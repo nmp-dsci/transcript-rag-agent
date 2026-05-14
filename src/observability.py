@@ -11,6 +11,7 @@ import mlflow
 
 from src.agents.models import TranscriptAnswer, TranscriptSummary
 from src.config import Settings
+from src.rag.models import ContextComparisonResult, RawTranscriptDocument, RetrievedChunk
 from src.transcripts.models import Transcript
 
 
@@ -81,6 +82,70 @@ def log_summary(summary: TranscriptSummary) -> None:
 
 def log_answer(answer: TranscriptAnswer) -> None:
     _log_json_artifact(answer.model_dump(), "answer.json")
+
+
+def log_context_details(
+    context_mode: str,
+    top_k: int | None = None,
+    retrieved_chunks: list[RetrievedChunk] | None = None,
+    raw_prompt_tokens_estimate: int | None = None,
+    rag_prompt_tokens_estimate: int | None = None,
+) -> None:
+    mlflow.log_param("context_mode", context_mode)
+    if top_k is not None:
+        mlflow.log_param("top_k", top_k)
+    if raw_prompt_tokens_estimate is not None:
+        mlflow.log_metric("raw_prompt_tokens_estimate", raw_prompt_tokens_estimate)
+    if rag_prompt_tokens_estimate is not None:
+        mlflow.log_metric("rag_prompt_tokens_estimate", rag_prompt_tokens_estimate)
+    if retrieved_chunks:
+        mlflow.set_tag(
+            "retrieved_chunk_ids",
+            ",".join(f"chunk:{chunk.video_id}:{chunk.chunk_index}" for chunk in retrieved_chunks),
+        )
+        mlflow.set_tag(
+            "retrieved_chunk_scores",
+            ",".join("" if chunk.score is None else f"{chunk.score:.6f}" for chunk in retrieved_chunks),
+        )
+        mlflow.set_tag(
+            "retrieved_chunk_time_ranges",
+            ",".join(
+                f"{chunk.start_seconds}-{chunk.end_seconds}" for chunk in retrieved_chunks
+            ),
+        )
+        _log_json_artifact(
+            {"chunks": [chunk.model_dump(mode="json") for chunk in retrieved_chunks]},
+            "rag_chunks.json",
+        )
+
+
+def log_raw_transcript_metadata(document: RawTranscriptDocument) -> None:
+    _log_json_artifact(
+        {
+            "transcript_id": document.transcript_id,
+            "video_id": document.video_id,
+            "source_url": str(document.source_url),
+            "source_collection": document.source_collection,
+            "provider": document.provider,
+            "title": document.title,
+            "language": document.language,
+            "fetched_at": document.fetched_at,
+            "segment_count": len(document.segments),
+        },
+        "raw_transcript_metadata.json",
+    )
+
+
+def log_context_comparison(comparison: ContextComparisonResult) -> None:
+    mlflow.log_metric("semantic_similarity", comparison.semantic_similarity)
+    mlflow.log_metric(
+        "raw_prompt_tokens_estimate", comparison.raw_prompt_tokens_estimate
+    )
+    mlflow.log_metric(
+        "rag_prompt_tokens_estimate", comparison.rag_prompt_tokens_estimate
+    )
+    mlflow.log_metric("token_savings_percent", comparison.token_savings_percent)
+    _log_json_artifact(comparison.model_dump(mode="json"), "context_comparison.json")
 
 
 def _log_json_artifact(payload: dict[str, object], artifact_name: str) -> None:

@@ -21,6 +21,12 @@ class Settings:
     mlflow_tracking_uri: str
     mlflow_experiment_name: str
     log_transcript_artifacts: bool
+    raw_transcript_collection: str = "raw_transcripts"
+    chunk_collection: str = "transcript_chunks"
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    rag_top_k: int = 10
+    chunk_target_chars: int = 1200
+    chunk_overlap_chars: int = 150
 
 
 def _project_root() -> Path:
@@ -38,6 +44,16 @@ def _bool_env(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _int_env(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ConfigError(f"{name} must be an integer") from exc
 
 
 def load_settings(require_keys: bool = True) -> Settings:
@@ -82,4 +98,16 @@ def load_settings(require_keys: bool = True) -> Settings:
         log_transcript_artifacts=_bool_env(
             os.environ.get("YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS"), default=False
         ),
+        raw_transcript_collection=os.environ.get(
+            "YT_AGENT_RAW_TRANSCRIPT_COLLECTION", "raw_transcripts"
+        ),
+        chunk_collection=os.environ.get(
+            "YT_AGENT_CHUNK_COLLECTION", "transcript_chunks"
+        ),
+        embedding_model=os.environ.get(
+            "YT_AGENT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
+        ),
+        rag_top_k=_int_env("YT_AGENT_RAG_TOP_K", 10),
+        chunk_target_chars=_int_env("YT_AGENT_CHUNK_TARGET_CHARS", 1200),
+        chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
     )

@@ -4,3 +4,6 @@
 __pycache__/
 *.pyc
 *.egg-info/
+evaluation/*
+!evaluation/evaluation.html
+!evaluation/evaluation.json

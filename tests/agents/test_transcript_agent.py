@@ -24,9 +24,15 @@ class FakeContextProvider:
         self.transcript = transcript
         self.calls = []
 
-    def get_transcript(self, video_id: str, source_url: str) -> TranscriptContext:
+    def get_transcript(
+        self, video_id: str, source_url: str, query: str | None = None
+    ) -> TranscriptContext:
         self.calls.append((video_id, source_url))
-        return TranscriptContext(transcript=self.transcript, cache_status="hit")
+        return TranscriptContext(
+            transcript=self.transcript,
+            cache_status="hit",
+            context_text=self.transcript.raw_text,
+        )
 
 
 def test_summarize_returns_pydantic_output(sample_transcript: Transcript) -> None:

@@ -1,0 +1,259 @@
+{
+  "eval_name": "raw_vs_rag_single_vs_rag_all",
+  "question": "what does this video say  for capital gains tax, is it being grandfathered or every now under new rules, does that mean if I sell before 30 June 2027 I can still access 50% discount ",
+  "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+  "top_k": 10,
+  "runs": [
+    {
+      "name": "raw_single",
+      "input_type": "raw",
+      "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+      "answer": "The transcript states that the 50% capital gains tax discount has been abolished for new purchases, but existing properties are not fully grandfathered for CGT (unlike negative gearing). Instead, there is a transitional rule: you can obtain a valuation as at 30 June 2027 (or 1 July 2027) to lock in the 50% discount on gains up to that date; gains after that point move to an indexation model. Therefore, if you sell before 30 June 2027, you can still access the full 50% discount on the entire capital gain, because there is no post-valuation gain. If you sell after that date, only the pre-valuation portion gets the discount; the rest is indexed.",
+      "token_estimate": 18295,
+      "retrieved_chunks": []
+    },
+    {
+      "name": "rag_single",
+      "input_type": "rag single",
+      "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+      "answer": "The transcript states that capital gains tax (CGT) is **not** grandfathered. For existing properties held before 12 May 2026, negative gearing is grandfathered, but for CGT it is not. However, the video indicates that the 50% CGT discount still applies up to a valuation obtained on 30 June or 1 July (presumably 2027). It does not explicitly state that selling before 30 June 2027 qualifies for the 50% discount, but it implies that the discount is available until that valuation date. After 1 July 2027, the rules shift to an indexation model. So selling before 30 June 2027 would likely still allow the 50% discount based on the valuation at that time, but the transcript does not provide a direct statement on a sale before that date.",
+      "token_estimate": 2997,
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "score": -0.0063898563385009766,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=2996s",
+          "start_seconds": 2996.8,
+          "end_seconds": 3073.2799999999997,
+          "chunk_index": 49,
+          "text": ">> All right, we'll try and find one more Ben here that will um uh uh help. Um will my existing properties be grandfathered for both negative gearing and CGT? Yes, for negative gearing, no for CGT. Oh, and importantly, um, and we touched on it before, but the the the quarantining that you did have pre85 is no longer from the 1st of July 2027, your quarantining will end and then you will move into um uh for the from the valuation at that point going forward until you have a capital gains tax event, you will be subject to capital gains tax. That's a that's a big job for those people who prior to Keing bringing in 85 they had this quarantining that they would have assumed would have last forever. >> Yep. So I mean you know obviously they've locked in all of those gains to this point but the question will be you know with rising interest rates um sentiment and expectation in the negative space now um that everyone will probably be racing to try and get a valuation today if it's a falling market. But unfortunately like like we don't what we don't know the known unknown here is >> when does that valuation have to get done >> um because if I'm in a regional town"
+        },
+        {
+          "rank": 2,
+          "score": -0.061331748962402344,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=593s",
+          "start_seconds": 593.36,
+          "end_seconds": 665.44,
+          "chunk_index": 10,
+          "text": "excited about that as are the valuers from the 1 of July. >> Well the valuers are going to be interesting. Will they be able to keep up, Ben, with the amount of valuations that need to be done? But um look, the the the CGT um uh 50% um has has been gone that there's some transitional rules that we just touched on before. And so existing property, just so it's clear for all of our audience, >> existing properties before 12th of May 2026, that's 7:30 uh budget delivery fully grandfathered and exempt from all the changes. uh for the negative gearing. Yes. For the capital, no. >> No. So for the CGT effectively what's happening there is that the once you get your valuation on the 30th of June or the 1st of July that will have the 50%. Yes. >> And then obviously the uh the indexation from that time. >> So there'll be a bit of sort of um working out a bit of this and did you apply under that and then proud from here. So it's going to get very very complex >> which which leads me into one of the first areas that I have concerns about. Right. >> Y >> so if someone um is been trading in property and they're being taught that you know you know through buyers agency"
+        },
+        {
+          "rank": 3,
+          "score": -0.08030450344085693,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=300s",
+          "start_seconds": 300.16,
+          "end_seconds": 364.16,
+          "chunk_index": 5,
+          "text": "your victory will be shortlived and we're going to go into some of the reasons why we think that's the case, but um >> it it certainly is um I I guess we should probably talk about just quickly go off some of the things that are changing. The negative gearing changes obviously from the uh the 12th of May 7:30 p.m. Australian Eastern Daylight Time. If you hadn't entered into a contract, you then no longer were able to work under the old rules. you have a 12 month um I guess period that if you wanted to you know negative gear for a year and then sell before the changes come you could do that from the 1st of July. >> Yeah they're referring to it as a tax >> and they've got to get the legislation through. There's a lot of changes here >> but I think it's going to lock people in like in terms of freeing up supply and a lot of people say oh good investors will leave and uh another spot for an owner occupied. fine, but I think it's going to lock. Like you all the people that had all of the pre-1985 benefits, they were holding on for dear life because they didn't want to lose those. And now there's a there's a cohort of people who have got the benefits of having rules"
+        },
+        {
+          "rank": 4,
+          "score": -0.26587820053100586,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=410s",
+          "start_seconds": 410.319,
+          "end_seconds": 489.36,
+          "chunk_index": 7,
+          "text": "in capital gains tax in 1985 right um and also made changes to negative gearing and then adjusted those because two years for two years uh because they could see that was impacting especially Sydney um uh rentals were were going higher and obviously that was the market that he spent most of his time in. So he made some adjustments there. So it's fair to say that by design those tax settings were favorable. They were favorable for this concept of being able to build wealth um and build out that. So so that's true. What have we moved from to where we are now? Well, obviously less favorable. Um, but you might ask more balanced in in a sense that what they're trying to do is they're trying to um bring up the the tax that you pay on wealth creation. Um, and you know what they should have tried to do is bring down uh income earning tax, but no, they've left that high and they're just basically recalibrating the wealth tax that we pay on our on our capital earnings. Um, and that's that's the problem here, right? So, uh, we'll be going into that, uh, in another podcast with, um, Evan and and the the chief economist of of Bendigo Bank next week. So, we'll be unpacking the broader"
+        },
+        {
+          "rank": 5,
+          "score": -0.2664525508880615,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=0s",
+          "start_seconds": 0.4,
+          "end_seconds": 76.479,
+          "chunk_index": 0,
+          "text": "This is again the most uh important update Bryce and I have done in the last probably 15 years. This is this is nothing more than collecting tax giving people on a lower lower down on the socioeconomic ladder less opportunities to get ahead. Well, this is almost like a tax. You're tuning in to the Property Couch, Australia's number one property, finance, and money podcast, featuring the titans of the industry since 2015, where trusted by tens of thousands of investors on their journey to financial peace. This show is powered by more. >> Thanks, OP. Yes, and welcome back to another edition of the number one property podcast in Australia, the Property G. And have we got a surprise for you, Bryce Holdway. >> Hello, mate. How good is it TO BE BACK? OH, LIKE IT JUST FEELS LIKE >> WOULD HAVE BEEN under would have been nice under better circumstances, but um here we are. >> We have a huge show today, don't we? I mean ultimately >> um big news. Um it's hot off the press. So, we're we're recording the morning after um the federal budget announcements and obviously the significant changes in in respect to property. Uh there's a lot of people that need a lot of advice. So, we're"
+        },
+        {
+          "rank": 6,
+          "score": -0.31594038009643555,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=2568s",
+          "start_seconds": 2568.0,
+          "end_seconds": 2634.319,
+          "chunk_index": 42,
+          "text": "philosophy um you'd hold them. Well, well, let's let's go through that negative gearing. I've got um I also and we'll be talking a bit more about the value of your offset account. Now, if you've been loading money up on offsets against your investment properties, that is that is gold because ultimately you'll be able to potentially move that money, which will allow you to get more access to some of those negative gearing benefits. So, those offsets become thing. But basic principle, negative gearing has been grandfathered. So that shouldn't affect you. You're still going to get that. And then ultimately your capital gains tax is going to be locked in from um July of next year and then you're going to move to a an indexation model. So the gains that you've made if you choose to sell >> sell. That's the point. >> If you choose to sell, but if you if you don't sell if you're retiring $3,000 a week, Ben, CGT doesn't affect you because you're holding your assets. >> No. Exactly. >> And the negative gearing doesn't affect you because you're locked and loaded. >> Correct. So, so again it's then becomes a bequeeavement discussion and an inheritance discussion and there's some"
+        },
+        {
+          "rank": 7,
+          "score": -0.33590662479400635,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=3117s",
+          "start_seconds": 3117.44,
+          "end_seconds": 3181.44,
+          "chunk_index": 51,
+          "text": "line in the sand, right? And and unfortunately it's going to be if it's a self declaration what are they going to do there? like, oh yeah, no, I've I've loaded up. It's as dumb as the, you know, the the 296 ruling around unrealized gains. We're in that sort of same space. So, that's going to be more consequence. All right, this last one. If you already own an investment property, an owner, sorry, if you already own an owner occupied property, >> Yes. >> and want to transition it to an investment property later, can that be negatively geared? That's interesting because the the definition says for properties held. It doesn't say for properties that are currently being used as an investment property. So, >> so my expectation is a yes on that. So, I I do expect that that will be um one of the loopholes. Well, not so much a loophole, but I mean the six-year rule if I do have to move for work or whatever and I then rent it out and I've still got a debt against that property, then that is technically deductible. So, I would suspect that they would keep that going. Um because again, if people have to move for work, it it wouldn't necessarily be in the spirit"
+        },
+        {
+          "rank": 8,
+          "score": -0.3393828868865967,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=4088s",
+          "start_seconds": 4088.64,
+          "end_seconds": 4164.4,
+          "chunk_index": 67,
+          "text": "celebration for our 600. Um and of course we'll have Julia Hartman back on um in the leadup to the tax season, but also uh you know to get her um opinions and views in terms of what's happening around the tax policies around that as well. So we will continue to evolve this conversation. We'll continue to see where the trends are going. Um but uh but yeah, don't do anything rash uh just yet until you sort of know the playing field. Stay close to the data. We'll teach you how to look at it that and uh hopefully you'll be able to navigate through this uncertain time for the next few months and then hopefully after that you'll go ah the dust has settled I know where I stand and I can pursue what uh what my ultimate goal is which is financial transformation towards you know lifestyle by design. So and just a final shout out for those people who want to register for the webinar the propertycatch.com.auregister /register now. You'll find the link there to uh to get in the wait list for that webinar coming up, mate. Um, great to have you back. >> Thank you for having me crew. >> # flagmantle. >> Flagmantle. >> That's mate. Yeah. On Thanks for inviting me back. It's um uh for for"
+        },
+        {
+          "rank": 9,
+          "score": -0.34824156761169434,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=2942s",
+          "start_seconds": 2942.0,
+          "end_seconds": 3008.4,
+          "chunk_index": 48,
+          "text": ">> You're about to see what that actually means. You are. >> This one is from Shane Wilkinson. Are there any changes to needed gearing on a property purchase pre206 which I then knocked down and replaced with two dwellings post 2027? Is there a difference if these two dwellings are on a single block or subdivided into separate torrent totals? I think the important part of the question that I think our audience needs to understand >> is replace with two dwellings. You've got to add to supply. Yes. >> So just for clarity for our audience, if you have a >> an investment property >> that you knock down and turn it into one investment property, that does not add to supply. Therefore, uh under um what was handed down last night, that doesn't qualify. But if you knock it down and turn it into two or more um by definition you are adding to supply correct therefore qualifying. >> So reward for the capital that funds new supply. Yes, >> which was the in the treasury notes there as well. So new build status. >> All right, we'll try and find one more Ben here that will um uh uh help. Um will my existing properties be grandfathered for both negative gearing"
+        },
+        {
+          "rank": 10,
+          "score": -0.35874950885772705,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=1530s",
+          "start_seconds": 1530.72,
+          "end_seconds": 1615.5200000000002,
+          "chunk_index": 25,
+          "text": "continue to overflow because the amount of tax revenue base that they get from from just the ordinary worker paying tax is a very significant part of the uh the taxation revenue that they receive. So this is this is nothing more than collecting tax giving people on a lower lower down on the socioeconomic ladder less opportunities to get ahead. And the people who already have the money, they winners always win, Ben. They'll find ways, >> but it's only the people with resources will be able to find ways. >> Yeah, we won't go deep into the loopholes. Um, but we'll try and spend a little bit of time at the end to have a just a couple of scenarios there, but I want to pick up on what you're saying. The Treasury modeling suggests that under these settings for supply, so remember when I said the tax settings were favorable, they were favorable under the current the model as of uh Monday, not the model as of Wednesday. Um to increase supply, the Treasury modeling declares that this is going to have a 30 to 35,000 less uh less supply. Yeah. >> Under this model. And they're they're saying that there'll be this will allow 75,000 new first home buyers to get into the market in the next decade."
+        }
+      ]
+    },
+    {
+      "name": "rag_all",
+      "input_type": "rag all",
+      "source_url": null,
+      "answer": "The video states that for capital gains tax (CGT), existing properties are **not grandfathered** \u2013 unlike negative gearing, which is grandfathered, CGT is subject to new rules [1][2]. However, there is a transition: a valuation on 30 June 2027 (or 1 July 2027) will capture the gain up to that point **with the 50% discount** applied [2]. From 1 July 2027, gains going forward are under the new CGT rules (indexation model) [1][10]. The video does not explicitly address selling before 30 June 2027, but it implies that the 50% discount still applies to gains accrued up to the valuation date. Therefore, if you sell before 30 June 2027, your entire gain would be before that cutoff, so it would likely still be eligible for the 50% discount, though the transcript does not state this directly.",
+      "token_estimate": 3188,
+      "retrieved_chunks": [
+        {
+          "rank": 1,
+          "score": -0.0063898563385009766,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=2996s",
+          "start_seconds": 2996.8,
+          "end_seconds": 3073.2799999999997,
+          "chunk_index": 49,
+          "text": ">> All right, we'll try and find one more Ben here that will um uh uh help. Um will my existing properties be grandfathered for both negative gearing and CGT? Yes, for negative gearing, no for CGT. Oh, and importantly, um, and we touched on it before, but the the the quarantining that you did have pre85 is no longer from the 1st of July 2027, your quarantining will end and then you will move into um uh for the from the valuation at that point going forward until you have a capital gains tax event, you will be subject to capital gains tax. That's a that's a big job for those people who prior to Keing bringing in 85 they had this quarantining that they would have assumed would have last forever. >> Yep. So I mean you know obviously they've locked in all of those gains to this point but the question will be you know with rising interest rates um sentiment and expectation in the negative space now um that everyone will probably be racing to try and get a valuation today if it's a falling market. But unfortunately like like we don't what we don't know the known unknown here is >> when does that valuation have to get done >> um because if I'm in a regional town"
+        },
+        {
+          "rank": 2,
+          "score": -0.061331748962402344,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=593s",
+          "start_seconds": 593.36,
+          "end_seconds": 665.44,
+          "chunk_index": 10,
+          "text": "excited about that as are the valuers from the 1 of July. >> Well the valuers are going to be interesting. Will they be able to keep up, Ben, with the amount of valuations that need to be done? But um look, the the the CGT um uh 50% um has has been gone that there's some transitional rules that we just touched on before. And so existing property, just so it's clear for all of our audience, >> existing properties before 12th of May 2026, that's 7:30 uh budget delivery fully grandfathered and exempt from all the changes. uh for the negative gearing. Yes. For the capital, no. >> No. So for the CGT effectively what's happening there is that the once you get your valuation on the 30th of June or the 1st of July that will have the 50%. Yes. >> And then obviously the uh the indexation from that time. >> So there'll be a bit of sort of um working out a bit of this and did you apply under that and then proud from here. So it's going to get very very complex >> which which leads me into one of the first areas that I have concerns about. Right. >> Y >> so if someone um is been trading in property and they're being taught that you know you know through buyers agency"
+        },
+        {
+          "rank": 3,
+          "score": -0.08030450344085693,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=300s",
+          "start_seconds": 300.16,
+          "end_seconds": 364.16,
+          "chunk_index": 5,
+          "text": "your victory will be shortlived and we're going to go into some of the reasons why we think that's the case, but um >> it it certainly is um I I guess we should probably talk about just quickly go off some of the things that are changing. The negative gearing changes obviously from the uh the 12th of May 7:30 p.m. Australian Eastern Daylight Time. If you hadn't entered into a contract, you then no longer were able to work under the old rules. you have a 12 month um I guess period that if you wanted to you know negative gear for a year and then sell before the changes come you could do that from the 1st of July. >> Yeah they're referring to it as a tax >> and they've got to get the legislation through. There's a lot of changes here >> but I think it's going to lock people in like in terms of freeing up supply and a lot of people say oh good investors will leave and uh another spot for an owner occupied. fine, but I think it's going to lock. Like you all the people that had all of the pre-1985 benefits, they were holding on for dear life because they didn't want to lose those. And now there's a there's a cohort of people who have got the benefits of having rules"
+        },
+        {
+          "rank": 4,
+          "score": -0.20333313941955566,
+          "video_id": "Uc1yniFxg0o",
+          "source_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o",
+          "timestamp_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o&t=361s",
+          "start_seconds": 361.84,
+          "end_seconds": 429.84,
+          "chunk_index": 6,
+          "text": "taxation and the legislation thereof. So um so what do you think? Obviously it's huge. Um so what do you think is going to happen? >> Yeah. And I think we're going to be wasting our um energy if we start saying is this fair? Is this unfair? Is this the right decision? Is it not? Like I think they've already made their decision. Does it go through parliament or not? Etc. And we could go and make a lot of noise and talk about all these unintended consequences down the line. But if we assume that this is going to go through, it absolutely changes the market completely. And I don't think people really get it. I think people just assume it's business as usual. It'll just wash out. Um, etc. It really does revalue every single property on the market in some way. And I think people probably aren't grasping that. The grandfathering thing is massively misunderstood because I think what the issue that people think is, \"Oh yeah, I've got the tax benefits locked in.\" So that's great, but that only protects your tax benefits. It doesn't protect the value of your property. The value of a property is based on who is going to buy your property in today's market based on"
+        },
+        {
+          "rank": 5,
+          "score": -0.2426137924194336,
+          "video_id": "Uc1yniFxg0o",
+          "source_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o",
+          "timestamp_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o&t=603s",
+          "start_seconds": 603.36,
+          "end_seconds": 671.8389999999999,
+          "chunk_index": 10,
+          "text": "your point on the legislation, well, that's going to pass through the house easily enough because the government has a majority. I think uh then they would have to go by the end of 2026, they'd have to pass it through this Senate. But I think with the help of the Greens, they would probably manage to do that. I mean, ironically, the Greens would probably want the government to go harder and actually get rid of the grandfathering in the name of intergenerational fairness. But assume, as you said, let's just assume that goes through late 2026, early 2027. So, plenty of time for one July next year. I mean I I suppose one factor which has already happened in New Zealand is that they went down a similar route in New Zealand with interest deductibility and then as soon as there was a change of government all all of it was reversed. So I think it sets up a a potential 2028 election showdown which will basically be on taxation particularly capital gains tax but also negative gearing and also immigration setting. So, the coalition has already said that's what it's going to stand on. But, as you said, Chris, let's just assume for the purposes of this discussion that all of"
+        },
+        {
+          "rank": 6,
+          "score": -0.26587820053100586,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=410s",
+          "start_seconds": 410.319,
+          "end_seconds": 489.36,
+          "chunk_index": 7,
+          "text": "in capital gains tax in 1985 right um and also made changes to negative gearing and then adjusted those because two years for two years uh because they could see that was impacting especially Sydney um uh rentals were were going higher and obviously that was the market that he spent most of his time in. So he made some adjustments there. So it's fair to say that by design those tax settings were favorable. They were favorable for this concept of being able to build wealth um and build out that. So so that's true. What have we moved from to where we are now? Well, obviously less favorable. Um, but you might ask more balanced in in a sense that what they're trying to do is they're trying to um bring up the the tax that you pay on wealth creation. Um, and you know what they should have tried to do is bring down uh income earning tax, but no, they've left that high and they're just basically recalibrating the wealth tax that we pay on our on our capital earnings. Um, and that's that's the problem here, right? So, uh, we'll be going into that, uh, in another podcast with, um, Evan and and the the chief economist of of Bendigo Bank next week. So, we'll be unpacking the broader"
+        },
+        {
+          "rank": 7,
+          "score": -0.2664525508880615,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=0s",
+          "start_seconds": 0.4,
+          "end_seconds": 76.479,
+          "chunk_index": 0,
+          "text": "This is again the most uh important update Bryce and I have done in the last probably 15 years. This is this is nothing more than collecting tax giving people on a lower lower down on the socioeconomic ladder less opportunities to get ahead. Well, this is almost like a tax. You're tuning in to the Property Couch, Australia's number one property, finance, and money podcast, featuring the titans of the industry since 2015, where trusted by tens of thousands of investors on their journey to financial peace. This show is powered by more. >> Thanks, OP. Yes, and welcome back to another edition of the number one property podcast in Australia, the Property G. And have we got a surprise for you, Bryce Holdway. >> Hello, mate. How good is it TO BE BACK? OH, LIKE IT JUST FEELS LIKE >> WOULD HAVE BEEN under would have been nice under better circumstances, but um here we are. >> We have a huge show today, don't we? I mean ultimately >> um big news. Um it's hot off the press. So, we're we're recording the morning after um the federal budget announcements and obviously the significant changes in in respect to property. Uh there's a lot of people that need a lot of advice. So, we're"
+        },
+        {
+          "rank": 8,
+          "score": -0.2914998531341553,
+          "video_id": "Uc1yniFxg0o",
+          "source_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o",
+          "timestamp_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o&t=0s",
+          "start_seconds": 0.08,
+          "end_seconds": 74.08,
+          "chunk_index": 0,
+          "text": "I suppose the big two factors Chris negative gearing and capital gains tax. If we assume that this is going to go through, it absolutely changes the market completely. And I don't think people really get it. I think people just assume it's business as usual. It'll just wash out, etc. It really does revalue every single property on the market in some way. This podcast is proudly brought to you by Pearller, the official brokerage platform of Ras. With Pear, you can effortlessly automate your money. Whether you're investing in ETFs or shares from Australia or the US stock market, whether you're a grandparent or setting up a kids account or your own account, you can do all of that with full automation on pear.com. If you want to learn more, head to pear.com/rasque. And of course, before you invest in anything, be sure to read the legal documents like the PDS and FSG. Thanks for watching this RAS podcast. >> Hello, welcome to the Australian Property Podcast. I'm Pete Went from Alan Went Property Buyers. I'm here with Chris Bates from the Alco Group, mortgage specialist. Chris, it's budget day or it's the morning after actually for us as we record this. Uh loads of"
+        },
+        {
+          "rank": 9,
+          "score": -0.31312525272369385,
+          "video_id": "Uc1yniFxg0o",
+          "source_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o",
+          "timestamp_url": "https://www.youtube.com/watch?v=Uc1yniFxg0o&t=296s",
+          "start_seconds": 296.16,
+          "end_seconds": 371.12,
+          "chunk_index": 5,
+          "text": "lower housing price growth will result in 35,000 fewer dwellings being built. Um, but the government's hoping to offset that with some investment in infrastructure. That's the first thing. Second thing, Chris already mentioned, capital gains tax. So, a shift in the method of calculating CGT, but the minimum rate going forward will be 30%. It seems to be no way around that. And that's not just for property. That's for all assets. That'll be commercial property, but also in the stock market. And it doesn't seem logically very progressive because everybody will be paying at least 30% capital gains tax. And then thirdly, maybe a lesser impact on the housing market. There'll be a minimum 30% tax rate on trusts and discretionary trust. So I suppose the big two factors Chris negative gearing and capital gains tax. So yeah, these are it's another broken election pledge. Well, it's actually several broken election pledges all in one go. Last time around it was um household energy and power bills. This time it's wholesale changes to the housing taxation and the legislation thereof. So um so what do you think? Obviously it's huge. Um so what do you think is going to happen?"
+        },
+        {
+          "rank": 10,
+          "score": -0.31594038009643555,
+          "video_id": "3hk7nO_q0a8",
+          "source_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8",
+          "timestamp_url": "https://www.youtube.com/watch?v=3hk7nO_q0a8&t=2568s",
+          "start_seconds": 2568.0,
+          "end_seconds": 2634.319,
+          "chunk_index": 42,
+          "text": "philosophy um you'd hold them. Well, well, let's let's go through that negative gearing. I've got um I also and we'll be talking a bit more about the value of your offset account. Now, if you've been loading money up on offsets against your investment properties, that is that is gold because ultimately you'll be able to potentially move that money, which will allow you to get more access to some of those negative gearing benefits. So, those offsets become thing. But basic principle, negative gearing has been grandfathered. So that shouldn't affect you. You're still going to get that. And then ultimately your capital gains tax is going to be locked in from um July of next year and then you're going to move to a an indexation model. So the gains that you've made if you choose to sell >> sell. That's the point. >> If you choose to sell, but if you if you don't sell if you're retiring $3,000 a week, Ben, CGT doesn't affect you because you're holding your assets. >> No. Exactly. >> And the negative gearing doesn't affect you because you're locked and loaded. >> Correct. So, so again it's then becomes a bequeeavement discussion and an inheritance discussion and there's some"
+        }
+      ]
+    }
+  ],
+  "similarities": {
+    "raw_single__rag_single": 0.870424895393505,
+    "raw_single__rag_all": 0.9033027792905469,
+    "rag_single__rag_all": 0.9461920514840286
+  }
+}

@@ -9,7 +9,7 @@ from src.transcripts.models import Transcript
 
 
 class FakeStore:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *args, **kwargs) -> None:
         self.transcript = None
         self.upserts = 0
 
@@ -66,6 +66,43 @@ class FakeAgent:
         )
 
 
+class FakeRagAgent:
+    last_request = None
+
+    @classmethod
+    def from_settings(cls, settings, context_provider=None):
+        agent = cls()
+        agent.context_provider = context_provider
+        agent.last_context = None
+        return agent
+
+    def answer(self, request):
+        FakeRagAgent.last_request = request
+        from src.agents.models import RagTranscriptAnswer
+
+        return RagTranscriptAnswer(question=request.question, answer="rag answer")
+
+
+class FakeEmbeddingModel:
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+
+
+class FakeChunkStore:
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+
+class FakeIndexer:
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+
+class FakeMultiProvider:
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+
 def test_cli_routes_summarize_with_cache_miss(monkeypatch, tmp_path, capsys) -> None:
     _patch_cli(monkeypatch, tmp_path)
     FakeFetcher.calls = 0
@@ -88,8 +125,8 @@ def test_fetch_no_refresh_uses_cached_transcript(monkeypatch, tmp_path, capsys) 
     )
 
     class CachedStore(FakeStore):
-        def __init__(self, path: Path) -> None:
-            super().__init__(path)
+        def __init__(self, path: Path, *args, **kwargs) -> None:
+            super().__init__(path, *args, **kwargs)
             self.transcript = transcript
 
     _patch_cli(monkeypatch, tmp_path, store_cls=CachedStore)
@@ -113,8 +150,8 @@ def test_summarize_uses_cached_transcript_without_fetch(monkeypatch, tmp_path, c
     )
 
     class CachedStore(FakeStore):
-        def __init__(self, path: Path) -> None:
-            super().__init__(path)
+        def __init__(self, path: Path, *args, **kwargs) -> None:
+            super().__init__(path, *args, **kwargs)
             self.transcript = transcript
 
     _patch_cli(monkeypatch, tmp_path, store_cls=CachedStore)
@@ -129,6 +166,25 @@ def test_summarize_uses_cached_transcript_without_fetch(monkeypatch, tmp_path, c
     assert "summary" in capsys.readouterr().out
 
 
+def test_rag_ask_uses_rag_only_agent(monkeypatch, tmp_path, capsys) -> None:
+    _patch_cli(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "RagTranscriptAgent", FakeRagAgent)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", FakeChunkStore)
+    monkeypatch.setattr(cli, "RagIndexer", FakeIndexer)
+    monkeypatch.setattr(cli, "MultiTranscriptRagContextProvider", FakeMultiProvider)
+    FakeRagAgent.last_request = None
+
+    result = cli.main(["rag-ask", "question", "--top-k", "7"])
+
+    assert result == 0
+    assert FakeRagAgent.last_request is not None
+    assert FakeRagAgent.last_request.question == "question"
+    assert FakeRagAgent.last_request.source_url is None
+    assert FakeRagAgent.last_request.top_k == 7
+    assert "rag answer" in capsys.readouterr().out
+
+
 def _patch_cli(monkeypatch, tmp_path, store_cls=FakeStore) -> None:
     settings = Settings(
         superdata_api_key="super",
@@ -141,7 +197,7 @@ def _patch_cli(monkeypatch, tmp_path, store_cls=FakeStore) -> None:
         log_transcript_artifacts=False,
     )
     monkeypatch.setattr(cli, "load_settings", lambda require_keys=True: settings)
-    monkeypatch.setattr(cli, "ChromaTranscriptStore", store_cls)
+    monkeypatch.setattr(cli, "RawTranscriptStore", store_cls)
     monkeypatch.setattr(cli, "SuperdataTranscriptFetcher", FakeFetcher)
     monkeypatch.setattr(cli, "TranscriptAgent", FakeAgent)
     monkeypatch.setattr(cli, "cli_run", _null_run)

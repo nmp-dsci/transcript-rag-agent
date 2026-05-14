@@ -20,8 +20,8 @@ from src.agents.prompts import (
     build_transcript_context_prompt,
 )
 from src.config import Settings
+from src.rag.storage import RawTranscriptStore
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
-from src.transcripts.storage import ChromaTranscriptStore
 
 
 class TranscriptTooLongError(RuntimeError):
@@ -58,17 +58,18 @@ class TranscriptAgent:
         if settings.deepseek_base_url:
             kwargs["base_url"] = settings.deepseek_base_url
         if context_provider is None:
+            fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
             context_provider = RawTranscriptContextProvider(
-                store=ChromaTranscriptStore(settings.chroma_path),
-                fetcher=SuperdataTranscriptFetcher(settings.superdata_api_key),
+                store=RawTranscriptStore(settings.chroma_path, fetcher=fetcher),
+                fetcher=fetcher,
             )
         return cls(ChatOpenAI(**kwargs), context_provider)
 
     def summarize(self, request: SummaryRequest) -> TranscriptSummary:
         context = self._get_context(request.video_id, request.source_url)
-        self._ensure_context_size(context.transcript.raw_text)
+        self._ensure_context_size(context.context_text or "")
         content = self._invoke(
-            context_text=context.transcript.raw_text,
+            context_text=context.context_text or "",
             user_prompt=build_summary_prompt(request.message),
         )
         data = _json_object(content)
@@ -78,10 +79,12 @@ class TranscriptAgent:
         return TranscriptSummary.model_validate(data)
 
     def answer(self, request: QuestionRequest) -> TranscriptAnswer:
-        context = self._get_context(request.video_id, request.source_url)
-        self._ensure_context_size(context.transcript.raw_text)
+        context = self._get_context(
+            request.video_id, request.source_url, query=request.question
+        )
+        self._ensure_context_size(context.context_text or "")
         content = self._invoke(
-            context_text=context.transcript.raw_text,
+            context_text=context.context_text or "",
             user_prompt=build_question_prompt(
                 question=request.question,
                 video_id=context.transcript.video_id,
@@ -92,8 +95,10 @@ class TranscriptAgent:
         data.setdefault("source_video_id", context.transcript.video_id)
         return TranscriptAnswer.model_validate(data)
 
-    def _get_context(self, video_id: str, source_url: str) -> TranscriptContext:
-        context = self.context_provider.get_transcript(video_id, source_url)
+    def _get_context(
+        self, video_id: str, source_url: str, query: str | None = None
+    ) -> TranscriptContext:
+        context = self.context_provider.get_transcript(video_id, source_url, query=query)
         self.last_context = context
         return context
 
