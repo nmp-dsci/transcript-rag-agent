@@ -11,7 +11,12 @@ import mlflow
 
 from src.agents.models import TranscriptAnswer, TranscriptSummary
 from src.config import Settings
-from src.rag.models import ContextComparisonResult, RawTranscriptDocument, RetrievedChunk
+from src.rag.models import (
+    ContextComparisonResult,
+    RawTranscriptDocument,
+    RetrievedChunk,
+    RetrievedTranscriptSummary,
+)
 from src.transcripts.models import Transcript
 
 
@@ -113,6 +118,65 @@ def log_context_details(
                 f"{chunk.start_seconds}-{chunk.end_seconds}" for chunk in retrieved_chunks
             ),
         )
+        _log_json_artifact(
+            {"chunks": [chunk.model_dump(mode="json") for chunk in retrieved_chunks]},
+            "rag_chunks.json",
+        )
+
+
+def log_transcript_filter_details(
+    enabled: bool,
+    selected_transcripts: list[RetrievedTranscriptSummary] | None = None,
+    filter_top_k: int | None = None,
+    min_score: float | None = None,
+    retrieved_chunks: list[RetrievedChunk] | None = None,
+) -> None:
+    selected_transcripts = selected_transcripts or []
+    retrieved_chunks = retrieved_chunks or []
+    mlflow.log_param("transcript_filter_enabled", enabled)
+    if filter_top_k is not None:
+        mlflow.log_param("transcript_filter_top_k", filter_top_k)
+    if min_score is not None:
+        mlflow.log_param("transcript_filter_min_score", min_score)
+    mlflow.log_metric("selected_transcript_count", len(selected_transcripts))
+    mlflow.log_metric("retrieved_chunk_count", len(retrieved_chunks))
+    scores = [
+        transcript.score
+        for transcript in selected_transcripts
+        if transcript.score is not None
+    ]
+    if scores:
+        mlflow.log_metric("selected_transcript_score_max", max(scores))
+        mlflow.log_metric("selected_transcript_score_min", min(scores))
+    if selected_transcripts:
+        mlflow.set_tag(
+            "selected_video_ids",
+            ",".join(transcript.video_id for transcript in selected_transcripts),
+        )
+        mlflow.set_tag(
+            "selected_transcript_ids",
+            ",".join(
+                transcript.transcript_id for transcript in selected_transcripts
+            ),
+        )
+    if retrieved_chunks:
+        mlflow.set_tag(
+            "retrieved_chunk_ids",
+            ",".join(f"chunk:{chunk.video_id}:{chunk.chunk_index}" for chunk in retrieved_chunks),
+        )
+    _log_json_artifact(
+        {
+            "enabled": enabled,
+            "filter_top_k": filter_top_k,
+            "min_score": min_score,
+            "selected_transcripts": [
+                transcript.model_dump(mode="json")
+                for transcript in selected_transcripts
+            ],
+        },
+        "transcript_filter.json",
+    )
+    if retrieved_chunks:
         _log_json_artifact(
             {"chunks": [chunk.model_dump(mode="json") for chunk in retrieved_chunks]},
             "rag_chunks.json",

@@ -24,7 +24,7 @@ class FakeStore:
 class FakeFetcher:
     calls = 0
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, api_key: str, *args, **kwargs) -> None:
         self.api_key = api_key
 
     def fetch(self, url: str) -> Transcript:
@@ -94,8 +94,20 @@ class FakeChunkStore:
 
 
 class FakeIndexer:
+    last_refresh = None
+
     def __init__(self, *args, **kwargs) -> None:
         pass
+
+    def index(self, source_url: str, refresh: bool = False, refresh_summary: bool = False):
+        FakeIndexer.last_refresh = (source_url, refresh, refresh_summary)
+
+        class Result:
+            raw_document = None
+            chunks = [object(), object()]
+            summary_status = "hit"
+
+        return Result()
 
 
 class FakeMultiProvider:
@@ -183,6 +195,58 @@ def test_rag_ask_uses_rag_only_agent(monkeypatch, tmp_path, capsys) -> None:
     assert FakeRagAgent.last_request.source_url is None
     assert FakeRagAgent.last_request.top_k == 7
     assert "rag answer" in capsys.readouterr().out
+
+
+def test_rag_ask_passes_transcript_filter_flags(monkeypatch, tmp_path, capsys) -> None:
+    _patch_cli(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "RagTranscriptAgent", FakeRagAgent)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", FakeChunkStore)
+    monkeypatch.setattr(cli, "RagIndexer", FakeIndexer)
+    monkeypatch.setattr(cli, "MultiTranscriptRagContextProvider", FakeMultiProvider)
+    FakeRagAgent.last_request = None
+
+    result = cli.main(
+        [
+            "rag-ask",
+            "question",
+            "--filter-transcripts",
+            "--transcript-filter-top-k",
+            "3",
+            "--transcript-filter-min-score",
+            "0.4",
+        ]
+    )
+
+    assert result == 0
+    assert FakeRagAgent.last_request is not None
+    assert FakeRagAgent.last_request.filter_transcripts is True
+    assert FakeRagAgent.last_request.transcript_filter_top_k == 3
+    assert FakeRagAgent.last_request.transcript_filter_min_score == 0.4
+    assert "rag answer" in capsys.readouterr().out
+
+
+def test_index_rag_refreshes_pipeline_dashboard(monkeypatch, tmp_path, capsys) -> None:
+    _patch_cli(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", FakeChunkStore)
+    monkeypatch.setattr(cli, "RagIndexer", FakeIndexer)
+    calls = []
+    monkeypatch.setattr(cli, "log_raw_transcript_metadata", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "_build_summary_store", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "_build_summary_generator", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        cli,
+        "_refresh_rag_pipeline_dashboard",
+        lambda settings: calls.append(settings) or tmp_path / "dashboard/rag_pipeline.html",
+    )
+
+    result = cli.main(["index-rag", "https://www.youtube.com/watch?v=3hk7nO_q0a8"])
+
+    assert result == 0
+    assert calls
+    output = capsys.readouterr().out
+    assert "RAG pipeline dashboard:" in output
 
 
 def _patch_cli(monkeypatch, tmp_path, store_cls=FakeStore) -> None:

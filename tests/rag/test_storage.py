@@ -3,11 +3,13 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from src.rag.models import TranscriptChunk
+from src.rag.models import TranscriptSummaryRecord
 from src.rag.storage import (
     RawTranscriptStore,
     TranscriptChunkStore,
     raw_document_from_transcript,
 )
+from src.rag.summaries import TranscriptSummaryStore
 from src.transcripts.models import Transcript, TranscriptSegment
 
 
@@ -48,6 +50,46 @@ def test_raw_transcript_store_serializes_segments_in_document_body(tmp_path) -> 
     assert loaded.segments[0].duration_ms == 1200
     assert "segments" in stored["documents"][0]
     assert "segments" not in stored["metadatas"][0]
+
+
+def test_raw_transcript_store_persists_summary_fields(tmp_path) -> None:
+    transcript = Transcript(
+        video_id="3hk7nO_q0a8",
+        url="https://www.youtube.com/watch?v=3hk7nO_q0a8",
+        raw_text="capital gains tax transcript",
+        fetched_at=datetime.now(timezone.utc),
+    )
+    store = RawTranscriptStore(tmp_path / "chroma")
+    document = raw_document_from_transcript(transcript).model_copy(
+        update={
+            "summary": "Capital gains tax policy summary",
+            "summary_model": "deepseek-test",
+            "summary_generated_at": "2026-05-16T00:00:00+00:00",
+            "summary_embedding": [1.0, 0.0, 1.0],
+            "summary_embedding_model": "fake-embedding",
+            "summary_embedded_at": "2026-05-16T00:01:00+00:00",
+            "channel_id": "channel-1",
+            "channel_name": "Channel name",
+            "duration_seconds": 90.0,
+            "upload_date": "2026-05-16T00:00:00Z",
+            "view_count": 123,
+            "like_count": 45,
+            "tags": ["tax", "property"],
+            "transcript_languages": ["en"],
+        }
+    )
+
+    store.upsert_raw_document(document)
+    loaded = store.get_raw_document(transcript.video_id)
+
+    assert loaded is not None
+    assert loaded.summary == "Capital gains tax policy summary"
+    assert loaded.summary_model == "deepseek-test"
+    assert loaded.summary_embedding == [1.0, 0.0, 1.0]
+    assert loaded.summary_embedding_model == "fake-embedding"
+    assert loaded.channel_name == "Channel name"
+    assert loaded.view_count == 123
+    assert loaded.tags == ["tax", "property"]
 
 
 def test_chunk_store_queries_top_k_with_metadata(tmp_path) -> None:
@@ -142,3 +184,63 @@ def test_chunk_store_query_by_url_filters_to_one_video(tmp_path) -> None:
     retrieved = store.query_by_url("https://www.youtube.com/watch?v=bbbbbbbbbbb", "capital", 10)
 
     assert {chunk.video_id for chunk in retrieved} == {"bbbbbbbbbbb"}
+
+
+def test_chunk_store_query_by_video_ids_restricts_results(tmp_path) -> None:
+    store = TranscriptChunkStore(tmp_path / "chroma", FakeEmbeddingModel())
+    store.upsert_chunks(
+        [
+            TranscriptChunk(
+                transcript_id="raw_transcript:aaaaaaaaaaa",
+                video_id="aaaaaaaaaaa",
+                source_url="https://www.youtube.com/watch?v=aaaaaaaaaaa",
+                chunk_index=0,
+                text="capital gains tax",
+                segment_count=1,
+            ),
+            TranscriptChunk(
+                transcript_id="raw_transcript:bbbbbbbbbbb",
+                video_id="bbbbbbbbbbb",
+                source_url="https://www.youtube.com/watch?v=bbbbbbbbbbb",
+                chunk_index=0,
+                text="agent systems",
+                segment_count=1,
+            ),
+        ]
+    )
+
+    retrieved = store.query_by_video_ids(["bbbbbbbbbbb"], "capital", 10)
+
+    assert {chunk.video_id for chunk in retrieved} == {"bbbbbbbbbbb"}
+
+
+def test_summary_store_upserts_and_queries_relevant_transcripts(tmp_path) -> None:
+    store = TranscriptSummaryStore(
+        tmp_path / "chroma",
+        embedding_model=FakeEmbeddingModel(),
+        embedding_model_name="fake-embedding",
+    )
+    store.upsert_summary(
+        TranscriptSummaryRecord(
+            transcript_id="raw_transcript:aaaaaaaaaaa",
+            video_id="aaaaaaaaaaa",
+            source_url="https://www.youtube.com/watch?v=aaaaaaaaaaa",
+            summary="capital gains tax and grandfathering",
+            summary_model="deepseek-test",
+            summary_generated_at="2026-05-16T00:00:00+00:00",
+            summary_embedding=[1.0, 0.0, 1.0],
+            summary_embedding_model="fake-embedding",
+            summary_embedded_at="2026-05-16T00:01:00+00:00",
+            segment_count=3,
+            chunk_count=1,
+        )
+    )
+
+    loaded = store.get_summary("aaaaaaaaaaa")
+    retrieved = store.query_relevant_transcripts("capital gains", top_k=1, min_score=-10)
+
+    assert loaded is not None
+    assert loaded.summary_embedding == [1.0, 0.0, 1.0]
+    assert len(retrieved) == 1
+    assert retrieved[0].video_id == "aaaaaaaaaaa"
+    assert retrieved[0].score is not None

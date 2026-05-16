@@ -61,7 +61,12 @@ class RagTranscriptAgent:
         if settings.deepseek_base_url:
             kwargs["base_url"] = settings.deepseek_base_url
         if context_provider is None:
-            fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
+            fetcher = SuperdataTranscriptFetcher(
+                settings.superdata_api_key,
+                timeout_seconds=settings.supadata_timeout_seconds,
+                poll_interval_seconds=settings.supadata_poll_interval_seconds,
+                max_poll_seconds=settings.supadata_max_poll_seconds,
+            )
             raw_store = RawTranscriptStore(
                 settings.chroma_path,
                 fetcher=fetcher,
@@ -91,6 +96,9 @@ class RagTranscriptAgent:
             question=request.question,
             source_url=str(request.source_url) if request.source_url else None,
             top_k=request.top_k,
+            filter_transcripts=request.filter_transcripts,
+            transcript_filter_top_k=request.transcript_filter_top_k,
+            transcript_filter_min_score=request.transcript_filter_min_score,
         )
         self.last_context = context
         context_text = context.context_text or ""

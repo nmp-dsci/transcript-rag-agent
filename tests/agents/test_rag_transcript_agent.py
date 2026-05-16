@@ -25,8 +25,25 @@ class FakeProvider:
     def __init__(self) -> None:
         self.calls = []
 
-    def get_context(self, question: str, source_url: str | None = None, top_k: int = 10):
-        self.calls.append((question, source_url, top_k))
+    def get_context(
+        self,
+        question: str,
+        source_url: str | None = None,
+        top_k: int = 10,
+        filter_transcripts: bool = False,
+        transcript_filter_top_k: int = 5,
+        transcript_filter_min_score: float = 0.25,
+    ):
+        self.calls.append(
+            (
+                question,
+                source_url,
+                top_k,
+                filter_transcripts,
+                transcript_filter_top_k,
+                transcript_filter_min_score,
+            )
+        )
         transcript = Transcript(
             video_id="all",
             url="https://www.youtube.com/watch?v=abc",
@@ -68,5 +85,7 @@ def test_rag_transcript_agent_answers_and_backfills_references() -> None:
 
     assert answer.answer == "answer from chunk [1]"
     assert answer.references[0].timestamp_url.unicode_string().endswith("t=593s")
-    assert provider.calls == [("q", "https://www.youtube.com/watch?v=abc", 3)]
+    assert provider.calls == [
+        ("q", "https://www.youtube.com/watch?v=abc", 3, False, 5, 0.25)
+    ]
     assert "retrieved transcript chunks" in llm.messages[0].content

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Transcript Agent Evaluation</title>
+<style>
+:root{color-scheme:dark}
+body{font-family:Arial,sans-serif;line-height:1.45;margin:0;color:#dbe4ef;background:#0f141b}
+header{padding:20px 28px;background:#151c26;color:#f6f8fb;border-bottom:1px solid #2d3745}
+main{padding:24px 28px}
+a{color:#8cc8ff}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:#151c26}
+th,td{border:1px solid #2d3745;padding:8px;text-align:left;vertical-align:top}
+th{background:#202a36;color:#f6f8fb}
+article{border-top:2px solid #2d3745;margin-top:28px;padding-top:16px}
+pre{white-space:pre-wrap;background:#10161f;border:1px solid #2d3745;color:#e7edf5;padding:12px;overflow:auto}
+details{margin:8px 0;padding:8px;border:1px solid #2d3745;background:#151c26}
+summary{cursor:pointer;font-weight:bold;color:#f6f8fb}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#c7e1ff}
+.metric{font-family:ui-monospace,Menlo,monospace}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.metric-grid .metric{background:#151c26;border:1px solid #2d3745;padding:12px}
+.metric strong{display:block;font-size:24px;color:#f6f8fb}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{border:1px solid #2d3745;background:#151c26;color:#dbe4ef;padding:8px 12px;cursor:pointer}
+.tab.active{background:#2f81f7;color:white;border-color:#2f81f7}
+.panel{display:none}.panel.active{display:block}
+td.summary{min-width:280px}
+</style>
+</head>
+<body>
+<header><h1>Transcript Agent Evaluation</h1></header>
+<main>
+<p><strong>Question:</strong> can you summarise the impact of negative gearing, capital gains tax on the property market, how does impact the long terms trends of property prices and what type of properties are winners and losers</p>
+<p><strong>Single transcript URL:</strong> https://www.youtube.com/watch?v=dn1tg0rYg7Q</p>
+<p><strong>RAG top K:</strong> 10</p>
+<h2>Summary</h2>
+<table><tr><th>Run</th><th>Transcript input type</th><th>Filter</th><th>Token estimate</th><th>Retrieved chunks</th><th>Answer chars</th></tr><tr><td>raw_single</td><td>raw</td><td>https://www.youtube.com/watch?v=dn1tg0rYg7Q</td><td class="metric">10283</td><td class="metric">0</td><td class="metric">1280</td></tr><tr><td>rag_single</td><td>rag single</td><td>https://www.youtube.com/watch?v=dn1tg0rYg7Q</td><td class="metric">3005</td><td class="metric">10</td><td class="metric">1206</td></tr><tr><td>rag_all</td><td>rag all</td><td>all indexed transcripts</td><td class="metric">3189</td><td class="metric">10</td><td class="metric">1342</td></tr></table>
+<h2>Pairwise Similarity</h2>
+<table><tr><th>Pair</th><th>Embedding cosine similarity</th></tr><tr><td>raw_single__rag_single</td><td class="metric">0.911</td></tr><tr><td>raw_single__rag_all</td><td class="metric">0.825</td></tr><tr><td>rag_single__rag_all</td><td class="metric">0.758</td></tr></table>
+<h2>Answers</h2>
+<article>
+<h3>raw_single (raw)</h3>
+<p><strong>Filter:</strong> https://www.youtube.com/watch?v=dn1tg0rYg7Q</p>
+<p><strong>Token estimate:</strong> <span class="metric">10283</span></p>
+<h4>Answer</h4>
+<pre>Negative gearing changes (removing it for existing properties) significantly reduce investor borrowing capacity – in some scenarios borrowing can be almost double with negative gearing than without. This shifts investor demand away from existing builds toward new builds, where negative gearing (and depreciation) still apply. Capital gains tax discount reduction (from 50% to an inflation-indexed minimum 30%) applies to all assets, making long-term investment less lucrative. Long‑term property price trends are not explicitly stated, but the transcript implies: existing properties in investor‑heavy suburbs may see price declines as investors exit, while new‑build prices may be supported by redirected demand. Rental prices are expected to rise (the government’s modelling of a $2/week increase is ridiculed as unrealistic).
+
+Winners: Developers/land holders (new‑build buyers get much more borrowing capacity), buyers agents focused on new builds, existing asset holders (grandfathered under old rules), short‑term rental operators (Airbnb), and company structures (flat 30% tax).
+Losers: Younger generations trying to build wealth, small business owners (higher CGT on sale), first home buyers in high‑yield suburbs now competing with investors, and renters (higher rents).</pre>
+<h4>Retrieved chunks</h4>
+<p>No retrieved chunks for raw transcript input.</p>
+</article>
+<article>
+<h3>rag_single (rag single)</h3>
+<p><strong>Filter:</strong> https://www.youtube.com/watch?v=dn1tg0rYg7Q</p>
+<p><strong>Token estimate:</strong> <span class="metric">3005</span></p>
+<h4>Answer</h4>
+<pre>According to the transcript, removing negative gearing reduces investor borrowing capacity significantly (e.g., can almost double borrowing with negative gearing), driving many investors out of existing property markets and making it easier for first home buyers in some suburbs (e.g., Central Coast). This is expected to push rental prices up, with the transcript dismissing the government&#x27;s claim of only a $2/week increase. Investors may shift to higher‑yield properties (e.g., Broken Hill with 9–12% yield, dual‑key in Queensland with strong positive gearing) or to short‑term rentals like Airbnb. The capital gains tax discount reduction applies to all investments (property, shares, crypto, small business), not just property, which the speakers argue hurts younger generations trying to build wealth and small businesses. Long‑term price trends: demand for existing properties likely falls, while new off‑the‑plan properties become more attractive, potentially increasing new supply. Winners: developers, land holders, buyers agents focusing on new builds. Losers: existing property investors, younger first‑time investors, and small businesses (especially startups planning to sell for a multiple).</pre>
+<h4>Retrieved chunks</h4>
+<details>
+<summary>[1] dn1tg0rYg7Q 1052.08-1128.96s score=0.13093560934066772</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=1052s">Open video at timestamp</a></p>
+<p>chunk_index=18</p>
+<pre>like to me I think the first thing I thought of was oh maybe like commercial property becomes a lot more attractive again yields are higher they still get yeah um obviously um and we talk about a lot in the coposite so the new property off the plan space you know the the negative gearing still applies &gt;&gt; for &gt;&gt; as well as that depreciation &gt;&gt; as well as depreciation right so all of a sudden it becomes attractive um for an investor to buy something that&#x27;s new and to me I understand the logic behind that too. I&#x27;m not just saying that from a co-osite perspective. But the logic from um from a from government&#x27;s perspective is if we can increase demand for new property then that will inherently increase supply of new property which is the biggest problem that we&#x27;re trying trying to solve. &gt;&gt; Um so that to me is interesting. Um it&#x27;s crazy you know and I guess again we&#x27;re trying to we don&#x27;t want to make predictions. making guesses, but I kind of think a lot of the changes overall if you if you actually zoom out, &gt;&gt; it&#x27;s probably a good thing to to overhaul our tax, especially from a property perspective. Like I think it&#x27;s I think we got to a point where um property investors had</pre>
+</details>
+<details>
+<summary>[2] dn1tg0rYg7Q 707.76-770.24s score=0.12446355819702148</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=707s">Open video at timestamp</a></p>
+<p>chunk_index=12</p>
+<pre>was an investor and I had a lot of money, I can go and buy that knowing that the capital growth will probably be there over the long term and I don&#x27;t really care if the rental yield like it might be $700 a week because it will be heav heavily negatively geared depending on my borrowing borrowing the amount I borrow. &gt;&gt; And you assume your equity is going to grow. &gt;&gt; You&#x27;ve got to assume that or otherwise you would never invest there to begin with because you&#x27;re making a cash loss. Even though negative gearing was there, you&#x27;re still making a cash loss. So your only benefit is capital growth. So you got to you got to assume that that&#x27;s going to happen. But um let&#x27;s say that negatively geared property could be 20 $30,000 per year, but then you&#x27;re on the highest marginal tax rate. You&#x27;re getting 50% of that back almost. So now you don&#x27;t get that back. So now you&#x27;ve got to hold that cash position and it makes it harder and less lucrative. So in those particular suburbs, you will see a pullback from investors, which will mean those first home buyers can jump on those opportunities. That&#x27;s in those specific suburbs. But then you&#x27;ve got other first home buyers in other</pre>
+</details>
+<details>
+<summary>[3] dn1tg0rYg7Q 648.079-715.6s score=-0.07141351699829102</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=648s">Open video at timestamp</a></p>
+<p>chunk_index=11</p>
+<pre>built wealth already, sweet, &gt;&gt; right? So, but then everybody trying to build wealth, the younger generation, they&#x27;re the ones that are screwed. &gt;&gt; That&#x27;s the biggest thing I&#x27;ve seen online. It&#x27;s like, okay, so we&#x27;re helping younger people get into property by taking away the thing that helped the last generation make money in property. &gt;&gt; And I Yeah, you&#x27;re right. I think that negative gearing, that&#x27;s the big one because it it really impacts borrowing capacity. So that will drive a lot of investors out of the the the market for existing builds. So it will really help out in some some suburbs. For sure. &gt;&gt; Explain that to me. So I mean with negative gearing if you apply it to investment lending you can borrow literally hundreds of thousand dollars more. So if you you know and so in some pockets let&#x27;s say first home buyers 5% no LMI is a maximum of uh $1.5 million purchase around Sydney Central Coast Woolong things like that. Um and then you&#x27;ve got say for example a $ 1.5 million home on the central coast. If I was an investor and I had a lot of money, I can go and buy that knowing that the capital growth will probably be there over the long term and I don&#x27;t</pre>
+</details>
+<details>
+<summary>[4] dn1tg0rYg7Q 813.68-885.76s score=-0.10483729839324951</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=813s">Open video at timestamp</a></p>
+<p>chunk_index=14</p>
+<pre>&gt;&gt; 100% they&#x27;ll be looking at like yeah higher yield places like if you look at who knows if they&#x27;ll be going there but places like Broken Hill they get like 9 12% yield. That would be perfect. Now, whether it&#x27;s a good investment, I&#x27;m not going to say. Um, but then you&#x27;ve got other in, you know, areas like, uh, Queensland that you&#x27;ve got, you know, existing dual key. I&#x27;ve got a client that&#x27;s purchased one that&#x27;s $900 a week and it cost him $540,000 to purchase. So, strongly, positively geared play on, right? It&#x27;s just that the borrowing capacity for that property will still reduce because the negative gearing is not there. Um, but I think the other thing about, you know, what will investors kind of do as well is will it cause a rental spike? I think that it almost definitely will, you know, because investors, even if it&#x27;s not going to affect them from a cash flow perspective, they&#x27;re thinking, well, my investment is now less lucrative from a capital gains tax perspective, so I want stronger yields to make up for it, even if it doesn&#x27;t hurt their cash flow. And across the board, I think you&#x27;re going to see rental prices increase because they will also use that Central Coast</pre>
+</details>
+<details>
+<summary>[5] dn1tg0rYg7Q 876.88-943.36s score=-0.13062214851379395</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=876s">Open video at timestamp</a></p>
+<p>chunk_index=15</p>
+<pre>across the board, I think you&#x27;re going to see rental prices increase because they will also use that Central Coast example. If all the investors um stop buying, there&#x27;s only a small percentage of first home buyers that can be in a position to buy that property unless they drop dramatically in value. So, you&#x27;re going to see less rental properties available with the same demand or maybe, you know, 90% as much of the demand, which can increase rental um uh prices. But, you know, I think what did they say that &gt;&gt; $2 a week? &gt;&gt; Yeah, $2 a week. &gt;&gt; I was about I mean, come on, man. &gt;&gt; Stop being silly. &gt;&gt; I don&#x27;t tr I never I never try and predict like you can&#x27;t I mean, you can guess and that&#x27;s fine and we can have a conversation around that, &gt;&gt; but to suggest that rents will only go up $2 a week. &gt;&gt; Such a random number. &gt;&gt; Yeah. How did they I want to know more about the math. &gt;&gt; How did they come up with &gt;&gt; it is uh like a a chatt prompt. Let me know how much rental prices will increase, but make sure it&#x27;s under $220. &gt;&gt; Look, the modeling is ridiculous, right? So, there&#x27;s no way there&#x27;s no rents will go up by more than $2 a week. I think we can guess that. I think so. We can</pre>
+</details>
+<details>
+<summary>[6] dn1tg0rYg7Q 532.08-596.6400000000001s score=-0.1441185474395752</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=532s">Open video at timestamp</a></p>
+<p>chunk_index=9</p>
+<pre>area. So I reckon that&#x27;s a good rule. &gt;&gt; Would it be a cleaner if they just said 30% across the board? &gt;&gt; Yeah. Wouldn&#x27;t it? &gt;&gt; I don&#x27;t know. Look, I don&#x27;t know. It&#x27;s above my pay grade. But I just think there&#x27;s got to be a simple &gt;&gt; I think it&#x27;s a Yeah, inflation model makes it tricky and it and because it fluctuates all the time and means that now it opens up the doors to when do I sell and timing and things like that. But so higher inflation is better &gt;&gt; for it would be better if you&#x27;re exiting a property or or any any investment really because the other side of things is not just for property and this is another thing we were talking about earlier. Right. So &gt;&gt; if they were if we&#x27;ve wrapped this up in a boat lab you know Jim Charas has said we&#x27;re trying to help first home buyers and we want to you know make it equal for everyone and um so we&#x27;re going to we&#x27;re going to change the taxes for property investors but it&#x27;s also for any investor type all investors. So that to me I start to go well is it really are we really &gt;&gt; yeah I&#x27;ve made videos on this it oh you have already it it can it cannot be you can&#x27;t say in the same breath we&#x27;re going to tax all investments more to help</pre>
+</details>
+<details>
+<summary>[7] dn1tg0rYg7Q 0.16-67.2s score=-0.15185761451721191</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=0s">Open video at timestamp</a></p>
+<p>chunk_index=0</p>
+<pre>You can&#x27;t say in the same breath, we&#x27;re going to tax all investments more to help first home buyers into the market. Please join the dots on that. My main gripe with this is reducing the discount on capital gains tax across the board. Not just for residential property, but shares crypto ETFs &gt;&gt; small business. Yeah, &gt;&gt; it&#x27;s all been under the guise of helping the 75,000 new homeowners over the next 10 years. &gt;&gt; So, who wins and who loses from this? Developers of all kinds or land holders are big winners here. in the right certain scenarios, you can borrow almost double what you could with negative gearing. And so that all of that money is now going to new build. &gt;&gt; I think it changes everyone&#x27;s thinking. How do I get in? How do I invest? &gt;&gt; Everybody that&#x27;s built wealth already. Sweet. But then everybody trying to build wealth, the younger generation, they&#x27;re the ones that are screwed. I&#x27;m Michael Carboni. My friends call me Carbs. And this is Property Now. &gt;&gt; Yeah. There&#x27;s going to be winners and losers as well. I guess we&#x27;ll we&#x27;ll talk about, but it&#x27;s all been under the guise of helping the 75,000 new homeowners over the next 10 years, so 7,500 per</pre>
+</details>
+<details>
+<summary>[8] dn1tg0rYg7Q 936.32-1009.839s score=-0.17140913009643555</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=936s">Open video at timestamp</a></p>
+<p>chunk_index=16</p>
+<pre>So, there&#x27;s no way there&#x27;s no rents will go up by more than $2 a week. I think we can guess that. I think so. We can assume. The other thing that I don&#x27;t think has been really discussed as well, if a property a property investor now wants a strongly positive uh cash flow property, but they want an existing, let&#x27;s say the central coast for example, um or Sydney or something and they&#x27;ve got a block of land and they were thinking I&#x27;m going to purchase this property, add a granny flat to it and have a a two yield and maybe I&#x27;ll start to become positively geared soon, but it might still be heavily negatively geared or it might be negatively geared. &gt;&gt; Do those investors start to look at short-term rental? &gt;&gt; And this is a big one, I think, because if if let&#x27;s say I&#x27;ve got a property where I was going to traditionally rent out both ter sides long-term lease now, it it&#x27;s less lucrative for me to sell the property, so I hold it. It&#x27;s less lucrative for me to invest it long-term. So, do I take it out of the sale pool and the rental pool and start Airbnb? &gt;&gt; And that&#x27;s a bad thing for everyone, right? Except for the person that owns it. &gt;&gt; So, you know, that could cause even</pre>
+</details>
+<details>
+<summary>[9] dn1tg0rYg7Q 1511.039-1581.12s score=-0.19063210487365723</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=1511s">Open video at timestamp</a></p>
+<p>chunk_index=26</p>
+<pre>allows them, not only is it a benefit for the investor from a cash flow perspective ongoing, but that borrowing capacity, it can&#x27;t be understated how big the impact is of the borrowing capacity changes for if you apply negative gearing versus not. That&#x27;s the bit that I haven&#x27;t heard anyone talk. Yeah, it&#x27;s really big. So, you know, and it can be like uh if if you&#x27;ve got, let&#x27;s say, you know, a couple on, you know, an average salary um and they want to purchase an investment property and let&#x27;s say the maximum borrowing capacity was $600,000. If you apply negative gearing to that, it can be 900 a million dollars, right? So, in the right certain scenarios, you can borrow almost double what you could with negative gearing. It&#x27;s crazy. And so, that all of that money is now going going to new build. So, I reckon developers of all kinds or land holders are big winners here. Um, the other one that I was thinking about is um obviously buyers agents that focus on new build. &gt;&gt; Yeah. &gt;&gt; What a layup for them, right? It&#x27;s like you&#x27;ve got the pitch of the century. &gt;&gt; You can see all the ads on Meta already. &gt;&gt; Yeah. Exactly. Yeah. Yeah. So, they&#x27;re a winner. Um and then I guess um I guess</pre>
+</details>
+<details>
+<summary>[10] dn1tg0rYg7Q 1291.44-1354.5590000000002s score=-0.19854795932769775</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=1291s">Open video at timestamp</a></p>
+<p>chunk_index=22</p>
+<pre>&gt;&gt; then that&#x27;s not a successful business. &gt;&gt; Why don&#x27;t we encourage businesses that are winning? &gt;&gt; I don&#x27;t know. It&#x27;s interesting. It is interesting. &gt;&gt; I think that it&#x27;s you&#x27;re making it harder and harder really for small businesses if you&#x27;re a you know you&#x27;re a startup and you&#x27;re thinking should I start up in Australia knowing that there is now more uh you&#x27;re going to be taxed at a higher rate on sale because a lot of these businesses now they do have the intention of buying building and selling for a multiple. &gt;&gt; Yeah. &gt;&gt; They they can be really really bad. cuz they&#x27;re one of the worst affected, especially if they don&#x27;t get the small business concessions. If they, you know, build that business over the next 5 or 10 years and get, you know, they started off with a million bucks and they get a 10 times multiple that&#x27;s worth $10 million, they&#x27;re on the hook for all of these increased capital gains tax um changes, which means they&#x27;re going to tax get taxed hundreds of thousands more on sale. &gt;&gt; Yeah. &gt;&gt; Um what they do? &gt;&gt; Yeah. &gt;&gt; Nothing. &gt;&gt; Hold on. They&#x27;re trying to build a business in Australia, employ people in Australia, you know, bring in money into</pre>
+</details>
+</article>
+<article>
+<h3>rag_all (rag all)</h3>
+<p><strong>Filter:</strong> all indexed transcripts</p>
+<p><strong>Token estimate:</strong> <span class="metric">3189</span></p>
+<h4>Answer</h4>
+<pre>The proposed changes restrict negative gearing to newly constructed housing; existing investment properties are grandfathered, while newly acquired established properties lose access [2]. Investors will only be able to offset rental losses against property income (not salary), with excess losses carried forward [1][4]. Capital losses remain offsettable only against capital gains [1]. In the long term, property prices are driven primarily by supply and demand, not tax benefits, and the changes are expected to have a minimal impact on prices overall [5][6]. A short‑term recalibration is possible, but markets tend to find equilibrium over time [6]. **Winners** include developers and sellers of off‑plan/new housing (due to continued negative gearing and depreciation) [3][7], existing landlords with grandfathered properties [3], homeowners (main residence CGT exemption remains) [5], and commercial property (still eligible) [7]. **Losers** are investors in established dwellings bought after the budget date [2]; these investors face reduced cash‑flow benefits and may pull back from certain suburbs [8]. Rent prices are expected to rise as costs are passed on to tenants [9]. Some investors may shift to shares or commercial property [10]. Overall, the changes aim to redirect investment toward new housing to increase supply [2][7].</pre>
+<h4>Retrieved chunks</h4>
+<details>
+<summary>[1] Q4gnTeHd1OM 5745.502-5812.636s score=0.20336323976516724</summary>
+<p><a href="https://www.youtube.com/watch?v=Q4gnTeHd1OM&amp;t=5745s">Open video at timestamp</a></p>
+<p>chunk_index=91</p>
+<pre>auxiliary taxes. Love it, man. And there&#x27;s another one here, Jeremy. If a property sold at capital loss, what if, so what will be happening to carried forward losses of negative gearing? This comes back to a little bit of what we were talking about at the very start. Small, medium business accountants. I might charge hourly for this one. But the capital loss will be carried forward as well as the negative gearing loss. that you&#x27;ve accumulated. So if you bought a property, you&#x27;ve made a loss on it, you sold it for less than what you bought it for, that capital loss is carried forward, nothing changes with that rule. And if there is revenue losses you&#x27;ve generated with this new legislation they&#x27;re looking to put through, those revenue losses from the property will also be carried forward and they can be utilised against the future rental income of the property. And we all know that capital losses can only be utilised against capital gains. So nothing changes from that, just the addition of the revenue losses from rental properties, similar to the carry forward revenue losses when you have a sole trader loss in your personal tax return.</pre>
+</details>
+<details>
+<summary>[2] ZdRYP1tfUU8 704.56-774.6800000000001s score=0.17095506191253662</summary>
+<p><a href="https://www.youtube.com/watch?v=ZdRYP1tfUU8&amp;t=704s">Open video at timestamp</a></p>
+<p>chunk_index=12</p>
+<pre>between the Australian government and accountants across the country as these things come into play. As with the negative gearing benefits for residential property investors, the negative gearing concessions will be restricted primarily to new constructed housing. Existing investment properties will be grandfathered under transitional agreements, while newly acquired established dwellings will lose access to negative gearing benefits from effectively the budget date moving forward. Newly built investment properties will retain more favorable tax treatment and from a policy perspective, the reforms are designed again to redirect investment towards new housing construction, reduce the demand for established housing and approve house and improve housing supply over time. So, what&#x27;s interesting about this one is it&#x27;s not actually going to affect every Australian in the same way and it&#x27;s not going to affect all of us in the same way on the same year. So, when it comes to these capital gains tax changes, um there&#x27;s examples from CBA bank and some of the other major banks in the country where they&#x27;re modeling this. Um and I&#x27;ve also been talking to my accountant about this this morning. In</pre>
+</details>
+<details>
+<summary>[3] Q4gnTeHd1OM 1941.522-2027.397s score=0.1454089879989624</summary>
+<p><a href="https://www.youtube.com/watch?v=Q4gnTeHd1OM&amp;t=1941s">Open video at timestamp</a></p>
+<p>chunk_index=31</p>
+<pre>to what was announced. So I don&#x27;t want to make any predictions per se. But as I&#x27;m sure you know, I haven&#x27;t been a big fan of negative gearing you know, ever since I started investing in properties and buying properties, whether it&#x27;s for myself or for clients or whatever. And I still maintain that. Look, when I first started buying properties, it was easy to get positive or neutral cash flow properties off the bat. But over time as, you know, property prices have increased and the rents haven&#x27;t caught up, you know, from my perspective, negative gearing has been a necessary evil to buy properties in areas that are more likely to grow. And I keep talking about major capital cities in areas where affordable housing still exists because ultimately that&#x27;s where humans have to live, right? At the end of the day. And I think the winners of this particular budget are some developers. Anyone selling developer stock, you know, off the plan house and land packages where they get a massive incentive, a massive bonus and a massive commission structure. Existing landlords, people like myself, who already have properties and have the grandfathering and so on. But also,</pre>
+</details>
+<details>
+<summary>[4] Q4gnTeHd1OM 625.082-691.9789999999999s score=0.14431607723236084</summary>
+<p><a href="https://www.youtube.com/watch?v=Q4gnTeHd1OM&amp;t=625s">Open video at timestamp</a></p>
+<p>chunk_index=10</p>
+<pre>will only be deductible against other income for residential properties, including capital gains. However, when an investor has excess losses, they will be able to carry forward that excess to offset residential property income in future years, enabling losses to be carried forward, ensuring investors remain able to claim deductions in the future and costs of maintenance. So does this basically mean negative gearing isn&#x27;t gone? It&#x27;s just been changed around and kind of moved forward? The concept has changed how negative gearing works. So, again, when you had losses that arose from a property, you could claim that as a deduction against your employment income, your work-related income, your salaries and wage. What they&#x27;ve done is they&#x27;ve segmented the return to say your income and your expenses for work is how you get your refund and the interest and dividends and all that stuff. But your property side of things, that&#x27;s a separate portion within the return. And you&#x27;ll only be able to claim negative gearing against a few related property profits that you make and if you don&#x27;t have enough property profits and you</pre>
+</details>
+<details>
+<summary>[5] Y83fSCBTZDI 240.64-301.52s score=0.14208614826202393</summary>
+<p><a href="https://www.youtube.com/watch?v=Y83fSCBTZDI&amp;t=240s">Open video at timestamp</a></p>
+<p>chunk_index=4</p>
+<pre>really driving the property market over the long term, it is that balance between supply and demand. And what we&#x27;re really talking about here with these tax changes is a slight shift in where that demand comes from. So, we&#x27;re going to see somewhat fewer investors and maybe somewhat more homeowners, but ultimately there&#x27;s a lot of homeowners out there. There&#x27;s a lot of demand still there. And so, when you run that through the kind of models that the Treasury has used and the kind of estimates that we&#x27;ve done show a pretty minimal impact on prices. &gt;&gt; So, again, the follow-up to you is the same, Matt. What does that mean for different parts of the market, established homes, uh, apartments, different parts of the bigger the big cities? What What does that look like? Well, I think there&#x27;s probably two impacts there. One is just as we&#x27;ve said, you know, this is something that advantages homeowners. They get to keep their big capital gains tax exemption, which is really the biggest tax exemption that there is now in in the property space now that we&#x27;ve we&#x27;ve retrenched on some of these other ones. And then I think there&#x27;s a second impact, which is that the types of</pre>
+</details>
+<details>
+<summary>[6] Uc1yniFxg0o 1186.64-1262.159s score=0.13822650909423828</summary>
+<p><a href="https://www.youtube.com/watch?v=Uc1yniFxg0o&amp;t=1186s">Open video at timestamp</a></p>
+<p>chunk_index=20</p>
+<pre>becomes even more enticing because you know that that&#x27;s going to grow tax-free and you can&#x27;t even afford to buy an investment property anyway. &gt;&gt; Well, totally. Yeah. And I agree completely that in the short term this is going to be messy. I think um yes you can model an a decrease in prices of 3% or 4% or whatever but as you said at the local level if you&#x27;ve got no buyer for your property then yeah the the modeling goes out the window and the sentiment impact is going to be large I would say especially in a rising interest rate environment which we now have. Um, if I I mean I suppose I&#x27;ve done a bit of content in the last 24 hours and if I sound relatively sanguin I I guess it&#x27;s more just from I guess partly due to the gray hairs appearing on my head but you do see over time a lot of these things come and go and markets in particular have a way of finding an equilibrium. So yes um there&#x27;ll be a short-term recalibration or adjustment but sooner or later things get back into some kind of equilibrium. I think as well if you actually look at housing markets really over the longer term anyway what drives them is supply and demand not so much the tax benefits although as you said</pre>
+</details>
+<details>
+<summary>[7] dn1tg0rYg7Q 1052.08-1128.96s score=0.13093560934066772</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=1052s">Open video at timestamp</a></p>
+<p>chunk_index=18</p>
+<pre>like to me I think the first thing I thought of was oh maybe like commercial property becomes a lot more attractive again yields are higher they still get yeah um obviously um and we talk about a lot in the coposite so the new property off the plan space you know the the negative gearing still applies &gt;&gt; for &gt;&gt; as well as that depreciation &gt;&gt; as well as depreciation right so all of a sudden it becomes attractive um for an investor to buy something that&#x27;s new and to me I understand the logic behind that too. I&#x27;m not just saying that from a co-osite perspective. But the logic from um from a from government&#x27;s perspective is if we can increase demand for new property then that will inherently increase supply of new property which is the biggest problem that we&#x27;re trying trying to solve. &gt;&gt; Um so that to me is interesting. Um it&#x27;s crazy you know and I guess again we&#x27;re trying to we don&#x27;t want to make predictions. making guesses, but I kind of think a lot of the changes overall if you if you actually zoom out, &gt;&gt; it&#x27;s probably a good thing to to overhaul our tax, especially from a property perspective. Like I think it&#x27;s I think we got to a point where um property investors had</pre>
+</details>
+<details>
+<summary>[8] dn1tg0rYg7Q 707.76-770.24s score=0.12446355819702148</summary>
+<p><a href="https://www.youtube.com/watch?v=dn1tg0rYg7Q&amp;t=707s">Open video at timestamp</a></p>
+<p>chunk_index=12</p>
+<pre>was an investor and I had a lot of money, I can go and buy that knowing that the capital growth will probably be there over the long term and I don&#x27;t really care if the rental yield like it might be $700 a week because it will be heav heavily negatively geared depending on my borrowing borrowing the amount I borrow. &gt;&gt; And you assume your equity is going to grow. &gt;&gt; You&#x27;ve got to assume that or otherwise you would never invest there to begin with because you&#x27;re making a cash loss. Even though negative gearing was there, you&#x27;re still making a cash loss. So your only benefit is capital growth. So you got to you got to assume that that&#x27;s going to happen. But um let&#x27;s say that negatively geared property could be 20 $30,000 per year, but then you&#x27;re on the highest marginal tax rate. You&#x27;re getting 50% of that back almost. So now you don&#x27;t get that back. So now you&#x27;ve got to hold that cash position and it makes it harder and less lucrative. So in those particular suburbs, you will see a pullback from investors, which will mean those first home buyers can jump on those opportunities. That&#x27;s in those specific suburbs. But then you&#x27;ve got other first home buyers in other</pre>
+</details>
+<details>
+<summary>[9] SZFpO176aVc 566.6-631.88s score=0.11144912242889404</summary>
+<p><a href="https://www.youtube.com/watch?v=SZFpO176aVc&amp;pp=ugUHEgVlbi1BVQ%3D%3D&amp;t=566s">Open video at timestamp</a></p>
+<p>chunk_index=10</p>
+<pre>properties? Another uh another side rant, but the the capital gains tax and the negative gearing thing is going to drive up rent prices. &gt;&gt; Yeah. There&#x27;s no two ways about that. &gt;&gt; Yeah. It&#x27;s it&#x27;s not going to decrease rent. Yeah. Investors will always pass on costs to to to the client or to the to the tenant. Yeah. It&#x27;s just how it&#x27;s going to happen. &gt;&gt; Yeah. So, now they&#x27;re going to be trying to build those tax Yeah. I I mean, I spoke to an investor yesterday who since 2022 to to to recently, he&#x27;s bought three properties in the one market up in mainland, the market that we spoke about recently. The first property that he bought in 2022 was $350,000. It&#x27;s probably worth $800,000 now. He&#x27;s already positively geared on that property in the last 3 years. By doing that, like it&#x27;s not going to affect him and it&#x27;s not going to increase his cost. It&#x27;s obviously going to increase his cost, but he&#x27;s already positively geared on that property. That that&#x27;s not going to affect him and he&#x27;s going to have to sell down. He&#x27;s going to keep that property and supply&#x27;s going to be be the same. It&#x27;s not like people are going to be hemorrhaging money and they&#x27;re going to just flood the market</pre>
+</details>
+<details>
+<summary>[10] Uc1yniFxg0o 542.08-610.64s score=0.1075010895729065</summary>
+<p><a href="https://www.youtube.com/watch?v=Uc1yniFxg0o&amp;t=542s">Open video at timestamp</a></p>
+<p>chunk_index=9</p>
+<pre>would you want to why would you want to go and be basically down $30 $40,000 a year um with the potential maybe getting some of that back on future rental in some point in the future and then pay more CGT. So I I think it really does change the economics for investors. investors are going to make a decision of well, you know, do I even buy an investment property? Do I go into shares which is, you know, you can negative gear shares still? Do I upgrade my home? You know, do I go into commercial property? It completely changes their fundamental options. And I don&#x27;t think people, you know, when when investors are basically buying driving 40% of lending right now and most of that is one or two owner property investors. They&#x27;re not these big portfolio buyers. If you, you know, basically say to them it&#x27;s no longer that worthwhile for you, you&#x27;re going to see a huge reduction in invest in lending and when 40% of it is what&#x27;s driving the market now, that&#x27;s going to have a huge impact on the buyer pool going forward. &gt;&gt; Well, yeah, completely. So, I think on your point on the legislation, well, that&#x27;s going to pass through the house easily enough because the government has</pre>
+</details>
+</article>
+</main>
+</body>
+</html>

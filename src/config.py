@@ -23,10 +23,16 @@ class Settings:
     log_transcript_artifacts: bool
     raw_transcript_collection: str = "raw_transcripts"
     chunk_collection: str = "transcript_chunks"
+    transcript_summary_collection: str = "transcript_summaries"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     rag_top_k: int = 10
+    transcript_filter_top_k: int = 5
+    transcript_filter_min_score: float = 0.25
     chunk_target_chars: int = 1200
     chunk_overlap_chars: int = 150
+    supadata_timeout_seconds: float = 120.0
+    supadata_poll_interval_seconds: float = 2.0
+    supadata_max_poll_seconds: float = 600.0
 
 
 def _project_root() -> Path:
@@ -54,6 +60,16 @@ def _int_env(name: str, default: int) -> int:
         return int(value)
     except ValueError as exc:
         raise ConfigError(f"{name} must be an integer") from exc
+
+
+def _float_env(name: str, default: float) -> float:
+    value = os.environ.get(name)
+    if value is None or value == "":
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ConfigError(f"{name} must be a number") from exc
 
 
 def load_settings(require_keys: bool = True) -> Settings:
@@ -104,10 +120,22 @@ def load_settings(require_keys: bool = True) -> Settings:
         chunk_collection=os.environ.get(
             "YT_AGENT_CHUNK_COLLECTION", "transcript_chunks"
         ),
+        transcript_summary_collection=os.environ.get(
+            "YT_AGENT_TRANSCRIPT_SUMMARY_COLLECTION", "transcript_summaries"
+        ),
         embedding_model=os.environ.get(
             "YT_AGENT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
         ),
         rag_top_k=_int_env("YT_AGENT_RAG_TOP_K", 10),
+        transcript_filter_top_k=_int_env("YT_AGENT_TRANSCRIPT_FILTER_TOP_K", 5),
+        transcript_filter_min_score=_float_env(
+            "YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE", 0.25
+        ),
         chunk_target_chars=_int_env("YT_AGENT_CHUNK_TARGET_CHARS", 1200),
         chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
+        supadata_timeout_seconds=_float_env("SUPADATA_TIMEOUT_SECONDS", 120.0),
+        supadata_poll_interval_seconds=_float_env(
+            "SUPADATA_POLL_INTERVAL_SECONDS", 2.0
+        ),
+        supadata_max_poll_seconds=_float_env("SUPADATA_MAX_POLL_SECONDS", 600.0),
     )

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import chromadb
-from pydantic import HttpUrl
+from pydantic import HttpUrl, ValidationError
 
 from src.rag.embeddings import EmbeddingModel
 from src.rag.models import RawTranscriptDocument, RawTranscriptSegment, RetrievedChunk, TranscriptChunk
@@ -56,6 +56,18 @@ class RawTranscriptStore:
             source_url=HttpUrl(str(metadata["source_url"])),
             provider=str(metadata.get("provider", "supadata")),
             title=_none_if_empty(metadata.get("title")),
+            description=body.get("description") or _none_if_empty(metadata.get("description")),
+            channel_id=_none_if_empty(metadata.get("channel_id")),
+            channel_name=_none_if_empty(metadata.get("channel_name")),
+            duration_seconds=_float_or_none(metadata.get("duration_seconds")),
+            thumbnail_url=_http_url_or_none(metadata.get("thumbnail_url")),
+            upload_date=_none_if_empty(metadata.get("upload_date")),
+            view_count=_int_or_none(metadata.get("view_count")),
+            like_count=_int_or_none(metadata.get("like_count")),
+            tags=[str(tag) for tag in body.get("tags", [])],
+            transcript_languages=[
+                str(lang) for lang in body.get("transcript_languages", [])
+            ],
             language=_none_if_empty(metadata.get("language")),
             segments=[
                 RawTranscriptSegment.model_validate(segment)
@@ -63,6 +75,14 @@ class RawTranscriptStore:
             ],
             fetched_at=str(metadata.get("fetched_at", _now_iso())),
             source_collection=str(metadata.get("source_collection", self.collection_name)),
+            summary=_none_if_empty(metadata.get("summary")),
+            summary_model=_none_if_empty(metadata.get("summary_model")),
+            summary_generated_at=_none_if_empty(metadata.get("summary_generated_at")),
+            summary_embedding=body.get("summary_embedding"),
+            summary_embedding_model=_none_if_empty(
+                metadata.get("summary_embedding_model")
+            ),
+            summary_embedded_at=_none_if_empty(metadata.get("summary_embedded_at")),
         )
 
     def ensure_raw_document(
@@ -72,6 +92,14 @@ class RawTranscriptStore:
         if not refresh:
             cached = self.get_raw_document(video_id)
             if cached is not None:
+                if self.fetcher is not None and _missing_video_metadata(cached):
+                    updated = _raw_document_with_metadata(
+                        cached,
+                        self.fetcher.fetch_metadata(source_url),
+                    )
+                    if updated != cached:
+                        self.upsert_raw_document(updated)
+                        return updated, "metadata"
                 return cached, "hit"
         if self.fetcher is None:
             raise ValueError("RawTranscriptStore requires a fetcher to refresh transcripts")
@@ -142,6 +170,20 @@ class TranscriptChunkStore:
     ) -> list[RetrievedChunk]:
         return self._query(query=query, top_k=top_k, where={"video_id": video_id})
 
+    def query_by_video_ids(
+        self, video_ids: list[str], query: str, top_k: int
+    ) -> list[RetrievedChunk]:
+        if not video_ids:
+            return []
+        chunks: list[RetrievedChunk] = []
+        for video_id in dict.fromkeys(video_ids):
+            chunks.extend(self.query_by_video_id(video_id, query, top_k))
+        return sorted(
+            chunks,
+            key=lambda chunk: float("-inf") if chunk.score is None else chunk.score,
+            reverse=True,
+        )[:top_k]
+
     def _query(
         self,
         query: str,
@@ -206,6 +248,16 @@ def raw_document_from_transcript(
         source_url=transcript.url,
         provider=transcript.provider,
         title=transcript.title,
+        description=transcript.description,
+        channel_id=transcript.channel_id,
+        channel_name=transcript.channel_name,
+        duration_seconds=transcript.duration_seconds,
+        thumbnail_url=transcript.thumbnail_url,
+        upload_date=transcript.upload_date,
+        view_count=transcript.view_count,
+        like_count=transcript.like_count,
+        tags=transcript.tags,
+        transcript_languages=transcript.transcript_languages,
         language=transcript.language,
         segments=segments,
         fetched_at=transcript.fetched_at.isoformat(),
@@ -219,6 +271,16 @@ def transcript_from_raw_document(document: RawTranscriptDocument) -> Transcript:
         video_id=document.video_id,
         url=document.source_url,
         title=document.title,
+        description=document.description,
+        channel_id=document.channel_id,
+        channel_name=document.channel_name,
+        duration_seconds=document.duration_seconds,
+        thumbnail_url=document.thumbnail_url,
+        upload_date=document.upload_date,
+        view_count=document.view_count,
+        like_count=document.like_count,
+        tags=document.tags,
+        transcript_languages=document.transcript_languages,
         language=document.language,
         provider=document.provider,
         raw_text=" ".join(segment.text for segment in document.segments).strip(),
@@ -247,14 +309,22 @@ def _raw_transcript_id(video_id: str) -> str:
 
 
 def _raw_document_body(document: RawTranscriptDocument) -> str:
-    return json.dumps(
-        {"segments": [segment.model_dump(mode="json") for segment in document.segments]},
-        separators=(",", ":"),
-    )
+    body: dict[str, object] = {
+        "segments": [segment.model_dump(mode="json") for segment in document.segments]
+    }
+    if document.summary_embedding is not None:
+        body["summary_embedding"] = document.summary_embedding
+    if document.description is not None:
+        body["description"] = document.description
+    if document.tags:
+        body["tags"] = document.tags
+    if document.transcript_languages:
+        body["transcript_languages"] = document.transcript_languages
+    return json.dumps(body, separators=(",", ":"))
 
 
-def _raw_document_metadata(document: RawTranscriptDocument) -> dict[str, str | int]:
-    return {
+def _raw_document_metadata(document: RawTranscriptDocument) -> dict[str, str | int | float]:
+    metadata: dict[str, str | int | float] = {
         "transcript_id": document.transcript_id,
         "video_id": document.video_id,
         "source_url": str(document.source_url),
@@ -265,6 +335,33 @@ def _raw_document_metadata(document: RawTranscriptDocument) -> dict[str, str | i
         "fetched_at": document.fetched_at,
         "segment_count": len(document.segments),
     }
+    if document.summary is not None:
+        metadata["summary"] = document.summary
+    if document.summary_model is not None:
+        metadata["summary_model"] = document.summary_model
+    if document.summary_generated_at is not None:
+        metadata["summary_generated_at"] = document.summary_generated_at
+    if document.summary_embedding_model is not None:
+        metadata["summary_embedding_model"] = document.summary_embedding_model
+    if document.summary_embedded_at is not None:
+        metadata["summary_embedded_at"] = document.summary_embedded_at
+    if document.description is not None:
+        metadata["description"] = _truncate_metadata_text(document.description)
+    if document.channel_id is not None:
+        metadata["channel_id"] = document.channel_id
+    if document.channel_name is not None:
+        metadata["channel_name"] = document.channel_name
+    if document.duration_seconds is not None:
+        metadata["duration_seconds"] = document.duration_seconds
+    if document.thumbnail_url is not None:
+        metadata["thumbnail_url"] = str(document.thumbnail_url)
+    if document.upload_date is not None:
+        metadata["upload_date"] = document.upload_date
+    if document.view_count is not None:
+        metadata["view_count"] = document.view_count
+    if document.like_count is not None:
+        metadata["like_count"] = document.like_count
+    return metadata
 
 
 def _chunk_metadata(chunk: TranscriptChunk) -> dict[str, str | int | float]:
@@ -307,10 +404,84 @@ def _none_if_empty(value: object) -> str | None:
     return text or None
 
 
+def _missing_video_metadata(document: RawTranscriptDocument) -> bool:
+    return not document.title or not document.channel_name
+
+
+def _raw_document_with_metadata(
+    document: RawTranscriptDocument,
+    metadata: dict[str, object],
+) -> RawTranscriptDocument:
+    if not metadata:
+        return document
+    author = metadata.get("author") if isinstance(metadata.get("author"), dict) else {}
+    media = metadata.get("media") if isinstance(metadata.get("media"), dict) else {}
+    additional = (
+        metadata.get("additionalData")
+        if isinstance(metadata.get("additionalData"), dict)
+        else {}
+    )
+    tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
+    transcript_languages = (
+        metadata.get("transcriptLanguages")
+        if isinstance(metadata.get("transcriptLanguages"), list)
+        else additional.get("transcriptLanguages")
+        if isinstance(additional.get("transcriptLanguages"), list)
+        else []
+    )
+    return document.model_copy(
+        update={
+            "title": _none_if_empty(metadata.get("title")) or document.title,
+            "description": _none_if_empty(metadata.get("description"))
+            or document.description,
+            "channel_id": _none_if_empty(additional.get("channelId"))
+            or _none_if_empty(author.get("id"))
+            or document.channel_id,
+            "channel_name": _none_if_empty(author.get("displayName"))
+            or _none_if_empty(author.get("username"))
+            or document.channel_name,
+            "duration_seconds": _float_or_none(media.get("duration"))
+            or document.duration_seconds,
+            "thumbnail_url": _http_url_or_none(media.get("thumbnailUrl"))
+            or document.thumbnail_url,
+            "upload_date": _none_if_empty(metadata.get("createdAt"))
+            or document.upload_date,
+            "view_count": _int_or_none(_nested(metadata, "stats", "views"))
+            or document.view_count,
+            "like_count": _int_or_none(_nested(metadata, "stats", "likes"))
+            or document.like_count,
+            "tags": [str(tag) for tag in tags] or document.tags,
+            "transcript_languages": [str(lang) for lang in transcript_languages]
+            or document.transcript_languages,
+        }
+    )
+
+
+def _nested(data: dict[str, object], parent: str, child: str) -> object:
+    value = data.get(parent)
+    if not isinstance(value, dict):
+        return None
+    return value.get(child)
+
+
+def _truncate_metadata_text(value: str, limit: int = 7000) -> str:
+    return value[:limit]
+
+
 def _float_or_none(value: object) -> float | None:
     if value is None:
         return None
     return float(value)
+
+
+def _http_url_or_none(value: object) -> HttpUrl | None:
+    text = _none_if_empty(value)
+    if text is None:
+        return None
+    try:
+        return HttpUrl(text)
+    except (ValueError, ValidationError):
+        return None
 
 
 def _int_or_none(value: object) -> int | None:

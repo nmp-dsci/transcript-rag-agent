@@ -67,7 +67,12 @@ def run_evaluation(
     video_id = extract_video_id(source_url)
     resolved_top_k = top_k or settings.rag_top_k
 
-    fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
+    fetcher = SuperdataTranscriptFetcher(
+        settings.superdata_api_key,
+        timeout_seconds=settings.supadata_timeout_seconds,
+        poll_interval_seconds=settings.supadata_poll_interval_seconds,
+        max_poll_seconds=settings.supadata_max_poll_seconds,
+    )
     raw_store = RawTranscriptStore(
         settings.chroma_path,
         fetcher=fetcher,

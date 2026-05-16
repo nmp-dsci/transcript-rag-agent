@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+from langchain_openai import ChatOpenAI
 
 from src.agents.context import RawTranscriptContextProvider
 from src.agents.models import QuestionRequest, RagQuestionRequest, SummaryRequest
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.agents.transcript_agent import TranscriptAgent
 from src.config import ConfigError, load_settings
+from src.dashboard.rag_pipeline import (
+    collect_filter_test_rows,
+    collect_pipeline_rows,
+    write_dashboard,
+)
 from src.observability import (
     cli_run,
     log_answer,
@@ -16,12 +24,14 @@ from src.observability import (
     log_raw_transcript_metadata,
     log_summary,
     log_transcript,
+    log_transcript_filter_details,
 )
 from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.eval import compare_answers, estimate_tokens
 from src.rag.indexing import RagIndexer
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
+from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
 from src.transcripts.youtube import extract_video_id
 
@@ -41,6 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     index_rag = subparsers.add_parser("index-rag", help="Index a transcript for RAG")
     index_rag.add_argument("url")
     index_rag.add_argument("--refresh", action="store_true")
+    index_rag.add_argument("--refresh-summary", action="store_true")
 
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
@@ -64,6 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
     rag_ask.add_argument("question")
     rag_ask.add_argument("--url")
     rag_ask.add_argument("--top-k", type=int, default=None)
+    rag_ask.add_argument("--filter-transcripts", action="store_true")
+    rag_ask.add_argument("--transcript-filter-top-k", type=int, default=None)
+    rag_ask.add_argument("--transcript-filter-min-score", type=float, default=None)
 
     return parser
 
@@ -77,7 +91,12 @@ def main(argv: list[str] | None = None) -> int:
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):
-            fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
+            fetcher = SuperdataTranscriptFetcher(
+                settings.superdata_api_key,
+                timeout_seconds=settings.supadata_timeout_seconds,
+                poll_interval_seconds=settings.supadata_poll_interval_seconds,
+                max_poll_seconds=settings.supadata_max_poll_seconds,
+            )
             raw_store = RawTranscriptStore(
                 settings.chroma_path,
                 fetcher=fetcher,
@@ -105,17 +124,29 @@ def main(argv: list[str] | None = None) -> int:
                     chunk_store=chunk_store,
                     target_chars=settings.chunk_target_chars,
                     overlap_chars=settings.chunk_overlap_chars,
+                    summary_store=_build_summary_store(
+                        settings, embedding_model, raw_store
+                    ),
+                    summary_generator=_build_summary_generator(settings),
                 )
-                result = indexer.index(args.url, refresh=args.refresh)
+                result = indexer.index(
+                    args.url,
+                    refresh=args.refresh,
+                    refresh_summary=args.refresh_summary,
+                )
                 log_raw_transcript_metadata(result.raw_document)
                 print(
                     _format_index(
                         raw_collection=settings.raw_transcript_collection,
                         chunk_collection=settings.chunk_collection,
+                        summary_collection=settings.transcript_summary_collection,
                         chunk_count=len(result.chunks),
+                        summary_status=result.summary_status,
                         chroma_path=settings.chroma_path,
                     )
                 )
+                dashboard_path = _refresh_rag_pipeline_dashboard(settings)
+                print(f"RAG pipeline dashboard: {dashboard_path}")
                 return 0
 
             if args.command == "summarize":
@@ -253,13 +284,29 @@ def main(argv: list[str] | None = None) -> int:
                     raw_store=raw_store,
                     chunk_store=chunk_store,
                     indexer=indexer,
+                    summary_store=_build_summary_store(
+                        settings, embedding_model, raw_store
+                    ),
                 )
                 agent = RagTranscriptAgent.from_settings(settings, context_provider)
+                filter_top_k = (
+                    args.transcript_filter_top_k or settings.transcript_filter_top_k
+                )
+                filter_min_score = (
+                    args.transcript_filter_min_score
+                    if args.transcript_filter_min_score is not None
+                    else settings.transcript_filter_min_score
+                )
                 answer = agent.answer(
                     RagQuestionRequest(
                         question=args.question,
                         source_url=args.url,
                         top_k=top_k,
+                        filter_transcripts=(
+                            args.filter_transcripts and args.url is None
+                        ),
+                        transcript_filter_top_k=filter_top_k,
+                        transcript_filter_min_score=filter_min_score,
                     )
                 )
                 if agent.last_context is not None:
@@ -271,7 +318,21 @@ def main(argv: list[str] | None = None) -> int:
                             agent.last_context.context_text or ""
                         ),
                     )
-                print(_format_rag_answer(answer))
+                    log_transcript_filter_details(
+                        enabled=args.filter_transcripts and args.url is None,
+                        selected_transcripts=agent.last_context.selected_transcripts,
+                        filter_top_k=filter_top_k,
+                        min_score=filter_min_score,
+                        retrieved_chunks=agent.last_context.retrieved_chunks,
+                    )
+                print(
+                    _format_rag_answer(
+                        answer,
+                        selected_transcripts=agent.last_context.selected_transcripts
+                        if agent.last_context is not None
+                        else [],
+                    )
+                )
                 return 0
 
         parser.error(f"Unknown command: {args.command}")
@@ -310,7 +371,9 @@ def _format_summary(summary: str, top_findings: list[str]) -> str:
 def _format_index(
     raw_collection: str,
     chunk_collection: str,
+    summary_collection: str,
     chunk_count: int,
+    summary_status: str | None,
     chroma_path,
 ) -> str:
     return "\n".join(
@@ -318,7 +381,9 @@ def _format_index(
             "RAG index updated",
             f"Raw transcript collection: {raw_collection}",
             f"Chunk collection: {chunk_collection}",
+            f"Transcript summary collection: {summary_collection}",
             f"Chunks: {chunk_count}",
+            f"Summary: {summary_status or 'not configured'}",
             f"Chroma path: {chroma_path}",
         ]
     )
@@ -341,8 +406,23 @@ def _format_comparison(comparison) -> str:
     )
 
 
-def _format_rag_answer(answer) -> str:
-    lines = [answer.answer]
+def _format_rag_answer(answer, selected_transcripts=None) -> str:
+    lines = []
+    if selected_transcripts:
+        lines.append("Selected transcripts")
+        for index, transcript in enumerate(selected_transcripts, 1):
+            score = (
+                "unknown"
+                if transcript.score is None
+                else f"{transcript.score:.3f}"
+            )
+            lines.append(
+                f"{index}. score={score} video={transcript.video_id} "
+                f"url={transcript.source_url}"
+            )
+        lines.append("")
+        lines.append("Answer")
+    lines.append(answer.answer)
     if answer.references:
         lines.extend(["", "References"])
         for reference in answer.references:
@@ -361,6 +441,42 @@ def _format_rag_answer(answer) -> str:
                 f"{start}-{end}s video={reference.video_id}"
             )
     return "\n".join(lines)
+
+
+def _build_summary_store(settings, embedding_model, raw_store):
+    return TranscriptSummaryStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        embedding_model_name=settings.embedding_model,
+        raw_store=raw_store,
+        collection_name=settings.transcript_summary_collection,
+    )
+
+
+def _build_summary_generator(settings):
+    kwargs: dict[str, object] = {
+        "api_key": settings.deepseek_api_key,
+        "model": settings.deepseek_model,
+    }
+    if settings.deepseek_base_url:
+        kwargs["base_url"] = settings.deepseek_base_url
+    return TranscriptSummaryGenerator(
+        ChatOpenAI(**kwargs),
+        model_name=settings.deepseek_model,
+    )
+
+
+def _refresh_rag_pipeline_dashboard(settings) -> Path:
+    output = Path("dashboard/rag_pipeline.html")
+    rows = collect_pipeline_rows(settings)
+    filter_test_rows = collect_filter_test_rows(settings, rows)
+    write_dashboard(
+        output=output,
+        rows=rows,
+        settings=settings,
+        filter_test_rows=filter_test_rows,
+    )
+    return output
 
 
 if __name__ == "__main__":

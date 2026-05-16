@@ -10,6 +10,7 @@ from typing import Any
 from src.agents.models import RagQuestionRequest, RagTranscriptAnswer
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.config import ConfigError, load_settings
+from src.dashboard.theme import dark_style_block
 from src.rag.context import MultiTranscriptRagContextProvider
 from src.rag.embeddings import HuggingFaceEmbeddingModel, cosine_similarity
 from src.rag.eval import estimate_tokens
@@ -84,7 +85,12 @@ def run_evaluation(
 ) -> dict[str, Any]:
     settings = load_settings(require_keys=True)
     resolved_top_k = top_k or settings.rag_top_k
-    fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
+    fetcher = SuperdataTranscriptFetcher(
+        settings.superdata_api_key,
+        timeout_seconds=settings.supadata_timeout_seconds,
+        poll_interval_seconds=settings.supadata_poll_interval_seconds,
+        max_poll_seconds=settings.supadata_max_poll_seconds,
+    )
     raw_store = RawTranscriptStore(
         settings.chroma_path,
         fetcher=fetcher,
@@ -193,19 +199,11 @@ def render_html_report(
             "<head>",
             '<meta charset="utf-8">',
             "<title>S3 RAG Agent Evaluation</title>",
-            "<style>",
-            "body{font-family:Arial,sans-serif;line-height:1.45;margin:32px;color:#18202a}",
-            "table{border-collapse:collapse;width:100%;margin:16px 0}",
-            "th,td{border:1px solid #ccd3dd;padding:8px;text-align:left;vertical-align:top}",
-            "th{background:#eef2f6} article{border-top:2px solid #ccd3dd;margin-top:28px;padding-top:16px}",
-            "pre{white-space:pre-wrap;background:#f7f8fa;border:1px solid #d8dee8;padding:12px;overflow:auto}",
-            "details{margin:8px 0;padding:8px;border:1px solid #d8dee8;background:#fbfcfd}",
-            "summary{cursor:pointer;font-weight:bold}",
-            ".metric{font-family:ui-monospace,Menlo,monospace}",
-            "</style>",
+            *dark_style_block(),
             "</head>",
             "<body>",
-            "<h1>S3 RAG Agent Evaluation</h1>",
+            "<header><h1>S3 RAG Agent Evaluation</h1></header>",
+            "<main>",
             f"<p><strong>Question:</strong> {html.escape(question)}</p>",
             f"<p><strong>Top K:</strong> {top_k}</p>",
             _summary_table(runs, similarities),
@@ -213,6 +211,7 @@ def render_html_report(
             *[_run_section(run) for run in runs],
             "<h2>Pairwise Similarity</h2>",
             _similarity_list(similarities),
+            "</main>",
             "</body>",
             "</html>",
         ]

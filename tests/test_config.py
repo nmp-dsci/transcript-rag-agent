@@ -16,6 +16,9 @@ def test_loads_settings_from_env_file(monkeypatch, tmp_path: Path) -> None:
                 "DEEPSEEK_API_KEY=deep",
                 "DEEPSEEK_MODEL=deepseek-v4",
                 "YT_AGENT_CHROMA_PATH=.cache/chroma",
+                "SUPADATA_TIMEOUT_SECONDS=150",
+                "SUPADATA_POLL_INTERVAL_SECONDS=3",
+                "SUPADATA_MAX_POLL_SECONDS=900",
             ]
         ),
         encoding="utf-8",
@@ -30,6 +33,9 @@ def test_loads_settings_from_env_file(monkeypatch, tmp_path: Path) -> None:
     assert settings.deepseek_api_key == "deep"
     assert settings.deepseek_model == "deepseek-v4-flash"
     assert settings.chroma_path.name == "chroma"
+    assert settings.supadata_timeout_seconds == 150
+    assert settings.supadata_poll_interval_seconds == 3
+    assert settings.supadata_max_poll_seconds == 900
 
 
 def test_accepts_supadata_api_key_alias(monkeypatch, tmp_path: Path) -> None:

@@ -30,6 +30,9 @@ class RagQuestionRequest(BaseModel):
     question: str
     source_url: HttpUrl | None = None
     top_k: int = 10
+    filter_transcripts: bool = False
+    transcript_filter_top_k: int = 5
+    transcript_filter_min_score: float = 0.25
 
 
 class RagAnswerReference(BaseModel):

@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 
 from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
-from src.rag.models import RawTranscriptDocument, RawTranscriptSegment, RetrievedChunk
+from src.rag.models import (
+    RawTranscriptDocument,
+    RawTranscriptSegment,
+    RetrievedChunk,
+    RetrievedTranscriptSummary,
+)
 
 
 class FakeRawStore:
@@ -100,6 +105,10 @@ class FakeMultiChunkStore:
         self.calls.append(("url", source_url, query, top_k))
         return [_multi_chunk("aaaaaaaaaaa")]
 
+    def query_by_video_ids(self, video_ids: list[str], query: str, top_k: int):
+        self.calls.append(("video_ids", video_ids, query, top_k))
+        return [_multi_chunk(video_ids[0])]
+
 
 class FakeMultiRawStore:
     def ensure_raw_document(self, source_url: str, refresh: bool = False):
@@ -130,6 +139,29 @@ class FakeMultiIndexer:
         return Result()
 
 
+class FakeSummaryStore:
+    def query_relevant_transcripts(
+        self,
+        question: str,
+        top_k: int,
+        min_score: float,
+    ):
+        return [
+            RetrievedTranscriptSummary(
+                transcript_id="raw_transcript:bbbbbbbbbbb",
+                video_id="bbbbbbbbbbb",
+                source_url="https://www.youtube.com/watch?v=bbbbbbbbbbb",
+                summary="capital gains tax summary",
+                summary_model="deepseek-test",
+                summary_generated_at="2026-05-16T00:00:00+00:00",
+                summary_embedding=[1.0, 0.0, 1.0],
+                summary_embedding_model="fake",
+                summary_embedded_at="2026-05-16T00:01:00+00:00",
+                score=0.8,
+            )
+        ]
+
+
 def test_multi_transcript_context_queries_all_when_url_is_missing() -> None:
     chunk_store = FakeMultiChunkStore()
     provider = MultiTranscriptRagContextProvider(
@@ -143,6 +175,29 @@ def test_multi_transcript_context_queries_all_when_url_is_missing() -> None:
     assert "url=https://www.youtube.com/watch?v=aaaaaaaaaaa&t=10s" in (
         context.context_text or ""
     )
+
+
+def test_multi_transcript_context_filters_by_summary_before_chunks() -> None:
+    chunk_store = FakeMultiChunkStore()
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=chunk_store,
+        summary_store=FakeSummaryStore(),
+    )
+
+    context = provider.get_context(
+        "capital gains",
+        top_k=5,
+        filter_transcripts=True,
+        transcript_filter_top_k=3,
+        transcript_filter_min_score=0.25,
+    )
+
+    assert chunk_store.calls == [
+        ("video_ids", ["bbbbbbbbbbb"], "capital gains", 5)
+    ]
+    assert context.selected_transcripts
+    assert context.selected_transcripts[0].video_id == "bbbbbbbbbbb"
 
 
 def test_multi_transcript_context_filters_by_url() -> None:

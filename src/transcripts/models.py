@@ -18,6 +18,16 @@ class Transcript(BaseModel):
     video_id: str
     url: HttpUrl
     title: str | None = None
+    description: str | None = None
+    channel_id: str | None = None
+    channel_name: str | None = None
+    duration_seconds: float | None = None
+    thumbnail_url: HttpUrl | None = None
+    upload_date: str | None = None
+    view_count: int | None = None
+    like_count: int | None = None
+    tags: list[str] = Field(default_factory=list)
+    transcript_languages: list[str] = Field(default_factory=list)
     language: str | None = None
     provider: str = "supadata"
     raw_text: str

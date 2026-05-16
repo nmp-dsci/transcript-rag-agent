@@ -5,6 +5,7 @@ from src.rag.chunking import format_timestamp
 from src.rag.indexing import RagIndexer
 from src.rag.references import format_chunk_reference
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript_from_raw_document
+from src.rag.summaries import TranscriptSummaryStore
 
 
 class RagTranscriptContextProvider:
@@ -64,25 +65,51 @@ class MultiTranscriptRagContextProvider:
         raw_store: RawTranscriptStore,
         chunk_store: TranscriptChunkStore,
         indexer: RagIndexer | None = None,
+        summary_store: TranscriptSummaryStore | None = None,
     ) -> None:
         self.raw_store = raw_store
         self.chunk_store = chunk_store
         self.indexer = indexer
+        self.summary_store = summary_store
 
     def get_context(
         self,
         question: str,
         source_url: str | None = None,
         top_k: int = 10,
+        filter_transcripts: bool = False,
+        transcript_filter_top_k: int = 5,
+        transcript_filter_min_score: float = 0.25,
     ) -> TranscriptContext:
         cache_status = "hit"
+        selected_transcripts = []
         if source_url is None:
             if not self.chunk_store.has_any_chunks():
                 raise ValueError(
                     "No indexed transcript chunks found. Run index-rag for one or more "
                     "YouTube URLs first."
                 )
-            retrieved = self.chunk_store.query_all(question, top_k)
+            if filter_transcripts:
+                if self.summary_store is None:
+                    raise ValueError("Transcript filtering requires a summary store")
+                selected_transcripts = self.summary_store.query_relevant_transcripts(
+                    question,
+                    top_k=transcript_filter_top_k,
+                    min_score=transcript_filter_min_score,
+                )
+                if not selected_transcripts:
+                    raise ValueError(
+                        "No transcript summaries matched the question. Try lowering "
+                        "--transcript-filter-min-score or run without "
+                        "--filter-transcripts."
+                    )
+                retrieved = self.chunk_store.query_by_video_ids(
+                    [summary.video_id for summary in selected_transcripts],
+                    question,
+                    top_k,
+                )
+            else:
+                retrieved = self.chunk_store.query_all(question, top_k)
             transcript = _context_transcript_from_chunks(retrieved)
         else:
             video_id = _extract_video_id(source_url)
@@ -107,6 +134,7 @@ class MultiTranscriptRagContextProvider:
             context_text=format_retrieved_chunks_with_references(retrieved),
             context_mode="rag",
             retrieved_chunks=retrieved,
+            selected_transcripts=selected_transcripts,
             top_k=top_k,
         )
 

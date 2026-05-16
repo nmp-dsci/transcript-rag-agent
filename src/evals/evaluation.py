@@ -12,6 +12,7 @@ from src.agents.models import QuestionRequest, RagQuestionRequest
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.agents.transcript_agent import TranscriptAgent
 from src.config import ConfigError, load_settings
+from src.dashboard.theme import dark_style_block
 from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
 from src.rag.embeddings import HuggingFaceEmbeddingModel, cosine_similarity
 from src.rag.eval import estimate_tokens
@@ -55,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--url", default=DEFAULT_VIDEO_URL)
     parser.add_argument("--question", default=DEFAULT_QUESTION)
     parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--output", type=Path, default=Path("evaluation/evaluation.html"))
+    parser.add_argument("--output", type=Path, default=Path("dashboard/evaluation.html"))
     parser.add_argument("--json-output", type=Path)
     return parser
 
@@ -92,7 +93,12 @@ def run_evaluation(
     video_id = extract_video_id(source_url)
     resolved_top_k = top_k or settings.rag_top_k
 
-    fetcher = SuperdataTranscriptFetcher(settings.superdata_api_key)
+    fetcher = SuperdataTranscriptFetcher(
+        settings.superdata_api_key,
+        timeout_seconds=settings.supadata_timeout_seconds,
+        poll_interval_seconds=settings.supadata_poll_interval_seconds,
+        max_poll_seconds=settings.supadata_max_poll_seconds,
+    )
     raw_store = RawTranscriptStore(
         settings.chroma_path,
         fetcher=fetcher,
@@ -224,19 +230,11 @@ def render_html_report(
             "<head>",
             '<meta charset="utf-8">',
             "<title>Transcript Agent Evaluation</title>",
-            "<style>",
-            "body{font-family:Arial,sans-serif;line-height:1.45;margin:32px;color:#18202a}",
-            "table{border-collapse:collapse;width:100%;margin:16px 0}",
-            "th,td{border:1px solid #ccd3dd;padding:8px;text-align:left;vertical-align:top}",
-            "th{background:#eef2f6} article{border-top:2px solid #ccd3dd;margin-top:28px;padding-top:16px}",
-            "pre{white-space:pre-wrap;background:#f7f8fa;border:1px solid #d8dee8;padding:12px;overflow:auto}",
-            "details{margin:8px 0;padding:8px;border:1px solid #d8dee8;background:#fbfcfd}",
-            "summary{cursor:pointer;font-weight:bold}",
-            ".metric{font-family:ui-monospace,Menlo,monospace}",
-            "</style>",
+            *dark_style_block(),
             "</head>",
             "<body>",
-            "<h1>Transcript Agent Evaluation</h1>",
+            "<header><h1>Transcript Agent Evaluation</h1></header>",
+            "<main>",
             f"<p><strong>Question:</strong> {html.escape(question)}</p>",
             f"<p><strong>Single transcript URL:</strong> {html.escape(source_url)}</p>",
             f"<p><strong>RAG top K:</strong> {top_k}</p>",
@@ -246,6 +244,7 @@ def render_html_report(
             _similarity_table(similarities),
             "<h2>Answers</h2>",
             *[_run_section(run) for run in runs],
+            "</main>",
             "</body>",
             "</html>",
         ]

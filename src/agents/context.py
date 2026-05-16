@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from src.rag.models import RetrievedChunk
+from src.rag.models import RetrievedChunk, RetrievedTranscriptSummary
 from src.rag.storage import RawTranscriptStore, transcript_from_raw_document
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
 from src.transcripts.models import Transcript
@@ -17,6 +17,7 @@ class TranscriptContext:
     context_text: str | None = None
     context_mode: str = "raw"
     retrieved_chunks: list[RetrievedChunk] | None = None
+    selected_transcripts: list[RetrievedTranscriptSummary] | None = None
     top_k: int | None = None
 
     def __post_init__(self) -> None:
@@ -24,6 +25,8 @@ class TranscriptContext:
             object.__setattr__(self, "context_text", self.transcript.raw_text)
         if self.retrieved_chunks is None:
             object.__setattr__(self, "retrieved_chunks", [])
+        if self.selected_transcripts is None:
+            object.__setattr__(self, "selected_transcripts", [])
 
 
 class TranscriptContextProvider(Protocol):
