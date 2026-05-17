@@ -4527,6 +4527,7 @@ dependencies = [
     { name = "mlflow" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "scikit-learn" },
     { name = "sentence-transformers" },
 ]
 
@@ -4545,6 +4546,7 @@ requires-dist = [
     { name = "mlflow", specifier = ">=3.12.0" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "scikit-learn", specifier = ">=1.8.0" },
     { name = "sentence-transformers", specifier = ">=5.5.0" },
 ]
 

@@ -33,6 +33,7 @@ class Settings:
     supadata_timeout_seconds: float = 120.0
     supadata_poll_interval_seconds: float = 2.0
     supadata_max_poll_seconds: float = 600.0
+    discovery_cache_ttl_hours: float = 24.0
 
 
 def _project_root() -> Path:
@@ -138,4 +139,7 @@ def load_settings(require_keys: bool = True) -> Settings:
             "SUPADATA_POLL_INTERVAL_SECONDS", 2.0
         ),
         supadata_max_poll_seconds=_float_env("SUPADATA_MAX_POLL_SECONDS", 600.0),
+        discovery_cache_ttl_hours=_float_env(
+            "YT_AGENT_DISCOVERY_CACHE_TTL_HOURS", 24.0
+        ),
     )

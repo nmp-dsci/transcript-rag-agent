@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src import cli
 from src.config import Settings
+from src.transcripts.discovery import DiscoveredVideo
 from src.transcripts.models import Transcript
 
 
@@ -247,6 +248,91 @@ def test_index_rag_refreshes_pipeline_dashboard(monkeypatch, tmp_path, capsys) -
     assert calls
     output = capsys.readouterr().out
     assert "RAG pipeline dashboard:" in output
+
+
+def test_bulk_index_channel_dry_run_writes_run_record(monkeypatch, tmp_path, capsys) -> None:
+    class BulkRawStore(FakeStore):
+        def get_raw_document(self, video_id: str):
+            return None
+
+    class BulkChunkStore(FakeChunkStore):
+        def has_chunks(self, video_id: str) -> bool:
+            return False
+
+        def count_chunks(self, video_id: str) -> int:
+            return 0
+
+    _patch_cli(monkeypatch, tmp_path, store_cls=BulkRawStore)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", BulkChunkStore)
+    monkeypatch.setattr(cli, "RagIndexer", FakeIndexer)
+    monkeypatch.setattr(cli, "_build_summary_store", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "_build_summary_generator", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        cli,
+        "discover_latest_channel_videos",
+        lambda channel, limit, client: [
+            DiscoveredVideo(
+                video_id="aaaaaaaaaaa",
+                source_url="https://www.youtube.com/watch?v=aaaaaaaaaaa",
+                title="Video A",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        cli,
+        "_refresh_rag_pipeline_dashboard",
+        lambda settings: tmp_path / "dashboard/rag_pipeline.html",
+    )
+
+    result = cli.main(
+        [
+            "bulk-index",
+            "channel",
+            "--channel",
+            "@channel",
+            "--latest",
+            "1",
+            "--dry-run",
+        ]
+    )
+
+    assert result == 0
+    output = capsys.readouterr().out
+    assert "Discovered: 1" in output
+    assert "aaaaaaaaaaa discovered" in output
+    run_files = list((tmp_path / "ingestion_runs").glob("*.json"))
+    assert len(run_files) == 1
+
+
+def test_refresh_rag_pipeline_dashboard_passes_default_filter_question(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    settings = Settings(
+        superdata_api_key="super",
+        deepseek_api_key="deep",
+        deepseek_model="deepseek-v4",
+        deepseek_base_url=None,
+        chroma_path=tmp_path / "chroma",
+        mlflow_tracking_uri=f"file:{tmp_path / 'mlruns'}",
+        mlflow_experiment_name="test-cli",
+        log_transcript_artifacts=False,
+    )
+    calls = {}
+    monkeypatch.setattr(cli, "collect_pipeline_rows", lambda settings: [])
+    monkeypatch.setattr(
+        cli,
+        "collect_filter_test_rows",
+        lambda settings, rows, question: calls.setdefault("question", question) or [],
+    )
+    monkeypatch.setattr(cli, "write_dashboard", lambda **kwargs: calls.update(kwargs))
+
+    output = cli._refresh_rag_pipeline_dashboard(settings)
+
+    assert output == Path("dashboard/rag_pipeline.html")
+    assert calls["question"] == cli.DEFAULT_FILTER_TEST_QUESTION
+    assert calls["filter_test_question"] == cli.DEFAULT_FILTER_TEST_QUESTION
 
 
 def _patch_cli(monkeypatch, tmp_path, store_cls=FakeStore) -> None:

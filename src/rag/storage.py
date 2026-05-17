@@ -150,6 +150,13 @@ class TranscriptChunkStore:
         )
         return bool(result.get("ids"))
 
+    def count_chunks(self, video_id: str) -> int:
+        result = self.collection.get(
+            where={"video_id": video_id},
+            include=["metadatas"],
+        )
+        return len(result.get("ids") or [])
+
     def has_any_chunks(self) -> bool:
         result = self.collection.get(limit=1, include=["metadatas"])
         return bool(result.get("ids"))

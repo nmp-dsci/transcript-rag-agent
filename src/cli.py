@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from langchain_openai import ChatOpenAI
@@ -12,6 +13,7 @@ from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.agents.transcript_agent import TranscriptAgent
 from src.config import ConfigError, load_settings
 from src.dashboard.rag_pipeline import (
+    DEFAULT_FILTER_TEST_QUESTION,
     collect_filter_test_rows,
     collect_pipeline_rows,
     write_dashboard,
@@ -30,8 +32,21 @@ from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptCont
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.eval import compare_answers, estimate_tokens
 from src.rag.indexing import RagIndexer
+from src.rag.ingestion import (
+    candidate_record,
+    ingestion_runs_dir,
+    start_ingestion_run,
+    write_ingestion_run,
+)
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
 from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
+from src.transcripts.discovery import (
+    DiscoveryError,
+    SupadataDiscoveryClient,
+    discover_channel_videos,
+    discover_latest_channel_videos,
+    discover_search_results,
+)
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
 from src.transcripts.youtube import extract_video_id
 
@@ -52,6 +67,22 @@ def build_parser() -> argparse.ArgumentParser:
     index_rag.add_argument("url")
     index_rag.add_argument("--refresh", action="store_true")
     index_rag.add_argument("--refresh-summary", action="store_true")
+
+    bulk = subparsers.add_parser("bulk-index", help="Discover and index many videos")
+    bulk_subparsers = bulk.add_subparsers(dest="bulk_mode", required=True)
+    bulk_channel = bulk_subparsers.add_parser("channel", help="Index videos from a channel")
+    bulk_channel.add_argument("--channel", required=True)
+    channel_window = bulk_channel.add_mutually_exclusive_group()
+    channel_window.add_argument("--latest", type=int)
+    channel_window.add_argument("--since", type=_parse_date_arg)
+    bulk_channel.add_argument("--until", type=_parse_date_arg)
+    bulk_channel.add_argument("--max-results", type=int, default=50)
+    _add_bulk_common_args(bulk_channel)
+
+    bulk_search = bulk_subparsers.add_parser("search", help="Index YouTube search results")
+    bulk_search.add_argument("--query", required=True)
+    bulk_search.add_argument("--top-n", type=int, default=10)
+    _add_bulk_common_args(bulk_search)
 
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
@@ -80,6 +111,23 @@ def build_parser() -> argparse.ArgumentParser:
     rag_ask.add_argument("--transcript-filter-min-score", type=float, default=None)
 
     return parser
+
+
+def _add_bulk_common_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--skip-existing", dest="skip_existing", action="store_true", default=True)
+    parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
+    parser.add_argument("--refresh-summary", action="store_true")
+    parser.add_argument("--concurrency", type=int, default=1)
+    parser.add_argument("--label")
+    parser.add_argument("--no-discovery-cache", action="store_true")
+
+
+def _parse_date_arg(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"Invalid date: {value}") from exc
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -145,6 +193,35 @@ def main(argv: list[str] | None = None) -> int:
                         chroma_path=settings.chroma_path,
                     )
                 )
+                dashboard_path = _refresh_rag_pipeline_dashboard(settings)
+                print(f"RAG pipeline dashboard: {dashboard_path}")
+                return 0
+
+            if args.command == "bulk-index":
+                embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+                chunk_store = TranscriptChunkStore(
+                    settings.chroma_path,
+                    embedding_model=embedding_model,
+                    collection_name=settings.chunk_collection,
+                )
+                indexer = RagIndexer(
+                    raw_store=raw_store,
+                    chunk_store=chunk_store,
+                    target_chars=settings.chunk_target_chars,
+                    overlap_chars=settings.chunk_overlap_chars,
+                    summary_store=_build_summary_store(
+                        settings, embedding_model, raw_store
+                    ),
+                    summary_generator=_build_summary_generator(settings),
+                )
+                output = _run_bulk_index(
+                    args=args,
+                    settings=settings,
+                    raw_store=raw_store,
+                    chunk_store=chunk_store,
+                    indexer=indexer,
+                )
+                print(output)
                 dashboard_path = _refresh_rag_pipeline_dashboard(settings)
                 print(f"RAG pipeline dashboard: {dashboard_path}")
                 return 0
@@ -443,6 +520,127 @@ def _format_rag_answer(answer, selected_transcripts=None) -> str:
     return "\n".join(lines)
 
 
+def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
+    if args.concurrency != 1:
+        raise ValueError("bulk-index currently supports --concurrency 1 only")
+    mode = args.bulk_mode
+    run = start_ingestion_run(
+        mode=mode,
+        label=args.label,
+        query=getattr(args, "query", None),
+        channel=getattr(args, "channel", None),
+        since=str(getattr(args, "since", "") or "") or None,
+        until=str(getattr(args, "until", "") or "") or None,
+    )
+    run_path = None
+    try:
+        discovery_client = SupadataDiscoveryClient(
+            settings.superdata_api_key,
+            timeout_seconds=settings.supadata_timeout_seconds,
+            cache_dir=settings.chroma_path.parent / "discovery_cache",
+            cache_ttl_hours=settings.discovery_cache_ttl_hours,
+            use_cache=not args.no_discovery_cache,
+        )
+        if mode == "channel":
+            if args.latest is not None and (args.since is not None or args.until is not None):
+                raise ValueError("--latest cannot be combined with --since or --until")
+            if args.latest is None and args.since is None and args.until is None:
+                raise ValueError("channel mode requires --latest, --since, or --until")
+            if args.latest is not None:
+                videos = discover_latest_channel_videos(
+                    args.channel,
+                    limit=args.latest,
+                    client=discovery_client,
+                )
+            else:
+                videos = discover_channel_videos(
+                    args.channel,
+                    published_after=args.since,
+                    published_before=args.until,
+                    max_results=args.max_results,
+                    client=discovery_client,
+                )
+        elif mode == "search":
+            videos = discover_search_results(
+                args.query,
+                top_n=args.top_n,
+                client=discovery_client,
+            )
+        else:
+            raise ValueError(f"Unsupported bulk-index mode: {mode}")
+    except Exception as exc:
+        run.status = "failed"
+        run.stage = "discovery"
+        run.error = str(exc)
+        run.complete()
+        run_path = write_ingestion_run(run, ingestion_runs_dir(settings.chroma_path))
+        return _format_bulk_summary(run, run_path)
+
+    for video in videos:
+        record = candidate_record(video)
+        started = __import__("time").monotonic()
+        try:
+            fully_indexed = (
+                raw_store.get_raw_document(video.video_id) is not None
+                and chunk_store.has_chunks(video.video_id)
+            )
+            if args.dry_run:
+                record.outcome = "discovered"
+                record.chunk_count = chunk_store.count_chunks(video.video_id)
+            elif fully_indexed and args.skip_existing and not args.refresh_summary:
+                record.outcome = "skipped_existing"
+                record.chunk_count = chunk_store.count_chunks(video.video_id)
+            else:
+                result = indexer.index(
+                    str(video.source_url),
+                    refresh=not args.skip_existing,
+                    refresh_summary=args.refresh_summary,
+                )
+                record.outcome = (
+                    "summary_refreshed"
+                    if fully_indexed and args.skip_existing and args.refresh_summary
+                    else "indexed"
+                )
+                record.chunk_count = len(result.chunks)
+                record.title = result.raw_document.title or record.title
+                record.channel_name = result.raw_document.channel_name or record.channel_name
+                record.published_at = result.raw_document.upload_date or record.published_at
+        except Exception as exc:  # per-candidate failure should not abort the run
+            record.outcome = "failed"
+            record.error = str(exc)
+        record.duration_seconds = round(__import__("time").monotonic() - started, 3)
+        run.candidates.append(record)
+
+    run.complete()
+    run_path = write_ingestion_run(run, ingestion_runs_dir(settings.chroma_path))
+    return _format_bulk_summary(run, run_path)
+
+
+def _format_bulk_summary(run, run_path: Path | None) -> str:
+    lines = [
+        "Bulk index run",
+        f"Run ID: {run.run_id}",
+        f"Mode: {run.mode}",
+        f"Status: {run.status}",
+        f"Discovered: {run.candidate_count}",
+        f"Indexed: {run.indexed_count}",
+        f"Skipped: {run.skipped_count}",
+        f"Failed: {run.failed_count}",
+    ]
+    if run.error:
+        lines.append(f"Error: {run.error}")
+    if run_path is not None:
+        lines.append(f"Run record: {run_path}")
+    lines.extend(["", "Outcome table", "video_id outcome chunks title"])
+    for candidate in run.candidates:
+        lines.append(
+            f"{candidate.video_id} {candidate.outcome or ''} "
+            f"{candidate.chunk_count if candidate.chunk_count is not None else ''} "
+            f"{candidate.title or ''}"
+        )
+    return "\n".join(lines)
+
+
 def _build_summary_store(settings, embedding_model, raw_store):
     return TranscriptSummaryStore(
         settings.chroma_path,
@@ -469,11 +667,16 @@ def _build_summary_generator(settings):
 def _refresh_rag_pipeline_dashboard(settings) -> Path:
     output = Path("dashboard/rag_pipeline.html")
     rows = collect_pipeline_rows(settings)
-    filter_test_rows = collect_filter_test_rows(settings, rows)
+    filter_test_rows = collect_filter_test_rows(
+        settings,
+        rows,
+        DEFAULT_FILTER_TEST_QUESTION,
+    )
     write_dashboard(
         output=output,
         rows=rows,
         settings=settings,
+        filter_test_question=DEFAULT_FILTER_TEST_QUESTION,
         filter_test_rows=filter_test_rows,
     )
     return output

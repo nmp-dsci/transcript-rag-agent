@@ -18,6 +18,8 @@ This project uses `uv`.
 uv sync
 ```
 
+The dashboard Chunk Space tab uses `scikit-learn` for deterministic PCA projection of stored chunk embeddings; it is installed by `uv sync`.
+
 Create `~/.env`:
 
 ```text
@@ -36,6 +38,7 @@ YT_AGENT_TRANSCRIPT_FILTER_TOP_K=5
 YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE=0.25
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
+YT_AGENT_DISCOVERY_CACHE_TTL_HOURS=24
 SUPADATA_TIMEOUT_SECONDS=120
 SUPADATA_POLL_INTERVAL_SECONDS=2
 SUPADATA_MAX_POLL_SECONDS=600
@@ -48,19 +51,188 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 
 Supadata can return async jobs for longer videos. `SUPADATA_MAX_POLL_SECONDS=600` lets indexing wait up to 10 minutes for those jobs before timing out.
 
-### End-To-End Demo
+### Command Sequence
 
-Run from the project root after `uv sync` and env setup:
+Run commands from the project root after `uv sync` and env setup.
+
+Set a reusable URL and question:
 
 ```bash
 url="https://www.youtube.com/watch?v=3hk7nO_q0a8"
-other_url="https://www.youtube.com/watch?v=Uc1yniFxg0o"
-url3="https://www.youtube.com/watch?v=Q4gnTeHd1OM&t=39s"
-question="what does this video say  for capital gains tax, is it being grandfathered or every now under new rules, does that mean if I sell before 30 June 2027 I can still access 50% discount "
+question="what does this video say for capital gains tax, is it being grandfathered or every now under new rules, does that mean if I sell before 30 June 2027 I can still access 50% discount"
+```
 
-uv run python -m src.cli index-rag "$url3"
-uv run python -m src.cli index-rag "$other_url"
+#### 1. Optional transcript fetch
 
+Fetch and cache a transcript without building the RAG index:
+
+```bash
+uv run python -m src.cli fetch "$url"
+```
+
+Fetch raw timestamped transcript segments:
+
+```bash
+uv run python -m src.cli fetch-raw "$url"
+```
+
+Use `--no-refresh` with either command to read from cache only when available:
+
+```bash
+uv run python -m src.cli fetch "$url" --no-refresh
+uv run python -m src.cli fetch-raw "$url" --no-refresh
+```
+
+#### 2. Index transcripts
+
+Index one YouTube transcript for RAG:
+
+```bash
+uv run python -m src.cli index-rag "$url"
+```
+
+`index-rag` stores raw transcript segments, chunk embeddings, an LLM-generated transcript summary, and a transcript-level summary embedding used for optional summary-first filtering. Regenerate the summary and summary embedding with:
+
+```bash
+uv run python -m src.cli index-rag "$url" --refresh-summary
+```
+
+Force a full transcript refresh and rebuild chunks:
+
+```bash
+uv run python -m src.cli index-rag "$url" --refresh
+```
+
+Bulk-index the most recent videos from a YouTube channel via Supadata discovery:
+
+```bash
+uv run python -m src.cli bulk-index channel \
+  --channel "https://www.youtube.com/@aiDotEngineer" \
+  --latest 5 \
+  --label "ai-engineer-latest-5"
+```
+
+Preview a channel discovery run without indexing:
+
+```bash
+uv run python -m src.cli bulk-index channel \
+  --channel "https://www.youtube.com/@aiDotEngineer" \
+  --latest 5 \
+  --dry-run
+```
+
+Bulk-index every video a channel published in a date window:
+
+```bash
+uv run python -m src.cli bulk-index channel \
+  --channel "@somechannel" \
+  --since 2026-01-01 \
+  --until 2026-05-17 \
+  --max-results 50 \
+  --label "somechannel-q1-q2"
+```
+
+Bulk-index the top N YouTube search results for a query:
+
+```bash
+uv run python -m src.cli bulk-index search \
+  --query "australian capital gains tax reform" \
+  --top-n 10 \
+  --label "cgt-top10"
+  --dry-run
+```
+
+Common `bulk-index` flags:
+
+- `--dry-run` — run discovery only, do not index.
+- `--skip-existing` / `--no-skip-existing` — default skips videos already fully indexed in both `raw_transcripts` and `transcript_chunks`.
+- `--refresh-summary` — regenerate transcript summaries even when raw transcripts and chunks are reused.
+- `--concurrency 1` — only sequential ingestion is currently supported.
+- `--no-discovery-cache` — bypass the 24h discovery cache for this run.
+
+Each `bulk-index` run writes one JSON record under `.yt-agent/ingestion_runs/` capturing per-candidate outcomes. The Ingestion Runs tab in `rag_pipeline.html` reads these records when any exist.
+
+#### 3. Refresh the RAG dashboard
+
+Render the local RAG pipeline review dashboard:
+
+```bash
+uv run python -m src.dashboard.rag_pipeline --output dashboard/rag_pipeline.html
+```
+
+Force-refit the chunk-space PCA projection:
+
+```bash
+uv run python -m src.dashboard.rag_pipeline \
+  --output dashboard/rag_pipeline.html \
+  --refresh-projection
+```
+
+Override the canonical question used in the Chunk Space tab:
+
+```bash
+uv run python -m src.dashboard.rag_pipeline \
+  --output dashboard/rag_pipeline.html \
+  --question "$question"
+```
+
+Open:
+
+```text
+dashboard/rag_pipeline.html
+```
+
+#### 4. Ask questions
+
+Ask against a full raw transcript:
+
+```bash
+uv run python -m src.cli ask "$url" "$question" --context raw
+```
+
+Ask with RAG restricted to one transcript:
+
+```bash
+uv run python -m src.cli ask "$url" "$question" --context rag --top-k 10
+```
+
+Ask with the RAG-only multi-transcript agent across all indexed transcripts:
+
+```bash
+question="how do ai engineers leveage claude to fully develop features and only set & review"
+
+uv run python -m src.cli rag-ask "$question" --top-k 20
+```
+
+Ask across indexed transcripts with transcript-summary filtering before chunk retrieval:
+
+```bash
+uv run python -m src.cli rag-ask "$question" --filter-transcripts --top-k 20
+```
+
+Ask with the RAG-only agent restricted to one transcript:
+
+```bash
+uv run python -m src.cli rag-ask "$question" --url "$url" --top-k 10
+```
+
+Summarize one transcript:
+
+```bash
+uv run python -m src.cli summarize "$url"
+```
+
+#### 5. Compare and evaluate
+
+Compare full-transcript prompting against single-transcript RAG in the terminal:
+
+```bash
+uv run python -m src.cli compare-context "$url" "$question" --top-k 10
+```
+
+Generate the HTML evaluation report:
+
+```bash
 uv run python -m src.evals.evaluation \
   --url "$url" \
   --question "$question" \
@@ -82,69 +254,6 @@ The report shows:
 - Prompt token estimates for each mode.
 - Pairwise embedding similarity between answers.
 - Expandable retrieved chunks with source URL and timestamp links.
-
-Current local demo output has shown:
-
-```text
-raw_single tokens: 18295
-rag_single tokens: 2997
-rag_all tokens: 3188
-
-raw_single__rag_single similarity: 0.8704
-raw_single__rag_all similarity: 0.9033
-rag_single__rag_all similarity: 0.9462
-```
-
-### Interactive Commands
-
-Index any YouTube transcript for RAG:
-
-```bash
-url="https://www.youtube.com/watch?v=VIDEO_ID"
-uv run python -m src.cli index-rag "$url"
-```
-
-`index-rag` stores raw transcript segments, chunk embeddings, an LLM-generated transcript summary, and a transcript-level summary embedding used for optional summary-first filtering. Regenerate the summary and summary embedding with:
-
-```bash
-uv run python -m src.cli index-rag "$url" --refresh-summary
-```
-
-Ask against a full raw transcript:
-
-```bash
-uv run python -m src.cli ask "$url" "$question" --context raw
-```
-
-Ask with RAG restricted to one transcript:
-
-```bash
-uv run python -m src.cli ask "$url" "$question" --context rag --top-k 10
-```
-
-Ask with the RAG-only multi-transcript agent across all indexed transcripts:
-
-```bash
-uv run python -m src.cli rag-ask "$question" --top-k 10
-```
-
-Ask across indexed transcripts with transcript-summary filtering before chunk retrieval:
-
-```bash
-uv run python -m src.cli rag-ask "$question" --filter-transcripts --top-k 10
-```
-
-Ask with the RAG-only agent restricted to one transcript:
-
-```bash
-uv run python -m src.cli rag-ask "$question" --url "$url" --top-k 10
-```
-
-Render the local RAG pipeline review dashboard:
-
-```bash
-uv run python -m src.dashboard.rag_pipeline --output dashboard/rag_pipeline.html
-```
 
 ### Architecture
 
@@ -274,9 +383,12 @@ dashboard/
   evaluation.html
   evaluation.json
   rag_pipeline.html
+  chunk_space/
+    projection.json     # PCA projection (chunk coords, components, mean) — committed
+    question.json       # canonical question + nearest chunks — committed
 ```
 
-`evaluation.html` compares answers for a question. `rag_pipeline.html` reviews indexed transcripts, transcript summaries, summary encodings, and chunk inventory.
+`evaluation.html` compares answers for a question. `rag_pipeline.html` is a tabbed dashboard that reviews indexed transcripts, summaries, summary encodings, chunk inventory, ingestion history when run records exist, and the chunk-embedding scatter plot. The `chunk_space/` artifacts are committed so a fresh clone renders the Chunk Space tab without re-running ingestion.
 
 ### Observability
 
