@@ -4,6 +4,12 @@
 __pycache__/
 *.pyc
 *.egg-info/
+.DS_Store
+mlflow.db
 evaluation/*
 !evaluation/evaluation.html
 !evaluation/evaluation.json
+
+opensrc/*/
+!opensrc/setup_opensrc.sh
+!opensrc/sources.json

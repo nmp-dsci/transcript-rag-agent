@@ -1,64 +1,78 @@
 from __future__ import annotations
 
-from src.evals.evaluation import EvaluationRun, render_html_report
-from src.rag.models import RetrievedChunk
+from src.agents.models import RagAnswerReference
+from src.evals.evaluation import (
+    SETUP_COMMANDS,
+    AgentRun,
+    _title_from_command,
+    render_html_report,
+)
 
 
-def test_render_html_report_compares_three_input_types() -> None:
-    chunk = RetrievedChunk(
-        transcript_id="raw_transcript:abc",
-        video_id="abc",
+def test_title_from_command_uses_flags_after_question() -> None:
+    assert _title_from_command(SETUP_COMMANDS[0]) == "--rag_llm --top-k 30"
+    assert _title_from_command(SETUP_COMMANDS[1]) == "--rag_llm --recursive --top-k 10"
+    assert _title_from_command(SETUP_COMMANDS[2]) == "--rag_agent --top-k 10"
+
+
+def test_render_html_report_three_columns_question_command_and_answer() -> None:
+    reference = RagAnswerReference(
+        label="[1]",
         source_url="https://www.youtube.com/watch?v=abc",
-        chunk_index=1,
-        text="retrieved evidence",
+        timestamp_url="https://www.youtube.com/watch?v=abc&t=10s",
         start_seconds=10,
         end_seconds=20,
-        segment_count=1,
-        score=0.9,
+        chunk_index=1,
+        video_id="abc",
     )
     runs = [
-        EvaluationRun(
-            name="raw_single",
-            input_type="raw",
-            source_url="https://www.youtube.com/watch?v=abc",
-            answer="raw answer",
-            context_text="x" * 100,
-            retrieved_chunks=[],
+        AgentRun(
+            title=_title_from_command(SETUP_COMMANDS[0]),
+            command=SETUP_COMMANDS[0],
+            answer="rag_llm answer",
+            references=[reference],
+            token_estimate=120,
+            chunk_count=30,
+            llm_calls=1,
         ),
-        EvaluationRun(
-            name="rag_single",
-            input_type="rag single",
-            source_url="https://www.youtube.com/watch?v=abc",
-            answer="rag single answer",
-            context_text="x" * 40,
-            retrieved_chunks=[chunk],
+        AgentRun(
+            title=_title_from_command(SETUP_COMMANDS[1]),
+            command=SETUP_COMMANDS[1],
+            answer="rag_llm recursive answer",
+            token_estimate=80,
+            chunk_count=10,
+            llm_calls=4,
+            terminated_reason="max_depth_reached",
         ),
-        EvaluationRun(
-            name="rag_all",
-            input_type="rag all",
-            source_url=None,
-            answer="rag all answer",
-            context_text="x" * 20,
-            retrieved_chunks=[chunk],
+        AgentRun(
+            title=_title_from_command(SETUP_COMMANDS[2]),
+            command=SETUP_COMMANDS[2],
+            answer="## Key Findings\n1. agentic answer",
+            token_estimate=60,
+            chunk_count=18,
+            iterations=5,
+            terminated_reason="completed",
         ),
     ]
 
-    output = render_html_report(
-        question="q",
-        source_url="https://www.youtube.com/watch?v=abc",
-        top_k=10,
-        runs=runs,
-        similarities={
-            "raw_single__rag_single": 0.8,
-            "raw_single__rag_all": 0.7,
-            "rag_single__rag_all": 0.9,
-        },
-    )
+    output = render_html_report(question="how is agentic coding used", runs=runs)
 
-    assert "Transcript Agent Evaluation" in output
-    assert "raw_single" in output
-    assert "rag_single" in output
-    assert "rag_all" in output
-    assert "raw_single__rag_single" in output
+    # Question shown at the top.
+    assert "how is agentic coding used" in output
+    # Three columns, one per setup, titled from the command flags.
+    assert output.count('class="answer-col"') == 3
+    assert "--rag_llm --top-k 30" in output
+    assert "--rag_llm --recursive --top-k 10" in output
+    assert "--rag_agent --top-k 10" in output
+    # The full bash command is shown inside an expandable details element.
+    assert "<details><summary>Command</summary>" in output
+    assert "src.cli rag-ask" in output
+    # Answers and per-setup metadata are rendered.
+    assert "rag_llm answer" in output
+    assert "## Key Findings" in output
+    assert "iterations 5" in output
+    assert "LLM calls 4" in output
+    # References carry the traceable timestamp link.
     assert "https://www.youtube.com/watch?v=abc&amp;t=10s" in output
-    assert "<details>" in output
+    # Dark theme is applied.
+    assert "color-scheme:dark" in output

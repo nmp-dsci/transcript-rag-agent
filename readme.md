@@ -8,7 +8,7 @@ The main demo compares one question across three transcript input types:
 - `rag_single`: top 10 retrieved chunks for that same video.
 - `rag_all`: top 10 retrieved chunks across all indexed videos.
 
-The demo writes `dashboard/evaluation.html` with answers, token estimates, pairwise answer similarity, and retrieved chunks. The target outcome is similar answer quality with roughly 80%+ fewer prompt tokens for RAG.
+The demo writes `dashboard/evaluation.html`: one question answered three ways — `rag_llm` single-hop, `rag_llm` recursive, and the agentic `rag_agent` — laid out as three side-by-side columns in dark mode, each titled by its command with the full command in an expandable block.
 
 ### Setup
 
@@ -42,6 +42,7 @@ YT_AGENT_RAG_MAX_FOLLOWUPS=3
 YT_AGENT_RAG_FOLLOWUP_TOP_K=
 YT_AGENT_RAG_NOVELTY_MIN_CHUNKS=2
 YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS=
+YT_AGENT_RAG_AGENT_MAX_ITERATIONS=10
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
 YT_AGENT_DISCOVERY_CACHE_TTL_HOURS=24
@@ -58,6 +59,8 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 Supadata can return async jobs for longer videos. `SUPADATA_MAX_POLL_SECONDS=600` lets indexing wait up to 10 minutes for those jobs before timing out.
 
 Recursion env vars are used only when recursive mode is effectively on via `--recursive` or `YT_AGENT_RAG_RECURSIVE_DEFAULT=true`. Empty `YT_AGENT_RAG_FOLLOWUP_TOP_K` defaults follow-up retrieval to `YT_AGENT_RAG_TOP_K`; empty `YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS` defaults to `max_depth * max_followups`.
+
+`YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (default `10`) is read only when the agentic RAG agent is used via `rag-ask --rag_agent`. It is the hard cap on the LangGraph ReAct loop and can be overridden per-run with `--max-iterations`. It has no effect on any other path.
 
 ### Command Sequence
 
@@ -231,6 +234,8 @@ uv run python -m src.cli rag-ask "$question" --filter-transcripts --show-followu
 
 Multi-transcript RAG (recursive): acts on follow-up queries with bounded fan-out retrieval, then runs a final synthesis call.
 
+Recursive RAG is a `rag_llm` feature only. It has no effect with `--rag_agent` (the agentic agent runs its own research loop). Since `rag_llm` is the default, the examples below omit the agent flag.
+
 ```bash
 uv run python -m src.cli rag-ask "$question" --recursive
 uv run python -m src.cli rag-ask "$question" --recursive --url "$url"
@@ -245,6 +250,27 @@ uv run python -m src.cli rag-ask "$question" --recursive --filter-transcripts \
 ```
 
 With `YT_AGENT_RAG_RECURSIVE_DEFAULT=true`, `rag-ask "$question"` runs recursively by default. Use `--no-recursive` to force the single-hop path.
+
+Agentic RAG (`--rag_agent`): routes `rag-ask` to the agentic LangGraph RAG agent (`rag_agent`) instead of the default pipeline agent (`rag_llm`). The agent drives its own ReAct research loop: it retrieves on the original question, identifies sub-topics, and calls retrieval again per sub-topic until it judges it has enough evidence, then writes a single comprehensive answer.
+
+```bash
+uv run python -m src.cli rag-ask "$question" --rag_agent
+uv run python -m src.cli rag-ask "$question" --rag_agent --url "$url" --top-k 10
+uv run python -m src.cli rag-ask "$question" --rag_agent --filter-transcripts
+uv run python -m src.cli rag-ask "$question" --rag_agent --max-iterations 8
+```
+
+The agent inherits `--url`, `--filter-transcripts`, and `--top-k` for every retrieval call; only the query string changes per iteration.
+
+Agentic RAG flags (`--rag_llm` and `--rag_agent` are mutually exclusive):
+
+- `--rag_agent` — use the agentic LangGraph RAG agent (`rag_agent`) instead of the pipeline agent (`rag_llm`).
+- `--rag_llm` — use the pipeline RAG agent (`rag_llm`) explicitly. This is also the default when neither flag is passed.
+- `--max-iterations N` — hard cap on ReAct loop iterations; only used with `--rag_agent`. Defaults to `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (or `10`). Ignored without `--rag_agent`.
+
+With `--rag_agent`, output streams live to the terminal: a `Researching...` header, then one `[N] Retrieving: "<query>"  →  K chunks` line per retrieval iteration (color-cycled on a TTY, plain text when piped), followed by the standard `Answer` / `References` blocks and an `Agent: N iterations (rag_agent)` footer. The `Answer` body uses a `## Key Findings` summary followed by one `## Finding N: <title>` section per insight, each with inline citations.
+
+Without `--rag_agent` (no flag, or `--rag_llm`), `rag-ask` behaves exactly as before; `rag_llm` is used and no footer or streaming output is printed.
 
 Recursive RAG flags:
 
@@ -276,7 +302,6 @@ Generate the HTML evaluation report:
 
 ```bash
 uv run python -m src.evals.evaluation \
-  --url "$url" \
   --question "$question" \
   --output dashboard/evaluation.html \
   --json-output dashboard/evaluation.json
@@ -288,25 +313,21 @@ Open:
 dashboard/evaluation.html
 ```
 
-The report compares six variants in one run:
+The report runs one question across three agent setups and lays them out side by side, one column per setup. Each column is titled by the flags from the command that produced it, with the full command shown in an expandable `Command` section:
 
-| Variant | Description |
-|---|---|
-| `raw_single` | Full transcript sent to the LLM (token baseline). |
-| `rag_single` | Top-K chunks from the selected video only. |
-| `rag_all` | Top-K chunks across all indexed videos (single-hop). |
-| `rag_all_filtered` | Summary-filtered transcripts, then top-K chunks (single-hop). |
-| `rag_recursive` | Multi-hop: first-pass + fan-out retrieval + synthesis (all transcripts). |
-| `rag_recursive_filtered` | Multi-hop with summary filtering applied at every hop. |
+| Column | Command | Description |
+|---|---|---|
+| `--rag_llm --top-k 30` | `rag-ask "$question" --rag_llm --top-k 30` | Baseline `rag_llm` single-hop, wide retrieval. |
+| `--rag_llm --recursive --top-k 10` | `rag-ask "$question" --rag_llm --recursive --top-k 10` | `rag_llm` with recursive multi-hop retrieval. |
+| `--rag_agent --top-k 10` | `rag-ask "$question" --rag_agent --top-k 10` | Agentic `rag_agent` ReAct research loop. |
 
 The report shows:
 
-- Answers for all six variants.
-- Prompt token estimates and retrieved chunk counts for each.
-- LLM call count and recursion terminated reason for recursive variants.
-- Pairwise embedding similarity between answers.
-- Expandable retrieved chunks with source URL and timestamp links.
-- Recursion trace (stages, proposed/executed follow-ups, subtopic drill-downs) for recursive variants.
+- The question at the top, then three answer columns underneath.
+- The full bash command for each setup in an expandable `Command` block.
+- Per-setup metadata: prompt token estimate, retrieved chunk count, answer length, LLM calls (single-hop/recursive), iteration count (rag_agent), and terminated reason.
+- Expandable `References` with traceable timestamp links back to the source video.
+- Dark theme, matching the other dashboards.
 
 ### Architecture
 
@@ -336,6 +357,19 @@ There are two agent paths:
 - `RagTranscriptAgent`: RAG agent that can search all indexed transcript chunks, filter to one URL, and optionally run recursive multi-hop retrieval.
 
 `RagTranscriptAgent` uses a unified first-pass LLM contract in both modes: the prompt always asks for an answer with references plus proposed subtopics and follow-up retrieval queries. Single-hop mode returns those follow-ups only when requested by `--show-followups`; recursive mode acts on them with extra retrieval and a final synthesis call.
+
+A third path, the agentic RAG agent (`RagAgent`), is available via `rag-ask --rag_agent`.
+
+#### rag_llm vs rag_agent
+
+Two labels are used in the CLI, specs, and eval reports to distinguish the two `rag-ask` agent paths:
+
+| Label | Class | File | Selected by | Behavior |
+|---|---|---|---|---|
+| `rag_llm` | `RagTranscriptAgent` | `src/agents/rag_transcript_agent.py` | `--rag_llm`, or no flag (default) | Single-shot pipeline: one retrieval (or bounded recursive fan-out), then an LLM answer. |
+| `rag_agent` | `RagAgent` | `src/agents/rag_agent.py` | `rag-ask --rag_agent` | Agentic LangGraph ReAct loop: the LLM iteratively retrieves across sub-topics, accumulating evidence, until it decides it has enough, then writes a cited answer. |
+
+`rag_llm` is a documentation and CLI label only — no class, file, or import path was renamed. It refers to the existing `RagTranscriptAgent` exactly as it is. `--rag_agent` selects `rag_agent` (`RagAgent`); `--rag_llm` (or no flag) keeps `rag-ask` on `rag_llm`. The two flags are mutually exclusive. Both agents accept the same question and return the same `RagTranscriptAnswer` shape, so the two approaches can be compared side-by-side.
 
 Indexing flow:
 

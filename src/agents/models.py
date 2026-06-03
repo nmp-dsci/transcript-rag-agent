@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, HttpUrl
 
 from src.rag.models import RetrievedChunk
@@ -103,3 +105,14 @@ class RagTranscriptAnswer(BaseModel):
     followups_requested: bool = False
     answer_confidence: float | None = None
     recursion: RecursionTrace | None = None
+
+
+class AgentProgressEvent(BaseModel):
+    iteration: int = Field(description="1-based retrieval counter.")
+    event_type: Literal["retrieval_start", "retrieval_complete", "answer_start"]
+    query: str | None = Field(
+        default=None, description="The retrieval query for this iteration."
+    )
+    chunk_count: int | None = Field(
+        default=None, description="Populated on retrieval_complete."
+    )

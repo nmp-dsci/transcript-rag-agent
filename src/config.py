@@ -34,6 +34,7 @@ class Settings:
     rag_followup_top_k: int | None = None
     rag_novelty_min_chunks: int = 2
     rag_max_total_followups: int | None = None
+    rag_agent_max_iterations: int = 10
     chunk_target_chars: int = 1200
     chunk_overlap_chars: int = 150
     supadata_timeout_seconds: float = 120.0
@@ -156,6 +157,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         rag_followup_top_k=_optional_int_env("YT_AGENT_RAG_FOLLOWUP_TOP_K"),
         rag_novelty_min_chunks=_int_env("YT_AGENT_RAG_NOVELTY_MIN_CHUNKS", 2),
         rag_max_total_followups=_optional_int_env("YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS"),
+        rag_agent_max_iterations=_int_env("YT_AGENT_RAG_AGENT_MAX_ITERATIONS", 10),
         chunk_target_chars=_int_env("YT_AGENT_CHUNK_TARGET_CHARS", 1200),
         chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
         supadata_timeout_seconds=_float_env("SUPADATA_TIMEOUT_SECONDS", 120.0),
