@@ -7,75 +7,68 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.agents.context import RawTranscriptContextProvider
-from src.agents.models import (
-    FollowupSubtopic,
-    QuestionRequest,
-    RagQuestionRequest,
-    RecursionOptions,
-    RecursionTrace,
-)
+from src.agents.models import RagQuestionRequest, RecursionOptions
+from src.agents.rag_agent import RagAgent
 from src.agents.rag_transcript_agent import RagTranscriptAgent
-from src.agents.transcript_agent import TranscriptAgent
 from src.config import ConfigError, load_settings
 from src.dashboard.theme import dark_style_block
-from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
-from src.rag.embeddings import HuggingFaceEmbeddingModel, cosine_similarity
+from src.rag.context import MultiTranscriptRagContextProvider
+from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.eval import estimate_tokens
 from src.rag.indexing import RagIndexer
-from src.rag.references import youtube_timestamp_url
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
 from src.rag.summaries import TranscriptSummaryStore
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
-from src.transcripts.youtube import extract_video_id
 
 
-DEFAULT_VIDEO_URL = "https://www.youtube.com/watch?v=3hk7nO_q0a8"
 DEFAULT_QUESTION = (
-    "what does this video say  for capital gains tax, is it being grandfathered "
-    "or every now under new rules, does that mean if I sell before 30 June 2027 "
-    "I can still access 50% discount "
+    "what does this corpus say about how AI engineers leverage agentic coding "
+    "to fully develop features, what is the best workflow for agentic coding"
 )
+
+# The three agent setups, expressed as the exact bash commands a user would run.
+# The column title is derived from the flags in each command (see _title_from_command).
+SETUP_COMMANDS = [
+    'uv run python -m src.cli rag-ask "$question" --rag_llm --top-k 30',
+    'uv run python -m src.cli rag-ask "$question" --rag_llm --recursive --top-k 10',
+    'uv run python -m src.cli rag-ask "$question" --rag_agent --top-k 10',
+]
 
 
 @dataclass(frozen=True)
-class EvaluationRun:
-    name: str
-    input_type: str
+class AgentRun:
+    """One agent setup's answer plus the command that produced it."""
+
+    title: str
+    command: str
     answer: str
-    context_text: str
-    retrieved_chunks: list[Any]
-    source_url: str | None = None
-    recursion: RecursionTrace | None = None
-    subtopics: list[FollowupSubtopic] = field(default_factory=list)
+    references: list[Any] = field(default_factory=list)
+    token_estimate: int = 0
+    chunk_count: int = 0
+    llm_calls: int | None = None
+    iterations: int | None = None
+    terminated_reason: str | None = None
 
-    @property
-    def token_estimate(self) -> int:
-        return estimate_tokens(self.context_text)
 
-    @property
-    def total_llm_calls(self) -> int:
-        if self.recursion:
-            return sum(s.llm_calls for s in self.recursion.stages)
-        return 1
-
-    @property
-    def terminated_reason(self) -> str | None:
-        return self.recursion.terminated_reason if self.recursion else None
+def _title_from_command(command: str) -> str:
+    """Derive a column title from the bash command: the flags after the question."""
+    marker = '"$question"'
+    flags = command.split(marker, 1)[1].strip() if marker in command else command
+    return flags or command
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="evaluation",
         description=(
-            "Compare raw single-transcript, RAG single-transcript, and RAG "
-            "all-transcripts answers."
+            "Compare one question across three agent setups: rag_llm single-hop, "
+            "rag_llm recursive, and the agentic rag_agent."
         ),
     )
-    parser.add_argument("--url", default=DEFAULT_VIDEO_URL)
     parser.add_argument("--question", default=DEFAULT_QUESTION)
-    parser.add_argument("--top-k", type=int, default=None)
-    parser.add_argument("--output", type=Path, default=Path("dashboard/evaluation.html"))
+    parser.add_argument(
+        "--output", type=Path, default=Path("dashboard/evaluation.html")
+    )
     parser.add_argument("--json-output", type=Path)
     return parser
 
@@ -84,11 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        report = run_evaluation(
-            source_url=args.url,
-            question=args.question,
-            top_k=args.top_k,
-        )
+        report = run_evaluation(question=args.question)
     except (ConfigError, Exception) as exc:
         parser.exit(1, f"Error: {exc}\n")
 
@@ -103,14 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def run_evaluation(
-    source_url: str = DEFAULT_VIDEO_URL,
-    question: str = DEFAULT_QUESTION,
-    top_k: int | None = None,
-) -> dict[str, Any]:
+def run_evaluation(question: str = DEFAULT_QUESTION) -> dict[str, Any]:
     settings = load_settings(require_keys=True)
-    video_id = extract_video_id(source_url)
-    resolved_top_k = top_k or settings.rag_top_k
 
     fetcher = SuperdataTranscriptFetcher(
         settings.superdata_api_key,
@@ -135,7 +118,6 @@ def run_evaluation(
         target_chars=settings.chunk_target_chars,
         overlap_chars=settings.chunk_overlap_chars,
     )
-
     summary_store = TranscriptSummaryStore(
         settings.chroma_path,
         embedding_model=embedding_model,
@@ -143,29 +125,15 @@ def run_evaluation(
         raw_store=raw_store,
         collection_name=settings.transcript_summary_collection,
     )
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=raw_store,
+        chunk_store=chunk_store,
+        indexer=indexer,
+        summary_store=summary_store,
+    )
 
-    raw_agent = TranscriptAgent.from_settings(
-        settings,
-        RawTranscriptContextProvider(raw_store, fetcher),
-    )
-    rag_single_agent = TranscriptAgent.from_settings(
-        settings,
-        RagTranscriptContextProvider(
-            raw_store=raw_store,
-            chunk_store=chunk_store,
-            indexer=indexer,
-            top_k=resolved_top_k,
-        ),
-    )
-    rag_all_agent = RagTranscriptAgent.from_settings(
-        settings,
-        MultiTranscriptRagContextProvider(
-            raw_store=raw_store,
-            chunk_store=chunk_store,
-            indexer=indexer,
-            summary_store=summary_store,
-        ),
-    )
+    rag_llm_agent = RagTranscriptAgent.from_settings(settings, provider)
+    rag_agent = RagAgent.from_settings(settings, provider)
 
     recursion_options = RecursionOptions(
         max_depth=settings.rag_max_depth,
@@ -175,179 +143,124 @@ def run_evaluation(
         max_total_followups=settings.rag_max_total_followups,
     )
 
-    raw_answer = raw_agent.answer(
-        QuestionRequest(video_id=video_id, source_url=source_url, question=question)
-    )
-    rag_single_answer = rag_single_agent.answer(
-        QuestionRequest(video_id=video_id, source_url=source_url, question=question)
+    # Setup 1: rag_llm single-hop, top-k 30.
+    answer_1 = rag_llm_agent.answer(RagQuestionRequest(question=question, top_k=30))
+    context_1 = rag_llm_agent.last_context
+    run_1 = _build_run(
+        SETUP_COMMANDS[0],
+        answer_1,
+        context_1,
+        llm_calls=1,
     )
 
-    rag_all_answer = rag_all_agent.answer(
-        RagQuestionRequest(question=question, top_k=resolved_top_k)
-    )
-    rag_all_context = rag_all_agent.last_context
-
-    rag_all_filtered_answer = rag_all_agent.answer(
+    # Setup 2: rag_llm recursive, top-k 10.
+    answer_2 = rag_llm_agent.answer(
         RagQuestionRequest(
             question=question,
-            top_k=resolved_top_k,
-            filter_transcripts=True,
-            transcript_filter_top_k=settings.transcript_filter_top_k,
-            transcript_filter_min_score=settings.transcript_filter_min_score,
-        )
-    )
-    rag_all_filtered_context = rag_all_agent.last_context
-
-    rag_recursive_answer = rag_all_agent.answer(
-        RagQuestionRequest(
-            question=question,
-            top_k=resolved_top_k,
+            top_k=10,
             recursive=True,
             recursion_options=recursion_options,
         )
     )
-    rag_recursive_context = rag_all_agent.last_context
-
-    rag_recursive_filtered_answer = rag_all_agent.answer(
-        RagQuestionRequest(
-            question=question,
-            top_k=resolved_top_k,
-            recursive=True,
-            filter_transcripts=True,
-            transcript_filter_top_k=settings.transcript_filter_top_k,
-            transcript_filter_min_score=settings.transcript_filter_min_score,
-            recursion_options=recursion_options,
-        )
+    context_2 = rag_llm_agent.last_context
+    recursion = answer_2.recursion
+    run_2 = _build_run(
+        SETUP_COMMANDS[1],
+        answer_2,
+        context_2,
+        llm_calls=(
+            sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
+        ),
+        terminated_reason=recursion.terminated_reason if recursion else None,
     )
-    rag_recursive_filtered_context = rag_all_agent.last_context
 
-    if (
-        raw_agent.last_context is None
-        or rag_single_agent.last_context is None
-        or rag_all_context is None
-        or rag_all_filtered_context is None
-        or rag_recursive_context is None
-        or rag_recursive_filtered_context is None
-    ):
-        raise RuntimeError("Evaluation did not capture all context payloads")
-
-    runs = [
-        EvaluationRun(
-            name="raw_single",
-            input_type="raw",
-            source_url=source_url,
-            answer=raw_answer.answer,
-            context_text=raw_agent.last_context.context_text or "",
-            retrieved_chunks=[],
-        ),
-        EvaluationRun(
-            name="rag_single",
-            input_type="rag single",
-            source_url=source_url,
-            answer=rag_single_answer.answer,
-            context_text=rag_single_agent.last_context.context_text or "",
-            retrieved_chunks=rag_single_agent.last_context.retrieved_chunks or [],
-        ),
-        EvaluationRun(
-            name="rag_all",
-            input_type="rag all",
-            answer=rag_all_answer.answer,
-            context_text=rag_all_context.context_text or "",
-            retrieved_chunks=rag_all_context.retrieved_chunks or [],
-            subtopics=rag_all_answer.subtopics,
-            recursion=rag_all_answer.recursion,
-        ),
-        EvaluationRun(
-            name="rag_all_filtered",
-            input_type="rag all filtered",
-            answer=rag_all_filtered_answer.answer,
-            context_text=rag_all_filtered_context.context_text or "",
-            retrieved_chunks=rag_all_filtered_context.retrieved_chunks or [],
-            subtopics=rag_all_filtered_answer.subtopics,
-            recursion=rag_all_filtered_answer.recursion,
-        ),
-        EvaluationRun(
-            name="rag_recursive",
-            input_type="rag recursive",
-            answer=rag_recursive_answer.answer,
-            context_text=rag_recursive_context.context_text or "",
-            retrieved_chunks=rag_recursive_context.retrieved_chunks or [],
-            subtopics=rag_recursive_answer.subtopics,
-            recursion=rag_recursive_answer.recursion,
-        ),
-        EvaluationRun(
-            name="rag_recursive_filtered",
-            input_type="rag recursive filtered",
-            answer=rag_recursive_filtered_answer.answer,
-            context_text=rag_recursive_filtered_context.context_text or "",
-            retrieved_chunks=rag_recursive_filtered_context.retrieved_chunks or [],
-            subtopics=rag_recursive_filtered_answer.subtopics,
-            recursion=rag_recursive_filtered_answer.recursion,
-        ),
-    ]
-    embeddings = embedding_model.embed_documents([run.answer for run in runs])
-    similarities = _pairwise_similarities(runs, embeddings)
-    payload = _json_payload(
-        question=question,
-        source_url=source_url,
-        top_k=resolved_top_k,
-        runs=runs,
-        similarities=similarities,
+    # Setup 3: agentic rag_agent, top-k 10.
+    answer_3 = rag_agent.answer(RagQuestionRequest(question=question, top_k=10))
+    context_3 = rag_agent.last_context
+    run_3 = _build_run(
+        SETUP_COMMANDS[2],
+        answer_3,
+        context_3,
+        iterations=rag_agent.last_iteration_count,
+        terminated_reason=rag_agent.last_terminated_reason,
     )
+
+    runs = [run_1, run_2, run_3]
     return {
-        "html": render_html_report(
-            question=question,
-            source_url=source_url,
-            top_k=resolved_top_k,
-            runs=runs,
-            similarities=similarities,
-        ),
-        "json": payload,
+        "html": render_html_report(question=question, runs=runs),
+        "json": _json_payload(question=question, runs=runs),
     }
 
 
-def _pairwise_similarities(
-    runs: list[EvaluationRun],
-    embeddings: list[list[float]],
-) -> dict[str, float]:
-    values: dict[str, float] = {}
-    for left_index, left in enumerate(runs):
-        for right_index in range(left_index + 1, len(runs)):
-            right = runs[right_index]
-            values[f"{left.name}__{right.name}"] = cosine_similarity(
-                embeddings[left_index], embeddings[right_index]
-            )
-    return values
+def _build_run(
+    command: str,
+    answer: Any,
+    context: Any,
+    *,
+    llm_calls: int | None = None,
+    iterations: int | None = None,
+    terminated_reason: str | None = None,
+) -> AgentRun:
+    context_text = context.context_text if context is not None else ""
+    chunks = context.retrieved_chunks if context is not None else []
+    return AgentRun(
+        title=_title_from_command(command),
+        command=command,
+        answer=answer.answer,
+        references=list(answer.references or []),
+        token_estimate=estimate_tokens(context_text or ""),
+        chunk_count=len(chunks or []),
+        llm_calls=llm_calls,
+        iterations=iterations,
+        terminated_reason=terminated_reason,
+    )
 
 
-def render_html_report(
-    question: str,
-    source_url: str,
-    top_k: int,
-    runs: list[EvaluationRun],
-    similarities: dict[str, float],
-) -> str:
+def _layout_style_block() -> list[str]:
+    return [
+        "<style>",
+        ".question-box{background:#151c26;border:1px solid #2d3745;"
+        "padding:16px 20px;margin-bottom:20px}",
+        ".question-box p{margin:8px 0 0;font-size:16px;color:#e7edf5}",
+        ".answer-columns{display:grid;grid-template-columns:repeat(3,1fr);"
+        "gap:16px;align-items:start}",
+        ".answer-col{border:1px solid #2d3745;background:#151c26;"
+        "padding:16px;min-width:0}",
+        ".answer-col h2{margin:0 0 10px;font-size:14px;color:#f6f8fb;"
+        "font-family:ui-monospace,Menlo,monospace;word-break:break-word}",
+        ".answer-col .answer{white-space:pre-wrap;background:#10161f;"
+        "border:1px solid #2d3745;color:#e7edf5;padding:12px;overflow:auto}",
+        ".col-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;"
+        "font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#9fb3c8}",
+        ".col-meta span{background:#10161f;border:1px solid #2d3745;padding:4px 8px}",
+        "@media(max-width:980px){.answer-columns{grid-template-columns:1fr}}",
+        "</style>",
+    ]
+
+
+def render_html_report(question: str, runs: list[AgentRun]) -> str:
+    columns = "\n".join(_run_column(run) for run in runs)
     return "\n".join(
         [
             "<!doctype html>",
             '<html lang="en">',
             "<head>",
             '<meta charset="utf-8">',
-            "<title>Transcript Agent Evaluation</title>",
+            '<meta name="viewport" content="width=device-width, initial-scale=1">',
+            "<title>Agentic Coding Evaluation — 3 Agent Setups</title>",
             *dark_style_block(),
+            *_layout_style_block(),
             "</head>",
             "<body>",
-            "<header><h1>Transcript Agent Evaluation</h1></header>",
+            "<header><h1>Agentic Coding Evaluation — 3 Agent Setups</h1></header>",
             "<main>",
-            f"<p><strong>Question:</strong> {html.escape(question)}</p>",
-            f"<p><strong>Single transcript URL:</strong> {html.escape(source_url)}</p>",
-            f"<p><strong>RAG top K:</strong> {top_k}</p>",
-            "<h2>Summary</h2>",
-            _summary_table(runs),
-            "<h2>Pairwise Similarity</h2>",
-            _similarity_table(similarities),
-            "<h2>Answers</h2>",
-            *[_run_section(run) for run in runs],
+            '<div class="question-box">',
+            "<strong>Question</strong>",
+            f"<p>{html.escape(question)}</p>",
+            "</div>",
+            '<div class="answer-columns">',
+            columns,
+            "</div>",
             "</main>",
             "</body>",
             "</html>",
@@ -355,167 +268,71 @@ def render_html_report(
     )
 
 
-def _summary_table(runs: list[EvaluationRun]) -> str:
-    rows = [
-        "<tr><th>Run</th><th>Transcript input type</th><th>Filter</th>"
-        "<th>Token estimate</th><th>Retrieved chunks</th><th>Answer chars</th>"
-        "<th>LLM calls</th><th>Terminated</th></tr>"
-    ]
-    for run in runs:
-        rows.append(
-            "<tr>"
-            f"<td>{html.escape(run.name)}</td>"
-            f"<td>{html.escape(run.input_type)}</td>"
-            f"<td>{html.escape(run.source_url or 'all indexed transcripts')}</td>"
-            f"<td class=\"metric\">{run.token_estimate}</td>"
-            f"<td class=\"metric\">{len(run.retrieved_chunks)}</td>"
-            f"<td class=\"metric\">{len(run.answer)}</td>"
-            f"<td class=\"metric\">{run.total_llm_calls}</td>"
-            f"<td>{html.escape(run.terminated_reason or '—')}</td>"
-            "</tr>"
-        )
-    return "<table>" + "".join(rows) + "</table>"
-
-
-def _similarity_table(similarities: dict[str, float]) -> str:
-    rows = ["<tr><th>Pair</th><th>Embedding cosine similarity</th></tr>"]
-    for pair, score in similarities.items():
-        rows.append(
-            "<tr>"
-            f"<td>{html.escape(pair)}</td>"
-            f"<td class=\"metric\">{score:.3f}</td>"
-            "</tr>"
-        )
-    return "<table>" + "".join(rows) + "</table>"
-
-
-def _run_section(run: EvaluationRun) -> str:
-    chunks = "\n".join(
-        _chunk_details(index, chunk)
-        for index, chunk in enumerate(run.retrieved_chunks, 1)
-    )
-    if not chunks:
-        chunks = "<p>No retrieved chunks for raw transcript input.</p>"
+def _run_column(run: AgentRun) -> str:
     parts = [
-        "<article>",
-        f"<h3>{html.escape(run.name)} ({html.escape(run.input_type)})</h3>",
-        f"<p><strong>Filter:</strong> {html.escape(run.source_url or 'all indexed transcripts')}</p>",
-        f"<p><strong>Token estimate:</strong> <span class=\"metric\">{run.token_estimate}</span></p>",
-        "<h4>Answer</h4>",
-        f"<pre>{html.escape(run.answer)}</pre>",
-        "<h4>Retrieved chunks</h4>",
-        chunks,
+        '<section class="answer-col">',
+        f"<h2>{html.escape(run.title)}</h2>",
+        "<details><summary>Command</summary>",
+        f"<pre><code>{html.escape(run.command)}</code></pre>",
+        "</details>",
+        '<div class="col-meta">',
+        f"<span>tokens ~{run.token_estimate}</span>",
+        f"<span>chunks {run.chunk_count}</span>",
+        f"<span>answer {len(run.answer)} chars</span>",
     ]
-    if run.recursion is not None:
-        parts.append(_recursion_trace_section(run.recursion))
-    parts.append("</article>")
+    if run.llm_calls is not None:
+        parts.append(f"<span>LLM calls {run.llm_calls}</span>")
+    if run.iterations is not None:
+        parts.append(f"<span>iterations {run.iterations}</span>")
+    if run.terminated_reason:
+        parts.append(f"<span>{html.escape(run.terminated_reason)}</span>")
+    parts.append("</div>")
+    parts.append("<h3>Answer</h3>")
+    parts.append(f'<pre class="answer">{html.escape(run.answer)}</pre>')
+    if run.references:
+        parts.append(_references_details(run.references))
+    parts.append("</section>")
     return "\n".join(parts)
 
 
-def _recursion_trace_section(recursion: RecursionTrace) -> str:
-    stage_rows = "".join(
-        f"<tr><td>{html.escape(s.name)}</td>"
-        f"<td class=\"metric\">{s.llm_calls}</td>"
-        f"<td class=\"metric\">{s.retrievals}</td></tr>"
-        for s in recursion.stages
-    )
-    stage_table = (
-        "<table><tr><th>Stage</th><th>LLM calls</th><th>Retrievals</th></tr>"
-        + stage_rows
-        + "</table>"
-    )
-    parts = [
-        "<h4>Recursion trace</h4>",
-        stage_table,
-        f"<p><strong>Terminated:</strong> {html.escape(recursion.terminated_reason)}</p>",
-        f"<p><strong>Follow-ups proposed:</strong> {recursion.total_followups_proposed}"
-        f" &nbsp;|&nbsp; <strong>executed:</strong> {recursion.total_followups_executed}</p>",
-    ]
-    if recursion.subtopic_answers:
-        parts.append("<h4>Subtopic drill-downs</h4>")
-        for sa in recursion.subtopic_answers:
-            parts.append(
-                "<details>"
-                f"<summary>{sa.subtopic_index}. {html.escape(sa.topic)}</summary>"
-                f"<p><strong>Follow-up query:</strong> {html.escape(sa.followup_query)}</p>"
-                f"<pre>{html.escape(sa.answer)}</pre>"
-                "</details>"
-            )
-    elif recursion.subtopic_evidence:
-        parts.append("<h4>Proposed follow-ups</h4>")
-        for ev in recursion.subtopic_evidence:
-            label = f"{ev.subtopic_index}. {ev.subtopic.topic} [{ev.outcome}]"
-            parts.append(
-                "<details>"
-                f"<summary>{html.escape(label)}</summary>"
-                f"<p><strong>Query:</strong> {html.escape(ev.subtopic.followup_query)}</p>"
-                "</details>"
-            )
-    return "\n".join(parts)
-
-
-def _chunk_details(index: int, chunk) -> str:
-    timestamp_url = youtube_timestamp_url(str(chunk.source_url), chunk.start_seconds)
-    summary = (
-        f"[{index}] {chunk.video_id} "
-        f"{chunk.start_seconds}-{chunk.end_seconds}s "
-        f"score={chunk.score}"
-    )
-    return "\n".join(
-        [
-            "<details>",
-            f"<summary>{html.escape(summary)}</summary>",
-            f'<p><a href="{html.escape(timestamp_url)}">Open video at timestamp</a></p>',
-            f"<p>chunk_index={chunk.chunk_index}</p>",
-            f"<pre>{html.escape(chunk.text)}</pre>",
-            "</details>",
-        ]
+def _references_details(references: list[Any]) -> str:
+    items = []
+    for ref in references:
+        label = html.escape(str(getattr(ref, "label", "")))
+        timestamp_url = html.escape(str(getattr(ref, "timestamp_url", "")))
+        video_id = html.escape(str(getattr(ref, "video_id", "")))
+        items.append(
+            f"<li>{label} "
+            f'<a href="{timestamp_url}">open at timestamp</a> '
+            f'<span class="metric">{video_id}</span></li>'
+        )
+    return (
+        f"<details><summary>References ({len(references)})</summary>"
+        f"<ul>{''.join(items)}</ul></details>"
     )
 
 
-def _json_payload(
-    question: str,
-    source_url: str,
-    top_k: int,
-    runs: list[EvaluationRun],
-    similarities: dict[str, float],
-) -> dict[str, Any]:
+def _json_payload(question: str, runs: list[AgentRun]) -> dict[str, Any]:
     return {
-        "eval_name": "raw_vs_rag_single_vs_rag_all",
+        "eval_name": "rag_llm_vs_rag_llm_recursive_vs_rag_agent",
         "question": question,
-        "source_url": source_url,
-        "top_k": top_k,
         "runs": [
             {
-                "name": run.name,
-                "input_type": run.input_type,
-                "source_url": run.source_url,
+                "title": run.title,
+                "command": run.command,
                 "answer": run.answer,
                 "token_estimate": run.token_estimate,
-                "total_llm_calls": run.total_llm_calls,
+                "chunk_count": run.chunk_count,
+                "llm_calls": run.llm_calls,
+                "iterations": run.iterations,
                 "terminated_reason": run.terminated_reason,
-                "retrieved_chunks": [
-                    {
-                        "rank": index,
-                        "score": chunk.score,
-                        "video_id": chunk.video_id,
-                        "source_url": str(chunk.source_url),
-                        "timestamp_url": youtube_timestamp_url(
-                            str(chunk.source_url), chunk.start_seconds
-                        ),
-                        "start_seconds": chunk.start_seconds,
-                        "end_seconds": chunk.end_seconds,
-                        "chunk_index": chunk.chunk_index,
-                        "text": chunk.text,
-                    }
-                    for index, chunk in enumerate(run.retrieved_chunks, 1)
+                "references": [
+                    ref.model_dump(mode="json") if hasattr(ref, "model_dump") else ref
+                    for ref in run.references
                 ],
-                "recursion": run.recursion.model_dump(mode="json") if run.recursion else None,
-                "subtopics": [s.model_dump(mode="json") for s in run.subtopics],
             }
             for run in runs
         ],
-        "similarities": similarities,
     }
 
 

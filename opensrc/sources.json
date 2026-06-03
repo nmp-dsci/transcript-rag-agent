@@ -1,0 +1,7 @@
+[
+  { "repo": "langchain-ai/langchain", "version": "1.3.0" },
+  { "repo": "pydantic/pydantic", "version": "2.13.4" },
+  { "repo": "tiangolo/fastapi", "version": "0.136.1" },
+  { "repo": "langchain-ai/docs", "version": "" },
+  { "repo": "langchain-ai/langgraph", "version": "1.2.0" }
+]

@@ -9,11 +9,13 @@ from langchain_openai import ChatOpenAI
 
 from src.agents.context import RawTranscriptContextProvider
 from src.agents.models import (
+    AgentProgressEvent,
     QuestionRequest,
     RagQuestionRequest,
     RecursionOptions,
     SummaryRequest,
 )
+from src.agents.rag_agent import RagAgent
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.agents.transcript_agent import TranscriptAgent
 from src.config import ConfigError, load_settings
@@ -34,7 +36,10 @@ from src.observability import (
     log_transcript,
     log_transcript_filter_details,
 )
-from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
+from src.rag.context import (
+    MultiTranscriptRagContextProvider,
+    RagTranscriptContextProvider,
+)
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.eval import compare_answers, estimate_tokens
 from src.rag.indexing import RagIndexer
@@ -76,7 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     bulk = subparsers.add_parser("bulk-index", help="Discover and index many videos")
     bulk_subparsers = bulk.add_subparsers(dest="bulk_mode", required=True)
-    bulk_channel = bulk_subparsers.add_parser("channel", help="Index videos from a channel")
+    bulk_channel = bulk_subparsers.add_parser(
+        "channel", help="Index videos from a channel"
+    )
     bulk_channel.add_argument("--channel", required=True)
     channel_window = bulk_channel.add_mutually_exclusive_group()
     channel_window.add_argument("--latest", type=int)
@@ -85,7 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     bulk_channel.add_argument("--max-results", type=int, default=50)
     _add_bulk_common_args(bulk_channel)
 
-    bulk_search = bulk_subparsers.add_parser("search", help="Index YouTube search results")
+    bulk_search = bulk_subparsers.add_parser(
+        "search", help="Index YouTube search results"
+    )
     bulk_search.add_argument("--query", required=True)
     bulk_search.add_argument("--top-n", type=int, default=10)
     _add_bulk_common_args(bulk_search)
@@ -136,14 +145,48 @@ def build_parser() -> argparse.ArgumentParser:
     rag_ask.add_argument("--max-total-followups", type=int, default=None)
     rag_ask.add_argument("--show-followups", action="store_true")
     rag_ask.add_argument("--print-trace", action="store_true")
+    agent_group = rag_ask.add_mutually_exclusive_group()
+    agent_group.add_argument(
+        "--rag_agent",
+        dest="rag_agent",
+        action="store_true",
+        default=False,
+        help=(
+            "Use the agentic LangGraph RAG agent (rag_agent) instead of the "
+            "pipeline agent (rag_llm)."
+        ),
+    )
+    agent_group.add_argument(
+        "--rag_llm",
+        dest="rag_llm",
+        action="store_true",
+        default=False,
+        help=(
+            "Use the pipeline RAG agent (rag_llm). This is the default when "
+            "neither --rag_llm nor --rag_agent is passed."
+        ),
+    )
+    rag_ask.add_argument(
+        "--max-iterations",
+        type=int,
+        default=None,
+        help=(
+            "Max ReAct loop iterations for --rag_agent mode "
+            "(default: YT_AGENT_RAG_AGENT_MAX_ITERATIONS or 10)."
+        ),
+    )
 
     return parser
 
 
 def _add_bulk_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--skip-existing", dest="skip_existing", action="store_true", default=True)
-    parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
+    parser.add_argument(
+        "--skip-existing", dest="skip_existing", action="store_true", default=True
+    )
+    parser.add_argument(
+        "--no-skip-existing", dest="skip_existing", action="store_false"
+    )
     parser.add_argument("--refresh-summary", action="store_true")
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--label")
@@ -268,7 +311,9 @@ def main(argv: list[str] | None = None) -> int:
                 top_k = args.top_k or settings.rag_top_k
                 context_provider = raw_provider
                 if context_mode == "rag":
-                    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+                    embedding_model = HuggingFaceEmbeddingModel(
+                        settings.embedding_model
+                    )
                     chunk_store = TranscriptChunkStore(
                         settings.chroma_path,
                         embedding_model=embedding_model,
@@ -392,6 +437,8 @@ def main(argv: list[str] | None = None) -> int:
                         settings, embedding_model, raw_store
                     ),
                 )
+                if args.rag_agent:
+                    return _run_rag_agent(args, settings, context_provider, top_k)
                 agent = RagTranscriptAgent.from_settings(settings, context_provider)
                 filter_top_k = (
                     args.transcript_filter_top_k or settings.transcript_filter_top_k
@@ -485,6 +532,133 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
 
+# ANSI color cycle keyed by (iteration - 1) % 6. Iteration 1 -> bright cyan,
+# 2 -> bright yellow, 3 -> bright green, 4 -> bright magenta, 5 -> bright blue,
+# 6 -> bright white, then the cycle repeats (iteration 7 matches iteration 1).
+_ITERATION_COLORS = (
+    "\033[96m",  # bright cyan   (iteration 1)
+    "\033[93m",  # bright yellow (iteration 2)
+    "\033[92m",  # bright green  (iteration 3)
+    "\033[95m",  # bright magenta(iteration 4)
+    "\033[94m",  # bright blue   (iteration 5)
+    "\033[97m",  # bright white  (iteration 6)
+)
+_ANSI_RESET = "\033[0m"
+
+
+def _run_rag_agent(args, settings, context_provider, top_k: int) -> int:
+    max_iterations = (
+        args.max_iterations
+        if args.max_iterations is not None
+        else settings.rag_agent_max_iterations
+    )
+    agent = RagAgent.from_settings(settings, context_provider)
+    agent.max_iterations = max_iterations
+
+    is_tty = sys.stdout.isatty()
+    print("Researching...")
+    print("")
+    answer_header_state = {"printed": False}
+    on_event = _make_agent_progress_printer(is_tty, answer_header_state)
+    answer = agent.answer_streaming(
+        RagQuestionRequest(
+            question=args.question,
+            source_url=args.url,
+            top_k=top_k,
+            filter_transcripts=(args.filter_transcripts and args.url is None),
+        ),
+        on_event=on_event,
+    )
+    if not answer_header_state["printed"]:
+        # max_iterations may terminate the loop before an answer_start event.
+        print("")
+        print("Answer")
+    if agent.last_context is not None:
+        log_context_details(
+            context_mode=agent.last_context.context_mode,
+            top_k=agent.last_context.top_k,
+            retrieved_chunks=agent.last_context.retrieved_chunks,
+            rag_prompt_tokens_estimate=estimate_tokens(
+                agent.last_context.context_text or ""
+            ),
+        )
+    # The Answer / References body is only available from the streaming return
+    # value (the parsed RagTranscriptAnswer); the on_event callback already
+    # printed the blank line and the "Answer" header on the answer_start event.
+    print(_format_rag_agent_answer(answer))
+    print("")
+    print(f"Agent: {agent.last_iteration_count} iterations (rag_agent)")
+    return 0
+
+
+def _make_agent_progress_printer(is_tty: bool, header_state: dict):
+    """Build an on_event callback that prints streamed agent progress lines.
+
+    On a TTY each retrieval line is colored by its iteration cycle and the chunk
+    count overwrites the query line via a carriage return. On non-TTY stdout the
+    query and chunk count print as two plain lines with no ANSI codes. The
+    Answer / References / Agent footer lines never contain ANSI codes.
+    ``header_state`` records whether the Answer header was printed so the caller
+    can emit it if the loop terminates before an answer_start event.
+    """
+
+    def on_event(event: AgentProgressEvent) -> None:
+        if event.event_type == "retrieval_start":
+            line = f'[{event.iteration}] Retrieving: "{event.query}"'
+            if is_tty:
+                color = _color_for(event.iteration)
+                print(f"{color}{line}", end="", flush=True)
+            else:
+                print(line)
+        elif event.event_type == "retrieval_complete":
+            suffix = f"  →  {event.chunk_count} chunks"
+            if is_tty:
+                color = _color_for(event.iteration)
+                line = f'[{event.iteration}] Retrieving: "{event.query}"'
+                print(f"\r{color}{line}{suffix}{_ANSI_RESET}", flush=True)
+            else:
+                print(suffix.strip())
+        elif event.event_type == "answer_start":
+            # Blank line then the Answer header in the default terminal color.
+            print("")
+            print("Answer")
+            header_state["printed"] = True
+
+    return on_event
+
+
+def _color_for(iteration: int) -> str:
+    return _ITERATION_COLORS[(iteration - 1) % 6]
+
+
+def _format_rag_agent_answer(answer) -> str:
+    """Format the agent's Answer / References body with no ANSI codes.
+
+    Matches the existing rag-ask reference format. The "Answer" header is
+    emitted by the on_event answer_start handler, so this returns only the
+    answer text and the References block.
+    """
+    lines = [answer.answer]
+    if answer.references:
+        lines.extend(["", "References"])
+        for reference in answer.references:
+            start = (
+                "unknown"
+                if reference.start_seconds is None
+                else str(int(reference.start_seconds))
+            )
+            end = (
+                "unknown"
+                if reference.end_seconds is None
+                else str(int(reference.end_seconds))
+            )
+            lines.append(
+                f"{reference.label} {reference.timestamp_url} "
+                f"{start}-{end}s video={reference.video_id}"
+            )
+    return "\n".join(lines)
+
+
 def _log_last_context(agent: TranscriptAgent, settings) -> None:
     if agent.last_context is None:
         return
@@ -559,11 +733,7 @@ def _format_rag_answer(
     if selected_transcripts:
         lines.append("Selected transcripts")
         for index, transcript in enumerate(selected_transcripts, 1):
-            score = (
-                "unknown"
-                if transcript.score is None
-                else f"{transcript.score:.3f}"
-            )
+            score = "unknown" if transcript.score is None else f"{transcript.score:.3f}"
             lines.append(
                 f"{index}. score={score} video={transcript.video_id} "
                 f"url={transcript.source_url}"
@@ -592,8 +762,7 @@ def _format_rag_answer(
         lines.extend(["", "Proposed follow-ups"])
         for index, subtopic in enumerate(answer.subtopics, 1):
             lines.append(
-                f"{index}. {subtopic.topic} "
-                f"(confidence {subtopic.confidence:.2f})"
+                f"{index}. {subtopic.topic} (confidence {subtopic.confidence:.2f})"
             )
             lines.append(f'   query: "{subtopic.followup_query}"')
     if answer.recursion is not None:
@@ -650,7 +819,9 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
             use_cache=not args.no_discovery_cache,
         )
         if mode == "channel":
-            if args.latest is not None and (args.since is not None or args.until is not None):
+            if args.latest is not None and (
+                args.since is not None or args.until is not None
+            ):
                 raise ValueError("--latest cannot be combined with --since or --until")
             if args.latest is None and args.since is None and args.until is None:
                 raise ValueError("channel mode requires --latest, --since, or --until")
@@ -688,10 +859,9 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
         record = candidate_record(video)
         started = __import__("time").monotonic()
         try:
-            fully_indexed = (
-                raw_store.get_raw_document(video.video_id) is not None
-                and chunk_store.has_chunks(video.video_id)
-            )
+            fully_indexed = raw_store.get_raw_document(
+                video.video_id
+            ) is not None and chunk_store.has_chunks(video.video_id)
             if args.dry_run:
                 record.outcome = "discovered"
                 record.chunk_count = chunk_store.count_chunks(video.video_id)
@@ -711,8 +881,12 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
                 )
                 record.chunk_count = len(result.chunks)
                 record.title = result.raw_document.title or record.title
-                record.channel_name = result.raw_document.channel_name or record.channel_name
-                record.published_at = result.raw_document.upload_date or record.published_at
+                record.channel_name = (
+                    result.raw_document.channel_name or record.channel_name
+                )
+                record.published_at = (
+                    result.raw_document.upload_date or record.published_at
+                )
         except Exception as exc:  # per-candidate failure should not abort the run
             record.outcome = "failed"
             record.error = str(exc)
