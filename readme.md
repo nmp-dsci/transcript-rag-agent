@@ -62,9 +62,111 @@ Recursion env vars are used only when recursive mode is effectively on via `--re
 
 `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (default `10`) is read only when the agentic RAG agent is used via `rag-ask --rag_agent`. It is the hard cap on the LangGraph ReAct loop and can be overridden per-run with `--max-iterations`. It has no effect on any other path.
 
+### Interactive Chat
+
+The recommended entry point is the menu-driven chat. It wraps the same agents
+the individual commands use, captures every question and answer, and renders a
+WhatsApp-style transcript you can browse in the dashboard.
+
+```bash
+uv run python -m src.cli chat
+```
+
+#### Main menu
+
+On launch you get a top-level menu and pick one action by typing its key:
+
+```text
+Main menu:
+  [1] Ask a question
+  [2] Fetch / index a new URL
+  [q] Quit
+Choose:
+```
+
+`q` (or `quit`/`exit`, or Ctrl-D) leaves the session. After each action the
+menu reappears so you can keep going.
+
+#### [1] Ask a question
+
+The ask flow has three prompts:
+
+1. **Question** — the question to ask the indexed corpus.
+2. **Restrict to a single video URL** — optional. Leave blank to search every
+   indexed transcript, or paste one video URL to confine retrieval to it.
+3. **RAG setup(s)** — pick one setup, several (e.g. `1,3`), or `a` for all to
+   answer the same question every way and compare:
+
+   ```text
+   RAG setups:
+     [1] rag_llm (single-hop) — One retrieval across all indexed transcripts, then a single LLM answer.
+     [2] rag_llm (recursive)  — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
+     [3] rag_agent (agentic)  — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
+     [a] all (compare every setup)
+   Choose setup(s) (e.g. 1,3 or a; blank to cancel):
+   ```
+
+The selected setups run in order (the retrieval stack loads once, on the first
+question of the session). Each answer is appended to the chat history and the
+`chat.html` view is regenerated. Example session:
+
+```text
+Choose: 1
+Question: Is the Gold Coast property market at risk of collapse, and why?
+Restrict to a single video URL (optional, blank for all):
+Choose setup(s) (e.g. 1,3 or a; blank to cancel): a
+  Running rag_llm (single-hop) ...
+  Running rag_llm (recursive) ...
+  Running rag_agent (agentic) ...
+
+Captured 3 answer(s) for: q-20260616-005733-5393
+  - rag_llm (single-hop): 776 chars (18.44s)
+  - rag_llm (recursive): 2533 chars (17.25s)
+  - rag_agent (agentic): 11533 chars (34.59s)
+Updated dashboard/chat.html — open it to read the conversation.
+```
+
+#### [2] Fetch / index a new URL
+
+The fetch flow first asks whether to index a single video or a whole channel:
+
+```text
+Fetch a new URL:
+  [1] Single video URL
+  [2] Bulk (whole channel)
+Choose:
+```
+
+- **[1] Single video URL** — prompts for one `Video URL:` and runs the same
+  pipeline as `index-rag <url>`.
+- **[2] Bulk (whole channel)** — prompts for a `Channel (URL or @handle):` and
+  `How many latest videos? [5]:`, then runs `bulk-index channel --channel <c>
+  --latest <n>`.
+
+Both paths reuse the documented indexing commands below, so newly indexed
+transcripts are immediately available to the ask flow.
+
+#### Browsing the conversation
+
+Each answered question is appended to `dashboard/chat_history.json` and the
+`dashboard/chat.html` view is regenerated. Open it to read conversations:
+
+```text
+dashboard/chat.html
+```
+
+The left sidebar lists every question with its time and id (newest first);
+clicking one loads that conversation in the main panel — your question as an
+outgoing bubble, then one incoming bubble per RAG setup, each headed by the
+setup name with the answer, retrieval metadata, references, and the equivalent
+`rag-ask` command below it. Because the history and view regenerate after every
+question, you can keep `chat.html` open and just refresh.
+
 ### Command Sequence
 
-Run commands from the project root after `uv sync` and env setup.
+The chat menu above is the recommended entry point. The individual commands
+below are the underlying building blocks it calls; run them from the project
+root after `uv sync` and env setup.
 
 Set a reusable URL and question:
 
@@ -486,11 +588,16 @@ Generated review artifacts live under:
 dashboard/
   evaluation.html
   evaluation.json
+  chat.html             # WhatsApp-style view of interactive chat Q&A
+  chat_history.json     # captured interactive chat questions and per-setup answers
   rag_pipeline.html
   chunk_space/
     projection.json     # PCA projection (chunk coords, components, mean) — committed
     question.json       # canonical question + nearest chunks — committed
 ```
+
+`chat.html` and `chat_history.json` are produced by `src.cli chat`. They capture
+ad-hoc interactive questions, so they are not committed by default.
 
 `evaluation.html` compares answers for a question. `rag_pipeline.html` is a tabbed dashboard that reviews indexed transcripts, summaries, summary encodings, chunk inventory, ingestion history when run records exist, and the chunk-embedding scatter plot. The `chunk_space/` artifacts are committed so a fresh clone renders the Chunk Space tab without re-running ingestion.
 

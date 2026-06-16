@@ -99,6 +99,11 @@ def build_parser() -> argparse.ArgumentParser:
     bulk_search.add_argument("--top-n", type=int, default=10)
     _add_bulk_common_args(bulk_search)
 
+    subparsers.add_parser(
+        "chat",
+        help="Interactive menu: ask questions across RAG setups or fetch new URLs",
+    )
+
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
 
@@ -206,6 +211,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         settings = load_settings(require_keys=True)
+        if args.command == "chat":
+            from src.chat.session import run_session
+
+            return run_session(settings)
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):
