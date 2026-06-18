@@ -39,6 +39,22 @@ def test_render_handles_empty_history() -> None:
     assert '"conversations"' in html
 
 
+def test_render_ships_readability_renderer() -> None:
+    # The page renders answers client-side; assert the readability features and
+    # their styling are present in the generated document.
+    html = render_chat_html([_entry()])
+    for marker in [
+        "function cleanAnswer",  # strips embedded JSON / preamble noise
+        "function extractJsonAnswer",  # prefers the canonical JSON answer field
+        "function renderAnswer",  # markdown -> headings/lists/paragraphs
+        "function toggleClamp",  # progressive disclosure
+        ".ans-section.summary",  # Key Findings callout styling
+        "a.cite",  # clickable inline citation styling
+        ".body.clamp",  # long-answer clamp styling
+    ]:
+        assert marker in html, marker
+
+
 def test_write_chat_html_creates_file(tmp_path) -> None:
     path = tmp_path / "out" / "chat.html"
     written = write_chat_html([_entry()], path)

@@ -49,24 +49,50 @@ display:flex;gap:12px;flex-wrap:wrap}
 .bubble{max-width:78%;padding:10px 12px;border-radius:10px;font-size:14px;
 line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.25)}
 .out{align-self:flex-end;background:#005c4b;border-bottom-right-radius:2px}
-.in{align-self:flex-start;background:#202c33;border-bottom-left-radius:2px;max-width:82%}
+.in{align-self:flex-start;background:#202c33;border-bottom-left-radius:2px;max-width:88%}
 .in .setup{font-weight:700;color:#00a884;font-size:13px;margin-bottom:6px;
 display:flex;align-items:center;gap:8px}
 .in .setup .key{font-family:ui-monospace,Menlo,monospace;font-size:11px;
 color:#8696a0;font-weight:400}
-.body{white-space:pre-wrap;word-wrap:break-word}
-.body .md-h{display:inline;font-weight:700;color:#aee6d6}
+.body{word-wrap:break-word;font-size:14px;line-height:1.55}
+.body p{margin:8px 0}
+.body p:first-child{margin-top:0}
 .body strong{color:#f3f6f8}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.body h3.ans-h,.body h4.ans-h,.body h5.ans-h{margin:14px 0 6px;color:#aee6d6;
+font-weight:700;line-height:1.3;font-size:14px}
+.body h3.ans-h{font-size:15px}
+.body h3.ans-h:first-child,.body h4.ans-h:first-child{margin-top:0}
+.body ol,.body ul{margin:6px 0;padding-left:22px}
+.body li{margin:5px 0}
+.ans-section{margin:10px 0}
+.ans-section.summary{background:rgba(0,168,132,.10);border-left:3px solid #00a884;
+padding:8px 13px 5px;border-radius:6px;margin:8px 0 14px}
+.ans-section.summary .ans-h{margin-top:2px;color:#7ff0d4}
+a.cite{display:inline-block;font-size:10px;line-height:1;vertical-align:super;
+background:#0b3b33;color:#7ff0d4;border:1px solid #155f53;border-radius:4px;
+padding:1px 4px;margin:0 1px;text-decoration:none}
+a.cite:hover{background:#155f53;color:#d9fdd3}
+.cite-missing{display:inline-block;font-size:10px;line-height:1;vertical-align:super;
+background:#2a3942;color:#8696a0;border-radius:4px;padding:1px 4px;margin:0 1px}
+.body.clamp{max-height:340px;overflow:hidden;
+-webkit-mask-image:linear-gradient(180deg,#000 72%,transparent);
+mask-image:linear-gradient(180deg,#000 72%,transparent)}
+.body.clamp.expanded{max-height:none;-webkit-mask-image:none;mask-image:none}
+.more{background:none;border:none;color:#53bdeb;cursor:pointer;
+padding:6px 0 0;font-size:12px;font-weight:600}
+.more:hover{text-decoration:underline}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .chip{background:#0b141a;border:1px solid #2a3942;color:#8696a0;
 border-radius:8px;padding:2px 7px;font-size:11px;font-family:ui-monospace,Menlo,monospace}
 .error{color:#f5a3a3}
-details.refs{margin-top:8px;background:#0b141a;border:1px solid #2a3942;border-radius:8px;padding:6px 10px}
+details.refs{margin-top:10px;background:#0b141a;border:1px solid #2a3942;border-radius:8px;padding:6px 10px}
 details.refs summary{cursor:pointer;color:#8696a0;font-size:12px}
-details.refs ul{margin:8px 0 2px;padding-left:18px}
-details.refs li{font-size:12px;margin:3px 0}
+details.refs ul{margin:8px 0 2px;padding-left:6px;list-style:none}
+details.refs li{font-size:12px;margin:5px 0;display:flex;gap:8px;align-items:baseline}
 details.refs a{color:#53bdeb;text-decoration:none}
-details.refs .vid{font-family:ui-monospace,Menlo,monospace;color:#5b6b75;margin-left:6px}
+details.refs a:hover{text-decoration:underline}
+details.refs .rnum{font-family:ui-monospace,Menlo,monospace;color:#7ff0d4;flex:0 0 auto}
+details.refs .vid{font-family:ui-monospace,Menlo,monospace;color:#5b6b75}
 details.cmd{margin-top:6px}
 details.cmd summary{cursor:pointer;color:#8696a0;font-size:11px}
 details.cmd pre{margin:6px 0 0;background:#0b141a;border:1px solid #2a3942;
@@ -81,10 +107,124 @@ function escapeHtml(s){
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-function mdLite(text){
-  let html = escapeHtml(text);
-  html = html.replace(/^\s{0,3}(#{1,6})\s+(.*)$/gm, (m,h,t)=>'<span class="md-h">'+t+'</span>');
-  html = html.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+// The agent sometimes wraps its answer in a JSON payload (trailing, or inside a
+// ```json fence). When present, that object's "answer" field is the canonical
+// markdown answer, so prefer it and drop the surrounding prose/preamble/fences.
+function extractJsonAnswer(t){
+  const m = t.match(/\{\s*"(?:question|answer|references)"\s*:/);
+  if(!m) return null;
+  const start = m.index;
+  let depth = 0, inStr = false, esc = false;
+  for(let i = start; i < t.length; i++){
+    const ch = t[i];
+    if(inStr){
+      if(esc) esc = false;
+      else if(ch === '\\') esc = true;
+      else if(ch === '"') inStr = false;
+      continue;
+    }
+    if(ch === '"'){ inStr = true; continue; }
+    if(ch === '{') depth++;
+    else if(ch === '}'){
+      depth--;
+      if(depth === 0){
+        try {
+          const obj = JSON.parse(t.slice(start, i + 1));
+          return obj && typeof obj.answer === 'string' ? obj.answer : null;
+        } catch(e){ return null; }
+      }
+    }
+  }
+  return null;
+}
+// Strip agent noise: prefer the embedded JSON "answer", else drop a trailing
+// payload, code fences, and a short meta preamble before the first heading.
+function cleanAnswer(text){
+  let t = String(text == null ? '' : text);
+  const fromJson = extractJsonAnswer(t);
+  if(fromJson != null && fromJson.trim()) return fromJson.trim();
+  const jsonIdx = t.search(/\n\s*(?:```json\s*)?\{\s*"(question|answer|references)"\s*:/);
+  if(jsonIdx !== -1) t = t.slice(0, jsonIdx);
+  t = t.replace(/```[a-z]*\s*$/i, '').trim();
+  t = t.replace(
+    /^\s*[^#\n][^\n]*\n+(?=#|```)/,
+    (m)=> /\b(evidence|comprehensive|here(?:'s| is)|based on|let me|i'?ll|i will|sufficient|i now have|compile|gathered)\b/i.test(m) ? '' : m
+  );
+  return t.replace(/```[a-z]*\s*$/i, '').trim();
+}
+function fmtSeconds(s){
+  if(s == null) return '';
+  s = Math.floor(s);
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+// Map citation number -> reference object, keyed by the digits in each label.
+function buildRefMap(refs){
+  const map = {};
+  (refs||[]).forEach(r=>{
+    const m = String(r.label||'').match(/\d+/);
+    if(m) map[m[0]] = r;
+  });
+  return map;
+}
+// Inline formatting: escape, bold, and turn [n] citations into linked chips.
+function inline(s, refMap){
+  let out = escapeHtml(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  out = out.replace(/\[(\d+)\]/g, (m,n)=>{
+    const ref = refMap[n];
+    if(ref){
+      const url = escapeHtml(ref.timestamp_url || ref.source_url || '#');
+      return '<a class="cite" href="'+url+'" target="_blank" title="Open source at timestamp">'+n+'</a>';
+    }
+    return '<span class="cite-missing">'+n+'</span>';
+  });
+  return out;
+}
+// Paragraphs and ordered/unordered lists (headings handled by parseSections).
+function renderBlocks(text, refMap){
+  const lines = String(text||'').split('\n');
+  let html = '', list = null, para = [];
+  const flushPara = ()=>{ if(para.length){ html += '<p>'+inline(para.join(' '),refMap)+'</p>'; para = []; } };
+  const closeList = ()=>{ if(list){ html += '</'+list+'>'; list = null; } };
+  for(const raw of lines){
+    const line = raw.replace(/\s+$/,'');
+    if(!line.trim()){ flushPara(); continue; }
+    let m;
+    if(m = line.match(/^\s*\d+\.\s+(.*)$/)){
+      flushPara(); if(list!=='ol'){ closeList(); html+='<ol>'; list='ol'; }
+      html += '<li>'+inline(m[1],refMap)+'</li>'; continue;
+    }
+    if(m = line.match(/^\s*[-*]\s+(.*)$/)){
+      flushPara(); if(list!=='ul'){ closeList(); html+='<ul>'; list='ul'; }
+      html += '<li>'+inline(m[1],refMap)+'</li>'; continue;
+    }
+    closeList(); para.push(line.trim());
+  }
+  flushPara(); closeList();
+  return html;
+}
+function parseSections(text){
+  const intro = [], sections = [];
+  let cur = null;
+  for(const line of String(text||'').split('\n')){
+    const m = line.match(/^(#{1,6})\s+(.*)$/);
+    if(m){ cur = {level:m[1].length, title:m[2], body:[]}; sections.push(cur); }
+    else if(cur){ cur.body.push(line); }
+    else { intro.push(line); }
+  }
+  return {intro: intro.join('\n'), sections};
+}
+function renderAnswer(text, refs){
+  const refMap = buildRefMap(refs);
+  const {intro, sections} = parseSections(text);
+  let html = renderBlocks(intro, refMap);
+  for(const s of sections){
+    const highlight = /key findings|summary|tl;?dr|bottom line|takeaways?/i.test(s.title);
+    const tag = 'h'+Math.min(s.level+1, 5);
+    html += '<section class="ans-section'+(highlight?' summary':'')+'">'
+      +'<'+tag+' class="ans-h">'+inline(s.title, refMap)+'</'+tag+'>'
+      +renderBlocks(s.body.join('\n'), refMap)
+      +'</section>';
+  }
   return html;
 }
 function fmtTime(iso){
@@ -106,18 +246,29 @@ function renderRefs(refs){
   if(!refs || !refs.length) return '';
   const items = refs.map(r=>{
     const url = escapeHtml(r.timestamp_url || r.source_url || '#');
-    const label = escapeHtml(r.label || 'open at timestamp');
+    const label = escapeHtml(r.label || '[?]');
+    const at = r.start_seconds != null ? ' at '+fmtSeconds(r.start_seconds) : '';
     const vid = escapeHtml(r.video_id || '');
-    return '<li><a href="'+url+'" target="_blank">'+label+'</a><span class="vid">'+vid+'</span></li>';
+    return '<li><span class="rnum">'+label+'</span>'
+      +'<a href="'+url+'" target="_blank">open'+escapeHtml(at)+'</a>'
+      +'<span class="vid">'+vid+'</span></li>';
   }).join('');
-  return '<details class="refs"><summary>References ('+refs.length+')</summary><ul>'+items+'</ul></details>';
+  return '<details class="refs"><summary>Sources ('+refs.length+')</summary><ul>'+items+'</ul></details>';
+}
+function toggleClamp(btn){
+  const body = btn.previousElementSibling;
+  const expanded = body.classList.toggle('expanded');
+  btn.textContent = expanded ? 'Show less ▴' : 'Show full answer ▾';
 }
 function answerBubble(a){
   let inner = '<div class="setup">'+escapeHtml(a.title)+'<span class="key">'+escapeHtml(a.key)+'</span></div>';
   if(a.error){
     inner += '<div class="body error">Error: '+escapeHtml(a.error)+'</div>';
   } else {
-    inner += '<div class="body">'+mdLite(a.answer)+'</div>';
+    const cleaned = cleanAnswer(a.answer);
+    const long = cleaned.length > 1400;
+    inner += '<div class="body'+(long?' clamp':'')+'">'+renderAnswer(cleaned, a.references)+'</div>';
+    if(long) inner += '<button class="more" onclick="toggleClamp(this)">Show full answer ▾</button>';
     inner += metaChips(a);
     inner += renderRefs(a.references);
   }

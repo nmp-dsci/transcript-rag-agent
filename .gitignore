@@ -10,10 +10,6 @@ evaluation/*
 !evaluation/evaluation.html
 !evaluation/evaluation.json
 
-# Interactive chat artifacts (ad-hoc personal Q&A)
-dashboard/chat.html
-dashboard/chat_history.json
-
 opensrc/*/
 !opensrc/setup_opensrc.sh
 !opensrc/sources.json

@@ -596,8 +596,8 @@ dashboard/
     question.json       # canonical question + nearest chunks — committed
 ```
 
-`chat.html` and `chat_history.json` are produced by `src.cli chat`. They capture
-ad-hoc interactive questions, so they are not committed by default.
+`chat.html` and `chat_history.json` are produced by `src.cli chat` and capture
+interactive questions and their per-setup answers.
 
 `evaluation.html` compares answers for a question. `rag_pipeline.html` is a tabbed dashboard that reviews indexed transcripts, summaries, summary encodings, chunk inventory, ingestion history when run records exist, and the chunk-embedding scatter plot. The `chunk_space/` artifacts are committed so a fresh clone renders the Chunk Space tab without re-running ingestion.
 
