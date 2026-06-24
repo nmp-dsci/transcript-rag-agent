@@ -454,6 +454,119 @@
           "error": null
         }
       ]
+    },
+    {
+      "id": "q-20260621-052042-f258",
+      "question": "Describe the Agenticy Engineering Workflow every step what it leverages, I want to be able to take the output of this and recreate it in my setup / terminal so output that could enter .md file would be greate",
+      "url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+      "asked_at": "2026-06-21T05:20:42.256712+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=iQyg-KypKAA\"",
+          "answer": "## Key Findings\n\n1. The Agentic Engineering Workflow by Kun (L8 Principal Engineer, ex-Meta/Microsoft/Atlassian) treats the engineer as a **captain** who assembles a ship (terminal), recruits crew mates (AI agents), and scales through memory files, skills, and orchestration tools \u2014 shipping 40\u201350 production PRs per day [1][9][2].\n2. **Memory files** (global `agents.md` and project-level `CLAUDE.md`) are supplemented by **Skills** (progressive disclosure files) that keep the system prompt lean; conditionally useful knowledge is extracted from memory into skills to save tokens [3][4][10].\n3. **Lavish** (an AXI tool) replaces walls of text with an interactive HTML editor for the planning phase, letting the captain visually review prototypes, annotate, and click decisions without leaving the browser [5][7].\n4. **No Mistakes** is a free, open-source pipeline that takes first-pass agent code through intent analysis, rebase, adversarial review in a fresh context, E2E testing with recorded evidence, documentation pass, lint checks, and PR babysitting \u2014 all in an isolated work tree [6][7][8].\n5. **Good Night Have Fun** is an open-source tool for long-running autonomous loops (e.g., overnight testing/fixing) with configurable token caps, iteration caps, and stop conditions [8][9].\n6. **Treehouse** manages git work trees so multiple parallel agent sessions can run without conflicts, auto-recycling idle work trees [9][10].\n7. **First Mate** is the final layer of orchestration: a meta-agent you talk to that spins up parallel crew mates across multiple repos, runs Treehouse for isolation, executes No Mistakes for validation, and manages context switching for you [7][8][10].\n8. **AXI** is a set of 10 design standards for agent-first tool ergonomics (e.g., token-efficient output formats save ~40% tokens vs JSON); AXI-built tools like GitHub AXI and Chrome DevTools AXI outperform MCP servers by 3x cost and 2x latency [5][10].\n9. The entire workflow is **agent-agnostic** \u2014 it works with Claude Code, Codex CLI, Goose, or Open Code \u2014 and uses **Open Super Whisper** for local voice input (3x faster than typing per Stanford research) [2][4][5].\n\n---\n\n# The Agentic Engineering Workflow \u2014 Full Setup Guide\n\n> **Source:** YouTube video by Kun (L8 Principal Engineer, ex-Meta/Microsoft/Atlassian)\n> Video: `iQyg-KypKAA`\n\n---\n\n## Finding 1: Assemble Your Ship \u2014 Terminal & Core Setup\n\nThe workflow is built on a **terminal-first architecture** to keep hands on keyboard and enable the same setup everywhere (including phone) [3][8].\n\n### Stack\n- **Terminal Emulator:** [Wezterm](https://github.com/wez/wezterm) \u2014 cross-platform (Mac/Win/Linux), Lua-configurable, hot-reloads config on save [3][8].\n- **Terminal Multiplexer:** [Tmux](https://github.com/tmux/tmux) \u2014 manages parallel sessions with a tab bar and metadata. Must be configured with keybinds and styling [3][8].\n- **Text Editor:** [Neovim](https://neovim.io/) \u2014 Vim-based, hands-on-keyboard editing, file search via `Space+f` [3][8].\n\n### Agent Harnesses (pick one \u2014 workflow is agnostic) [4][5]\n- **Claude Code** \u2014 Best default experience, rich feature set, slightly buggy [4][5].\n- **Codex CLI** \u2014 Written in Rust, smoother, open-source, less customizable [4][5].\n- **Goose** \u2014 Minimal, highly extensible [4][5].\n- **Open Code** \u2014 Buttery-smooth TUI, model-agnostic, great out-of-box feature set [4][5].\n\n### Setup commands (recreate in your terminal):\n\n```bash\n# --- Terminal & Multiplexer ---\n# Install Wezterm: https://github.com/wez/wezterm/releases\n# Install Tmux: brew install tmux (mac) / apt install tmux (linux)\n\n# --- Neovim ---\n# Install: https://github.com/neovim/neovim\n\n# --- Agent Harness (pick one) ---\n# Claude Code: https://docs.anthropic.com/en/docs/claude-code/overview\n# OR Open Code: https://github.com/sst/opencode\n# OR Codex CLI: https://github.com/openai/codex\n```\n\n---\n\n## Finding 2: Recruit & Ramp Up Crew Mates \u2014 Memory Files\n\nFresh agent instances are like new recruits \u2014 they need onboarding. This is done through **memory files** (not fancy vector DBs, just markdown) [4][10].\n\n### Global Memory File (`agents.md`)\n- Loaded into every single agent session across all projects [4][10].\n- Keep it minimal (~27 lines) to avoid silently consuming tokens on every request [4][10].\n- Stores personal preferences like \"never use &mdash;\" and \"when making technical decisions, don't give too much weight to development cost\" [4][10].\n\n### Project-Level Memory File (`CLAUDE.md` or `agents.md`)\n- Collective learning of all agent sessions on this project [3][10].\n- Contains: project context, repo layout, terminology, how important components work, E2E testing instructions, conventions [3][10].\n- **Built incrementally:** every time the agent does something wrong, correct it and ask it to \"store this learning into the memory file\" \u2014 over time crew mates get smarter [3][10].\n\n### Symbolic Link Trick (for agent-agnostic setup)\n\n```bash\n# Make both Claude Code and other agents share the same memory file\nln -s CLAUDE.md agents.md\n```\n\nThis way both `CLAUDE.md` (Claude Code) and `agents.md` (other harnesses) point to the same file [4][10].\n\n---\n\n## Finding 3: Skills \u2014 Progressive Disclosure for Token Efficiency\n\nSkills are the upgrade from bloated memory files. They use **progressive disclosure**: only the small description field loads into the system prompt at startup; the full content loads only when the agent decides to use that skill [3][10].\n\n### How to Install Skills\n\n```bash\n# Install the Skill Creator (by Anthropic) \u2014 teaches agents how to create skills\n# Uses the `npx skills` CLI from Vercel\nnpx skills <skill-name>\n```\n\nOnce installed, your agent can follow rules and create new skills for you [4][10].\n\n### Converting Memory into Skills\n\nWhen memory files grow bloated, extract conditionally-useful sections into skills:\n> \"Let's extract the end-to-end testing instructions in our agents.md file into a project level skill.\" [3][4]\n\nThis removes large chunks from the memory file and keeps the system prompt lean \u2014 the skill only loads when the agent is making changes, not when answering questions [3][10].\n\n### \u26a0\ufe0f Security Warning\n\nDo **not** install random skills from the internet. Even repos with 177k GitHub stars can degrade performance (5% more tokens, worse results) and skills can instruct your agent to leak API keys or credentials [8][10].\n\n---\n\n## Finding 4: Voice Input \u2014 Open Super Whisper\n\nAll prompts are done via **voice** \u2014 Stanford research shows talking is 3x faster than typing [2][5].\n\n```bash\n# Install Open Super Whisper (free, open-source, runs locally)\n# https://github.com/nicedoc/open-super-whisper\n```\n\n- Runs the Whisper model locally on your machine [5][10].\n- Quality is excellent; only fall back to typing for URLs or file paths [5][10].\n- For custom vocabulary (project names, technical terms), set an **initial prompt** in the transcription settings menu [5][10].\n\n---\n\n## Finding 5: The Planning Phase \u2014 Lavish (Rich HTML Editor)\n\nInstead of getting a wall of text back from the agent, **Lavish** (an AXI skill) instructs the agent to create an interactive HTML artifact that uses the project's actual design system [5][7].\n\n### What Lavish provides:\n- Visual prototype of options that matches the app's look and feel [5][7]\n- Annotate and comment on specific parts of the artifact [5][7]\n- Clickable decision buttons at the bottom to choose between options [5][7]\n- Feedback is sent back to the agent directly from the Lavish editor \u2014 no need to return to terminal [5][7]\n\n> \"Honestly, I can never go back to reading text in the terminal anymore. This is just way too much more efficient.\" [7]\n\n### How to use:\nInstall the Lavish AXI skill from [axi.md](https://axi.md) catalog. The agent will auto-detect when to use it for planning [5][7].\n\n---\n\n## Finding 6: The Implementation Phase \u2014 Hands-Off Autonomy\n\nOnce planning is complete, the workflow is **fire-and-forget**:\n\n> \"Because we already clarified all the requirements in the planning phase, I typically don't need to interfere at all during this implementation phase. I only come back to this when the agent has done.\" [7]\n\nTell the agent \"start building\" and end the session. The agent works autonomously in the background [7].\n\n---\n\n## Finding 7: The No Mistakes Pipeline \u2014 Automated PR Quality Gate\n\nWhen the agent says it's done, **do not review the diff manually**. That creates a bottleneck (you can only review so many diffs per day). Instead, send the change through **No Mistakes** \u2014 a free, open-source pipeline [6][7][8].\n\n### Pipeline Steps (all in an isolated work tree) [6][7][8]:\n\n1. **Create branch & commit** \u2014 if no branch exists yet\n2. **Understand intent** \u2014 analyzes the agent session to understand the real goal\n3. **Rebase** \u2014 rebases onto latest `main` from remote origin, resolves merge conflicts upfront\n4. **Adversarial review** \u2014 runs in a fresh context window; obvious problems self-correct, ambiguous ones with product implications are escalated to human\n5. **E2E test against intent** \u2014 records evidence (screenshot, video, log file) proving the change works\n6. **Documentation pass** \u2014 updates all relevant docs to reflect the change\n7. **Lint check** \u2014 ensures no linking problems\n8. **Push branch & raise PR** \u2014 pushes to remote and creates a PR\n9. **Babysit the PR** \u2014 continues monitoring for merge conflicts and CI failures until merged\n\n### Triggering No Mistakes:\n- As a skill: just type `no mistakes` in the agent [6]\n- Automatically via First Mate [7]\n\n### Reviewing the Output:\nThe PR includes: summarized original intent, what changed, how it's tested, evidence from testing, and a **risk assessment**. For low-risk changes, skip the diff entirely \u2014 any problem is already caught by the pipeline. Only invest time on high-risk changes [6][8].\n\n---\n\n## Finding 8: Good Night Have Fun \u2014 Long-Running Autonomous Loops\n\nFor overnight or extended background work, use **Good Night Have Fun** (free, open-source). It keeps agents running in a loop until a stop condition is met [8][9].\n\n```bash\n# Run in your repo\ngood-night-have-fun \"Pretend you are a seven-year-old kid and use the app end to end. Find the first usability problem, fix it, then rinse and repeat.\"\n```\n\n### Features:\n- Monitor token usage and iteration count (shown as moon icons) [8][9]\n- Set precise token cap, iteration cap, or custom stop condition [8][9]\n- When you wake up, review a list of commits on a new branch and cherry-pick what you want [8][9]\n\n### Best for verifiable objectives:\n- Reducing page load time\n- Improving E2E test coverage\n- Running experiments to improve a metric\n- Automated usability testing [8][9]\n\n---\n\n## Finding 9: Treehouse \u2014 Git Work Tree Manager for Parallel Agents\n\nWhen running multiple agents on the same repo, they'll conflict. Git work trees are the solution, but managing them manually is overhead. **Treehouse** automates this [9][10].\n\n```bash\n# Inside your repo\ntreehouse          # Drops you into a fresh work tree\ntreehouse status   # Shows which work trees are in use vs idle\n# Close the tab when done \u2014 treehouse auto-recycles it\n```\n\nTreehouse creates isolated directories, reuses idle work trees for new sessions, and frees them when tabs are closed [9][10].\n\n### Workflow with parallel agents:\n\n```bash\n# Tab 1: Good Night Have Fun running in original repo\ntmux new -s session1\ncd my-repo\ngood-night-have-fun \"...\"\n\n# Tab 2: New feature in separate work tree\ntmux new -s session2\ncd my-repo\ntreehouse          # Creates isolated work tree\nclaude             # Launch agent here \u2014 won't conflict with Tab 1\n\n# Tab 3: Bug fix in another work tree\ntmux new -s session3\ncd my-repo\ntreehouse\nclaude             # Another isolated agent session\n```\n\n---\n\n## Finding 10: AXI \u2014 Agent-First Tool Design Standards\n\n**AXI** is a set of 10 design principles authored by Kun for building tools that treat agents as first-class citizens. It optimizes for **agent ergonomics** [5][10].\n\n### Key finding:\nUsing GitHub MCP server costs 3x more tokens and 2x more latency than using the GitHub CLI (COI). AXI-built tools perform best [5][10].\n\n### Available AXI tools:\n- **GitHub AXI** \u2014 lowest cost, highest success rate for GitHub operations [5][10]\n- **Chrome DevTools AXI** \u2014 fewer turns and less tokens vs other browser tools [5][10]\n- **Lavish AXI** \u2014 the planning/design tool [5][10]\n\n### Find AXI tools:\n```\nhttps://axi.md\n```\n\nBrowse the catalog and follow repo instructions to install [5][10].\n\n---\n\n## Finding 11: First Mate \u2014 The Orchestrator / Meta-Agent\n\nWhen managing 10+ parallel agent sessions becomes exhausting, level up to **First Mate** \u2014 a free, open-source meta-agent you talk to as the captain. It manages all crew mates for you [7][8][10].\n\n### How to use:\n\n```bash\n# Clone the First Mate repo and run an agent inside it\ngit clone https://github.com/<first-mate-repo>\ncd first-mate\nclaude   # or codex, opencode, etc.\n```\n\nThen just talk to it naturally:\n> \"I'd like to work on Lavish AXI, GitHub AXI and Chrome DevTools AXI. For all three projects, add an update command that will update their version to the latest on npm.\"\n\n### What First Mate does automatically [7][8]:\n1. Recognizes this is 3 parallel tasks, not 1\n2. Spins up tabs in Tmux behind the scenes\n3. Calls Treehouse to create isolated work trees for each\n4. Runs an agent in each work tree to do the work\n5. Runs No Mistakes to validate each change\n6. Gets PRs ready for review\n7. While waiting, accepts more work (e.g., \"look at the 3 most recent open issues\")\n8. Context-switches between tasks for you\n\n### Setting up transcription accuracy:\nIn Open Super Whisper, add an **initial prompt** with your project names and common vocabulary to improve voice recognition [5].\n\n> \"The bottleneck shifts from execution to ideas. You as the captain need to focus on talking to users, understanding the competitive landscape, and crafting a good treasure map.\" [7]\n\n---\n\n# Quick-Start Checklist\n\n```markdown\n## 1. Terminal Foundation\n- [ ] Install Wezterm (configure with Lua)\n- [ ] Install Tmux (configure keybinds and styling)\n- [ ] Install Neovim\n\n## 2. Agent Harness (pick one)\n- [ ] Claude Code\n- [ ] Codex CLI\n- [ ] Goose\n- [ ] Open Code\n\n## 3. Memory Files\n- [ ] Create global agents.md (~27 lines, personal preferences only)\n- [ ] Create project-level CLAUDE.md (repo context, conventions)\n- [ ] Run: ln -s CLAUDE.md agents.md (for agent-agnostic setup)\n\n## 4. Skills\n- [ ] Install Skill Creator: npx skills <skill-creator>\n- [ ] Extract bloated memory sections into skills\n- [ ] Do NOT install random internet skills\n\n## 5. Voice Input\n- [ ] Install Open Super Whisper\n- [ ] Add custom vocabulary to the initial prompt in transcription settings\n\n## 6. Planning\n- [ ] Install Lavish AXI from https://axi.md\n\n## 7. Quality Pipeline\n- [ ] Install No Mistakes (free, open-source)\n- [ ] Trigger via agent command \"no mistakes\" or use as default pipeline\n\n## 8. Long-Running Tasks\n- [ ] Install Good Night Have Fun\n- [ ] Use for overnight usability testing / metric optimization\n\n## 9. Parallel Sessions\n- [ ] Install Treehouse for git work tree management\n\n## 10. Orchestration\n- [ ] Clone and set up First Mate\n- [ ] Talk to it and delegate everything\n\n## 11. Tool Efficiency\n- [ ] Prefer AXI-built tools over MCP servers\n- [ ] Visit https://axi.md for the catalog\n```\n\n---\n\n> **Final mindset shift:** Spend your time at the **beginning** (planning in Lavish) and **end** (holding quality bar via risk assessments in No Mistakes PRs). Everything in the middle is AI-controlled. The more time you free in the middle, the more parallel work you can spin up [6][8].",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=0s",
+              "start_seconds": 0.0,
+              "end_seconds": 66.0,
+              "chunk_index": 0,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=60s",
+              "start_seconds": 60.0,
+              "end_seconds": 132.0,
+              "chunk_index": 1,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=989s",
+              "start_seconds": 989.0,
+              "end_seconds": 1071.0,
+              "chunk_index": 2,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=656s",
+              "start_seconds": 656.0,
+              "end_seconds": 728.0,
+              "chunk_index": 4,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1344s",
+              "start_seconds": 1344.0,
+              "end_seconds": 1423.0,
+              "chunk_index": 5,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[6]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1754s",
+              "start_seconds": 1754.0,
+              "end_seconds": 1829.0,
+              "chunk_index": 7,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[7]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1688s",
+              "start_seconds": 1688.0,
+              "end_seconds": 1762.0,
+              "chunk_index": 3,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[8]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=2019s",
+              "start_seconds": 2019.0,
+              "end_seconds": 2092.0,
+              "chunk_index": 8,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[9]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1823s",
+              "start_seconds": 1823.0,
+              "end_seconds": 1895.0,
+              "chunk_index": 9,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[10]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=721s",
+              "start_seconds": 721.0,
+              "end_seconds": 800.0,
+              "chunk_index": 10,
+              "video_id": "iQyg-KypKAA"
+            }
+          ],
+          "token_estimate": 47111,
+          "chunk_count": 37,
+          "llm_calls": null,
+          "iterations": 15,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 74.5,
+          "error": null
+        }
+      ]
     }
   ]
 }
