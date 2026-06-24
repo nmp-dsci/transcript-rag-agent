@@ -567,6 +567,119 @@
           "error": null
         }
       ]
+    },
+    {
+      "id": "q-20260624-065736-93c6",
+      "question": "summarise the key insights from this video",
+      "url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+      "asked_at": "2026-06-24T06:57:36.749908+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=AdRL6tKu3Gk\"",
+          "answer": "I now have a comprehensive understanding of the video. Let me compile the full summary.\n\n## Key Findings\n\n1. Australian capital city property markets are deeply divided \u2014 Perth, Darwin, Brisbane, and Adelaide have been high-flyers with extraordinary growth, while Sydney, Melbourne, and Canberra have lagged behind [3][6].\n2. Perth delivered ~25% growth over the last 12 months and roughly doubled (~100%) over 5 years, described by the hosts as \"extraordinary\" and \"amazing\" [3][5].\n3. Key market metrics \u2014 days on market, stock on market, and vacancy rates \u2014 all indicate the market is slowing, but conditions remain tight rather than alarming, with days on market still well below the typical 60-day benchmark [10][7].\n4. The rental crisis is far from over, with vacancy rates below 1% across most capital cities, double-digit rental growth in Darwin (~15% for houses, ~11.7% for units) and Hobart (~11%), and no relief expected from proposed federal tax changes [8][6][1].\n5. Units are emerging as a more affordable and potentially better-performing asset class than houses, particularly in Sydney's western corridor and in Darwin where yields are enticing and typical unit values sit around $430,000 [8][5].\n6. The hosts' proprietary DSR 3 metric signals improving conditions in Sydney, Melbourne, and Canberra, while markets that have already had massive runs (Perth, Brisbane, Adelaide) now score lower on Market Cycle Timing (MCT), suggesting their probability of further outperformance may be lower [1][4].\n7. The proposed federal CGT and negative gearing changes have caused stock on market to pick up, but the hosts advise there is no need to rush into buying \u2014 waiting a few months to see clearer data is a reasonable strategy [9][1][2].\n\n## Finding 1: Divergent Capital City Performance \u2014 High-Flyers vs. Laggards\n\nOver the last 12 months, Perth has been the standout performer with ~25% growth, while Darwin, Brisbane, and Adelaide have also had strong runs [3]. In contrast, Sydney and Melbourne went backwards in the most recent month (Sydney down ~2%, Melbourne down ~2.2%), though the hosts note that even in those cities there are pockets of strength \u2014 Sydney has around 700 suburbs and Melbourne around 500, so city-wide averages mask significant local variation [4][10]. The 5-year picture is even more stark: Perth roughly doubled (~100%), Brisbane ~95%, and Adelaide ~90%, numbers the hosts describe as extraordinary relative to the historical expectation of ~10% per annum [5][3].\n\n## Finding 2: Market Is Slowing \u2014 But Not Crashing\n\nDays on market increased roughly 6% overall across capital cities, moving from about 34 days to 39 days in some areas [10]. Stock on market also lifted across the board, particularly in Darwin, Adelaide, Perth, and Sydney [7]. However, the hosts are clear that this is a moderation, not a crash \u2014 days on market remain \"very tight everywhere\" compared to a typical 60-day benchmark [10]. They note that the data was still feeding through from only a couple of weeks after the federal budget announcement, and they expect a full month of June data to show clearer trends [9][7].\n\n## Finding 3: Ongoing Rental Crisis With No Near-Term Relief\n\nVacancy rates remain extremely tight across virtually all capital cities \u2014 Darwin at 0.3\u20130.4%, with Brisbane, Hobart, Adelaide, and Perth also very low [7][8]. Rental growth is running well above long-term averages: Darwin house rents grew ~15% over 12 months, Hobart ~11%, and Darwin unit rents grew ~11.7% [8][6]. The hosts argue the federal tax changes will not alleviate this; they predict fewer rentals will be available in established areas as properties sell to owner-occupiers rather than investors, pushing vacancy rates even lower and rents higher until cash-flow-positive property returns in established areas and re-attracts investors [6].\n\n## Finding 4: Units Offer Affordability and Emerging Opportunity\n\nThe hosts highlight units as a more affordable segment that may hold up better than houses due to lower price points [5]. Darwin units have a typical value of ~$430,000 with strong yields (and 11.7% rental growth), while even in expensive Sydney, units like a two-bedroom in Punchbowl can be found for under $600,000 \u2014 described as \"extraordinary\" value for money [8][5]. They suggest units \"may be holding up a little bit better than houses\" and are likely to become increasingly popular with buyers priced out of the house market [5].\n\n## Finding 5: DSR 3 and Market Cycle Timing \u2014 Identifying the Next Opportunity\n\nThe hosts' flagship DSR 3 metric shows Darwin at the top followed by Perth, but Perth's Market Cycle Timing (MCT) score is now low because it has already had such a massive run [3]. Conversely, Sydney, Melbourne, and Canberra are showing improving DSR 3 scores, and because they have lagged other markets, their MCT scores are higher \u2014 potentially signalling better value going forward [1][4]. The hosts emphasise that MCT is just one metric within the DSR, and investors must consider their own budget, yield targets, and holding timeframe; buying a market that has already surged does not mean it won't keep growing, but the probability is lower [4].\n\n## Finding 6: Cautious Stance on Federal Budget Tax Changes\n\nThe hosts acknowledge that the proposed CGT and negative gearing changes have caused uncertainty and a pickup in listings, but they do not advocate panic buying [9][6]. One host (Jeremy) had already signed a contract just before the changes and was not slowed down, but the other notes there is \"nothing wrong with waiting a couple months just to sort of see what's going on\" because the data flow will take 1\u20132 months to reflect the impact [3][9]. Their overarching advice is to focus on individual circumstances \u2014 budget, buffers, and goals \u2014 and to treat yield as an increasingly important factor [5].\n\n## Finding 7: Markets Within Markets \u2014 City Averages Can Mislead\n\nA recurring theme is that broad capital city data conceals substantial local variation. Even in \"lagging\" markets like Melbourne and Sydney, certain pockets (e.g., Campbelltown in Sydney, unspecified pockets in Melbourne) score well on DSR 3 [1]. The hosts caution that stock on market data can be misleading in greenfield estates where off-the-plan properties listed for sale may not yet exist as dwellings, potentially making an area look oversupplied when it is actually tight on the ground [10]. The key takeaway: investors must drill down to suburb and price-point level rather than relying solely on city-wide aggregates [4].",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=1s",
+              "start_seconds": 1.964,
+              "end_seconds": 82.48,
+              "chunk_index": 0,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=1308s",
+              "start_seconds": 1308.4,
+              "end_seconds": 1350.0800000000002,
+              "chunk_index": 20,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=71s",
+              "start_seconds": 71.48,
+              "end_seconds": 140.48000000000002,
+              "chunk_index": 1,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=1192s",
+              "start_seconds": 1192.04,
+              "end_seconds": 1257.88,
+              "chunk_index": 18,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=390s",
+              "start_seconds": 390.0,
+              "end_seconds": 462.08,
+              "chunk_index": 6,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[6]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=772s",
+              "start_seconds": 772.6,
+              "end_seconds": 841.56,
+              "chunk_index": 12,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[7]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=1040s",
+              "start_seconds": 1040.319,
+              "end_seconds": 1125.84,
+              "chunk_index": 16,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[8]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=265s",
+              "start_seconds": 265.919,
+              "end_seconds": 333.4,
+              "chunk_index": 4,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[9]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=1248s",
+              "start_seconds": 1248.2,
+              "end_seconds": 1315.0400000000002,
+              "chunk_index": 19,
+              "video_id": "AdRL6tKu3Gk"
+            },
+            {
+              "label": "[10]",
+              "source_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk",
+              "timestamp_url": "https://www.youtube.com/watch?v=AdRL6tKu3Gk&t=576s",
+              "start_seconds": 576.08,
+              "end_seconds": 639.64,
+              "chunk_index": 9,
+              "video_id": "AdRL6tKu3Gk"
+            }
+          ],
+          "token_estimate": 15912,
+          "chunk_count": 20,
+          "llm_calls": null,
+          "iterations": 5,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 26.77,
+          "error": null
+        }
+      ]
     }
   ]
 }
