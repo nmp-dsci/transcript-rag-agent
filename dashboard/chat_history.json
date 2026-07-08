@@ -680,6 +680,92 @@
           "error": null
         }
       ]
+    },
+    {
+      "id": "q-20260708-060235-62d1",
+      "question": "how do I setup herdr what app do I run it in",
+      "url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+      "asked_at": "2026-07-08T06:02:35.700634+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s\"",
+          "answer": "Now I have enough information to answer your question. Here's what the transcripts reveal about Herder.\n\n---\n\n## Key Findings\n\n1. Herder is a terminal multiplexer (like tmux) built for the \"agent era\" that integrates with AI agent harnesses out of the box [1].\n2. It is installed as a normal Homebrew package (not a cask) via `brew install herder` (or via Nix) [1].\n3. Its configuration file is a TOML file (`config.toml`) placed in a dedicated config directory [1][7].\n4. Herder runs inside a terminal emulator \u2014 you launch it from your terminal app (e.g., WezTerm, Terminal.app, iTerm2) [1][7].\n5. It features a side panel that organizes workspaces and agents, and a main terminal area for tabs and panes [7].\n\n## Finding 1: What Herder Is and Why It's Different\n\nHerder is a terminal multiplexer in the same category as tmux (called \"the OG\" in the transcript) and WezTerm's built-in multiplexing [1]. What distinguishes Herder is that it was built specifically for the current AI agent era \u2014 it understands what agents are, how they work, and integrates with most mainstream agent harnesses \"really well\" [1]. The presenter notes they used tmux for years but found Herder gives a better experience after using it for a few weeks [1]. It also may be the only terminal multiplexer that works on Windows too [1].\n\n## Finding 2: How to Install Herder\n\nHerder is installed as a regular Homebrew package (not a cask). In the transcript, the presenter adds it to their Nix-managed Homebrew configuration as a normal brew formula (as opposed to casks like WezTerm) [1]. If you're not using Nix, you can install it directly with `brew install herder` on macOS. The presenter also notes it works on Windows, so Windows users can install it as well [1].\n\n## Finding 3: Herder Configuration (config.toml)\n\nAfter installation, you need to create a configuration directory and a `config.toml` file for Herder [1][7]. The presenter uses this config to set custom key bindings that preserve their muscle memory from tmux \u2014 but they note that if you haven't used tmux before, you can likely \"just rely on the defaults instead\" [7]. The configuration is set up similarly to other tools in their Nix-based reproducible environment, with a symbolic link pointing to the config file [7].\n\n## Finding 4: What App to Run Herder In\n\nHerder is a terminal multiplexer \u2014 it is **not** a terminal emulator itself. You run it **inside** your terminal emulator. The presenter uses **WezTerm** (a Rust-based, cross-platform terminal emulator) as their terminal app [1][4]. So the flow is: open your terminal emulator (WezTerm, Terminal.app, iTerm2, Alacritty, etc.), then launch Herder inside it with the `herder` command. Once running, Herder provides a side panel that organizes workspaces and agents, and a main terminal area where you can create tabs, name them, and split them into panes [7].\n\n## Finding 5: Agent Integration with Claude Code\n\nHerder's standout feature is its native integration with AI agent harnesses like Claude Code. When you run Claude Code inside Herder, the side panel automatically detects that Claude is working and displays real-time status information \u2014 such as what model is being used and what percentage of the context window is consumed [6]. This works consistently across all agent harnesses, not just Claude Code [6]. You can set this up by installing Claude Code (a Homebrew cask) and running it from within a Herder session [5].\n\n---\n\n**In short:** Install Herder via Homebrew, configure it with a `config.toml` file for key bindings (if desired), then launch it from any terminal emulator (like WezTerm, iTerm2, or Terminal.app) by running the `herder` command.\n\n{\"question\": \"how do I setup herdr what app do I run it in\", \"answer\": \"## Key Findings\\n\\n1. Herder is a terminal multiplexer (like tmux) built for the \\\"agent era\\\" that integrates with AI agent harnesses out of the box [1].\\n2. It is installed as a normal Homebrew package (not a cask) via `brew install herder` (or via Nix) [1].\\n3. Its configuration file is a TOML file (`config.toml`) placed in a dedicated config directory [1][7].\\n4. Herder runs inside a terminal emulator \u2014 you launch it from your terminal app (e.g., WezTerm, Terminal.app, iTerm2) [1][7].\\n5. It features a side panel that organizes workspaces and agents, and a main terminal area for tabs and panes [7].\\n\\n## Finding 1: What Herder Is and Why It's Different\\n\\nHerder is a terminal multiplexer in the same category as tmux (called \\\"the OG\\\" in the transcript) and WezTerm's built-in multiplexing [1]. What distinguishes Herder is that it was built specifically for the current AI agent era \u2014 it understands what agents are, how they work, and integrates with most mainstream agent harnesses \\\"really well\\\" [1]. The presenter notes they used tmux for years but found Herder gives a better experience after using it for a few weeks [1]. It also may be the only terminal multiplexer that works on Windows too [1].\\n\\n## Finding 2: How to Install Herder\\n\\nHerder is installed as a regular Homebrew package (not a cask). In the transcript, the presenter adds it to their Nix-managed Homebrew configuration as a normal brew formula (as opposed to casks like WezTerm) [1]. If you're not using Nix, you can install it directly with `brew install herder` on macOS. The presenter also notes it works on Windows, so Windows users can install it as well [1].\\n\\n## Finding 3: Herder Configuration (config.toml)\\n\\nAfter installation, you need to create a configuration directory and a `config.toml` file for Herder [1][7]. The presenter uses this config to set custom key bindings that preserve their muscle memory from tmux \u2014 but they note that if you haven't used tmux before, you can likely \\\"just rely on the defaults instead\\\" [7]. The configuration is set up similarly to other tools in their Nix-based reproducible environment, with a symbolic link pointing to the config file [7].\\n\\n## Finding 4: What App to Run Herder In\\n\\nHerder is a terminal multiplexer \u2014 it is **not** a terminal emulator itself. You run it **inside** your terminal emulator. The presenter uses **WezTerm** (a Rust-based, cross-platform terminal emulator) as their terminal app [1][4]. So the flow is: open your terminal emulator (WezTerm, Terminal.app, iTerm2, Alacritty, etc.), then launch Herder inside it with the `herder` command. Once running, Herder provides a side panel that organizes workspaces and agents, and a main terminal area where you can create tabs, name them, and split them into panes [7].\\n\\n## Finding 5: Agent Integration with Claude Code\\n\\nHerder's standout feature is its native integration with AI agent harnesses like Claude Code. When you run Claude Code inside Herder, the side panel automatically detects that Claude is working and displays real-time status information \u2014 such as what model is being used and what percentage of the context window is consumed [6]. This works consistently across all agent harnesses, not just Claude Code [6]. You can set this up by installing Claude Code (a Homebrew cask) and running it from within a Herder session [5].\\n\\n---\\n\\n**In short:** Install Herder via Homebrew, configure it with a `config.toml` file for key bindings (if desired), then launch it from any terminal emulator (like WezTerm, iTerm2, or Terminal.app) by running the `herder` command.\", \"references\": [{\"label\": \"[1]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2042s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2042s\", \"start_seconds\": 2042.0, \"end_seconds\": 2123.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[2]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2199s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2199s\", \"start_seconds\": 2199.0, \"end_seconds\": 2294.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[3]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=599s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=599s\", \"start_seconds\": 599.0, \"end_seconds\": 690.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[4]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=896s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=896s\", \"start_seconds\": 896.0, \"end_seconds\": 971.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[5]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2289s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2289s\", \"start_seconds\": 2289.0, \"end_seconds\": 2373.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[6]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2289s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2289s\", \"start_seconds\": 2289.0, \"end_seconds\": 2373.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}, {\"label\": \"[7]\", \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2116s\", \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2116s\", \"start_seconds\": 2116.0, \"end_seconds\": 2207.0, \"chunk_index\": 0, \"video_id\": \"5N-okeDdIuI\"}]}",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2042s",
+              "start_seconds": 2042.72,
+              "end_seconds": 2123.12,
+              "chunk_index": 27,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2199s",
+              "start_seconds": 2199.92,
+              "end_seconds": 2294.5600000000004,
+              "chunk_index": 29,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2116s",
+              "start_seconds": 2116.0,
+              "end_seconds": 2207.28,
+              "chunk_index": 28,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=896s",
+              "start_seconds": 896.24,
+              "end_seconds": 971.84,
+              "chunk_index": 12,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=599s",
+              "start_seconds": 599.2,
+              "end_seconds": 690.72,
+              "chunk_index": 8,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[6]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2289s",
+              "start_seconds": 2289.28,
+              "end_seconds": 2373.28,
+              "chunk_index": 30,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[7]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=519s",
+              "start_seconds": 519.84,
+              "end_seconds": 606.88,
+              "chunk_index": 7,
+              "video_id": "5N-okeDdIuI"
+            }
+          ],
+          "token_estimate": 12537,
+          "chunk_count": 17,
+          "llm_calls": null,
+          "iterations": 4,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 36.1,
+          "error": null
+        }
+      ]
     }
   ]
 }
