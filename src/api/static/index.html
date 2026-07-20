@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transcript RAG Chat — Live</title>
+<link rel="stylesheet" href="/assets/answer.css">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#e9edef;
+background:#0b141a;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+
+.sidebar{width:360px;min-width:300px;background:#111b21;border-right:1px solid #222d34;
+display:flex;flex-direction:column}
+.sidebar-head{padding:16px 18px;background:#202c33;border-bottom:1px solid #222d34}
+.sidebar-head h1{margin:0;font-size:17px;color:#e9edef;display:flex;align-items:center;gap:8px}
+.live-badge{font-size:10px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
+background:#0b3b33;color:#7ff0d4;border:1px solid #155f53;border-radius:4px;padding:1px 6px}
+.sidebar-head p{margin:4px 0 0;font-size:12px;color:#8696a0}
+.sidebar-actions{padding:10px 18px;border-bottom:1px solid #1d272d;display:flex;gap:8px}
+.btn{background:#202c33;border:1px solid #2a3942;color:#e9edef;border-radius:8px;
+padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#2a3942}
+.btn.accent{background:#005c4b;border-color:#00a884;color:#d9fdd3}
+.btn.accent:hover{background:#0e6b58}
+.btn:disabled{opacity:.45;cursor:default}
+
+.conv-list{overflow-y:auto;flex:1}
+.conv-item{padding:12px 18px;border-bottom:1px solid #1d272d;cursor:pointer}
+.conv-item:hover{background:#182229}
+.conv-item.active{background:#2a3942}
+.conv-q{font-size:14px;color:#e9edef;display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden}
+.conv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:#8696a0}
+.conv-badge{background:#005c4b;color:#d9fdd3;border-radius:9px;padding:1px 7px;font-size:11px}
+.conv-id{font-family:ui-monospace,Menlo,monospace;color:#5b6b75}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:#0b141a}
+.main-head{padding:14px 22px;background:#202c33;border-bottom:1px solid #222d34}
+.main-head .q{font-size:15px;color:#e9edef;font-weight:600}
+.main-head .sub{margin-top:4px;font-size:12px;color:#8696a0;display:flex;gap:12px;flex-wrap:wrap}
+.main-head .sub a{color:#53bdeb;text-decoration:none}
+.chat{flex:1;overflow-y:auto;padding:24px 8%;display:flex;flex-direction:column;gap:14px}
+
+.typing{align-self:flex-start;background:#202c33;border-radius:10px;
+border-bottom-left-radius:2px;padding:10px 14px;font-size:13px;color:#8696a0;
+display:flex;align-items:center;gap:10px}
+.typing .dots{display:inline-flex;gap:3px}
+.typing .dots span{width:6px;height:6px;border-radius:50%;background:#00a884;
+animation:blink 1.2s infinite}
+.typing .dots span:nth-child(2){animation-delay:.2s}
+.typing .dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+.composer{border-top:1px solid #222d34;background:#202c33;padding:10px 16px 14px}
+.filter-row{display:none;margin-bottom:8px}
+.filter-row.open{display:flex;gap:8px}
+.filter-row input{flex:1;background:#111b21;border:1px solid #2a3942;border-radius:8px;
+color:#e9edef;padding:7px 10px;font-size:13px;font-family:inherit}
+.filter-row input:focus{outline:none;border-color:#00a884}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
+.pill{background:#111b21;border:1px solid #2a3942;color:#8696a0;border-radius:16px;
+padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.pill.on{background:#0b3b33;border-color:#00a884;color:#7ff0d4}
+.pill-hint{font-size:11px;color:#5b6b75;margin-left:4px}
+.filter-toggle{margin-left:auto;background:none;border:none;color:#53bdeb;
+font-size:11.5px;cursor:pointer;font-family:inherit;padding:2px 4px}
+.filter-toggle:hover{text-decoration:underline}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;background:#111b21;border:1px solid #2a3942;border-radius:10px;
+color:#e9edef;padding:10px 12px;font-size:14px;font-family:inherit;resize:none;
+line-height:1.45;max-height:140px;min-height:41px}
+textarea:focus{outline:none;border-color:#00a884}
+.send{background:#00a884;border:none;color:#0b141a;border-radius:10px;width:60px;
+height:41px;font-size:14px;font-weight:700;cursor:pointer}
+.send:hover{background:#06cf9c}
+.send:disabled{background:#2a3942;color:#5b6b75;cursor:default}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;
+align-items:center;justify-content:center;z-index:10}
+.overlay.open{display:flex}
+.modal{background:#111b21;border:1px solid #2a3942;border-radius:12px;
+width:min(480px,92vw);padding:20px 22px}
+.modal h2{margin:0 0 4px;font-size:16px}
+.modal .hint{margin:0 0 14px;font-size:12.5px;color:#8696a0}
+.modal label{display:block;font-size:12px;color:#8696a0;margin:10px 0 4px}
+.modal input[type=text],.modal input[type=number]{width:100%;background:#0b141a;
+border:1px solid #2a3942;border-radius:8px;color:#e9edef;padding:8px 10px;
+font-size:13px;font-family:inherit}
+.modal input:focus{outline:none;border-color:#00a884}
+.mode-row{display:flex;gap:8px;margin-top:4px}
+.mode-row .pill{border-radius:8px}
+.modal-actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+.modal-status{font-size:12.5px;color:#8696a0;flex:1}
+.modal-status.ok{color:#7ff0d4}
+.modal-status.err{color:#f5a3a3}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h1>Transcript RAG Chat <span class="live-badge">LIVE</span></h1>
+      <p id="sidebar-sub">connecting…</p>
+    </div>
+    <div class="sidebar-actions">
+      <button class="btn accent" onclick="newQuestion()">＋ New question</button>
+      <button class="btn" onclick="openIndexModal()">Index content</button>
+    </div>
+    <div class="conv-list" id="conv-list"></div>
+  </aside>
+
+  <section class="main">
+    <div class="main-head" id="main-head">
+      <div class="q">Ask the indexed transcripts anything</div>
+      <div class="sub"><span>answers compare up to three RAG setups side by side</span></div>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="composer">
+      <div class="filter-row" id="filter-row">
+        <input id="url-filter" type="text" spellcheck="false"
+               placeholder="Restrict to a single video URL (optional)">
+      </div>
+      <div class="pills" id="setup-pills">
+        <span class="pill-hint">setups:</span>
+      </div>
+      <div class="input-row">
+        <textarea id="question" rows="1" placeholder="Ask a question… (Enter to send, Shift+Enter for a new line)"></textarea>
+        <button class="send" id="send" onclick="ask()">Send</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="index-overlay">
+  <div class="modal">
+    <h2>Index new content</h2>
+    <p class="hint">Fetch a transcript and add it to the RAG index. Bulk channel indexing can take several minutes.</p>
+    <div class="mode-row">
+      <button class="pill on" id="mode-video" onclick="setIndexMode('video')">Single video</button>
+      <button class="pill" id="mode-channel" onclick="setIndexMode('channel')">Channel (latest N)</button>
+    </div>
+    <div id="video-fields">
+      <label for="index-url">Video URL</label>
+      <input id="index-url" type="text" spellcheck="false" placeholder="https://www.youtube.com/watch?v=…">
+    </div>
+    <div id="channel-fields" style="display:none">
+      <label for="index-channel">Channel URL or @handle</label>
+      <input id="index-channel" type="text" spellcheck="false" placeholder="@somechannel">
+      <label for="index-latest">How many latest videos</label>
+      <input id="index-latest" type="number" value="5" min="1" max="50">
+    </div>
+    <div class="modal-actions">
+      <span class="modal-status" id="index-status"></span>
+      <button class="btn" onclick="closeIndexModal()">Close</button>
+      <button class="btn accent" id="index-go" onclick="runIndex()">Start indexing</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/render.js"></script>
+<script>
+let SETUPS = [];
+let HISTORY = [];
+const selected = new Set();
+let busy = false;
+let indexMode = 'video';
+
+const el = id => document.getElementById(id);
+
+function sortedConversations(){
+  return HISTORY.slice().sort((a,b)=> (a.asked_at < b.asked_at ? 1 : -1));
+}
+
+function renderSidebar(activeId){
+  const list = el('conv-list');
+  const convs = sortedConversations();
+  if(!convs.length){
+    list.innerHTML = '<div class="empty">No questions yet.<br>Ask one below.</div>';
+    return;
+  }
+  list.innerHTML = convs.map(c=>{
+    return '<div class="conv-item'+(c.id===activeId?' active':'')+'" data-id="'+escapeHtml(c.id)+'" onclick="selectConversation(\''+c.id+'\')">'
+      +'<div class="conv-q">'+escapeHtml(c.question)+'</div>'
+      +'<div class="conv-meta"><span class="conv-badge">'+c.answers.length+' answer'+(c.answers.length===1?'':'s')+'</span>'
+      +'<span>'+fmtTime(c.asked_at)+'</span><span class="conv-id">'+escapeHtml(c.id)+'</span></div>'
+      +'</div>';
+  }).join('');
+}
+
+function setHead(question, subHtml){
+  el('main-head').innerHTML = '<div class="q">'+escapeHtml(question)+'</div>'
+    +'<div class="sub">'+subHtml+'</div>';
+}
+
+function selectConversation(id){
+  if(busy) return;
+  const conv = HISTORY.find(c=>c.id===id);
+  if(!conv) return;
+  renderSidebar(id);
+  let sub = '<span>'+fmtTime(conv.asked_at)+'</span><span class="conv-id">'+escapeHtml(conv.id)+'</span>';
+  if(conv.url) sub += '<a href="'+escapeHtml(conv.url)+'" target="_blank">restricted to one video</a>';
+  setHead(conv.question, sub);
+  const chat = el('chat');
+  chat.innerHTML = '<div class="bubble out"><div class="body">'+escapeHtml(conv.question)+'</div></div>'
+    + conv.answers.map(answerBubble).join('');
+  chat.scrollTop = 0;
+}
+
+function newQuestion(){
+  if(busy) return;
+  renderSidebar(null);
+  setHead('Ask the indexed transcripts anything',
+    '<span>answers compare up to three RAG setups side by side</span>');
+  el('chat').innerHTML = '';
+  el('question').focus();
+}
+
+function renderPills(){
+  const wrap = el('setup-pills');
+  wrap.querySelectorAll('.pill').forEach(p=>p.remove());
+  const toggle = document.createElement('button');
+  SETUPS.forEach(s=>{
+    const b = document.createElement('button');
+    b.className = 'pill'+(selected.has(s.key)?' on':'');
+    b.textContent = s.title;
+    b.title = s.description;
+    b.onclick = ()=>{
+      if(selected.has(s.key)) selected.delete(s.key); else selected.add(s.key);
+      renderPills();
+      updateSendState();
+    };
+    wrap.appendChild(b);
+  });
+  toggle.className = 'filter-toggle';
+  toggle.textContent = el('filter-row').classList.contains('open') ? 'hide video filter' : 'filter by video';
+  toggle.onclick = ()=>{ el('filter-row').classList.toggle('open'); renderPills(); };
+  wrap.appendChild(toggle);
+}
+
+function updateSendState(){
+  el('send').disabled = busy || !selected.size || !el('question').value.trim();
+}
+
+function appendTyping(message){
+  const chat = el('chat');
+  let typing = el('typing');
+  if(!typing){
+    typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.id = 'typing';
+    typing.innerHTML = '<span class="dots"><span></span><span></span><span></span></span><span id="typing-msg"></span>';
+    chat.appendChild(typing);
+  }
+  typing.querySelector('#typing-msg').textContent = message;
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping(){
+  const typing = el('typing');
+  if(typing) typing.remove();
+}
+
+function appendHtml(html){
+  const chat = el('chat');
+  const typing = el('typing');
+  const holder = document.createElement('div');
+  holder.innerHTML = html;
+  const node = holder.firstElementChild;
+  if(typing) chat.insertBefore(node, typing); else chat.appendChild(node);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function ask(){
+  const question = el('question').value.trim();
+  if(!question || busy || !selected.size) return;
+  const url = el('url-filter').value.trim() || null;
+  busy = true;
+  el('question').value = '';
+  autosize();
+  updateSendState();
+
+  renderSidebar(null);
+  let sub = '<span>in progress…</span>';
+  if(url) sub += '<a href="'+escapeHtml(url)+'" target="_blank">restricted to one video</a>';
+  setHead(question, sub);
+  const chat = el('chat');
+  chat.innerHTML = '<div class="bubble out"><div class="body">'+escapeHtml(question)+'</div></div>';
+  appendTyping('Sending…');
+
+  try{
+    const resp = await fetch('/api/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question, setups: [...selected], url}),
+    });
+    if(!resp.ok || !resp.body){
+      const detail = await resp.text();
+      throw new Error('HTTP '+resp.status+': '+detail);
+    }
+    await readEvents(resp.body, {
+      progress: d => appendTyping(d.message),
+      answer: d => appendHtml(answerBubble(d)),
+      done: d => {
+        HISTORY.push(d);
+        renderSidebar(d.id);
+        let doneSub = '<span>'+fmtTime(d.asked_at)+'</span><span class="conv-id">'+escapeHtml(d.id)+'</span>';
+        if(d.url) doneSub += '<a href="'+escapeHtml(d.url)+'" target="_blank">restricted to one video</a>';
+        setHead(d.question, doneSub);
+      },
+      error: d => appendHtml('<div class="bubble in"><div class="body error">Error: '+escapeHtml(d.message)+'</div></div>'),
+    });
+  } catch(err){
+    appendHtml('<div class="bubble in"><div class="body error">Request failed: '+escapeHtml(err.message)+'</div></div>');
+  } finally {
+    removeTyping();
+    busy = false;
+    updateSendState();
+    refreshHealth();
+  }
+}
+
+// Parse server-sent events from a fetch() body stream.
+async function readEvents(body, handlers){
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for(;;){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buffer += decoder.decode(value, {stream: true});
+    const blocks = buffer.split('\n\n');
+    buffer = blocks.pop();
+    for(const block of blocks){
+      let event = 'message', data = '';
+      for(const line of block.split('\n')){
+        if(line.startsWith('event: ')) event = line.slice(7).trim();
+        else if(line.startsWith('data: ')) data += line.slice(6);
+      }
+      if(handlers[event] && data){
+        try { handlers[event](JSON.parse(data)); } catch(e){ console.error('bad event payload', e); }
+      }
+    }
+  }
+}
+
+function autosize(){
+  const t = el('question');
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 140)+'px';
+}
+
+async function refreshHealth(){
+  try{
+    const health = await (await fetch('/api/health')).json();
+    el('sidebar-sub').textContent = HISTORY.length+' question(s) — retrieval stack '
+      +(health.runner_loaded ? 'loaded' : 'loads on first question');
+  } catch(e){
+    el('sidebar-sub').textContent = 'server unreachable';
+  }
+}
+
+function openIndexModal(){ el('index-overlay').classList.add('open'); el('index-status').textContent=''; }
+function closeIndexModal(){ el('index-overlay').classList.remove('open'); }
+function setIndexMode(mode){
+  indexMode = mode;
+  el('mode-video').classList.toggle('on', mode==='video');
+  el('mode-channel').classList.toggle('on', mode==='channel');
+  el('video-fields').style.display = mode==='video' ? '' : 'none';
+  el('channel-fields').style.display = mode==='channel' ? '' : 'none';
+}
+
+async function runIndex(){
+  const status = el('index-status');
+  const payload = {mode: indexMode};
+  if(indexMode === 'video'){
+    payload.url = el('index-url').value.trim();
+    if(!payload.url){ status.className='modal-status err'; status.textContent='Enter a video URL.'; return; }
+  } else {
+    payload.channel = el('index-channel').value.trim();
+    payload.latest = parseInt(el('index-latest').value, 10) || 5;
+    if(!payload.channel){ status.className='modal-status err'; status.textContent='Enter a channel.'; return; }
+  }
+  el('index-go').disabled = true;
+  status.className = 'modal-status';
+  status.textContent = 'Indexing… this can take a while.';
+  try{
+    const resp = await fetch('/api/index', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
+    });
+    const result = await resp.json();
+    if(resp.ok && result.ok){
+      status.className = 'modal-status ok';
+      status.textContent = 'Indexed '+result.target+' — ready to ask about it.';
+    } else {
+      status.className = 'modal-status err';
+      status.textContent = 'Indexing failed'+(result.detail ? ': '+result.detail : ' (exit code '+result.exit_code+')');
+    }
+  } catch(err){
+    status.className = 'modal-status err';
+    status.textContent = 'Request failed: '+err.message;
+  } finally {
+    el('index-go').disabled = false;
+  }
+}
+
+async function init(){
+  const [setupsResp, historyResp] = await Promise.all([
+    fetch('/api/setups'), fetch('/api/history'),
+  ]);
+  SETUPS = (await setupsResp.json()).setups;
+  HISTORY = (await historyResp.json()).conversations;
+  SETUPS.forEach(s=>selected.add(s.key));
+  renderPills();
+  refreshHealth();
+  const convs = sortedConversations();
+  if(convs.length) selectConversation(convs[0].id); else newQuestion();
+
+  const input = el('question');
+  input.addEventListener('input', ()=>{ autosize(); updateSendState(); });
+  input.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); ask(); }
+  });
+  updateSendState();
+}
+init();
+</script>
+</body>
+</html>

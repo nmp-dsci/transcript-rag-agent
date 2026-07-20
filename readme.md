@@ -162,6 +162,50 @@ setup name with the answer, retrieval metadata, references, and the equivalent
 `rag-ask` command below it. Because the history and view regenerate after every
 question, you can keep `chat.html` open and just refresh.
 
+### Live Web Chat (browser)
+
+The same chat is also available as a live web app: a FastAPI server with a
+browser UI where you type questions, pick RAG setups, and watch each answer
+stream in as it completes — no CLI menus, no manual page refresh.
+
+```bash
+uv run python -m src.cli serve                       # http://127.0.0.1:8000
+uv run python -m src.cli serve --host 0.0.0.0 --port 9000
+```
+
+Open the printed URL. The sidebar shows the shared chat history; the composer
+at the bottom has:
+
+- **Setup pills** — toggle which of the three RAG setups answer (all on by
+  default).
+- **filter by video** — optionally restrict retrieval to a single video URL.
+- **Index content** — a modal for indexing a single video, or the latest N
+  videos of a channel, through the same pipeline as `index-rag` /
+  `bulk-index channel`.
+
+Answers arrive over server-sent events: a typing indicator names the setup
+currently running, and each answer bubble renders as soon as that setup
+finishes — with the same citation links, metadata chips, sources, and
+equivalent-command block as the static view. Questions asked in the browser are
+appended to the same `dashboard/chat_history.json` and regenerate
+`dashboard/chat.html`, so the CLI chat, the web app, and the static viewer all
+share one history.
+
+Endpoints (JSON unless noted):
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | The chat UI |
+| `/api/health` | GET | Liveness + whether the retrieval stack is loaded |
+| `/api/setups` | GET | The three RAG setup descriptors |
+| `/api/history` | GET | All captured conversations |
+| `/api/ask` | POST | Answer a question (streams server-sent events) |
+| `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
+
+The retrieval stack loads lazily on the first question, exactly like the CLI
+chat. The server runs on `uvicorn`, now an explicit dependency installed by
+`uv sync`.
+
 ### Command Sequence
 
 The chat menu above is the recommended entry point. The individual commands

@@ -104,6 +104,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Interactive menu: ask questions across RAG setups or fetch new URLs",
     )
 
+    serve = subparsers.add_parser(
+        "serve", help="Run the live web chat app (FastAPI + uvicorn)"
+    )
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
 
@@ -215,6 +221,13 @@ def main(argv: list[str] | None = None) -> int:
             from src.chat.session import run_session
 
             return run_session(settings)
+        if args.command == "serve":
+            import uvicorn
+
+            from src.api.main import create_app
+
+            uvicorn.run(create_app(settings), host=args.host, port=args.port)
+            return 0
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):

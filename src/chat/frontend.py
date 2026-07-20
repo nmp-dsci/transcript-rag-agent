@@ -4,6 +4,10 @@ The page embeds the conversation JSON and renders a left sidebar of asked
 questions (with time and id) plus a main chat panel. Selecting a sidebar entry
 shows the user's question as an outgoing bubble followed by one incoming bubble
 per RAG setup, each headed by the setup name.
+
+The answer-rendering CSS (``ANSWER_CSS``) and JS (``ANSWER_RENDER_JS``) are
+module-level constants shared with the live web app (``src.api``), so both
+surfaces render answers, citations, and references identically.
 """
 
 from __future__ import annotations
@@ -16,36 +20,8 @@ from src.chat.history import ChatEntry
 
 DEFAULT_CHAT_HTML_PATH = Path("dashboard/chat.html")
 
-_STYLE = """
-:root{color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#e9edef;
-background:#0b141a;height:100vh;overflow:hidden}
-.app{display:flex;height:100vh}
-.sidebar{width:360px;min-width:300px;background:#111b21;border-right:1px solid #222d34;
-display:flex;flex-direction:column}
-.sidebar-head{padding:16px 18px;background:#202c33;border-bottom:1px solid #222d34}
-.sidebar-head h1{margin:0;font-size:17px;color:#e9edef}
-.sidebar-head p{margin:4px 0 0;font-size:12px;color:#8696a0}
-.conv-list{overflow-y:auto;flex:1}
-.conv-item{padding:12px 18px;border-bottom:1px solid #1d272d;cursor:pointer}
-.conv-item:hover{background:#182229}
-.conv-item.active{background:#2a3942}
-.conv-q{font-size:14px;color:#e9edef;display:-webkit-box;-webkit-line-clamp:2;
--webkit-box-orient:vertical;overflow:hidden}
-.conv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;
-font-size:11px;color:#8696a0}
-.conv-badge{background:#005c4b;color:#d9fdd3;border-radius:9px;padding:1px 7px;font-size:11px}
-.conv-id{font-family:ui-monospace,Menlo,monospace;color:#5b6b75}
-.main{flex:1;display:flex;flex-direction:column;min-width:0;
-background-color:#0b141a;
-background-image:linear-gradient(rgba(11,20,26,.96),rgba(11,20,26,.96))}
-.main-head{padding:14px 22px;background:#202c33;border-bottom:1px solid #222d34}
-.main-head .q{font-size:15px;color:#e9edef;font-weight:600}
-.main-head .sub{margin-top:4px;font-size:12px;color:#8696a0;
-display:flex;gap:12px;flex-wrap:wrap}
-.main-head .sub a{color:#53bdeb;text-decoration:none}
-.chat{flex:1;overflow-y:auto;padding:24px 12%;display:flex;flex-direction:column;gap:14px}
+# Message/answer styling shared by the static viewer and the live web app.
+ANSWER_CSS = """
 .bubble{max-width:78%;padding:10px 12px;border-radius:10px;font-size:14px;
 line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.25)}
 .out{align-self:flex-end;background:#005c4b;border-bottom-right-radius:2px}
@@ -100,9 +76,42 @@ border-radius:6px;padding:8px;font-size:11px;color:#c7e1ff;overflow:auto;white-s
 .empty{margin:auto;color:#8696a0;text-align:center;padding:40px}
 """
 
-_SCRIPT = r"""
-const DATA = __DATA__;
+# Page layout for the static history viewer only.
+_VIEWER_STYLE = """
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#e9edef;
+background:#0b141a;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+.sidebar{width:360px;min-width:300px;background:#111b21;border-right:1px solid #222d34;
+display:flex;flex-direction:column}
+.sidebar-head{padding:16px 18px;background:#202c33;border-bottom:1px solid #222d34}
+.sidebar-head h1{margin:0;font-size:17px;color:#e9edef}
+.sidebar-head p{margin:4px 0 0;font-size:12px;color:#8696a0}
+.conv-list{overflow-y:auto;flex:1}
+.conv-item{padding:12px 18px;border-bottom:1px solid #1d272d;cursor:pointer}
+.conv-item:hover{background:#182229}
+.conv-item.active{background:#2a3942}
+.conv-q{font-size:14px;color:#e9edef;display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden}
+.conv-meta{display:flex;align-items:center;gap:8px;margin-top:6px;
+font-size:11px;color:#8696a0}
+.conv-badge{background:#005c4b;color:#d9fdd3;border-radius:9px;padding:1px 7px;font-size:11px}
+.conv-id{font-family:ui-monospace,Menlo,monospace;color:#5b6b75}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;
+background-color:#0b141a;
+background-image:linear-gradient(rgba(11,20,26,.96),rgba(11,20,26,.96))}
+.main-head{padding:14px 22px;background:#202c33;border-bottom:1px solid #222d34}
+.main-head .q{font-size:15px;color:#e9edef;font-weight:600}
+.main-head .sub{margin-top:4px;font-size:12px;color:#8696a0;
+display:flex;gap:12px;flex-wrap:wrap}
+.main-head .sub a{color:#53bdeb;text-decoration:none}
+.chat{flex:1;overflow-y:auto;padding:24px 12%;display:flex;flex-direction:column;gap:14px}
+"""
 
+# Answer-rendering helpers shared by the static viewer and the live web app.
+# Everything here is pure rendering: no DATA access, no DOM wiring.
+ANSWER_RENDER_JS = r"""
 function escapeHtml(s){
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -231,9 +240,6 @@ function fmtTime(iso){
   const d = new Date(iso);
   return isNaN(d) ? iso : d.toLocaleString();
 }
-function sortedConversations(){
-  return DATA.conversations.slice().sort((a,b)=> (a.asked_at < b.asked_at ? 1 : -1));
-}
 function metaChips(a){
   const chips = ['~'+a.token_estimate+' tok', a.chunk_count+' chunks'];
   if(a.llm_calls != null) chips.push(a.llm_calls+' LLM calls');
@@ -274,6 +280,15 @@ function answerBubble(a){
   }
   inner += '<details class="cmd"><summary>command</summary><pre>'+escapeHtml(a.command)+'</pre></details>';
   return '<div class="bubble in">'+inner+'</div>';
+}
+"""
+
+# Static-viewer wiring: embedded DATA, sidebar, and conversation selection.
+_VIEWER_SCRIPT = r"""
+const DATA = __DATA__;
+
+function sortedConversations(){
+  return DATA.conversations.slice().sort((a,b)=> (a.asked_at < b.asked_at ? 1 : -1));
 }
 function renderSidebar(){
   const list = document.getElementById('conv-list');
@@ -327,7 +342,7 @@ def render_chat_html(
     payload = {"conversations": [entry.to_dict() for entry in entries]}
     # Embed safely inside the inline <script> tag.
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
-    script = _SCRIPT.replace("__DATA__", data_json)
+    script = ANSWER_RENDER_JS + _VIEWER_SCRIPT.replace("__DATA__", data_json)
     return "\n".join(
         [
             "<!doctype html>",
@@ -336,7 +351,7 @@ def render_chat_html(
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
             "<title>Transcript RAG Chat</title>",
-            f"<style>{_STYLE}</style>",
+            f"<style>{_VIEWER_STYLE}{ANSWER_CSS}</style>",
             "</head>",
             "<body>",
             '<div class="app">',
