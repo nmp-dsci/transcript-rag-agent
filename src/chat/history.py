@@ -35,6 +35,9 @@ class ChatAnswer:
     terminated_reason: str | None = None
     elapsed_seconds: float = 0.0
     error: str | None = None
+    # Retrieved chunk texts (judge input) and the RAGAS evaluation record.
+    contexts: list[str] = field(default_factory=list)
+    evaluation: dict[str, Any] | None = None
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -51,6 +54,7 @@ class ChatAnswer:
             terminated_reason=result.terminated_reason,
             elapsed_seconds=result.elapsed_seconds,
             error=result.error,
+            contexts=list(result.contexts),
         )
 
 
