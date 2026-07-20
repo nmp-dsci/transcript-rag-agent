@@ -37,10 +37,11 @@ from src.chat.frontend import (
 from src.chat.history import (
     DEFAULT_HISTORY_PATH,
     ChatAnswer,
+    ChatEntry,
     append_entry,
     build_entry,
     load_history,
-    save_history,
+    update_entry,
 )
 from src.chat.setups import SETUP_KEYS, SETUP_SPECS, RagSetupRunner, setup_spec
 from src.config import Settings, load_settings
@@ -265,9 +266,21 @@ def create_app(
                         {"key": answer.key, "evaluation": answer.evaluation},
                     )
                 if targets:
-                    save_history(entries, history_path)
+                    evaluations = {answer.key: answer.evaluation for answer in targets}
+
+                    def _apply_evaluations(fresh_entry: ChatEntry) -> None:
+                        for fresh_answer in fresh_entry.answers:
+                            if fresh_answer.key in evaluations:
+                                fresh_answer.evaluation = evaluations[fresh_answer.key]
+
+                    updated_entry, entries = update_entry(
+                        payload.entry_id, _apply_evaluations, history_path
+                    )
                     write_chat_html(entries, chat_html_path)
-                yield _sse("done", entry.to_dict())
+                    result_entry = updated_entry if updated_entry is not None else entry
+                else:
+                    result_entry = entry
+                yield _sse("done", result_entry.to_dict())
             except Exception as exc:
                 yield _sse("error", {"message": str(exc)})
 
