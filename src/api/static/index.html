@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>transcript·lab — RAG Evaluation Workbench</title>
+<style>
+/* ── Instrument design system ─────────────────────────────────────────── */
+:root{
+  color-scheme:dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --bad:#f85149; --bad-dim:#3d1d1f;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;}
+body{background:var(--bg);color:var(--text);font:13px/1.5 'Segoe UI',Helvetica,Arial,sans-serif;
+display:flex;flex-direction:column;overflow:hidden;}
+button{font-family:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2b3442;border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:4px}
+
+.microlabel{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+
+/* ── Top bar ──────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:20px;padding:0 16px;height:46px;flex:0 0 auto;
+background:var(--panel);border-bottom:1px solid var(--border);}
+.brand{font-weight:700;font-size:14px;letter-spacing:.02em;white-space:nowrap}
+.brand em{color:var(--accent2);font-style:normal}
+.nav{display:flex;gap:2px}
+.nav button{background:none;border:none;color:var(--muted);font-size:12.5px;padding:5px 12px;
+border-radius:6px;cursor:pointer}
+.nav button:hover{color:var(--text)}
+.nav button.on{background:var(--accent-dim);color:var(--accent2)}
+.topstat{margin-left:auto;display:flex;align-items:center;gap:14px;font:11px var(--mono);color:var(--muted);
+white-space:nowrap;overflow:hidden}
+.hdot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:0 0 auto}
+.hdot.ok{background:var(--good)}
+.hdot.err{background:var(--bad)}
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+.views{flex:1;min-height:0;display:flex}
+.view{flex:1;min-width:0;display:none}
+.view.on{display:flex}
+
+/* Ask view */
+#view-ask{display:none}
+#view-ask.on{display:flex}
+.rail{width:270px;min-width:220px;flex:0 0 auto;background:var(--panel3);border-right:1px solid var(--border);
+display:flex;flex-direction:column}
+.rail-head{padding:10px 12px 8px;border-bottom:1px solid var(--border)}
+.rail-search{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+color:var(--text);padding:5px 9px;font-size:12px}
+.rail-search::placeholder{color:var(--dim)}
+.rail-list{flex:1;overflow-y:auto}
+.rentry{padding:9px 12px;border-bottom:1px solid #1a2029;cursor:pointer}
+.rentry:hover{background:#182029}
+.rentry.on{background:var(--panel2)}
+.rq{font-size:12.5px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;
+-webkit-box-orient:vertical;overflow:hidden}
+.rmeta{display:flex;gap:8px;align-items:center;margin-top:4px;font:10px var(--mono);color:var(--dim)}
+.rbadge{border-radius:4px;padding:0 5px;font:600 9.5px var(--mono)}
+.rbadge.judged{background:var(--good-dim);color:var(--good);border:1px solid var(--good-border)}
+.rbadge.pending{background:var(--panel2);color:var(--muted);border:1px solid var(--border2)}
+.rail-empty{padding:22px 14px;color:var(--dim);font-size:12px;text-align:center}
+
+.stage{flex:1;min-width:0;display:flex;flex-direction:column}
+.composer{flex:0 0 auto;padding:12px 16px 10px;border-bottom:1px solid var(--border);background:var(--panel)}
+.composer textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;
+color:var(--text);padding:9px 11px;font:13.5px/1.45 'Segoe UI',Helvetica,sans-serif;resize:none;
+min-height:40px;max-height:120px}
+.composer textarea::placeholder{color:var(--dim)}
+.composer textarea:focus{border-color:var(--accent);outline:none}
+.crow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.crow select,.crow input[type=number]{background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+color:var(--text);padding:4px 8px;font-size:12px;max-width:280px}
+.crow input[type=number]{width:64px}
+.pill{background:var(--bg);border:1px solid var(--border2);color:var(--muted);border-radius:14px;
+padding:3px 11px;font-size:11.5px;cursor:pointer}
+.pill.on{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent2)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--accent)}
+.btn{background:var(--panel2);border:1px solid var(--border2);color:var(--text2);border-radius:6px;
+padding:5px 14px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#232b38}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#0b1220;font-weight:700}
+.btn.pri:hover{background:#4b93f8}
+.btn.pri:disabled{background:var(--panel2);border-color:var(--border2);color:var(--dim);font-weight:400}
+.btn.danger{color:var(--bad)}
+.spacer{flex:1}
+
+.qhead{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;
+padding:10px 16px;border-bottom:1px solid var(--border);background:var(--panel3)}
+.qtext{font-size:14.5px;font-weight:600}
+.qmeta{font:10.5px var(--mono);color:var(--dim);display:flex;gap:12px;flex-wrap:wrap;align-items:baseline}
+.qmeta a{color:var(--accent2);text-decoration:none}
+#judge-btn{margin-left:auto}
+
+.cols{flex:1;min-height:0;overflow:auto;padding:14px 16px;display:grid;gap:12px;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start;align-content:start}
+.cols>*{min-width:0}
+.placeholder{grid-column:1/-1;border:1px dashed var(--border2);border-radius:10px;
+padding:34px 22px;text-align:center;color:var(--muted);font-size:13px}
+.placeholder .hint{margin-top:10px;font-size:12px;color:var(--dim)}
+.placeholder .hint b{color:var(--text2);font-weight:600}
+
+.col{background:var(--panel);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;
+min-width:0}
+.col.top{border-color:var(--accent-border);box-shadow:0 0 0 1px var(--accent-border)}
+.colhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.colhead .sw{width:8px;height:8px;border-radius:2px;background:var(--dim);flex:0 0 auto}
+.col[data-key=rag_llm] .sw{background:#8b949e}
+.col[data-key=rag_llm_recursive] .sw{background:#d29922}
+.col[data-key=rag_agent] .sw{background:#2f81f7}
+.coltitle{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.colstatus{margin-left:auto;font:10.5px var(--mono);color:var(--muted);white-space:nowrap}
+.colstatus.running{color:var(--accent2)}
+.colstatus.error{color:var(--bad)}
+.topbadge{font:700 9px var(--mono);letter-spacing:.06em;background:var(--accent-dim);color:var(--accent2);
+border:1px solid var(--accent-border);border-radius:4px;padding:1px 5px}
+.colbody{padding:10px 12px;overflow-y:auto;max-height:52vh;font-size:13px;color:var(--text2)}
+.colwait{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px;padding:6px 0}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.colfoot{border-top:1px solid var(--border);padding:8px 12px}
+.colerr{color:var(--bad);font-size:12.5px;padding:10px 12px}
+
+/* evaluation strip */
+.eval{border-top:1px solid var(--border);background:var(--panel3);padding:9px 12px;border-radius:0 0 8px 8px}
+.eval-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.composite{margin-left:auto;font:700 13px var(--mono);color:var(--accent2)}
+.composite.na{color:var(--dim);font-weight:400;font-size:11px}
+.metric{display:flex;align-items:center;gap:8px;margin:4px 0}
+.metric .mlab{width:86px;flex:0 0 auto;font:10px var(--mono);letter-spacing:.05em;
+text-transform:uppercase;color:var(--muted)}
+.mbar{flex:1;height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.metric .mval{width:44px;text-align:right;font:11px var(--mono);color:var(--text2)}
+.eval-note{font-size:11px;color:var(--dim);margin-top:4px}
+.eval-note.err{color:var(--bad)}
+
+/* shared answer rendering (render.js output), Instrument skin */
+.body{word-wrap:break-word;font-size:13px;line-height:1.55}
+.body p{margin:8px 0}
+.body p:first-child{margin-top:0}
+.body strong{color:var(--text)}
+.body h3.ans-h,.body h4.ans-h,.body h5.ans-h{margin:14px 0 6px;color:var(--accent2);
+font-weight:700;line-height:1.3;font-size:13px}
+.body h3.ans-h{font-size:13.5px}
+.body h3.ans-h:first-child,.body h4.ans-h:first-child{margin-top:0}
+.body ol,.body ul{margin:6px 0;padding-left:20px}
+.body li{margin:5px 0}
+.ans-section{margin:10px 0}
+.ans-section.summary{background:var(--accent-dim);border-left:3px solid var(--accent);
+padding:8px 12px 5px;border-radius:6px;margin:8px 0 14px}
+.ans-section.summary .ans-h{color:var(--accent2)}
+a.cite{display:inline-block;font-size:9.5px;line-height:1;vertical-align:super;
+background:var(--accent-dim);color:var(--accent2);border:1px solid var(--accent-border);
+border-radius:4px;padding:1px 4px;margin:0 1px;text-decoration:none}
+a.cite:hover{background:var(--accent-border)}
+.cite-missing{display:inline-block;font-size:9.5px;line-height:1;vertical-align:super;
+background:var(--panel2);color:var(--muted);border-radius:4px;padding:1px 4px;margin:0 1px}
+.body.clamp{max-height:300px;overflow:hidden;
+-webkit-mask-image:linear-gradient(180deg,#000 72%,transparent);
+mask-image:linear-gradient(180deg,#000 72%,transparent)}
+.body.clamp.expanded{max-height:none;-webkit-mask-image:none;mask-image:none}
+.more{background:none;border:none;color:var(--accent2);cursor:pointer;padding:6px 0 0;
+font-size:11.5px;font-weight:600}
+.more:hover{text-decoration:underline}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.chip{background:var(--bg);border:1px solid var(--border2);color:var(--muted);
+border-radius:5px;padding:1px 7px;font:10.5px var(--mono)}
+.error{color:var(--bad)}
+details.refs{margin-top:8px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:5px 10px}
+details.refs summary{cursor:pointer;color:var(--muted);font-size:11.5px}
+details.refs ul{margin:8px 0 2px;padding-left:4px;list-style:none}
+details.refs li{font-size:11.5px;margin:5px 0;display:flex;gap:8px;align-items:baseline}
+details.refs a{color:var(--accent2);text-decoration:none}
+details.refs a:hover{text-decoration:underline}
+details.refs .rnum{font-family:var(--mono);color:var(--accent2);flex:0 0 auto}
+details.refs .vid{font-family:var(--mono);color:var(--dim)}
+details.cmd{margin-top:6px}
+details.cmd summary{cursor:pointer;color:var(--dim);font-size:10.5px}
+details.cmd pre{margin:6px 0 0;background:var(--bg);border:1px solid var(--border2);
+border-radius:6px;padding:8px;font:10.5px var(--mono);color:var(--text2);overflow:auto;white-space:pre-wrap}
+
+/* Library view */
+#view-library.on,#view-board.on{display:block;overflow-y:auto}
+.pagewrap{max-width:1080px;margin:0 auto;padding:20px 18px 60px}
+.statusstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:130px}
+.stat .microlabel{margin-bottom:2px}
+.stat b{font:600 16px var(--mono);color:var(--text)}
+.stat span{font-size:11px;color:var(--muted)}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.libgrid>*{min-width:0}
+.vcard{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+display:flex;flex-direction:column;gap:6px}
+.vtitle{font-size:13px;font-weight:600;line-height:1.35}
+.vmeta{font:10.5px var(--mono);color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.vcard details{font-size:12px;color:var(--text2)}
+.vcard details summary{cursor:pointer;color:var(--muted);font-size:11.5px}
+.vcard details p{margin:6px 0 0;max-height:150px;overflow-y:auto;color:var(--text2);font-size:12px}
+.vactions{margin-top:auto;padding-top:6px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.panel h2{margin:0 0 4px;font-size:14px}
+.panel .sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
+.formrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.formrow input[type=text],.formrow input[type=number]{background:var(--bg);border:1px solid var(--border2);
+border-radius:6px;color:var(--text);padding:6px 9px;font-size:12.5px}
+.formrow input[type=text]{flex:1;min-width:220px}
+.formrow input[type=number]{width:70px}
+#index-result{font-size:12px;color:var(--muted)}
+#index-result.ok{color:var(--good)}
+#index-result.err{color:var(--bad)}
+
+/* Scoreboard view */
+.boardwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+th{font:600 10px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+text-align:left;padding:9px 12px;border-bottom:1px solid var(--border2);background:var(--panel3);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+td.num{font:11.5px var(--mono);color:var(--text2);white-space:nowrap}
+.cellbar{display:flex;align-items:center;gap:8px;min-width:110px}
+.cellbar .mbar{width:64px;flex:0 0 auto}
+.bestrow td{background:rgba(47,129,247,.06)}
+.board-note{margin-top:12px;font-size:11.5px;color:var(--dim);max-width:760px}
+.emptyboard{padding:30px;text-align:center;color:var(--muted);font-size:13px}
+
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:820px){ .rail{display:none} }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">transcript<em>·lab</em></span>
+  <nav class="nav" aria-label="Views">
+    <button id="nav-ask" class="on" onclick="showView('ask')">Ask &amp; Compare</button>
+    <button id="nav-library" onclick="showView('library')">Library</button>
+    <button id="nav-board" onclick="showView('board')">Scoreboard</button>
+  </nav>
+  <div class="topstat"><span class="hdot" id="hdot"></span><span id="topstat-text">connecting…</span></div>
+</header>
+
+<main class="views">
+
+  <!-- ── Ask & Compare ─────────────────────────────────────────────── -->
+  <section class="view on" id="view-ask">
+    <aside class="rail">
+      <div class="rail-head">
+        <input class="rail-search" id="rail-search" type="search" placeholder="Search questions…" autocomplete="off">
+      </div>
+      <div class="rail-list" id="rail-list"></div>
+    </aside>
+    <div class="stage">
+      <div class="composer">
+        <textarea id="question" rows="1"
+          placeholder="Ask the indexed transcripts anything… (Enter to run, Shift+Enter for newline)"></textarea>
+        <div class="crow">
+          <span class="microlabel">scope</span>
+          <select id="scope"><option value="">Whole corpus</option></select>
+          <span class="microlabel">top_k</span>
+          <input id="topk" type="number" min="1" max="50" placeholder="10">
+          <span class="microlabel">setups</span>
+          <span id="pills"></span>
+          <span class="spacer"></span>
+          <label class="toggle" title="Run RAGAS judging automatically after the answers finish">
+            <input type="checkbox" id="autojudge" checked> auto-judge (RAGAS)
+          </label>
+          <button class="btn danger" id="cancel-btn" style="display:none" onclick="cancelAsk()">Cancel (Esc)</button>
+          <button class="btn pri" id="ask-btn" onclick="ask()">Run</button>
+        </div>
+      </div>
+      <div class="qhead" id="qhead" style="display:none"></div>
+      <div class="cols" id="cols"></div>
+      <div class="sr-only" role="status" aria-live="polite" id="live-status"></div>
+    </div>
+  </section>
+
+  <!-- ── Library ───────────────────────────────────────────────────── -->
+  <section class="view" id="view-library">
+    <div class="pagewrap">
+      <div class="statusstrip" id="lib-stats"></div>
+      <div class="panel">
+        <h2>Index new content</h2>
+        <p class="sub">Fetch transcripts and add them to the RAG index. Channel bulk runs can take several minutes and report when finished.</p>
+        <div class="formrow">
+          <span class="pill on" id="imode-video" onclick="setIndexMode('video')">Single video</span>
+          <span class="pill" id="imode-channel" onclick="setIndexMode('channel')">Channel · latest N</span>
+        </div>
+        <div class="formrow" id="ifields-video">
+          <input type="text" id="index-url" spellcheck="false" placeholder="https://www.youtube.com/watch?v=…">
+        </div>
+        <div class="formrow" id="ifields-channel" style="display:none">
+          <input type="text" id="index-channel" spellcheck="false" placeholder="Channel URL or @handle">
+          <input type="number" id="index-latest" value="5" min="1" max="50" title="How many latest videos">
+        </div>
+        <div class="formrow">
+          <button class="btn pri" id="index-btn" onclick="runIndex()">Start indexing</button>
+          <span id="index-result"></span>
+        </div>
+      </div>
+      <div class="libgrid" id="libgrid"></div>
+    </div>
+  </section>
+
+  <!-- ── Scoreboard ────────────────────────────────────────────────── -->
+  <section class="view" id="view-board">
+    <div class="pagewrap">
+      <div class="statusstrip" id="board-stats"></div>
+      <div class="boardwrap"><div id="board-table"></div></div>
+      <p class="board-note">All answers are graded under one eval process — <b>RAGAS</b>: faithfulness (is the answer supported by the retrieved chunks?), answer relevancy (does it address the question?), context precision (were the retrieved chunks useful?). Composite is their mean; win rate counts questions where a method scored highest among judged answers.</p>
+    </div>
+  </section>
+
+</main>
+
+<script src="/assets/render.js"></script>
+<script>
+'use strict';
+const el = id => document.getElementById(id);
+
+let SETUPS = [], HISTORY = [], CORPUS = null, BOARD = null;
+const selected = new Set();
+let busy = false, judging = false, currentId = null, indexMode = 'video';
+let askAbort = null;
+const timers = new Map();
+
+const METRICS = [
+  ['faithfulness', 'Faithful', 'Faithfulness — is the answer supported by the retrieved chunks?'],
+  ['answer_relevancy', 'Relevant', 'Answer relevancy — does the answer address the question?'],
+  ['context_precision', 'Precision', 'Context precision — were the retrieved chunks useful for the answer?'],
+];
+
+/* ── helpers ── */
+function announce(message){ el('live-status').textContent = message; }
+function fmtDur(seconds){
+  if(seconds == null) return '';
+  seconds = Math.round(seconds);
+  return Math.floor(seconds/60) + ':' + String(seconds%60).padStart(2,'0');
+}
+function fmtScore(value){ return value == null ? '—' : value.toFixed(2); }
+function entryJudgedComposite(entry){
+  const values = entry.answers.map(a => a.evaluation && a.evaluation.composite).filter(v => v != null);
+  return values.length ? Math.max(...values) : null;
+}
+
+async function readEvents(body, handlers){
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for(;;){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buffer += decoder.decode(value, {stream:true});
+    const blocks = buffer.split('\n\n');
+    buffer = blocks.pop();
+    for(const block of blocks){
+      let event = 'message', data = '';
+      for(const line of block.split('\n')){
+        if(line.startsWith('event: ')) event = line.slice(7).trim();
+        else if(line.startsWith('data: ')) data += line.slice(6);
+      }
+      if(handlers[event] && data){
+        try { handlers[event](JSON.parse(data)); } catch(e){ console.error('bad event payload', e); }
+      }
+    }
+  }
+}
+
+/* ── views ── */
+function showView(name){
+  for(const view of ['ask','library','board']){
+    el('view-'+view).classList.toggle('on', view === name);
+    el('nav-'+view).classList.toggle('on', view === name);
+  }
+  if(name === 'library') loadCorpus();
+  if(name === 'board') loadBoard(true);
+}
+
+/* ── health / topbar ── */
+async function refreshHealth(){
+  try{
+    const health = await (await fetch('/api/health')).json();
+    el('hdot').className = 'hdot ok';
+    const corpusBit = CORPUS ? CORPUS.totals.videos + ' videos · ' + CORPUS.totals.chunks + ' chunks · ' : '';
+    el('topstat-text').textContent = corpusBit + 'judge ' + health.judge_model
+      + (health.runner_loaded ? ' · stack loaded' : ' · stack cold');
+  } catch(e){
+    el('hdot').className = 'hdot err';
+    el('topstat-text').textContent = 'server unreachable';
+  }
+}
+
+/* ── history rail ── */
+function renderRail(){
+  const query = el('rail-search').value.trim().toLowerCase();
+  const list = el('rail-list');
+  const entries = HISTORY.slice().sort((a,b)=> a.asked_at < b.asked_at ? 1 : -1)
+    .filter(entry => !query || entry.question.toLowerCase().includes(query));
+  if(!entries.length){
+    list.innerHTML = '<div class="rail-empty">' + (HISTORY.length ? 'No matches.' : 'No questions yet.<br>Run your first one above.') + '</div>';
+    return;
+  }
+  list.innerHTML = entries.map(entry => {
+    const composite = entryJudgedComposite(entry);
+    const badge = composite != null
+      ? '<span class="rbadge judged">✓ ' + composite.toFixed(2) + '</span>'
+      : '<span class="rbadge pending">unjudged</span>';
+    return '<div class="rentry' + (entry.id === currentId ? ' on' : '') + '" data-id="' + escapeHtml(entry.id) + '">'
+      + '<div class="rq">' + escapeHtml(entry.question) + '</div>'
+      + '<div class="rmeta">' + badge + '<span>' + entry.answers.length + ' ans</span>'
+      + '<span>' + fmtTime(entry.asked_at) + '</span></div></div>';
+  }).join('');
+  list.querySelectorAll('.rentry').forEach(node => {
+    node.onclick = () => { if(!busy) selectEntry(node.getAttribute('data-id')); };
+  });
+}
+
+/* ── setup pills / composer ── */
+function renderPills(){
+  el('pills').innerHTML = '';
+  SETUPS.forEach(spec => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pill' + (selected.has(spec.key) ? ' on' : '');
+    pill.textContent = spec.title.replace(/^rag_llm |^rag_agent ?/,'').replace(/[()]/g,'') || spec.key;
+    pill.title = spec.description;
+    pill.onclick = () => {
+      if(selected.has(spec.key)) selected.delete(spec.key); else selected.add(spec.key);
+      renderPills(); updateButtons();
+    };
+    el('pills').appendChild(pill);
+  });
+}
+function updateButtons(){
+  el('ask-btn').disabled = busy || !selected.size || !el('question').value.trim();
+}
+function autosize(){
+  const area = el('question');
+  area.style.height = 'auto';
+  area.style.height = Math.min(area.scrollHeight, 120) + 'px';
+}
+
+/* ── columns ── */
+function setQHead(html, visible){
+  const head = el('qhead');
+  head.style.display = visible ? '' : 'none';
+  head.innerHTML = html;
+}
+function qheadFor(entry, statusText){
+  let meta = '<span class="qmeta">'
+    + (statusText ? '<span>' + escapeHtml(statusText) + '</span>' : '')
+    + '<span>' + fmtTime(entry.asked_at) + '</span><span>' + escapeHtml(entry.id) + '</span>'
+    + (entry.url ? '<a href="' + escapeHtml(entry.url) + '" target="_blank">scoped to one video</a>' : '')
+    + '</span>';
+  const unjudged = entry.answers.some(a => !a.evaluation);
+  const judgeBtn = (!statusText && unjudged && !judging)
+    ? '<button class="btn" id="judge-btn" onclick="judgeEntry(\'' + entry.id + '\')">Judge with RAGAS</button>' : '';
+  return '<span class="qtext">' + escapeHtml(entry.question) + '</span>' + meta + judgeBtn;
+}
+
+function columnShell(key, title){
+  return '<div class="col" data-key="' + escapeHtml(key) + '" id="col-' + escapeHtml(key) + '">'
+    + '<div class="colhead"><span class="sw"></span><span class="coltitle">' + escapeHtml(title) + '</span>'
+    + '<span class="colstatus" id="st-' + escapeHtml(key) + '">queued</span></div>'
+    + '<div class="colbody" id="body-' + escapeHtml(key) + '"><div class="colwait"><span class="pulse"></span>waiting…</div></div>'
+    + '<div class="eval" id="eval-' + escapeHtml(key) + '"></div>'
+    + '</div>';
+}
+function setColStatus(key, text, cls){
+  const node = el('st-' + key);
+  if(node){ node.textContent = text; node.className = 'colstatus' + (cls ? ' ' + cls : ''); }
+}
+function startTimer(key){
+  stopTimer(key);
+  const started = Date.now();
+  timers.set(key, setInterval(() => {
+    setColStatus(key, 'running ' + ((Date.now() - started)/1000).toFixed(0) + 's', 'running');
+  }, 250));
+}
+function stopTimer(key){
+  if(timers.has(key)){ clearInterval(timers.get(key)); timers.delete(key); }
+}
+function stopAllTimers(){ [...timers.keys()].forEach(stopTimer); }
+
+function fillAnswer(answer){
+  const body = el('body-' + answer.key);
+  if(!body) return;
+  if(answer.error){
+    body.innerHTML = '<div class="error" style="font-size:12.5px">Error: ' + escapeHtml(answer.error) + '</div>';
+    setColStatus(answer.key, 'error', 'error');
+  } else {
+    const cleaned = cleanAnswer(answer.answer);
+    const long = cleaned.length > 1600;
+    body.innerHTML = '<div class="body' + (long ? ' clamp' : '') + '">' + renderAnswer(cleaned, answer.references) + '</div>'
+      + (long ? '<button class="more" onclick="toggleClamp(this)">Show full answer ▾</button>' : '')
+      + metaChips(answer)
+      + renderRefs(answer.references)
+      + '<details class="cmd"><summary>command</summary><pre>' + escapeHtml(answer.command) + '</pre></details>';
+    setColStatus(answer.key, (answer.elapsed_seconds || 0) + 's · ~' + answer.token_estimate + ' tok');
+  }
+  renderEval(answer.key, answer.evaluation, false);
+}
+
+function renderEval(key, evaluation, inProgress){
+  const strip = el('eval-' + key);
+  if(!strip) return;
+  const head = '<div class="eval-head"><span class="microlabel">ragas eval</span>';
+  if(inProgress){
+    strip.innerHTML = head + '</div><div class="colwait"><span class="pulse"></span>judging…</div>';
+    return;
+  }
+  if(!evaluation){
+    strip.innerHTML = head + '<span class="composite na">not judged</span></div>';
+    return;
+  }
+  const scores = evaluation.scores || {};
+  const composite = evaluation.composite;
+  let html = head
+    + '<span class="composite' + (composite == null ? ' na' : '') + '">'
+    + (composite == null ? 'no score' : composite.toFixed(2)) + '</span></div>';
+  for(const [name, label, title] of METRICS){
+    const value = scores[name];
+    html += '<div class="metric" title="' + escapeHtml(title) + '"><span class="mlab">' + label + '</span>'
+      + '<span class="mbar"><i style="width:' + (value != null ? Math.round(value*100) : 0) + '%"></i></span>'
+      + '<span class="mval">' + fmtScore(value) + '</span></div>';
+  }
+  if(evaluation.error) html += '<div class="eval-note err">' + escapeHtml(evaluation.error) + '</div>';
+  else html += '<div class="eval-note">judged by ' + escapeHtml(evaluation.judge_model || 'ragas')
+    + (evaluation.elapsed_seconds ? ' in ' + evaluation.elapsed_seconds + 's' : '') + '</div>';
+  strip.innerHTML = html;
+}
+
+function markTopColumn(entry){
+  const values = entry.answers.filter(a => a.evaluation && a.evaluation.composite != null);
+  document.querySelectorAll('.col').forEach(col => col.classList.remove('top'));
+  document.querySelectorAll('.topbadge').forEach(node => node.remove());
+  if(values.length < 2) return;
+  const best = values.reduce((x, y) => y.evaluation.composite > x.evaluation.composite ? y : x);
+  const col = el('col-' + best.key);
+  if(col){
+    col.classList.add('top');
+    const status = el('st-' + best.key);
+    if(status) status.insertAdjacentHTML('beforebegin', '<span class="topbadge">TOP</span>');
+  }
+}
+
+function selectEntry(id){
+  const entry = HISTORY.find(e => e.id === id);
+  if(!entry) return;
+  currentId = id;
+  renderRail();
+  setQHead(qheadFor(entry), true);
+  el('cols').innerHTML = entry.answers.map(a => columnShell(a.key, a.title)).join('');
+  entry.answers.forEach(fillAnswer);
+  markTopColumn(entry);
+}
+
+function showPlaceholder(){
+  currentId = null;
+  setQHead('', false);
+  let hint = '';
+  if(CORPUS && CORPUS.videos.length){
+    const titles = CORPUS.videos.slice(0,3).map(video => video.title || video.video_id).filter(Boolean);
+    if(titles.length) hint = '<div class="hint">In the corpus right now: ' + titles.map(t => '<b>' + escapeHtml(t) + '</b>').join(' · ') + '</div>';
+  }
+  el('cols').innerHTML = '<div class="placeholder">Ask a question above to compare retrieval methods side by side — '
+    + 'each answer is scored with RAGAS under the same eval process.' + hint + '</div>';
+}
+
+/* ── ask flow ── */
+async function ask(){
+  const question = el('question').value.trim();
+  if(!question || busy || !selected.size) return;
+  const url = el('scope').value || null;
+  const topK = parseInt(el('topk').value, 10) || null;
+  const keys = SETUPS.map(s => s.key).filter(k => selected.has(k));
+
+  busy = true; updateButtons();
+  el('cancel-btn').style.display = '';
+  el('question').value = ''; autosize();
+  currentId = null; renderRail();
+
+  const pendingEntry = {question, url, asked_at: new Date().toISOString(), id: 'running…', answers: []};
+  setQHead(qheadFor(pendingEntry, 'in progress'), true);
+  el('cols').innerHTML = keys.map(key => columnShell(key, SETUPS.find(s => s.key === key).title)).join('');
+
+  askAbort = new AbortController();
+  let doneEntry = null;
+  try{
+    const response = await fetch('/api/ask', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question, setups: keys, url, top_k: topK}),
+      signal: askAbort.signal,
+    });
+    if(!response.ok || !response.body) throw new Error('HTTP ' + response.status + ': ' + await response.text());
+    await readEvents(response.body, {
+      progress: data => {
+        if(data.key){ startTimer(data.key); }
+        announce(data.message);
+      },
+      answer: data => { stopTimer(data.key); fillAnswer(data); },
+      done: data => { doneEntry = data; },
+      error: data => {
+        stopAllTimers();
+        el('cols').insertAdjacentHTML('afterbegin',
+          '<div class="colerr">Request failed: ' + escapeHtml(data.message) + '</div>');
+      },
+    });
+  } catch(err){
+    stopAllTimers();
+    if(err.name !== 'AbortError'){
+      el('cols').insertAdjacentHTML('afterbegin', '<div class="colerr">Request failed: ' + escapeHtml(err.message) + '</div>');
+    } else {
+      announce('Run cancelled');
+    }
+  } finally {
+    stopAllTimers();
+    busy = false; askAbort = null;
+    el('cancel-btn').style.display = 'none';
+    updateButtons(); refreshHealth();
+  }
+  if(doneEntry){
+    HISTORY.push(doneEntry);
+    currentId = doneEntry.id;
+    BOARD = null;
+    renderRail();
+    setQHead(qheadFor(doneEntry), true);
+    doneEntry.answers.forEach(a => renderEval(a.key, a.evaluation, false));
+    announce('All answers finished');
+    if(el('autojudge').checked) await judgeEntry(doneEntry.id);
+  }
+}
+function cancelAsk(){ if(askAbort) askAbort.abort(); }
+
+/* ── judge flow ── */
+async function judgeEntry(id){
+  const entry = HISTORY.find(e => e.id === id);
+  if(!entry || judging) return;
+  judging = true;
+  if(currentId === id){
+    setQHead(qheadFor(entry, 'judging with RAGAS'), true);
+    entry.answers.filter(a => !a.evaluation).forEach(a => renderEval(a.key, null, true));
+  }
+  try{
+    const response = await fetch('/api/judge', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({entry_id: id}),
+    });
+    if(!response.ok || !response.body) throw new Error('HTTP ' + response.status + ': ' + await response.text());
+    await readEvents(response.body, {
+      progress: data => announce(data.message),
+      scored: data => {
+        const answer = entry.answers.find(a => a.key === data.key);
+        if(answer) answer.evaluation = data.evaluation;
+        if(currentId === id) renderEval(data.key, data.evaluation, false);
+      },
+      done: data => {
+        const index = HISTORY.findIndex(e => e.id === id);
+        if(index !== -1) HISTORY[index] = data;
+      },
+      error: data => announce('Judging failed: ' + data.message),
+    });
+  } catch(err){
+    announce('Judging failed: ' + err.message);
+  } finally {
+    judging = false;
+    BOARD = null;
+    const fresh = HISTORY.find(e => e.id === id);
+    if(fresh && currentId === id){
+      setQHead(qheadFor(fresh), true);
+      markTopColumn(fresh);
+    }
+    renderRail(); refreshHealth();
+  }
+}
+
+/* ── library ── */
+async function loadCorpus(force){
+  if(CORPUS && !force){ renderLibrary(); return; }
+  try{
+    CORPUS = await (await fetch('/api/corpus')).json();
+  } catch(e){ CORPUS = {videos: [], totals: {videos: 0, chunks: 0}}; }
+  renderLibrary(); renderScope(); refreshHealth();
+}
+function renderScope(){
+  const scope = el('scope');
+  const current = scope.value;
+  scope.innerHTML = '<option value="">Whole corpus</option>';
+  (CORPUS ? CORPUS.videos : []).forEach(video => {
+    if(!video.source_url) return;
+    const option = document.createElement('option');
+    option.value = video.source_url;
+    option.textContent = (video.title || video.video_id || video.source_url).slice(0, 70);
+    scope.appendChild(option);
+  });
+  scope.value = current;
+}
+function renderLibrary(){
+  const totals = CORPUS.totals;
+  el('lib-stats').innerHTML =
+    '<div class="stat"><div class="microlabel">videos indexed</div><b>' + totals.videos + '</b></div>'
+    + '<div class="stat"><div class="microlabel">chunks</div><b>' + totals.chunks + '</b></div>'
+    + '<div class="stat"><div class="microlabel">questions asked</div><b>' + HISTORY.length + '</b></div>';
+  if(!CORPUS.videos.length){
+    el('libgrid').innerHTML = '<div class="placeholder">Library is empty — index your first video above, then ask it anything.</div>';
+    return;
+  }
+  el('libgrid').innerHTML = CORPUS.videos.map(video => {
+    const meta = [
+      video.channel_name ? escapeHtml(video.channel_name) : null,
+      video.duration_seconds ? fmtDur(video.duration_seconds) : null,
+      video.upload_date ? escapeHtml(String(video.upload_date)) : null,
+      video.chunk_count + ' chunks',
+    ].filter(Boolean).join(' · ');
+    return '<div class="vcard">'
+      + '<div class="vtitle">' + escapeHtml(video.title || video.video_id) + '</div>'
+      + '<div class="vmeta">' + meta + '</div>'
+      + (video.summary ? '<details><summary>summary</summary><p>' + escapeHtml(video.summary) + '</p></details>' : '')
+      + '<div class="vactions"><button class="btn" data-url="' + escapeHtml(video.source_url || '') + '">Ask about this →</button></div>'
+      + '</div>';
+  }).join('');
+  el('libgrid').querySelectorAll('button[data-url]').forEach(button => {
+    button.onclick = () => {
+      showView('ask');
+      renderScope();
+      el('scope').value = button.getAttribute('data-url');
+      el('question').focus();
+    };
+  });
+}
+function setIndexMode(mode){
+  indexMode = mode;
+  el('imode-video').classList.toggle('on', mode === 'video');
+  el('imode-channel').classList.toggle('on', mode === 'channel');
+  el('ifields-video').style.display = mode === 'video' ? '' : 'none';
+  el('ifields-channel').style.display = mode === 'channel' ? '' : 'none';
+}
+async function runIndex(){
+  const result = el('index-result');
+  const payload = {mode: indexMode};
+  if(indexMode === 'video'){
+    payload.url = el('index-url').value.trim();
+    if(!payload.url){ result.className = 'err'; result.textContent = 'Enter a video URL.'; return; }
+  } else {
+    payload.channel = el('index-channel').value.trim();
+    payload.latest = parseInt(el('index-latest').value, 10) || 5;
+    if(!payload.channel){ result.className = 'err'; result.textContent = 'Enter a channel.'; return; }
+  }
+  el('index-btn').disabled = true;
+  result.className = ''; result.textContent = 'Indexing… this can take a while.';
+  try{
+    const response = await fetch('/api/index', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if(response.ok && data.ok){
+      result.className = 'ok';
+      result.textContent = 'Indexed ' + data.target + ' — refreshing library…';
+      await loadCorpus(true);
+      result.textContent = 'Indexed ' + data.target + ' — ready to ask about it.';
+    } else {
+      result.className = 'err';
+      result.textContent = 'Indexing failed' + (data.detail ? ': ' + data.detail : ' (exit code ' + data.exit_code + ')');
+    }
+  } catch(err){
+    result.className = 'err'; result.textContent = 'Request failed: ' + err.message;
+  } finally {
+    el('index-btn').disabled = false;
+  }
+}
+
+/* ── scoreboard ── */
+async function loadBoard(force){
+  if(BOARD && !force){ renderBoard(); return; }
+  try{ BOARD = await (await fetch('/api/scoreboard')).json(); }
+  catch(e){ BOARD = null; }
+  renderBoard();
+}
+function renderBoard(){
+  if(!BOARD){ el('board-table').innerHTML = '<div class="emptyboard">Scoreboard unavailable.</div>'; return; }
+  el('board-stats').innerHTML =
+    '<div class="stat"><div class="microlabel">questions judged</div><b>' + BOARD.entries_judged + '</b><span> of ' + BOARD.entries_total + '</span></div>'
+    + '<div class="stat"><div class="microlabel">judge model</div><b style="font-size:13px">' + escapeHtml(BOARD.judge_model || 'ragas') + '</b></div>';
+  const rows = BOARD.setups.filter(row => row.answers > 0);
+  if(!rows.length || !BOARD.entries_judged){
+    el('board-table').innerHTML = '<div class="emptyboard">Nothing judged yet — run a question with auto-judge on, or open one from history and press “Judge with RAGAS”.</div>';
+    return;
+  }
+  const bestKey = rows[0].avg_composite != null ? rows[0].key : null;
+  let html = '<table><thead><tr><th>Setup</th><th>Judged</th>';
+  for(const [,label] of METRICS) html += '<th>' + label + '</th>';
+  html += '<th>Composite</th><th>Win rate</th><th>Latency</th><th>~Tokens</th></tr></thead><tbody>';
+  for(const row of rows){
+    html += '<tr' + (row.key === bestKey ? ' class="bestrow"' : '') + '>'
+      + '<td>' + escapeHtml(row.title) + '</td>'
+      + '<td class="num">' + row.judged + '/' + row.answers + '</td>';
+    for(const [name] of METRICS){
+      const value = row.avg_scores[name];
+      html += '<td><span class="cellbar"><span class="mbar"><i style="width:' + (value != null ? Math.round(value*100) : 0) + '%"></i></span><span class="num">' + fmtScore(value) + '</span></span></td>';
+    }
+    html += '<td class="num"><b style="color:var(--accent2)">' + fmtScore(row.avg_composite) + '</b></td>'
+      + '<td class="num">' + (row.win_rate == null ? '—' : Math.round(row.win_rate*100) + '% (' + row.wins + '/' + row.contests + ')') + '</td>'
+      + '<td class="num">' + (row.avg_latency_seconds == null ? '—' : row.avg_latency_seconds + 's') + '</td>'
+      + '<td class="num">' + (row.avg_token_estimate == null ? '—' : row.avg_token_estimate) + '</td></tr>';
+  }
+  el('board-table').innerHTML = html + '</tbody></table>';
+}
+
+/* ── init ── */
+async function init(){
+  const [setupsResponse, historyResponse] = await Promise.all([fetch('/api/setups'), fetch('/api/history')]);
+  SETUPS = (await setupsResponse.json()).setups;
+  HISTORY = (await historyResponse.json()).conversations;
+  SETUPS.forEach(spec => selected.add(spec.key));
+  renderPills(); renderRail();
+
+  const latest = HISTORY.slice().sort((a,b)=> a.asked_at < b.asked_at ? 1 : -1)[0];
+  if(latest) selectEntry(latest.id); else showPlaceholder();
+
+  loadCorpus();
+  refreshHealth();
+
+  const input = el('question');
+  input.addEventListener('input', () => { autosize(); updateButtons(); });
+  input.addEventListener('keydown', event => {
+    if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); ask(); }
+  });
+  document.addEventListener('keydown', event => {
+    if(event.key === 'Escape' && askAbort) cancelAsk();
+  });
+  el('rail-search').addEventListener('input', renderRail);
+  el('autojudge').checked = localStorage.getItem('tlab.autojudge') !== '0';
+  el('autojudge').addEventListener('change', () =>
+    localStorage.setItem('tlab.autojudge', el('autojudge').checked ? '1' : '0'));
+  updateButtons();
+}
+init();
+</script>
+</body>
+</html>

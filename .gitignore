@@ -13,3 +13,4 @@ evaluation/*
 opensrc/*/
 !opensrc/setup_opensrc.sh
 !opensrc/sources.json
+.lavish/

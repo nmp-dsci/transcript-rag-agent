@@ -11,10 +11,15 @@ from src.chat.setups import (
 )
 
 
+class FakeChunk:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
 class FakeContext:
     def __init__(self, text: str = "some retrieved context", chunks: int = 3) -> None:
         self.context_text = text
-        self.retrieved_chunks = [object()] * chunks
+        self.retrieved_chunks = [FakeChunk(f"chunk {i}") for i in range(chunks)]
 
 
 class FakeRagLlm:
@@ -89,6 +94,7 @@ def test_run_rag_llm_single_hop(settings) -> None:
     assert result.answer == "llm answer"
     assert result.llm_calls == 1
     assert result.chunk_count == 3
+    assert result.contexts == ["chunk 0", "chunk 1", "chunk 2"]
     assert result.token_estimate > 0
     assert result.error is None
     assert fake.requests[-1].top_k == 7

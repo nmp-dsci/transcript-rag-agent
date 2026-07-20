@@ -41,6 +41,10 @@ class Settings:
     supadata_poll_interval_seconds: float = 2.0
     supadata_max_poll_seconds: float = 600.0
     discovery_cache_ttl_hours: float = 24.0
+    # RAGAS judge model; each falls back to the DeepSeek value when unset.
+    judge_model: str | None = None
+    judge_api_key: str | None = None
+    judge_base_url: str | None = None
 
 
 def _project_root() -> Path:
@@ -168,4 +172,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         discovery_cache_ttl_hours=_float_env(
             "YT_AGENT_DISCOVERY_CACHE_TTL_HOURS", 24.0
         ),
+        judge_model=os.environ.get("YT_AGENT_JUDGE_MODEL") or None,
+        judge_api_key=os.environ.get("YT_AGENT_JUDGE_API_KEY") or None,
+        judge_base_url=os.environ.get("YT_AGENT_JUDGE_BASE_URL") or None,
     )

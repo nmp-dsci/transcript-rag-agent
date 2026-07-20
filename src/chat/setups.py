@@ -86,6 +86,8 @@ class SetupResult:
     terminated_reason: str | None = None
     elapsed_seconds: float = 0.0
     error: str | None = None
+    # Retrieved chunk texts, persisted so RAGAS can judge the answer later.
+    contexts: list[str] = field(default_factory=list)
 
 
 def select_setups(raw: str) -> list[str]:
@@ -316,4 +318,9 @@ class RagSetupRunner:
             iterations=iterations,
             terminated_reason=terminated_reason,
             elapsed_seconds=round(elapsed, 2),
+            contexts=[
+                chunk.text
+                for chunk in (chunks or [])
+                if isinstance(getattr(chunk, "text", None), str)
+            ],
         )

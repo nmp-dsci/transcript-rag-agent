@@ -162,6 +162,68 @@ setup name with the answer, retrieval metadata, references, and the equivalent
 `rag-ask` command below it. Because the history and view regenerate after every
 question, you can keep `chat.html` open and just refresh.
 
+### Evaluation Workbench (browser)
+
+The web app is an evaluation workbench: ask a question, watch every selected
+RAG setup answer it side by side, and have **RAGAS score each answer under the
+same eval process** — faithfulness, answer relevancy, and context precision,
+plus a composite — so retrieval methods are compared with numbers, not vibes.
+
+```bash
+uv run python -m src.cli serve                       # http://127.0.0.1:8000
+uv run python -m src.cli serve --host 0.0.0.0 --port 9000
+```
+
+Three views:
+
+- **Ask & Compare** — composer with scope (whole corpus or one video picked
+  from the Library), `top_k`, setup toggles, and an auto-judge switch. Answers
+  stream into side-by-side columns with live per-setup timers; when a run
+  finishes, RAGAS judges every answer (automatically, or via the
+  "Judge with RAGAS" button) and each column gets a score strip. The
+  highest-composite column is badged TOP. The history rail is searchable and
+  shows judged/unjudged state; Esc cancels a running ask.
+- **Library** — every indexed video with title, channel, duration, upload
+  date, chunk count, and expandable summary (all read from Chroma metadata);
+  "Ask about this" pre-scopes the composer. Indexing (single video or latest-N
+  channel) lives here too.
+- **Scoreboard** — per-setup aggregates across everything judged: average
+  score per RAGAS metric, composite, win rate (highest composite per
+  question), average latency and token estimate.
+
+Retrieved chunk texts are persisted with each answer (`contexts` in the
+history JSON) so judging can run at any time, including re-judging with
+`force`. Questions asked in the browser are appended to the same
+`dashboard/chat_history.json` and regenerate `dashboard/chat.html`, so the CLI
+chat, the workbench, and the static viewer share one history. Entries recorded
+before context persistence report "no stored retrieval contexts" instead of
+scores.
+
+Endpoints (JSON unless noted):
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | The workbench UI |
+| `/api/health` | GET | Liveness, lazy-stack state, judge model |
+| `/api/setups` | GET | The three RAG setup descriptors |
+| `/api/history` | GET | All captured conversations (with evaluations) |
+| `/api/corpus` | GET | Indexed videos with metadata and chunk counts |
+| `/api/scoreboard` | GET | Per-setup RAGAS aggregates and win rates |
+| `/api/ask` | POST | Answer a question (streams server-sent events) |
+| `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
+| `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
+
+The judge LLM defaults to the configured DeepSeek model (self-grading); set
+`YT_AGENT_JUDGE_MODEL`, `YT_AGENT_JUDGE_API_KEY`, and `YT_AGENT_JUDGE_BASE_URL`
+to grade with an independent provider instead — any OpenAI-compatible API
+works. Answer-relevancy embeddings use the same local sentence-transformers
+model as retrieval.
+
+Dependencies: `ragas` (the eval metrics) and `uvicorn` (the server), both
+installed by `uv sync`. `src/evals/_ragas_compat.py` shims two legacy Vertex AI
+imports that ragas 0.4 expects from older `langchain-community` releases; the
+retrieval and judge stacks load lazily on first use, never at startup.
+
 ### Command Sequence
 
 The chat menu above is the recommended entry point. The individual commands

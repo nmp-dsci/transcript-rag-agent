@@ -8,7 +8,9 @@ from these records.
 from __future__ import annotations
 
 import json
+import threading
 import uuid
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +19,11 @@ from typing import Any
 from src.chat.setups import SetupResult
 
 DEFAULT_HISTORY_PATH = Path("dashboard/chat_history.json")
+
+# Guards read-modify-write access to the history file so concurrent requests
+# (e.g. /api/ask and /api/judge, or two browser tabs) cannot interleave and
+# silently drop each other's writes.
+_LOCK = threading.Lock()
 
 
 @dataclass
@@ -35,6 +42,9 @@ class ChatAnswer:
     terminated_reason: str | None = None
     elapsed_seconds: float = 0.0
     error: str | None = None
+    # Retrieved chunk texts (judge input) and the RAGAS evaluation record.
+    contexts: list[str] = field(default_factory=list)
+    evaluation: dict[str, Any] | None = None
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -51,6 +61,7 @@ class ChatAnswer:
             terminated_reason=result.terminated_reason,
             elapsed_seconds=result.elapsed_seconds,
             error=result.error,
+            contexts=list(result.contexts),
         )
 
 
@@ -125,7 +136,29 @@ def save_history(entries: list[ChatEntry], path: Path = DEFAULT_HISTORY_PATH) ->
 def append_entry(
     entry: ChatEntry, path: Path = DEFAULT_HISTORY_PATH
 ) -> list[ChatEntry]:
-    entries = load_history(path)
-    entries.append(entry)
-    save_history(entries, path)
-    return entries
+    with _LOCK:
+        entries = load_history(path)
+        entries.append(entry)
+        save_history(entries, path)
+        return entries
+
+
+def update_entry(
+    entry_id: str,
+    mutate: Callable[[ChatEntry], None],
+    path: Path = DEFAULT_HISTORY_PATH,
+) -> tuple[ChatEntry | None, list[ChatEntry]]:
+    """Reload the current history, mutate the target entry in place, and save.
+
+    Reloading from disk immediately before saving (rather than reusing an
+    in-memory snapshot taken before a long-running operation) avoids
+    clobbering entries appended by other requests in the meantime.
+    """
+    with _LOCK:
+        entries = load_history(path)
+        entry = next((e for e in entries if e.id == entry_id), None)
+        if entry is None:
+            return None, entries
+        mutate(entry)
+        save_history(entries, path)
+        return entry, entries
