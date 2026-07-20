@@ -67,7 +67,10 @@ class RagasJudge:
         )
 
         faithfulness = Faithfulness(llm=llm)
-        relevancy = AnswerRelevancy(llm=llm, embeddings=embeddings)
+        # strictness controls how many synthetic questions are generated per
+        # sample via a single n>1 chat completion; DeepSeek's OpenAI-compatible
+        # endpoint rejects n>1, so keep it at 1.
+        relevancy = AnswerRelevancy(llm=llm, embeddings=embeddings, strictness=1)
         precision = LLMContextPrecisionWithoutReference(llm=llm)
 
         def sample(question: str, answer: str, contexts: list[str]) -> Any:
