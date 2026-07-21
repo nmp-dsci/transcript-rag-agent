@@ -1,7 +1,13 @@
 /* ── Instrument design system ───────────────────────────────────────────
    Ported from src/api/static/index.html so the React app keeps the same
-   visual language as the workbench it replaces. */
-:root {
+   visual language as the workbench it replaces.
+
+   Both themes define the same token set, so components never branch on the
+   theme — index.html stamps data-theme on <html> before first paint. Note
+   that --accent2 inverts in meaning: it is a light blue for emphasis on dark
+   surfaces, and a dark blue for emphasis on light ones. */
+:root,
+:root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #0e1116;
   --panel: #12161d;
@@ -24,7 +30,50 @@
   --warn-dim: #3a2e12;
   --bad: #f85149;
   --bad-dim: #3d1d1f;
+  --warn-border: #5c451a;
+  --bad-border: #6b2a2c;
+  --on-accent: #0b1220;
+  --scroll-thumb: #2b3442;
+  --hover: #182029;
+  --rail-sep: #1a2029;
+  --btn-hover: #232b38;
+  --accent-hover: #4b93f8;
+  --best-row: rgba(47, 129, 247, 0.06);
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f6f8fa;
+  --panel: #ffffff;
+  --panel2: #eaeef2;
+  --panel3: #f6f8fa;
+  --border: #d1d9e0;
+  --border2: #bcc4cc;
+  --text: #1f2328;
+  --text2: #424a53;
+  --muted: #59636e;
+  --dim: #818b98;
+  --accent: #0969da;
+  --accent2: #0550ae;
+  --accent-dim: #ddf4ff;
+  --accent-border: #b6e3ff;
+  --good: #1a7f37;
+  --good-dim: #dafbe1;
+  --good-border: #aceebb;
+  --warn: #9a6700;
+  --warn-dim: #fff8c5;
+  --bad: #cf222e;
+  --bad-dim: #ffebe9;
+  --warn-border: #d4a72c;
+  --bad-border: #ffcecb;
+  --on-accent: #ffffff;
+  --scroll-thumb: #c9d1d9;
+  --hover: #eef2f6;
+  --rail-sep: #e4e8ec;
+  --btn-hover: #eef2f6;
+  --accent-hover: #0860ca;
+  --best-row: rgba(9, 105, 218, 0.06);
 }
 
 * { box-sizing: border-box; }
@@ -37,7 +86,7 @@ body {
 }
 button, input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #2b3442; border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; border: 2px solid var(--bg); }
 ::-webkit-scrollbar-track { background: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 
@@ -69,6 +118,12 @@ button, input, select, textarea { font-family: inherit; }
   margin-left: auto; display: flex; align-items: center; gap: 14px;
   font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden;
 }
+.themetoggle {
+  background: none; border: 1px solid var(--border2); color: var(--muted);
+  border-radius: 6px; width: 26px; height: 22px; flex: 0 0 auto;
+  cursor: pointer; font-size: 12px; line-height: 1; padding: 0;
+}
+.themetoggle:hover { color: var(--text); background: var(--btn-hover); }
 .hdot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: 0 0 auto; }
 .hdot.ok { background: var(--good); }
 .hdot.err { background: var(--bad); }
@@ -85,10 +140,10 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--panel2); border: 1px solid var(--border2); color: var(--text2);
   border-radius: 6px; padding: 5px 14px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
 }
-.btn:hover:not(:disabled) { background: #232b38; }
+.btn:hover:not(:disabled) { background: var(--btn-hover); }
 .btn:disabled { opacity: 0.4; cursor: default; }
-.btn.pri { background: var(--accent); border-color: var(--accent); color: #0b1220; font-weight: 700; }
-.btn.pri:hover:not(:disabled) { background: #4b93f8; }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.btn.pri:hover:not(:disabled) { background: var(--accent-hover); }
 .btn.pri:disabled { background: var(--panel2); border-color: var(--border2); color: var(--dim); font-weight: 400; }
 .btn.danger { color: var(--bad); }
 .btn.sm { padding: 3px 9px; font-size: 11.5px; }
@@ -110,8 +165,8 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .badge { border-radius: 4px; padding: 1px 6px; font: 600 9.5px var(--mono); white-space: nowrap; }
 .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
 .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
-.badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid #5c451a; }
-.badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid #6b2a2c; }
+.badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+.badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
 .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
 
 /* ── History rail ── */
@@ -122,8 +177,8 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .rail-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--border); }
 .rail-head input { width: 100%; }
 .rail-list { flex: 1; min-height: 0; overflow-y: auto; }
-.rentry { padding: 9px 12px; border-bottom: 1px solid #1a2029; cursor: pointer; background: none; border-left: none; border-right: none; border-top: none; width: 100%; text-align: left; display: block; }
-.rentry:hover { background: #182029; }
+.rentry { padding: 9px 12px; border-bottom: 1px solid var(--rail-sep); cursor: pointer; background: none; border-left: none; border-right: none; border-top: none; width: 100%; text-align: left; display: block; }
+.rentry:hover { background: var(--hover); }
 .rentry.on { background: var(--panel2); }
 .rq {
   font-size: 12.5px; color: var(--text2); display: -webkit-box; -webkit-line-clamp: 2;
@@ -160,10 +215,11 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 }
 .tab:hover { color: var(--text2); }
 .tab.on { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent2); }
-.tab .sw { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
-.tab[data-key='rag_llm'] .sw { background: #8b949e; }
-.tab[data-key='rag_llm_recursive'] .sw { background: #d29922; }
-.tab[data-key='rag_agent'] .sw { background: #2f81f7; }
+/* Setup identity colours, deliberately the same in both themes — they label
+   which agent produced an answer, so they must not shift with the palette. */
+.tab .sw, .ccol .sw { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; background: #8b949e; }
+[data-key='rag_llm_recursive'] .sw { background: #d29922; }
+[data-key='rag_agent'] .sw { background: #2f81f7; }
 .tab .win { color: var(--good); }
 
 /* agent research trace */
@@ -313,7 +369,7 @@ th {
 td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 td.num { font: 11.5px var(--mono); color: var(--text2); white-space: nowrap; }
-tr.bestrow td { background: rgba(47, 129, 247, 0.06); }
+tr.bestrow td { background: var(--best-row); }
 tr.legacyrow td { opacity: 0.6; }
 .cellbar { display: flex; align-items: center; gap: 8px; min-width: 110px; }
 .cellbar .mbar { width: 64px; flex: 0 0 auto; }

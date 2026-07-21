@@ -5,6 +5,7 @@ import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
 import { LibraryView } from './library/LibraryView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
+import { type Theme, initialTheme, setTheme } from './theme';
 
 export type Tab = 'chat' | 'library' | 'board';
 
@@ -28,6 +29,9 @@ export function App() {
   const [offline, setOffline] = useState(false);
   /** Set by "Ask about this" in the Library so Chat opens pre-scoped. */
   const [pendingScope, setPendingScope] = useState<string | null>(null);
+  // index.html applies the theme before first paint; this mirrors it so the
+  // toggle can render the right label.
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
 
   const refreshHealth = useCallback(async () => {
     try {
@@ -76,6 +80,12 @@ export function App() {
     selectTab('chat');
   };
 
+  const toggleTheme = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  };
+
   const corpusBit = corpus
     ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks · `
     : '';
@@ -110,6 +120,15 @@ export function App() {
                   }`
                 : 'connecting…'}
           </span>
+          <button
+            type="button"
+            className="themetoggle"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
         </div>
       </header>
 

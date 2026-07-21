@@ -21,5 +21,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
+    // jsdom disables localStorage on an opaque origin, so give the document a
+    // real URL — otherwise anything touching persisted state cannot be tested.
+    environmentOptions: { jsdom: { url: 'http://localhost:8000' } },
   },
 });

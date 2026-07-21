@@ -171,17 +171,7 @@ export function MessageBubble({
                 data-key={answer.key}
               >
                 <div className="t">
-                  <span
-                    className="sw"
-                    style={{
-                      background:
-                        answer.key === 'rag_agent'
-                          ? '#2f81f7'
-                          : answer.key === 'rag_llm_recursive'
-                            ? '#d29922'
-                            : '#8b949e',
-                    }}
-                  />
+                  <span className="sw" />
                   {answer.title.replace(/^rag_llm |^rag_agent ?/, '').replace(/[()]/g, '') ||
                     answer.key}
                 </div>
