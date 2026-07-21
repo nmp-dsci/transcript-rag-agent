@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +10,40 @@ from fastapi.testclient import TestClient
 from src.api.main import create_app
 from src.chat.setups import SETUP_KEYS, SetupResult, setup_spec
 from src.config import Settings
+from src.rag.models import RetrievedChunk
+
+
+class FakeChunkStore:
+    """Stands in for TranscriptChunkStore: scoped vs. global chunk queries."""
+
+    def __init__(self, by_video: dict[str, list[RetrievedChunk]]) -> None:
+        self.by_video = by_video
+        self.calls: list[tuple] = []
+
+    def query_by_video_id(
+        self, video_id: str, query: str, top_k: int
+    ) -> list[RetrievedChunk]:
+        self.calls.append(("scoped", video_id, query, top_k))
+        return self.by_video.get(video_id, [])[:top_k]
+
+    def query_all(self, query: str, top_k: int) -> list[RetrievedChunk]:
+        self.calls.append(("all", query, top_k))
+        all_chunks = [chunk for chunks in self.by_video.values() for chunk in chunks]
+        return all_chunks[:top_k]
+
+
+class FakeProvider:
+    """Stands in for MultiTranscriptRagContextProvider: only what /api/rank uses."""
+
+    def __init__(self, chunk_store: FakeChunkStore) -> None:
+        self.chunk_store = chunk_store
+
+    def get_context(
+        self, *, question: str, source_url: str | None, top_k: int
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            retrieved_chunks=self.chunk_store.query_all(question, top_k)
+        )
 
 
 class FakeRunner:
@@ -17,6 +52,7 @@ class FakeRunner:
     def __init__(self, agent_steps: list | None = None) -> None:
         self.calls: list[tuple[str, str, str | None]] = []
         self.agent_steps = agent_steps or []
+        self.provider = FakeProvider(FakeChunkStore({}))
 
     def run(
         self,
@@ -397,10 +433,32 @@ def test_ask_appends_setups_to_an_existing_entry(harness: Harness) -> None:
 
 def test_ask_replaces_a_rerun_setup_in_place(harness: Harness) -> None:
     entry_id = harness.ask(setups=["rag_llm"])
-    harness.client.post(
+    response = harness.client.post(
         "/api/ask",
-        json={"question": "q", "setups": ["rag_llm"], "entry_id": entry_id},
+        json={
+            "question": "What is agentic RAG?",
+            "setups": ["rag_llm"],
+            "entry_id": entry_id,
+        },
     )
+    assert response.status_code == 200
+    saved = json.loads(harness.history_path.read_text(encoding="utf-8"))
+    answers = saved["conversations"][0]["answers"]
+    assert [a["key"] for a in answers] == ["rag_llm"]
+
+
+def test_ask_rejects_mismatched_question_for_entry_id(harness: Harness) -> None:
+    entry_id = harness.ask(setups=["rag_llm"])
+    response = harness.client.post(
+        "/api/ask",
+        json={
+            "question": "A completely different question?",
+            "setups": ["rag_agent"],
+            "entry_id": entry_id,
+        },
+    )
+    assert response.status_code == 422
+
     saved = json.loads(harness.history_path.read_text(encoding="utf-8"))
     answers = saved["conversations"][0]["answers"]
     assert [a["key"] for a in answers] == ["rag_llm"]
@@ -518,6 +576,25 @@ def test_scoreboard_filters_by_judge(harness: Harness) -> None:
     assert board["entries_judged"] == 0
 
 
+def test_scoreboard_judge_filter_keeps_answers_count(harness: Harness) -> None:
+    # An answer judged by a *different* judge than the filter must still count
+    # toward "answers" (it exists), even though it's excluded from "judged"/
+    # win-rate accounting because that judge's scale isn't comparable.
+    entry_id = harness.ask(setups=["rag_llm"])
+    harness.client.post("/api/judge", json={"entry_id": entry_id})
+
+    unfiltered = harness.client.get("/api/scoreboard").json()
+    filtered = harness.client.get(
+        "/api/scoreboard", params={"judge_model": "someone-else"}
+    ).json()
+
+    unfiltered_row = next(r for r in unfiltered["setups"] if r["key"] == "rag_llm")
+    filtered_row = next(r for r in filtered["setups"] if r["key"] == "rag_llm")
+    assert unfiltered_row["answers"] == filtered_row["answers"] == 1
+    assert unfiltered_row["judged"] == 1
+    assert filtered_row["judged"] == 0
+
+
 def test_corpus_endpoint(harness: Harness) -> None:
     payload = harness.client.get("/api/corpus").json()
     assert payload["totals"] == {"videos": 1, "chunks": 42}
@@ -594,6 +671,49 @@ def test_rank_returns_aligned_modes(harness: Harness) -> None:
     assert bm25_rows[0]["score"] >= 0
     # A single mode has nothing to align against.
     assert bm25_rows[0]["other_rank"] is None
+
+
+def _chunk(video_id: str, chunk_index: int, text: str, score: float) -> RetrievedChunk:
+    return RetrievedChunk(
+        transcript_id=f"{video_id}-t",
+        video_id=video_id,
+        source_url=f"https://youtu.be/{video_id}",
+        chunk_index=chunk_index,
+        text=text,
+        score=score,
+    )
+
+
+def test_rank_semantic_scopes_to_video_id_beyond_global_top_k(
+    harness: Harness,
+) -> None:
+    # "other" dominates the unscoped top-k ranking; "abc123" has only one,
+    # lower-scoring chunk that a global query_all(top_k=2) would truncate away
+    # before any post-hoc video_id filter ever saw it.
+    by_video = {
+        "other": [
+            _chunk("other", 0, "unrelated chunk one", 0.9),
+            _chunk("other", 1, "unrelated chunk two", 0.8),
+        ],
+        "abc123": [_chunk("abc123", 0, "capital gains tax explained", 0.1)],
+    }
+    harness.runner.provider = FakeProvider(FakeChunkStore(by_video))
+
+    payload = harness.client.post(
+        "/api/rank",
+        json={
+            "query": "capital gains tax",
+            "modes": ["semantic"],
+            "top_k": 2,
+            "video_id": "abc123",
+        },
+    ).json()
+
+    semantic_rows = payload["modes"]["semantic"]
+    assert [row["video_id"] for row in semantic_rows] == ["abc123"]
+    assert harness.runner.provider.chunk_store.calls == [
+        ("scoped", "abc123", "capital gains tax", 2)
+    ]
 
 
 def test_rank_rejects_blank_query(harness: Harness) -> None:

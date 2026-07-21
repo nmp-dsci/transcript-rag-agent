@@ -289,14 +289,18 @@ def create_app(
             raise HTTPException(status_code=422, detail="Query must not be blank")
 
         def semantic(text: str, top_k: int) -> list[dict[str, Any]]:
-            context = get_runner().provider.get_context(
-                question=text,
-                source_url=None,
-                top_k=top_k,
-            )
-            chunks = context.retrieved_chunks or []
+            provider = get_runner().provider
             if payload.video_id:
-                chunks = [c for c in chunks if c.video_id == payload.video_id]
+                chunks = provider.chunk_store.query_by_video_id(
+                    payload.video_id, text, top_k
+                )
+            else:
+                context = provider.get_context(
+                    question=text,
+                    source_url=None,
+                    top_k=top_k,
+                )
+                chunks = context.retrieved_chunks or []
             return [
                 {
                     "video_id": chunk.video_id,
@@ -334,12 +338,26 @@ def create_app(
             )
         keys = list(dict.fromkeys(payload.setups))
         url = payload.url.strip() if payload.url and payload.url.strip() else None
-        if payload.entry_id and not any(
-            entry.id == payload.entry_id for entry in load_history(history_path)
-        ):
-            raise HTTPException(
-                status_code=404, detail=f"Unknown entry: {payload.entry_id}"
+        if payload.entry_id:
+            target_entry = next(
+                (
+                    entry
+                    for entry in load_history(history_path)
+                    if entry.id == payload.entry_id
+                ),
+                None,
             )
+            if target_entry is None:
+                raise HTTPException(
+                    status_code=404, detail=f"Unknown entry: {payload.entry_id}"
+                )
+            if target_entry.question != question or (
+                target_entry.url is not None and target_entry.url != url
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Question/url does not match entry {payload.entry_id}",
+                )
 
         def stream() -> Iterator[str]:
             # One failing setup is already captured as SetupResult.error by the

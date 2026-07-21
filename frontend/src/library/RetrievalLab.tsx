@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { api } from '../api/client';
 import type { RankMode, RankRow, Rankings } from '../api/types';
@@ -44,6 +44,11 @@ export function RetrievalLab({
   const [result, setResult] = useState<Rankings | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+  }, [scopeVideoId]);
 
   const search = async () => {
     const trimmed = query.trim();

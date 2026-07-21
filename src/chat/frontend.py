@@ -114,7 +114,7 @@ display:flex;gap:12px;flex-wrap:wrap}
 ANSWER_RENDER_JS = r"""
 function escapeHtml(s){
   return String(s == null ? '' : s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 // The agent sometimes wraps its answer in a JSON payload (trailing, or inside a
 // ```json fence). When present, that object's "answer" field is the canonical

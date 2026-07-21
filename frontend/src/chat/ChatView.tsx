@@ -236,6 +236,7 @@ export function ChatView({
   }, []);
 
   const compare = (entry: Entry) => {
+    if (busy) return;
     const missing = setups
       .map((setup) => setup.key)
       .filter((key) => !entry.answers.some((answer) => answer.key === key));
@@ -305,6 +306,7 @@ export function ChatView({
                   answers={entry.answers}
                   running={[]}
                   judging={judgingId === entry.id}
+                  busy={busy}
                   onJudge={() => void judge(entry.id)}
                   onCompare={() => compare(entry)}
                   traces={traces[entry.id]}

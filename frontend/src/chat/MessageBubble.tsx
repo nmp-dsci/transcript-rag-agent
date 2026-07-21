@@ -17,6 +17,7 @@ interface Props {
   answers: Answer[];
   running: RunningSetup[];
   judging: boolean;
+  busy?: boolean;
   onJudge?: () => void;
   onCompare?: () => void;
   remainingSetups: number;
@@ -56,6 +57,7 @@ export function MessageBubble({
   answers,
   running,
   judging,
+  busy,
   onJudge,
   onCompare,
   remainingSetups,
@@ -193,7 +195,7 @@ export function MessageBubble({
       {running.length === 0 && answers.length ? (
         <div className="msg-actions">
           {remainingSetups > 0 && onCompare ? (
-            <button type="button" className="linkbtn" onClick={onCompare}>
+            <button type="button" className="linkbtn" onClick={onCompare} disabled={busy}>
               Compare {remainingSetups} more setup{remainingSetups === 1 ? '' : 's'} ▸
             </button>
           ) : null}

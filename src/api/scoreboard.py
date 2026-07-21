@@ -74,8 +74,9 @@ def build_scoreboard(
 
         for answer in entry.answers:
             evaluation = answer.evaluation or {}
-            if judge_model and evaluation and _judge_of(answer) != judge_model:
-                continue
+            judge_excluded = bool(
+                judge_model and evaluation and _judge_of(answer) != judge_model
+            )
             key = _group_key(answer, group_by)
             acc = accumulators.setdefault(
                 key,
@@ -98,7 +99,7 @@ def build_scoreboard(
             acc["answers"] += 1
             acc["latency_sum"] += answer.elapsed_seconds or 0.0
             acc["token_sum"] += answer.token_estimate or 0
-            if _is_scored(answer):
+            if _is_scored(answer) and not judge_excluded:
                 acc["judged"] += 1
                 acc["composite_sum"] += evaluation["composite"]
                 for metric, value in (evaluation.get("scores") or {}).items():

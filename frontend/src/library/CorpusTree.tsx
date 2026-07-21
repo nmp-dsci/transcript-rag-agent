@@ -39,7 +39,7 @@ export function groupByChannel(videos: Video[], sort: SortKey): Channel[] {
   channels.sort((a, b) => {
     if (sort === 'views') return b.viewTotal - a.viewTotal;
     if (sort === 'chunks') return b.chunkTotal - a.chunkTotal;
-    if (sort === 'recent') return b.newest < a.newest ? -1 : 1;
+    if (sort === 'recent') return b.newest === a.newest ? 0 : b.newest < a.newest ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
   return channels;
@@ -50,7 +50,11 @@ function sortVideos(videos: Video[], sort: SortKey): Video[] {
   copy.sort((a, b) => {
     if (sort === 'views') return (b.view_count ?? 0) - (a.view_count ?? 0);
     if (sort === 'chunks') return (b.chunk_count ?? 0) - (a.chunk_count ?? 0);
-    if (sort === 'recent') return String(b.upload_date ?? '') < String(a.upload_date ?? '') ? -1 : 1;
+    if (sort === 'recent') {
+      const bDate = String(b.upload_date ?? '');
+      const aDate = String(a.upload_date ?? '');
+      return bDate === aDate ? 0 : bDate < aDate ? -1 : 1;
+    }
     return (a.title ?? a.video_id).localeCompare(b.title ?? b.video_id);
   });
   return copy;
