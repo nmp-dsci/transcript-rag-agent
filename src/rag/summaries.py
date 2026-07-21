@@ -195,11 +195,12 @@ class TranscriptSummaryStore:
         result = self.collection.query(
             query_embeddings=[embedding],
             n_results=top_k,
-            include=["documents", "metadatas", "distances", "embeddings"],
+            # Relevance is scored below with cosine_similarity over the returned
+            # embeddings, so Chroma's own distances are never read.
+            include=["documents", "metadatas", "embeddings"],
         )
         documents = (result.get("documents") or [[]])[0]
         metadatas = (result.get("metadatas") or [[]])[0]
-        distances = (result.get("distances") or [[]])[0]
         raw_embeddings = result.get("embeddings")
         embeddings = raw_embeddings[0] if raw_embeddings is not None else []
         summaries: list[RetrievedTranscriptSummary] = []
