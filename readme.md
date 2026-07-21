@@ -170,7 +170,9 @@ eval process** — faithfulness, answer relevancy, and context precision, plus a
 composite — so retrieval methods are compared with numbers, not vibes.
 
 The UI is a React 19 + TypeScript app under `frontend/`, built with Vite and
-served by the same FastAPI process.
+served by the same FastAPI process. It follows the OS light/dark preference by
+default; the ☀/☾ toggle in the header overrides that and persists the choice
+per browser.
 
 ```bash
 cd frontend && npm install && npm run build && cd ..   # once, and after UI changes
@@ -199,14 +201,15 @@ Three views:
   into the *same* history entry so the scoreboard sees them as competing
   answers. Esc cancels a running ask.
 - **Library** — an interactive corpus tree (all videos → channel → video →
-  chunks) with a sort control for "top" ordering by views, recency, or chunk
-  count. Expanding a video lazily loads its chunks; selecting one shows its
-  full text, timestamp range, segment span, and a deep link into the video at
-  that moment. The **Retrieval Lab** at the top ranks the corpus for any query
-  with **BM25, semantic, or both side by side** — aligned rows show each
-  chunk's rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap
-  count, which is the fastest way to see where keyword and embedding retrieval
-  disagree. Indexing (single video or latest-N channel) lives in a panel here.
+  chunks) with a sort control for "top" ordering by views, recency, chunk
+  count, or title. Expanding a video lazily loads its chunks; selecting one
+  shows its full text, timestamp range, segment span, and a deep link into
+  the video at that moment. The **Retrieval Lab** at the top ranks the corpus
+  for any query with **BM25, semantic, or both side by side** — aligned rows
+  show each chunk's rank in the other mode (`↑2`, `↓1`, `only here`) plus an
+  overlap count, which is the fastest way to see where keyword and embedding
+  retrieval disagree. Indexing (single video or latest-N channel) lives in a
+  panel here.
 - **Scoreboard** — per-setup aggregates across everything judged, groupable by
   **setup × answering model** so scores from different model versions are never
   silently averaged. Each row shows average score per RAGAS metric, composite,
@@ -752,7 +755,7 @@ Each CLI command creates a run with command metadata, cache status, transcript m
 
 ```bash
 uv run pytest                        # Python: pipeline, API, evals
-cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI
+cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI, theme
 ```
 
 External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automated tests where appropriate. Frontend tests run in jsdom with no network access.
