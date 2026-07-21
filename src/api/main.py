@@ -304,6 +304,15 @@ def create_app(
             return FileResponse(bundle_index())
         return HTMLResponse(INDEX_HTML_PATH.read_text(encoding="utf-8"))
 
+    @app.get("/favicon.svg")
+    def favicon() -> Any:
+        # Vite emits this at the bundle root rather than under /assets, so it
+        # needs its own route — the StaticFiles mount below would not reach it.
+        icon = frontend_dist / "favicon.svg"
+        if icon.is_file():
+            return FileResponse(icon, media_type="image/svg+xml")
+        raise HTTPException(status_code=404, detail="favicon not built")
+
     @app.get("/assets/render.js")
     def render_js() -> PlainTextResponse:
         return PlainTextResponse(ANSWER_RENDER_JS, media_type="text/javascript")

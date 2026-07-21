@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
+import { Logo } from './Logo';
 import { PipelineView } from './pipeline/PipelineView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
@@ -103,7 +104,10 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <span className="brand">
-          transcript<em>·lab</em>
+          <Logo />
+          <span>
+            transcript<em>·lab</em>
+          </span>
         </span>
         <nav className="nav" aria-label="Views">
           {TABS.map(({ id, label }) => (
