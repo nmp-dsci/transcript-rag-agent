@@ -51,6 +51,9 @@ export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props)
   return (
     <div className="detail">
       <div className="vhead">
+        {video.thumbnail_url ? (
+          <img className="vthumb" src={video.thumbnail_url} alt="" loading="lazy" />
+        ) : null}
         <span className="t">{video.title || video.video_id}</span>
         <span className="m">{meta}</span>
         {video.source_url ? (

@@ -134,7 +134,12 @@ class TranscriptChunkStore:
     def upsert_chunks(self, chunks: list[TranscriptChunk]) -> None:
         if not chunks:
             return
-        embeddings = self.embedding_model.embed_documents([chunk.text for chunk in chunks])
+        # Embed the contextual header with the text, but store the spoken text
+        # alone as the document — the header is retrieval scaffolding, not
+        # something the answering LLM should quote back.
+        embeddings = self.embedding_model.embed_documents(
+            [chunk.embedding_text for chunk in chunks]
+        )
         self.collection.upsert(
             ids=[chunk.chunk_id for chunk in chunks],
             documents=[chunk.text for chunk in chunks],
@@ -191,6 +196,89 @@ class TranscriptChunkStore:
             reverse=True,
         )[:top_k]
 
+    def query_by_channel(
+        self, channel_id: str, query: str, top_k: int
+    ) -> list[RetrievedChunk]:
+        """Retrieve across every chunk belonging to one channel.
+
+        A native Chroma metadata filter, which is why chunks carry channel
+        identity — the alternative is querying each of the channel's videos
+        separately and merging, which scales with video count.
+        """
+        return self._query(query=query, top_k=top_k, where={"channel_id": channel_id})
+
+    def channel_video_ids(self, channel_id: str) -> list[str]:
+        """The video ids whose chunks are tagged with this channel."""
+        result = self.collection.get(
+            where={"channel_id": channel_id}, include=["metadatas"]
+        )
+        seen: dict[str, None] = {}
+        for meta in result.get("metadatas") or []:
+            video_id = str((meta or {}).get("video_id", ""))
+            if video_id:
+                seen.setdefault(video_id, None)
+        return list(seen)
+
+    def neighbors(self, video_id: str, chunk_index: int, span: int = 1) -> list[TranscriptChunk]:
+        """Chunks immediately before and after one chunk, in index order.
+
+        Used to widen precise retrieval hits back out to readable context so
+        answers stop getting cut off mid-thought.
+        """
+        if span <= 0:
+            return []
+        wanted = [
+            index
+            for index in range(chunk_index - span, chunk_index + span + 1)
+            if index >= 0 and index != chunk_index
+        ]
+        if not wanted:
+            return []
+        result = self.collection.get(
+            ids=[f"chunk:{video_id}:{index}" for index in wanted],
+            include=["documents", "metadatas"],
+        )
+        documents = result.get("documents") or []
+        metadatas = result.get("metadatas") or []
+        chunks: list[TranscriptChunk] = []
+        for index, meta in enumerate(metadatas):
+            meta = meta or {}
+            chunks.append(
+                _chunk_from_metadata(
+                    meta, documents[index] if index < len(documents) else ""
+                )
+            )
+        return sorted(chunks, key=lambda chunk: chunk.chunk_index)
+
+    def all_embeddings(self) -> list[dict[str, object]]:
+        """Every chunk with its embedding, for similarity-graph construction."""
+        result = self.collection.get(include=["embeddings", "documents", "metadatas"])
+        embeddings = result.get("embeddings")
+        embeddings = [] if embeddings is None else list(embeddings)
+        documents = result.get("documents") or []
+        metadatas = result.get("metadatas") or []
+        records: list[dict[str, object]] = []
+        for index, meta in enumerate(metadatas):
+            meta = meta or {}
+            if index >= len(embeddings):
+                continue
+            records.append(
+                {
+                    "chunk_id": f"chunk:{meta.get('video_id', '')}:{meta.get('chunk_index', index)}",
+                    "video_id": str(meta.get("video_id", "")),
+                    "chunk_index": int(meta.get("chunk_index", index) or 0),
+                    "channel_id": meta.get("channel_id") or None,
+                    "channel_name": meta.get("channel_name") or None,
+                    "title": meta.get("title") or None,
+                    "text": documents[index] if index < len(documents) else "",
+                    "start_seconds": _float_or_none(meta.get("start_seconds")),
+                    "end_seconds": _float_or_none(meta.get("end_seconds")),
+                    "source_url": meta.get("source_url") or None,
+                    "embedding": [float(value) for value in embeddings[index]],
+                }
+            )
+        return records
+
     def _query(
         self,
         query: str,
@@ -226,10 +314,33 @@ class TranscriptChunkStore:
                     start_segment_index=_int_or_none(metadata.get("start_segment_index")),
                     end_segment_index=_int_or_none(metadata.get("end_segment_index")),
                     segment_count=int(metadata.get("segment_count", 0)),
+                    channel_id=_none_if_empty(metadata.get("channel_id")),
+                    channel_name=_none_if_empty(metadata.get("channel_name")),
+                    title=_none_if_empty(metadata.get("title")),
+                    upload_date=_none_if_empty(metadata.get("upload_date")),
                     score=(1.0 - float(distance)) if distance is not None else None,
                 )
             )
         return chunks
+
+
+def _chunk_from_metadata(metadata: dict, text: str) -> TranscriptChunk:
+    return TranscriptChunk(
+        transcript_id=str(metadata.get("transcript_id", "")),
+        video_id=str(metadata.get("video_id", "")),
+        source_url=HttpUrl(str(metadata["source_url"])),
+        chunk_index=int(metadata.get("chunk_index", 0) or 0),
+        text=text,
+        start_seconds=_float_or_none(metadata.get("start_seconds")),
+        end_seconds=_float_or_none(metadata.get("end_seconds")),
+        start_segment_index=_int_or_none(metadata.get("start_segment_index")),
+        end_segment_index=_int_or_none(metadata.get("end_segment_index")),
+        segment_count=int(metadata.get("segment_count", 0) or 0),
+        channel_id=_none_if_empty(metadata.get("channel_id")),
+        channel_name=_none_if_empty(metadata.get("channel_name")),
+        title=_none_if_empty(metadata.get("title")),
+        upload_date=_none_if_empty(metadata.get("upload_date")),
+    )
 
 
 def raw_document_from_transcript(
@@ -388,6 +499,16 @@ def _chunk_metadata(chunk: TranscriptChunk) -> dict[str, str | int | float]:
         metadata["start_segment_index"] = chunk.start_segment_index
     if chunk.end_segment_index is not None:
         metadata["end_segment_index"] = chunk.end_segment_index
+    if chunk.channel_id is not None:
+        metadata["channel_id"] = chunk.channel_id
+    if chunk.channel_name is not None:
+        metadata["channel_name"] = chunk.channel_name
+    if chunk.title is not None:
+        metadata["title"] = chunk.title
+    if chunk.upload_date is not None:
+        metadata["upload_date"] = chunk.upload_date
+    if chunk.context_header is not None:
+        metadata["context_header"] = chunk.context_header
     return metadata
 
 

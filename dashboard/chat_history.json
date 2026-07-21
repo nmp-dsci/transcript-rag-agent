@@ -84,7 +84,14 @@
           "elapsed_seconds": 26.56,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -136,16 +143,30 @@
           "elapsed_seconds": 18.44,
           "error": null,
           "contexts": [],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": null,
             "scores": {},
             "composite": null,
+            "spread": {},
+            "sample_scores": {},
+            "judge_samples": 0,
+            "details": null,
+            "self_graded": null,
             "elapsed_seconds": 0.0,
-            "scored_at": "2026-07-20T13:04:39.845386+00:00",
+            "scored_at": "2026-07-21T11:52:13.692028+00:00",
             "error": "no stored retrieval contexts (asked before context persistence)"
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -189,16 +210,30 @@
           "elapsed_seconds": 17.25,
           "error": null,
           "contexts": [],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": null,
             "scores": {},
             "composite": null,
+            "spread": {},
+            "sample_scores": {},
+            "judge_samples": 0,
+            "details": null,
+            "self_graded": null,
             "elapsed_seconds": 0.0,
-            "scored_at": "2026-07-20T13:04:39.845602+00:00",
+            "scored_at": "2026-07-21T11:52:13.692961+00:00",
             "error": "no stored retrieval contexts (asked before context persistence)"
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -278,16 +313,30 @@
           "elapsed_seconds": 34.59,
           "error": null,
           "contexts": [],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": null,
             "scores": {},
             "composite": null,
+            "spread": {},
+            "sample_scores": {},
+            "judge_samples": 0,
+            "details": null,
+            "self_graded": null,
             "elapsed_seconds": 0.0,
-            "scored_at": "2026-07-20T13:04:39.845847+00:00",
+            "scored_at": "2026-07-21T11:52:13.693759+00:00",
             "error": "no stored retrieval contexts (asked before context persistence)"
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -375,7 +424,14 @@
           "elapsed_seconds": 19.72,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -490,7 +546,14 @@
           "elapsed_seconds": 52.72,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -605,7 +668,14 @@
           "elapsed_seconds": 74.5,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -720,7 +790,14 @@
           "elapsed_seconds": 26.77,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -808,7 +885,14 @@
           "elapsed_seconds": 36.1,
           "error": null,
           "contexts": [],
-          "evaluation": null
+          "retrieved_chunk_ids": [],
+          "evaluation": null,
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -871,6 +955,7 @@
             "ability to offset, you know, uh, uh, losses on the way through as well at a at a future capital gain selling point too. So, it changes very little for us. If anything, I've actually been bullish and excited from an investor perspective. I I I I do worry about the next gen coming through and what this potentially could have an impact on for people who aren't ready to buy in the next two to three years or or even less. Um but yeah man like ultimately the biggest changes that I think will impact the marketplace are you know specifically around existing residential property. >> Now the government has pretty much put stimulus behind the idea of property spruers coming back out of the woodwork buying off the plan you know fat margins being built into deals house and land packages you know um and massive estates of house and land packages and then obviously um high-rise towers you know being sold and and and directed towards investment stock. Now, these are the times that people have to be really careful and wary of that style of of asset. And, you know, if they're looking to buy that or someone's looking to sell them into it, like what is their what is",
             "said very earlier, if you were to take away population from the housing market, that's what's going to cause a decline. Not taxes, um not in not change of reforms or you know, change of the way that we build homes. It's population. People need a roof over their heads and we're just not building enough to to to meet the the amount of demand that's out there. And that's what's going to drive the property prices more indirectly. There will be an increase off the back of it and happened in New Zealand. People are forgetting. And if you're all listening, go research New Zealand. It was negative gearing was taken away in 2022 and they talked about CGT coming in. The New Zealand population shut that down very quickly and voted with their their hands and their feet. Negative gearing was brought back in in 2024. So, so far around around the world, you try to change property taxes too much and people ultimately find other ways. >> Seems like a 2-year is a magic magic time frame. >> If you're looking at history, yeah. >> Yeah. Um and and now like they've gone completely they flipped it now and now they've got zero capital gains tax on businesses and >> Yeah."
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -884,7 +969,13 @@
             "elapsed_seconds": 66.46,
             "scored_at": "2026-07-21T00:39:25.943622+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -967,6 +1058,7 @@
             "investors can pass on and if and if new investors coming in can't write off their losses of course they're going to increase their rents by 100 $200 a week if they're able to because it's going to enable them to actually be able to hold the property. So it's like there's this cause and effect that they're bringing about that man I just think we're driving into the next we're driving into the next cycle in a very very strong way in specific areas which is what happened in NZ where they backtracked on it after 2 years cuz uh was that 2023 to 2025 or something it lasted two years but they tried it. Um, now Sam, at the risk of sounding repetitive because I I don't want to necessarily ask >> the same questions again and again and again, but um I would like to get some insight into what young Australians who are looking to build a pathway to financial future through wealth, what their game plan looks like. Is it are they moving into high yielding assets or is it a case of really as it's always been that um negative gearing is a nice benefit but it's not necessary for making um your financial future. What does the game plan look like? >> Man, I'll tell you right now, very very",
             "sure that they are you know, taking into account what's happening in the economy. But yeah, you are you are incentivized not to sell because if your asset's done very well and I said it earlier, if your asset's done very well early on and you know, you're a buyer's agent, you're in charge of finding people properties that are prime for growth. You know, your goal isn't to buy something for someone and 15 years later it sees the growth. You want to see that growth early on and extract equity and build that property portfolio in a more aggressive manner. But, if things do stagnate, you're not incentivized to sell. In fact, you're more incentivized to hold. >> Cuz then the indexation is going to >> Because of the indexation, the cost base increases and then you start to pay potentially less tax on the real gain that's made. So, it's a crazy tax and there's a reason why they took it away 26 years ago. Like they took away negative gearing in '85 and then brought back negative gearing in '87. If you play around with the economics too much, then you start to distort the market and the market will find its own means of equilibrium. That's what we will see as"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -980,7 +1072,13 @@
             "elapsed_seconds": 209.48,
             "scored_at": "2026-07-21T00:42:55.418852+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -1109,6 +1207,7 @@
             "at it because they always try and throw property and, um, you know, that would have been the only little bit of extra um, thing they would have had over over the top of us. We got leverage, we got we got yeah rental incomes, we got everything else with the ability to scale portfolios properly. That's all that they you know that that would have been one little thing they would have had in the kitty against us. But they got lumped in with us on on on all on everything to do with capital gains as well. So um man, it just like it further solidifies to me that property property and asset the asset class is is strong. It's resilient. It's still going to produce. And man, like okay, so to talk really easy numbers, it's a 6 and a half% variance. you know, if you if you're in structures at um at uh you know, 23 and a half cents in the dollar, if you're at the highest tax bracket for a CGT exemption, right? So, after 50% exemption um versus 30% uh you know, a flat 30% make you six and a half%. If you make a million bucks, pay extra $65,000. >> Yeah. >> Yeah. Sweet. Okay. Sweet. So, I'm not going to invest because I pay an extra $65,000 in tax for a million bucks.",
             "commercial property, overseas investments where even bank accounts and savings accounts provide you better returns than you know high income commercial property. >> You will get that. >> Yeah. So if your goal was always that and you're not one of those people who my accountant said I should save tax and buy property and your actual goal to buy property was to build wealth to then consolidate to then produce an income. Those misconceptions they won't change the way you invest. The changes of the budget won't change the way you invest as long as your family household can hold on to that property. >> So that's that's a really good way of putting it. Um so if you bought now you still get negative gearing until next financial year. So 27 you run your returns >> and that's when it happens and you raise a very very salient point which is between now and July 2028 because the typical investor would be putting it with the tax return at the end of the financial year. >> If we've got 25 months 25 months um it's very likely that you would have a few interest rate rises a few um rental increases >> and interest rates could also come the other way. >> Interest rates could also come the other"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1122,7 +1221,13 @@
             "elapsed_seconds": 282.29,
             "scored_at": "2026-07-21T00:47:37.708410+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -1248,6 +1353,7 @@
             "Hi everyone, welcome to this video and this will\u00a0\nbe a full walkthrough of my agentic engineering workflow. My name is Kun. I was previously\u00a0\nan L8 principal engineer worked at Meta, Microsoft and Atlassian on many large scale\u00a0\nsystems like the Bing search engine, Windows and Facebook games. In the recent couple of years,\u00a0\nI have been building frontier coding agents at Atlassian and helped many engineering teams\u00a0\nfigure out how to use them effectively. And I have been building heavily with agents myself and\u00a0\nshipping 40 to 50 PRs almost every day, sometimes more. And these are all well- tested and shipped\u00a0\nto production, not those Minecraft demos you see people vibe code on social media. I have shaped\u00a0\nmy workflow to be both highly productive and enjoyable. Many people recently asked me what it\u00a0\nlooks like. To be honest, I did debate a lot with myself whether I should make this video a paid\u00a0\ncourse because it does have that level of value. But ultimately, I decided to just share it here\u00a0\nwith everyone because I want to stay focused on building products as my main business. You can see\u00a0\nthis is a bit of a long video because I'm going to",
             "to do and this uh system prompt will fight against\u00a0\nthat. Um I don't think it's too useful for agents to be like a co-author of the human. uh it's\u00a0\nultimately still the human that's going to be accountable for the quality of the code change. Um\u00a0\nnever manually modify change lock.md files or any files that are marked as autogenerated. That's\u00a0\na no-brainer. When making technical decisions, do not give much weight to development cost.\u00a0\nInstead, prefer quality, simplicity, robustness, scalability, and long-term maintainability.\u00a0\nThis is a very very important rule. And the reason I have this rule is that agents uh the\u00a0\nlarge chunkage models today are trained from human data. And when when we humans are making\u00a0\nestimations about our projects, our estimations are usually in days, weeks or months. But agents\u00a0\ncan work a lot faster. But because the agents are trained from human data, it tends to assume the\u00a0\nestimation, the development cost is going to be as high as what humans estimate. So when agents are\u00a0\nmaking decisions, sometimes it will put too much weight onto the development cost and prefer those\u00a0\nreally cheap and not very scalable solutions. That"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1261,7 +1367,13 @@
             "elapsed_seconds": 122.71,
             "scored_at": "2026-07-21T00:49:40.514521+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -1482,6 +1594,7 @@
             "we need. If anything doesn't look right, we can\u00a0\ngo back to the agent and ask for more changes before merging this PR. This risk assessment here\u00a0\nis also very useful. I basically look at this to decide how much time I should spend on reviewing\u00a0\nthis change in more detail. For low-risk changes, I don't really look at the diff at all because I\u00a0\nhave validated time and time again for low-risk changes. Any problem I could catch is very likely\u00a0\nalready caught by the pipeline. Only more risky changes are worth my time. This is how I scale\u00a0\nup the volume of code changes I do every day through a large crew of agents without losing\u00a0\ncontrol on quality. One thing we are starting to see now is that the place where I spend time\u00a0\nis towards the beginning and the end of the task. At the beginning, I would spend time in lavish to\u00a0\nplan the requirements more clearly. At the end, I would come in and hold a bar on quality. All\u00a0\nthese parts in the middle is done by AI which frees me up to spin up other tasks. This is a\u00a0\ncore aspect of how I work. And you can see the more time I can free up in the middle, the more\u00a0\nwork I can go do in parallel. So an interesting",
             "anecdotally and somehow got it to go viral. Their\u00a0\nGitHub stars only tell you how popular they are and not whether they are actually helpful. So,\u00a0\nas a general rule of thumb, I recommend that you do not install any skill from the internet\u00a0\nthat claims to magically make your agent perform better, but hasn't published anything rigorous\u00a0\nthat proves its claim. All right, now that we have memory files and skills to help ramp up crew\u00a0\nmates, it's finally time to actually start working with a crew mate and set sail. The first thing\u00a0\nabout working with a crew mate is how you talk to them. I have pretty much completely moved to\u00a0\nvoice input now. So instead of typing I will just say explain this repo in a concise way and give me\u00a0\na recap of what the recent PRs have been working on. This is just so easy. There's an actual\u00a0\npaper from Stanford that seriously compared the efficiency and basically talking is three times\u00a0\nfaster than typing. So this is a very big boost in productivity. I also want to show you something\u00a0\ninteresting here. Um, if we go to the references of this paper, look who's here. It's our guy\u00a0\nDario. What is the CEO of Anthropic doing here?"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1495,7 +1608,13 @@
             "elapsed_seconds": 252.61,
             "scored_at": "2026-07-21T00:53:53.125753+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -1644,6 +1763,7 @@
             "This is just a lot of overhead. My solution to\u00a0\nthat is another tool I built called treehouse. It's very simple. I just come into this repo and I\u00a0\nrun treehouse. It would drop me into a fresh work tree where I can start doing whatever I want.\u00a0\nI can keep spinning up more and more of these work trees by running treehouse again. And if I\u00a0\nwant, I can see a list of all the work trees by typing treehouse status. So I can see which ones\u00a0\nare being used versus not. When I'm done, I can just close this tab and treehouse knows that I'm\u00a0\ndone. So it will free up that work tree for future use. Next time I ask for a work tree, it will\u00a0\ntry to reuse one of the idle work trees instead of creating a brand new one. So let's start some\u00a0\nreal work. I have a bunch of user feedback from my son's last round of play testing. So let me uh\u00a0\nuse this first work tree we created and launch claude and I'll say I remember it's hard for the\u00a0\nkids to realize they can press and hold the voice input button to talk by default they just click\u00a0\nit and then they will see a popover. Maybe in the popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin",
             "popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin up a new tab, treehouse claw. And this time I'll\u00a0\nsay the image attachment dropdown menu should have an action that takes a screenshot of the current\u00a0\napp and use that as the attachment. All right, one more tab. Treehouse claw. Our agent status bar\u00a0\nright above the chat input is not always showing bot activity. Look into what happened there\u00a0\nand make sure when any bots are in progress, it always displays something that reflects the\u00a0\nlatest activity. Boom. We now have three sessions running in parallel. Now I can keep going because\u00a0\nnone of these sessions will need my attention anytime soon. Especially if I tell them to run no\u00a0\nmistakes after implementation. I know whether they need me by looking at the top status bar and I can\u00a0\nswitch between the tabs using keyboard shortcuts like this. That's very important for managing a\u00a0\nlot of parallel sessions efficiently. That said, after doing this for a while, you will discover\u00a0\nthat juggling between all these sessions, it's quite exhausting. The constant context\u00a0\nswitch and having to remind yourself what each"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1657,7 +1777,13 @@
             "elapsed_seconds": 456.43,
             "scored_at": "2026-07-21T01:01:29.557641+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -1756,6 +1882,7 @@
             "invest on lower incomes. Regardless of your marginal tax bracket, if you are $45,000 or below in income, you will be paying 30% tax on the real gain. So, it's a little bit nasty. I think that that takes away younger people from, you know, investing and maybe trying to make a couple of extra bucks. That maybe can go to buying property, especially their first one, in the Australian housing market. So, it was an interesting budget. There's lots of negatives out of it, no doubt about it. We call it as it is. But my role as an accountant is to try to find then where are our next strategies, where are our next steps that we take to be able to minimize the tax for the clients, and still incentivize them to create wealth. I've always been of the belief that tax is a cost of success. Um we've got to try to find ways to minimize so that cost of success stays more in our back pocket as opposed to someone else. And I suppose we'll get to the the strategies you can implement as you move forward. >> Yeah, absolutely. Thanks, Jeremy. There's a a lot to to to summarize there for for everyone. And I guess the the main thing that I'm getting out of it as well is that these uh these tax changes",
             "won't sell any of our properties which are grandfathered. So, that means that as we buy more properties in the future, we know that we can't claim any negative gearing benefits on it. We're going to redirect as much of our hard savings or our capital into paying down those debts first. So, any properties that are going to be under the grandfathered negative geared provision, we'll try to maintain and leave the debt as long and as much as we can. And we'll work towards paying down debt on any new assets we buy. So, again, I always mentioned in a number of podcasts now that I've done since the budget, we need to be calculative and deliberate. And that's the strategy that now needs to be implemented for all all assets that we buy. In this particular cases I mentioned, we're going to focus on working towards paying down properties or assets where there is debt post budget night, debt that we can't claim as a negative gearing benefit either against our own income or or potentially structure. Work towards paying them down first and maintain any existing properties that we may have owned in our own name, helping offset the tax that we pay. So, that's things that investors"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1769,7 +1896,13 @@
             "elapsed_seconds": 77.34,
             "scored_at": "2026-07-21T01:02:46.943408+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -1926,6 +2059,7 @@
             ">> Yeah. Um and and now like they've gone completely they flipped it now and now they've got zero capital gains tax on businesses and >> Yeah. >> Yeah, it's to to attract more like you're saying the the opposite effect cuz it's not productive when you >> New Zealand finance minister maybe came out and for the first time appealed to Australians in a bit of a joking and tongue-in-cheek way. Hey, come across the ditch. We don't charge any tax on our property is and we still give you negative gearing benefits, but it is a a genuine realistic thing that people will consider and they'll factor that into their feasibilities and it just means that prices have to increase to meet a certain level of return that everyone's looking to generate. >> Exactly. Uh maybe just a couple more things as well in terms of what people can do. Um we talked about entities, you know, um trusts still have their place but become a little bit less attractive. Companies maybe more for your experienced investor. How about SMSF? Were they touched in the budget? >> Yeah, they they haven't, which is good. So, they've they've gone through a big change a year ago with the division 296",
             "brand new ones uh that are built after the budget of course, but excluding brand new ones, all properties will have to have a market value being done and you'll have a 50% CGT calculation up to the market value of 1 July 27. And then an indexation cost base calculation, so a little bit painful. And then the last one was the trust tax. They're going to be taxing trustees 30% um effectively taking out a lot of small business owners and property investors who enjoyed the ability of being able to minimize tax through distributions to the beneficiaries, especially on lower marginal tax rate payers, and then now implementing a 30% flat tax. And also implementing potentially an extra tax that any distribution that goes to a corporate beneficiary, or otherwise known as a bucket company, they're also going to be paying a tax, which may result in double taxation. Couple other things to mention, um nasty ones, a minimum rate of tax on capital gains on the real gain at 30%. So, that's nasty for any, you know, spouses that may not be working or younger people wanting to invest on lower incomes. Regardless of your marginal tax bracket, if you are $45,000 or below in income, you will be"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -1939,7 +2073,13 @@
             "elapsed_seconds": 196.22,
             "scored_at": "2026-07-21T01:06:03.162752+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -2071,6 +2211,7 @@
             "important to to talk about, but some more practical insights for for those then the main thing we're talking about here is that owner-occupier appeal. Um one thing that I've noticed in the last few weeks already cuz obviously this budget has affected sentiment. Um but also, you know, in a practical sense, borrowing capacity. Absolutely. That negative gearing add backs into servicing calculations, we're seeing probably about a 30% drop in borrowing capacity for a lot of people. So, I've had real clients with budgets of 1.4 mil down to 1 mil, 1 mil down 700k, 800 down to 560. Um and what that's done, what I've noticed already on on the ground in a lot of locations that we're buying in, is that sub 750k budget is getting more pressure. >> Mhm. Um and especially in areas that already have high owner-occupier ratios and appeal, um they're directly competing with first home buyers. >> Yep. >> You know, which is maybe an unintended consequence of this. >> It will, yeah, no, absolutely. You you but borrowing capacity is reduced, you know, that top end of the market, people now still wanting to invest, they're going to start looking at the more affordable areas. I saw on the news, um",
             "The only one way to collapse the property market here in this country >> [music] >> is to absolutely cut migration to nil. I've always looked at property not a tool as cash flow and super, but for a tool as growth. I've always been of the belief that tax is a cost of success. >> [music] >> My role as an accountant is to try to find then where are our next strategies, where are our next steps [music] that we take to be able to minimize the tax for the clients. If you tax something more, people will do less. >> It's been a month since the budget announcement and there has been a massive spanner thrown the works for property investors everywhere. Today, I'm going to sit down with Jeremy Izzaly, a very experienced property accountant and property investor to talk about not only [music] what the changes are, but what they mean for property investors moving forward. Jeremy Izzaly. Did I say that right? >> You got it right. >> Cool. Cool. I was like practicing. [laughter] Uh mate, welcome to the KTG Property Podcast. We're really excited to have you on board today. Uh so obviously there's so much noise happening at the moment. The federal budget was announced about 3 weeks ago. So"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2084,7 +2225,13 @@
             "elapsed_seconds": 198.53,
             "scored_at": "2026-07-21T01:09:21.696244+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -2192,6 +2339,7 @@
             "using token efficient output format can save about\u00a0\n40% tokens compared to using JSON. And then I built a few axis with them. Besides the GitHub\u00a0\naxi I showed earlier, I also built ChromeDev tools axi and benchmarked it against other various\u00a0\nbrowser tools. Here you can see the agent taking less turns and using less tokens to get the same\u00a0\ntasks done with axi. The main point here is when you give tools to your agent, do some research on\u00a0\ntheir efficiency because they can greatly affect how much mileage you get out of your agents. If\u00a0\nyou want to use the axis I mentioned earlier, you can just go to this site called axi.mmd\u00a0\nand find them in this catalog. You can just go to their repo and find instructions for how\u00a0\nto start using them. Speaking of this catalog, there is something called lavish axi here. This\u00a0\nis a very important tool in my setup. I pretty much rely on this tool for planning any kind\u00a0\nof complex work. Let's do a real feature live and I'll show you how it works. Let me first\u00a0\nlaunch Hibbit to show you what I'm trying to work on here. Hibbit is an AI tutor I'm\u00a0\nbuilding for kids. Um I'll just create a",
             "This is the lavish editor. The reason I named it\u00a0\nlavish is that it's richer than a rich editor. I almost named it filthy rich editor, but um that's\u00a0\njust not the best sounding name. Lavish editor basically instructed the agent to create an HTML\u00a0\nartifact to visualize what we need to discuss. It always uses the same design system as the current\u00a0\nproject being worked on. So this is consistent with how the hybits app actually looks. This makes\u00a0\nit very easy to review concepts and prototypes. see the option is laid out here. This is so much\u00a0\neasier to understand than the huge wall of text we were looking at earlier in the terminal, right?\u00a0\nI can also annotate and make comments on specific parts of the artifacts to give feedback to the\u00a0\nagent. This is something that's really hard to do with the wall of text or a markdown file. And at\u00a0\nthe bottom, there are things for me to decide on. And I can just click on these options to make the\u00a0\ndecisions. and I just send this feedback back to the agents inside of Lavish without even having to\u00a0\ngo back to the terminal. Honestly, I can never go back to reading text in the terminal anymore. This\u00a0\nis just like way too much more efficient. Now,"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2205,7 +2353,13 @@
             "elapsed_seconds": 121.85,
             "scored_at": "2026-07-21T01:11:23.576302+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -2435,6 +2589,7 @@
             "doing that, congratulations. You have successfully\u00a0\ntransitioned from a sailor into a great captain. All right, we have gone from not having a ship\u00a0\nto being a captain that has a first mate and a big crew that sail together. This is a pretty\u00a0\ngood time to wrap up this video. All my tools can be found on my GitHub and will be linked in\u00a0\nthe description below. They are all free and open source. I built them because I just want to see\u00a0\nmore people learning how to do aic engineering effectively and doing it in an enjoyable way. And\u00a0\nthat's what I hope you can get out of this video. I will continue to share more of my workflow\u00a0\nand things I find useful on my channel. So, don't forget to subscribe if\u00a0\nyou don't want to miss anything.",
             "This is an important thing to pay attention to\u00a0\nbecause agents rely on external tools like GitHub to do its tasks. The design of these external\u00a0\ntools can greatly affect your agents performance. Take GitHub as an example. Many people use the\u00a0\nGitHub MCP server for accessing GitHub. However, I ran this benchmark here that measured various\u00a0\nkind of ways to access GitHub for the exact same tasks. Using GitHub MCP server will cost you\u00a0\nto spend three times more on token cost and more than double the latency compared to using\u00a0\nthe COI. If you're using the GitHub MCP, you are pretty much wasting both time and money for no\u00a0\nclear benefit. Now you can see there's this thing called Axi which has the lowest cost but highest\u00a0\nsuccess rate. So what is it? Let me show you. AXI is a set of design standards I authored\u00a0\nafter discovering the huge upside we can have by designing our tools to treat agents as a first\u00a0\nclass citizen and optimize for agent ergonomics. I created 10 principles for how to make a tool\u00a0\nhighly efficient for agents. For example, using token efficient output format can save about\u00a0\n40% tokens compared to using JSON. And then I"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2448,7 +2603,13 @@
             "elapsed_seconds": 205.42,
             "scored_at": "2026-07-21T01:14:48.991724+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -2594,6 +2755,7 @@
             "popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin up a new tab, treehouse claw. And this time I'll\u00a0\nsay the image attachment dropdown menu should have an action that takes a screenshot of the current\u00a0\napp and use that as the attachment. All right, one more tab. Treehouse claw. Our agent status bar\u00a0\nright above the chat input is not always showing bot activity. Look into what happened there\u00a0\nand make sure when any bots are in progress, it always displays something that reflects the\u00a0\nlatest activity. Boom. We now have three sessions running in parallel. Now I can keep going because\u00a0\nnone of these sessions will need my attention anytime soon. Especially if I tell them to run no\u00a0\nmistakes after implementation. I know whether they need me by looking at the top status bar and I can\u00a0\nswitch between the tabs using keyboard shortcuts like this. That's very important for managing a\u00a0\nlot of parallel sessions efficiently. That said, after doing this for a while, you will discover\u00a0\nthat juggling between all these sessions, it's quite exhausting. The constant context\u00a0\nswitch and having to remind yourself what each",
             "it, uh a git work tree is basically creating a\u00a0\nclone of your repo directory. I can create one by typing gork tree add and give a path\u00a0\nhere. Now we have to think about a name. This is when you waste five minutes and eventually\u00a0\ngive up and just say high bit two. Now we have a work tree and we can navigate to it. Uh so let's\u00a0\ngo find it. It's in high bit 2. This is a separate directory on the file system. So we can have an\u00a0\nagent doing anything here and it won't conflict with goodn night have fun which is running in\u00a0\nthe original repo directory. The problem with work trees is that we now have something to\u00a0\nmaintain in our head. I need to remember, oh, I have hybrid 2 here. Next time I come into\u00a0\nthis hybrid 2 directory, I would wonder what was I doing in this work tree last time. Is there\u00a0\nstill an agent running or is it free? All of that has to exist in my head and there's no way I'm\u00a0\ngoing to remember all that. So, this work tree basically becomes a debt. To get rid of it,\u00a0\nI need to run this remove command. Remove. This is just a lot of overhead. My solution to\u00a0\nthat is another tool I built called treehouse."
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2607,7 +2769,13 @@
             "elapsed_seconds": 411.63,
             "scored_at": "2026-07-21T01:21:40.617327+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -2724,6 +2892,7 @@
             "on market actually declined. So, that's what I'm looking forward to next month's June starters come through to see cuz we get a full month's worth of data. >> Mhm. Since the the announcement >> Announcement, correct. Anything to add to the stock on market there Jeremy? >> Uh just the significantly mixed results. Uh you know, the polar opposites there. Top bottom, there's a 50% difference. Up 25%, down 25%. >> It's only 0.1 though. That's what makes it look very skewed when you look at it. That's the challenge. >> Uh off low base. >> Days on market pretty much lifted everywhere as we expected. So, it's slowing down for sure similar to what houses are happening, too. >> Mhm. >> Besides um Darwin and Canberra come back a little bit, but yeah, days on market is sort of trending which we'd expect, right? >> Yeah. Yeah, given the the the news. >> And I think there's a lot of investors or owner occupiers maybe lending strategies have also changed. They've had to go back to the lenders to to do their refi. Um vacancy rate again, similar story really tight. Like Darwin 0.4. What else is quite low? Brisbane, Hobart. Um Adelaide, Perth, but yeah, 0.4. >> Very small unit market, Darwin.",
             "here is mostly that end value, which is saying that all over the last 12 months has been 11.7% growth. >> Yeah. >> That's the key number. >> last column. >> That's second last column. Um and I expect that rental growth to continue to push with the low vacancy rates. >> Yeah. It's going to get any better. Um >> Key takeaways, I think Yeah, as I said, like every market has There's always markets within markets, but again, it just really comes down to your circumstances, the buffers that you've got in place, um any goals that are coming up, could be car expenses, moving homes, whatever it might be. So, I think really dial in on what your budget's going to be. And I think yield's going to be a big play for a lot of investors um potentially. >> Yeah. Yeah, for the established. >> The house supply has lifted and yeah, as we know, days on market's obviously increase, so um I expect that to increase a little bit more. And I think units may be holding up a little bit better than houses due to the fact the price points. I think units going to be quite popular cuz they're a lot more affordable. >> Yeah, and I noticed in Sydney there's some great opportunities for for units for Sydney"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2737,7 +2906,13 @@
             "elapsed_seconds": 59.24,
             "scored_at": "2026-07-21T01:22:39.885019+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -2902,6 +3077,7 @@
             "on that? >> No, but I just think um 100% in 5 years for Perth, the city as a whole, is uh yeah, amazing. And also Brisbane pretty close, 95%. Uh Adelaide, yeah, not as bad as it is it not bad either, nearly 90%. I mean, 5 years, yeah. Yeah, I can just remember when I first started getting into property, and the expectation of having 10% per annum um for just a couple of years would have been, yeah, fantastic. But, seeing things like 20%, 10, and 15, so, don't expect this sort of thing will keep going uh forever if you're a novice property investor. These have been pretty good times recently. >> With the federal budget proposed changes, would you be buying right now? >> Just did. >> [laughter] >> Okay, good true again. Okay, it's fair enough. But that was sort of before you're in the process before the changes were happening. >> signed a contract until after yeah, 12th of May. >> But it hasn't slowed you down, right? >> No. No, but I can understand the cash flow considerations of the typical investor for for these changes. >> Yeah, I don't think there's anything wrong with waiting a couple months just to sort of see what's going on cuz we are seeing",
             "around that $400,000 range. >> Yeah, it's amazing, isn't it? State capital under 500,000. That's a I mean the next closest is where Hobart was it? Yeah, 592 just under 600,000. But look at the gap between Hobart and Darwin. As far as state capitals are concerned Darwin is is out on its own for it's just incredibly cheap. >> Well, the thing is the vacancy rate's the tightest across the board and stock on market is actually a little bit higher than Adelaide. But it is Adelaide and Brisbane, but it's like again really tight there and market cycle timing strong. Had about 21% growth over the last year. As the Perth and Brisbane around that 22 and 21%, so high flyers in the unit market. But again that Brisbane and Perth growth over the last 5 years about the form houses 101% and 112 percent. So massive. So again depends on the view that you're taking, but market cycle timing's definitely, you know, there's opportunities I believe in you know, Sydney potentially Melbourne Canberra by the looks of it too if you're looking purely at MCT market cycle timing. >> Yeah, and market cycle timing's just one metric. It's included in the DSR, so you can't ignore all the other metrics which"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -2915,7 +3091,13 @@
             "elapsed_seconds": 156.52,
             "scored_at": "2026-07-21T01:25:16.411335+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -3043,6 +3225,7 @@
             "which is what we expected. We only had what, maybe a couple weeks after the announcement on the federal budget, but stock has picked up as as days on market. Um So, that's for houses overall. Now, let's move over to uh the typical value change. So, over the We use typical value. Um I know that CoreLogic use their uh hot hedonic index. Is that right, Jeremy? >> Mhm. >> Um so, a little bit different how we, you know, use a typical value, but overall, there was about like what, pretty much a flat market over um over the last month in May. So, Darwin picked up. >> Uh look at the Look at the differences from top to bottom there. That We're talking about the right most column on this slide. So, Sydney backwards 2% a month is quite significant. 2 and 1/2, 2.2 for Melbourne. But then ahead by 2.4% Darwin. >> And yeah, like I said, I think with a lot of this, we should maybe even look at it from a um a yearly point of view. Might be good, too, instead of just looking at that 1 month, but that typical value has definitely fluctuated. Um definitely. But overall, it'll be interesting to see what happens next month. We get a full month's worth of data again.",
             "quite popular cuz they're a lot more affordable. >> Yeah, and I noticed in Sydney there's some great opportunities for for units for Sydney uh buyers who are s- priced out of the market when you're thinking 2 million, 3 million for a house. Um I think it was uh Punchbowl I saw you could buy a It's an old two-year two-unit bedroom two-bedroom unit in an old but small complex. That's quite common there in Punchbowl and it's under under 600,000. And I thought that's extraordinary for Sydney. >> That's right. >> Great great value for money. >> more in that sort of western corridor cuz I know we've done a bit of research around there. So, it really again it comes down to your budget and yeah if you're an owner-occupier in Sydney you don't want to rent anymore and have your own place. I think there's definitely some opportunity in the unit market. So, Is there anything else Jeremy you want to go over? >> Yes, I think um if you like this, you know, hit a like. If we if [music] it's something that you enjoy, you know, leave a comment and we can try and do this on a monthly basis and maybe a little bit quicker too. So, as soon as we get the data, hopefully"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3055,7 +3238,13 @@
             "elapsed_seconds": 263.17,
             "scored_at": "2026-07-21T01:29:39.580894+00:00",
             "error": "faithfulness: Failed to parse StringIO from completion {}. Got: 1 validation error for StringIO\ntext\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE "
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -3109,6 +3298,7 @@
             "What's up everyone? I'm still in shock that\u00a0\nmy last video about agentic engineering got hundreds of thousands of views. I'm really happy\u00a0\nto see many of you are leaning into building with agents and I plan to continue sharing what I found\u00a0\nthat's truly useful for getting real work done. Today, by popular demand, I'm going to be sharing\u00a0\nmy entire development environment by setting up all my config files from scratch, step by step,\u00a0\nso we can all go from a freshly installed Mac to my complete agentic engineering setup that's\u00a0\nready to go. Let's get started. All right, here we are at our starting point, a freshly\u00a0\ninstalled Mac OS on my Mac Mini. I have only done some of the most basic things like installing\u00a0\nChrome, Git, and set up my SSH key for GitHub. I also downloaded this custom wallpaper here just so\u00a0\nthe video looks a little bit more pleasant. I will drop a link in the description for where I got\u00a0\nthis. And that's all there is right now. We will set up everything else together from this point\u00a0\non. Now, the very first problem I want to solve is the reproducibility of my configuration. It means\u00a0\nonce I have things all set up on this machine,",
             "and we will run it. This will basically refresh\u00a0\nour environment. All right. Now Nyx is properly set up in our environment. Let's start writing our\u00a0\nactual file config. I'll go create a repo here uh in my GitHub cont. And I'll make a new repo called\u00a0\nfiles. And I will initialize git here. This will be the repo I publish on GitHub after this video.\u00a0\nAnd I'm going to create a symbolic link at a fixed location here like this. Uh I'll be targeting\u00a0\nthis current directory. and I'll put a symbolic link at this location. I do this so that all my\u00a0\nscripts later can reference this using a stable path. All right. Now, we have an empty files repo\u00a0\nand Nyx already set up. The first config we write here is going to be something called Nyx Darwin.\u00a0\nNyx Darwin is how I configure my Mac OS settings using Nyx. You will see how it works in a bit,\u00a0\nbut for now, I'm just going to be copying their boilerplate config content here. And then let's\u00a0\ngo create a Nyx uh file called flake.nix. We don't have neo vim just yet. Uh so I'm just going to use\u00a0\nthe vanilla vim that comes with the Mac OS install for now. It's not as good, but uh should be enough\u00a0\nto carry us through uh the initial phase until we"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3122,7 +3312,13 @@
             "elapsed_seconds": 76.74,
             "scored_at": "2026-07-21T01:30:56.355122+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -3256,6 +3452,7 @@
             "happened so far, I can just uh split another pane\u00a0\nand use new vim and use git to see the diff. Uh this is a very typical flow for how I work. Now a\u00a0\nreally important piece about working with agents is the global memory file that affects all our\u00a0\nagents behavior. I want all my agents whether it's cloud or codeex or open code or pi or grock\u00a0\nor whatever to behave somewhat consistently and follow my rules. I do this by creating a central\u00a0\nmemory file. I put it here uh in my files repo. I'll uh put it here uh home agents.m MD. And here\u00a0\nis a set of rules I wrote for my agents. Never use m dash use plain dash instead. Uh for some reason\u00a0\na lot of the AI models are trained to use M dash uh whenever it needs to use a dash. Uh so now\u00a0\nwhenever I see m dash I just feel really robotic. So whenever I need the agent to write something\u00a0\nfor me like a commit message or a PR description, I don't want to use the mdash. Uh so that's my\u00a0\npreference. Uh whenever uh when writing commit messages, never auto add your agent's name as\u00a0\nco-author. That is something Claude really loves to do and this uh system prompt will fight against\u00a0\nthat. Um I don't think it's too useful for agents",
             "you can see it is actually trying to copy this\u00a0\nfile. This is oil.neov recognizing my intent and I just confirmed. You can see it actually created\u00a0\nthis uh configuration-2.nix file here and it's a copy paste of the previous one. Similarly, if I\u00a0\ngo to oil and delete this line by typing dd and I write and the file is gone. If you are used to\u00a0\nediting in them, you will feel this is a really natural way to handle the file system. is my\u00a0\nfavorite way to manage files. Now with agentic engineering becoming my primary way of coding, I\u00a0\nfind that's a very common reason I come to neoim is to quickly review diffs and manage the state of\u00a0\ngit. But there's nothing out of the box in neoim that can help me do that. I use two plugins called\u00a0\nneoit and git signs. I'm going to create another file uh here called uh git.la Lua and I'm going to\u00a0\npaste them in. Very straightforward. Uh basically just giving a key bind to launch uh neoit and an\u00a0\noption for git science to show the git blame of the current line. So it's easy for me to see who's\u00a0\nthe person that last touched it. Here you can also see this event equals buff win enter uh is a\u00a0\nprimitive in the lazy plug-in manager which means"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3269,7 +3466,13 @@
             "elapsed_seconds": 121.65,
             "scored_at": "2026-07-21T01:32:58.010339+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -3338,6 +3541,7 @@
             "files regardless of where the actual git clone is.\u00a0\nNow the next set of things we add to home manager is a list of packages that we want to install\u00a0\nat user level and we can just let home manager install all of them for us. Interestingly even\u00a0\nfonts can be installed by home manager this way. Here we are installing the hack nerd font which is\u00a0\nmy favorite monospace font for terminal encoding. We install it through home manager here. So we\u00a0\ndon't need to manually click through and download the font from their website. We can also set uh\u00a0\nenvironment variables like this. So for example, I want my default editor to to be neoim. So here I\u00a0\nhave this variable set. Let's run another rebuild. And uh remember to add all the files uh to be\u00a0\ntracked by git as well. and we will be rebuilding. Before we go deep into configurations, I\u00a0\njust want to get one last thing set up, which is our shell. By default, Mac already\u00a0\ngave us uh the Zshell, which is pretty good, but it's the raw Zshell without any of the\u00a0\ngood stuff, and I need the good stuff. So, we'll come to our home manager config again, um\u00a0\nhome.nix, and we will be dropping this in. This",
             "the reproducibility of my configuration. It means\u00a0\nonce I have things all set up on this machine, can I easily apply it on another machine and get\u00a0\nthe exact same results? Or in the less likely but still very possible scenario, if my AI agent\u00a0\ndid something stupid and completely destroyed my system, can I recover it instantly and get\u00a0\neverything back exactly the way they were? My solution to this is something called Nyx.\u00a0\nIf you haven't heard of Nyx before, Nyx is a declarative and reproducible configuration\u00a0\nsystem primarily designed for Nyx OS, which is an operating system based on Linux. But\u00a0\nyou don't have to use Linux to use Nyx. People have made Nyx portable. And here's an installer\u00a0\nthat works on Mac as well called determinate Nyx. And this is what we will install now by\u00a0\nfollowing their install command here. So this is what we will copy. We'll just run this command\u00a0\nin our terminal and finish the installation here. We will choose yes. Now it says the installation is done. So let's\u00a0\nfollow its instruction and let's copy this command and we will run it. This will basically refresh\u00a0\nour environment. All right. Now Nyx is properly"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3351,7 +3555,13 @@
             "elapsed_seconds": 148.46,
             "scored_at": "2026-07-21T01:35:26.474035+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         }
       ]
     },
@@ -3414,6 +3624,7 @@
             "Um definitely. But overall, it'll be interesting to see what happens next month. We get a full month's worth of data again. >> month. Yeah, and even then that's not with the new tax laws in place. It's just still at the time of recording working its way through the upper house. >> I think it's as I said before, like you got Sydney and Melbourne and Canberra and let's say Adelaide all gone backwards, but there are pockets that have gone up, too. So, it's not like it's not like they're bad areas to invest in. There are markets that have done well. >> Yeah. Yeah. I mean, Sydney's got like 700 suburbs. Melbourne's got like 500, so yeah, there's pockets that that are still very hot and others that have cooled. >> And it could be that sort of higher end, too, cuz that typical value is a little bit higher, for example, for Sydney and Melbourne maybe can feel it that that little bit more. Stock on market percentage, so if we have a look it's picked up everywhere pretty much. The Darwin's picked up pretty quick in the couple weeks of data that we had. Adelaide Perth Sydney. Again, I wouldn't look at that change so much. If we just look at Darwin as an example, it went up from like let's say",
             "bank repossession, they're sold at debt level. It's like well then that's actually where the new vals are setting because they're coming in and being sold at that man. It's dangerous dangerous territory. And so like anyone selling that brand new off the planet, all that sort of stuff, you got to be really really careful that sort of stuff because that's that's where that's where a lot of people get burning windows like this. >> Unfortunately, this is what the government's incentivizing. They're literally incentivizing spruers to come back to the fold. >> Yeah, it is. It's dangerous, man. Um I mean my my first question, the actual podcast, which is uh the end of the old property playbook, um Sammy Gordon's latest investing strategy. So now these are my words. Feel free to disagree, but it looks like there's going to be a bit of a property reset in Australia. What are the hallmarks of suburbs or regions that are going to win and lose? >> I think it's a good place to start, right? >> Yeah, man. Look, I think I think it just it always comes back to the fundamentals of what are going to keep driving a market um or drive slashke keep driving a market combined with where do we think"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3427,7 +3638,13 @@
             "elapsed_seconds": 57.45,
             "scored_at": "2026-07-21T00:31:52.304173+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_llm_recursive",
@@ -3642,6 +3859,7 @@
             "saying, it's natural market pressure or market um uh rates. What's adding pressure to the housing market right now and what will continue to add pressure in in the coming years? >> Cost at the moment is one of them, but the biggest thing is population. >> Exactly. >> We have seen 1 million people come in between 2022 to 2026, which is It's number. It's a very healthy number. It's great for property investors and great for the country and helps GDP or mask GDP deficiencies, but the estimates are that another 1.4 million people to come in between 2026 and 2030. So, 2.4 million economic migrants to come in, which is brilliant. Again, we're growing. I saw the population data come out today. We've now officially reached 28 million people. So, we're moving at a rate of knots. Infrastructure's obviously not keeping up and we know housing demand housing demand's high, but houses being added into the market from a supply perspective is quite low. That's what's driving the market. That is the underpin of all the growth in this country. It is population. And as I said very earlier, if you were to take away population from the housing market, that's what's going to cause a decline. Not taxes,",
             "calculating the metrics of the fuel levy. So these are short-term things. Things will ultimately find their equilibrium again equilibrium again. That's the principles of economics. So, if you can see that downturn or see that sentiment shift, it might be a great time because it doesn't last for long. You know, my best buying times as a property investor were just after the GFC, in the Royal Commission. That's when I really expanded my portfolio quite a bit. Start of COVID, I got into the market when people running away. I got in get into that WA market in early 2020, late 2019, and saw 3X on a lot of my properties and was able to exit them. And this is one of those times we'll look back and say, \"Wow, there was a really great 6-month buying window.\" And it doesn't last for long, but you know, until everyone sees that opportunity, and thus the cycle starts again. >> Exactly. Perfect. Jeremy, thank you so much. >> Pleasure. Thank you very much. >> If you found this episode helpful and you want to see what's possible for you with property investing, reach out. Info in the show notes."
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3655,7 +3873,13 @@
             "elapsed_seconds": 161.78,
             "scored_at": "2026-07-21T00:34:34.084123+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
         },
         {
           "key": "rag_agent",
@@ -3797,6 +4021,7 @@
             "object because it was shiny and brand new to them, and then the value becomes in the eye of the beholder of the next person. Do they value it as much as you did? Are they receiving the same level of incentives that you received? If the answer's no, then your potential buyer pool reduces. So, the exit of the property becomes very important and comes back to those two words, calculative and deliberate. You've got to make sure you understand what you're getting yourself into, be very deliberate with your approach and the way that you buy, and also potentially the way that you sell, and understand who that next market is. And I feel and I see, especially speaking with new potential clients every day, a lot of people just buy. They're just so used to a COVID pandemic market where 650 to 700 billion dollars worth of capital was stimulated into the market all at once. And we can't just be throwing thousands of darts at a dartboard now because you're not going to be popping the balloons. The balloons are, you know, spaced at very certain points that dartboard, and you need to be very measured with how you, you know, try to land on that balloon. So, be very wary",
             "got to remember like these are the times where developers um and builders, they're just going to kind of keep trying to raise their pricings. Um, you know, they'll they'll they'll hold on to land estates and release them slowly so they can keep charging more. Builders do the same thing. Um, cuz they got to make their monies and and they've been they've been gone through a couple, you know, many hard years as well trying to make margins. So like these are the times where um I firmly believe you know the entire land estates are going to be created that are going to be bought out by investors >> just because that's the only thing they can get access to to still be able to get their their negative gearing benefits and their planners and accountants and all the rest of sort of thing are going to be pushing them in that sort of direction and unfortunately that's where that's where a lot of masses will go and I would be steering very very well clear of that. Yeah, at the end of the day, if the market does a downturn, it's you're going to be in the middle of a fire sale in areas where it's with investors, >> which is what we saw like, you know, like I remember, man, man me man me man"
           ],
+          "retrieved_chunk_ids": [],
           "evaluation": {
             "judge": "ragas",
             "judge_model": "deepseek-v4-flash",
@@ -3810,7 +4035,570 @@
             "elapsed_seconds": 215.81,
             "scored_at": "2026-07-21T00:38:09.885070+00:00",
             "error": null
-          }
+          },
+          "model": null,
+          "embedding_model": null,
+          "top_k": null,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
+        }
+      ]
+    },
+    {
+      "id": "q-20260721-084445-db03",
+      "question": "Help me write a better professional summary here is my attempt \"\"Highly skilled data scientist turned AI engineer with 10+ years experience shipping measurable impact in tech, startups, corporate and consulting. I enjoy working end to end transforming stakeholder problems into data driven solutions. I\u2019m pivoting to AI to expand my impact from supporting business performance to building agentic solutions and capture a data driven loop. \"\"",
+      "url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+      "asked_at": "2026-07-21T08:44:45.552352+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=QPUmFKboiqY\"",
+          "answer": "I have enough evidence to give you comprehensive, transcript-backed feedback and a revision. Here's what the research reveals about what your summary needs.\n\n## Key Findings\n\n1. Hiring managers spend only ~6 seconds on a resume before deciding, so your summary must hook them instantly with proven impact rather than generic claims [2][4].\n2. For career changers, the summary must demonstrate active learning effort in the new discipline \u2014 nobody hires for something you've never done without seeing you work to master it [1][2][3].\n3. The strongest summaries prove capability with specific facts and figures, making the reader think \"wow, you did that for your last employer \u2014 I want you to do that for me\" [1][2].\n4. The best professional summary blends experience, skills, relationship building, and measurable impact while also revealing character [3][5].\n5. Numbers and specifics are critical \u2014 they help the reader understand exactly what you did and how it helped your employers succeed [3].\n\n---\n\n## Analysis of Your Current Draft\n\n**What works:** Your \"10+ years experience shipping measurable impact\" line is strong because it signals tenure with proof of delivery. The pivot narrative (data science \u2192 AI engineering) is clear.\n\n**What needs fixing:**\n\n| Issue | Why it's a problem |\n|---|---|\n| \"Highly skilled\" | Tells instead of shows. Replaces a slot where a specific number or achievement could go [1][2]. |\n| No facts or figures anywhere | The #1 rule \u2014 you need specific numbers to make the reader think \"wow\" [1][3]. |\n| \"I enjoy working end to end\" | Passive, personal-taste language. Re-frame as a capability, not a preference. |\n| \"capture a data driven loop\" | Vague and grammatically awkward. Leaves the reader confused. |\n| No proof of AI learning effort | For a career pivot, you must show you're actively upskilling \u2014 \"no one is going to hire you for something you've never done if they don't see effort to learn\" [3]. |\n| No standout accomplishment anchoring the summary | Leads with \"highly skilled\" instead of your biggest win [1]. |\n\n---\n\n## Revised Professional Summary (Template \u2014 Fill in Your Numbers)\n\nHere is a rewritten version following the transcript-backed guidance. **Bold brackets** are where you insert your specific metrics.\n\n> **Data Scientist \u2192 AI Engineer** with 10+ years of delivering **[X%]** revenue lift through **[type of solution, e.g., ML-driven optimization]** across tech, startup, and consulting environments. Led end-to-end delivery of **[Y projects / systems]** that transformed stakeholder problems into production data solutions generating **[$Z in impact / % improvement]**. Now actively pivoting into AI engineering \u2014 building **[specific project/course/work product]** to prove out agentic architectures \u2014 with the goal of expanding impact from business analytics to building autonomous, data-driven systems that capture a continuous improvement loop.\n\n**Key changes and why (with citations):**\n\n1. **Leads with role + tenure** \u2014 tells them immediately who you are [2].\n2. **Opens with a specific number achievement** \u2014 the hook that makes them think \"wow\" [1][2].\n3. **Replaces \"enjoy\" with \"delivered\"** \u2014 action language, not preference [2].\n4. **Shows active AI learning** \u2014 inserts a concrete example of what you're building/learning, which is mandatory for career pivots [1][3].\n5. **Clarifies \"data driven loop\"** \u2014 reframed as \"continuous improvement loop\" inside \"autonomous, data-driven systems\" so it's concrete and compelling.\n6. **Ends with the forward-looking value proposition** \u2014 connects past impact to future AI ambition [5].\n\n---\n\n## Optional: A Shorter, Punchier Version\n\nIf you prefer something tighter (better for the 6-second scan [2]):\n\n> **AI Engineer (pivoting from Data Science)** | 10+ yrs shipping measurable business impact \u2014 **[X% revenue lift / $Y savings]** via end-to-end ML solutions. Currently building **[specific AI project]** to deepen agentic systems expertise. Seeking to apply a proven data-to-impact loop to autonomous AI product development.\n\n---\n\n## What You Need to Fill In\n\nBased on the transcripts, the single most impactful change you can make is adding **specific numbers** [1][3]. Before you use any version above, identify:\n\n- **A specific metric** from your data science work (e.g., \"drove 30% cost reduction,\" \"increased conversion by 15%\")\n- **A concrete AI learning project** you can mention (a course cert, a built agent, a deployed LLM prototype, etc.) \u2014 this is critical for the career pivot credibility [3]\n- **The # of projects/teams/stakeholders** you've worked with\n\nPlug those in and your summary will go from \"tells\" to \"proves\" \u2014 which is exactly what gets a resume past the 6-second scan [2].\n\n{\n  \"question\": \"Help me write a better professional summary here is my attempt \\\"\\\"Highly skilled data scientist turned AI engineer with 10+ years experience shipping measurable impact in tech, startups, corporate and consulting. I enjoy working end to end transforming stakeholder problems into data driven solutions. I'm pivoting to AI to expand my impact from supporting business performance to building agentic solutions and capture a data driven loop. \\\"\\\"\",\n  \"answer\": \"## Key Findings\\n\\n1. Hiring managers spend only ~6 seconds on a resume before deciding, so your summary must hook them instantly with proven impact rather than generic claims [2][4].\\n2. For career changers, the summary must demonstrate active learning effort in the new discipline \u2014 nobody hires for something you've never done without seeing you work to master it [1][2][3].\\n3. The strongest summaries prove capability with specific facts and figures, making the reader think \\\"wow, you did that for your last employer \u2014 I want you to do that for me\\\" [1][2].\\n4. The best professional summary blends experience, skills, relationship building, and measurable impact while also revealing character [3][5].\\n5. Numbers and specifics are critical \u2014 they help the reader understand exactly what you did and how it helped your employers succeed [3].\\n\\n---\\n\\n## Analysis of Your Current Draft\\n\\n**What works:** Your \\\"10+ years experience shipping measurable impact\\\" line is strong because it signals tenure with proof of delivery. The pivot narrative (data science \u2192 AI engineering) is clear.\\n\\n**What needs fixing:**\\n\\n| Issue | Why it's a problem |\\n|---|---|\\n| \\\"Highly skilled\\\" | Tells instead of shows. Replaces a slot where a specific number or achievement could go [1][2]. |\\n| No facts or figures anywhere | The #1 rule \u2014 you need specific numbers to make the reader think \\\"wow\\\" [1][3]. |\\n| \\\"I enjoy working end to end\\\" | Passive, personal-taste language. Re-frame as a capability, not a preference. |\\n| \\\"capture a data driven loop\\\" | Vague and grammatically awkward. Leaves the reader confused. |\\n| No proof of AI learning effort | For a career pivot, you must show you're actively upskilling \u2014 \\\"no one is going to hire you for something you've never done if they don't see effort to learn\\\" [3]. |\\n| No standout accomplishment anchoring the summary | Leads with \\\"highly skilled\\\" instead of your biggest win [1]. |\\n\\n---\\n\\n## Revised Professional Summary (Template \u2014 Fill in Your Numbers)\\n\\nHere is a rewritten version following the transcript-backed guidance. **Bold brackets** are where you insert your specific metrics.\\n\\n> **Data Scientist \u2192 AI Engineer** with 10+ years of delivering **[X%]** revenue lift through **[type of solution, e.g., ML-driven optimization]** across tech, startup, and consulting environments. Led end-to-end delivery of **[Y projects / systems]** that transformed stakeholder problems into production data solutions generating **[$Z in impact / % improvement]**. Now actively pivoting into AI engineering \u2014 building **[specific project/course/work product]** to prove out agentic architectures \u2014 with the goal of expanding impact from business analytics to building autonomous, data-driven systems that capture a continuous improvement loop.\\n\\n**Key changes and why (with citations):**\\n\\n1. **Leads with role + tenure** \u2014 tells them immediately who you are [2].\\n2. **Opens with a specific number achievement** \u2014 the hook that makes them think \\\"wow\\\" [1][2].\\n3. **Replaces \\\"enjoy\\\" with \\\"delivered\\\"** \u2014 action language, not preference [2].\\n4. **Shows active AI learning** \u2014 inserts a concrete example of what you're building/learning, which is mandatory for career pivots [1][3].\\n5. **Clarifies \\\"data driven loop\\\"** \u2014 reframed as \\\"continuous improvement loop\\\" inside \\\"autonomous, data-driven systems\\\" so it's concrete and compelling.\\n6. **Ends with the forward-looking value proposition** \u2014 connects past impact to future AI ambition [5].\\n\\n---\\n\\n## Optional: A Shorter, Punchier Version\\n\\nIf you prefer something tighter (better for the 6-second scan [2]):\\n\\n> **AI Engineer (pivoting from Data Science)** | 10+ yrs shipping measurable business impact \u2014 **[X% revenue lift / $Y savings]** via end-to-end ML solutions. Currently building **[specific AI project]** to deepen agentic systems expertise. Seeking to apply a proven data-to-impact loop to autonomous AI product development.\\n\\n---\\n\\n## What You Need to Fill In\\n\\nBased on the transcripts, the single most impactful change you can make is adding **specific numbers** [1][3]. Before you use any version above, identify:\\n\\n- **A specific metric** from your data science work (e.g., \\\"drove 30% cost reduction,\\\" \\\"increased conversion by 15%\\\")\\n- **A concrete AI learning project** you can mention (a course cert, a built agent, a deployed LLM prototype, etc.) \u2014 this is critical for the career pivot credibility [3]\\n- **The # of projects/teams/stakeholders** you've worked with\\n\\nPlug those in and your summary will go from \\\"tells\\\" to \\\"proves\\\" \u2014 which is exactly what gets a resume past the 6-second scan [2].\",\n  \"references\": [\n    {\"label\": \"[1]\", \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=59s\", \"start_seconds\": 59.0, \"end_seconds\": 124.0, \"chunk_index\": 0, \"video_id\": \"QPUmFKboiqY\"},\n    {\"label\": \"[2]\", \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s\", \"start_seconds\": 0.0, \"end_seconds\": 70.0, \"chunk_index\": 0, \"video_id\": \"QPUmFKboiqY\"},\n    {\"label\": \"[3]\", \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=172s\", \"start_seconds\": 172.0, \"end_seconds\": 236.0, \"chunk_index\": 0, \"video_id\": \"QPUmFKboiqY\"},\n    {\"label\": \"[4]\", \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s\", \"start_seconds\": 0.0, \"end_seconds\": 70.0, \"chunk_index\": 0, \"video_id\": \"QPUmFKboiqY\"},\n    {\"label\": \"[5]\", \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=115s\", \"start_seconds\": 115.0, \"end_seconds\": 180.0, \"chunk_index\": 0, \"video_id\": \"QPUmFKboiqY\"}\n  ]\n}",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=59s",
+              "start_seconds": 59.519,
+              "end_seconds": 124.159,
+              "chunk_index": 1,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=115s",
+              "start_seconds": 115.24,
+              "end_seconds": 180.959,
+              "chunk_index": 2,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=172s",
+              "start_seconds": 172.08,
+              "end_seconds": 236.92,
+              "chunk_index": 3,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s",
+              "start_seconds": 0.08,
+              "end_seconds": 70.119,
+              "chunk_index": 0,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=225s",
+              "start_seconds": 225.439,
+              "end_seconds": 257.28,
+              "chunk_index": 4,
+              "video_id": "QPUmFKboiqY"
+            }
+          ],
+          "token_estimate": 8571,
+          "chunk_count": 5,
+          "llm_calls": null,
+          "iterations": 6,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 31.45,
+          "error": null,
+          "contexts": [
+            "facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you did that for your last employer well I want to hire you to come and do that for me so take a look at this and remember my friends after I show you these five awesome resum\u00e9 professional summary examples I'm going to give you templates that you can use to create your own version of these so that you don't have to do any writing when you're putting these into your resume let's move on to number three now this resume professional summary is for for folks looking to change careers in this summary we are showing the reader that while we don't currently do work that they're hiring for we are eagerly learning to do exactly that type of work and we're working very hard to become good at it as fast as possible now in another situation you might be a new professional altogether this is a summary I recommend for people in this situation this summary showcases our potential and the effort we're willing to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their",
+            "to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their career now before I show you my favorite resume professional summary example it would mean a lot to me my friends if you could take a second to like this video And subscribe to help me achieve my mission of putting everyone in the world into a job they love now let's move on to example number five now I absolutely love this professional summary because it offers a nice blend of showcasing experience skills relationship building and impact it also shares a lot about your character so if this one resonates with you I would definitely recommend giving it a shot okay now you've seen all my favorites in action let me give you the plug andplay templates you can use to put these into your resume okay we're going to zip through these templates as you can see we use square brackets to Showcase where you need to plug in your own specific information I tried to keep this as flexible as possible so get ready on that pause button so you can take a photo or screenshot or whatever you need to do cuz we're going to move through these pretty quickly so here is our highlight",
+            "button so you can take a photo or screenshot or whatever you need to do cuz we're going to move through these pretty quickly so here is our highlight reel professional summmer do your best here to include numbers and specifics in the accomplishments that you choose to highlight so that this truly impresses the person reading it and they feel like they can understand exactly what you did and how that helped your employers to succeed this is our career changer summary here and if you're reading this and saying well I'm not taking any courses related to my new discipline or my new industry that should be priority number one because no one is going to hire you for something that you've never done before if they don't see an effort that you're trying to learn and master that new thing here is our new professional summary nice and easy pretty straightforward of course and moving on to my favorite one here's the best one I have so make sure to definitely take a screenshot or a photo of this one and use it if you can cuz it works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new",
+            "hiring managers are only spending 6 seconds reviewing your resume before they decide if it gets thrown in the trash so you need a professional summary to tell them who you are and win them over in this video I'm going to walk you through the five best resume professional summary examples that are easy to write and hiring managers are going to love the last one is my favorite and if you stick around until the end I'm going to give you the plug andplay templates you can use to put these in your own resume so you win hiring managers over and start getting job offers in this summary we are telling them exactly how long we've been doing work like this and then explaining the parts of the work that we are best at so they feel confident in our skills and our ability to do the job well now take a second to screenshot this take a picture do whatever you need to do cuz we are going to move on to the next professional summary right now now in this second summary we are not only going to tell them that we're good at this job we're going to prove it with facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you",
+            "works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new professional summaries check out the link down below I've got free templates I've got premium templates everything you need and to learn how to fill out the rest of your templates so that you are impressing the heck out of these hiring managers lining up interviews and getting multiple job offers check out my other videos on resum\u00e9 writing here on YouTube"
+          ],
+          "retrieved_chunk_ids": [],
+          "evaluation": {
+            "judge": "ragas",
+            "judge_model": "deepseek-v4-flash",
+            "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "scores": {
+              "faithfulness": 0.1,
+              "answer_relevancy": 0.8098,
+              "context_precision": 1.0
+            },
+            "composite": 0.6366,
+            "elapsed_seconds": 170.21,
+            "scored_at": "2026-07-21T08:47:41.125596+00:00",
+            "error": null
+          },
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 10,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
+        }
+      ]
+    },
+    {
+      "id": "q-20260721-085619-237d",
+      "question": "here's my updated professional summary, feedback \"\"\"Data Scientist \u2192 AI Engineer with 10+ years of delivering data engineering, machine learning and insight solutions across tech, startup, and consulting environments. I lead end-to-end delivery of projects that transform stakeholder problems into production data driven solutions. Now actively pivoting into AI engineering; building a series of apps to prove out agentic architectures with the goal to build data driven AI solutions.\"\"\"",
+      "url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+      "asked_at": "2026-07-21T08:56:19.429772+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=QPUmFKboiqY\"",
+          "answer": "I have sufficient evidence to provide you with structured feedback. Here's my analysis:\n\n```json\n{\n  \"question\": \"Feedback on professional summary: 'Data Scientist \u2192 AI Engineer with 10+ years of delivering data engineering, machine learning and insight solutions across tech, startup, and consulting environments. I lead end-to-end delivery of projects that transform stakeholder problems into production data driven solutions. Now actively pivoting into AI engineering; building a series of apps to prove out agentic architectures with the goal to build data driven AI solutions.'\",\n  \"answer\": \"## Key Findings\\n\\n1. Your summary does a good job signaling a career pivot and stating your years of experience, but it lacks the **facts and figures** that would make a hiring manager think \\\"wow, I want to hire you\\\" \u2014 which is the core goal of a professional summary [1][2].\\n2. For career changers, hiring managers need to see concrete **proof of learning effort** (courses, certifications, shipped projects), and your current mention of \\\"building a series of apps\\\" is too vague to demonstrate mastery [3][4].\\n3. The best professional summaries blend **experience, skills, impact, and character** \u2014 your summary covers experience and skills but omits measurable impact and personal character [4][5].\\n4. You tell the reader you lead end-to-end delivery, but you don't **back it up with specifics** (scale of data, team size, revenue impact, time saved) \u2014 the transcript advises that proving past accomplishments with numbers is what differentiates a good summary from a great one [1][2].\\n5. For a career-change summary specifically, the core message should be: \\\"I don't currently do work they're hiring for, but I am **eagerly learning** to do exactly that work and working very hard to become good at it as fast as possible\\\" \u2014 your current wording conveys the pivot but not the urgency or intensity of learning [3].\\n\\n## Finding 1: You need facts and figures to prove past impact\\n\\nThe transcript emphasizes that a strong professional summary doesn't just *tell* the reader you're good \u2014 it *proves* it with facts and figures based on accomplishments in previous roles, so the reader thinks \\\"you did that for your last employer \u2014 I want to hire you to do that for me\\\" [1][2]. Your summary says \\\"I lead end-to-end delivery of projects that transform stakeholder problems into production data driven solutions\\\" but gives no scale, no metrics, no tangible results. Adding specific numbers \u2014 e.g., size of data pipelines, percentage improvements, team sizes, revenue impact, or number of production systems delivered \u2014 would dramatically strengthen this. The transcript advises: \\\"do your best here to include numbers and specifics in the accomplishments that you choose to highlight so that this truly impresses the person reading it\\\" [3][4].\\n\\n## Finding 2: Your career pivot needs more concrete proof of learning\\n\\nFor someone changing careers, the transcript is very clear: \\\"if you're reading this and saying 'well I'm not taking any courses related to my new discipline' ... that should be priority number one because no one is going to hire you for something that you've never done before if they don't see an effort that you're trying to learn and master that new thing\\\" [4]. Your summary mentions \\\"building a series of apps to prove out agentic architectures\\\" which is on the right track, but it's generic. To follow the transcript's guidance, you should specify: what specific technologies (LangChain, CrewAI, AutoGen?), what you've already shipped, what courses or certifications you've completed, and what specific agentic patterns you've proven. The career changer summary should show you are \\\"eagerly learning to do exactly that type of work and working very hard to become good at it as fast as possible\\\" [2][3].\\n\\n## Finding 3: You're missing the blend of impact and character that makes a summary memorable\\n\\nThe transcript highlights that the most effective professional summary \\\"offers a nice blend of showcasing experience, skills, relationship building, and impact \u2014 it also shares a lot about your character\\\" [4][5]. Your current draft covers experience (10+ years) and skills (data engineering, ML, end-to-end delivery), but it doesn't touch on the impact your solutions had on the business or the stakeholders you partnered with. The phrase \\\"transform stakeholder problems into production data driven solutions\\\" hints at relationship building but doesn't name a specific outcome. Adding a character element \u2014 e.g., your passion for bridging technical execution with business value, your track record of stakeholder trust, or your drive to learn the newest AI architectures \u2014 would complete the picture and make your summary stand out in the 6 seconds a hiring manager spends reading it [1][2].\\n\\n## Finding 4: Your opening \\\"Data Scientist \u2192 AI Engineer\\\" is effective but could be sharper\\n\\nThe transcript notes that a good summary should immediately tell the reader \\\"exactly how long we've been doing work like this and then explain the parts of the work that we are best at\\\" [1][2]. Your arrow format immediately signals the pivot, which is smart. However, the phrase \\\"with 10+ years of delivering data engineering, machine learning and insight solutions\\\" is somewhat passive and could be made punchier. The transcript suggests framing this as: the reader should feel confident in your skills and your ability to do the job well [1]. Consider restructuring to lead with your strongest, most relevant accomplishment or your most impressive quantifiable result from your data science/ML career, then bridge directly into why you're now the perfect person to do AI engineering work.\\n\\n## Finding 5: Your pivot statement focuses on what you're doing, not what you can now do for them\\n\\nThe final part of your summary \u2014 \\\"building a series of apps to prove out agentic architectures with the goal to build data driven AI solutions\\\" \u2014 tells the reader about *your* activity, but it doesn't answer the reader's core question: \\\"What can you do for me?\\\" [1][2]. The transcript's career changer template frames the pivot as a value proposition for the employer. Consider reframing this final sentence to connect your past data-driven delivery expertise with your new AI engineering skills to state what you can specifically achieve for the hiring company (e.g., \\\"Now applying that end-to-end delivery discipline to build production agentic AI systems that [specific outcome]\\\" instead of just describing what you're building on your own).\",\n  \"references\": [\n    {\n      \"label\": \"[1]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s\",\n      \"start_seconds\": 0.0,\n      \"end_seconds\": 70.0,\n      \"chunk_index\": 0,\n      \"video_id\": \"QPUmFKboiqY\"\n    },\n    {\n      \"label\": \"[2]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=59s\",\n      \"start_seconds\": 59.0,\n      \"end_seconds\": 124.0,\n      \"chunk_index\": 1,\n      \"video_id\": \"QPUmFKboiqY\"\n    },\n    {\n      \"label\": \"[3]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=115s\",\n      \"start_seconds\": 115.0,\n      \"end_seconds\": 180.0,\n      \"chunk_index\": 2,\n      \"video_id\": \"QPUmFKboiqY\"\n    },\n    {\n      \"label\": \"[4]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=172s\",\n      \"start_seconds\": 172.0,\n      \"end_seconds\": 236.0,\n      \"chunk_index\": 3,\n      \"video_id\": \"QPUmFKboiqY\"\n    },\n    {\n      \"label\": \"[5]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=QPUmFKboiqY&t=225s\",\n      \"start_seconds\": 225.0,\n      \"end_seconds\": 257.0,\n      \"chunk_index\": 4,\n      \"video_id\": \"QPUmFKboiqY\"\n    }\n  ]\n}\n```",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=172s",
+              "start_seconds": 172.08,
+              "end_seconds": 236.92,
+              "chunk_index": 3,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=115s",
+              "start_seconds": 115.24,
+              "end_seconds": 180.959,
+              "chunk_index": 2,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=59s",
+              "start_seconds": 59.519,
+              "end_seconds": 124.159,
+              "chunk_index": 1,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s",
+              "start_seconds": 0.08,
+              "end_seconds": 70.119,
+              "chunk_index": 0,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=225s",
+              "start_seconds": 225.439,
+              "end_seconds": 257.28,
+              "chunk_index": 4,
+              "video_id": "QPUmFKboiqY"
+            }
+          ],
+          "token_estimate": 9999,
+          "chunk_count": 5,
+          "llm_calls": null,
+          "iterations": 7,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 39.29,
+          "error": null,
+          "contexts": [
+            "button so you can take a photo or screenshot or whatever you need to do cuz we're going to move through these pretty quickly so here is our highlight reel professional summmer do your best here to include numbers and specifics in the accomplishments that you choose to highlight so that this truly impresses the person reading it and they feel like they can understand exactly what you did and how that helped your employers to succeed this is our career changer summary here and if you're reading this and saying well I'm not taking any courses related to my new discipline or my new industry that should be priority number one because no one is going to hire you for something that you've never done before if they don't see an effort that you're trying to learn and master that new thing here is our new professional summary nice and easy pretty straightforward of course and moving on to my favorite one here's the best one I have so make sure to definitely take a screenshot or a photo of this one and use it if you can cuz it works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new",
+            "to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their career now before I show you my favorite resume professional summary example it would mean a lot to me my friends if you could take a second to like this video And subscribe to help me achieve my mission of putting everyone in the world into a job they love now let's move on to example number five now I absolutely love this professional summary because it offers a nice blend of showcasing experience skills relationship building and impact it also shares a lot about your character so if this one resonates with you I would definitely recommend giving it a shot okay now you've seen all my favorites in action let me give you the plug andplay templates you can use to put these into your resume okay we're going to zip through these templates as you can see we use square brackets to Showcase where you need to plug in your own specific information I tried to keep this as flexible as possible so get ready on that pause button so you can take a photo or screenshot or whatever you need to do cuz we're going to move through these pretty quickly so here is our highlight",
+            "facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you did that for your last employer well I want to hire you to come and do that for me so take a look at this and remember my friends after I show you these five awesome resum\u00e9 professional summary examples I'm going to give you templates that you can use to create your own version of these so that you don't have to do any writing when you're putting these into your resume let's move on to number three now this resume professional summary is for for folks looking to change careers in this summary we are showing the reader that while we don't currently do work that they're hiring for we are eagerly learning to do exactly that type of work and we're working very hard to become good at it as fast as possible now in another situation you might be a new professional altogether this is a summary I recommend for people in this situation this summary showcases our potential and the effort we're willing to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their",
+            "hiring managers are only spending 6 seconds reviewing your resume before they decide if it gets thrown in the trash so you need a professional summary to tell them who you are and win them over in this video I'm going to walk you through the five best resume professional summary examples that are easy to write and hiring managers are going to love the last one is my favorite and if you stick around until the end I'm going to give you the plug andplay templates you can use to put these in your own resume so you win hiring managers over and start getting job offers in this summary we are telling them exactly how long we've been doing work like this and then explaining the parts of the work that we are best at so they feel confident in our skills and our ability to do the job well now take a second to screenshot this take a picture do whatever you need to do cuz we are going to move on to the next professional summary right now now in this second summary we are not only going to tell them that we're good at this job we're going to prove it with facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you",
+            "works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new professional summaries check out the link down below I've got free templates I've got premium templates everything you need and to learn how to fill out the rest of your templates so that you are impressing the heck out of these hiring managers lining up interviews and getting multiple job offers check out my other videos on resum\u00e9 writing here on YouTube"
+          ],
+          "retrieved_chunk_ids": [],
+          "evaluation": {
+            "judge": "ragas",
+            "judge_model": "deepseek-v4-flash",
+            "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "scores": {
+              "faithfulness": 0.3333,
+              "answer_relevancy": 0.6692,
+              "context_precision": 1.0
+            },
+            "composite": 0.6675,
+            "elapsed_seconds": 125.84,
+            "scored_at": "2026-07-21T08:58:25.302149+00:00",
+            "error": null
+          },
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 10,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
+        }
+      ]
+    },
+    {
+      "id": "q-20260721-104447-6be7",
+      "question": "tell me how to structure my experiences, what do I put for each document how do I structure it",
+      "url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+      "asked_at": "2026-07-21T10:44:47.311193+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent --url \"https://www.youtube.com/watch?v=owIP4Qr39BY\"",
+          "answer": "Here is a comprehensive guide on how to structure your resume, what to put in each section, and how to format it all.\n\n---\n\n## Key Findings\n\n1. The overall resume structure should follow this order: Name/Contact Info \u2192 Professional Title \u2192 Professional Summary \u2192 Skills \u2192 Work Experience (most recent first) \u2192 Education (at the bottom) [1][2][3].\n2. Each job entry in the experience section must include the job title (bold), location (italics), company name (regular font), and the *months* of employment \u2014 not just the years [1].\n3. Bullet points under each role should tell accomplishment stories with numbers, strong action verbs, and varied language \u2014 never just list responsibilities [4].\n4. The skills section must be curated to pull only skills from the jobs you're targeting, avoiding generic basics like \"Microsoft Office\" or \"attention to detail\" [5].\n5. Education belongs at the bottom of the resume, should list the full credential name (not just the abbreviation), and should omit graduation years to avoid age discrimination [3].\n\n---\n\n## Finding 1: Overall Resume Section Order \u2014 Top to Bottom\n\nThe resume flows in a deliberate sequence designed to answer the employer's questions in order. Start with your **name and contact info** (city & state only \u2014 no street address to avoid location-based discrimination) [1]. Right below your name, add a **professional title** that defines your brand \u2014 something like \"Strategic Marketing Director\" or \"E-commerce SEO Strategist\" \u2014 covering what you do, your level, and your industry [3]. Next comes the **professional summary** (not an outdated objective statement), which should state what you are, your years of experience, the environments you've worked in, and \u2014 by the second sentence \u2014 a specific accomplishment [3]. After that, insert your **skills section**, then your **work experience** in reverse-chronological order, and finally **education** at the bottom [1][3].\n\n## Finding 2: How to Structure Each Job Entry in the Experience Section\n\nEach experience entry must be formatted for both ATS scanners and human readers. List jobs from **most recent to least recent** with no exceptions \u2014 ATS systems and recruiters both need this order [1]. For each role, the line should present: **your job title in bold** (so they can instantly see what positions you've held), the **location in italics** (to visually differentiate it), and the **company name in regular font** [1]. Crucially, include the **months** you were in the role (e.g., \"March 2021 \u2013 June 2023\"), not just the years. Year-only dates hide whether you were there for two weeks or two years, which makes you look untrustworthy [1].\n\n## Finding 3: How to Write Bullet Points That Sell Your Accomplishments\n\nBullet points are the most important part of the experience section, and most people write them wrong. Rather than listing what you were *responsible for* (e.g., \"responsible for managing the company's online marketing initiatives\" \u2014 which tells the reader nothing), write bullet points that tell the story of **what you did and how it helped the company succeed** [4]. Strong bullet points: (1) start with a **strong action verb**, (2) include **quantified numbers** where possible (e.g., \"38% online revenue increase,\" \"26% improvement in ROI\"), and (3) **vary the wording** so you don't sound like everyone else using AI-generated language [4][6]. The difference is dramatic \u2014 \"oversee a small team\" becomes \"led a 12-person cross-functional marketing team optimizing paid, organic, and email channels to improve ROI by 26%\" [6].\n\n## Finding 4: How to Build a Smart Skills Section\n\nThe skills section should sit before your experience, and it must be curated intentionally. Do **not** include basic, entry-level skills like \"strong communication,\" \"attention to detail,\" \"Microsoft Office,\" or \"time management\" \u2014 these waste space and make a seasoned professional look junior [5]. Instead, **pull the skills directly from the job descriptions you are applying to**, selecting only those that are genuinely interesting and relevant to the employer [5]. Format the section compactly using a borderless table (e.g., 3x4 grid) with bullet points for each skill, so it doesn't take up excessive vertical space or leave awkward white space on the page [2].\n\n## Finding 5: Education and Formatting Best Practices\n\nEducation is not the most important section \u2014 put it **at the bottom of page two** [3]. Write out the **full name of your credential** (e.g., \"Bachelor of Arts\" not just \"BA\") for a more professional look, and **do not include the graduation years** \u2014 employers can use that to infer your age and discriminate [3]. For overall formatting: use **10-point font** for body text to keep it condensed and professional, adjust margins to avoid single words hanging on a new line, and use the \"full justified\" alignment to squeeze tight lines together cleanly [5]. Maintain consistent paragraph spacing (e.g., 12pt after each line) and avoid orphans \u2014 if a role's bullet points spill to page two, add a \"continued\" label so content doesn't float disconnected from its context [7].\n\n---\n\n{\"question\": \"tell me how to structure my experiences, what do I put for each document how do I structure it\",\n \"answer\": \"## Key Findings\\n\\n1. The overall resume structure should follow this order: Name/Contact Info \u2192 Professional Title \u2192 Professional Summary \u2192 Skills \u2192 Work Experience (most recent first) \u2192 Education (at the bottom) [1][2][3].\\n2. Each job entry in the experience section must include the job title (bold), location (italics), company name (regular font), and the *months* of employment \u2014 not just the years [1].\\n3. Bullet points under each role should tell accomplishment stories with numbers, strong action verbs, and varied language \u2014 never just list responsibilities [4].\\n4. The skills section must be curated to pull only skills from the jobs you're targeting, avoiding generic basics like \\\"Microsoft Office\\\" or \\\"attention to detail\\\" [5].\\n5. Education belongs at the bottom of the resume, should list the full credential name (not just the abbreviation), and should omit graduation years to avoid age discrimination [3].\\n\\n## Finding 1: Overall Resume Section Order \u2014 Top to Bottom\\n\\nThe resume flows in a deliberate sequence designed to answer the employer's questions in order. Start with your **name and contact info** (city & state only \u2014 no street address to avoid location-based discrimination) [1]. Right below your name, add a **professional title** that defines your brand \u2014 something like \\\"Strategic Marketing Director\\\" or \\\"E-commerce SEO Strategist\\\" \u2014 covering what you do, your level, and your industry [3]. Next comes the **professional summary** (not an outdated objective statement), which should state what you are, your years of experience, the environments you've worked in, and \u2014 by the second sentence \u2014 a specific accomplishment [3]. After that, insert your **skills section**, then your **work experience** in reverse-chronological order, and finally **education** at the bottom [1][3].\\n\\n## Finding 2: How to Structure Each Job Entry in the Experience Section\\n\\nEach experience entry must be formatted for both ATS scanners and human readers. List jobs from **most recent to least recent** with no exceptions \u2014 ATS systems and recruiters both need this order [1]. For each role, the line should present: **your job title in bold** (so they can instantly see what positions you've held), the **location in italics** (to visually differentiate it), and the **company name in regular font** [1]. Crucially, include the **months** you were in the role (e.g., \\\"March 2021 \u2013 June 2023\\\"), not just the years. Year-only dates hide whether you were there for two weeks or two years, which makes you look untrustworthy [1].\\n\\n## Finding 3: How to Write Bullet Points That Sell Your Accomplishments\\n\\nBullet points are the most important part of the experience section, and most people write them wrong. Rather than listing what you were *responsible for* (e.g., \\\"responsible for managing the company's online marketing initiatives\\\" \u2014 which tells the reader nothing), write bullet points that tell the story of **what you did and how it helped the company succeed** [4]. Strong bullet points: (1) start with a **strong action verb**, (2) include **quantified numbers** where possible (e.g., \\\"38% online revenue increase,\\\" \\\"26% improvement in ROI\\\"), and (3) **vary the wording** so you don't sound like everyone else using AI-generated language [4][6]. The difference is dramatic \u2014 \\\"oversee a small team\\\" becomes \\\"led a 12-person cross-functional marketing team optimizing paid, organic, and email channels to improve ROI by 26%\\\" [6].\\n\\n## Finding 4: How to Build a Smart Skills Section\\n\\nThe skills section should sit before your experience, and it must be curated intentionally. Do **not** include basic, entry-level skills like \\\"strong communication,\\\" \\\"attention to detail,\\\" \\\"Microsoft Office,\\\" or \\\"time management\\\" \u2014 these waste space and make a seasoned professional look junior [5]. Instead, **pull the skills directly from the job descriptions you are applying to**, selecting only those that are genuinely interesting and relevant to the employer [5]. Format the section compactly using a borderless table (e.g., 3x4 grid) with bullet points for each skill, so it doesn't take up excessive vertical space or leave awkward white space on the page [2].\\n\\n## Finding 5: Education and Formatting Best Practices\\n\\nEducation is not the most important section \u2014 put it **at the bottom of page two** [3]. Write out the **full name of your credential** (e.g., \\\"Bachelor of Arts\\\" not just \\\"BA\\\") for a more professional look, and **do not include the graduation years** \u2014 employers can use that to infer your age and discriminate [3]. For overall formatting: use **10-point font** for body text to keep it condensed and professional, adjust margins to avoid single words hanging on a new line, and use the \\\"full justified\\\" alignment to squeeze tight lines together cleanly [5]. Maintain consistent paragraph spacing (e.g., 12pt after each line) and avoid orphans \u2014 if a role's bullet points spill to page two, add a \\\"continued\\\" label so content doesn't float disconnected from its context [7].\",\n \"references\": [{\"label\": \"[1]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=0s\", \"start_seconds\": 0.0, \"end_seconds\": 77.0, \"chunk_index\": 0, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[2]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=199s\", \"start_seconds\": 199.0, \"end_seconds\": 277.0, \"chunk_index\": 1, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[3]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=66s\", \"start_seconds\": 66.0, \"end_seconds\": 143.0, \"chunk_index\": 2, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[4]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=601s\", \"start_seconds\": 601.0, \"end_seconds\": 674.0, \"chunk_index\": 3, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[5]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=268s\", \"start_seconds\": 268.0, \"end_seconds\": 340.0, \"chunk_index\": 4, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[6]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=527s\", \"start_seconds\": 527.0, \"end_seconds\": 609.0, \"chunk_index\": 5, \"video_id\": \"owIP4Qr39BY\"}, {\"label\": \"[7]\", \"source_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY\", \"timestamp_url\": \"https://www.youtube.com/watch?v=owIP4Qr39BY&t=803s\", \"start_seconds\": 803.0, \"end_seconds\": 900.0, \"chunk_index\": 6, \"video_id\": \"owIP4Qr39BY\"}]}",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=330s",
+              "start_seconds": 330.8,
+              "end_seconds": 403.52,
+              "chunk_index": 5,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=890s",
+              "start_seconds": 890.32,
+              "end_seconds": 931.199,
+              "chunk_index": 13,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=664s",
+              "start_seconds": 664.24,
+              "end_seconds": 748.079,
+              "chunk_index": 10,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=601s",
+              "start_seconds": 601.279,
+              "end_seconds": 674.1600000000001,
+              "chunk_index": 9,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=268s",
+              "start_seconds": 268.56,
+              "end_seconds": 340.639,
+              "chunk_index": 4,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[6]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=391s",
+              "start_seconds": 391.759,
+              "end_seconds": 472.96,
+              "chunk_index": 6,
+              "video_id": "owIP4Qr39BY"
+            },
+            {
+              "label": "[7]",
+              "source_url": "https://www.youtube.com/watch?v=owIP4Qr39BY",
+              "timestamp_url": "https://www.youtube.com/watch?v=owIP4Qr39BY&t=66s",
+              "start_seconds": 66.4,
+              "end_seconds": 143.2,
+              "chunk_index": 1,
+              "video_id": "owIP4Qr39BY"
+            }
+          ],
+          "token_estimate": 12352,
+          "chunk_count": 14,
+          "llm_calls": null,
+          "iterations": 4,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 33.19,
+          "error": null,
+          "contexts": [
+            "so you can see what it looks like. Great. So now we have some skills here that are genuinely interesting to the employer and are applicable to the job and are not basic skills everyone else has which we have now gotten rid of. Let's talk about the experience because once we've laid the foundwork of our title, a nice summary, and some skills, now we can start to tell them about what we've done. Give them our background a little bit. These experiences here, you'll see we've gone two pages. That's totally fine, you know, as long as you're not a student. But what we're not doing well here in these bullet points, as nicely worded as they are, is we're not selling ourselves. We're not speaking to past accomplishments. There is no evidence here that we are good at what we do. So, we're going to jazz up the bullet points. But first, there's a couple things that we just we need to do before anyone's going to take us seriously as a professional and be able to like scan and read our resume properly, which is arranging the experience in the order of information they want. So, yes, we do want to go from most recent job back to least recent. No exceptions really because of",
+            "resume for people. If you want me to take a look at your resume, I do offer r\u00e9 review services. You can read all about those down below in the description. I offer resume rewriting services as well where we'll sit down, we'll have a 50inute chat about your experience and make sure I'm pulling all the best experiences and stories you have to write these great bullet points and build out your skills section and everything. I do all the work. Uh, and if you just want some new templates and sample resumes, check out my mega resume and cover letter bundle. I've linked that down in the description below. Most importantly, uh, I work really hard on these YouTube videos. If you took a minute to like and follow, I would really appreciate it.",
+            "a little bit. So, this is obviously like too much. One thing that makes r\u00e9sum\u00e9s look super unprofessional is just like excess space between content. Now, we don't want we don't want no space between the content, but we do want um enough to to let it breathe. So, yeah, this is sort of uh already starting to look a little bit better. But one thing I'm going to suggest is that for the body text of your resume, most of the time it does look a little bit childish. if it's too big. Uh, so I'm typically using for the body text at least, so like bullet points or the paragraph of the professional summary, the the skills section, I'm just going down to 10point font. Nice and easy. Oh, this one didn't take uh that makes it just look a little bit more condensed, a little more professional. Now, when we have a lot of these like words hanging over the edge, something I will do is just widen the margins just a little bit to give ourselves like that nice concise flow. And then here, one thing you could do if you have like one hanging word like this, uh, is hit this full justified line and it's sort of squeezes squeezes it all in on one line. This one doesn't quite fit. Uh, so we'll",
+            "now updated. You can see that many of them have numbers. Not every bullet point you write needs numbers, but the more the better. We also start all our ver bullet points with strong action verbs as you can see here. Um and we vary the wording a lot which is really important uh especially in today's modern u AIdriven job search space because a lot of people are using the same language as each other because that's what AI is putting out. So make sure there's a nice variety in your in your language and just make sure with each of your bullet points you've sort of rounded out the story of how what you did helped your company to succeed. And if you do that, you're already going to see a lot more interviews coming your way. But let's make sure this looks nice. So, I'm just going to talk you through a bit of my uh my formatting strategy. So, first, let's let's either have the name fully fully centered with the contact information or we want the name of the contact information on the left. I kind of like the middle look for this resume. Uh let's talk about spacing a little bit. So, this is obviously like too much. One thing that makes r\u00e9sum\u00e9s look super unprofessional is just like",
+            "we will add in little bullet point for each of these uh each of these skills and then we'll just add in the actual skills here. Oh, actually we're going to we're going to speak to the skills we're selecting first before we before we do the formatting. These are largely these skills here largely inappropriate entry-level skills that should not be showing up in a mature seasoned professional's resume. We don't want to see that. So, um, strong communication and interpersonal, no, that's too basic. Team leadership, yeah, maybe collaboration, that's too basic. Marketing strategy, campaign management, these these are these are fine. These are fine. Everyone knows how to use Microsoft Office, so we were not going to include that. Uh, problem solving, attention to detail, no thank you. These are basic things. Project, project management maybe could be nice. Definitely not. Time management, data analysis, and reporting, those are fine. What we want to do is pull skills from the jobs that we're interested in applying to. Uh so I'll pop those in now so you can see what it looks like. Great. So now we have some skills here that are genuinely interesting to the",
+            "experience in the order of information they want. So, yes, we do want to go from most recent job back to least recent. No exceptions really because of ATS scanners needing to read the information in that order and because that's how a person naturally wants to see it. But what we do want to do to make things nice and easy is we want to start with our title. And I usually like to put that in bold so they can quickly see the thing they care most about which is what jobs have you had. Then uh I always put the the location in italics just to differentiate from the company which we leave in regular font. And then another key piece that's missing here in this resume is the months that we were in the role. If you say 2024 to present or here, this one's even worse, 2023 to 2024, they don't know if that was 23 and a half months or if it was 2 weeks or two days. Technically, you could have been hired December 31st, 2023 and been fired January 1st, 2024. And you could write that in there. So, we want to include the months in here, whatever those were. And just trust me, it's better not to leave the appearance of hi uh hiding anything. It's just going to make you look untrustworthy, make them",
+            "objective statement with a professional summary. So, I have pre-prepared ones so that you don't have to watch me type it out from scratch. But the idea with a a good professional summary, as you'll see here, we really want people to understand what we bring to the table for them because they know our objective is to get a job. What they don't know is what we can do for them and why they should hire us. So that's why I always include in the professional summary uh what we are, marketing leader or whatever it is, years experience, environments in which we have done our work. And then by the second sentence, you should be bragging about specific accomplishments that you've achieved. Uh, next we'll get into the education. There's a couple of issues here. Uh, one, I'm sure you saw this coming. We don't include the years and our education. Again, people use that to kind of assume our age and then um discriminate against us again in the hiring decision. Another piece, it's nice. You work so hard for this degree. Let's include the uh the full name of the credential. Bachelor of Arts or whatever it is instead of just the BA. It just looks a little bit more professional.",
+            "better not to leave the appearance of hi uh hiding anything. It's just going to make you look untrustworthy, make them suspicious of you. So, best to be forthcoming with the dates. Um, yeah. And and that's sort of how we want to present like the content in that order. I'll do the other ones really quick and then we'll come back and we'll update the bullet points. Okay, the jobs are now laid out properly, but the bullet points need a lot of work. If you can see here, like just as a case study with this first bullet point, uh responsible for managing the company's online marketing initiatives and ensuring all digital activities align with overall business goals. What does that mean? Nothing. Uh yeah, and then like this one is a little bit better. oversee a small team of marketing professionals to coordinate daily operations and campaign timelines. I guess we know you're leading a marketing team, but you haven't said what they do or how many people. So, we need to upgrade these with like real stories that explain what we've done and the impact that we've had. So, I'm going to just copy and paste in some bullet points I created in advance so you don't have to watch me",
+            "the credential. Bachelor of Arts or whatever it is instead of just the BA. It just looks a little bit more professional. Um, and then the other piece about education is it's not it's not that important. So, we're going to put it down uh on the bottom of page two. And we'll we'll do some formatting stuff a little later on. Another piece that's fully missing here uh is a professional title. So, after our name, before we get into like our experience, once again, we'll format this later. Uh, I like to say a couple of things that kind of define our our brand. Um, that so they can instantly know who we are after they read our name. So, we'd say something like strategic marketing leader. Sort of a highlevel piece. Actually, it's nice to let them know what level we're on. So, let's say we have been a director, strategic marketing director. It could be an executive, could be a VP, and then we'll go one level deeper on maybe some other expertise we have. Um, maybe that's an SEO strategist. And then if we want to get into industry, we also can. So maybe we would say something like a e-commerce um expert. And that way we've got what we do, the level we're at, and",
+            "I have upgraded thousands of r\u00e9sum\u00e9s to get people jobs at Google, Amazon, Meta, Netflix, and hundreds of other companies. I'm going to show you exactly how I do it so you can upgrade your resume to be just as good. This is the resume we are working with today. Uh, we're just going to dive straight in here. First off, let's get rid of the street address. Companies will often Google Street View your house and then use your street address to discriminate against you either in making their hiring decision or when it comes to negotiating salary. So, city and state is fine. Uh, next thing, this is for anyone who's over 45 or so. We want to make sure we don't have an email address with our birth birth year in it. So, make sure we uh put in an email address that does not have that issue. Uh, next we are going to get into like the the content of it all. First, objective statements. This is something that hasn't been taught in r\u00e9 writing since the probably the '9s. So, they know what your objective is. You want to get a job. So, we're going to replace the objective statement with a professional summary. So, I have pre-prepared ones so that you don't have to watch me type it out from",
+            "had. So, I'm going to just copy and paste in some bullet points I created in advance so you don't have to watch me type them all out. But let's actually no, let's dive in with a quick one at a time here so you can see. So rather than just listing what we're responsible for, if we paste in this other bullet point I created, we can see that the um we've now explained that we have created a strategy and what that strategy has produced 38% uh online revenue increase that now goes from saying I did this to I'm good at this. The next example, I'll leave this one in there so you can see it. Overseeing a small team. What if we were to talk about what that team was responsible for and some of the successes that they've had um by describing just like we have here 12person team crossunctional marketing team responsible for optimizing paid organic and email channels to improve return on investment by 26%. Now we have impressed someone. So let me sub in all the rest of the bullet points and then we'll come back and talk about what to do next. Okay, so the bullet points are now updated. You can see that many of them have numbers. Not every bullet point you write needs numbers, but the",
+            "let's make sure we're giving it the same amount of space after uh after the previous line above. So, let's bump Oh, yeah. See, it's an eight. Let's bump that up to a 12. Oh, now now we're now we're seeing a lot more consistent spacing. Oh, I really like that better. Um, last little formatting thing. I don't love when the the bullet points of the new job start up here like this. So, what I'll do is we hit enter a couple of times. Go off to the right. Um, oh, that doesn't quite fit. Let's bump the margin up. There we go. Okay. Then we write continued on page two. Make that bold. And then here at the top, just so stuff isn't hanging on its own, um, we'll go, let's see, territory manager at Greg's Ice Cream continued. And now this set of bullet points is no longer floating on its own. It has the space. It lives somewhere. And this is a much improved resume from that original version. And let's just make sure we round it out here. Shiny. New resume. Is it shiny? Okay, confirmed. Shiny has no E in it. That's everything that I do to upgrade a resume for people. If you want me to take a look at your resume, I do offer r\u00e9 review services. You can read all about those down below in the",
+            "So maybe we would say something like a e-commerce um expert. And that way we've got what we do, the level we're at, and the industry that we're in as well. All fantastic. Now, let's talk a bit about the skills section. which normally should come after the professional summary or before. It doesn't really matter which, but we definitely want it before the experience. So, a couple of things. I don't like that it's hiding down here on page two. So, first thing we're going to move it right here. Uh then this is like an inappropriate amount of space for the for the skill section to take up uh top to bottom. And it's also leaving this awkward white space here. So, here is how I like to approach the skills section in terms of design. We'll go to insert and then we'll draw ourselves a little table. Let's do like a a 3x4. Um the table's going to look ugly, but we'll fix that in a moment. Um by getting fix it now, actually uh by getting rid of the borders. No border. Now it looks a little nicer. Can't really tell where it is. So, we're going to go home and then we will add in little bullet point for each of these uh each of these skills and then we'll just add in the actual",
+            "full justified line and it's sort of squeezes squeezes it all in on one line. This one doesn't quite fit. Uh, so we'll have to leave it hanging there. But we're already starting to look a lot more professional. Now, something I want to do here as well is the titles look a little bit weird uh because they're they're hidden. Um, so one of my favorite moves is just to do like a big uh underline of the titles using this border feature right here. Now it's a little more easy to differentiate. Um, I'm still not loving the amount of space between each of the lines. So, one thing that I'm going to do is just I notice that if you see this blank space is kind of connected to the paragraph, but here it's just on exists on its own. We have some inconsistency in the the spacing. So, that seems to be a 12 point font as you can see right here. So, what I'm going to do is make sure that this is a 122. This part's probably a little too boring for you, but I'll show you how it works anyway. Um, so all the text that's sort of at the bottom of its own line, let's make sure we're giving it the same amount of space after uh after the previous line above. So, let's bump Oh, yeah. See, it's an eight."
+          ],
+          "retrieved_chunk_ids": [],
+          "evaluation": {
+            "judge": "ragas",
+            "judge_model": "deepseek-v4-flash",
+            "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "scores": {
+              "faithfulness": 1.0,
+              "answer_relevancy": 0.5501,
+              "context_precision": 0.7396
+            },
+            "composite": 0.7632,
+            "elapsed_seconds": 179.02,
+            "scored_at": "2026-07-21T10:47:51.957292+00:00",
+            "error": null
+          },
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 10,
+          "channel_id": null,
+          "retrieval_mode": null,
+          "followups": []
+        }
+      ]
+    },
+    {
+      "id": "q-20260721-113116-5006",
+      "question": "What do these videos say about writing a professional summary on a resume?",
+      "url": null,
+      "asked_at": "2026-07-21T11:31:16.252928+00:00",
+      "answers": [
+        {
+          "key": "rag_llm",
+          "title": "rag_llm (single-hop)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_llm",
+          "answer": "The videos stress the importance of a professional summary because hiring managers often spend only 6 seconds reviewing a resume, so the summary must quickly tell them who you are and win them over [5]. They provide several example approaches: for experienced professionals, state your tenure and strongest skills [5]; for career changers, show that you are actively learning the new field [2]; for new professionals or students, highlight your potential and willingness to grow [2]. A favorite example blends experience, skills, relationship building, and impact while also revealing character [3]. The videos also offer ready-to-use templates with square brackets as placeholders for your own information [3][1]. The second video (owIP4Qr39BY) does not directly address writing the summary content; it focuses on other resume sections and services [4][6].",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=225s",
+              "start_seconds": 225.0,
+              "end_seconds": 257.0,
+              "chunk_index": 1,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=59s",
+              "start_seconds": 59.0,
+              "end_seconds": 124.0,
+              "chunk_index": 2,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=115s",
+              "start_seconds": 115.0,
+              "end_seconds": 180.0,
+              "chunk_index": 3,
+              "video_id": "QPUmFKboiqY"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=QPUmFKboiqY",
+              "timestamp_url": "https://www.youtube.com/watch?v=QPUmFKboiqY&t=0s",
+              "start_seconds": 0.0,
+              "end_seconds": 70.0,
+              "chunk_index": 5,
+              "video_id": "QPUmFKboiqY"
+            }
+          ],
+          "token_estimate": 1635,
+          "chunk_count": 6,
+          "llm_calls": 1,
+          "iterations": null,
+          "terminated_reason": null,
+          "elapsed_seconds": 17.48,
+          "error": null,
+          "contexts": [
+            "works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new professional summaries check out the link down below I've got free templates I've got premium templates everything you need and to learn how to fill out the rest of your templates so that you are impressing the heck out of these hiring managers lining up interviews and getting multiple job offers check out my other videos on resum\u00e9 writing here on YouTube",
+            "facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you did that for your last employer well I want to hire you to come and do that for me so take a look at this and remember my friends after I show you these five awesome resum\u00e9 professional summary examples I'm going to give you templates that you can use to create your own version of these so that you don't have to do any writing when you're putting these into your resume let's move on to number three now this resume professional summary is for for folks looking to change careers in this summary we are showing the reader that while we don't currently do work that they're hiring for we are eagerly learning to do exactly that type of work and we're working very hard to become good at it as fast as possible now in another situation you might be a new professional altogether this is a summary I recommend for people in this situation this summary showcases our potential and the effort we're willing to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their",
+            "to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their career now before I show you my favorite resume professional summary example it would mean a lot to me my friends if you could take a second to like this video And subscribe to help me achieve my mission of putting everyone in the world into a job they love now let's move on to example number five now I absolutely love this professional summary because it offers a nice blend of showcasing experience skills relationship building and impact it also shares a lot about your character so if this one resonates with you I would definitely recommend giving it a shot okay now you've seen all my favorites in action let me give you the plug andplay templates you can use to put these into your resume okay we're going to zip through these templates as you can see we use square brackets to Showcase where you need to plug in your own specific information I tried to keep this as flexible as possible so get ready on that pause button so you can take a photo or screenshot or whatever you need to do cuz we're going to move through these pretty quickly so here is our highlight",
+            "resume for people. If you want me to take a look at your resume, I do offer r\u00e9 review services. You can read all about those down below in the description. I offer resume rewriting services as well where we'll sit down, we'll have a 50inute chat about your experience and make sure I'm pulling all the best experiences and stories you have to write these great bullet points and build out your skills section and everything. I do all the work. Uh, and if you just want some new templates and sample resumes, check out my mega resume and cover letter bundle. I've linked that down in the description below. Most importantly, uh, I work really hard on these YouTube videos. If you took a minute to like and follow, I would really appreciate it.",
+            "hiring managers are only spending 6 seconds reviewing your resume before they decide if it gets thrown in the trash so you need a professional summary to tell them who you are and win them over in this video I'm going to walk you through the five best resume professional summary examples that are easy to write and hiring managers are going to love the last one is my favorite and if you stick around until the end I'm going to give you the plug andplay templates you can use to put these in your own resume so you win hiring managers over and start getting job offers in this summary we are telling them exactly how long we've been doing work like this and then explaining the parts of the work that we are best at so they feel confident in our skills and our ability to do the job well now take a second to screenshot this take a picture do whatever you need to do cuz we are going to move on to the next professional summary right now now in this second summary we are not only going to tell them that we're good at this job we're going to prove it with facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you",
+            "the credential. Bachelor of Arts or whatever it is instead of just the BA. It just looks a little bit more professional. Um, and then the other piece about education is it's not it's not that important. So, we're going to put it down uh on the bottom of page two. And we'll we'll do some formatting stuff a little later on. Another piece that's fully missing here uh is a professional title. So, after our name, before we get into like our experience, once again, we'll format this later. Uh, I like to say a couple of things that kind of define our our brand. Um, that so they can instantly know who we are after they read our name. So, we'd say something like strategic marketing leader. Sort of a highlevel piece. Actually, it's nice to let them know what level we're on. So, let's say we have been a director, strategic marketing director. It could be an executive, could be a VP, and then we'll go one level deeper on maybe some other expertise we have. Um, maybe that's an SEO strategist. And then if we want to get into industry, we also can. So maybe we would say something like a e-commerce um expert. And that way we've got what we do, the level we're at, and"
+          ],
+          "retrieved_chunk_ids": [],
+          "evaluation": {
+            "judge": "ragas",
+            "judge_model": "deepseek-v4-flash",
+            "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "scores": {
+              "faithfulness": 0.8571,
+              "answer_relevancy": 0.8122,
+              "context_precision": 0.5889
+            },
+            "composite": 0.7527,
+            "spread": {
+              "faithfulness": 0.0,
+              "answer_relevancy": 0.0,
+              "context_precision": 0.0
+            },
+            "sample_scores": {
+              "faithfulness": [
+                0.8571
+              ],
+              "answer_relevancy": [
+                0.8122
+              ],
+              "context_precision": [
+                0.5889
+              ]
+            },
+            "judge_samples": 1,
+            "details": {
+              "faithfulness": {
+                "claims": [
+                  {
+                    "claim": "The videos stress the importance of a professional summary. [5]",
+                    "verdict": 1,
+                    "reason": "The context explicitly states that a professional summary is needed to tell hiring managers who you are and win them over, and that hiring managers spend only 6 seconds reviewing a resume."
+                  },
+                  {
+                    "claim": "Hiring managers often spend only 6 seconds reviewing a resume. [5]",
+                    "verdict": 1,
+                    "reason": "The context directly states: 'hiring managers are only spending 6 seconds reviewing your resume before they decide if it gets thrown in the trash'."
+                  },
+                  {
+                    "claim": "The professional summary must quickly tell hiring managers who the job applicant is. [5]",
+                    "verdict": 1,
+                    "reason": "The context says 'you need a professional summary to tell them who you are' and describes summaries that state tenure and skills."
+                  },
+                  {
+                    "claim": "The professional summary must win over hiring managers. [5]",
+                    "verdict": 1,
+                    "reason": "The context mentions 'win them over' and 'so you win hiring managers over and start getting job offers'."
+                  },
+                  {
+                    "claim": "The videos provide several example approaches.",
+                    "verdict": 1,
+                    "reason": "The context refers to walking through the five best resume professional summary examples, and describes different approaches for experienced, career changers, and new professionals."
+                  },
+                  {
+                    "claim": "For experienced professionals, the professional summary should state the applicant's tenure and strongest skills. [5]",
+                    "verdict": 1,
+                    "reason": "The context describes a summary that tells exactly how long the applicant has been doing similar work and explains the parts they are best at, which aligns with experienced professionals."
+                  },
+                  {
+                    "claim": "For career changers, the professional summary should show that the applicant is actively learning the new field. [2]",
+                    "verdict": 1,
+                    "reason": "The context explicitly says for career changers: 'we are showing the reader that ... we are eagerly learning to do exactly that type of work'."
+                  },
+                  {
+                    "claim": "For new professionals or students, the professional summary should highlight the applicant's potential and willingness to grow. [2]",
+                    "verdict": 1,
+                    "reason": "The context states for new professionals: 'this summary showcases our potential and the effort we're willing to put forward to learn and grow'."
+                  },
+                  {
+                    "claim": "A favorite example of a professional summary blends experience, skills, relationship building, and impact. [3]",
+                    "verdict": 1,
+                    "reason": "The context says about example number five: 'it offers a nice blend of showcasing experience skills relationship building and impact'."
+                  },
+                  {
+                    "claim": "The example also reveals character. [3]",
+                    "verdict": 1,
+                    "reason": "The context says: 'it also shares a lot about your character'."
+                  },
+                  {
+                    "claim": "The videos also offer ready-to-use templates. [3][1]",
+                    "verdict": 1,
+                    "reason": "The context mentions giving plug-and-play templates and templates that can be used to create your own version."
+                  },
+                  {
+                    "claim": "The templates use square brackets as placeholders for the applicant's own information. [3][1]",
+                    "verdict": 1,
+                    "reason": "The context says: 'we use square brackets to Showcase where you need to plug in your own specific information'."
+                  },
+                  {
+                    "claim": "The second video (owIP4Qr39BY) does not directly address writing the summary content. [4][6]",
+                    "verdict": 0,
+                    "reason": "The context does not mention any second video or a video ID, nor does it discuss content of a separate video."
+                  },
+                  {
+                    "claim": "The second video focuses on other resume sections and services. [4][6]",
+                    "verdict": 0,
+                    "reason": "No reference to a second video or its focus is present in the given context."
+                  }
+                ],
+                "supported": 12,
+                "total": 14
+              },
+              "answer_relevancy": {
+                "generated_questions": [
+                  "What do the videos say about the importance of a professional summary and how to write one?"
+                ],
+                "noncommittal": false,
+                "similarities": [
+                  0.8122
+                ]
+              },
+              "context_precision": {
+                "verdicts": [
+                  {
+                    "rank": 1,
+                    "verdict": 0,
+                    "reason": "The provided context does not contain the specific details mentioned in the answer, such as the 6-second review statistic, example approaches, or video references. It only discusses templates and links, which is insufficient to derive the comprehensive answer given.",
+                    "chunk_preview": "works extremely well now we need a place to put these professional summaries so for 10 out of 10 resum\u00e9 templates in which you can plug in these new professiona"
+                  },
+                  {
+                    "rank": 2,
+                    "verdict": 1,
+                    "reason": "The context provides detailed information about writing a professional summary for different career stages (experienced, career changers, new professionals), including the importance of showcasing accomplishments and using templates, which directly aligns with the points in the answer.",
+                    "chunk_preview": "facts and figures based on accomplishments we achieved in previous roles we want people to read this professional summary and think wow you did that for your la"
+                  },
+                  {
+                    "rank": 3,
+                    "verdict": 1,
+                    "reason": "The context includes specific details about professional summary examples and templates, such as the blend of experience, skills, relationship building, and impact, and the use of square brackets as placeholders, which are directly referenced in the answer. Therefore, the context was useful in formulating the answer.",
+                    "chunk_preview": "to put forward to learn and grow one's great for any new professional student or someone who is just kicking off their career now before I show you my favorite "
+                  },
+                  {
+                    "rank": 4,
+                    "verdict": 0,
+                    "reason": "The provided context is a generic promotional transcript about resume review services and templates. It does not contain any specific information or advice about writing a professional summary on a resume, such as the 6-second rule, example approaches for different professionals, or templates with placeholders mentioned in the answer. Therefore, the context was not useful in arriving at the detailed answer.",
+                    "chunk_preview": "resume for people. If you want me to take a look at your resume, I do offer r\u00e9 review services. You can read all about those down below in the description. I of"
+                  },
+                  {
+                    "rank": 5,
+                    "verdict": 1,
+                    "reason": "The context provides specific details about the video's content, including the 6-second review time, examples for experienced professionals and career changers, templates, and references to other videos. These details are directly reflected in the answer, indicating the context was useful.",
+                    "chunk_preview": "hiring managers are only spending 6 seconds reviewing your resume before they decide if it gets thrown in the trash so you need a professional summary to tell t"
+                  },
+                  {
+                    "rank": 6,
+                    "verdict": 0,
+                    "reason": "The provided context discusses formatting of credentials, education placement, and a professional title, but does not mention or address writing a professional summary on a resume. The answer focuses on the importance and examples of a professional summary, which is not covered in the given context.",
+                    "chunk_preview": "the credential. Bachelor of Arts or whatever it is instead of just the BA. It just looks a little bit more professional. Um, and then the other piece about educ"
+                  }
+                ],
+                "average_precision": 0.5889
+              }
+            },
+            "self_graded": true,
+            "elapsed_seconds": 76.53,
+            "scored_at": "2026-07-21T11:53:49.631711+00:00",
+            "error": null
+          },
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 6,
+          "channel_id": "UCbqOFQ5u-ZiT6kgwo9viP2Q",
+          "retrieval_mode": "hybrid",
+          "followups": []
         }
       ]
     }

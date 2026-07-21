@@ -149,3 +149,36 @@ def test_round_trips_model_identity(tmp_path) -> None:
     assert answer.model == "deepseek-v4"
     assert answer.embedding_model == "all-MiniLM-L6-v2"
     assert answer.top_k == 20
+
+
+def test_followups_are_carried_from_result_to_history():
+    """The LLM proposes follow-ups on every answer; the UI offers them as chips."""
+    from src.chat.history import ChatAnswer
+    from src.chat.setups import SetupResult
+
+    result = SetupResult(
+        key="rag_llm",
+        title="t",
+        command="c",
+        answer="a",
+        followups=[
+            {
+                "topic": "CGT discount",
+                "rationale": "mentioned but not detailed",
+                "followup_query": "how does the CGT discount change?",
+                "confidence": 0.8,
+            }
+        ],
+    )
+    answer = ChatAnswer.from_result(result)
+    assert answer.followups[0]["followup_query"] == "how does the CGT discount change?"
+
+
+def test_followups_default_to_empty_for_older_answers():
+    from src.chat.history import ChatAnswer
+    from src.chat.setups import SetupResult
+
+    answer = ChatAnswer.from_result(
+        SetupResult(key="rag_llm", title="t", command="c", answer="a")
+    )
+    assert answer.followups == []

@@ -3,11 +3,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { Scoreboard } from '../api/types';
 import { METRICS, fmtScore } from '../chat/ScoreStrip';
+import { LOW_N } from '../eval/breakdown';
+import { MetricExplainers } from '../eval/MetricExplainer';
+import { useEvalStyles } from '../eval/styles';
+import { EfficiencyPanel } from './EfficiencyPanel';
 import { ProvenanceBar } from './ProvenanceBar';
 
 type GroupBy = 'setup' | 'setup_model';
 
 export function ScoreboardView() {
+  useEvalStyles();
   const [board, setBoard] = useState<Scoreboard | null>(null);
   const [groupBy, setGroupBy] = useState<GroupBy>('setup_model');
   const [judgeFilter, setJudgeFilter] = useState('');
@@ -97,7 +102,9 @@ export function ScoreboardView() {
                 <tr>
                   <th>Setup</th>
                   {groupBy === 'setup_model' ? <th>Answer model</th> : null}
-                  <th>Judged</th>
+                  <th title={`n = questions judged for this row. Fewer than ${LOW_N} is dimmed — too thin to rank on.`}>
+                    n judged
+                  </th>
                   {METRICS.map(([name, label, title]) => (
                     <th key={name} title={title}>
                       {label}
@@ -110,10 +117,12 @@ export function ScoreboardView() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
+                {rows.map((row) => {
+                  const lowN = row.judged < LOW_N;
+                  return (
                   <tr
                     key={`${row.key}:${row.model ?? 'legacy'}`}
-                    className={`${row === bestKey ? 'bestrow' : ''}${row.legacy ? ' legacyrow' : ''}`}
+                    className={`${row === bestKey ? 'bestrow' : ''}${row.legacy ? ' legacyrow' : ''}${lowN ? ' lown' : ''}`}
                   >
                     <td>{row.title}</td>
                     {groupBy === 'setup_model' ? (
@@ -124,7 +133,19 @@ export function ScoreboardView() {
                       </td>
                     ) : null}
                     <td className="num">
-                      {row.judged}/{row.answers}
+                      n={row.judged}{' '}
+                      <span className="nchip">of {row.answers} answers</span>
+                      {lowN ? (
+                        <>
+                          {' '}
+                          <span
+                            className="badge warn"
+                            title={`Averaged over only ${row.judged} judged question${row.judged === 1 ? '' : 's'} — treat this row as a hint, not a ranking. ${LOW_N}+ before comparing.`}
+                          >
+                            thin
+                          </span>
+                        </>
+                      ) : null}
                     </td>
                     {METRICS.map(([name]) => {
                       const value = row.avg_scores[name];
@@ -150,16 +171,39 @@ export function ScoreboardView() {
                       {row.win_rate == null
                         ? '—'
                         : `${Math.round(row.win_rate * 100)}% (${row.wins}/${row.contests})`}
+                      {row.contests > 0 && row.contests < LOW_N ? (
+                        <>
+                          {' '}
+                          <span
+                            className="nchip"
+                            title={`Only ${row.contests} head-to-head contest${row.contests === 1 ? '' : 's'} — a win rate over this few questions is noise.`}
+                          >
+                            n={row.contests}
+                          </span>
+                        </>
+                      ) : null}
                     </td>
                     <td className="num">
                       {row.avg_latency_seconds == null ? '—' : `${row.avg_latency_seconds}s`}
                     </td>
                     <td className="num">{row.avg_token_estimate ?? '—'}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}
+        </div>
+
+        <EfficiencyPanel rows={rows} />
+
+        <div className="panel">
+          <h2>What the metrics mean</h2>
+          <p className="sub">
+            Every column above comes out of one of these three. Open a metric on any answer in the
+            chat to see the judge&apos;s claim-by-claim workings for that question.
+          </p>
+          <MetricExplainers />
         </div>
 
         {board ? <ProvenanceBar provenance={board.provenance} /> : null}
@@ -171,7 +215,10 @@ export function ScoreboardView() {
           mean. A win counts a question where a setup scored highest <em>among answers graded by
           the same judge</em>, so self-graded and independently-graded runs never compete.
           Rows marked <span className="badge plain">— pre-provenance</span> were captured before
-          model identity was recorded and cannot be attributed to a specific model.
+          model identity was recorded and cannot be attributed to a specific model. Rows judged on
+          fewer than {LOW_N} questions are dimmed and marked{' '}
+          <span className="badge warn">thin</span>: an average over a handful of questions moves
+          several points on one bad answer, so read those as a hint rather than a ranking.
         </p>
       </div>
     </div>

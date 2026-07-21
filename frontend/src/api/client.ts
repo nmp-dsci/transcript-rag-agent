@@ -5,11 +5,14 @@ import type {
   AgentStep,
   Answer,
   AskRequest,
+  ChunkGraph,
   ChunkList,
   Corpus,
   Entry,
   Evaluation,
   Health,
+  IndexResult,
+  IndexStage,
   RankMode,
   Rankings,
   Scoreboard,
@@ -81,6 +84,24 @@ export const api = {
       '/api/index',
       payload,
     ),
+
+  /** Index with per-stage progress, ending in a summary of what changed. */
+  indexStream: (
+    payload: { mode: 'video' | 'channel'; url?: string; channel?: string; latest?: number },
+    handlers: {
+      stage?: (data: IndexStage) => void;
+      done?: (data: IndexResult) => void;
+      error?: (data: { message: string }) => void;
+    },
+    signal?: AbortSignal,
+  ) => postStream('/api/index/stream', payload, handlers, signal),
+
+  chunkGraph: (opts: {
+    k?: number;
+    min_similarity?: number;
+    query?: string | null;
+    top_k?: number;
+  } = {}) => postJson<ChunkGraph>('/api/chunk-graph', opts),
 
   ask: (
     request: AskRequest,

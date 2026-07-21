@@ -37,6 +37,8 @@ class FakeProvider:
         filter_transcripts: bool = False,
         transcript_filter_top_k: int = 5,
         transcript_filter_min_score: float = 0.25,
+        channel_id: str | None = None,
+        retrieval_mode: str | None = None,
     ):
         self.calls.append(
             (

@@ -246,6 +246,8 @@ class RagAgent:
         filter_transcripts = request.filter_transcripts
         transcript_filter_top_k = request.transcript_filter_top_k
         transcript_filter_min_score = request.transcript_filter_min_score
+        channel_id = request.channel_id
+        retrieval_mode = request.retrieval_mode
         context_provider = self.context_provider
 
         @tool
@@ -267,6 +269,8 @@ class RagAgent:
                 filter_transcripts=filter_transcripts,
                 transcript_filter_top_k=transcript_filter_top_k,
                 transcript_filter_min_score=transcript_filter_min_score,
+                channel_id=channel_id,
+                retrieval_mode=retrieval_mode,
             )
             retrieved_contexts.append(context)
             return context.context_text or ""

@@ -75,6 +75,22 @@ def setup_spec(key: str) -> SetupSpec:
 
 
 @dataclass
+class AskScope:
+    """Everything that narrows or shapes retrieval for one question.
+
+    Grouped into one object because it has to travel unchanged through the
+    runner, both agents, and the recursive follow-up loop — passing five loose
+    keyword arguments down that chain is how they drift apart.
+    """
+
+    channel_id: str | None = None
+    retrieval_mode: str | None = None
+    filter_transcripts: bool = False
+    # Condensed prior turns for follow-up questions.
+    history: list[str] = field(default_factory=list)
+
+
+@dataclass
 class SetupResult:
     """One setup's answer to a question, with the metadata the UI displays."""
 
@@ -92,11 +108,22 @@ class SetupResult:
     error: str | None = None
     # Retrieved chunk texts, persisted so RAGAS can judge the answer later.
     contexts: list[str] = field(default_factory=list)
+    # Identity of every retrieved chunk, in retrieval order. References cover
+    # only the chunks the LLM chose to cite, so recall against a golden set
+    # needs this separate record of what retrieval actually returned.
+    retrieved_chunk_ids: list[str] = field(default_factory=list)
     # Identity of the stack that produced the answer. Scores from different
     # models must never be averaged together, so the scoreboard groups on these.
     model: str | None = None
     embedding_model: str | None = None
     top_k: int | None = None
+    # Retrieval scope and strategy, recorded so the scoreboard never averages a
+    # channel-scoped hybrid run together with a whole-corpus semantic one.
+    channel_id: str | None = None
+    retrieval_mode: str | None = None
+    # Follow-up subtopics the answering LLM proposed. The agent contract always
+    # returns these; surfacing them lets the UI offer them as next questions.
+    followups: list[dict[str, Any]] = field(default_factory=list)
 
 
 def select_setups(raw: str) -> list[str]:
@@ -191,11 +218,20 @@ class RagSetupRunner:
             raw_store=raw_store,
             collection_name=settings.transcript_summary_collection,
         )
+        reranker = None
+        if settings.rerank_enabled:
+            from src.rag.rerank import CrossEncoderReranker
+
+            reranker = CrossEncoderReranker.from_model_name(settings.rerank_model)
         provider = MultiTranscriptRagContextProvider(
             raw_store=raw_store,
             chunk_store=chunk_store,
             indexer=indexer,
             summary_store=summary_store,
+            retrieval_mode=settings.retrieval_mode,
+            retrieval_candidates=settings.retrieval_candidates,
+            reranker=reranker,
+            neighbor_span=settings.neighbor_span,
         )
         return cls(settings, provider)
 
@@ -235,6 +271,7 @@ class RagSetupRunner:
         url: str | None = None,
         top_k: int | None = None,
         on_agent_event: AgentEventFn | None = None,
+        scope: "AskScope | None" = None,
     ) -> SetupResult:
         """Answer with one setup.
 
@@ -244,11 +281,12 @@ class RagSetupRunner:
         """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
+        scope = scope or AskScope()
         started = time.monotonic()
         try:
             if key == "rag_agent":
                 answer, agent = self._run_rag_agent(
-                    question, url, effective_top_k, on_agent_event
+                    question, url, effective_top_k, on_agent_event, scope
                 )
                 context = agent.last_context
                 return self._build_result(
@@ -260,9 +298,10 @@ class RagSetupRunner:
                     iterations=agent.last_iteration_count,
                     terminated_reason=agent.last_terminated_reason,
                     elapsed=time.monotonic() - started,
+                    scope=scope,
                 )
             answer, agent, llm_calls = self._run_rag_llm(
-                key, question, url, effective_top_k
+                key, question, url, effective_top_k, scope
             )
             return self._build_result(
                 spec,
@@ -275,6 +314,7 @@ class RagSetupRunner:
                     answer.recursion.terminated_reason if answer.recursion else None
                 ),
                 elapsed=time.monotonic() - started,
+                scope=scope,
             )
         except Exception as exc:  # one failing setup must not abort the comparison
             return SetupResult(
@@ -287,15 +327,32 @@ class RagSetupRunner:
                 model=self._settings.deepseek_model,
                 embedding_model=self._settings.embedding_model,
                 top_k=effective_top_k,
+                channel_id=scope.channel_id,
+                retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
             )
 
-    def _run_rag_llm(self, key, question, url, top_k):
+    def _request(self, question, url, top_k, scope: "AskScope", **extra):
+        return RagQuestionRequest(
+            question=question,
+            source_url=url,
+            top_k=top_k,
+            channel_id=scope.channel_id,
+            retrieval_mode=scope.retrieval_mode,
+            filter_transcripts=scope.filter_transcripts,
+            transcript_filter_top_k=self._settings.transcript_filter_top_k,
+            transcript_filter_min_score=self._settings.transcript_filter_min_score,
+            history=list(scope.history),
+            **extra,
+        )
+
+    def _run_rag_llm(self, key, question, url, top_k, scope: "AskScope"):
         agent = self._rag_llm()
         if key == "rag_llm_recursive":
-            request = RagQuestionRequest(
-                question=question,
-                source_url=url,
-                top_k=top_k,
+            request = self._request(
+                question,
+                url,
+                top_k,
+                scope,
                 recursive=True,
                 recursion_options=RecursionOptions(
                     max_depth=self._settings.rag_max_depth,
@@ -311,12 +368,11 @@ class RagSetupRunner:
                 sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
             )
             return answer, agent, llm_calls
-        request = RagQuestionRequest(question=question, source_url=url, top_k=top_k)
-        return agent.answer(request), agent, 1
+        return agent.answer(self._request(question, url, top_k, scope)), agent, 1
 
-    def _run_rag_agent(self, question, url, top_k, on_agent_event=None):
+    def _run_rag_agent(self, question, url, top_k, on_agent_event=None, scope=None):
         agent = self._agentic()
-        request = RagQuestionRequest(question=question, source_url=url, top_k=top_k)
+        request = self._request(question, url, top_k, scope or AskScope())
         if on_agent_event is None:
             return agent.answer(request), agent
         return agent.answer_streaming(request, on_agent_event), agent
@@ -333,7 +389,9 @@ class RagSetupRunner:
         iterations: int | None = None,
         terminated_reason: str | None = None,
         elapsed: float = 0.0,
+        scope: "AskScope | None" = None,
     ) -> SetupResult:
+        scope = scope or AskScope()
         context_text = context.context_text if context is not None else ""
         chunks = context.retrieved_chunks if context is not None else []
         return SetupResult(
@@ -353,7 +411,26 @@ class RagSetupRunner:
                 for chunk in (chunks or [])
                 if isinstance(getattr(chunk, "text", None), str)
             ],
+            retrieved_chunk_ids=[
+                f"chunk:{chunk.video_id}:{chunk.chunk_index}"
+                for chunk in (chunks or [])
+                if getattr(chunk, "video_id", None) is not None
+            ],
             model=self._settings.deepseek_model,
             embedding_model=self._settings.embedding_model,
             top_k=top_k,
+            channel_id=scope.channel_id,
+            retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
+            followups=_followups_to_dicts(getattr(answer, "subtopics", [])),
         )
+
+
+def _followups_to_dicts(subtopics: list[Any]) -> list[dict[str, Any]]:
+    """Serialise proposed follow-ups, tolerating plain dicts from fakes."""
+    followups: list[dict[str, Any]] = []
+    for subtopic in subtopics or []:
+        if hasattr(subtopic, "model_dump"):
+            followups.append(subtopic.model_dump(mode="json"))
+        elif isinstance(subtopic, dict):
+            followups.append(subtopic)
+    return followups

@@ -26,6 +26,7 @@ from src.agents.prompts import (
     RECURSIVE_SYNTHESIS_SYSTEM_PROMPT,
     RAG_SYSTEM_PROMPT,
     build_rag_question_prompt,
+    build_rewrite_prompt,
     build_recursive_synthesis_prompt,
     build_transcript_context_prompt,
 )
@@ -133,16 +134,46 @@ class RagTranscriptAgent:
             return self._answer_recursive(request)
         return self._answer_single_hop(request)
 
+    def retrieval_query(self, request: RagQuestionRequest) -> str:
+        """The question rewritten to stand alone, for retrieval.
+
+        Embedding "what about the second one?" retrieves nothing useful, because
+        the subject lives in the previous turn rather than in the query. With no
+        history this returns the question untouched and costs no LLM call; the
+        answering prompt always receives the user's original wording either way.
+        """
+        if not request.history:
+            return request.question
+        try:
+            content = self._invoke_plain(
+                build_rewrite_prompt(request.question, request.history)
+            )
+            rewritten = str(_json_object(content).get("query", "")).strip()
+            return rewritten or request.question
+        except Exception:
+            # A failed rewrite must degrade to the raw question, never block
+            # the answer.
+            logger.warning("Query rewrite failed; retrieving on the raw question")
+            return request.question
+
+    def _invoke_plain(self, user_prompt: str) -> str:
+        response = self.llm.invoke([HumanMessage(content=user_prompt)])
+        return str(getattr(response, "content", response) or "")
+
     def _answer_single_hop(self, request: RagQuestionRequest) -> RagTranscriptAnswer:
         retrieval = self._retrieve(
-            question=request.question,
+            question=self.retrieval_query(request),
             source_url=str(request.source_url) if request.source_url else None,
             top_k=request.top_k,
             filter_transcripts=request.filter_transcripts,
             transcript_filter_top_k=request.transcript_filter_top_k,
             transcript_filter_min_score=request.transcript_filter_min_score,
+            channel_id=request.channel_id,
+            retrieval_mode=request.retrieval_mode,
         )
-        first = self._invoke_first_pass(request.question, retrieval.context_text)
+        first = self._invoke_first_pass(
+            request.question, retrieval.context_text, request.history
+        )
         references = first.references or _fallback_references(
             first.answer, retrieval.context
         )
@@ -170,14 +201,18 @@ class RagTranscriptAgent:
         max_total_followups = max(0, max_total_followups)
 
         retrieval = self._retrieve(
-            question=request.question,
+            question=self.retrieval_query(request),
             source_url=str(request.source_url) if request.source_url else None,
             top_k=request.top_k,
             filter_transcripts=request.filter_transcripts,
             transcript_filter_top_k=request.transcript_filter_top_k,
             transcript_filter_min_score=request.transcript_filter_min_score,
+            channel_id=request.channel_id,
+            retrieval_mode=request.retrieval_mode,
         )
-        first = self._invoke_first_pass(request.question, retrieval.context_text)
+        first = self._invoke_first_pass(
+            request.question, retrieval.context_text, request.history
+        )
         first_references = first.references or _fallback_references(
             first.answer, retrieval.context
         )
@@ -252,6 +287,8 @@ class RagTranscriptAgent:
                 filter_transcripts=request.filter_transcripts,
                 transcript_filter_top_k=request.transcript_filter_top_k,
                 transcript_filter_min_score=request.transcript_filter_min_score,
+                channel_id=request.channel_id,
+                retrieval_mode=request.retrieval_mode,
             )
             novel_chunks = [
                 chunk
@@ -361,6 +398,8 @@ class RagTranscriptAgent:
         filter_transcripts: bool,
         transcript_filter_top_k: int,
         transcript_filter_min_score: float,
+        channel_id: str | None = None,
+        retrieval_mode: str | None = None,
     ) -> _RetrievalResult:
         context = self.context_provider.get_context(
             question=question,
@@ -369,6 +408,8 @@ class RagTranscriptAgent:
             filter_transcripts=filter_transcripts,
             transcript_filter_top_k=transcript_filter_top_k,
             transcript_filter_min_score=transcript_filter_min_score,
+            channel_id=channel_id,
+            retrieval_mode=retrieval_mode,
         )
         self.last_context = context
         context_text = context.context_text or ""
@@ -376,11 +417,13 @@ class RagTranscriptAgent:
             raise RagContextTooLongError("Retrieved RAG context is too long")
         return _RetrievalResult(context=context, context_text=context_text)
 
-    def _invoke_first_pass(self, question: str, context_text: str) -> _FirstPassResult:
+    def _invoke_first_pass(
+        self, question: str, context_text: str, history: list[str] | None = None
+    ) -> _FirstPassResult:
         content = self._invoke(
             system_prompt=RAG_SYSTEM_PROMPT,
             context_text=context_text,
-            user_prompt=build_rag_question_prompt(question),
+            user_prompt=build_rag_question_prompt(question, history),
         )
         try:
             data = _json_object(content)

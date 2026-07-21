@@ -14,6 +14,46 @@ export interface Reference {
   start_seconds?: number | null;
 }
 
+/** One claim the judge extracted from an answer, and whether the chunks back it. */
+export interface FaithfulnessClaim {
+  claim: string;
+  verdict: 0 | 1;
+  reason: string;
+}
+
+/** One retrieved chunk's usefulness verdict, in retrieval rank order. */
+export interface PrecisionVerdict {
+  rank: number;
+  verdict: 0 | 1;
+  reason: string;
+  chunk_preview: string;
+}
+
+/**
+ * The judge's workings behind each score.
+ *
+ * Persisted by src/evals/judge.py, which computes each score FROM these
+ * intermediates — so a breakdown always reconciles with the number above it.
+ * Null per metric when capture failed, and null overall on evaluations written
+ * before derivations were recorded.
+ */
+export interface EvaluationDetails {
+  faithfulness: {
+    claims: FaithfulnessClaim[];
+    supported: number;
+    total: number;
+  } | null;
+  answer_relevancy: {
+    generated_questions: string[];
+    noncommittal: boolean;
+    similarities: number[];
+  } | null;
+  context_precision: {
+    verdicts: PrecisionVerdict[];
+    average_precision: number;
+  } | null;
+}
+
 export interface Evaluation {
   judge: string;
   judge_model: string;
@@ -25,6 +65,13 @@ export interface Evaluation {
   elapsed_seconds: number;
   scored_at: string;
   error: string | null;
+  /** Optional: absent on evaluations written before each field existed. */
+  spread?: Record<string, number>;
+  sample_scores?: Record<string, number[]>;
+  judge_samples?: number;
+  /** True when the judge model also wrote the answer; null when unknown. */
+  self_graded?: boolean | null;
+  details?: EvaluationDetails | null;
 }
 
 export interface Answer {
@@ -45,6 +92,18 @@ export interface Answer {
   model: string | null;
   embedding_model: string | null;
   top_k: number | null;
+  /** Retrieval scope and strategy; null on answers predating scoping. */
+  channel_id?: string | null;
+  retrieval_mode?: string | null;
+  /** Follow-up questions the answering LLM proposed for this answer. */
+  followups?: Followup[];
+}
+
+export interface Followup {
+  topic: string;
+  rationale: string;
+  followup_query: string;
+  confidence: number;
 }
 
 export interface Entry {
@@ -69,6 +128,9 @@ export interface Video {
   video_id: string;
   title: string | null;
   channel_name: string | null;
+  /** Matches the channel_id stamped on chunks, so it is safe to filter with. */
+  channel_id: string | null;
+  thumbnail_url: string | null;
   source_url: string | null;
   duration_seconds: number | null;
   upload_date: string | null;
@@ -78,9 +140,69 @@ export interface Video {
   chunk_count: number;
 }
 
+export interface Channel {
+  channel_id: string;
+  channel_name: string;
+  video_count: number;
+  chunk_count: number;
+  video_ids: string[];
+}
+
+/** An observation about corpus shape that affects retrieval quality. */
+export interface CorpusInsight {
+  kind: 'channel_skew' | 'missing_summaries' | 'unindexed' | 'size_spread';
+  level: 'info' | 'warn' | 'bad';
+  message: string;
+  channel_id?: string;
+  video_ids?: string[];
+}
+
 export interface Corpus {
   videos: Video[];
-  totals: { videos: number; chunks: number };
+  channels: Channel[];
+  totals: { videos: number; chunks: number; channels: number };
+  insights: CorpusInsight[];
+}
+
+export interface GraphNode {
+  id: string;
+  video_id: string;
+  chunk_index: number;
+  channel_id: string | null;
+  channel_name: string | null;
+  title: string | null;
+  preview: string;
+  start_seconds: number | null;
+  end_seconds: number | null;
+  source_url: string | null;
+  degree: number;
+  x: number;
+  y: number;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  similarity: number;
+}
+
+export interface ChunkGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  stats: {
+    nodes: number;
+    edges: number;
+    k: number;
+    min_similarity: number;
+    channels: number;
+    mean_similarity: number;
+    isolated_nodes: number;
+  };
+  /** Present only when a query was supplied: its retrieval neighbourhood. */
+  query?: {
+    text: string;
+    nearest: { chunk_id: string; similarity: number }[];
+  };
 }
 
 export interface Chunk {
@@ -167,9 +289,34 @@ export interface AgentStep {
   chunk_count: number | null;
 }
 
+export type RetrievalMode = 'semantic' | 'hybrid';
+
 export interface AskRequest {
   question: string;
   setups: string[];
   url?: string | null;
   top_k?: number | null;
+  entry_id?: string | null;
+  /** Ignored by the server when `url` pins a single video. */
+  channel_id?: string | null;
+  retrieval_mode?: RetrievalMode | null;
+  filter_transcripts?: boolean;
+  history?: string[];
+}
+
+/** One stage of an indexing run, streamed by POST /api/index/stream. */
+export interface IndexStage {
+  stage: 'discover' | 'fetch' | 'chunk' | 'embed' | 'summarize';
+  message: string;
+}
+
+export interface IndexResult {
+  ok: boolean;
+  target: string;
+  added_videos: Video[];
+  added_video_count: number;
+  added_chunk_count: number;
+  totals: { videos: number; chunks: number; channels: number };
+  insights: CorpusInsight[];
+  channels: Channel[];
 }

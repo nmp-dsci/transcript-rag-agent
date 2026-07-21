@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frontend Review &amp; Redesign — Transcript RAG Evaluation Workbench</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .cols, .jgrid, .mock-cols, .dir-grid) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, td, th, summary, .chip) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas) { max-width: 100%; height: auto; }
+
+  :root{
+    --bg:#f6f6f7; --panel:#ffffff; --panel2:#f0f0f2; --border:#e3e3e8; --border2:#d4d4dc;
+    --ink:#191a20; --muted:#61646e; --dim:#9a9da6;
+    --accent:#4f46e5; --accent-soft:#eef0ff; --accent-border:#c9cdf7;
+    --good:#137a53; --good-soft:#e7f5ef; --warn:#9a6700; --warn-soft:#fdf3dc;
+    --bad:#b3383e; --bad-soft:#fbebec;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;}
+  .wrap{max-width:1120px;margin:0 auto;padding:30px 20px 90px;}
+
+  header.hero{border-bottom:1px solid var(--border2);padding-bottom:22px;margin-bottom:26px;}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 8px;}
+  h1{font-size:28px;margin:0 0 10px;line-height:1.25;}
+  .lede{color:var(--muted);max-width:880px;margin:0 0 14px;}
+  .lede strong{color:var(--ink);}
+  .src-strip{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{background:var(--panel);border:1px solid var(--border2);color:var(--muted);
+    border-radius:8px;padding:3px 9px;font-size:11.5px;font-family:var(--mono);}
+  .chip b{color:var(--accent);font-weight:600;}
+
+  nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0;}
+  nav.toc a{color:var(--accent);text-decoration:none;font-size:12.5px;background:var(--panel);
+    border:1px solid var(--border);border-radius:16px;padding:4px 12px;}
+  nav.toc a:hover{background:var(--accent-soft);}
+
+  section{margin-bottom:46px;}
+  h2{font-size:20px;margin:0 0 4px;display:flex;align-items:baseline;gap:10px;}
+  h2 .no{font-family:var(--mono);font-size:13px;color:var(--dim);}
+  h3{font-size:15.5px;margin:0 0 8px;}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:860px;}
+
+  .verdict{background:linear-gradient(180deg,var(--accent-soft),#fff);
+    border:1px solid var(--accent-border);border-left:4px solid var(--accent);
+    border-radius:10px;padding:16px 20px;margin-bottom:26px;}
+  .verdict h3{margin:0 0 6px;color:var(--accent);font-size:15.5px;}
+  .verdict p{margin:0 0 8px;font-size:14px;max-width:920px;}
+  .verdict p:last-child{margin:0;}
+  .bigscore{display:inline-block;font-family:var(--mono);font-weight:700;font-size:15px;
+    padding:1px 10px;border-radius:6px;}
+  .bigscore.now{background:var(--bad-soft);color:var(--bad);border:1px solid #efc3c6;}
+  .bigscore.target{background:var(--good-soft);color:var(--good);border:1px solid #bfe3d3;}
+
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .card h3{display:flex;align-items:center;gap:8px;font-size:14.5px;}
+  .card ul{margin:0;padding-left:18px;}
+  .card li{margin:6px 0;font-size:13.5px;}
+  .card li .why{color:var(--muted);}
+  code, .card li code, td code{font-family:var(--mono);font-size:12px;background:var(--panel2);
+    border:1px solid var(--border);border-radius:4px;padding:0 4px;color:#3b3f8c;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto;}
+  .dot.g{background:var(--good);} .dot.r{background:var(--bad);} .dot.a{background:var(--warn);}
+
+  .tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel);}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--border2);
+    background:var(--panel2);white-space:nowrap;}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafafd;}
+  td .note{color:var(--muted);font-size:12.5px;}
+  .badge{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-family:var(--mono);white-space:nowrap;}
+  .badge.ok{background:var(--good-soft);color:var(--good);border:1px solid #bfe3d3;}
+  .badge.part{background:var(--warn-soft);color:var(--warn);border:1px solid #ecd9a8;}
+  .badge.miss{background:var(--bad-soft);color:var(--bad);border:1px solid #efc3c6;}
+  .badge.plan{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-border);}
+
+  /* journey scorecard */
+  .jgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;}
+  .jcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;}
+  .jcard .jtop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .jcard h3{font-size:13.5px;margin:0;}
+  .jscore{font-family:var(--mono);font-weight:700;font-size:18px;white-space:nowrap;}
+  .jscore small{font-size:11px;color:var(--dim);font-weight:400;}
+  .jscore.s0{color:var(--bad);} .jscore.s1{color:#c05621;} .jscore.s2{color:var(--warn);} .jscore.s3{color:var(--good);}
+  .jbar{height:5px;border-radius:3px;background:var(--panel2);margin:8px 0 10px;overflow:hidden;}
+  .jbar i{display:block;height:100%;border-radius:3px;}
+  .jcard p{margin:0;font-size:12.5px;color:var(--muted);}
+  .jcard p b{color:var(--ink);}
+  .jcard .fix{margin-top:auto;padding-top:10px;font-size:12.5px;color:var(--good);}
+  .jcard .fix b{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;}
+
+  .mermaid-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;overflow-x:auto;}
+  .flow-svg{width:100%;height:auto;display:block;min-width:640px;}
+  .flow-svg .fb{fill:#fff;stroke:var(--border2);stroke-width:1.2;}
+  .flow-svg .fb-star{fill:var(--accent-soft);stroke:var(--accent-border);}
+  .flow-svg .fb-title{font:600 13.5px 'Segoe UI',Helvetica,Arial,sans-serif;fill:var(--ink);}
+  .flow-svg .fb-title-star{fill:var(--accent);}
+  .flow-svg .fb-line{font:11px 'Segoe UI',Helvetica,Arial,sans-serif;fill:var(--muted);}
+  .flow-svg .fl{stroke:#9a9da6;stroke-width:1.6;fill:none;}
+  .flow-svg .fl-dash{stroke:#b9bcc7;stroke-width:1.4;stroke-dasharray:4 4;fill:none;}
+  .flow-svg .fl-loop{stroke:var(--accent);stroke-width:1.6;fill:none;}
+  .flow-svg .fl-label{font:10.5px 'Segoe UI',Helvetica,Arial,sans-serif;fill:var(--accent);}
+  .flow-svg .api-bar{fill:var(--panel2);stroke:var(--border2);}
+  .flow-svg .api-t{font:600 12px 'Segoe UI',Helvetica,Arial,sans-serif;fill:var(--ink);}
+  .flow-svg .api-c{font:10.5px ui-monospace,Menlo,monospace;fill:var(--muted);}
+  .flow-svg .p1b{fill:var(--accent-soft);stroke:var(--accent-border);stroke-dasharray:5 3;}
+
+  /* current-UI mock (honest reproduction, dark) */
+  .now-mock{background:#0b141a;border:1px solid #222d34;border-radius:10px;padding:0;overflow:hidden;
+    font-size:12px;color:#e9edef;}
+  .now-mock .nm-app{display:flex;min-height:230px;}
+  .now-mock .nm-side{width:31%;min-width:150px;background:#111b21;border-right:1px solid #222d34;}
+  .now-mock .nm-head{background:#202c33;padding:9px 12px;font-weight:600;font-size:12.5px;border-bottom:1px solid #222d34;}
+  .now-mock .nm-item{padding:8px 12px;border-bottom:1px solid #1d272d;color:#e9edef;}
+  .now-mock .nm-item small{display:block;color:#8696a0;font-size:10px;margin-top:3px;}
+  .now-mock .nm-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .now-mock .nm-chat{padding:14px;display:flex;flex-direction:column;gap:9px;flex:1;}
+  .now-mock .nm-out{align-self:flex-end;background:#005c4b;border-radius:8px;border-bottom-right-radius:2px;padding:7px 10px;max-width:75%;}
+  .now-mock .nm-in{align-self:flex-start;background:#202c33;border-radius:8px;border-bottom-left-radius:2px;padding:7px 10px;max-width:85%;}
+  .now-mock .nm-setup{color:#00a884;font-weight:700;font-size:11.5px;margin-bottom:3px;}
+  .now-mock .nm-chips{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+  .now-mock .nm-chip{background:#0b141a;border:1px solid #2a3942;border-radius:6px;color:#8696a0;font-size:9.5px;padding:1px 5px;font-family:var(--mono);}
+  .now-mock .nm-composer{border-top:1px solid #222d34;background:#202c33;padding:8px 12px;display:flex;gap:8px;align-items:center;}
+  .now-mock .nm-input{flex:1;background:#111b21;border:1px solid #2a3942;border-radius:8px;color:#8696a0;padding:7px 10px;font-size:11px;}
+  .now-mock .nm-send{background:#00a884;color:#0b141a;border-radius:8px;padding:7px 14px;font-weight:700;font-size:11px;}
+  .callouts{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;}
+  .co{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--bad);border-radius:8px;padding:9px 12px;font-size:12.5px;}
+  .co b{color:var(--bad);font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;}
+
+  /* ---------- Direction mockups: shared skeleton, scoped skins ---------- */
+  .dir-grid{display:grid;grid-template-columns:1fr;gap:22px;}
+  .dir{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden;}
+  .dir.rec{border-color:var(--accent-border);box-shadow:0 0 0 2px var(--accent-soft);}
+  .dir-head{padding:14px 18px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;border-bottom:1px solid var(--border);}
+  .dir-head h3{margin:0;font-size:15px;}
+  .dir-head .tagline{color:var(--muted);font-size:12.5px;}
+  .rec-badge{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-soft);
+    border:1px solid var(--accent-border);border-radius:4px;padding:1px 6px;letter-spacing:.05em;}
+  .dir-notes{padding:10px 18px 14px;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;}
+  .dir-notes span b{color:var(--ink);}
+
+  .mk{padding:18px;}
+  .mk-frame{border-radius:10px;overflow:hidden;border:1px solid transparent;}
+  .mk-top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:10px 16px;}
+  .mk-brand{font-weight:700;font-size:13px;}
+  .mk-nav{display:flex;gap:2px;font-size:12px;}
+  .mk-nav span{padding:3px 10px;border-radius:6px;cursor:default;}
+  .mk-stat{margin-left:auto;font-size:11px;}
+  .mk-q{padding:14px 16px 4px;}
+  .mk-qtext{font-size:15.5px;font-weight:600;line-height:1.35;}
+  .mk-qmeta{font-size:11px;margin-top:4px;}
+  .mock-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:12px;padding:12px 16px 16px;}
+  .mk-col{border-radius:8px;display:flex;flex-direction:column;min-width:0;}
+  .mk-colhead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;font-size:12px;font-weight:600;}
+  .mk-colhead .t{display:flex;align-items:center;gap:6px;}
+  .mk-timing{font-size:10px;font-weight:400;white-space:nowrap;}
+  .mk-ans{padding:10px 12px;font-size:12.5px;line-height:1.55;}
+  .mk-cite{display:inline-block;font-size:9px;line-height:1;vertical-align:super;border-radius:3px;padding:1px 4px;margin:0 1px;}
+  .mk-meta{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 8px;}
+  .mk-mchip{font-size:9.5px;border-radius:5px;padding:1px 6px;font-family:var(--mono);}
+  .mk-score{margin-top:auto;padding:9px 12px;display:flex;flex-direction:column;gap:6px;}
+  .mk-crit{display:flex;align-items:center;gap:8px;font-size:11px;}
+  .mk-crit .lab{width:92px;flex:0 0 auto;}
+  .mk-dots{display:inline-flex;gap:3px;}
+  .mk-dots i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .mk-actions{display:flex;gap:8px;margin-top:4px;align-items:center;}
+  .mk-btn{font-size:10.5px;border-radius:6px;padding:3px 10px;cursor:default;white-space:nowrap;}
+
+  /* Direction A — Instrument (dark precision console) */
+  .mkA .mk-frame{background:#0e1116;border-color:#252b35;color:#e6edf3;font-family:'Segoe UI',Helvetica,sans-serif;}
+  .mkA .mk-top{background:#12161d;border-bottom:1px solid #252b35;}
+  .mkA .mk-brand{color:#e6edf3;letter-spacing:.02em;}
+  .mkA .mk-nav span{color:#8b949e;}
+  .mkA .mk-nav .on{background:#1c2330;color:#79b8ff;}
+  .mkA .mk-stat{color:#8b949e;font-family:var(--mono);}
+  .mkA .mk-qtext{color:#e6edf3;}
+  .mkA .mk-qmeta{color:#8b949e;font-family:var(--mono);}
+  .mkA .mk-col{background:#12161d;border:1px solid #252b35;}
+  .mkA .mk-col.win{border-color:#2f81f7;box-shadow:0 0 0 1px #2f81f7;}
+  .mkA .mk-colhead{border-bottom:1px solid #21262e;color:#e6edf3;}
+  .mkA .mk-colhead .t::before{content:"";width:7px;height:7px;border-radius:2px;background:#2f81f7;display:inline-block;}
+  .mkA .mk-col:first-child .mk-colhead .t::before{background:#8b949e;}
+  .mkA .mk-timing{color:#8b949e;font-family:var(--mono);}
+  .mkA .mk-ans{color:#c9d1d9;}
+  .mkA .mk-ans b{color:#e6edf3;}
+  .mkA .mk-cite{background:#132339;color:#79b8ff;border:1px solid #1f4a7a;}
+  .mkA .mk-mchip{background:#0e1116;border:1px solid #252b35;color:#8b949e;}
+  .mkA .mk-score{border-top:1px dashed #252b35;}
+  .mkA .mk-crit .lab{color:#8b949e;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+  .mkA .mk-dots i{background:#1c2330;border:1px solid #2b3442;}
+  .mkA .mk-dots i.f{background:#2f81f7;border-color:#2f81f7;}
+  .mkA .mk-btn{background:#1c2330;color:#c9d1d9;border:1px solid #2b3442;}
+  .mkA .mk-btn.pri{background:#173a2b;color:#3fb950;border-color:#1f5937;}
+  .mkA .mk-btn.picked{background:#132339;color:#79b8ff;border-color:#2f81f7;}
+
+  /* Direction B — Journal (light editorial) */
+  .mkB .mk-frame{background:#faf7f1;border-color:#e5dfd2;color:#1c1a17;}
+  .mkB .mk-top{background:#f4efe6;border-bottom:1px solid #e5dfd2;}
+  .mkB .mk-brand{font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#1c1a17;}
+  .mkB .mk-nav span{color:#6e675d;border-radius:0;border-bottom:2px solid transparent;}
+  .mkB .mk-nav .on{color:#14584a;border-bottom-color:#14584a;background:none;}
+  .mkB .mk-stat{color:#8a8272;}
+  .mkB .mk-qtext{font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:400;color:#14120f;}
+  .mkB .mk-qmeta{color:#8a8272;}
+  .mkB .mk-col{background:#fffdf9;border:1px solid #e5dfd2;border-radius:4px;}
+  .mkB .mk-col.win{border-color:#b8a44a;box-shadow:inset 0 2px 0 #d6b842;}
+  .mkB .mk-colhead{border-bottom:1px solid #efe9dc;color:#14584a;font-family:Georgia,serif;font-weight:400;font-size:13px;}
+  .mkB .mk-timing{color:#8a8272;font-family:var(--mono);}
+  .mkB .mk-ans{color:#33302a;font-size:12.5px;}
+  .mkB .mk-ans b{color:#14120f;}
+  .mkB .mk-cite{background:#eaf2ee;color:#14584a;border:1px solid #c4d9d0;}
+  .mkB .mk-mchip{background:#f4efe6;border:1px solid #e5dfd2;color:#8a8272;}
+  .mkB .mk-score{border-top:1px solid #efe9dc;background:#fbf9f3;}
+  .mkB .mk-crit .lab{color:#6e675d;font-size:10.5px;}
+  .mkB .mk-dots i{background:#efe9dc;border:1px solid #ddd5c2;}
+  .mkB .mk-dots i.f{background:#14584a;border-color:#14584a;}
+  .mkB .mk-btn{background:#fffdf9;color:#33302a;border:1px solid #ddd5c2;border-radius:3px;}
+  .mkB .mk-btn.pri{background:#14584a;color:#f4efe6;border-color:#14584a;}
+  .mkB .mk-btn.picked{background:#f7edcb;color:#7a6410;border-color:#d6b842;}
+
+  /* Direction C — Studio (soft light productivity) */
+  .mkC .mk-frame{background:#f5f6f8;border-color:#e2e4ea;color:#1f2328;}
+  .mkC .mk-top{background:#ffffff;border-bottom:1px solid #e2e4ea;}
+  .mkC .mk-brand{color:#1f2328;}
+  .mkC .mk-nav span{color:#667085;border-radius:14px;}
+  .mkC .mk-nav .on{background:#eceafd;color:#5148c9;}
+  .mkC .mk-stat{color:#98a2b3;}
+  .mkC .mk-qtext{color:#1f2328;}
+  .mkC .mk-qmeta{color:#98a2b3;}
+  .mkC .mk-col{background:#ffffff;border:1px solid #e2e4ea;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.05);}
+  .mkC .mk-col.win{border-color:#a5b4fc;box-shadow:0 0 0 3px #eef0ff;}
+  .mkC .mk-colhead{color:#1f2328;}
+  .mkC .mk-colhead .t::before{content:"";width:8px;height:8px;border-radius:50%;background:#5b5bd6;display:inline-block;}
+  .mkC .mk-col:first-child .mk-colhead .t::before{background:#98a2b3;}
+  .mkC .mk-timing{color:#98a2b3;}
+  .mkC .mk-ans{color:#3d4450;border-top:1px solid #f0f1f4;}
+  .mkC .mk-cite{background:#eceafd;color:#5148c9;}
+  .mkC .mk-mchip{background:#f5f6f8;color:#667085;border-radius:8px;}
+  .mkC .mk-score{border-top:1px solid #f0f1f4;}
+  .mkC .mk-crit .lab{color:#667085;}
+  .mkC .mk-dots i{background:#eef0f4;}
+  .mkC .mk-dots i.f{background:#5b5bd6;}
+  .mkC .mk-btn{background:#f5f6f8;color:#3d4450;border:1px solid #e2e4ea;border-radius:8px;}
+  .mkC .mk-btn.pri{background:#5b5bd6;color:#fff;border-color:#5b5bd6;}
+  .mkC .mk-btn.picked{background:#eceafd;color:#5148c9;border-color:#a5b4fc;}
+
+  /* decision forms */
+  form.decision{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:16px 0 0;}
+  form.decision h3{margin:0 0 4px;font-size:14.5px;}
+  form.decision .dwhy{font-size:12.5px;color:var(--muted);margin:0 0 12px;}
+  form.decision label{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--border);
+    border-radius:8px;margin:6px 0;cursor:pointer;font-size:13px;background:#fff;}
+  form.decision label:hover{background:#fafafd;}
+  form.decision label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);}
+  form.decision input[type=radio],form.decision input[type=checkbox]{accent-color:var(--accent);margin-top:3px;flex:0 0 auto;}
+  form.decision .opt b{color:var(--ink);}
+  form.decision .opt .od{color:var(--muted);display:block;font-size:12.5px;}
+  form.decision .rec{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-soft);
+    border:1px solid var(--accent-border);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap;}
+  form.decision button{margin-top:10px;background:var(--accent);color:#fff;border:none;
+    border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;}
+  form.decision button:hover{background:#4038c9;}
+  .queued{display:none;font-family:var(--mono);font-size:11.5px;color:var(--good);margin-top:8px;}
+  .queued.show{display:block;}
+
+  .risk{display:flex;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 16px;margin:10px 0;}
+  .risk .sev{flex:0 0 auto;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.06em;padding:2px 8px;border-radius:5px;height:fit-content;margin-top:2px;}
+  .sev.hi{background:var(--bad-soft);color:var(--bad);border:1px solid #efc3c6;}
+  .sev.md{background:var(--warn-soft);color:var(--warn);border:1px solid #ecd9a8;}
+  .risk p{margin:0;font-size:13.5px;}
+  .risk p .mit{color:var(--muted);}
+
+  footer.pagefoot{border-top:1px solid var(--border2);margin-top:50px;padding-top:16px;
+    color:var(--dim);font-size:12px;font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">Frontend review · redesign proposal · decisions inside</p>
+  <h1>From chat clone to evaluation workbench</h1>
+  <p class="lede">A full review of the live web app shipped yesterday (<code>src/api</code> + <code>src/api/static/index.html</code>), measured against what the backend can do and against <strong>your actual goal: ask questions of the corpus, compare how each retrieval method answers, and score every answer</strong>. Verdict, gap matrix, per-journey usability ratings, then a redesign — information architecture, every user journey, and <strong>three fully-rendered styling directions</strong> for you to pick from below.</p>
+  <div class="src-strip">
+    <span class="chip">reviewed: <b>src/api/static/index.html (496 lines)</b></span>
+    <span class="chip">backend: <b>src/api/main.py · 6 endpoints</b></span>
+    <span class="chip">data: <b>chat_history.json schema · Chroma metadata</b></span>
+    <span class="chip">verified: <b>2026-07-20, working tree</b></span>
+  </div>
+  <nav class="toc">
+    <a href="#current">1 · Current app</a>
+    <a href="#gap">2 · Backend vs frontend</a>
+    <a href="#journeys">3 · Usability scorecard</a>
+    <a href="#concept">4 · Redesign concept</a>
+    <a href="#screens">5 · Screens &amp; journeys</a>
+    <a href="#directions">6 · Styling directions ← pick</a>
+    <a href="#scoring">7 · Scoring model ← pick</a>
+    <a href="#backend">8 · Backend additions</a>
+    <a href="#plan">9 · Build plan &amp; scope ← pick</a>
+  </nav>
+</header>
+
+<div class="verdict">
+  <h3>The verdict, up front</h3>
+  <p>Current app, rated against your target workflow: <span class="bigscore now">3.5 / 10</span>. It is a competent <em>chat viewer with a send box</em> — but your workflow is <em>evaluation</em>, and the two journeys that matter most are the two weakest: <b>comparing retrieval methods</b> means scrolling three long bubbles stacked in one column (4/10), and <b>scoring answers doesn't exist at all</b> — no UI, no API, no storage (0/10). The corpus is also invisible: you can't see what's indexed, so you can't know what to ask (1/10).</p>
+  <p>The good news: the backend already stores almost everything the redesign needs (per-answer metadata, citations, timings, and rich per-video metadata in Chroma — title, channel, duration, upload date, summary). The redesign below reframes the app as an <b>evaluation workbench</b> — three views (<b>Ask &amp; Compare · Library · Scoreboard</b>), side-by-side answer columns, and an inline scoring rubric whose labels become seed data for the roadmap's P1 golden dataset. With the backend additions in §8 (~1 day) plus the rebuilt frontend, every journey in §3 reaches its 10/10 definition: <span class="bigscore target">10 / 10</span>.</p>
+  <p><b>Three decisions are yours</b> — styling direction (§6), scoring model (§7), and build scope (§9). Each has a form; queue your picks and press <em>Send to Agent</em>, and I build it.</p>
+</div>
+
+<section id="current">
+  <h2><span class="no">01</span> The current app, honestly rendered</h2>
+  <p class="sub">What ships today at <code>/</code> — a WhatsApp-style dark chat. Faithful mini-reproduction below (this is the styling you said you hate), with the specific problems annotated.</p>
+
+  <div class="now-mock">
+    <div class="nm-app">
+      <div class="nm-side">
+        <div class="nm-head">Transcript RAG Chat <span style="font-size:9px;color:#7ff0d4;border:1px solid #155f53;border-radius:3px;padding:0 4px;">LIVE</span></div>
+        <div class="nm-item">What are the key tax changes affecting property investors?<small>3 answers · q-20260616-005733</small></div>
+        <div class="nm-item">Is the Gold Coast market at risk of collapse?<small>3 answers · q-20260616-005621</small></div>
+      </div>
+      <div class="nm-main">
+        <div class="nm-head">What are the key tax changes affecting property investors?</div>
+        <div class="nm-chat">
+          <div class="nm-out">What are the key tax changes affecting property investors?</div>
+          <div class="nm-in"><div class="nm-setup">rag_llm (single-hop)</div>The main changes are to negative gearing caps and land tax thresholds…<div class="nm-chips"><span class="nm-chip">~2 100 tok</span><span class="nm-chip">10 chunks</span><span class="nm-chip">18.4s</span></div></div>
+          <div class="nm-in"><div class="nm-setup">rag_agent (agentic)</div>Comprehensive evidence gathered across four videos suggests…<div class="nm-chips"><span class="nm-chip">~6 800 tok</span><span class="nm-chip">31 chunks</span><span class="nm-chip">4 iterations</span><span class="nm-chip">34.6s</span></div></div>
+        </div>
+        <div class="nm-composer"><div class="nm-input">Ask a question…</div><div class="nm-send">Send</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="callouts">
+    <div class="co"><b>COMPARISON</b> — answers stack vertically in one column; comparing 3 long answers is scroll archaeology. The repo's own <code>evaluation.html</code> already proved side-by-side columns work better.</div>
+    <div class="co"><b>NO SCORING</b> — nothing to click when you've judged an answer. The entire reason you're comparing methods has no home.</div>
+    <div class="co"><b>BLIND CORPUS</b> — nothing tells you what's indexed, so the empty composer is a guessing game.</div>
+    <div class="co"><b>STYLING</b> — WhatsApp mimicry reads as a toy, teal-on-dark everywhere, cramped metadata chips, no visual identity of its own.</div>
+    <div class="co"><b>WAITING</b> — one typing indicator for runs up to ~35s per setup; no per-setup timer, no cancel.</div>
+    <div class="co"><b>MOBILE / A11Y</b> — sidebar is fixed-width (breaks &lt; ~640px); no <code>aria-live</code> on streaming updates; no keyboard shortcuts.</div>
+  </div>
+</section>
+
+<section id="gap">
+  <h2><span class="no">02</span> Backend capability vs frontend surface</h2>
+  <p class="sub">Everything the system can do or already stores, against what the UI actually shows. <b>Shown</b> = surfaced well · <b>Partial</b> = surfaced but hard to use · <b>Hidden</b> = backend/data exists, no UI · <b>Absent</b> = doesn't exist anywhere yet.</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Capability</th><th>Backend</th><th>Frontend</th><th>Detail</th><th>Redesign</th></tr></thead>
+      <tbody>
+        <tr><td>Ask across 3 RAG setups</td><td><span class="badge ok">API ✓</span></td><td><span class="badge ok">shown</span></td><td class="note"><code>POST /api/ask</code> + setup pills. Works.</td><td class="note">Keep; columns instead of bubbles.</td></tr>
+        <tr><td>Per-setup progress streaming</td><td><span class="badge ok">SSE ✓</span></td><td><span class="badge part">partial</span></td><td class="note">One typing indicator; no per-setup elapsed timer, no cancel, answers appear only when a setup finishes.</td><td class="note">Live column placeholders with running timers + cancel.</td></tr>
+        <tr><td>Answer metadata (tokens, chunks, LLM calls, iterations, latency)</td><td><span class="badge ok">stored ✓</span></td><td><span class="badge part">partial</span></td><td class="note">Cryptic chips per bubble (<code>~2100 tok</code>); comparing setups means building a mental table.</td><td class="note">Aligned metadata footer per column + one comparison strip.</td></tr>
+        <tr><td>Citations → timestamped YouTube links</td><td><span class="badge ok">stored ✓</span></td><td><span class="badge ok">shown</span></td><td class="note">Inline <code>[n]</code> chips + Sources list. One of the app's genuine strengths.</td><td class="note">Keep as-is.</td></tr>
+        <tr><td>Restrict retrieval to one video</td><td><span class="badge ok">API ✓</span></td><td><span class="badge part">partial</span></td><td class="note">Paste-a-URL text field. You must already know the URL.</td><td class="note">Scope picker fed by the Library (click a video → ask about it).</td></tr>
+        <tr><td>Retrieval parameters (top_k, max iterations)</td><td><span class="badge part">runner ✓ / API ✗</span></td><td><span class="badge miss">hidden</span></td><td class="note"><code>RagSetupRunner.run()</code> accepts <code>top_k</code>; <code>AskRequest</code> never exposes it.</td><td class="note">Advanced row in composer; plumb through API (§8).</td></tr>
+        <tr><td>Corpus contents (title, channel, duration, upload date, views, summary per video)</td><td><span class="badge part">stored ✓ / API ✗</span></td><td><span class="badge miss">hidden</span></td><td class="note">All of it sits in Chroma metadata (<code>src/rag/storage.py:54–85</code>) — no list endpoint, no UI. Biggest hidden asset.</td><td class="note">Library view + <code>GET /api/corpus</code> (§8).</td></tr>
+        <tr><td>Score / evaluate an answer</td><td><span class="badge miss">absent</span></td><td><span class="badge miss">absent</span></td><td class="note"><b>Your core goal.</b> No endpoint, no storage field, no UI. (<code>src/rag/eval.py</code> cosine compare is CLI-only.)</td><td class="note">Scoring strip per answer + <code>POST /api/score</code> + Scoreboard (§7–8).</td></tr>
+        <tr><td>Aggregate quality per method (win rates, avg scores)</td><td><span class="badge miss">absent</span></td><td><span class="badge miss">absent</span></td><td class="note">Nothing aggregates "which retrieval method is winning".</td><td class="note">Scoreboard view + <code>GET /api/scoreboard</code>.</td></tr>
+        <tr><td>History browse</td><td><span class="badge ok">API ✓</span></td><td><span class="badge part">partial</span></td><td class="note">List + click works; no search, no filters, no scored/unscored marker, no delete.</td><td class="note">Search + filter chips (scored · setup · scope).</td></tr>
+        <tr><td>Index a video / channel</td><td><span class="badge ok">API ✓</span></td><td><span class="badge part">partial</span></td><td class="note">Modal fires a blocking request; bulk runs look frozen for minutes and return only an exit code. Per-candidate outcomes are written to <code>.yt-agent/ingestion_runs/</code> and never shown.</td><td class="note">Streaming index log per candidate (§8, phase 2).</td></tr>
+        <tr><td>Health / system state</td><td><span class="badge ok">API ✓</span></td><td><span class="badge part">partial</span></td><td class="note">One sidebar line. No corpus counts, no last-index info.</td><td class="note">Status strip in Library (n videos · n chunks · stack state).</td></tr>
+        <tr><td>MLflow run tracking for served questions</td><td><span class="badge miss">absent</span></td><td><span class="badge miss">—</span></td><td class="note">CLI commands log to MLflow; web asks don't. Fine for now — Langfuse arrives in roadmap P4.</td><td class="note">Out of scope here; noted for P4.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="journeys">
+  <h2><span class="no">03</span> Usability scorecard — the seven journeys</h2>
+  <p class="sub">Each journey rated for today's app, with what 10/10 means. Weighted to your stated goal (J3 + J4 are the point of the app), today's overall is <b>3.5/10</b>.</p>
+  <div class="jgrid">
+    <div class="jcard">
+      <div class="jtop"><h3>J1 · Know what you can ask</h3><span class="jscore s0">1<small>/10</small></span></div>
+      <div class="jbar"><i style="width:10%;background:var(--bad);"></i></div>
+      <p>The corpus is invisible. You ask blind and hope a transcript covers it.</p>
+      <p class="fix"><b>10/10 =</b> Library view: every indexed video with title, channel, duration, summary; click → “ask about this”.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J2 · Ask a question</h3><span class="jscore s2">6<small>/10</small></span></div>
+      <div class="jbar"><i style="width:60%;background:var(--warn);"></i></div>
+      <p>Composer + pills + Enter-to-send work fine. No scope picker, no top_k, no cancel, placeholder teaches nothing.</p>
+      <p class="fix"><b>10/10 =</b> guided scope (corpus/video), advanced params, cancel, suggested questions from summaries.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J3 · Compare retrieval methods</h3><span class="jscore s1">4<small>/10</small></span></div>
+      <div class="jbar"><i style="width:40%;background:#c05621;"></i></div>
+      <p>Three long answers stacked in one column; metadata scattered across chips. Comparison = memory test.</p>
+      <p class="fix"><b>10/10 =</b> synchronized side-by-side columns, aligned metadata strip, per-column timers while running.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J4 · Score &amp; evaluate answers</h3><span class="jscore s0">0<small>/10</small></span></div>
+      <div class="jbar"><i style="width:3%;background:var(--bad);"></i></div>
+      <p><b>Does not exist</b> — no rubric, no winner pick, no persistence. Your end goal has no UI at all.</p>
+      <p class="fix"><b>10/10 =</b> inline rubric per answer + winner pick + note, autosaved, feeding a Scoreboard and exportable labels.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J5 · Revisit past Q&amp;A</h3><span class="jscore s2">5<small>/10</small></span></div>
+      <div class="jbar"><i style="width:50%;background:var(--warn);"></i></div>
+      <p>Sidebar list + click works. No search, no filters, no “scored?” marker, no delete.</p>
+      <p class="fix"><b>10/10 =</b> searchable, filterable history with scored/unscored state visible at a glance.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J6 · Grow the corpus</h3><span class="jscore s1">3<small>/10</small></span></div>
+      <div class="jbar"><i style="width:30%;background:#c05621;"></i></div>
+      <p>Modal works for one video; channel bulk looks frozen for minutes and reports only an exit code.</p>
+      <p class="fix"><b>10/10 =</b> live per-candidate log (fetched / cached / failed), history of ingestion runs.</p>
+    </div>
+    <div class="jcard">
+      <div class="jtop"><h3>J7 · Trust the system</h3><span class="jscore s1">3<small>/10</small></span></div>
+      <div class="jbar"><i style="width:30%;background:#c05621;"></i></div>
+      <p>One health line. No corpus stats, no visible error states beyond a red bubble.</p>
+      <p class="fix"><b>10/10 =</b> status strip (videos · chunks · stack state), graceful error + retry affordances.</p>
+    </div>
+  </div>
+</section>
+
+<section id="concept">
+  <h2><span class="no">04</span> Redesign concept — the evaluation workbench</h2>
+  <p class="sub">One reframe drives everything: this app is not a chat, it's a <b>lab bench for judging retrieval strategies</b>. Three views, one loop. The loop is the product: every scored answer makes the Scoreboard smarter and seeds the roadmap's P1 golden dataset.</p>
+  <div class="mermaid-wrap">
+    <svg class="flow-svg" viewBox="0 0 1000 292" role="img" aria-label="Workbench loop: Library feeds Ask and Compare, answers flow to Score, scores aggregate in Scoreboard, which feeds new questions back and exports labels to roadmap P1. All views talk to the FastAPI backend.">
+      <defs>
+        <marker id="s01arr" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#9a9da6"/></marker>
+        <marker id="s01arrA" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="7" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#4f46e5"/></marker>
+        <marker id="s01arrD" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="6" orient="auto"><path d="M0 0 L10 4 L0 8 Z" fill="#b9bcc7"/></marker>
+      </defs>
+
+      <!-- feedback loop: Scoreboard back to Ask -->
+      <path class="fl-loop" d="M 822 40 C 822 8, 345 8, 345 40" marker-end="url(#s01arrA)"/>
+      <text class="fl-label" x="583" y="20" text-anchor="middle">weak spots → new questions</text>
+
+      <!-- main flow boxes -->
+      <g>
+        <rect class="fb" x="15" y="40" width="175" height="90" rx="10"/>
+        <text class="fb-title" x="102" y="66" text-anchor="middle">📚 Library</text>
+        <text class="fb-line" x="102" y="86" text-anchor="middle">indexed videos · summaries</text>
+        <text class="fb-line" x="102" y="103" text-anchor="middle">index new content</text>
+      </g>
+      <g>
+        <rect class="fb" x="245" y="40" width="200" height="90" rx="10"/>
+        <text class="fb-title" x="345" y="66" text-anchor="middle">✍️ Ask &amp; Compare</text>
+        <text class="fb-line" x="345" y="86" text-anchor="middle">composer · scope · params</text>
+        <text class="fb-line" x="345" y="103" text-anchor="middle">side-by-side answer columns</text>
+      </g>
+      <g>
+        <rect class="fb fb-star" x="500" y="40" width="175" height="90" rx="10"/>
+        <text class="fb-title fb-title-star" x="587" y="66" text-anchor="middle">⭐ Score</text>
+        <text class="fb-line" x="587" y="86" text-anchor="middle">rubric per answer</text>
+        <text class="fb-line" x="587" y="103" text-anchor="middle">pick the winner</text>
+      </g>
+      <g>
+        <rect class="fb" x="730" y="40" width="185" height="90" rx="10"/>
+        <text class="fb-title" x="822" y="66" text-anchor="middle">📊 Scoreboard</text>
+        <text class="fb-line" x="822" y="86" text-anchor="middle">win rates · avg scores</text>
+        <text class="fb-line" x="822" y="103" text-anchor="middle">per retrieval method</text>
+      </g>
+
+      <!-- forward arrows -->
+      <path class="fl" d="M 190 85 L 239 85" marker-end="url(#s01arr)"/>
+      <path class="fl" d="M 445 85 L 494 85" marker-end="url(#s01arr)"/>
+      <path class="fl" d="M 675 85 L 724 85" marker-end="url(#s01arr)"/>
+
+      <!-- API bar + dashed connectors -->
+      <path class="fl-dash" d="M 102 130 L 102 203"/>
+      <path class="fl-dash" d="M 345 130 L 345 203"/>
+      <path class="fl-dash" d="M 587 130 L 587 203"/>
+      <rect class="api-bar" x="90" y="205" width="600" height="50" rx="8"/>
+      <text class="api-t" x="390" y="227" text-anchor="middle">FastAPI · src/api</text>
+      <text class="api-c" x="390" y="245" text-anchor="middle">POST /api/ask (SSE) · POST /api/score · GET /api/corpus · GET /api/scoreboard</text>
+
+      <!-- P1 export -->
+      <path class="fl-dash" d="M 822 130 L 822 203" marker-end="url(#s01arrD)"/>
+      <rect class="p1b" x="730" y="205" width="185" height="60" rx="8"/>
+      <text class="fb-title" x="822" y="228" text-anchor="middle" style="font-size:12.5px;">Roadmap P1 · golden dataset</text>
+      <text class="fb-line" x="822" y="247" text-anchor="middle">seeded by your labels (JSONL)</text>
+    </svg>
+  </div>
+  <p class="sub" style="margin-top:10px;">Reading the loop: the Library's “ask about this video” pre-fills the composer → each finished answer lands in its scoring strip → scores aggregate per retrieval method on the Scoreboard → its weak spots suggest the next questions, and every label exports toward the roadmap-P1 golden dataset.</p>
+</section>
+
+<section id="screens">
+  <h2><span class="no">05</span> Screens &amp; every user journey</h2>
+  <p class="sub">Three views cover all seven journeys. What each screen contains, and which journey it closes:</p>
+  <div class="cols">
+    <div class="card">
+      <h3><span class="dot g"></span>Ask &amp; Compare <span style="color:var(--dim);font-family:var(--mono);font-size:11px;">J2 · J3 · J4 · J5</span></h3>
+      <ul>
+        <li><b>Composer on top</b> — question, scope (whole corpus / pick a video from Library), setup toggles, advanced row (top_k). Enter sends; Esc cancels. <span class="why">J2</span></li>
+        <li><b>Answer columns</b> — one per selected setup, side by side with synchronized scrolling; while running each column shows a live elapsed timer and progress state; stacked layout stays available as a toggle for single-setup asks. <span class="why">J3</span></li>
+        <li><b>Aligned metadata strip</b> — latency · tokens · chunks · LLM calls in the same row position for every column, so trade-offs read across. <span class="why">J3</span></li>
+        <li><b>Scoring strip per column</b> — the rubric you pick in §7, plus a winner pick and optional note; autosaves on click. <span class="why">J4</span></li>
+        <li><b>History rail</b> — searchable, filter chips (scored / unscored, setup, video-scoped), scored entries badged. <span class="why">J5</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot g"></span>Library <span style="color:var(--dim);font-family:var(--mono);font-size:11px;">J1 · J6 · J7</span></h3>
+      <ul>
+        <li><b>Corpus grid</b> — every indexed video: title, channel, duration, upload date, chunk count, expandable summary (all already in Chroma). <span class="why">J1</span></li>
+        <li><b>“Ask about this”</b> — one click pre-fills the composer scoped to that video. <span class="why">J1→J2</span></li>
+        <li><b>Index new content</b> — video or channel; per-candidate outcome log (phase 2: live streaming; phase 1: results on completion). <span class="why">J6</span></li>
+        <li><b>Status strip</b> — n videos · n chunks · retrieval stack state · last ingestion run. <span class="why">J7</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot g"></span>Scoreboard <span style="color:var(--dim);font-family:var(--mono);font-size:11px;">J4 payoff</span></h3>
+      <ul>
+        <li><b>Per-method table</b> — avg score per criterion, win rate, median latency, avg tokens, n scored — the “which retrieval method is actually better” answer, from your own labels.</li>
+        <li><b>Unscored queue</b> — jump straight to answers awaiting judgment.</li>
+        <li><b>Export labels</b> — download scores as JSONL: the seed of the roadmap P1 golden dataset. Your clicking literally builds the eval set.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:14px;">Cross-cutting to 10/10: responsive to tablet width (rails collapse), <code>aria-live</code> announcements for streaming answers, visible focus states, full keyboard path (Enter send · Esc cancel · 1–5 to score the focused answer), and empty states that teach (“Library is empty → index your first video”).</p>
+</section>
+
+<section id="directions">
+  <h2><span class="no">06</span> Styling directions — pick one</h2>
+  <p class="sub">Three complete design languages, each rendered live below as the same Ask &amp; Compare slice (two answer columns + scoring strips, agentic column marked winner). These are real CSS systems, not screenshots — what you pick is what I build across all three views.</p>
+
+  <div class="dir-grid">
+
+    <div class="dir rec">
+      <div class="dir-head"><h3>A · Instrument</h3><span class="rec-badge">RECOMMENDED</span><span class="tagline">Dark precision console — Linear/GitHub-dark energy. Dense, technical, credible in a portfolio demo; zero WhatsApp DNA.</span></div>
+      <div class="mk mkA">
+        <div class="mk-frame">
+          <div class="mk-top">
+            <span class="mk-brand">transcript·lab</span>
+            <div class="mk-nav"><span class="on">Ask &amp; Compare</span><span>Library</span><span>Scoreboard</span></div>
+            <span class="mk-stat">24 videos · 1 812 chunks · stack loaded</span>
+          </div>
+          <div class="mk-q">
+            <div class="mk-qtext">What are the key tax changes affecting property investors?</div>
+            <div class="mk-qmeta">scope: whole corpus · top_k 10 · 2 setups · 53.0s total</div>
+          </div>
+          <div class="mock-cols">
+            <div class="mk-col">
+              <div class="mk-colhead"><span class="t">rag_llm · single-hop</span><span class="mk-timing">18.4s · 2.1k tok · 10 chunks</span></div>
+              <div class="mk-ans">The main changes are to <b>negative gearing caps</b> and land-tax thresholds <span class="mk-cite">1</span>. Investors holding more than two properties face the revised deduction schedule from July <span class="mk-cite">2</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">1 LLM call</span><span class="mk-mchip">2 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">✓ saved</span><span class="mk-btn">mark winner</span><span class="mk-btn">note</span></div>
+              </div>
+            </div>
+            <div class="mk-col win">
+              <div class="mk-colhead"><span class="t">rag_agent · agentic</span><span class="mk-timing">34.6s · 6.8k tok · 31 chunks</span></div>
+              <div class="mk-ans"><b>Four videos</b> cover the changes: negative-gearing caps <span class="mk-cite">1</span>, land-tax bracket shifts <span class="mk-cite">3</span>, and the CGT discount review <span class="mk-cite">5</span> — with the Gold Coast video flagging timing risk for settlements <span class="mk-cite">7</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">4 iterations</span><span class="mk-mchip">9 LLM calls</span><span class="mk-mchip">7 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-crit"><span class="lab">completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">✓ saved</span><span class="mk-btn picked">★ winner</span><span class="mk-btn">note</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dir-notes">
+        <span><b>Type:</b> system sans + mono micro-labels</span>
+        <span><b>Feel:</b> observability tool, sharp 6px radii, hairline borders</span>
+        <span><b>Why recommended:</b> matches the “engineer who measures LLM systems” portfolio identity; screenshots read instantly as a serious eval tool</span>
+        <span><b>Trade-off:</b> dark-only at first (light variant later)</span>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-head"><h3>B · Journal</h3><span class="tagline">Light editorial — warm paper, serif questions, footnote-style citations. The “grading papers” metaphor; easiest on the eyes for long reading sessions.</span></div>
+      <div class="mk mkB">
+        <div class="mk-frame">
+          <div class="mk-top">
+            <span class="mk-brand">Transcript Journal</span>
+            <div class="mk-nav"><span class="on">Ask &amp; Compare</span><span>Library</span><span>Scoreboard</span></div>
+            <span class="mk-stat">24 videos · 1 812 chunks</span>
+          </div>
+          <div class="mk-q">
+            <div class="mk-qtext">What are the key tax changes affecting property investors?</div>
+            <div class="mk-qmeta">Whole corpus · 2 methods · 20 Jul 2026</div>
+          </div>
+          <div class="mock-cols">
+            <div class="mk-col">
+              <div class="mk-colhead"><span class="t">Single-hop</span><span class="mk-timing">18.4s · 2.1k tok</span></div>
+              <div class="mk-ans">The main changes are to <b>negative gearing caps</b> and land-tax thresholds <span class="mk-cite">1</span>. Investors holding more than two properties face the revised deduction schedule from July <span class="mk-cite">2</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">1 LLM call</span><span class="mk-mchip">2 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">Accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">Saved</span><span class="mk-btn">Mark winner</span><span class="mk-btn">Note</span></div>
+              </div>
+            </div>
+            <div class="mk-col win">
+              <div class="mk-colhead"><span class="t">Agentic</span><span class="mk-timing">34.6s · 6.8k tok</span></div>
+              <div class="mk-ans"><b>Four videos</b> cover the changes: negative-gearing caps <span class="mk-cite">1</span>, land-tax bracket shifts <span class="mk-cite">3</span>, and the CGT discount review <span class="mk-cite">5</span> — with the Gold Coast video flagging timing risk <span class="mk-cite">7</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">4 iterations</span><span class="mk-mchip">7 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">Accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-crit"><span class="lab">Completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">Saved</span><span class="mk-btn picked">★ Winner</span><span class="mk-btn">Note</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dir-notes">
+        <span><b>Type:</b> Georgia serif display + sans body</span>
+        <span><b>Feel:</b> research journal; gold top-rule marks the winner like a marked paper</span>
+        <span><b>Best for:</b> hours of reading + judging text</span>
+        <span><b>Trade-off:</b> least “dev-tool” of the three; softer in screenshots</span>
+      </div>
+    </div>
+
+    <div class="dir">
+      <div class="dir-head"><h3>C · Studio</h3><span class="tagline">Soft light productivity — white cards, indigo accent, rounded and calm. Notion/Linear-light familiarity; safest, least distinctive.</span></div>
+      <div class="mk mkC">
+        <div class="mk-frame">
+          <div class="mk-top">
+            <span class="mk-brand">Transcript Studio</span>
+            <div class="mk-nav"><span class="on">Ask &amp; Compare</span><span>Library</span><span>Scoreboard</span></div>
+            <span class="mk-stat">24 videos · 1 812 chunks</span>
+          </div>
+          <div class="mk-q">
+            <div class="mk-qtext">What are the key tax changes affecting property investors?</div>
+            <div class="mk-qmeta">Whole corpus · 2 setups · 53s total</div>
+          </div>
+          <div class="mock-cols">
+            <div class="mk-col">
+              <div class="mk-colhead"><span class="t">Single-hop</span><span class="mk-timing">18.4s · 2.1k tok</span></div>
+              <div class="mk-ans">The main changes are to <b>negative gearing caps</b> and land-tax thresholds <span class="mk-cite">1</span>. Investors holding more than two properties face the revised deduction schedule <span class="mk-cite">2</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">1 LLM call</span><span class="mk-mchip">2 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">Accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i></i><i></i><i></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">Saved</span><span class="mk-btn">Mark winner</span><span class="mk-btn">Note</span></div>
+              </div>
+            </div>
+            <div class="mk-col win">
+              <div class="mk-colhead"><span class="t">Agentic</span><span class="mk-timing">34.6s · 6.8k tok</span></div>
+              <div class="mk-ans"><b>Four videos</b> cover the changes: negative-gearing caps <span class="mk-cite">1</span>, land-tax bracket shifts <span class="mk-cite">3</span>, and the CGT discount review <span class="mk-cite">5</span>…</div>
+              <div class="mk-meta"><span class="mk-mchip">4 iterations</span><span class="mk-mchip">7 sources</span></div>
+              <div class="mk-score">
+                <div class="mk-crit"><span class="lab">Accuracy</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span></div>
+                <div class="mk-crit"><span class="lab">Grounding</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-crit"><span class="lab">Completeness</span><span class="mk-dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></span></div>
+                <div class="mk-actions"><span class="mk-btn pri">Saved</span><span class="mk-btn picked">★ Winner</span><span class="mk-btn">Note</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dir-notes">
+        <span><b>Type:</b> system sans throughout</span>
+        <span><b>Feel:</b> friendly SaaS; soft shadows, 12px radii</span>
+        <span><b>Best for:</b> broad likability</span>
+        <span><b>Trade-off:</b> most generic — weakest as a portfolio signature</span>
+      </div>
+    </div>
+  </div>
+
+  <form class="decision" data-lavish-question="design-direction"
+        onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('direction'); if(!c) return;
+        window.lavish.queuePrompt('Build the redesigned frontend using the ' + c + ' design direction from s01.', {tag:'choice', text:'Design direction: '+c, element:event.currentTarget, data:{question:'design-direction', answer:c}});
+        event.currentTarget.querySelector('.queued').classList.add('show');">
+    <h3>Decision 1 · Which design direction?</h3>
+    <p class="dwhy">Your pick becomes the design system for all three views. You can also annotate any mockup above with specific tweaks (colors, density, type) before or after queueing.</p>
+    <label><input type="radio" name="direction" value="A — Instrument (dark precision console)"><span class="opt"><b>A · Instrument</b> <span class="rec">RECOMMENDED</span><span class="od">Dark, dense, technical — strongest portfolio signal for an eval tool.</span></span></label>
+    <label><input type="radio" name="direction" value="B — Journal (light editorial)"><span class="opt"><b>B · Journal</b><span class="od">Warm light editorial — most comfortable for long scoring sessions.</span></span></label>
+    <label><input type="radio" name="direction" value="C — Studio (soft light productivity)"><span class="opt"><b>C · Studio</b><span class="od">Familiar SaaS-light — safe, least distinctive.</span></span></label>
+    <button type="submit">Queue this answer</button>
+    <p class="queued">✓ queued — press “Send to Agent” when you've answered the other decisions too.</p>
+  </form>
+</section>
+
+<section id="scoring">
+  <h2><span class="no">07</span> Scoring model — pick one</h2>
+  <p class="sub">How you judge each answer. This defines the data schema, so it's worth locking before labels accumulate.</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Model</th><th>Per answer you click</th><th>Time/answer</th><th>What it buys you</th><th>What it can't tell you</th></tr></thead>
+      <tbody>
+        <tr><td><b>S1 · Quick verdict</b></td><td class="note">One overall 1–5 + optional winner</td><td class="note">~5s</td><td class="note">Fast coverage, rough ranking</td><td class="note">Why a method lost (no per-criterion diagnostics)</td></tr>
+        <tr><td><b>S2 · Rubric-lite</b> <span class="badge plan">recommended</span></td><td class="note">Accuracy · Grounding · Completeness, each 1–5, + winner + optional note</td><td class="note">~20s</td><td class="note">Diagnoses <i>why</i> methods win/lose; criteria map ~1:1 onto RAGAS (faithfulness ≈ grounding) so your human labels calibrate the P1 LLM-judge</td><td class="note">Slower; rubric fatigue on long sessions (mitigated: keyboard 1–5)</td></tr>
+        <tr><td><b>S3 · Pairwise only</b></td><td class="note">Pick the winning answer per question</td><td class="note">~3s</td><td class="note">Clean win-rate leaderboard</td><td class="note">No absolute quality signal; can't spot “all three were bad”</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <form class="decision" data-lavish-question="scoring-model"
+        onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('scoring'); if(!c) return;
+        window.lavish.queuePrompt('Use the ' + c + ' scoring model for answer evaluation in the redesigned frontend.', {tag:'choice', text:'Scoring model: '+c, element:event.currentTarget, data:{question:'scoring-model', answer:c}});
+        event.currentTarget.querySelector('.queued').classList.add('show');">
+    <h3>Decision 2 · Which scoring model?</h3>
+    <p class="dwhy">S2 is recommended: it's the only one whose labels directly calibrate the roadmap-P1 LLM-judge, and the winner pick gives you S3's leaderboard for free.</p>
+    <label><input type="radio" name="scoring" value="S2 — Rubric-lite (3 criteria 1–5 + winner + note)"><span class="opt"><b>S2 · Rubric-lite</b> <span class="rec">RECOMMENDED</span><span class="od">3 criteria × 1–5, winner, note — diagnostic + leaderboard.</span></span></label>
+    <label><input type="radio" name="scoring" value="S1 — Quick verdict (single 1–5 + winner)"><span class="opt"><b>S1 · Quick verdict</b><span class="od">One score — fastest, least signal.</span></span></label>
+    <label><input type="radio" name="scoring" value="S3 — Pairwise winner only"><span class="opt"><b>S3 · Pairwise only</b><span class="od">Winner pick only — leaderboard, no diagnostics.</span></span></label>
+    <button type="submit">Queue this answer</button>
+    <p class="queued">✓ queued.</p>
+  </form>
+</section>
+
+<section id="backend">
+  <h2><span class="no">08</span> Backend additions the redesign needs</h2>
+  <p class="sub">The frontend can only be 10/10 if the API stops hiding things. Small, testable additions — same patterns as the existing <code>create_app</code> factory:</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Addition</th><th>What it does</th><th>Effort</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/corpus</code></td><td class="note">Lists indexed videos with title, channel, duration, upload date, chunk count, summary — powers the Library.</td><td class="note">~2h</td><td class="note">Needs a small <code>list_documents()</code> on <code>RawTranscriptStore</code> (Chroma <code>collection.get</code>); all metadata already stored.</td></tr>
+        <tr><td><code>POST /api/score</code></td><td class="note">Persists your rubric scores/winner/note per answer into <code>chat_history.json</code> (new <code>evaluation</code> field on <code>ChatAnswer</code>); regenerates static viewer.</td><td class="note">~2h</td><td class="note">Schema follows your §7 pick. Backwards-compatible: old entries simply have no <code>evaluation</code>.</td></tr>
+        <tr><td><code>GET /api/scoreboard</code></td><td class="note">Aggregates scores per setup: averages per criterion, win rate, latency/token medians, n scored. Plus JSONL label export.</td><td class="note">~1h</td><td class="note">Pure read over history — no new storage.</td></tr>
+        <tr><td><code>top_k</code> on <code>AskRequest</code></td><td class="note">Exposes the retrieval-depth knob the runner already supports.</td><td class="note">~30m</td><td class="note">Plumb straight to <code>runner.run(top_k=…)</code>.</td></tr>
+        <tr><td>Cancel ask</td><td class="note">Client abort stops the SSE stream between setups.</td><td class="note">~1h</td><td class="note">Honest limit: a setup already executing finishes server-side; the stream just stops. Good enough for a local tool.</td></tr>
+        <tr><td>Streaming index log <span class="badge part">phase 2</span></td><td class="note">SSE per-candidate outcomes for channel indexing (fetched / cached / failed).</td><td class="note">~3h</td><td class="note">Bulk path currently prints to stdout inside <code>cli.main</code>; needs a progress-callback refactor. Phase 1 ships the modal returning the per-candidate results at completion instead.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;">
+    <div class="risk"><span class="sev hi">high</span><p><b>Score schema churn.</b> If the rubric changes after you've labelled 50 answers, the labels fragment. <span class="mit">Mitigation: Decision 2 locks the schema first; the stored record carries a <code>rubric_version</code> field from day one.</span></p></div>
+    <div class="risk"><span class="sev md">med</span><p><b>Redesign scope creep.</b> Three views + scoring + corpus could balloon. <span class="mit">Mitigation: build order in §9 ships Ask &amp; Compare + scoring first (your core loop), Library second, Scoreboard third; each slice is demoable alone.</span></p></div>
+    <div class="risk"><span class="sev md">med</span><p><b>Roadmap coherence.</b> This work front-loads more of P3's service layer before P0/P1. <span class="mit">Counterpoint: the scoring loop directly manufactures P1's golden-dataset raw material, so it advances the roadmap's flagship phase rather than dodging it.</span></p></div>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="no">09</span> Build plan &amp; scope — final decision</h2>
+  <p class="sub">Four slices, each independently shippable and tested (same fake-runner test pattern as <code>tests/api/</code>). Tick what I should build once Decisions 1–2 are in:</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Slice</th><th>Contains</th><th>Est.</th><th>Depends on</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 · Workbench core</b></td><td class="note">New design system (your §6 pick) + Ask &amp; Compare view: composer, side-by-side columns, live timers, cancel, aligned metadata, history rail with search/filters</td><td class="note">~5h</td><td class="note">D1</td></tr>
+        <tr><td><b>2 · Scoring loop</b></td><td class="note"><code>POST /api/score</code> + rubric strip + winner + notes + scored badges (your §7 pick)</td><td class="note">~3h</td><td class="note">D2, slice 1</td></tr>
+        <tr><td><b>3 · Library</b></td><td class="note"><code>GET /api/corpus</code> + corpus grid + “ask about this” + status strip + index modal v2 (results at completion)</td><td class="note">~3h</td><td class="note">slice 1</td></tr>
+        <tr><td><b>4 · Scoreboard</b></td><td class="note"><code>GET /api/scoreboard</code> + per-method aggregates + unscored queue + JSONL label export</td><td class="note">~2h</td><td class="note">slice 2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <form class="decision" data-lavish-question="build-scope"
+        onsubmit="event.preventDefault(); const fd=new FormData(event.currentTarget); const picks=fd.getAll('scope'); if(!picks.length) return;
+        window.lavish.queuePrompt('Approved build scope for the frontend redesign: '+picks.join('; ')+'. Proceed once design direction and scoring model are decided.', {tag:'choice', text:'Build scope: '+picks.join(', '), element:event.currentTarget, data:{question:'build-scope', answer:picks}});
+        event.currentTarget.querySelector('.queued').classList.add('show');">
+    <h3>Decision 3 · What do I build?</h3>
+    <p class="dwhy">All four ticked = the full 10/10 workbench (~13h of slices, shipped one PR at a time so each lands reviewed and tested).</p>
+    <label><input type="checkbox" name="scope" value="Slice 1: Workbench core (new design + Ask & Compare)" checked><span class="opt"><b>Slice 1 · Workbench core</b><span class="od">The redesign itself + comparison columns.</span></span></label>
+    <label><input type="checkbox" name="scope" value="Slice 2: Scoring loop (API + rubric UI)" checked><span class="opt"><b>Slice 2 · Scoring loop</b><span class="od">Your core goal — score every answer.</span></span></label>
+    <label><input type="checkbox" name="scope" value="Slice 3: Library (corpus API + view + index v2)" checked><span class="opt"><b>Slice 3 · Library</b><span class="od">See and grow the corpus.</span></span></label>
+    <label><input type="checkbox" name="scope" value="Slice 4: Scoreboard (aggregates + label export)" checked><span class="opt"><b>Slice 4 · Scoreboard</b><span class="od">The payoff view + P1 label export.</span></span></label>
+    <button type="submit">Queue this answer</button>
+    <p class="queued">✓ queued — press “Send to Agent” to send everything.</p>
+  </form>
+</section>
+
+<footer class="pagefoot">
+  Sources: src/api/static/index.html · src/api/main.py · src/chat/{setups,history,frontend}.py · src/rag/storage.py (metadata fields, lines 54–85) · dashboard/evaluation.html (side-by-side precedent) · .lavish/s00 roadmap (P1 golden dataset tie-in) — all verified against the working tree 2026-07-20.
+</footer>
+
+</div>
+
+</body>
+</html>

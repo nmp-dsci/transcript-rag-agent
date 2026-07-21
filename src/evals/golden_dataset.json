@@ -1,0 +1,152 @@
+{
+  "description": "Curated reference set for reference-based RAG evaluation. Every question is one that was actually asked through the workbench (see dashboard/chat_history.json); every reference_answer is written from the stored transcript chunks listed in expected_chunk_ids, not from model output or outside knowledge.",
+  "corpus": {
+    "chunk_collection": "transcript_chunks",
+    "videos": 10,
+    "chunks": 281,
+    "chunk_target_chars": 1200,
+    "chunk_overlap_chars": 150,
+    "verified_at": "2026-07-21",
+    "note": "expected_chunk_ids were checked against the live Chroma corpus on the date above. Chunk indices are chunking-dependent: re-indexing with different chunk_target_chars/chunk_overlap_chars invalidates them, and some chunk indices cited in chat_history.json already refer to a previous chunking. Re-verify after any re-index."
+  },
+  "entries": [
+    {
+      "id": "g001",
+      "question": "What are the key tax changes affecting property investors right now?",
+      "reference_answer": "The federal budget announced four changes, plus a fifth that was not highlighted. (1) Negative gearing: anyone who held a property before budget night (12 May, 7:30pm) keeps their negative gearing benefits on that existing portfolio, old or new. From budget night onward negative gearing applies only until 1 July 2027, and only to new properties after that, because the government wants to push investors out of established stock and into new builds. (2) Capital gains tax moves to an indexation method, reversing the 1999 Howard/Costello change. From 1 July 2027 owners must have their property valued to create a new market-value cost base: a 50% CGT calculation applies up to the 1 July 2027 market value and an indexation cost base calculation after it. Brand new properties built after the budget are excluded. (3) Trusts: trustees will be taxed at a flat 30%, removing much of the benefit small business owners and investors had from distributing to beneficiaries on lower marginal rates, and distributions to a corporate beneficiary (a \"bucket company\") may be taxed as well, risking double taxation. (4) The WATTO, the Working Australians Tax Offset. The fifth, unannounced change is that the marginal tax brackets are no longer indexed, so they go stale and bracket creep pushes people into higher tax over time. There is also a minimum 30% tax on the real capital gain regardless of marginal rate, which hits non-working spouses and anyone earning $45,000 or below.",
+      "expected_video_ids": ["gXf7fRvuaXA"],
+      "expected_chunk_ids": [
+        "chunk:gXf7fRvuaXA:4",
+        "chunk:gXf7fRvuaXA:5",
+        "chunk:gXf7fRvuaXA:6",
+        "chunk:gXf7fRvuaXA:7",
+        "chunk:gXf7fRvuaXA:8"
+      ],
+      "domain": "property",
+      "notes": "Asked verbatim in chat_history.json (q-20260616-005622-6194, q-20260720-124948-3c63). The accountant enumerates the changes across a contiguous run of chunks, so all five must be surfaced for a complete answer; a retriever that returns only one or two of them will look faithful but will silently drop whole changes."
+    },
+    {
+      "id": "g002",
+      "question": "If I bought an investment property before budget night, do I keep negative gearing?",
+      "reference_answer": "Yes. Anyone who held a property before budget night (12 May, 7:30pm) keeps the negative gearing benefits on that existing portfolio, whether the property is old or new. For anything bought from budget night onward, negative gearing still applies up to 1 July 2027, and only to new properties after that. The change is also deferred in practice: someone buying now still lodges a July 2027 tax return with full negative gearing considerations, and the first return where the benefit is gone is the July 2028 one, roughly 25 months out, later still for anyone who does not lodge in the first month. Rents, the budget's final form, and the government itself can all change in that window.",
+      "expected_video_ids": ["gXf7fRvuaXA", "ZiEGOgTC56Y"],
+      "expected_chunk_ids": ["chunk:gXf7fRvuaXA:5", "chunk:ZiEGOgTC56Y:3"],
+      "domain": "property",
+      "notes": "Narrow probe derived from the grandfathering thread that runs through both budget conversations, not asked verbatim. Deliberately cross-video: the rule is stated in gXf7fRvuaXA and the timing of when it bites is only explained in ZiEGOgTC56Y, so a single-video retriever scores partial recall."
+    },
+    {
+      "id": "g003",
+      "question": "What is now the best property strategy for investors post budget?",
+      "reference_answer": "The tax outcomes have not changed the fundamentals of investing: supply and demand still drive property, population growth and the housing shortfall have not slowed, and sentiment drops are expected to be short-term. The core advice is to be calculative and deliberate. Do not sell grandfathered properties: keep them and leave the debt on them as long and as large as possible so they keep offsetting income, and redirect savings and capital into paying down debt on anything bought after budget night, where negative gearing can no longer be claimed. New investors should not change the game plan: buy the first one or two properties in their own name, keep it low cost and simple, because today's income and borrowing capacity are not the ones you will have in ten years. The indexation method rewards long holds and is poor for short bursts and sales after three or four years, since inflation has not had time to catch up. More sophisticated investors should consider structures such as a company, with trusts still useful as shareholders of investment entities because they preserve discretionary distribution of fully franked dividends, though trusts have lost some of their lustre. Always buy with an exit in mind and target owner-occupier demand in established pockets, which stay attractive because the principal place of residence was left untouched; new builds retain the current negative gearing and CGT benefits but raise the question of who buys them from you. Be wary of the marketing campaigns and house-and-land packages that will be pushed heavily.",
+      "expected_video_ids": ["gXf7fRvuaXA"],
+      "expected_chunk_ids": [
+        "chunk:gXf7fRvuaXA:10",
+        "chunk:gXf7fRvuaXA:11",
+        "chunk:gXf7fRvuaXA:20",
+        "chunk:gXf7fRvuaXA:21",
+        "chunk:gXf7fRvuaXA:24",
+        "chunk:gXf7fRvuaXA:26"
+      ],
+      "domain": "property",
+      "notes": "Asked verbatim (q-20260617-101931-a234, q-20260720-132017-99c4), scoped to https://www.youtube.com/watch?v=gXf7fRvuaXA. The strategy advice is spread across the back half of the interview, well away from the tax-change chunks in g001, so this entry checks that a retriever moves past the headline chunks of the same video."
+    },
+    {
+      "id": "g004",
+      "question": "Is the Gold Coast property market at risk of collapse, and why?",
+      "reference_answer": "The speakers think it is among the most at-risk markets. The Gold Coast has always been a volatile boom-and-bust lifestyle market, driven before COVID by its holiday-destination appeal. COVID brought in city money on the assumption people would relocate and work from home, but migration data shows those buyers are moving home again: they stayed twelve to eighteen months and returned to family and obligations in Melbourne and elsewhere. Prices in the off-the-plan space are very high, and as in the run-up to the GFC the penthouses, the marketing, the spruikers and the buyers agent institutes are again concentrated there, which one speaker calls a salesman's dream and the reason he thinks that market could get smashed harder than any. Structurally it is a supply-height market with a brutal supply yo-yo, swinging from about 0.5% vacancy to 9% across a cycle. Brisbane did the same in Hamilton, an inner-city blue chip four kilometres east of the CBD that swung to 9.5% with thirty units at a time leased in tranches from developers who could not sell them, purely because too much stock arrived at once. Buying a unit off the plan means buying something three years in the future: people assume they get three years of capital growth and settle with equity, but the opposite is true in some markets and you can be 20% down on settlement day, carrying valuation risk and deposit loss. The advice given is that if you love a building, buy one of the acute resales that always appear, because circumstances change in the three years between decision and settlement, and at least then you know what the market is doing and what you are paying in real terms.",
+      "expected_video_ids": ["Bw58mV015z4"],
+      "expected_chunk_ids": [
+        "chunk:Bw58mV015z4:0",
+        "chunk:Bw58mV015z4:1",
+        "chunk:Bw58mV015z4:2",
+        "chunk:Bw58mV015z4:3"
+      ],
+      "domain": "property",
+      "notes": "Asked verbatim (q-20260616-005733-5393, q-20260720-141020-5dca), unscoped. This clip is only four chunks long, so the whole video is the reference: perfect recall is achievable and any miss is a real miss. Note that chat_history.json cites chunk_index 7 for this video, which no longer exists (the clip was re-chunked); the ids here were verified against the live corpus."
+    },
+    {
+      "id": "g005",
+      "question": "Summarise the key insights from the Suburb Data episode on what is happening across Australia's property markets.",
+      "reference_answer": "Over the last twelve months most markets picked up. Darwin and Perth are the high flyers, with Perth around 25% for the year and roughly 100% growth over five years, Brisbane close behind at about 95% and Adelaide near 90%; Hobart, Brisbane and Adelaide have had good runs while Canberra, Melbourne and Sydney lag. Because Perth, Brisbane and Adelaide have already run so hard, their market cycle timing scores are among the lowest, so investors taking a longer-term view may prefer markets with better cycle timing even though the presenters' flagship DSR3 metric favours the leaders. Month to month the market was roughly flat in May, with Sydney back about 2%, Melbourne about 2.2 to 2.5%, and Darwin ahead 2.4%; capital-city averages hide pockets, since Sydney has around 700 suburbs and Melbourne around 500 and some are still hot. Stock on market has picked up almost everywhere as expected after the budget, but from chronically low levels: Darwin moving from 0.5% to 0.7% is a 40% change yet still far below the roughly 1% that is normal, so there is still a shortage. Days on market rose about 6%, for example 34 days to 39, which is noticeable but not alarming and still tight against a normal 60 days. Vacancy rates remain very tight almost everywhere, below 1%, with Darwin tightening from 0.6% to 0.3%. The presenters expect the CGT and negative gearing changes to show up in the data over the next one to two months and see nothing in them that relieves rental pressure: established properties will increasingly sell to owner-occupiers rather than investors, leaving fewer rentals in established areas, pushing vacancy lower and rents higher until properties turn cash flow positive and investors return. They caution that suburb-level stock on market is distorted by off-the-plan and greenfield estates, where listings can exceed the number of dwellings that actually exist, and they see no rush to buy right now.",
+      "expected_video_ids": ["AdRL6tKu3Gk"],
+      "expected_chunk_ids": [
+        "chunk:AdRL6tKu3Gk:1",
+        "chunk:AdRL6tKu3Gk:2",
+        "chunk:AdRL6tKu3Gk:4",
+        "chunk:AdRL6tKu3Gk:5",
+        "chunk:AdRL6tKu3Gk:6",
+        "chunk:AdRL6tKu3Gk:8",
+        "chunk:AdRL6tKu3Gk:10"
+      ],
+      "domain": "property",
+      "notes": "Asked as \"summarise the key insights from this video\" (q-20260624-065736-93c6, q-20260720-134628-c061) scoped to https://www.youtube.com/watch?v=AdRL6tKu3Gk. Reworded to be self-contained: \"this video\" is only answerable with the UI's scope chip attached, and answer_relevancy scored it 0.28 and 0.20 for exactly that reason. A summarisation question is the strongest recall test in the set, since the answer must span the whole episode rather than one passage."
+    },
+    {
+      "id": "g006",
+      "question": "tell me the most effective AI coding setup to build an app with agentic coding that doesn't suffer from ai slop and is scalable",
+      "reference_answer": "Keep the setup agent-agnostic, because the landscape changes fast and no harness stays best for long; the concepts matter more than the mechanics. Onboard agents through two mechanisms. Memory files: a global file (with claude.md symlinked to agents.md so one file serves every harness) kept deliberately minimal, around 27 lines, because it enters the system prompt of every session and silently burns tokens. The rules that fight slop live here. One is to not give too much weight to development cost: models trained on human data estimate work in days, weeks and months when an agent can produce a playable version in minutes, so they implicitly assume options are expensive and bias toward cheap solutions that are low quality, not scalable and hard to maintain. Another is to always start bug fixes by reproducing the bug end to end, as close to how an end user experiences it as possible, because models default to unit tests that do not guard real product behaviour. A project-level memory file (claude.md or agents.md in the repo, also symlinked) is more verbose and holds project context, repo layout, terminology, how key components work, end-to-end testing instructions and conventions. Build it by correcting the agent whenever it goes wrong and asking it to store the learning, so agents on that project get smarter over time; no fancy memory system is needed, a markdown file is enough. Skills: when the project memory bloats, move conditionally useful sections into skills. Skills use progressive disclosure, loading only a short description into the system prompt and reading the body only when the agent decides it needs them, so knowledge can be stored without paying tokens on every request. For scale, stop reviewing diffs by hand. AI writes code faster than you can review it, so review becomes a hard cap on velocity; think of yourself as an engineering manager or director who influences quality through culture and process rather than reading every PR. When the agent says it is done, send the change into a pipeline instead, such as the free and open-source no mistakes pipeline, which creates a branch and commit, works in an isolated worktree so validation cannot affect the current repo, infers the real intent behind the change from the agent session, rebases on the latest remote main, and takes first-pass code through to a clean PR.",
+      "expected_video_ids": ["iQyg-KypKAA"],
+      "expected_chunk_ids": [
+        "chunk:iQyg-KypKAA:10",
+        "chunk:iQyg-KypKAA:11",
+        "chunk:iQyg-KypKAA:12",
+        "chunk:iQyg-KypKAA:13",
+        "chunk:iQyg-KypKAA:14",
+        "chunk:iQyg-KypKAA:15",
+        "chunk:iQyg-KypKAA:16",
+        "chunk:iQyg-KypKAA:26"
+      ],
+      "domain": "ai-coding",
+      "notes": "Asked near-verbatim (q-20260616-010542-5f2d, q-20260720-130732-778c); the stored text has a typo, \"agenting coding\", corrected here. The question has two halves, slop and scale, that live in different parts of the video, which is why the shallow single-hop run scored 0.58 faithfulness while the recursive run reached 0.89. Expected chunks cover the anti-slop rules, memory, skills, and the review-pipeline answer to scale."
+    },
+    {
+      "id": "g007",
+      "question": "Describe the Agentic Engineering Workflow: every step and what it leverages.",
+      "reference_answer": "The workflow is presented as five chapters. First, assemble the ship: build the core setup. Second, recruit and ramp up crew mates, the agents, through memory files and skills. Third, work with a single crew mate effectively. Fourth, upgrade to working with multiple crew mates in parallel. Fifth, recruit a first mate that manages the overhead so you can stay focused on the big picture as the captain. The setup is terminal-centric for two reasons: hands never leave the keyboard, which preserves flow that mouse use breaks, and the same workflow works everywhere including on a phone; GUI workflows can still apply the concepts. The terminal emulator is WezTerm, chosen because it is genuinely cross-platform, working the same on Windows, Mac and Linux, and because it is configured with a Lua script rather than static values, so the config can hold conditions and logic and hot-reloads instantly. Inside it runs tmux, a terminal multiplexer, which splits the terminal into as many panes as you like (an agent in one, an editor in another, a shell for yourself), supports multiple tabs called windows for running agent sessions in parallel, and keeps sessions persistent in the tmux server so you can detach, reattach to the exact same state, and connect to the same session from a laptop or a phone; it needs configuration to get the tab bar and metadata shown. The editor is Neovim, whose purpose is to keep hands on the keyboard, using modal editing, relative line numbers for jumps like 11k, and plugins bound to keys such as space-s to grep the codebase and space-f to find files. For agents, four harnesses are used regularly: Claude Code, the only practical choice on an Anthropic subscription, with the most sensible defaults and the richest feature set but sometimes buggy and less customisable; Codex CLI, written in Rust, smoother and open source so it can inspect its own source to work around problems, though light on features and not very customisable; the pi coding agent, minimal and highly extensible for people who want no bloat; and OpenCode, with a buttery smooth TUI, integration with nearly every model and a more complete out-of-the-box feature set than pi, making it the model-agnostic off-the-shelf choice. The video demonstrates with Claude Code but the workflow is kept strictly agent-agnostic.",
+      "expected_video_ids": ["iQyg-KypKAA"],
+      "expected_chunk_ids": [
+        "chunk:iQyg-KypKAA:1",
+        "chunk:iQyg-KypKAA:2",
+        "chunk:iQyg-KypKAA:3",
+        "chunk:iQyg-KypKAA:4",
+        "chunk:iQyg-KypKAA:5",
+        "chunk:iQyg-KypKAA:6",
+        "chunk:iQyg-KypKAA:7",
+        "chunk:iQyg-KypKAA:8",
+        "chunk:iQyg-KypKAA:9"
+      ],
+      "domain": "ai-coding",
+      "notes": "Asked as \"Describe the Agenticy Engineering Workflow every step what it leverages...\" (q-20260621-052042-f258, q-20260720-133001-6f42) scoped to https://www.youtube.com/watch?v=iQyg-KypKAA; typo corrected and the request for markdown output dropped, since output formatting is not a retrieval property. The reference covers the chapter list and the tool stack only; the later chapters are graded by g006 and g009."
+    },
+    {
+      "id": "g008",
+      "question": "How do I set up Herder, and what app do I run it in?",
+      "reference_answer": "Herder is itself the app you run things in: it is a terminal multiplexer, an alternative to tmux, so it runs inside your terminal emulator (WezTerm in this setup) and you run your agent harnesses inside it. It is recommended over tmux because it was built in the agent era, understands what agents are and how they work, and integrates well with most mainstream agent harnesses; it may also be the only terminal multiplexer that works on Windows. Setup in the video goes through the Nix and Homebrew configuration: open configuration.nix and add Herder as a normal brew rather than a cask, create its configuration directory and a config.toml (the speaker's is mostly keybinds carried over to preserve tmux muscle memory, and defaults are fine if you have not used tmux), create a symbolic link so the directory is applied, then rebuild Nix. Herder then shows a side panel on the left organising workspaces and agents, plus a main area like a normal terminal; the configured keybinds create and name tabs and split tabs into panes, the same basics tmux offers. To run an agent inside it, add Claude Code to the Homebrew config as a cask, create ~/.claude/settings.json as an empty JSON blob and symlink it, rebuild, then start Claude inside Herder. Herder detects that Claude is working and displays its status in the side panel, consistently across all agent harnesses rather than just Claude Code, which would otherwise need hooks. The speaker keeps agent-side customisation minimal because the setup is deliberately agent-agnostic, the exception being a status line added with the /statusline command to show the model name and the percentage of context window used.",
+      "expected_video_ids": ["5N-okeDdIuI"],
+      "expected_chunk_ids": [
+        "chunk:5N-okeDdIuI:27",
+        "chunk:5N-okeDdIuI:28",
+        "chunk:5N-okeDdIuI:29",
+        "chunk:5N-okeDdIuI:30"
+      ],
+      "domain": "ai-coding",
+      "notes": "Asked as \"how do I setup herdr what app do I run it in\" (q-20260708-060235-62d1, q-20260720-140047-d784) scoped to https://www.youtube.com/watch?v=5N-okeDdIuI; spelling normalised to Herder, as the transcript spells it. The best existing answer used exactly these four chunks and scored 1.0 faithfulness while the two shallower setups scored 0.45 and 0.5, so this entry is a clean discriminator: the relevant passage is a single contiguous run late in a 36-chunk video."
+    },
+    {
+      "id": "g009",
+      "question": "How should I use memory files and skills to onboard a coding agent?",
+      "reference_answer": "Onboarding happens through two mechanisms, memory files and skills. There are global and project-level memory files. Claude Code reads a global file at its own location and every other agent uses the standard agents.md location, so symlink claude.md to agents.md and both point at one underlying file. Keep the global file minimal, around 27 lines, because it is loaded into the system prompt of every session across all projects and will silently consume tokens; use it for personal preferences and cross-cutting rules, such as never using em-dashes, not giving too much weight to development cost when making technical decisions, and always reproducing bugs end to end rather than relying on the unit tests models default to. Each project can also have a memory file, claude.md or agents.md in the repo, also symlinked. It is much more verbose than the global file because it is the collective learning of every agent session on that project: what the project is, how the repo is laid out, terminology, how the most important components work, how to run end-to-end tests, and conventions. Build it not by writing it by hand but by correcting the agent whenever it does something wrong and asking it to remember, so crew mates get smarter and more experienced over time; no fancy memory system is needed, a markdown file is all it takes. Over time the file bloats, and the fix is to move conditionally useful information into skills. For example, end-to-end testing instructions are only needed when the agent is making changes, so they waste tokens on every question that does not involve changes. Ask the agent to extract them into a project-level skill. Skills are designed for progressive disclosure: only the short description field is loaded into the system prompt so the agent knows what each skill does, and the rest of the file is read only when the agent decides it needs that skill, which lets you store a lot of knowledge without blowing up the system prompt. Claude Code already knows how to create skills; other harnesses may not, so install Anthropic's skill-creator skill, using the npx skills CLI from Vercel, which supports pretty much any agent. Avoid installing random skills from the internet even when they have many GitHub stars, because a skill can instruct your agent to run anything on your machine and leak your API keys.",
+      "expected_video_ids": ["iQyg-KypKAA"],
+      "expected_chunk_ids": [
+        "chunk:iQyg-KypKAA:10",
+        "chunk:iQyg-KypKAA:11",
+        "chunk:iQyg-KypKAA:13",
+        "chunk:iQyg-KypKAA:14",
+        "chunk:iQyg-KypKAA:15",
+        "chunk:iQyg-KypKAA:16"
+      ],
+      "domain": "ai-coding",
+      "notes": "Narrow probe derived from the crew-mate onboarding chapter that the broader q-20260720-130732-778c and q-20260720-133001-6f42 questions both hit, not asked verbatim. Deliberately overlaps g006's expected chunks: g006 asks a vague strategic question and g009 asks the precise one, so comparing their recall shows how much of a retriever's hit rate depends on question specificity."
+    }
+  ]
+}

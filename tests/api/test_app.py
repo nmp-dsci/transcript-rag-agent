@@ -39,7 +39,7 @@ class FakeProvider:
         self.chunk_store = chunk_store
 
     def get_context(
-        self, *, question: str, source_url: str | None, top_k: int
+        self, *, question: str, source_url: str | None, top_k: int, **kwargs
     ) -> SimpleNamespace:
         return SimpleNamespace(
             retrieved_chunks=self.chunk_store.query_all(question, top_k)
@@ -53,6 +53,7 @@ class FakeRunner:
         self.calls: list[tuple[str, str, str | None]] = []
         self.agent_steps = agent_steps or []
         self.provider = FakeProvider(FakeChunkStore({}))
+        self.scopes: list = []
 
     def run(
         self,
@@ -62,10 +63,12 @@ class FakeRunner:
         url: str | None = None,
         top_k: int | None = None,
         on_agent_event=None,
+        scope=None,
     ) -> SetupResult:
         self.calls.append((key, question, url))
         self.top_ks: list[int | None] = getattr(self, "top_ks", [])
         self.top_ks.append(top_k)
+        self.scopes.append(scope)
         if key == "rag_agent" and on_agent_event is not None:
             for event in self.agent_steps:
                 on_agent_event(event)
@@ -96,9 +99,17 @@ class FakeJudge:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, list[str]]] = []
+        self.answer_models: list[str | None] = []
 
-    def score(self, question: str, answer: str, contexts: list[str]) -> dict:
+    def score(
+        self,
+        question: str,
+        answer: str,
+        contexts: list[str],
+        answer_model: str | None = None,
+    ) -> dict:
         self.calls.append((question, answer, list(contexts)))
+        self.answer_models.append(answer_model)
         value = 0.9 if "rag_agent" in answer else 0.5
         return {
             "judge": "ragas",
@@ -760,3 +771,51 @@ def test_built_bundle_is_served_when_present(
     assert client.get("/assets/index-abc.js").status_code == 200
     # The legacy shared renderer keeps its route despite the /assets mount.
     assert "function renderAnswer" in client.get("/assets/render.js").text
+
+
+def test_ask_scopes_retrieval_to_a_channel(harness: Harness) -> None:
+    harness.ask(setups=["rag_llm"], channel_id="UC_finance")
+    assert harness.runner.scopes[-1].channel_id == "UC_finance"
+
+
+def test_ask_prefers_video_scope_over_channel(harness: Harness) -> None:
+    """A pinned video is narrower, so sending both must not widen the scope."""
+    harness.ask(
+        setups=["rag_llm"],
+        url="https://youtu.be/abc123",
+        channel_id="UC_finance",
+    )
+    assert harness.runner.scopes[-1].channel_id is None
+
+
+def test_ask_passes_retrieval_mode_and_filter(harness: Harness) -> None:
+    harness.ask(
+        setups=["rag_llm"], retrieval_mode="hybrid", filter_transcripts=True
+    )
+    scope = harness.runner.scopes[-1]
+    assert scope.retrieval_mode == "hybrid"
+    assert scope.filter_transcripts is True
+
+
+def test_ask_rejects_unknown_retrieval_mode(harness: Harness) -> None:
+    response = harness.client.post(
+        "/api/ask", json={"question": "q", "retrieval_mode": "magic"}
+    )
+    assert response.status_code == 422
+
+
+def test_judge_receives_the_model_that_wrote_each_answer(harness: Harness) -> None:
+    """self_graded must reflect the actual pairing, not the current config."""
+    entry_id = harness.ask(setups=["rag_llm"])
+    harness.client.post("/api/judge", json={"entry_id": entry_id})
+    assert harness.judge.answer_models == ["deepseek-v4"]
+
+
+def test_ask_persists_retrieved_chunk_ids(harness: Harness) -> None:
+    """References cover only cited chunks, so recall needs the full list."""
+    entry_id = harness.ask(setups=["rag_llm"])
+    entry = next(
+        e for e in harness.client.get("/api/history").json()["conversations"]
+        if e["id"] == entry_id
+    )
+    assert "retrieved_chunk_ids" in entry["answers"][0]
