@@ -29,7 +29,9 @@ def list_corpus(
     total_chunks = 0
     try:
         chunk_metas = (
-            client.get_collection(chunk_collection).get(include=["metadatas"]).get("metadatas")
+            client.get_collection(chunk_collection)
+            .get(include=["metadatas"])
+            .get("metadatas")
             or []
         )
         for meta in chunk_metas:
@@ -63,3 +65,87 @@ def list_corpus(
         "videos": videos,
         "totals": {"videos": len(videos), "chunks": total_chunks},
     }
+
+
+def list_chunks(
+    chroma_path: Path,
+    video_id: str,
+    chunk_collection: str = "transcript_chunks",
+) -> dict[str, Any]:
+    """Every stored chunk for one video, ordered by chunk index.
+
+    Reads documents and metadata straight from Chroma for the same reason as
+    ``list_corpus``: browsing the corpus must never load the embedding model.
+    """
+    import chromadb
+
+    try:
+        client = chromadb.PersistentClient(path=str(chroma_path))
+        collection = client.get_collection(chunk_collection)
+        result = collection.get(
+            where={"video_id": video_id}, include=["documents", "metadatas"]
+        )
+    except Exception:
+        return {"video_id": video_id, "chunks": [], "total": 0}
+
+    documents = result.get("documents") or []
+    metadatas = result.get("metadatas") or []
+    chunks = []
+    for index, meta in enumerate(metadatas):
+        meta = meta or {}
+        text = documents[index] if index < len(documents) else ""
+        chunks.append(
+            {
+                "chunk_index": int(meta.get("chunk_index", index) or 0),
+                "text": text or "",
+                "start_seconds": meta.get("start_seconds"),
+                "end_seconds": meta.get("end_seconds"),
+                "start_segment_index": meta.get("start_segment_index"),
+                "end_segment_index": meta.get("end_segment_index"),
+                "segment_count": meta.get("segment_count") or 0,
+                "source_url": meta.get("source_url") or None,
+            }
+        )
+    chunks.sort(key=lambda chunk: chunk["chunk_index"])
+    return {"video_id": video_id, "chunks": chunks, "total": len(chunks)}
+
+
+def load_chunk_corpus(
+    chroma_path: Path,
+    chunk_collection: str = "transcript_chunks",
+    video_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """All chunk texts (optionally for one video) for keyword ranking.
+
+    Returns records shaped for BM25 scoring: text plus the identity needed to
+    align a keyword hit with the same chunk from semantic search.
+    """
+    import chromadb
+
+    where = {"video_id": video_id} if video_id else None
+    try:
+        client = chromadb.PersistentClient(path=str(chroma_path))
+        collection = client.get_collection(chunk_collection)
+        result = collection.get(where=where, include=["documents", "metadatas"])
+    except Exception:
+        return []
+
+    documents = result.get("documents") or []
+    metadatas = result.get("metadatas") or []
+    records = []
+    for index, meta in enumerate(metadatas):
+        meta = meta or {}
+        text = documents[index] if index < len(documents) else ""
+        if not text:
+            continue
+        records.append(
+            {
+                "video_id": str(meta.get("video_id", "")),
+                "chunk_index": int(meta.get("chunk_index", index) or 0),
+                "text": text,
+                "start_seconds": meta.get("start_seconds"),
+                "end_seconds": meta.get("end_seconds"),
+                "source_url": meta.get("source_url") or None,
+            }
+        )
+    return records

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from src.agents.models import RagAnswerReference
@@ -82,3 +83,69 @@ def test_save_history_writes_conversations_key(tmp_path) -> None:
     save_history([build_entry("Q", [_result()])], path)
     text = path.read_text(encoding="utf-8")
     assert '"conversations"' in text
+
+
+def test_loads_entries_written_before_model_identity_existed(tmp_path) -> None:
+    """Histories from earlier builds must keep loading, with model set to None."""
+    path = tmp_path / "chat_history.json"
+    path.write_text(
+        json.dumps(
+            {
+                "conversations": [
+                    {
+                        "id": "q-legacy",
+                        "question": "Old question",
+                        "url": None,
+                        "asked_at": "2026-01-01T00:00:00+00:00",
+                        "answers": [
+                            {
+                                "key": "rag_llm",
+                                "title": "rag_llm (single-hop)",
+                                "command": "rag-ask",
+                                "answer": "An old answer.",
+                                "references": [],
+                                "token_estimate": 10,
+                                "chunk_count": 1,
+                                "elapsed_seconds": 1.0,
+                                "contexts": ["ctx"],
+                                "evaluation": None,
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    [entry] = load_history(path)
+    answer = entry.answers[0]
+    assert answer.answer == "An old answer."
+    assert answer.model is None
+    assert answer.embedding_model is None
+    assert answer.top_k is None
+
+
+def test_ignores_unknown_answer_fields_from_newer_builds(tmp_path) -> None:
+    path = tmp_path / "chat_history.json"
+    save_history([build_entry("Q", [_result()])], path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["conversations"][0]["answers"][0]["invented_field"] = "from the future"
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    [entry] = load_history(path)
+    assert entry.answers[0].key == "rag_llm"
+
+
+def test_round_trips_model_identity(tmp_path) -> None:
+    path = tmp_path / "chat_history.json"
+    result = _result()
+    result.model = "deepseek-v4"
+    result.embedding_model = "all-MiniLM-L6-v2"
+    result.top_k = 20
+    save_history([build_entry("Q", [result])], path)
+
+    answer = load_history(path)[0].answers[0]
+    assert answer.model == "deepseek-v4"
+    assert answer.embedding_model == "all-MiniLM-L6-v2"
+    assert answer.top_k == 20

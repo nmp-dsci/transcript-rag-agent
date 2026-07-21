@@ -14,3 +14,7 @@ opensrc/*/
 !opensrc/setup_opensrc.sh
 !opensrc/sources.json
 .lavish/
+
+# Built React bundle — rebuild with: cd frontend && npm install && npm run build
+frontend/dist/
+frontend/node_modules/

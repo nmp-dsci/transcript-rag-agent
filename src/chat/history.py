@@ -11,7 +11,7 @@ import json
 import threading
 import uuid
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -45,6 +45,11 @@ class ChatAnswer:
     # Retrieved chunk texts (judge input) and the RAGAS evaluation record.
     contexts: list[str] = field(default_factory=list)
     evaluation: dict[str, Any] | None = None
+    # Stack identity, recorded so the scoreboard can group by model instead of
+    # averaging across them. Entries written before this existed keep ``None``.
+    model: str | None = None
+    embedding_model: str | None = None
+    top_k: int | None = None
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -62,6 +67,9 @@ class ChatAnswer:
             elapsed_seconds=result.elapsed_seconds,
             error=result.error,
             contexts=list(result.contexts),
+            model=result.model,
+            embedding_model=result.embedding_model,
+            top_k=result.top_k,
         )
 
 
@@ -85,8 +93,17 @@ class ChatEntry:
             question=data["question"],
             url=data.get("url"),
             asked_at=data["asked_at"],
-            answers=[ChatAnswer(**answer) for answer in data.get("answers", [])],
+            answers=[
+                ChatAnswer(**_known_answer_fields(answer))
+                for answer in data.get("answers", [])
+            ],
         )
+
+
+def _known_answer_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """Drop unknown keys so histories written by a newer build still load."""
+    allowed = {f.name for f in fields(ChatAnswer)}
+    return {key: value for key, value in data.items() if key in allowed}
 
 
 def _reference_to_dict(reference: Any) -> dict[str, Any]:

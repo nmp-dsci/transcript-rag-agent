@@ -164,32 +164,73 @@ question, you can keep `chat.html` open and just refresh.
 
 ### Evaluation Workbench (browser)
 
-The web app is an evaluation workbench: ask a question, watch every selected
-RAG setup answer it side by side, and have **RAGAS score each answer under the
-same eval process** — faithfulness, answer relevancy, and context precision,
-plus a composite — so retrieval methods are compared with numbers, not vibes.
+The web app is a chat-first evaluation workbench: ask a question, read the
+answer as a conversation, and have **RAGAS score every answer under the same
+eval process** — faithfulness, answer relevancy, and context precision, plus a
+composite — so retrieval methods are compared with numbers, not vibes.
+
+The UI is a React 19 + TypeScript app under `frontend/`, built with Vite and
+served by the same FastAPI process.
 
 ```bash
-uv run python -m src.cli serve                       # http://127.0.0.1:8000
+cd frontend && npm install && npm run build && cd ..   # once, and after UI changes
+uv run python -m src.cli serve                         # http://127.0.0.1:8000
 uv run python -m src.cli serve --host 0.0.0.0 --port 9000
 ```
 
+`frontend/dist/` is gitignored, so a fresh clone must run `npm run build`
+before `serve` shows the React UI. Without a build, `/` falls back to the
+legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
+API is unaffected either way.
+
 Three views:
 
-- **Ask & Compare** — composer with scope (whole corpus or one video picked
-  from the Library), `top_k`, setup toggles, and an auto-judge switch. Answers
-  stream into side-by-side columns with live per-setup timers; when a run
-  finishes, RAGAS judges every answer (automatically, or via the
-  "Judge with RAGAS" button) and each column gets a score strip. The
-  highest-composite column is badged TOP. The history rail is searchable and
-  shows judged/unjudged state; Esc cancels a running ask.
-- **Library** — every indexed video with title, channel, duration, upload
-  date, chunk count, and expandable summary (all read from Chroma metadata);
-  "Ask about this" pre-scopes the composer. Indexing (single video or latest-N
-  channel) lives here too.
-- **Scoreboard** — per-setup aggregates across everything judged: average
-  score per RAGAS metric, composite, win rate (highest composite per
-  question), average latency and token estimate.
+- **Chat** — the landing tab. Type a question and it is answered in a
+  conversation thread with citations back to source timestamps. The default
+  agent is `rag_agent` (agentic), whose retrieval loop streams into the bubble
+  live — one line per iteration showing the query it chose and how many chunks
+  came back — so a ~30s research run reads as progress rather than a stall.
+  Composer chips switch the scope (whole corpus or one video) and the
+  answering agent; **⚙ advanced** exposes `top_k`, the auto-judge toggle, and
+  additional setups to run alongside the default. When several setups answer
+  the same question they share **one bubble with tabs**, each carrying its own
+  answer, citations, and RAGAS score, with the best composite badged TOP and a
+  compare grid underneath. "Compare N more setups" runs the remaining ones
+  into the *same* history entry so the scoreboard sees them as competing
+  answers. Esc cancels a running ask.
+- **Library** — an interactive corpus tree (all videos → channel → video →
+  chunks) with a sort control for "top" ordering by views, recency, or chunk
+  count. Expanding a video lazily loads its chunks; selecting one shows its
+  full text, timestamp range, segment span, and a deep link into the video at
+  that moment. The **Retrieval Lab** at the top ranks the corpus for any query
+  with **BM25, semantic, or both side by side** — aligned rows show each
+  chunk's rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap
+  count, which is the fastest way to see where keyword and embedding retrieval
+  disagree. Indexing (single video or latest-N channel) lives in a panel here.
+- **Scoreboard** — per-setup aggregates across everything judged, groupable by
+  **setup × answering model** so scores from different model versions are never
+  silently averaged. Each row shows average score per RAGAS metric, composite,
+  win rate, latency, and token estimate. A judge filter keeps self-graded and
+  independently-graded runs apart, and a provenance bar states the judge model,
+  ragas version, embedding model, metric definitions, and last-judged time.
+  Answers captured before model identity was recorded appear as
+  `— pre-provenance` and are excluded from cross-model comparison.
+
+#### Frontend development
+
+```bash
+cd frontend
+npm install
+npm run dev        # Vite on :5173, proxies /api to uvicorn on :8000
+npm test           # Vitest
+npm run typecheck  # tsc --noEmit (strict)
+npm run build      # emits frontend/dist for `serve`
+```
+
+Run `uv run python -m src.cli serve` in a second terminal while using
+`npm run dev`; the dev server proxies `/api` to it and passes SSE straight
+through. Restart `serve` after the first `npm run build` so it picks up the
+newly created `frontend/dist`.
 
 Retrieved chunk texts are persisted with each answer (`contexts` in the
 history JSON) so judging can run at any time, including re-judging with
@@ -199,19 +240,39 @@ chat, the workbench, and the static viewer share one history. Entries recorded
 before context persistence report "no stored retrieval contexts" instead of
 scores.
 
+Each answer also records the stack that produced it — `model`,
+`embedding_model`, and the effective `top_k` — and each evaluation records
+`ragas_version` and the judge's `embedding_model`. All of these default to
+`null`, so histories written before they existed keep loading unchanged; the
+scoreboard reports those rows as `— pre-provenance` rather than attributing
+them to a model.
+
 Endpoints (JSON unless noted):
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/` | GET | The workbench UI |
-| `/api/health` | GET | Liveness, lazy-stack state, judge model |
+| `/` | GET | The workbench UI (React bundle, else the legacy page) |
+| `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
 | `/api/setups` | GET | The three RAG setup descriptors |
 | `/api/history` | GET | All captured conversations (with evaluations) |
 | `/api/corpus` | GET | Indexed videos with metadata and chunk counts |
-| `/api/scoreboard` | GET | Per-setup RAGAS aggregates and win rates |
-| `/api/ask` | POST | Answer a question (streams server-sent events) |
+| `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
+| `/api/scoreboard` | GET | RAGAS aggregates; `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
+| `/api/rank` | POST | Rank the corpus for a query by `semantic` and/or `bm25` |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
+
+`/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
+per `rag_agent` retrieval iteration, carrying its query and chunk count),
+`answer` (a finished setup), `done` (the saved entry), and `error`.
+
+Keyword ranking uses `rank-bm25`, a small pure-Python Okapi BM25 implementation
+installed by `uv sync`. The index is built in memory from stored chunk texts
+and cached per chunk count, which is appropriate at this project's scale;
+`src/rag/bm25.py` treats a chunk as a hit when it contains a query term rather
+than when it scores above zero, because BM25's IDF term floors to zero for a
+term appearing in roughly half a small corpus.
 
 The judge LLM defaults to the configured DeepSeek model (self-grading); set
 `YT_AGENT_JUDGE_MODEL`, `YT_AGENT_JUDGE_API_KEY`, and `YT_AGENT_JUDGE_BASE_URL`
@@ -498,12 +559,26 @@ The report shows:
 ```text
 src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
-  rag/           # Raw segment storage, chunking, embeddings, retrieval, references
+  rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25
   agents/        # Full-transcript agent and RAG agent with optional recursive multi-hop retrieval
-  evals/         # Demo/evaluation scripts and HTML report generation
+  api/           # FastAPI workbench: ask/judge SSE, corpus, chunks, ranking, scoreboard
+  chat/          # Setup registry + runner, shared chat history, static chat.html viewer
+  evals/         # Demo/evaluation scripts, RAGAS judge, HTML report generation
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
+frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
+  src/api/       # Typed endpoint client and SSE reader
+  src/answers/   # Answer/citation renderer (TS port of the shared renderer)
+  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, history rail
+  src/library/   # Corpus tree, chunk detail, Retrieval Lab, indexing panel
+  src/scoreboard/# Grouped aggregates and provenance bar
 tests/
 ```
+
+The answer renderer exists twice on purpose: `src/chat/frontend.py` holds the
+JS used by the standalone `dashboard/chat.html` viewer, and
+`frontend/src/answers/render.ts` is its TypeScript port used by the React app.
+They must stay behaviourally identical — `frontend/src/answers/render.test.ts`
+pins the parsing, citation-linking, and section rules that both implement.
 
 Canonical storage:
 
@@ -676,10 +751,11 @@ Each CLI command creates a run with command metadata, cache status, transcript m
 ### Tests
 
 ```bash
-uv run pytest
+uv run pytest                        # Python: pipeline, API, evals
+cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI
 ```
 
-External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automated tests where appropriate.
+External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automated tests where appropriate. Frontend tests run in jsdom with no network access.
 
 ### Agent Work
 
