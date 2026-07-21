@@ -24,6 +24,21 @@ from src.config import Settings
 RUBRIC_VERSION = "ragas-v1"
 METRIC_NAMES = ["faithfulness", "answer_relevancy", "context_precision"]
 
+
+def ragas_version() -> str:
+    """The installed ragas version, stamped onto every evaluation record.
+
+    Metric implementations change between releases, so a score is only
+    comparable to another score produced by the same version.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("ragas")
+    except PackageNotFoundError:
+        return "unknown"
+
+
 # (question, answer, contexts) -> score in [0, 1]
 ScoreFn = Callable[[str, str, list[str]], float]
 
@@ -34,6 +49,7 @@ class RagasJudge:
 
     score_fns: dict[str, ScoreFn]
     judge_model: str
+    embedding_model: str | None = None
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "RagasJudge":
@@ -91,7 +107,11 @@ class RagasJudge:
                 precision.single_turn_score(sample(q, a, c))
             ),
         }
-        return cls(score_fns=score_fns, judge_model=model)
+        return cls(
+            score_fns=score_fns,
+            judge_model=model,
+            embedding_model=settings.embedding_model,
+        )
 
     def score(self, question: str, answer: str, contexts: list[str]) -> dict[str, Any]:
         """Run every metric; a failing metric records an error, not a crash."""
@@ -106,13 +126,13 @@ class RagasJudge:
                 scores[name] = round(float(value), 4)
             except Exception as exc:
                 errors.append(f"{name}: {exc}")
-        composite = (
-            round(sum(scores.values()) / len(scores), 4) if scores else None
-        )
+        composite = round(sum(scores.values()) / len(scores), 4) if scores else None
         return {
             "judge": "ragas",
             "judge_model": self.judge_model,
             "rubric_version": RUBRIC_VERSION,
+            "ragas_version": ragas_version(),
+            "embedding_model": self.embedding_model,
             "scores": scores,
             "composite": composite,
             "elapsed_seconds": round(time.monotonic() - started, 2),
@@ -127,6 +147,8 @@ def unjudgeable(reason: str, judge_model: str = "") -> dict[str, Any]:
         "judge": "ragas",
         "judge_model": judge_model,
         "rubric_version": RUBRIC_VERSION,
+        "ragas_version": ragas_version(),
+        "embedding_model": None,
         "scores": {},
         "composite": None,
         "elapsed_seconds": 0.0,

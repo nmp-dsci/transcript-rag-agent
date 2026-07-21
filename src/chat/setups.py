@@ -13,7 +13,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from src.agents.models import RagQuestionRequest, RecursionOptions
+from src.agents.models import (
+    AgentProgressEvent,
+    RagQuestionRequest,
+    RecursionOptions,
+)
 from src.agents.rag_agent import RagAgent
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.config import Settings
@@ -88,6 +92,11 @@ class SetupResult:
     error: str | None = None
     # Retrieved chunk texts, persisted so RAGAS can judge the answer later.
     contexts: list[str] = field(default_factory=list)
+    # Identity of the stack that produced the answer. Scores from different
+    # models must never be averaged together, so the scoreboard groups on these.
+    model: str | None = None
+    embedding_model: str | None = None
+    top_k: int | None = None
 
 
 def select_setups(raw: str) -> list[str]:
@@ -129,6 +138,7 @@ def command_for(key: str, url: str | None = None) -> str:
 
 
 ProgressFn = Callable[[str], None]
+AgentEventFn = Callable[[AgentProgressEvent], None]
 
 
 class RagSetupRunner:
@@ -143,6 +153,11 @@ class RagSetupRunner:
         self._provider = provider
         self._rag_llm_agent: RagTranscriptAgent | None = None
         self._rag_agent: RagAgent | None = None
+
+    @property
+    def provider(self) -> MultiTranscriptRagContextProvider:
+        """The shared retrieval provider, reused by the ranking endpoint."""
+        return self._provider
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "RagSetupRunner":
@@ -219,19 +234,29 @@ class RagSetupRunner:
         *,
         url: str | None = None,
         top_k: int | None = None,
+        on_agent_event: AgentEventFn | None = None,
     ) -> SetupResult:
+        """Answer with one setup.
+
+        ``on_agent_event`` receives per-iteration research events and only ever
+        fires for ``rag_agent`` — the other setups make a single retrieval pass
+        and have no intermediate steps to report.
+        """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
         started = time.monotonic()
         try:
             if key == "rag_agent":
-                answer, agent = self._run_rag_agent(question, url, effective_top_k)
+                answer, agent = self._run_rag_agent(
+                    question, url, effective_top_k, on_agent_event
+                )
                 context = agent.last_context
                 return self._build_result(
                     spec,
                     url,
                     answer,
                     context,
+                    top_k=effective_top_k,
                     iterations=agent.last_iteration_count,
                     terminated_reason=agent.last_terminated_reason,
                     elapsed=time.monotonic() - started,
@@ -244,6 +269,7 @@ class RagSetupRunner:
                 url,
                 answer,
                 agent.last_context,
+                top_k=effective_top_k,
                 llm_calls=llm_calls,
                 terminated_reason=(
                     answer.recursion.terminated_reason if answer.recursion else None
@@ -258,6 +284,9 @@ class RagSetupRunner:
                 answer="",
                 elapsed_seconds=time.monotonic() - started,
                 error=str(exc),
+                model=self._settings.deepseek_model,
+                embedding_model=self._settings.embedding_model,
+                top_k=effective_top_k,
             )
 
     def _run_rag_llm(self, key, question, url, top_k):
@@ -285,12 +314,12 @@ class RagSetupRunner:
         request = RagQuestionRequest(question=question, source_url=url, top_k=top_k)
         return agent.answer(request), agent, 1
 
-    def _run_rag_agent(self, question, url, top_k):
+    def _run_rag_agent(self, question, url, top_k, on_agent_event=None):
         agent = self._agentic()
-        answer = agent.answer(
-            RagQuestionRequest(question=question, source_url=url, top_k=top_k)
-        )
-        return answer, agent
+        request = RagQuestionRequest(question=question, source_url=url, top_k=top_k)
+        if on_agent_event is None:
+            return agent.answer(request), agent
+        return agent.answer_streaming(request, on_agent_event), agent
 
     def _build_result(
         self,
@@ -299,6 +328,7 @@ class RagSetupRunner:
         answer: Any,
         context: Any,
         *,
+        top_k: int | None = None,
         llm_calls: int | None = None,
         iterations: int | None = None,
         terminated_reason: str | None = None,
@@ -323,4 +353,7 @@ class RagSetupRunner:
                 for chunk in (chunks or [])
                 if isinstance(getattr(chunk, "text", None), str)
             ],
+            model=self._settings.deepseek_model,
+            embedding_model=self._settings.embedding_model,
+            top_k=top_k,
         )

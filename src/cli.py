@@ -52,7 +52,6 @@ from src.rag.ingestion import (
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
 from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
 from src.transcripts.discovery import (
-    DiscoveryError,
     SupadataDiscoveryClient,
     discover_channel_videos,
     discover_latest_channel_videos,
