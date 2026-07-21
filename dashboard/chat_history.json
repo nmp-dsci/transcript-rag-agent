@@ -877,12 +877,13 @@
             "rubric_version": "ragas-v1",
             "scores": {
               "faithfulness": 1.0,
-              "context_precision": 0.6095
+              "answer_relevancy": 0.7236,
+              "context_precision": 0.5821
             },
-            "composite": 0.8048,
-            "elapsed_seconds": 70.43,
-            "scored_at": "2026-07-20T12:56:30.907843+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7686,
+            "elapsed_seconds": 66.46,
+            "scored_at": "2026-07-21T00:39:25.943622+00:00",
+            "error": null
           }
         },
         {
@@ -971,13 +972,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 1.0,
-              "context_precision": 0.4471
+              "faithfulness": 0.875,
+              "answer_relevancy": 0.8228,
+              "context_precision": 0.4613
             },
-            "composite": 0.7236,
-            "elapsed_seconds": 176.59,
-            "scored_at": "2026-07-20T12:59:27.490212+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7197,
+            "elapsed_seconds": 209.48,
+            "scored_at": "2026-07-21T00:42:55.418852+00:00",
+            "error": null
           }
         },
         {
@@ -1112,13 +1114,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9167,
-              "context_precision": 0.4581
+              "faithfulness": 0.9697,
+              "answer_relevancy": 0.9002,
+              "context_precision": 0.5125
             },
-            "composite": 0.6874,
-            "elapsed_seconds": 312.34,
-            "scored_at": "2026-07-20T13:04:39.826392+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7941,
+            "elapsed_seconds": 282.29,
+            "scored_at": "2026-07-21T00:47:37.708410+00:00",
+            "error": null
           }
         }
       ]
@@ -1250,13 +1253,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.6,
-              "context_precision": 0.7736
+              "faithfulness": 0.5833,
+              "answer_relevancy": 0.6296,
+              "context_precision": 0.8976
             },
-            "composite": 0.6868,
-            "elapsed_seconds": 117.94,
-            "scored_at": "2026-07-20T13:09:30.379490+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7035,
+            "elapsed_seconds": 122.71,
+            "scored_at": "2026-07-21T00:49:40.514521+00:00",
+            "error": null
           }
         },
         {
@@ -1483,13 +1487,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9143,
-              "context_precision": 0.6855
+              "faithfulness": 0.8857,
+              "answer_relevancy": 0.8985,
+              "context_precision": 0.7855
             },
-            "composite": 0.7999,
-            "elapsed_seconds": 169.07,
-            "scored_at": "2026-07-20T13:12:19.442390+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8566,
+            "elapsed_seconds": 252.61,
+            "scored_at": "2026-07-21T00:53:53.125753+00:00",
+            "error": null
           }
         },
         {
@@ -1644,13 +1649,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9773,
-              "context_precision": 0.7125
+              "faithfulness": 0.8693,
+              "answer_relevancy": 0.9579,
+              "context_precision": 0.7127
             },
-            "composite": 0.8449,
-            "elapsed_seconds": 354.59,
-            "scored_at": "2026-07-20T13:18:14.162202+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8466,
+            "elapsed_seconds": 456.43,
+            "scored_at": "2026-07-21T01:01:29.557641+00:00",
+            "error": null
           }
         }
       ]
@@ -1755,13 +1761,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.95,
-              "context_precision": 1.0
+              "faithfulness": 1.0,
+              "answer_relevancy": 0.541,
+              "context_precision": 0.7857
             },
-            "composite": 0.975,
-            "elapsed_seconds": 58.8,
-            "scored_at": "2026-07-20T13:21:16.685379+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7756,
+            "elapsed_seconds": 77.34,
+            "scored_at": "2026-07-21T01:02:46.943408+00:00",
+            "error": null
           }
         },
         {
@@ -1925,12 +1932,13 @@
             "rubric_version": "ragas-v1",
             "scores": {
               "faithfulness": 0.931,
-              "context_precision": 0.4638
+              "answer_relevancy": 0.7697,
+              "context_precision": 0.5209
             },
-            "composite": 0.6974,
-            "elapsed_seconds": 155.5,
-            "scored_at": "2026-07-20T13:23:52.188286+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7405,
+            "elapsed_seconds": 196.22,
+            "scored_at": "2026-07-21T01:06:03.162752+00:00",
+            "error": null
           }
         },
         {
@@ -2068,13 +2076,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.98,
-              "context_precision": 0.7895
+              "faithfulness": 0.964,
+              "answer_relevancy": 0.7951,
+              "context_precision": 0.6667
             },
-            "composite": 0.8847,
-            "elapsed_seconds": 206.35,
-            "scored_at": "2026-07-20T13:27:18.545164+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8086,
+            "elapsed_seconds": 198.53,
+            "scored_at": "2026-07-21T01:09:21.696244+00:00",
+            "error": null
           }
         }
       ]
@@ -2188,13 +2197,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9032,
-              "context_precision": 0.8143
+              "faithfulness": 0.9333,
+              "answer_relevancy": 0.7296,
+              "context_precision": 0.8552
             },
-            "composite": 0.8588,
-            "elapsed_seconds": 113.8,
-            "scored_at": "2026-07-20T13:31:55.226642+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8394,
+            "elapsed_seconds": 121.85,
+            "scored_at": "2026-07-21T01:11:23.576302+00:00",
+            "error": null
           }
         },
         {
@@ -2430,13 +2440,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.92,
-              "context_precision": 0.8744
+              "faithfulness": 0.9744,
+              "answer_relevancy": 0.7388,
+              "context_precision": 0.5997
             },
-            "composite": 0.8972,
-            "elapsed_seconds": 188.1,
-            "scored_at": "2026-07-20T13:35:03.334449+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.771,
+            "elapsed_seconds": 205.42,
+            "scored_at": "2026-07-21T01:14:48.991724+00:00",
+            "error": null
           }
         },
         {
@@ -2588,13 +2599,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.8784,
-              "context_precision": 0.3882
+              "faithfulness": 0.9119,
+              "answer_relevancy": 0.677,
+              "context_precision": 0.5311
             },
-            "composite": 0.6333,
-            "elapsed_seconds": 548.62,
-            "scored_at": "2026-07-20T13:44:11.962361+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7067,
+            "elapsed_seconds": 411.63,
+            "scored_at": "2026-07-21T01:21:40.617327+00:00",
+            "error": null
           }
         }
       ]
@@ -2718,12 +2730,13 @@
             "rubric_version": "ragas-v1",
             "scores": {
               "faithfulness": 1.0,
-              "context_precision": 0.5426
+              "answer_relevancy": 0.2801,
+              "context_precision": 0.7857
             },
-            "composite": 0.7713,
-            "elapsed_seconds": 96.94,
-            "scored_at": "2026-07-20T13:52:31.808254+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.6886,
+            "elapsed_seconds": 59.24,
+            "scored_at": "2026-07-21T01:22:39.885019+00:00",
+            "error": null
           }
         },
         {
@@ -2895,12 +2908,13 @@
             "rubric_version": "ragas-v1",
             "scores": {
               "faithfulness": 1.0,
-              "context_precision": 0.5858
+              "answer_relevancy": 0.2008,
+              "context_precision": 0.6626
             },
-            "composite": 0.7929,
-            "elapsed_seconds": 153.02,
-            "scored_at": "2026-07-20T13:55:04.866260+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.6211,
+            "elapsed_seconds": 156.52,
+            "scored_at": "2026-07-21T01:25:16.411335+00:00",
+            "error": null
           }
         },
         {
@@ -3034,13 +3048,13 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9574,
-              "context_precision": 0.5354
+              "answer_relevancy": 0.8608,
+              "context_precision": 0.3684
             },
-            "composite": 0.7464,
-            "elapsed_seconds": 248.27,
-            "scored_at": "2026-07-20T13:59:13.149224+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.6146,
+            "elapsed_seconds": 263.17,
+            "scored_at": "2026-07-21T01:29:39.580894+00:00",
+            "error": "faithfulness: Failed to parse StringIO from completion {}. Got: 1 validation error for StringIO\ntext\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE "
           }
         }
       ]
@@ -3100,13 +3114,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.4,
-              "context_precision": 0.8333
+              "faithfulness": 0.4545,
+              "answer_relevancy": 0.6877,
+              "context_precision": 0.7333
             },
-            "composite": 0.6167,
-            "elapsed_seconds": 107.93,
-            "scored_at": "2026-07-20T14:02:35.546721+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.6252,
+            "elapsed_seconds": 76.74,
+            "scored_at": "2026-07-21T01:30:56.355122+00:00",
+            "error": null
           }
         },
         {
@@ -3246,13 +3261,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.4231,
+              "faithfulness": 0.5,
+              "answer_relevancy": 0.0,
               "context_precision": 1.0
             },
-            "composite": 0.7116,
-            "elapsed_seconds": 146.33,
-            "scored_at": "2026-07-20T14:05:01.882232+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.5,
+            "elapsed_seconds": 121.65,
+            "scored_at": "2026-07-21T01:32:58.010339+00:00",
+            "error": null
           }
         },
         {
@@ -3327,13 +3343,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.8462,
-              "context_precision": 0.8929
+              "faithfulness": 1.0,
+              "answer_relevancy": 0.6515,
+              "context_precision": 0.9111
             },
-            "composite": 0.8696,
-            "elapsed_seconds": 166.47,
-            "scored_at": "2026-07-20T14:07:48.360937+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8542,
+            "elapsed_seconds": 148.46,
+            "scored_at": "2026-07-21T01:35:26.474035+00:00",
+            "error": null
           }
         }
       ]
@@ -3403,12 +3420,13 @@
             "rubric_version": "ragas-v1",
             "scores": {
               "faithfulness": 1.0,
+              "answer_relevancy": 0.742,
               "context_precision": 0.7071
             },
-            "composite": 0.8536,
-            "elapsed_seconds": 59.46,
-            "scored_at": "2026-07-20T14:11:19.955444+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.8164,
+            "elapsed_seconds": 57.45,
+            "scored_at": "2026-07-21T00:31:52.304173+00:00",
+            "error": null
           }
         },
         {
@@ -3629,13 +3647,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.3929,
-              "context_precision": 0.6744
+              "faithfulness": 0.8667,
+              "answer_relevancy": 0.0,
+              "context_precision": 0.6247
             },
-            "composite": 0.5336,
-            "elapsed_seconds": 242.38,
-            "scored_at": "2026-07-20T14:15:22.245331+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.4971,
+            "elapsed_seconds": 161.78,
+            "scored_at": "2026-07-21T00:34:34.084123+00:00",
+            "error": null
           }
         },
         {
@@ -3783,13 +3802,14 @@
             "judge_model": "deepseek-v4-flash",
             "rubric_version": "ragas-v1",
             "scores": {
-              "faithfulness": 0.9344,
-              "context_precision": 0.4529
+              "faithfulness": 0.9322,
+              "answer_relevancy": 0.8612,
+              "context_precision": 0.4462
             },
-            "composite": 0.6936,
-            "elapsed_seconds": 250.78,
-            "scored_at": "2026-07-20T14:19:33.015938+00:00",
-            "error": "answer_relevancy: Error code: 400 - {'error': {'message': 'Invalid n value (currently only n = 1 is supported)', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_request_error'}}"
+            "composite": 0.7465,
+            "elapsed_seconds": 215.81,
+            "scored_at": "2026-07-21T00:38:09.885070+00:00",
+            "error": null
           }
         }
       ]
