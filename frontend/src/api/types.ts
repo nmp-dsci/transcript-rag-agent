@@ -306,6 +306,58 @@ export interface AskRequest {
   history?: string[];
 }
 
+/** One retrieval configuration measured by `eval-ablation` (src/evals/ablation.py). */
+export interface AblationConfig {
+  label: string;
+  retrieval_mode: string;
+  rerank: boolean;
+  neighbor_span: number;
+  top_k: number;
+}
+
+export interface AblationCell {
+  label: string;
+  config: AblationConfig;
+  averages: Record<string, number>;
+  by_domain: Record<string, Record<string, number>>;
+}
+
+export interface AblationDelta {
+  label: string;
+  vs_baseline: Record<string, number>;
+}
+
+export interface AblationRun {
+  run_id: string;
+  created_at: string;
+  entries: number;
+  metrics: string[];
+  baseline: string;
+  cells: AblationCell[];
+  deltas: AblationDelta[];
+}
+
+export interface GoldenRunSummary {
+  run_id: string;
+  created_at: string;
+  setup: string;
+  config: Record<string, unknown>;
+  summary: {
+    entries?: number;
+    scored?: number;
+    failed?: number;
+    averages?: Record<string, number>;
+    avg_elapsed_seconds?: number | null;
+    avg_token_estimate?: number | null;
+  };
+}
+
+/** Committed eval snapshots for the Experiments tab (GET /api/experiments). */
+export interface Experiments {
+  ablations: AblationRun[];
+  golden_runs: GoldenRunSummary[];
+}
+
 /** One stage of an indexing run, streamed by POST /api/index/stream. */
 export interface IndexStage {
   stage: 'discover' | 'fetch' | 'chunk' | 'embed' | 'summarize';

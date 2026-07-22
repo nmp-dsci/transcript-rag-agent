@@ -32,5 +32,39 @@ include = ["src*"]
 
 [dependency-groups]
 dev = [
+    "mypy>=2.3.0",
     "pytest>=9.0.3",
+    "ruff>=0.15.22",
+]
+
+[tool.ruff]
+# 100 cols matches the repo's TypeScript house style (Prettier printWidth: 100).
+line-length = 100
+
+[tool.ruff.lint]
+# Ruff's default rules (pyflakes + a curated pycodestyle subset). The wider
+# opinionated rule sets (SIM/UP/B/RUF) are not enabled yet: turning them on would
+# rewrite large parts of the existing tree, which belongs in its own cleanup, not
+# a feature PR. Line-length (E501) stays off for the same reason.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+# Scoped to the retrieval + evaluation core this project's specs are about. The
+# LLM-agent and Chroma/langchain-boundary modules carry ~200 untyped-third-party
+# errors; annotating them is its own task (tracked for the production-platform
+# milestone), so `follow_imports = "silent"` type-checks these files against the
+# rest without reporting the rest's errors. `tsc --noEmit` is the frontend's gate.
+python_version = "3.12"
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_ignores = true
+files = [
+    "src/evals/golden.py",
+    "src/evals/regression.py",
+    "src/evals/judge.py",
+    "src/evals/ir_metrics.py",
+    "src/evals/ablation.py",
+    "src/rag/fusion.py",
+    "src/rag/bm25.py",
+    "src/rag/context.py",
 ]

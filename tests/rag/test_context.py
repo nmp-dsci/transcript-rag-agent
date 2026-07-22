@@ -351,3 +351,140 @@ def _multi_chunk(video_id: str) -> RetrievedChunk:
         end_seconds=20,
         segment_count=1,
     )
+
+
+class FakeHybridChunkStore:
+    """A store whose semantic pass misses a chunk that only BM25 will find.
+
+    ``query_all`` returns one chunk that lacks the rare query term; the whole
+    tiny corpus (that chunk plus a keyword-only one) is exposed to BM25 through
+    ``collection.get``. Hybrid fusion should surface the keyword-only chunk
+    rather than drop it — the recall-widening behaviour the resolver enables.
+    """
+
+    def __init__(self, records_metadata: list[dict] | None = None) -> None:
+        self._semantic = RetrievedChunk(
+            transcript_id="raw_transcript:vidsem",
+            video_id="vidsem",
+            source_url="https://www.youtube.com/watch?v=vidsem",
+            chunk_index=0,
+            text="a general discussion of property investment returns",
+            start_seconds=10,
+            end_seconds=20,
+            segment_count=1,
+        )
+        self._metadatas = records_metadata or [
+            {
+                "transcript_id": "raw_transcript:vidsem",
+                "video_id": "vidsem",
+                "chunk_index": 0,
+                "source_url": "https://www.youtube.com/watch?v=vidsem",
+            },
+            {
+                "transcript_id": "raw_transcript:vidkw",
+                "video_id": "vidkw",
+                "chunk_index": 5,
+                "source_url": "https://www.youtube.com/watch?v=vidkw",
+            },
+        ]
+        self.collection = self  # _bm25_records calls chunk_store.collection.get(...)
+
+    def has_any_chunks(self) -> bool:
+        return True
+
+    def query_all(self, query: str, top_k: int):
+        return [self._semantic]
+
+    def get(self, where=None, include=None):
+        return {
+            "documents": [
+                "a general discussion of property investment returns",
+                "existing properties are grandfathered under the old negative gearing rules",
+            ],
+            "metadatas": self._metadatas,
+        }
+
+
+def test_hybrid_widens_recall_with_a_bm25_only_chunk() -> None:
+    from src.rag import bm25
+
+    bm25.clear_cache()
+    chunk_store = FakeHybridChunkStore()
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=chunk_store,
+        retrieval_mode="hybrid",
+    )
+
+    context = provider.get_context("grandfathered", top_k=5)
+
+    surfaced = {(c.video_id, c.chunk_index) for c in context.retrieved_chunks}
+    # Semantic never returned vidkw:5; only BM25 found the rare term, and fusion
+    # now surfaces it instead of dropping it for want of a resolvable identity.
+    assert ("vidkw", 5) in surfaced
+    keyword_only = next(c for c in context.retrieved_chunks if c.video_id == "vidkw")
+    # Found by keyword alone, so it carries no invented semantic score.
+    assert keyword_only.score is None
+
+
+def test_hybrid_does_not_fabricate_identity_for_unresolvable_hits() -> None:
+    from src.rag import bm25
+
+    bm25.clear_cache()
+    # The keyword-only record is missing source_url, so it cannot be cited.
+    chunk_store = FakeHybridChunkStore(
+        records_metadata=[
+            {
+                "transcript_id": "raw_transcript:vidsem",
+                "video_id": "vidsem",
+                "chunk_index": 0,
+                "source_url": "https://www.youtube.com/watch?v=vidsem",
+            },
+            {"transcript_id": "raw_transcript:vidkw", "video_id": "vidkw", "chunk_index": 5},
+        ]
+    )
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=chunk_store,
+        retrieval_mode="hybrid",
+    )
+
+    context = provider.get_context("grandfathered", top_k=5)
+
+    surfaced = {(c.video_id, c.chunk_index) for c in context.retrieved_chunks}
+    assert ("vidkw", 5) not in surfaced
+
+
+def test_chunk_from_record_rebuilds_a_citable_chunk() -> None:
+    from src.rag.context import _chunk_from_record
+
+    chunk = _chunk_from_record(
+        {
+            "transcript_id": "raw_transcript:v",
+            "video_id": "v",
+            "chunk_index": 3,
+            "text": "hello",
+            "source_url": "https://www.youtube.com/watch?v=v",
+        }
+    )
+    assert chunk is not None
+    assert chunk.chunk_id == "chunk:v:3"
+    assert chunk.score is None
+
+
+def test_chunk_from_record_refuses_to_invent_missing_identity() -> None:
+    from src.rag.context import _chunk_from_record
+
+    # No source_url and no transcript_id, respectively → dropped, never fabricated.
+    assert (
+        _chunk_from_record(
+            {"transcript_id": "t", "video_id": "v", "chunk_index": 1, "text": "x"}
+        )
+        is None
+    )
+    assert (
+        _chunk_from_record(
+            {"video_id": "v", "chunk_index": 1, "text": "x", "source_url": "https://y.com"}
+        )
+        is None
+    )

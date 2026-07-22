@@ -382,6 +382,12 @@ def create_app(
     def setups() -> dict:
         return {"setups": [asdict(spec) for spec in SETUP_SPECS]}
 
+    @app.get("/api/experiments")
+    def experiments() -> dict:
+        from src.api.experiments import load_experiments
+
+        return load_experiments()
+
     @app.get("/api/history")
     def history() -> dict:
         return {

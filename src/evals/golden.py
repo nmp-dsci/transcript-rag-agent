@@ -30,6 +30,7 @@ from typing import Any, Callable, Iterable
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
 from src.config import Settings
+from src.evals.ir_metrics import IR_METRIC_NAMES, entry_ir_metrics
 
 DEFAULT_DATASET_PATH = Path(__file__).with_name("golden_dataset.json")
 
@@ -38,10 +39,13 @@ CHUNK_ID_PATTERN = re.compile(r"^chunk:(?P<video_id>[^:]+):(?P<chunk_index>\d+)$
 
 DOMAINS = ("property", "ai-coding")
 
-#: Keys always present in an :func:`evaluate_entry` result.
+#: Keys always present in an :func:`evaluate_entry` result. The ``recall@k``,
+#: ``mrr`` and ``ndcg@10`` entries come from :mod:`src.evals.ir_metrics` and, like
+#: the two recalls above them, are deterministic id-based arithmetic with no LLM.
 METRIC_NAMES = [
     "context_recall",
     "video_recall",
+    *IR_METRIC_NAMES,
     "answer_correctness",
     "answer_similarity",
     "llm_context_recall",
@@ -260,7 +264,8 @@ def answer_correctness_fns(settings: Settings) -> dict[str, ReferenceScoreFn]:
     llm = LangchainLLMWrapper(
         ChatOpenAI(
             model=model,
-            api_key=settings.judge_api_key or settings.deepseek_api_key,
+            # langchain types api_key as SecretStr but accepts a plain str at runtime.
+            api_key=settings.judge_api_key or settings.deepseek_api_key,  # type: ignore[arg-type]
             base_url=settings.judge_base_url or settings.deepseek_base_url,
             temperature=0.0,
         )
@@ -328,6 +333,9 @@ def evaluate_entry(
         "context_recall": round(context_recall(retrieved_chunk_ids, entry.expected_chunk_ids), 4),
         "video_recall": round(video_recall(retrieved_video_ids, entry.expected_video_ids), 4),
     }
+    # Rank-aware IR metrics over the same ids: how well retrieval *ordered* the
+    # relevant chunks, not just whether it found them. Deterministic and free.
+    scores.update(entry_ir_metrics(retrieved_chunk_ids, entry.expected_chunk_ids))
     for name in ("answer_correctness", "answer_similarity", "llm_context_recall"):
         fn = fns.get(name)
         if fn is None:

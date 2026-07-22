@@ -5,9 +5,10 @@ configured at that moment. This runs the *same* curated questions through the
 *current* configuration and snapshots the result, so a retrieval or prompt
 change can be shown to have moved the numbers rather than assumed to have.
 
-Each run writes one JSON file under ``.yt-agent/eval_runs/``. ``diff_runs``
-compares two snapshots per question and per metric, which is what makes a
-regression visible instead of merely recorded.
+Each run writes one JSON file under ``evals/runs/`` — tracked in git, so the
+numbers are reviewable and CI can gate on them. ``diff_runs`` compares two
+snapshots per question and per metric, which is what makes a regression visible
+instead of merely recorded.
 
     uv run python -m src.cli eval-golden --setup rag_llm
     uv run python -m src.cli eval-golden --setup rag_llm --retrieval hybrid
@@ -24,8 +25,12 @@ from typing import Any, Callable
 
 from src.config import Settings
 from src.evals.golden import GoldenEntry, evaluate_entry, load_golden
+from src.evals.ir_metrics import IR_METRIC_NAMES
 
-DEFAULT_RUNS_DIR = Path(".yt-agent/eval_runs")
+#: Runs are committed to source control (unlike the gitignored ``.yt-agent/``) so a
+#: reviewer can open the numbers a config change produced and the CI eval gate can
+#: diff them without a live corpus. See ``evals/runs/README.md``.
+DEFAULT_RUNS_DIR = Path("evals/runs")
 
 # Metrics where a drop is a regression. Latency and tokens move the other way
 # and are reported separately rather than folded into a quality verdict.
@@ -35,15 +40,17 @@ QUALITY_METRICS = [
     "context_precision",
     "context_recall",
     "video_recall",
+    *IR_METRIC_NAMES,
     "answer_correctness",
     "answer_similarity",
     "llm_context_recall",
 ]
 
-#: Metrics computed deterministically from golden.py's id-based comparisons
-#: (see its module docstring: "No LLM, no cost"). These have no sampling
-#: noise to excuse with a nonzero threshold, unlike the RAGAS-judged metrics.
-DETERMINISTIC_METRICS = {"context_recall", "video_recall"}
+#: Metrics computed deterministically from id comparisons — golden.py's recalls
+#: and ir_metrics.py's rank-aware measures. These have no sampling noise to excuse
+#: with a nonzero threshold, unlike the RAGAS-judged metrics, so any movement in
+#: them is a real change.
+DETERMINISTIC_METRICS = {"context_recall", "video_recall", *IR_METRIC_NAMES}
 
 
 @dataclass
@@ -157,9 +164,9 @@ def summarize(results: list[EntryResult]) -> dict[str, Any]:
     averages: dict[str, float] = {}
     for metric in QUALITY_METRICS + ["composite"]:
         values = [
-            r.scores[metric]
+            value
             for r in scored
-            if isinstance(r.scores.get(metric), (int, float))
+            if isinstance((value := r.scores.get(metric)), (int, float))
         ]
         if values:
             averages[metric] = round(sum(values) / len(values), 4)

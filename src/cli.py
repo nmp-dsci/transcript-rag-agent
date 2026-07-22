@@ -142,6 +142,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Diff the two most recent saved runs instead of running a new one",
     )
 
+    ablation = subparsers.add_parser(
+        "eval-ablation",
+        help="Sweep retrieval configs (semantic/hybrid/hybrid+rerank) over the golden set",
+    )
+    ablation.add_argument(
+        "--top-k",
+        type=int,
+        default=None,
+        help="Final chunk count each configuration retrieves (default: YT_AGENT_RAG_TOP_K)",
+    )
+
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
 
@@ -310,6 +321,23 @@ def _run_eval_golden(args, settings) -> int:
     return 0
 
 
+def _run_eval_ablation(args, settings) -> int:
+    """Sweep retrieval configurations over the golden set and snapshot the table.
+
+    Retrieval-only and deterministic: no answer is generated and no judge runs, so
+    this needs no API key — only the local embedding, BM25 and cross-encoder models.
+    """
+    from src.evals.ablation import format_table, run_default_ablation
+    from src.evals.regression import save_run
+
+    result = run_default_ablation(settings, top_k=args.top_k, on_progress=print)
+    path = save_run(result)
+    print(f"\n{result['run_id']} — {result['entries']} golden questions\n")
+    print(format_table(result))
+    print(f"\nsaved {path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -329,6 +357,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "eval-golden":
             return _run_eval_golden(args, settings)
+        if args.command == "eval-ablation":
+            return _run_eval_ablation(args, settings)
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):

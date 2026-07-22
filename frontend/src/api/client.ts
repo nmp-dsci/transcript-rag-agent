@@ -10,6 +10,7 @@ import type {
   Corpus,
   Entry,
   Evaluation,
+  Experiments,
   Health,
   IndexResult,
   IndexStage,
@@ -64,6 +65,8 @@ export const api = {
   corpus: () => getJson<Corpus>('/api/corpus'),
   chunks: (videoId: string) =>
     getJson<ChunkList>(`/api/corpus/${encodeURIComponent(videoId)}/chunks`),
+
+  experiments: () => getJson<Experiments>('/api/experiments'),
 
   scoreboard: (groupBy: string, judgeModel?: string | null) => {
     const params = new URLSearchParams({ group_by: groupBy });
