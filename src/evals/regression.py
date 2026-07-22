@@ -30,7 +30,7 @@ from src.evals.ir_metrics import IR_METRIC_NAMES
 #: Runs are committed to source control (unlike the gitignored ``.yt-agent/``) so a
 #: reviewer can open the numbers a config change produced and the CI eval gate can
 #: diff them without a live corpus. See ``evals/runs/README.md``.
-DEFAULT_RUNS_DIR = Path("evals/runs")
+DEFAULT_RUNS_DIR = Path(__file__).resolve().parents[2] / "evals" / "runs"
 
 # Metrics where a drop is a regression. Latency and tokens move the other way
 # and are reported separately rather than folded into a quality verdict.

@@ -179,10 +179,10 @@ Both modes pull `YT_AGENT_RETRIEVAL_CANDIDATES` chunks before narrowing to
 candidates with a local cross-encoder (`YT_AGENT_RERANK_MODEL`) is **on by
 default**; it loads lazily on first use and adds no API calls. Set
 `YT_AGENT_RERANK_ENABLED=false` to retrieve without it — the `eval-ablation`
-harness (below) measures the recall/NDCG lift it buys, so the default is a
-measured choice. `YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each
-hit into the context, which stops answers being cut off mid-sentence at a chunk
-boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
+harness (below) quantifies its effect, which on this small set is a tradeoff:
+it sharpens recall@1 but slightly reduces deeper recall versus plain hybrid.
+`YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each hit into the
+context, which stops answers being cut off mid-sentence at a chunk boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
 setup can be compared under both modes with the same judge.
 
 Retrieval can be scoped to a **channel** or a **single video**. Channel

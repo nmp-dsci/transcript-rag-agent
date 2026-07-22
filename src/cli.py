@@ -343,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        settings = load_settings(require_keys=True)
+        settings = load_settings(require_keys=args.command != "eval-ablation")
         if args.command == "chat":
             from src.chat.session import run_session
 

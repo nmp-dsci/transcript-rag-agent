@@ -488,3 +488,35 @@ def test_chunk_from_record_refuses_to_invent_missing_identity() -> None:
         )
         is None
     )
+
+
+def test_chunk_from_record_drops_malformed_metadata_instead_of_raising() -> None:
+    from src.rag.context import _chunk_from_record
+
+    # A malformed source_url must drop the record, not crash hybrid retrieval.
+    assert (
+        _chunk_from_record(
+            {
+                "transcript_id": "t",
+                "video_id": "v",
+                "chunk_index": 1,
+                "text": "x",
+                "source_url": "not a url",
+            }
+        )
+        is None
+    )
+    # Same for an unparsable start_seconds.
+    assert (
+        _chunk_from_record(
+            {
+                "transcript_id": "t",
+                "video_id": "v",
+                "chunk_index": 1,
+                "text": "x",
+                "source_url": "https://www.youtube.com/watch?v=v",
+                "start_seconds": "not-a-number",
+            }
+        )
+        is None
+    )

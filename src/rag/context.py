@@ -366,7 +366,7 @@ def _chunk_from_record(record: dict):
     rather than reconstructed with invented values. The chunk carries no score:
     it was found only by keyword, so it has no semantic distance of its own.
     """
-    from pydantic import HttpUrl
+    from pydantic import HttpUrl, ValidationError
 
     from src.rag.models import RetrievedChunk
 
@@ -374,20 +374,23 @@ def _chunk_from_record(record: dict):
     source_url = record.get("source_url")
     if not transcript_id or not source_url:
         return None
-    return RetrievedChunk(
-        transcript_id=str(transcript_id),
-        video_id=str(record.get("video_id", "")),
-        source_url=HttpUrl(str(source_url)),
-        chunk_index=int(record.get("chunk_index", 0) or 0),
-        text=str(record.get("text", "")),
-        start_seconds=record.get("start_seconds"),
-        end_seconds=record.get("end_seconds"),
-        channel_id=record.get("channel_id"),
-        channel_name=record.get("channel_name"),
-        title=record.get("title"),
-        upload_date=record.get("upload_date"),
-        score=None,
-    )
+    try:
+        return RetrievedChunk(
+            transcript_id=str(transcript_id),
+            video_id=str(record.get("video_id", "")),
+            source_url=HttpUrl(str(source_url)),
+            chunk_index=int(record.get("chunk_index", 0) or 0),
+            text=str(record.get("text", "")),
+            start_seconds=record.get("start_seconds"),
+            end_seconds=record.get("end_seconds"),
+            channel_id=record.get("channel_id"),
+            channel_name=record.get("channel_name"),
+            title=record.get("title"),
+            upload_date=record.get("upload_date"),
+            score=None,
+        )
+    except (ValidationError, ValueError):
+        return None
 
 
 def _as_retrieved(chunk):
