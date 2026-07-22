@@ -123,7 +123,7 @@ uv sync
 
 The dashboard Chunk Space tab uses `scikit-learn` for deterministic PCA projection of stored chunk embeddings; it is installed by `uv sync`.
 
-Create `~/.env`:
+Create `~/.env` (the tracked `.env.example` is a ready-to-fill template):
 
 ```text
 SUPADATA_API_KEY=<Supadata API key>
@@ -531,7 +531,9 @@ is generated and no judge runs — so it needs no API key and is cheap to re-run
 uv run python -m src.cli eval-ablation
 ```
 
-The committed results render in the workbench **Experiments** tab. To grow the
+`--top-k N` overrides the final chunk count each configuration retrieves
+(default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
+**Experiments** tab. To grow the
 golden set past its curated 9, see `docs/golden-set-curation.md` and the
 `scripts/generate_golden_candidates.py` drafting scaffold.
 
@@ -819,15 +821,20 @@ src/
   agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
                  #   with follow-up query rewriting for conversational history
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
-                 #   scoreboard, chunk graph
+                 #   scoreboard, chunk graph, committed experiments
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
-  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, regression runs
+  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
+                 #   ablation harness, regression runs
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
-scripts/         # One-off maintenance, incl. chunk-metadata backfill
+evals/runs/      # Committed eval snapshots (ablation + golden runs), gated in CI
+docs/            # Process docs, e.g. growing the golden set
+scripts/         # One-off maintenance (chunk-metadata backfill) and the
+                 #   golden-candidate drafting scaffold
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
   src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
+  src/experiments/ # Experiments tab: ablation tables + golden-run summaries
   src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
   src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
 tests/
@@ -1011,10 +1018,16 @@ Each CLI command creates a run with command metadata, cache status, transcript m
 
 ```bash
 uv run pytest                        # Python: pipeline, API, evals
+uv run ruff check src tests scripts  # lint
+uv run mypy                          # types, scoped to the retrieval + eval core (see pyproject.toml)
 cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI, theme
 ```
 
 External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automated tests where appropriate. Frontend tests run in jsdom with no network access.
+
+CI (`.github/workflows/ci.yml`) runs the same lint/type/test steps, the frontend
+typecheck and build, and a deterministic eval-regression gate that re-scores the
+committed snapshots in `evals/runs/` (see `evals/runs/README.md`).
 
 ### Agent Work
 
