@@ -98,6 +98,8 @@ class FakeProvider:
         filter_transcripts: bool = False,
         transcript_filter_top_k: int = 5,
         transcript_filter_min_score: float = 0.25,
+        channel_id: str | None = None,
+        retrieval_mode: str | None = None,
     ) -> TranscriptContext:
         call_index = len(self.calls)
         self.calls.append(
@@ -108,6 +110,8 @@ class FakeProvider:
                 "filter_transcripts": filter_transcripts,
                 "transcript_filter_top_k": transcript_filter_top_k,
                 "transcript_filter_min_score": transcript_filter_min_score,
+                "channel_id": channel_id,
+                "retrieval_mode": retrieval_mode,
             }
         )
         # Each call returns a distinct chunk so the union across calls grows.

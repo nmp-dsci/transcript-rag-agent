@@ -143,3 +143,20 @@ def test_run_many_reports_progress(settings) -> None:
 
     assert [r.key for r in results] == ["rag_llm", "rag_agent"]
     assert len(messages) == 2
+
+
+def test_followups_serialise_from_agent_subtopics():
+    from src.agents.models import FollowupSubtopic
+    from src.chat.setups import _followups_to_dicts
+
+    dicts = _followups_to_dicts(
+        [FollowupSubtopic(topic="t", followup_query="q", confidence=0.5)]
+    )
+    assert dicts[0]["followup_query"] == "q"
+
+
+def test_followups_tolerate_plain_dicts_and_junk():
+    from src.chat.setups import _followups_to_dicts
+
+    assert _followups_to_dicts([{"topic": "t"}, None, "junk"]) == [{"topic": "t"}]
+    assert _followups_to_dicts([]) == []

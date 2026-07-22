@@ -64,6 +64,8 @@ interface Props {
   videos: Video[];
   sort: SortKey;
   onSortChange: (sort: SortKey) => void;
+  /** Open every channel — used when an insight has narrowed the tree. */
+  expandChannels?: boolean;
   selectedVideo: string | null;
   selectedChunk: number | null;
   chunks: Record<string, Chunk[]>;
@@ -77,6 +79,7 @@ export function CorpusTree({
   videos,
   sort,
   onSortChange,
+  expandChannels = false,
   selectedVideo,
   selectedChunk,
   chunks,
@@ -114,7 +117,7 @@ export function CorpusTree({
         </summary>
         <div className="lvl">
           {channels.map((channel) => (
-            <details key={channel.name}>
+            <details key={channel.name} open={expandChannels}>
               <summary>
                 <span className="label">{channel.name}</span>
                 <span className="cnt">
@@ -134,6 +137,9 @@ export function CorpusTree({
                       }}
                     >
                       <summary className={video.video_id === selectedVideo ? 'on' : ''}>
+                        {video.thumbnail_url ? (
+                          <img className="thumb" src={video.thumbnail_url} alt="" loading="lazy" />
+                        ) : null}
                         <span className="label">{video.title || video.video_id}</span>
                         <span className="cnt">{video.chunk_count}</span>
                       </summary>

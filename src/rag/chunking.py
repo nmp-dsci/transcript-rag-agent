@@ -78,7 +78,35 @@ def _chunk(
         start_segment_index=start_index,
         end_segment_index=end_index,
         segment_count=len(segments),
+        channel_id=raw_document.channel_id,
+        channel_name=raw_document.channel_name,
+        title=raw_document.title,
+        upload_date=raw_document.upload_date,
+        context_header=build_context_header(
+            channel_name=raw_document.channel_name,
+            title=raw_document.title,
+            start_seconds=first.start_seconds,
+            end_seconds=last.end_seconds,
+        ),
     )
+
+
+def build_context_header(
+    channel_name: str | None,
+    title: str | None,
+    start_seconds: float | None,
+    end_seconds: float | None,
+) -> str | None:
+    """A one-line preamble naming the source of a chunk, for embedding.
+
+    Returns ``None`` when nothing identifying is known, so chunks without video
+    metadata embed exactly as they did before contextual headers existed.
+    """
+    parts = [part for part in (channel_name, title) if part]
+    if not parts:
+        return None
+    window = f"{format_timestamp(start_seconds)}-{format_timestamp(end_seconds)}"
+    return f"[{' — '.join(parts)} @ {window}]"
 
 
 def format_timestamp(seconds: float | None) -> str:

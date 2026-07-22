@@ -1,8 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api } from '../api/client';
-import type { AgentStep, Answer, Corpus, Entry, SetupSpec } from '../api/types';
-import { Composer } from './Composer';
+import type {
+  AgentStep,
+  Answer,
+  AskRequest,
+  Corpus,
+  Entry,
+  RetrievalMode,
+  SetupSpec,
+} from '../api/types';
+import {
+  type ChatScope,
+  Composer,
+  WHOLE_CORPUS,
+  readAskPrefs,
+  scopePayload,
+} from './Composer';
 import { HistoryRail } from './HistoryRail';
 import { MessageBubble, type RunningSetup } from './MessageBubble';
 
@@ -24,6 +38,8 @@ interface Props {
   onActivity: () => void;
   pendingScope: string | null;
   onScopeConsumed: () => void;
+  /** Optional channel hint for pendingScope; otherwise read off the corpus. */
+  pendingChannel?: string | null;
 }
 
 function suggestionsFor(corpus: Corpus | null): string[] {
@@ -49,6 +65,7 @@ export function ChatView({
   onActivity,
   pendingScope,
   onScopeConsumed,
+  pendingChannel = null,
 }: Props) {
   const [thread, setThread] = useState<Entry[]>([]);
   const [live, setLive] = useState<LiveRun | null>(null);
@@ -57,7 +74,7 @@ export function ChatView({
   const [traces, setTraces] = useState<Record<string, Record<string, AgentStep[]>>>({});
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [scope, setScope] = useState('');
+  const [scope, setScope] = useState<ChatScope>(WHOLE_CORPUS);
   const [defaultSetup, setDefaultSetup] = useState(DEFAULT_SETUP);
   const [status, setStatus] = useState('');
   const abort = useRef<AbortController | null>(null);
@@ -67,11 +84,21 @@ export function ChatView({
   const selectedId = thread.length ? (thread[thread.length - 1]?.id ?? null) : null;
 
   useEffect(() => {
-    if (pendingScope) {
-      setScope(pendingScope);
-      onScopeConsumed();
+    if (!pendingScope) return;
+    const video = (corpus?.videos ?? []).find((item) => item.source_url === pendingScope);
+    setScope({ channelId: video?.channel_id ?? pendingChannel, videoUrl: pendingScope });
+    onScopeConsumed();
+  }, [pendingScope, pendingChannel, corpus, onScopeConsumed]);
+
+  // A scope can arrive before the corpus loads, leaving the owning channel
+  // unknown; fill it in as soon as the corpus can answer for it.
+  useEffect(() => {
+    if (!scope.videoUrl || scope.channelId) return;
+    const video = (corpus?.videos ?? []).find((item) => item.source_url === scope.videoUrl);
+    if (video?.channel_id) {
+      setScope((current) => ({ ...current, channelId: video.channel_id }));
     }
-  }, [pendingScope, onScopeConsumed]);
+  }, [corpus, scope]);
 
   useEffect(() => {
     if (setups.length && !setups.some((setup) => setup.key === defaultSetup)) {
@@ -124,9 +151,15 @@ export function ChatView({
     async (options: {
       question: string;
       setups: string[];
+      /** Exactly one of url / channelId may be set; url wins if both are. */
       url: string | null;
+      channelId: string | null;
       topK: number | null;
       autoJudge: boolean;
+      retrievalMode: RetrievalMode;
+      filterTranscripts: boolean;
+      /** Prior turns, so a follow-up can be rewritten to stand alone. */
+      history?: string[];
       entryId?: string;
     }) => {
       const titleOf = (key: string) =>
@@ -150,15 +183,23 @@ export function ChatView({
       let finished: Entry | null = null;
       const collected: Record<string, AgentStep[]> = {};
 
+      // The server ignores channel_id whenever url pins a video, so send the
+      // narrower of the two rather than both.
+      const request: AskRequest = {
+        question: options.question,
+        setups: options.setups,
+        url: options.url,
+        top_k: options.topK,
+        channel_id: options.url ? null : options.channelId,
+        retrieval_mode: options.retrievalMode,
+        filter_transcripts: options.filterTranscripts,
+        ...(options.history?.length ? { history: options.history } : {}),
+        ...(options.entryId ? { entry_id: options.entryId } : {}),
+      };
+
       try {
         await api.ask(
-          {
-            question: options.question,
-            setups: options.setups,
-            url: options.url,
-            top_k: options.topK,
-            ...(options.entryId ? { entry_id: options.entryId } : {}),
-          } as never,
+          request,
           {
             progress: (data) => setStatus(data.message),
             agent_step: (step: AgentStep) => {
@@ -235,19 +276,52 @@ export function ChatView({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Re-run the setups that have not answered yet, under the original scope. */
   const compare = (entry: Entry) => {
     if (busy) return;
     const missing = setups
       .map((setup) => setup.key)
       .filter((key) => !entry.answers.some((answer) => answer.key === key));
     if (!missing.length) return;
+    const prefs = readAskPrefs();
+    const prior = entry.answers.find((answer) => answer.channel_id || answer.retrieval_mode);
     void run({
       question: entry.question,
       setups: missing,
       url: entry.url,
+      channelId: entry.url ? null : (prior?.channel_id ?? null),
       topK: null,
       autoJudge: true,
+      // Compare like with like: reuse the retrieval strategy of the answers
+      // already in this entry rather than whatever the composer now shows.
+      retrievalMode: prior?.retrieval_mode === 'hybrid' ? 'hybrid' : 'semantic',
+      filterTranscripts: prefs.filterTranscripts,
       entryId: entry.id,
+    });
+  };
+
+  /**
+   * Ask a proposed follow-up as a new question, inheriting the scope, strategy
+   * and conversation history of the answer that proposed it — a follow-up asked
+   * against a different corpus slice would not be a follow-up.
+   */
+  const askFollowup = (query: string) => {
+    if (busy) return;
+    const source = thread[thread.length - 1];
+    const prior = source?.answers.find(
+      (answer) => answer.channel_id || answer.retrieval_mode,
+    );
+    const prefs = readAskPrefs();
+    void run({
+      question: query,
+      setups: [defaultSetup],
+      url: source?.url ?? null,
+      channelId: source?.url ? null : (prior?.channel_id ?? null),
+      topK: null,
+      autoJudge: prefs.autoJudge,
+      retrievalMode: prior?.retrieval_mode === 'hybrid' ? 'hybrid' : 'semantic',
+      filterTranscripts: prefs.filterTranscripts,
+      history: source ? [source.question, ...source.answers.map((a) => a.answer)] : [],
     });
   };
 
@@ -274,8 +348,8 @@ export function ChatView({
                 <h2>Ask the transcripts anything</h2>
                 <p>
                   {corpus?.totals.videos
-                    ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks indexed. Answers are cited back to the source timestamp and scored with RAGAS.`
-                    : 'No transcripts indexed yet — add one from the Library tab first.'}
+                    ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks · ${corpus.totals.channels} channels indexed. Narrow the scope below, or ask across everything. Answers are cited back to the source timestamp and scored with RAGAS.`
+                    : 'No transcripts indexed yet — add one from the RAG Pipeline tab first.'}
                 </p>
                 <div className="suggest">
                   {suggestions.map((suggestion) => (
@@ -286,9 +360,9 @@ export function ChatView({
                         void run({
                           question: suggestion,
                           setups: [defaultSetup],
-                          url: scope || null,
+                          ...scopePayload(scope),
                           topK: null,
-                          autoJudge: localStorage.getItem('tlab.autojudge') !== '0',
+                          ...readAskPrefs(),
                         })
                       }
                     >
@@ -303,8 +377,10 @@ export function ChatView({
               <div key={entry.id} style={{ display: 'contents' }}>
                 <div className="msg-user">{entry.question}</div>
                 <MessageBubble
+                  question={entry.question}
                   answers={entry.answers}
                   running={[]}
+                  onAskFollowup={askFollowup}
                   judging={judgingId === entry.id}
                   busy={busy}
                   onJudge={() => void judge(entry.id)}
@@ -323,6 +399,7 @@ export function ChatView({
               <>
                 {live.entryId ? null : <div className="msg-user">{live.question}</div>}
                 <MessageBubble
+                  question={live.question}
                   answers={live.answers}
                   running={live.running}
                   judging={false}
@@ -344,15 +421,7 @@ export function ChatView({
           onScopeChange={setScope}
           defaultSetup={defaultSetup}
           onDefaultSetupChange={setDefaultSetup}
-          onAsk={(options) =>
-            void run({
-              question: options.question,
-              setups: options.setups,
-              url: options.url,
-              topK: options.topK,
-              autoJudge: options.autoJudge,
-            })
-          }
+          onAsk={(options) => void run(options)}
           onCancel={() => abort.current?.abort()}
         />
         <div className="sr-only" role="status" aria-live="polite">

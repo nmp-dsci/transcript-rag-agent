@@ -2,21 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Video } from '../api/types';
 import { groupByChannel } from './CorpusTree';
-
-function video(partial: Partial<Video> & { video_id: string }): Video {
-  return {
-    title: partial.video_id,
-    channel_name: null,
-    source_url: `https://youtu.be/${partial.video_id}`,
-    duration_seconds: null,
-    upload_date: null,
-    view_count: null,
-    summary: null,
-    fetched_at: null,
-    chunk_count: 0,
-    ...partial,
-  };
-}
+import { video } from './fixtures';
 
 const VIDEOS: Video[] = [
   video({ video_id: 'a', channel_name: 'Alpha', view_count: 100, chunk_count: 10, upload_date: '2026-01-01' }),

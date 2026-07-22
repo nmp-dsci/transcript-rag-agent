@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
+from src.api import main as api_main
 from src.api.main import create_app
 from src.chat.setups import SETUP_KEYS, SetupResult, setup_spec
 from src.config import Settings
@@ -39,7 +41,7 @@ class FakeProvider:
         self.chunk_store = chunk_store
 
     def get_context(
-        self, *, question: str, source_url: str | None, top_k: int
+        self, *, question: str, source_url: str | None, top_k: int, **kwargs
     ) -> SimpleNamespace:
         return SimpleNamespace(
             retrieved_chunks=self.chunk_store.query_all(question, top_k)
@@ -53,6 +55,7 @@ class FakeRunner:
         self.calls: list[tuple[str, str, str | None]] = []
         self.agent_steps = agent_steps or []
         self.provider = FakeProvider(FakeChunkStore({}))
+        self.scopes: list = []
 
     def run(
         self,
@@ -62,10 +65,12 @@ class FakeRunner:
         url: str | None = None,
         top_k: int | None = None,
         on_agent_event=None,
+        scope=None,
     ) -> SetupResult:
         self.calls.append((key, question, url))
         self.top_ks: list[int | None] = getattr(self, "top_ks", [])
         self.top_ks.append(top_k)
+        self.scopes.append(scope)
         if key == "rag_agent" and on_agent_event is not None:
             for event in self.agent_steps:
                 on_agent_event(event)
@@ -96,9 +101,17 @@ class FakeJudge:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, list[str]]] = []
+        self.answer_models: list[str | None] = []
 
-    def score(self, question: str, answer: str, contexts: list[str]) -> dict:
+    def score(
+        self,
+        question: str,
+        answer: str,
+        contexts: list[str],
+        answer_model: str | None = None,
+    ) -> dict:
         self.calls.append((question, answer, list(contexts)))
+        self.answer_models.append(answer_model)
         value = 0.9 if "rag_agent" in answer else 0.5
         return {
             "judge": "ragas",
@@ -373,6 +386,143 @@ def test_index_requires_target(harness: Harness) -> None:
     assert (
         harness.client.post("/api/index", json={"mode": "channel"}).status_code == 422
     )
+
+
+def test_index_stream_reports_discover_fetch_processing_then_done(
+    harness: Harness,
+) -> None:
+    response = harness.client.post(
+        "/api/index/stream", json={"mode": "video", "url": "https://youtu.be/abc123"}
+    )
+    assert response.status_code == 200
+    events = sse_events(response.text)
+    stages = [data["stage"] for event, data in events if event == "stage"]
+    assert stages == ["discover", "fetch", "processing"]
+    assert events[-1][0] == "done"
+    done = events[-1][1]
+    assert done["ok"] is True
+    assert done["target"] == "https://youtu.be/abc123"
+    assert "added_videos" in done
+    assert "added_video_count" in done
+    assert "added_chunk_count" in done
+    assert "totals" in done
+    assert "insights" in done
+    assert "channels" in done
+
+
+def test_index_stream_reports_added_videos_and_totals(
+    settings: Settings, tmp_path: Path
+) -> None:
+    before_corpus = {"videos": [], "totals": {"videos": 0, "chunks": 0}}
+    after_corpus = {
+        "videos": [{"video_id": "abc123"}],
+        "totals": {"videos": 1, "chunks": 5},
+        "insights": ["insight"],
+        "channels": ["chan"],
+    }
+    calls = {"n": 0}
+
+    def corpus_fn() -> dict:
+        calls["n"] += 1
+        return before_corpus if calls["n"] == 1 else after_corpus
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        corpus_fn=corpus_fn,
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/index/stream", json={"mode": "video", "url": "https://youtu.be/abc123"}
+    )
+    events = sse_events(response.text)
+    done = events[-1]
+    assert done[0] == "done"
+    assert done[1]["added_video_count"] == 1
+    assert done[1]["added_chunk_count"] == 5
+    assert done[1]["insights"] == ["insight"]
+    assert done[1]["channels"] == ["chan"]
+
+
+def test_index_stream_emits_heartbeats_while_indexing_is_slow(
+    settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(api_main, "_INDEX_HEARTBEAT_INTERVAL_SECONDS", 0.05)
+    release = threading.Event()
+
+    def slow_index_fn(argv: list[str]) -> int:
+        release.wait(timeout=2)
+        return 0
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=slow_index_fn,
+    )
+    client = TestClient(app)
+    timer = threading.Timer(0.2, release.set)
+    timer.start()
+    try:
+        response = client.post(
+            "/api/index/stream",
+            json={"mode": "video", "url": "https://youtu.be/abc123"},
+        )
+    finally:
+        timer.cancel()
+    events = sse_events(response.text)
+    stage_events = [data for event, data in events if event == "stage"]
+    heartbeats = [
+        data for data in stage_events if data["message"] == "Still indexing..."
+    ]
+    assert len(heartbeats) >= 1
+    assert all(data["stage"] == "processing" for data in heartbeats)
+    assert events[-1][0] == "done"
+
+
+def test_index_stream_reports_nonzero_exit_code_as_error(
+    settings: Settings, tmp_path: Path
+) -> None:
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 1,
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/index/stream", json={"mode": "video", "url": "https://youtu.be/abc123"}
+    )
+    events = sse_events(response.text)
+    assert events[-1][0] == "error"
+    assert "exit 1" in events[-1][1]["message"]
+
+
+def test_index_stream_reports_exception_from_index_fn_as_error(
+    settings: Settings, tmp_path: Path
+) -> None:
+    def boom(argv: list[str]) -> int:
+        raise RuntimeError("index blew up")
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=boom,
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/index/stream", json={"mode": "video", "url": "https://youtu.be/abc123"}
+    )
+    events = sse_events(response.text)
+    assert events[-1][0] == "error"
+    assert "index blew up" in events[-1][1]["message"]
 
 
 def test_ask_persists_contexts(harness: Harness) -> None:
@@ -720,6 +870,74 @@ def test_rank_rejects_blank_query(harness: Harness) -> None:
     assert harness.client.post("/api/rank", json={"query": "  "}).status_code == 422
 
 
+def test_chunk_graph_404_when_no_records(harness: Harness) -> None:
+    response = harness.client.post("/api/chunk-graph", json={})
+    assert response.status_code == 404
+    assert "Index a video first" in response.json()["detail"]
+
+
+def test_chunk_graph_returns_graph_for_records(settings: Settings, tmp_path: Path) -> None:
+    records = [
+        {
+            "chunk_id": "chunk:abc123:0",
+            "video_id": "abc123",
+            "chunk_index": 0,
+            "channel_id": "UC1",
+            "channel_name": "Channel One",
+            "title": "Title",
+            "text": "some text",
+            "start_seconds": 0.0,
+            "end_seconds": 30.0,
+            "source_url": "https://youtu.be/abc123",
+            "embedding": [1.0, 0.0],
+        },
+        {
+            "chunk_id": "chunk:abc123:1",
+            "video_id": "abc123",
+            "chunk_index": 1,
+            "channel_id": "UC1",
+            "channel_name": "Channel One",
+            "title": "Title",
+            "text": "more text",
+            "start_seconds": 30.0,
+            "end_seconds": 60.0,
+            "source_url": "https://youtu.be/abc123",
+            "embedding": [0.0, 1.0],
+        },
+    ]
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        graph_records_fn=lambda: records,
+    )
+    response = TestClient(app).post("/api/chunk-graph", json={})
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["nodes"]) == 2
+
+
+def test_chunk_graph_500_on_backend_read_failure(
+    settings: Settings, tmp_path: Path
+) -> None:
+    def broken_records_fn() -> list[dict]:
+        raise RuntimeError("chroma store corrupted")
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        graph_records_fn=broken_records_fn,
+    )
+    response = TestClient(app).post("/api/chunk-graph", json={})
+    assert response.status_code == 500
+    assert "chroma store corrupted" in response.json()["detail"]
+
+
 def test_ui_and_assets_served(harness: Harness) -> None:
     page = harness.client.get("/")
     assert page.status_code == 200
@@ -760,3 +978,51 @@ def test_built_bundle_is_served_when_present(
     assert client.get("/assets/index-abc.js").status_code == 200
     # The legacy shared renderer keeps its route despite the /assets mount.
     assert "function renderAnswer" in client.get("/assets/render.js").text
+
+
+def test_ask_scopes_retrieval_to_a_channel(harness: Harness) -> None:
+    harness.ask(setups=["rag_llm"], channel_id="UC_finance")
+    assert harness.runner.scopes[-1].channel_id == "UC_finance"
+
+
+def test_ask_prefers_video_scope_over_channel(harness: Harness) -> None:
+    """A pinned video is narrower, so sending both must not widen the scope."""
+    harness.ask(
+        setups=["rag_llm"],
+        url="https://youtu.be/abc123",
+        channel_id="UC_finance",
+    )
+    assert harness.runner.scopes[-1].channel_id is None
+
+
+def test_ask_passes_retrieval_mode_and_filter(harness: Harness) -> None:
+    harness.ask(
+        setups=["rag_llm"], retrieval_mode="hybrid", filter_transcripts=True
+    )
+    scope = harness.runner.scopes[-1]
+    assert scope.retrieval_mode == "hybrid"
+    assert scope.filter_transcripts is True
+
+
+def test_ask_rejects_unknown_retrieval_mode(harness: Harness) -> None:
+    response = harness.client.post(
+        "/api/ask", json={"question": "q", "retrieval_mode": "magic"}
+    )
+    assert response.status_code == 422
+
+
+def test_judge_receives_the_model_that_wrote_each_answer(harness: Harness) -> None:
+    """self_graded must reflect the actual pairing, not the current config."""
+    entry_id = harness.ask(setups=["rag_llm"])
+    harness.client.post("/api/judge", json={"entry_id": entry_id})
+    assert harness.judge.answer_models == ["deepseek-v4"]
+
+
+def test_ask_persists_retrieved_chunk_ids(harness: Harness) -> None:
+    """References cover only cited chunks, so recall needs the full list."""
+    entry_id = harness.ask(setups=["rag_llm"])
+    entry = next(
+        e for e in harness.client.get("/api/history").json()["conversations"]
+        if e["id"] == entry_id
+    )
+    assert "retrieved_chunk_ids" in entry["answers"][0]

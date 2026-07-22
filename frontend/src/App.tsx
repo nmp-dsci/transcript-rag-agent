@@ -3,20 +3,25 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
-import { LibraryView } from './library/LibraryView';
+import { Logo } from './Logo';
+import { PipelineView } from './pipeline/PipelineView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
 
-export type Tab = 'chat' | 'library' | 'board';
+export type Tab = 'chat' | 'pipeline' | 'board';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
-  { id: 'library', label: 'Library' },
+  { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
 ];
 
+/** Old #library links stay valid; #pipeline is canonical. */
+const HASH_ALIASES: Record<string, Tab> = { library: 'pipeline' };
+
 function tabFromHash(): Tab {
   const hash = window.location.hash.replace('#', '');
+  if (HASH_ALIASES[hash]) return HASH_ALIASES[hash];
   return TABS.some((tab) => tab.id === hash) ? (hash as Tab) : 'chat';
 }
 
@@ -27,7 +32,7 @@ export function App() {
   const [corpus, setCorpus] = useState<Corpus | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [offline, setOffline] = useState(false);
-  /** Set by "Ask about this" in the Library so Chat opens pre-scoped. */
+  /** Set by "Ask about this" in the pipeline view so Chat opens pre-scoped. */
   const [pendingScope, setPendingScope] = useState<string | null>(null);
   // index.html applies the theme before first paint; this mirrors it so the
   // toggle can render the right label.
@@ -46,7 +51,12 @@ export function App() {
     try {
       setCorpus(await api.corpus());
     } catch {
-      setCorpus({ videos: [], totals: { videos: 0, chunks: 0 } });
+      setCorpus({
+        videos: [],
+        channels: [],
+        totals: { videos: 0, chunks: 0, channels: 0 },
+        insights: [],
+      });
     }
   }, []);
 
@@ -94,7 +104,10 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <span className="brand">
-          transcript<em>·lab</em>
+          <Logo />
+          <span>
+            transcript<em>·lab</em>
+          </span>
         </span>
         <nav className="nav" aria-label="Views">
           {TABS.map(({ id, label }) => (
@@ -144,8 +157,13 @@ export function App() {
             onScopeConsumed={() => setPendingScope(null)}
           />
         )}
-        {tab === 'library' && (
-          <LibraryView corpus={corpus} onCorpusChange={refreshCorpus} onAskAbout={askAbout} />
+        {tab === 'pipeline' && (
+          <PipelineView
+            corpus={corpus}
+            onCorpusChange={refreshCorpus}
+            onAskAbout={askAbout}
+            embeddingModel={health?.embedding_model ?? null}
+          />
         )}
         {tab === 'board' && <ScoreboardView />}
       </main>

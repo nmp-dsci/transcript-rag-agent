@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s02 — Chat-first React/TypeScript Redesign — transcript·lab</title>
+<style>
+/* ── Instrument design system (ported from src/api/static/index.html) ── */
+:root{
+  color-scheme:dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --bad:#f85149; --bad-dim:#3d1d1f;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+:where(.lv-grid,.lv-flex,[style*="display:grid"],[style*="display: grid"],[style*="display:flex"],[style*="display: flex"])>*{min-width:0}
+:where(p,h1,h2,h3,h4,li,dd,td,th,figcaption,.lv-badge){overflow-wrap:anywhere}
+:where(img,svg,video,canvas,iframe){max-width:100%;height:auto}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+font:14px/1.6 'Segoe UI',Helvetica,Arial,sans-serif}
+a{color:var(--accent2)}
+code,.lv-mono{font-family:var(--mono);font-size:.92em}
+code{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:0 4px;color:var(--text2)}
+pre{background:var(--panel3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;
+overflow-x:auto;font:12px/1.55 var(--mono);color:var(--text2)}
+pre code{background:none;border:none;padding:0}
+
+.lv-wrap{max-width:1080px;margin:0 auto;padding:36px 20px 90px}
+.lv-micro{font:600 10.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.lv-kicker{font:600 11px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--accent2)}
+
+/* masthead */
+.lv-mast{border-bottom:1px solid var(--border);padding-bottom:26px;margin-bottom:30px}
+.lv-mast h1{margin:8px 0 10px;font-size:29px;line-height:1.25;letter-spacing:-.01em}
+.lv-mast h1 em{color:var(--accent2);font-style:normal}
+.lv-sub{color:var(--muted);max-width:760px;margin:0}
+.lv-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.lv-badge{display:inline-block;background:var(--panel2);border:1px solid var(--border2);color:var(--text2);
+border-radius:5px;padding:2px 9px;font:11px var(--mono);white-space:nowrap}
+.lv-badge.acc{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent2)}
+.lv-badge.good{background:var(--good-dim);border-color:var(--good-border);color:var(--good)}
+.lv-badge.warn{background:var(--warn-dim);border-color:#5c451a;color:var(--warn)}
+.lv-badge.bad{background:var(--bad-dim);border-color:#6b2a2c;color:var(--bad)}
+
+/* sections */
+section{margin:44px 0}
+.lv-shead{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--border);
+padding-bottom:8px;margin-bottom:18px}
+.lv-shead .n{font:700 13px var(--mono);color:var(--accent2)}
+.lv-shead h2{margin:0;font-size:19px}
+.lv-shead .aside{margin-left:auto;font:11px var(--mono);color:var(--dim);white-space:nowrap}
+h3{font-size:15px;margin:26px 0 10px}
+p.lede{color:var(--text2);max-width:820px}
+
+/* verdict cards */
+.lv-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.lv-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.lv-card .lv-micro{margin-bottom:6px}
+.lv-card b{color:var(--text)}
+.lv-card p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+
+/* tables */
+.lv-tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{font:600 10px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+text-align:left;padding:9px 12px;border-bottom:1px solid var(--border2);background:var(--panel3);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+tr:last-child td{border-bottom:none}
+td .file{font:11px var(--mono);color:var(--accent2);white-space:nowrap}
+td.stat-bad{color:var(--bad)}
+td.stat-good{color:var(--good)}
+
+/* callout */
+.lv-note{background:var(--accent-dim);border:1px solid var(--accent-border);border-left-width:3px;
+border-radius:8px;padding:11px 15px;font-size:13px;color:var(--text2);margin:16px 0}
+.lv-note.warn{background:var(--warn-dim);border-color:#5c451a}
+.lv-note b{color:var(--text)}
+
+/* mock frames */
+.lv-mockwrap{overflow-x:auto;margin:14px 0 8px}
+.lv-mock{min-width:860px;background:var(--bg);border:1px solid var(--border2);border-radius:12px;
+overflow:hidden;font-size:11.5px;line-height:1.45;box-shadow:0 10px 34px rgba(0,0,0,.45)}
+.m-top{display:flex;align-items:center;gap:16px;padding:0 14px;height:40px;
+background:var(--panel);border-bottom:1px solid var(--border)}
+.m-brand{font-weight:700;font-size:12.5px;white-space:nowrap}
+.m-brand em{color:var(--accent2);font-style:normal}
+.m-nav{display:flex;gap:2px}
+.m-nav span{color:var(--muted);padding:4px 11px;border-radius:6px;cursor:default}
+.m-nav span.on{background:var(--accent-dim);color:var(--accent2)}
+.m-health{margin-left:auto;display:flex;align-items:center;gap:7px;font:10px var(--mono);color:var(--muted);white-space:nowrap}
+.m-dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.m-body{display:flex;min-height:0}
+
+/* numbered callouts */
+.m-call{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;
+border-radius:50%;background:var(--warn);color:#1a1408;font:700 10px var(--mono);vertical-align:middle;
+margin:0 2px;cursor:default}
+.lv-legend{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:7px;font-size:12.5px;color:var(--text2)}
+.lv-legend li{display:flex;gap:9px;align-items:flex-start}
+.lv-legend li>span{min-width:0;overflow-wrap:anywhere}
+.lv-legend code{overflow-wrap:anywhere;word-break:break-word}
+.lv-legend .m-call{margin-top:2px}
+.lv-legend b{color:var(--text)}
+
+/* chat mock */
+.c-rail{width:190px;flex:0 0 auto;background:var(--panel3);border-right:1px solid var(--border);padding:8px}
+.c-rail input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+color:var(--dim);padding:4px 8px;font-size:10.5px}
+.c-rentry{padding:7px 8px;border-radius:6px;margin-top:6px;color:var(--text2)}
+.c-rentry.on{background:var(--panel2)}
+.c-rentry .q{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:10.5px}
+.c-rentry .m{display:flex;gap:6px;margin-top:3px;font:9px var(--mono);color:var(--dim)}
+.c-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.c-thread{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.c-user{align-self:flex-end;max-width:66%;background:var(--accent-dim);border:1px solid var(--accent-border);
+border-radius:12px 12px 3px 12px;padding:8px 12px;color:var(--text)}
+.c-bot{align-self:flex-start;max-width:82%;background:var(--panel);border:1px solid var(--border);
+border-radius:12px 12px 12px 3px;padding:10px 13px;color:var(--text2)}
+.c-bothead{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:6px;font:10px var(--mono);color:var(--muted)}
+.c-setupchip{background:var(--panel2);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;color:var(--text2)}
+.c-tab{background:var(--panel3);border:1px solid var(--border2);border-radius:5px;padding:2px 8px;
+font:10px var(--mono);color:var(--muted);white-space:nowrap;cursor:default}
+.c-tab.on{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent2)}
+.c-tab.best{border-color:var(--good-border);color:var(--good)}
+.c-score{background:var(--good-dim);border:1px solid var(--good-border);border-radius:4px;padding:1px 6px;color:var(--good)}
+.c-cite{display:inline-block;font-size:8.5px;line-height:1;vertical-align:super;background:var(--accent-dim);
+color:var(--accent2);border:1px solid var(--accent-border);border-radius:3px;padding:1px 3px;margin:0 1px}
+.c-actions{display:flex;gap:12px;margin-top:8px;font-size:10.5px;color:var(--accent2)}
+.c-cmp{margin-top:9px;border-top:1px solid var(--border);padding-top:9px}
+.c-cmpcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:7px}
+.c-cmpcol{background:var(--panel3);border:1px solid var(--border);border-radius:7px;padding:7px 9px}
+.c-cmpcol.top{border-color:var(--accent-border);box-shadow:0 0 0 1px var(--accent-border)}
+.c-cmpcol .t{display:flex;align-items:center;gap:5px;font:600 10px var(--mono);color:var(--text2);white-space:nowrap}
+.c-cmpcol .sw{width:6px;height:6px;border-radius:2px;flex:0 0 auto}
+.c-cmpcol .comp{font:700 13px var(--mono);color:var(--accent2);margin:4px 0 2px}
+.c-cmpcol .sub{font:9.5px var(--mono);color:var(--dim)}
+.c-suggest{display:flex;flex-wrap:wrap;gap:6px}
+.c-suggest span{background:var(--bg);border:1px solid var(--border2);border-radius:14px;
+padding:3px 11px;font-size:10.5px;color:var(--muted)}
+.c-composer{flex:0 0 auto;border-top:1px solid var(--border);background:var(--panel);padding:10px 14px}
+.c-input{background:var(--bg);border:1px solid var(--accent-border);border-radius:10px;padding:9px 12px;
+color:var(--dim);font-size:12px}
+.c-crow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+.c-chip{background:var(--bg);border:1px solid var(--border2);border-radius:13px;padding:2px 10px;
+font-size:10.5px;color:var(--muted)}
+.c-send{margin-left:auto;background:var(--accent);color:#0b1220;font-weight:700;border-radius:6px;
+padding:4px 16px;font-size:11.5px}
+
+/* library mock */
+.l-lab{border-bottom:1px solid var(--border);background:var(--panel3);padding:10px 14px}
+.l-labrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.l-labinput{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border2);border-radius:7px;
+padding:5px 10px;color:var(--text2);font-size:11px}
+.l-modes{display:flex;border:1px solid var(--border2);border-radius:7px;overflow:hidden}
+.l-modes span{padding:4px 11px;color:var(--muted);font:10.5px var(--mono);cursor:default}
+.l-modes span.on{background:var(--accent-dim);color:var(--accent2)}
+.l-ranks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.l-rankcol{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.l-rankcol .h{display:flex;align-items:center;gap:7px;padding:6px 10px;border-bottom:1px solid var(--border);
+font:600 10px var(--mono);color:var(--text2)}
+.l-rankcol .h .lv-badge{font-size:9px;padding:0 6px}
+.l-rrow{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--border);font:10.5px var(--mono)}
+.l-rrow:last-child{border-bottom:none}
+.l-rrow .rk{width:14px;color:var(--dim);flex:0 0 auto}
+.l-rrow .cid{color:var(--accent2);flex:0 0 auto}
+.l-rrow .tx{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;font-family:'Segoe UI',Helvetica,sans-serif}
+.l-rrow .sc{color:var(--text2);flex:0 0 auto}
+.l-mv{flex:0 0 auto;font-size:9.5px;border-radius:3px;padding:0 4px}
+.l-mv.up{color:var(--good);background:var(--good-dim)}
+.l-mv.dn{color:var(--bad);background:var(--bad-dim)}
+.l-mv.new{color:var(--warn);background:var(--warn-dim)}
+.l-body{display:flex;min-height:0}
+.l-tree{width:300px;flex:0 0 auto;border-right:1px solid var(--border);background:var(--panel3);
+padding:10px 8px;font-size:11px}
+.l-tree details{margin:1px 0}
+.l-tree summary{cursor:pointer;padding:3px 8px;border-radius:6px;color:var(--text2);list-style:none;
+display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+.l-tree summary::before{content:'▸';color:var(--dim);font-size:9px;flex:0 0 auto;transition:transform .12s}
+.l-tree details[open]>summary::before{transform:rotate(90deg)}
+.l-tree summary:hover{background:var(--panel2)}
+.l-tree .cnt{margin-left:auto;font:9.5px var(--mono);color:var(--dim);flex:0 0 auto}
+.l-tree .lvl{margin-left:14px;border-left:1px solid var(--border);padding-left:4px}
+.l-chunkrow{display:flex;gap:7px;align-items:baseline;padding:2px 8px 2px 20px;font:10px var(--mono);
+color:var(--muted);border-radius:5px;white-space:nowrap;overflow:hidden}
+.l-chunkrow.sel{background:var(--accent-dim);color:var(--accent2)}
+.l-chunkrow:hover{background:var(--panel2)}
+.l-detail{flex:1;min-width:0;padding:12px 16px}
+.l-vhead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;border-bottom:1px solid var(--border);padding-bottom:8px}
+.l-vhead .t{font-size:13px;font-weight:600;color:var(--text)}
+.l-vhead .m{font:10px var(--mono);color:var(--dim)}
+.l-chunkcard{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin-top:9px}
+.l-chunkcard.sel{border-color:var(--accent-border);box-shadow:0 0 0 1px var(--accent-border)}
+.l-chunkcard .h{display:flex;gap:10px;font:10px var(--mono);color:var(--dim);margin-bottom:4px}
+.l-chunkcard .h .id{color:var(--accent2)}
+.l-chunkcard p{margin:0;font-size:11px;color:var(--text2)}
+
+/* scoreboard mock */
+.s-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel3)}
+.s-sel{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:3px 9px;
+font-size:10.5px;color:var(--text2);white-space:nowrap}
+.s-tbl{width:100%;border-collapse:collapse;font-size:10.5px}
+.s-tbl th{font-size:9px;padding:7px 10px}
+.s-tbl td{padding:7px 10px;font-family:var(--mono);font-size:10px;white-space:nowrap}
+.s-tbl td.name{font-family:'Segoe UI',Helvetica,sans-serif;font-size:11px;color:var(--text)}
+.s-bar{display:inline-flex;align-items:center;gap:6px}
+.s-bar i{display:inline-block;width:44px;height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;position:relative}
+.s-bar i b{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px}
+.s-prov{padding:9px 14px;border-top:1px solid var(--border);background:var(--panel3);
+font:10px var(--mono);color:var(--dim);display:flex;flex-wrap:wrap;gap:6px 16px}
+.s-prov b{color:var(--muted);font-weight:600}
+
+/* phases */
+.lv-phases{display:grid;gap:12px}
+.lv-phase{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:start}
+.lv-phase .pn{font:700 17px var(--mono);color:var(--accent2)}
+.lv-phase .pn small{display:block;font:600 9px var(--mono);letter-spacing:.08em;color:var(--dim)}
+.lv-phase h4{margin:0 0 5px;font-size:14px}
+.lv-phase p{margin:0 0 6px;font-size:12.5px;color:var(--muted)}
+.lv-phase .files{font:10.5px var(--mono);color:var(--dim)}
+.lv-phase .files b{color:var(--accent2);font-weight:400}
+.lv-size{font:700 11px var(--mono);border-radius:5px;padding:2px 8px;white-space:nowrap}
+.lv-size.s{background:var(--good-dim);color:var(--good);border:1px solid var(--good-border)}
+.lv-size.m{background:var(--warn-dim);color:var(--warn);border:1px solid #5c451a}
+.lv-size.l{background:var(--bad-dim);color:var(--bad);border:1px solid #6b2a2c}
+
+/* risks */
+.lv-risks{display:grid;gap:10px}
+.lv-risk{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--warn);
+border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--text2)}
+.lv-risk b{color:var(--text)}
+.lv-risk .mit{display:block;margin-top:4px;color:var(--muted)}
+.lv-risk .mit em{color:var(--good);font-style:normal;font:600 10px var(--mono);letter-spacing:.05em;text-transform:uppercase}
+
+/* decision forms */
+.lv-dec{background:var(--panel);border:1px solid var(--accent-border);border-radius:10px;padding:16px 18px;margin:16px 0}
+.lv-dec .lv-kicker{display:block;margin-bottom:4px}
+.lv-dec h3{margin:0 0 4px;font-size:15px}
+.lv-dec>p{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+.lv-opt{display:flex;gap:11px;align-items:flex-start;background:var(--panel3);border:1px solid var(--border);
+border-radius:8px;padding:10px 13px;margin:8px 0;cursor:pointer}
+.lv-opt:hover{border-color:var(--border2)}
+.lv-opt input{margin-top:3px;accent-color:var(--accent);flex:0 0 auto}
+.lv-opt .ot{font-weight:600;color:var(--text);font-size:13px}
+.lv-opt .od{font-size:12px;color:var(--muted);margin-top:2px}
+.lv-opt .lv-badge{margin-left:6px}
+.lv-dec button[type=submit]{margin-top:10px;background:var(--accent);border:none;color:#0b1220;
+font-weight:700;border-radius:6px;padding:7px 18px;font-size:12.5px;cursor:pointer}
+.lv-dec button[type=submit]:hover{background:#4b93f8}
+.lv-dec .queued{margin-left:12px;font:11px var(--mono);color:var(--good);display:none}
+
+.lv-foot{margin-top:60px;border-top:1px solid var(--border);padding-top:16px;font-size:12px;color:var(--dim)}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin:14px 0;overflow-x:auto}
+@media (max-width:720px){ .lv-phase{grid-template-columns:40px minmax(0,1fr)} .lv-phase .lv-size{grid-column:2} }
+</style>
+</head>
+<body>
+<div class="lv-wrap">
+
+<!-- ══════════════════════ MASTHEAD ══════════════════════ -->
+<header class="lv-mast">
+  <span class="lv-kicker">s02 · frontend plan · follows s01 "Instrument" workbench</span>
+  <h1>transcript<em>·lab</em> goes React — a chat-first TypeScript frontend</h1>
+  <p class="lv-sub">Replace the 850-line vanilla-JS <code>src/api/static/index.html</code> with a
+  Vite + React 19 + TypeScript app: land in <b>Chat</b> and just ask, explore the corpus as an
+  interactive <b>Library</b> tree down to individual chunks with a BM25-vs-semantic ranking lab,
+  and give the <b>Scoreboard</b> real model-version and scoring provenance.</p>
+  <div class="lv-meta">
+    <span class="lv-badge acc">branch feat/frontend-redesign</span>
+    <span class="lv-badge">backend: FastAPI · unchanged contracts + 2 new endpoints</span>
+    <span class="lv-badge">design system: Instrument (kept)</span>
+    <span class="lv-badge good">all 5 decisions resolved — see 09</span>
+  </div>
+</header>
+
+<!-- ══════════════════════ VERDICT ══════════════════════ -->
+<section id="verdict">
+  <div class="lv-shead"><span class="n">00</span><h2>The verdict, up front</h2></div>
+  <div class="lv-cards lv-grid">
+    <div class="lv-card"><div class="lv-micro">stack</div>
+      <b>Not TypeScript, not React today.</b>
+      <p>The whole frontend is one vanilla-JS file with string-concat rendering and zero build
+      tooling. Migration is a real port, but the API layer is clean and stays as-is.</p></div>
+    <div class="lv-card"><div class="lv-micro">chat</div>
+      <b>Landing flips from eval-grid to conversation.</b>
+      <p>One primary answer per question, streamed into a thread. Comparison and judging stay
+      one click away instead of being the default cost of every question.</p></div>
+    <div class="lv-card"><div class="lv-micro">library</div>
+      <b>Tree to the chunk level + Retrieval Lab.</b>
+      <p>All videos → channel → video → chunks, fully interactive. BM25 does not exist in the
+      backend yet — the lab needs one new module and one new endpoint.</p></div>
+    <div class="lv-card"><div class="lv-micro">scoreboard</div>
+      <b>Model identity is currently invisible.</b>
+      <p><code>ChatAnswer</code> stores no answering-model name. Adding 3 fields at capture time
+      unlocks per-model segmentation, provenance, and honest historical comparisons.</p></div>
+  </div>
+</section>
+
+<!-- ══════════════════════ 01 CURRENT STATE ══════════════════════ -->
+<section id="current">
+  <div class="lv-shead"><span class="n">01</span><h2>Current state vs the four asks</h2>
+    <span class="aside">verified against the code on main</span></div>
+  <p class="lede">Every claim below was checked in the repo. The backend is in better shape than
+  the frontend: nine clean JSON/SSE endpoints already exist and the redesign keeps them all.</p>
+  <div class="lv-tblwrap">
+  <table>
+    <thead><tr><th>Ask</th><th>Current reality</th><th>Evidence</th><th>Gap</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>TypeScript + React</b></td>
+        <td class="stat-bad">Neither. One 850-line HTML file, inline CSS + vanilla JS,
+        <code>onclick=</code> handlers, HTML built by string concatenation. Answer-rendering JS is
+        a <em>Python string constant</em> served at <code>/assets/render.js</code>.</td>
+        <td><span class="file">src/api/static/index.html</span><br>
+            <span class="file">src/chat/frontend.py (ANSWER_RENDER_JS)</span></td>
+        <td>Full port to Vite + React 19 + TS strict</td>
+      </tr>
+      <tr>
+        <td><b>Chat-first landing</b></td>
+        <td>Landing tab is "Ask &amp; Compare": an evaluation grid. Every question fans out to all
+        three setups as side-by-side columns; the composer is a workbench control row
+        (scope, top_k, setup pills, auto-judge) — not a chat.</td>
+        <td><span class="file">index.html:256-286</span></td>
+        <td>Conversation thread, one primary answer, compare-on-demand</td>
+      </tr>
+      <tr>
+        <td><b>Library tree + chunks</b></td>
+        <td>Flat card grid, one card per video. <code>chunk_count</code> is displayed but no chunk
+        is viewable anywhere in the app, and no endpoint returns chunk texts for a video.</td>
+        <td><span class="file">index.html:708-740</span><br>
+            <span class="file">src/api/corpus.py</span></td>
+        <td>Tree UI + new <code>GET /api/corpus/{video_id}/chunks</code></td>
+      </tr>
+      <tr>
+        <td><b>BM25 vs semantic</b></td>
+        <td class="stat-bad">No BM25 / keyword ranking anywhere (<code>grep -r bm25 src/</code>
+        → 0 hits). All retrieval is Chroma vector search over
+        <code>transcript_chunks</code>.</td>
+        <td><span class="file">src/rag/context.py, src/rag/storage.py</span></td>
+        <td>New <code>src/rag/bm25.py</code> + <code>POST /api/rank</code></td>
+      </tr>
+      <tr>
+        <td><b>Scoreboard model versions</b></td>
+        <td class="stat-bad"><code>ChatAnswer</code> has <em>no model field</em> — answering LLM,
+        embedding model, and effective top_k are never captured. Only the judge model lands in
+        the evaluation dict. Aggregation is keyed by setup only, so two runs with different
+        DeepSeek versions merge silently.</td>
+        <td><span class="file">src/chat/history.py:29-47</span><br>
+            <span class="file">src/api/scoreboard.py:30-60</span></td>
+        <td>3–4 capture fields + grouped aggregation + provenance UI</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="lv-note"><b>What already works and is kept:</b> SSE streaming for ask/judge with
+  per-setup progress events, shared history in <code>dashboard/chat_history.json</code> (CLI chat +
+  web stay in sync), lazy stack loading, RAGAS judging with force re-judge, and the Instrument
+  visual language. The redesign is a re-skin + re-architecture of the client, not of the pipeline.</div>
+</section>
+
+<!-- ══════════════════════ 02 TARGET ARCHITECTURE ══════════════════════ -->
+<section id="arch">
+  <div class="lv-shead"><span class="n">02</span><h2>Target architecture</h2>
+    <span class="aside">what talks to what after the migration</span></div>
+  <p class="lede">A new <code>frontend/</code> workspace owns the UI. FastAPI keeps owning the API
+  and serves the built bundle, so <code>uv run python -m src.cli serve</code> stays the single
+  entry point. In development, Vite's dev server proxies <code>/api</code> to uvicorn.</p>
+
+  <pre class="mermaid">
+flowchart LR
+  subgraph FE["frontend/ · Vite + React 19 + TypeScript — NEW"]
+    APP["App shell — 3 tabs"]
+    CHAT["ChatView"]
+    LIB["LibraryView"]
+    BOARD["ScoreboardView"]
+    CLIENT["api/client.ts + sse.ts<br/>typed endpoint contracts"]
+    APP --> CHAT --> CLIENT
+    APP --> LIB --> CLIENT
+    APP --> BOARD --> CLIENT
+  end
+  subgraph BE["src/api/main.py · FastAPI — EXISTING"]
+    ASK["POST /api/ask — SSE"]
+    JUDGE["POST /api/judge — SSE"]
+    REST["GET health · setups · history<br/>corpus · scoreboard · POST index"]
+    CHUNKS["GET /api/corpus/{id}/chunks — NEW"]
+    RANK["POST /api/rank — NEW"]
+  end
+  CLIENT --> ASK
+  CLIENT --> JUDGE
+  CLIENT --> REST
+  CLIENT --> CHUNKS
+  CLIENT --> RANK
+  ASK --> RUNNER["RagSetupRunner<br/>src/chat/setups.py"]
+  JUDGE --> RJ["RagasJudge<br/>src/evals/judge.py"]
+  RANK --> BM["src/rag/bm25.py — NEW"]
+  RANK --> SEM["semantic search — existing"]
+  RUNNER --> DB[("Chroma<br/>transcript_chunks · raw · summaries")]
+  BM --> DB
+  SEM --> DB
+  RUNNER --> HJ[("dashboard/<br/>chat_history.json")]
+  RJ --> HJ
+  </pre>
+
+  <h3>Dev loop vs serve</h3>
+  <pre class="mermaid">
+flowchart LR
+  DEV["npm run dev<br/>Vite :5173 + HMR"] -- "proxy /api, /assets → :8000" --> UV["uvicorn :8000<br/>uv run python -m src.cli serve"]
+  BUILD["npm run build"] --> DIST["frontend/dist"]
+  DIST -- "mounted by FastAPI at /" --> UV
+  </pre>
+
+  <h3>Proposed frontend layout</h3>
+<pre><code>frontend/
+  package.json          # react 19, react-dom, typescript, vite, vitest, @testing-library/react
+  vite.config.ts        # server.proxy /api → 127.0.0.1:8000 · build.outDir dist
+  tsconfig.json         # strict: true
+  src/
+    main.tsx  App.tsx   # tab shell — 3 tabs, hash-based, no router dependency
+    theme.css           # Instrument tokens, ported 1:1 from today's index.html
+    api/  types.ts client.ts sse.ts     # every endpoint typed; SSE reader as a hook
+    answers/  render.ts render.test.ts  # TS port of ANSWER_RENDER_JS (citations, sections)
+    chat/     ChatView Thread MessageBubble CompareExpander ScoreStrip Composer HistoryRail
+    library/  LibraryView CorpusTree VideoDetail ChunkList RetrievalLab IndexPanel
+    scoreboard/ ScoreboardView ProvenanceBar
+</code></pre>
+  <div class="lv-note">Per workspace conventions (<code>/git CLAUDE.md</code>): ESM only,
+  Vitest for unit tests, Biome for linting, Prettier for formatting. No MUI and no router —
+  three tabs and small state do not justify the dependencies, matching this repo's
+  "no unnecessary infrastructure" rule in <code>AGENTS.md</code>.</div>
+</section>
+
+<!-- ══════════════════════ 03 CHAT TAB ══════════════════════ -->
+<section id="chat">
+  <div class="lv-shead"><span class="n">03</span><h2>Chat — the new landing tab</h2>
+    <span class="aside">mocked in the app's own Instrument system</span></div>
+  <p class="lede">You land here, the composer is focused, and a question is one keystroke away.
+  Each question produces <b>one primary answer bubble</b>; comparing all setups and RAGAS scores
+  become progressive disclosures on the message instead of the default layout. Per <b>Decision
+  D2</b>, the default answering agent is <b>rag_agent</b> — the agentic ReAct loop — with its
+  retrieval steps streamed live into the bubble, so the ~30s research run reads as progress,
+  not lag.</p>
+
+  <div class="lv-mockwrap"><div class="lv-mock">
+    <div class="m-top">
+      <span class="m-brand">transcript<em>·lab</em></span>
+      <div class="m-nav"><span class="on">Chat</span><span>Library</span><span>Scoreboard</span></div>
+      <div class="m-health"><span class="m-dot"></span>12 videos · 418 chunks · judge deepseek-v4-flash</div>
+    </div>
+    <div class="m-body" style="height:430px">
+      <div class="c-rail">
+        <input value="" placeholder="Search conversations…" readonly>
+        <div class="c-rentry on"><div class="q">Is the Gold Coast property market at risk of collapse?</div>
+          <div class="m"><span style="color:var(--good)">✓ 0.88</span><span>2 msgs</span><span>10:12</span></div></div>
+        <div class="c-rentry"><div class="q">How do AI engineers leverage Claude to develop features?</div>
+          <div class="m"><span>unjudged</span><span>1 msg</span><span>09:44</span></div></div>
+        <div class="c-rentry"><div class="q">What does the video say about capital gains tax grandfathering?</div>
+          <div class="m"><span style="color:var(--good)">✓ 0.74</span><span>3 msgs</span><span>yesterday</span></div></div>
+      </div>
+      <div class="c-main">
+        <div class="c-thread">
+          <div class="c-suggest"><span class="m-call">1</span>
+            <span>“What risks does the Gold Coast market face?”</span>
+            <span>“Summarize the CGT changes”</span>
+            <span>“Compare advice across channels”</span></div>
+          <div class="c-user">Is the Gold Coast property market at risk of collapse, and why?</div>
+          <div class="c-bot">
+            <div class="c-bothead"><span class="m-call">2</span>
+              <span class="c-setupchip">rag_agent · agentic</span><span>31s · ~11k tok · 5 retrievals</span>
+              <span class="c-score">RAGAS 0.88</span></div>
+            <div style="font:9.5px var(--mono);color:var(--dim);margin-bottom:6px">[1] "gold coast
+            price outlook" → 10 chunks · [2] "construction insolvencies" → 8 · [3] "interstate
+            migration" → 7 · <span style="color:var(--accent2)">full trace ▸</span></div>
+            The transcripts describe elevated risk from three directions: interstate migration
+            slowing<span class="c-cite">1</span>, construction insolvencies<span class="c-cite">2</span>,
+            and rate-sensitive investor stock<span class="c-cite">1</span><span class="c-cite">3</span>.
+            None of the analysts predict outright collapse; the consensus is a 5–10% correction…
+            <div class="c-actions"><span class="m-call">3</span>
+              <span>Compare 3 setups ▸</span><span>Sources (4)</span><span>Judge again</span></div>
+          </div>
+          <div class="c-user">And what would trigger the worst case?</div>
+          <div class="c-bot">
+            <div class="c-bothead"><span class="m-call">4</span>
+              <span class="c-tab on">rag_llm · 0.78</span>
+              <span class="c-tab">recursive · 0.83</span>
+              <span class="c-tab best">rag_agent · 0.88 TOP</span>
+              <span style="color:var(--dim)">3 agents answered · tabs switch answers</span></div>
+            A forced-sale cascade: builder insolvencies landing in the same quarter as investor
+            loan resets<span class="c-cite">2</span>. Only the agentic run also surfaced the
+            rental-vacancy counterweight<span class="c-cite">4</span> — switch tabs to read each
+            agent's full answer with its own citations and score.
+            <div class="c-cmp">
+              <span style="font:600 10px var(--mono);color:var(--muted)">COMPARE — same question, side by side</span>
+              <div class="c-cmpcols lv-grid">
+                <div class="c-cmpcol"><div class="t"><span class="sw" style="background:#8b949e"></span>rag_llm</div>
+                  <div class="comp">0.78</div><div class="sub">6.2s · ~3.1k tok</div></div>
+                <div class="c-cmpcol"><div class="t"><span class="sw" style="background:#d29922"></span>recursive</div>
+                  <div class="comp">0.83</div><div class="sub">17.3s · ~6.4k tok</div></div>
+                <div class="c-cmpcol top"><div class="t"><span class="sw" style="background:#2f81f7"></span>rag_agent</div>
+                  <div class="comp">0.88 · TOP</div><div class="sub">34.6s · ~11k tok</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="c-composer">
+          <div class="c-input">Ask the indexed transcripts anything…   (Enter to send)</div>
+          <div class="c-crow"><span class="m-call">5</span>
+            <span class="c-chip">Scope: Whole corpus ▾</span>
+            <span class="c-chip">Agent: rag_agent ▾</span>
+            <span class="c-chip"><span class="m-call">6</span> ⚙ advanced</span>
+            <span class="c-send">Send</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ul class="lv-legend">
+    <li><span class="m-call">1</span><span><b>Suggested questions</b> seeded from corpus titles/summaries
+      (<code>/api/corpus</code> already returns them) so an empty thread is never a dead end.</span></li>
+    <li><span class="m-call">2</span><span><b>Agentic by default (D2)</b> — the primary answer comes from
+      rag_agent. While it researches, its per-iteration retrieval lines stream into the bubble (query →
+      chunk count, exactly what the CLI already prints), then collapse to the one-line trace shown. The
+      header compresses agent, latency, tokens, retrieval count, and the RAGAS composite; the composer chip
+      switches to a faster setup any time.</span></li>
+    <li><span class="m-call">3</span><span><b>Progressive disclosure</b> — Compare, Sources (references with
+      timestamp links), and re-judge live on the message, not in the page chrome.</span></li>
+    <li><span class="m-call">4</span><span><b>Three agents, one bubble.</b> When several setups answer the same
+      question (multi-select in the composer, or "Compare setups" on a message), the thread gets <em>one
+      grouped bubble, not three stacked ones</em>: tabs switch between each agent's full answer with its own
+      citations and RAGAS score, the best composite is badged TOP, and the compare grid below lays them side
+      by side. While running, each tab shows a live timer as its agent streams in — the first to finish
+      becomes the active tab, so the fast single-hop answer is readable while rag_agent is still working.</span></li>
+    <li><span class="m-call">5</span><span><b>Composer chips</b> replace the control row: scope (corpus or one
+      video) and default setup are chips; everything else moves behind <b>⚙ advanced</b>.</span></li>
+    <li><span class="m-call">6</span><span><b>Advanced popover</b>: top_k, auto-judge toggle, multi-setup
+      selection — full workbench power preserved, no longer the landing experience.</span></li>
+  </ul>
+  <div class="lv-note"><b>Streaming stays.</b> The existing <code>/api/ask</code> SSE events
+  (progress → answer → done) map directly onto the thread: the assistant bubble mounts on
+  <code>progress</code>, fills on <code>answer</code>, and the history rail updates on
+  <code>done</code>. Esc-to-cancel and the live-region announcements are ported as-is.</div>
+</section>
+
+<!-- ══════════════════════ 04 LIBRARY TAB ══════════════════════ -->
+<section id="library">
+  <div class="lv-shead"><span class="n">04</span><h2>Library — corpus tree + Retrieval Lab</h2>
+    <span class="aside">tree below is real — click it</span></div>
+  <p class="lede">Two jobs in one tab: <b>explore</b> what the corpus actually contains (down to the
+  chunk a retrieval would return), and <b>interrogate ranking</b> — the same query scored by BM25
+  and by semantic similarity, side by side. The tree in this mock is interactive.</p>
+
+  <div class="lv-mockwrap"><div class="lv-mock">
+    <div class="m-top">
+      <span class="m-brand">transcript<em>·lab</em></span>
+      <div class="m-nav"><span>Chat</span><span class="on">Library</span><span>Scoreboard</span></div>
+      <div class="m-health"><span class="m-dot"></span>12 videos · 418 chunks · + Index new ▾ <span class="m-call">7</span></div>
+    </div>
+    <div class="l-lab">
+      <div class="l-labrow"><span class="m-call">1</span>
+        <span class="lv-micro" style="color:var(--accent2)">retrieval lab</span>
+        <span class="l-labinput">construction insolvencies gold coast apartments</span>
+        <span class="s-sel">Scope: Whole corpus ▾</span>
+        <div class="l-modes"><span>Semantic</span><span>BM25</span><span class="on">Both</span></div>
+        <span class="lv-badge" style="font-size:9px">overlap 6/10 <span class="m-call">3</span></span>
+      </div>
+      <div class="l-ranks lv-grid">
+        <div class="l-rankcol">
+          <div class="h"><span class="m-call">2</span>SEMANTIC · all-MiniLM-L6-v2 <span class="lv-badge acc">cosine</span></div>
+          <div class="l-rrow"><span class="rk">1</span><span class="cid">#c14</span><span class="tx">…builders going under mid-project has left towers…</span><span class="sc">0.71</span><span class="l-mv up">↑2</span></div>
+          <div class="l-rrow"><span class="rk">2</span><span class="cid">#c02</span><span class="tx">…Gold Coast presales collapsed after the insolvency…</span><span class="sc">0.66</span><span class="l-mv dn">↓1</span></div>
+          <div class="l-rrow"><span class="rk">3</span><span class="cid">#c31</span><span class="tx">…migration flows that drove the boom are slowing…</span><span class="sc">0.61</span><span class="l-mv new">only here</span></div>
+        </div>
+        <div class="l-rankcol">
+          <div class="h">BM25 · keyword <span class="lv-badge warn">k1=1.5 b=0.75</span></div>
+          <div class="l-rrow"><span class="rk">1</span><span class="cid">#c02</span><span class="tx">…Gold Coast presales collapsed after the insolvency…</span><span class="sc">12.4</span><span class="l-mv up">↑1</span></div>
+          <div class="l-rrow"><span class="rk">2</span><span class="cid">#c47</span><span class="tx">…apartment defect claims and insolvencies in QLD…</span><span class="sc">10.9</span><span class="l-mv new">only here</span></div>
+          <div class="l-rrow"><span class="rk">3</span><span class="cid">#c14</span><span class="tx">…builders going under mid-project has left towers…</span><span class="sc">9.8</span><span class="l-mv dn">↓2</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="l-body" style="height:300px">
+      <div class="l-tree"><span class="m-call">4</span>
+        <details open>
+          <summary><b>All videos</b><span class="cnt">12 videos · 418 chunks</span></summary>
+          <div class="lvl">
+            <details open>
+              <summary>@PropertyInsightsAU<span class="cnt">5 · 190</span></summary>
+              <div class="lvl">
+                <details open>
+                  <summary style="color:var(--accent2)">Gold Coast market outlook 2026<span class="cnt">34</span></summary>
+                  <div class="lvl">
+                    <div class="l-chunkrow"><span>#c01</span><span>00:00–01:12</span></div>
+                    <div class="l-chunkrow sel"><span>#c02</span><span>01:12–02:30</span></div>
+                    <div class="l-chunkrow"><span>#c03</span><span>02:30–03:58</span></div>
+                    <div class="l-chunkrow" style="color:var(--dim)">… 31 more</div>
+                  </div>
+                </details>
+                <details><summary>CGT changes explained<span class="cnt">41</span></summary></details>
+                <details><summary>Interstate migration deep-dive<span class="cnt">28</span></summary></details>
+              </div>
+            </details>
+            <details><summary>@aiDotEngineer<span class="cnt">4 · 152</span></summary></details>
+            <details><summary>@FinanceDaily<span class="cnt">3 · 76</span></summary></details>
+          </div>
+        </details>
+        <div style="margin-top:8px;padding:0 8px;display:flex;gap:6px;align-items:center">
+          <span class="lv-micro">sort</span><span class="s-sel">most viewed ▾ <span class="m-call">5</span></span>
+        </div>
+      </div>
+      <div class="l-detail">
+        <div class="l-vhead lv-flex"><span class="t">Gold Coast market outlook 2026</span>
+          <span class="m">@PropertyInsightsAU · 18:42 · 2026-05-02 · 34 chunks · 48k views</span>
+          <span class="lv-badge acc" style="margin-left:auto">Ask about this →</span><span class="m-call">6</span></div>
+        <div class="l-chunkcard sel">
+          <div class="h lv-flex"><span class="id">#c02</span><span>01:12–02:30</span><span>segs 4–9</span>
+            <span style="margin-left:auto;color:var(--accent2)">▸ open at 01:12 on YouTube</span></div>
+          <p>…the bigger story is that Gold Coast presales collapsed after the insolvency of two
+          major builders, which froze roughly 1,400 apartments mid-construction and pushed buyers
+          back into the established market…</p>
+        </div>
+        <div class="l-chunkcard">
+          <div class="h lv-flex"><span class="id">#c03</span><span>02:30–03:58</span><span>segs 10–15</span></div>
+          <p>…rents responded immediately: vacancy under 1% across the northern corridor while
+          completions stalled, which is why the “collapse” framing misses the supply side…</p>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <ul class="lv-legend">
+    <li><span class="m-call">1</span><span><b>Retrieval Lab</b> — type any query, pick scope and mode. "Both"
+      renders the two rankings aligned; clicking a row highlights that chunk in the tree and detail pane.</span></li>
+    <li><span class="m-call">2</span><span><b>Aligned rank columns</b> with per-mode scores (cosine vs BM25) and
+      movement badges: ↑/↓ = rank shift versus the other mode, "only here" = missed entirely by the other mode.
+      This is the fastest way to <em>see</em> where keyword and semantic retrieval disagree.</span></li>
+    <li><span class="m-call">3</span><span><b>Overlap stat</b> — how many of the top-k both modes agree on; the
+      single number that summarizes retrieval divergence for a query.</span></li>
+    <li><span class="m-call">4</span><span><b>Corpus tree</b> — All videos → channel → video → chunk. Built
+      client-side from <code>/api/corpus</code> (channel_name is already returned); expanding a video lazily
+      fetches <code>GET /api/corpus/{video_id}/chunks</code>.</span></li>
+    <li><span class="m-call">5</span><span><b>Sort control</b> ("by top") — orders channels/videos by view count,
+      chunk count, or recency. <code>view_count</code> and <code>upload_date</code> are already in the corpus
+      metadata. Locked in by D1 — the hierarchy stays channel → video → chunks, with “top” as a sort
+      order rather than a topic level.</span></li>
+    <li><span class="m-call">6</span><span><b>Ask about this →</b> jumps to Chat with scope pre-set to the video
+      — same behavior as today's Library cards, kept.</span></li>
+    <li><span class="m-call">7</span><span><b>Index new</b> — the single-video / channel-latest-N indexing form
+      moves into a dropdown panel so the tab leads with exploration, not administration.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════════════ 05 SCOREBOARD TAB ══════════════════════ -->
+<section id="scoreboard">
+  <div class="lv-shead"><span class="n">05</span><h2>Scoreboard — model versions &amp; provenance</h2></div>
+  <p class="lede">Today the scoreboard can silently average scores produced by different DeepSeek
+  versions, different judges, and different top_k settings. The fix is at <b>capture time</b>:
+  stamp every answer and every evaluation with its full identity, then let the table group by it.</p>
+
+  <div class="lv-mockwrap"><div class="lv-mock">
+    <div class="m-top">
+      <span class="m-brand">transcript<em>·lab</em></span>
+      <div class="m-nav"><span>Chat</span><span>Library</span><span class="on">Scoreboard</span></div>
+      <div class="m-health"><span class="m-dot"></span>9 of 14 questions judged</div>
+    </div>
+    <div class="s-filters"><span class="m-call">1</span>
+      <span class="lv-micro">group by</span><span class="s-sel">setup × answer model ▾</span>
+      <span class="lv-micro">judge</span><span class="s-sel">all judges ▾</span>
+      <span class="lv-micro">period</span><span class="s-sel">all time ▾</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="s-tbl">
+      <thead><tr><th>Setup</th><th>Answer model <span class="m-call">2</span></th><th>Judged</th>
+        <th>Faithful</th><th>Relevant</th><th>Precision</th><th>Composite</th><th>Win rate</th><th>Latency</th><th>~Tokens</th></tr></thead>
+      <tbody>
+        <tr style="background:rgba(47,129,247,.06)">
+          <td class="name">rag_agent (agentic)</td>
+          <td><span class="lv-badge acc" style="font-size:9px">deepseek-v4-flash</span></td>
+          <td>6/6</td>
+          <td><span class="s-bar"><i><b style="width:88%"></b></i>0.88</span></td>
+          <td><span class="s-bar"><i><b style="width:84%"></b></i>0.84</span></td>
+          <td><span class="s-bar"><i><b style="width:79%"></b></i>0.79</span></td>
+          <td style="color:var(--accent2);font-weight:700">0.84</td><td>67% (4/6)</td><td>31.2s</td><td>10.8k</td>
+        </tr>
+        <tr>
+          <td class="name">rag_llm (recursive)</td>
+          <td><span class="lv-badge acc" style="font-size:9px">deepseek-v4-flash</span></td>
+          <td>6/6</td>
+          <td><span class="s-bar"><i><b style="width:81%"></b></i>0.81</span></td>
+          <td><span class="s-bar"><i><b style="width:80%"></b></i>0.80</span></td>
+          <td><span class="s-bar"><i><b style="width:74%"></b></i>0.74</span></td>
+          <td>0.78</td><td>33% (2/6)</td><td>16.9s</td><td>6.2k</td>
+        </tr>
+        <tr>
+          <td class="name">rag_llm (single-hop)</td>
+          <td><span class="lv-badge acc" style="font-size:9px">deepseek-v4-flash</span></td>
+          <td>6/6</td>
+          <td><span class="s-bar"><i><b style="width:76%"></b></i>0.76</span></td>
+          <td><span class="s-bar"><i><b style="width:82%"></b></i>0.82</span></td>
+          <td><span class="s-bar"><i><b style="width:70%"></b></i>0.70</span></td>
+          <td>0.76</td><td>0% (0/6)</td><td>6.4s</td><td>3.1k</td>
+        </tr>
+        <tr style="opacity:.6">
+          <td class="name">rag_llm (single-hop)</td>
+          <td><span class="lv-badge" style="font-size:9px">— pre-s02 <span class="m-call">3</span></span></td>
+          <td>3/3</td>
+          <td><span class="s-bar"><i><b style="width:72%"></b></i>0.72</span></td>
+          <td><span class="s-bar"><i><b style="width:69%"></b></i>0.69</span></td>
+          <td><span class="s-bar"><i><b style="width:66%"></b></i>0.66</span></td>
+          <td>0.69</td><td>—</td><td>7.1s</td><td>3.4k</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="s-prov"><span class="m-call">4</span>
+      <span><b>judge</b> deepseek-v4-flash (self-grading)</span>
+      <span><b>ragas</b> 0.4.x</span>
+      <span><b>embeddings</b> all-MiniLM-L6-v2</span>
+      <span><b>metrics</b> faithfulness · answer_relevancy · context_precision → composite = mean</span>
+      <span><b>last judged</b> 2026-07-21 10:14</span>
+    </div>
+  </div></div>
+  <ul class="lv-legend">
+    <li><span class="m-call">1</span><span><b>Grouping controls</b> — by setup (today's view), or setup × answer
+      model. Judge filter matters once <code>YT_AGENT_JUDGE_MODEL</code> points at an independent grader:
+      self-graded and independently-graded scores should never silently average.</span></li>
+    <li><span class="m-call">2</span><span><b>Answer model column</b> — populated from the new
+      <code>ChatAnswer.model</code> field. <code>RagSetupRunner</code> already holds
+      <code>settings.deepseek_model</code> and <code>settings.embedding_model</code>; stamping them into
+      <code>SetupResult</code> is a ~10-line change in <span class="file">src/chat/setups.py</span>.</span></li>
+    <li><span class="m-call">3</span><span><b>Legacy rows</b> — entries captured before this change have no model
+      field; they render as "— pre-s02", dimmed, and are excluded from cross-model comparisons instead of
+      polluting them. Old JSON keeps loading because the new dataclass fields all default to
+      <code>None</code>.</span></li>
+    <li><span class="m-call">4</span><span><b>Provenance bar</b> — judge model, ragas version
+      (<code>importlib.metadata.version("ragas")</code>, stamped per evaluation), embedding model, metric
+      definitions, and last-judged time. The scoring methodology stops being folklore.</span></li>
+  </ul>
+</section>
+
+<!-- ══════════════════════ 06 BACKEND ADDITIONS ══════════════════════ -->
+<section id="backend">
+  <div class="lv-shead"><span class="n">06</span><h2>Backend additions the redesign needs</h2>
+    <span class="aside">small, testable, all additive</span></div>
+  <div class="lv-tblwrap">
+  <table>
+    <thead><tr><th>Change</th><th>Shape</th><th>Files</th><th>Tests</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Chunks endpoint</b><br><span class="lv-badge good">new</span></td>
+        <td><code>GET /api/corpus/{video_id}/chunks</code> → chunk_index, text, start/end seconds,
+        segment range — read straight from Chroma <code>transcript_chunks</code> (documents +
+        metadatas), sorted by index. Powers the tree drill-down and the chunk detail pane.</td>
+        <td><span class="file">src/api/corpus.py</span><br><span class="file">src/api/main.py</span></td>
+        <td><span class="file">tests/api/test_app.py</span></td>
+      </tr>
+      <tr>
+        <td><b>Ranking endpoint</b><br><span class="lv-badge good">new</span></td>
+        <td><code>POST /api/rank</code> {query, video_id?, top_k, modes:[semantic,bm25]} →
+        per-mode ranked lists of {chunk_id, rank, score, preview}. Semantic path reuses the
+        existing retrieval provider; BM25 path wraps <code>rank-bm25</code> (per D4) over the same
+        chunk corpus (in-memory index, rebuilt on demand — fine at hundreds of chunks).</td>
+        <td><span class="file">src/rag/bm25.py</span> (new)<br><span class="file">src/api/main.py</span></td>
+        <td><span class="file">tests/rag/test_bm25.py</span> — deterministic, no network</td>
+      </tr>
+      <tr>
+        <td><b>Agent progress events</b><br><span class="lv-badge good">new</span></td>
+        <td>The <code>/api/ask</code> SSE stream gains an <code>agent_step</code> event —
+        {key, iteration, query, chunk_count} emitted per rag_agent retrieval — so the chat bubble
+        can stream research lines live (required by D2). The CLI already streams these lines to
+        the terminal; the same callback gets surfaced through the runner to the API.</td>
+        <td><span class="file">src/agents/rag_agent.py</span><br><span class="file">src/chat/setups.py</span><br><span class="file">src/api/main.py</span></td>
+        <td><span class="file">tests/api/test_app.py</span></td>
+      </tr>
+      <tr>
+        <td><b>Answer identity</b><br><span class="lv-badge warn">schema</span></td>
+        <td>Add to <code>SetupResult</code> / <code>ChatAnswer</code>: <code>model</code>,
+        <code>embedding_model</code>, <code>top_k</code> (effective). All default
+        <code>None</code> → existing <code>chat_history.json</code> loads unchanged via
+        <code>ChatAnswer(**answer)</code>.</td>
+        <td><span class="file">src/chat/setups.py</span><br><span class="file">src/chat/history.py</span></td>
+        <td><span class="file">tests/chat/test_history.py</span> — old-entry round-trip</td>
+      </tr>
+      <tr>
+        <td><b>Eval provenance</b><br><span class="lv-badge warn">schema</span></td>
+        <td>Add to the evaluation record: <code>ragas_version</code>, <code>judged_at</code>
+        (judge_model already exists). Stamped inside <code>RagasJudge.score</code>.</td>
+        <td><span class="file">src/evals/judge.py</span></td>
+        <td><span class="file">tests/evals/test_judge.py</span></td>
+      </tr>
+      <tr>
+        <td><b>Grouped scoreboard</b><br><span class="lv-badge warn">extend</span></td>
+        <td><code>GET /api/scoreboard?group_by=setup|setup_model</code> — aggregation key becomes
+        (setup, model); rows carry <code>model</code> and a <code>legacy</code> flag when model is
+        unknown. Win-rate contests only compare answers judged by the same judge model.</td>
+        <td><span class="file">src/api/scoreboard.py</span></td>
+        <td><span class="file">tests/api/test_app.py</span></td>
+      </tr>
+      <tr>
+        <td><b>Serve the bundle</b><br><span class="lv-badge warn">extend</span></td>
+        <td>FastAPI mounts <code>frontend/dist</code> at <code>/</code> when it exists (assets +
+        index fallback); until Phase 1 lands, the legacy static page keeps serving. API routes are
+        untouched. Per D5 the bundle is gitignored, and <code>serve</code> fails with a clear
+        “run npm run build” message when it is missing.</td>
+        <td><span class="file">src/api/main.py</span></td>
+        <td><span class="file">tests/api/test_app.py</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ══════════════════════ 07 BUILD PLAN ══════════════════════ -->
+<section id="phases">
+  <div class="lv-shead"><span class="n">07</span><h2>Build plan — five phases, each shippable</h2>
+    <span class="aside">S ≈ hours · M ≈ a day · L ≈ days</span></div>
+  <div class="lv-phases">
+    <div class="lv-phase">
+      <div class="pn">P1<small>big-bang</small></div>
+      <div><h4>Scaffold + chat-first Chat, built directly (D3)</h4>
+        <p>Create <code>frontend/</code> (Vite, React 19, TS strict, Vitest, Biome). Typed API client
+        for all endpoints, SSE hook, TS port of the answer renderer (with tests) — then build the
+        redesigned Chat landing straight away: thread, grouped multi-agent bubbles, composer chips,
+        suggested questions, history rail. No 1:1 parity port. FastAPI serves the bundle; streaming
+        is verified against the live API before anything else builds on it.</p>
+        <div class="files">new <b>frontend/*</b> · touch <b>src/api/main.py</b>, <b>.gitignore</b> · update <b>readme.md</b></div></div>
+      <span class="lv-size l">L</span>
+    </div>
+    <div class="lv-phase">
+      <div class="pn">P2<small>stream</small></div>
+      <div><h4>Agent research streaming (D2)</h4>
+        <p>Extend <code>/api/ask</code> with per-iteration <code>agent_step</code> events from the
+        rag_agent loop and render them live in the bubble with timers and Esc-to-cancel — the
+        agentic default answer reads as research, not a 30-second stall.</p>
+        <div class="files">src/agents/rag_agent.py · src/chat/setups.py · src/api/main.py · frontend/src/chat/*</div></div>
+      <span class="lv-size m">M</span>
+    </div>
+    <div class="lv-phase">
+      <div class="pn">P3<small>tree</small></div>
+      <div><h4>Library tree + chunk drill-down</h4>
+        <p>Chunks endpoint, corpus tree (grouping per Decision D1), video detail pane with
+        timestamped chunk cards and YouTube deep links, indexing form moved into a panel.</p>
+        <div class="files">src/api/corpus.py · frontend/src/library/* · tests/api</div></div>
+      <span class="lv-size m">M</span>
+    </div>
+    <div class="lv-phase">
+      <div class="pn">P4<small>lab</small></div>
+      <div><h4>Retrieval Lab — BM25 vs semantic</h4>
+        <p>BM25 module (Decision D4), <code>/api/rank</code>, aligned rank columns with movement
+        badges and overlap stat, row → tree/detail cross-highlighting.</p>
+        <div class="files">src/rag/bm25.py · src/api/main.py · frontend/src/library/RetrievalLab.tsx · tests/rag</div></div>
+      <span class="lv-size m">M</span>
+    </div>
+    <div class="lv-phase">
+      <div class="pn">P5<small>truth</small></div>
+      <div><h4>Scoreboard provenance</h4>
+        <p>Capture-time identity fields, ragas version stamping, grouped aggregation, provenance
+        bar, legacy-row handling.</p>
+        <div class="files">src/chat/setups.py · src/chat/history.py · src/evals/judge.py · src/api/scoreboard.py · frontend/src/scoreboard/*</div></div>
+      <span class="lv-size s">S</span>
+    </div>
+  </div>
+  <div class="lv-note"><b>Order rationale (post-D3):</b> big-bang means P1 carries stack risk and
+  design risk together, so it starts from the inside out — typed client and SSE hook first, proven
+  against the live API, then the UI grows on top. P2 completes the D2 default experience; P3–P5 are
+  independent after P1 and each ends green (<code>uv run pytest</code> + <code>npm test</code>) with
+  <code>readme.md</code> updated per project rules.</div>
+</section>
+
+<!-- ══════════════════════ 08 RISKS ══════════════════════ -->
+<section id="risks">
+  <div class="lv-shead"><span class="n">08</span><h2>Risks &amp; failure modes</h2></div>
+  <div class="lv-risks">
+    <div class="lv-risk"><b>Build step enters a build-free repo.</b> Today <code>uv sync</code> +
+      <code>serve</code> is the whole story; after this, UI changes need Node.
+      <span class="mit"><em>mitigation</em> Resolved by D5 — <code>frontend/dist</code> is gitignored,
+      readme documents the Node workflow, and <code>serve</code> fails with a helpful message when the
+      bundle is missing.</span></div>
+    <div class="lv-risk"><b>Answer renderer drift.</b> The citation/section renderer would exist twice:
+      the TS port (React app) and the Python constant still used by the static <code>chat.html</code> viewer.
+      <span class="mit"><em>mitigation</em> Shared fixture tests: the same input snapshots must render
+      equivalently in both, or chat.html generation is retired once the React app covers browsing history.</span></div>
+    <div class="lv-risk"><b>SSE through the Vite dev proxy.</b> Streaming responses can be buffered by
+      misconfigured proxies, breaking live progress in dev only.
+      <span class="mit"><em>mitigation</em> Vite's http-proxy passes streams through; keep
+      <code>X-Accel-Buffering: no</code> (already set in main.py) and verify in P1 before building on it.</span></div>
+    <div class="lv-risk"><b>History schema growth.</b> New fields on <code>ChatAnswer</code> must not break
+      old entries or the CLI chat path that shares the same file.
+      <span class="mit"><em>mitigation</em> All new fields default to <code>None</code>; a round-trip test
+      loads a pre-s02 history fixture verbatim. No migration script needed.</span></div>
+    <div class="lv-risk"><b>rag_agent latency in a chat UI — accepted per D2.</b> The default answer
+      takes ~30s by design.
+      <span class="mit"><em>mitigation</em> Per-iteration retrieval lines stream into the bubble (P2)
+      so the wait reads as active research; Esc cancels; the composer chip drops to the ~6s
+      single-hop setup when speed matters.</span></div>
+    <div class="lv-risk"><b>BM25 scale ceiling.</b> The in-memory index is rebuilt from all chunk texts;
+      trivial at ~400 chunks, noticeable at ~50k.
+      <span class="mit"><em>mitigation</em> Cache the index keyed by collection count; document the
+      ceiling. This is a demo-scale tool, not a search engine.</span></div>
+  </div>
+</section>
+
+<!-- ══════════════════════ 09 DECISIONS ══════════════════════ -->
+<section id="decisions">
+  <div class="lv-shead"><span class="n">09</span><h2>Decisions — resolved</h2>
+    <span class="aside">locked in via review · 2026-07-21</span></div>
+  <p class="lede">All five decisions are settled and every section above reflects them. Annotate any
+  section if you want one revisited.</p>
+  <div class="lv-tblwrap">
+  <table>
+    <thead><tr><th></th><th>Decision</th><th>Choice</th><th>Consequence in this plan</th></tr></thead>
+    <tbody>
+      <tr><td><b>D1</b></td><td>Library tree hierarchy</td>
+        <td>Channel hierarchy; “top” = sort order</td>
+        <td>All videos → channel → video → chunks, sortable by views / recency / chunk count.
+        No topic extraction — ships from existing corpus metadata.</td></tr>
+      <tr><td><b>D2</b></td><td>Chat default behavior</td>
+        <td class="stat-good">rag_agent by default, streamed research</td>
+        <td>Primary bubble is the agentic answer with live per-iteration retrieval lines; adds the
+        <code>agent_step</code> SSE events (section 06) and phase P2. Composer chip switches to
+        faster setups.</td></tr>
+      <tr><td><b>D3</b></td><td>Migration strategy</td>
+        <td class="stat-good">Big-bang redesign</td>
+        <td>No 1:1 parity port — P1 builds the redesigned Chat directly, proving the typed client
+        and SSE streaming first inside the same phase.</td></tr>
+      <tr><td><b>D4</b></td><td>BM25 implementation</td>
+        <td><code>rank-bm25</code> dependency</td>
+        <td>Added via uv and documented in readme; <code>src/rag/bm25.py</code> wraps it behind a
+        small deterministic-tested interface.</td></tr>
+      <tr><td><b>D5</b></td><td>Serving the built frontend</td>
+        <td>Gitignore dist, document Node</td>
+        <td><code>frontend/dist</code> is gitignored; readme documents <code>npm install</code> +
+        <code>npm run build</code>; <code>serve</code> fails helpfully when the bundle is
+        missing.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+
+
+
+
+</section>
+
+<footer class="lv-foot">
+  s02 · transcript-rag-agent · branch <code>feat/frontend-redesign</code> · design source: the app's own
+  Instrument design system (tokens ported from <code>src/api/static/index.html</code>) · diagrams: Mermaid ·
+  facts verified against main @ 56f368d
+</footer>
+
+</div>
+
+<script>
+// Decision forms: radios stay local; Queue submits exactly one prompt per question.
+document.querySelectorAll('form.lv-dec').forEach(form => {
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const q = form.getAttribute('data-lavish-question');
+    const choice = new FormData(form).get(q.split('-')[0]);
+    if(!choice) return;
+    const label = form.querySelector('.lv-kicker').textContent;
+    if(window.lavish && window.lavish.queuePrompt){
+      window.lavish.queuePrompt(label + ' — chosen: ' + choice, {
+        tag: 'decision',
+        text: label + ': ' + choice,
+        element: form,
+        queueKey: q,
+        data: {question: q, answer: choice}
+      });
+      const mark = form.querySelector('.queued');
+      if(mark) mark.style.display = 'inline';
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  });
+});
+</script>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0] * fa + bg[0] * ba * (1 - fa)) / a,
+      (fg[1] * fa + bg[1] * ba * (1 - fa)) / a,
+      (fg[2] * fa + bg[2] * ba * (1 - fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBg = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBg = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0, 0, 0, 0];
+    const [r, g, b, a] = compositeRgba(bodyBg, rootBg);
+    if (a > 0) return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied; let rendering = false; let queued = false;
+  function queueRender() { queued = true; if (rendering) return; void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (error) { console.error("Mermaid diagram render failed:", error); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener("transitionend", ({ propertyName }) => {
+    if (propertyName === "background-color") queueRender();
+  }, true);
+  darkQuery.addEventListener("change", queueRender);
+</script>
+</body>
+</html>

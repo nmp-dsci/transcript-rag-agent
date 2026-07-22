@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transcript RAG Agent — Senior AI Engineer Roadmap</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex, .phase-grid, .cols) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, li, td, th, .badge, summary) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas) { max-width: 100%; height: auto; }
+
+  :root{
+    --bg:#0b141a; --panel:#111b21; --panel2:#202c33; --border:#222d34; --border2:#2a3942;
+    --text:#e9edef; --muted:#8696a0; --dim:#5b6b75;
+    --teal:#00a884; --teal-bright:#7ff0d4; --teal-dark:#0b3b33; --teal-border:#155f53;
+    --blue:#53bdeb; --amber:#e9c46a; --red:#f5a3a3;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.hero{border-bottom:1px solid var(--border);padding-bottom:22px;margin-bottom:26px;}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin:0 0 8px;}
+  h1{font-size:28px;margin:0 0 10px;line-height:1.25;}
+  .lede{color:var(--muted);max-width:860px;margin:0 0 14px;}
+  .lede strong{color:var(--text);}
+  .src-strip{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{background:var(--panel);border:1px solid var(--border2);color:var(--muted);
+    border-radius:8px;padding:3px 9px;font-size:11.5px;font-family:var(--mono);}
+  .chip b{color:var(--teal-bright);font-weight:600;}
+
+  nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 30px;}
+  nav.toc a{color:var(--blue);text-decoration:none;font-size:12.5px;background:var(--panel);
+    border:1px solid var(--border2);border-radius:16px;padding:4px 12px;}
+  nav.toc a:hover{background:var(--panel2);}
+
+  section{margin-bottom:44px;}
+  h2{font-size:20px;margin:0 0 4px;display:flex;align-items:baseline;gap:10px;}
+  h2 .no{font-family:var(--mono);font-size:13px;color:var(--dim);}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:820px;}
+
+  .verdict{background:linear-gradient(180deg,rgba(0,168,132,.10),rgba(0,168,132,.03));
+    border:1px solid var(--teal-border);border-left:4px solid var(--teal);
+    border-radius:10px;padding:16px 20px;margin-bottom:26px;}
+  .verdict h3{margin:0 0 6px;color:var(--teal-bright);font-size:15.5px;}
+  .verdict p{margin:0;color:var(--text);font-size:14px;max-width:900px;}
+  .verdict p + p{margin-top:8px;}
+
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .card h3{margin:0 0 10px;font-size:14.5px;display:flex;align-items:center;gap:8px;}
+  .card ul{margin:0;padding-left:18px;}
+  .card li{margin:6px 0;font-size:13.5px;color:var(--text);}
+  .card li .why{color:var(--muted);}
+  .card li code, td code, .task code{font-family:var(--mono);font-size:12px;background:var(--panel2);
+    border:1px solid var(--border2);border-radius:4px;padding:0 4px;color:var(--teal-bright);}
+  .good h3{color:var(--teal-bright);}
+  .bad h3{color:var(--red);}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto;}
+  .dot.g{background:var(--teal);}
+  .dot.r{background:var(--red);}
+
+  blockquote.jd{margin:0;background:var(--panel);border:1px solid var(--border2);border-left:3px solid var(--blue);
+    border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);}
+  blockquote.jd footer{color:var(--dim);font-size:11.5px;margin-top:6px;font-family:var(--mono);}
+  .quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:14px;}
+
+  .tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel);}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--border2);
+    background:var(--panel2);white-space:nowrap;}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#182229;}
+  td.pct{font-family:var(--mono);color:var(--blue);white-space:nowrap;}
+  .badge{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-family:var(--mono);white-space:nowrap;}
+  .badge.proven{background:var(--teal-dark);color:var(--teal-bright);border:1px solid var(--teal-border);}
+  .badge.partial{background:rgba(233,196,106,.12);color:var(--amber);border:1px solid rgba(233,196,106,.35);}
+  .badge.missing{background:rgba(245,163,163,.10);color:var(--red);border:1px solid rgba(245,163,163,.3);}
+  .badge.phase{background:var(--panel2);color:var(--blue);border:1px solid var(--border2);}
+  td .note{color:var(--muted);font-size:12.5px;}
+
+  .mermaid-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:14px;overflow-x:auto;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted);}
+  .legend .sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;}
+
+  .timeline{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;margin-bottom:20px;}
+  .tl-grid{display:grid;grid-template-columns:130px repeat(8,minmax(56px,1fr));gap:4px 0;min-width:640px;}
+  .tl-head{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .tl-label{font-size:12px;color:var(--muted);padding:7px 8px 0 0;white-space:nowrap;font-family:var(--mono);}
+  .tl-cell{padding-top:6px;}
+  .tl-bar{height:16px;border-radius:4px;background:var(--teal-dark);border:1px solid var(--teal-border);}
+  .tl-bar.hot{background:#0e4a41;border-color:var(--teal);}
+
+  .phase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;}
+  .phase{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;}
+  .phase.flag{border-color:var(--teal-border);box-shadow:0 0 0 1px var(--teal-border);}
+  .phase-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px;}
+  .phase h3{margin:0;font-size:15px;color:var(--teal-bright);}
+  .phase .eff{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap;}
+  .phase .why{font-size:12.5px;color:var(--muted);margin:4px 0 10px;}
+  .phase .why b{color:var(--blue);font-weight:600;}
+  .task{font-size:13px;margin:5px 0;padding-left:16px;position:relative;}
+  .task::before{content:"›";position:absolute;left:2px;color:var(--teal);}
+  .proof{margin-top:auto;padding-top:10px;font-size:12.5px;color:var(--teal-bright);
+    border-top:1px dashed var(--border2);}
+  .proof b{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--teal);}
+
+  .story{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+  .story ol{margin:8px 0 0;padding-left:20px;}
+  .story li{margin:9px 0;font-size:13.5px;}
+  .story li b{color:var(--teal-bright);}
+  .story li .q{color:var(--muted);font-style:italic;}
+  .bullets{margin-top:16px;}
+  .bullets .rb{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--border2);
+    border-radius:8px;padding:10px 12px;margin:8px 0;color:var(--text);}
+  .bullets .rb .ph{color:var(--amber);}
+
+  .risk{display:flex;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 16px;margin:10px 0;}
+  .risk .sev{flex:0 0 auto;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.06em;padding:2px 8px;border-radius:5px;height:fit-content;margin-top:2px;}
+  .sev.hi{background:rgba(245,163,163,.12);color:var(--red);border:1px solid rgba(245,163,163,.3);}
+  .sev.md{background:rgba(233,196,106,.10);color:var(--amber);border:1px solid rgba(233,196,106,.3);}
+  .risk p{margin:0;font-size:13.5px;}
+  .risk p b{color:var(--text);}
+  .risk p .mit{color:var(--muted);}
+
+  form.decision{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  form.decision h3{margin:0 0 4px;font-size:14.5px;color:var(--text);}
+  form.decision .dwhy{font-size:12.5px;color:var(--muted);margin:0 0 12px;}
+  form.decision label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border2);
+    border-radius:8px;margin:6px 0;cursor:pointer;font-size:13px;}
+  form.decision label:hover{background:#182229;}
+  form.decision label:has(input:checked){border-color:var(--teal);background:rgba(0,168,132,.07);}
+  form.decision input[type=radio]{accent-color:var(--teal);margin-top:3px;flex:0 0 auto;}
+  form.decision .opt b{color:var(--text);}
+  form.decision .opt .od{color:var(--muted);display:block;font-size:12.5px;}
+  form.decision .rec{font-family:var(--mono);font-size:10px;color:var(--teal-bright);background:var(--teal-dark);
+    border:1px solid var(--teal-border);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:1px;white-space:nowrap;}
+  form.decision button{margin-top:10px;background:var(--teal-dark);color:var(--teal-bright);
+    border:1px solid var(--teal-border);border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-family:inherit;}
+  form.decision button:hover{background:#0e4a41;}
+  .queue-note{font-size:12px;color:var(--dim);margin-top:6px;font-family:var(--mono);}
+
+  footer.pagefoot{border-top:1px solid var(--border);margin-top:50px;padding-top:16px;
+    color:var(--dim);font-size:12px;font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="kicker">Professionalisation plan · portfolio evidence</p>
+  <h1>transcript-rag-agent → your senior-AI-engineer RAG evidence</h1>
+  <p class="lede">This repo already does the hard part — <strong>three comparable RAG strategies</strong> (single-hop, recursive multi-hop, agentic LangGraph ReAct) over a real ingestion pipeline, with 115 tests. What it lacks is exactly what separates a prototype from senior evidence: <strong>measured evaluation, hybrid retrieval, CI/CD, a deployable service, and observability</strong>. This plan closes those gaps in 6 phases (~8 part-time weeks) and maps every step to the skills your <code style="font-family:var(--mono);font-size:13px;">ai-engineer-fit</code> market research says hiring managers screen for.</p>
+  <div class="src-strip">
+    <span class="chip">repo: <b>nmp-dsci/transcript-rag-agent</b></span>
+    <span class="chip">tests: <b>115 across 26 files</b></span>
+    <span class="chip">market data: <b>25 AU AI-engineer roles, Mar 2026</b></span>
+    <span class="chip">role specs: <b>Sirius · Insight Timer · Harper FDE (Jul 2026)</b></span>
+    <span class="chip">portfolio target: <b>Project #2 — Enterprise RAG Evaluation Platform</b></span>
+  </div>
+  <nav class="toc">
+    <a href="#state">1 · Where it stands</a>
+    <a href="#market">2 · Market gap matrix</a>
+    <a href="#arch">3 · Target architecture</a>
+    <a href="#roadmap">4 · Roadmap</a>
+    <a href="#story">5 · Interview narrative</a>
+    <a href="#risks">6 · Risks</a>
+    <a href="#decisions">7 · Decisions (locked)</a>
+    <a href="#walkthrough">8 · Implementation walkthrough</a>
+  </nav>
+</header>
+
+<div class="verdict">
+  <h3>The verdict, up front</h3>
+  <p>Your own <em>ai-role-summary-v1</em> says to build the <b>Enterprise RAG Evaluation Platform first</b> — "it creates the evaluation backbone that improves almost every other AI project." This repo is already ~60% of that project. Don't start a new repo: <b>professionalise this one into it</b>. The single highest-leverage move is Phase 1 (a real evaluation harness with a golden dataset, retrieval metrics, and LLM-as-judge scoring), because every recent role spec you collected — Sirius, Insight Timer, Databricks — screens for an <b>evaluation-first mindset</b>, and it turns every later improvement into a measured, tellable story.</p>
+  <p>Secondary leverage: you work in <b>promptfoo</b> daily. An eval-heavy RAG repo plus promptfoo contributions is a coherent, credible senior identity: <em>"the engineer who measures LLM systems."</em></p>
+  <p><b>Does it prove RAG at 100%?</b> After P1 + P2: <b>~95% of what interviews actually probe</b> — you'd be able to defend chunking, hybrid retrieval, reranking, grounding, and evaluation with your own measured numbers, which is more than most working RAG engineers can. The honest residual is variant breadth (GraphRAG, messy-document parsing, managed enterprise vector stores) — see the <a href="#rag-100" style="color:var(--blue)">RAG coverage breakdown</a> for exactly what's covered, what isn't, and the one cheap stretch that closes the most-cited gap.</p>
+</div>
+
+<section id="state">
+  <h2><span class="no">01</span> Where the repo stands today</h2>
+  <p class="sub">Verified against the working tree on 16 Jul 2026 — every claim below was checked, not assumed.</p>
+  <div class="cols">
+    <div class="card good">
+      <h3><span class="dot g"></span>Already senior-grade (keep &amp; showcase)</h3>
+      <ul>
+        <li><b>Three comparable RAG strategies behind one CLI</b> — <code>rag_llm</code> single-hop, recursive multi-hop with bounded fan-out &amp; novelty filtering, and <code>rag_agent</code> (LangGraph ReAct loop). <span class="why">Side-by-side comparison is rare in portfolios.</span></li>
+        <li><b>Summary-first transcript filtering</b> — two-stage retrieval via <code>transcript_summaries</code>. <span class="why">A real retrieval-architecture decision.</span></li>
+        <li><b>Bulk ingestion with run records</b> — channel/search discovery, 24h cache, per-candidate outcomes in <code>.yt-agent/ingestion_runs/</code>.</li>
+        <li><b>115 tests in 26 files</b>, external calls mocked; clean module boundaries (<code>transcripts / rag / agents / evals / chat / dashboard</code>).</li>
+        <li><b>MLflow tracking per CLI run</b> + three HTML dashboards incl. PCA chunk-space explorer.</li>
+        <li><b>Spec-driven development</b> — <code>ai_specs/s1–s7</code> reads like a design-doc trail. <span class="why">Raw material for ADRs in Phase 5.</span></li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <h3><span class="dot r"></span>Reads as prototype (the gaps)</h3>
+      <ul>
+        <li><b>No CI/CD</b> — no <code>.github/</code>, no ruff/mypy config in <code>pyproject.toml</code>, no coverage, no badge.</li>
+        <li><b>Evaluation is cosmetic</b> — answer-embedding cosine similarity + token estimates (<code>src/rag/eval.py</code>). No golden dataset, no recall@k/MRR, no LLM-as-judge, no regression gate.</li>
+        <li><b>Dense-only retrieval</b> — no BM25/hybrid, no reranker. <span class="why">Named explicitly in the Sirius spec.</span></li>
+        <li><b>No service, no deploy</b> — FastAPI is in <code>pyproject.toml</code> but never imported in <code>src/</code>; no Dockerfile, nothing running anywhere.</li>
+        <li><b>Single provider, no routing</b> — DeepSeek only; no cost/quality comparison across models.</li>
+        <li><b>Observability is local-only</b> — MLflow files; no tracing spans, no per-request token/cost accounting.</li>
+        <li><b>README is a 24 KB command reference</b> — no business framing, no architecture image, no results, no LICENSE, no <code>.env.example</code>.</li>
+        <li><b>No security story</b> — transcripts are untrusted input; zero prompt-injection tests.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="quotes">
+    <blockquote class="jd">"A scientific, <b>evaluation-first mindset</b>… hybrid and re-ranked retrieval… observability and tracing (e.g., Langfuse, OpenTelemetry) and tracking token usage and cost in production."<footer>— Sirius, Senior AI Engineer spec (Jul 2026, ai-role/20260715)</footer></blockquote>
+    <blockquote class="jd">"Build <b>evaluation, testing, and monitoring systems</b> to ensure agent reliability, safety, and continual improvement."<footer>— Insight Timer, Senior AI Engineer spec (Jul 2026)</footer></blockquote>
+    <blockquote class="jd">"Evaluation harness with curated test cases, automated scoring, regression tests, LLM-as-judge checks, RAGAS-style metrics, dashboards, and <b>CI gates</b>."<footer>— your ai-role-summary-v1, capability #4</footer></blockquote>
+  </div>
+</section>
+
+<section id="market">
+  <h2><span class="no">02</span> Market gap matrix</h2>
+  <p class="sub">Top screened skills from your 25-role AU analysis (Mar 2026), scored against this repo. <b>Proven</b> = demonstrable today · <b>Partial</b> = exists but wouldn't survive interview probing · <b>Missing</b> = absent.</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Skill</th><th>AU demand</th><th>Status</th><th>Evidence today / what's missing</th><th>Closed by</th></tr></thead>
+      <tbody>
+        <tr><td>Python</td><td class="pct">100%</td><td><span class="badge proven">proven</span></td><td class="note">Typed, modular, tested codebase.</td><td><span class="badge phase">—</span></td></tr>
+        <tr><td>RAG</td><td class="pct">88%</td><td><span class="badge partial">partial</span></td><td class="note">Strong pipeline breadth; dense-only, unmeasured. Hybrid + rerank + metrics make it senior.</td><td><span class="badge phase">P1 · P2</span></td></tr>
+        <tr><td>Agentic AI / agents</td><td class="pct">80%</td><td><span class="badge proven">proven</span></td><td class="note">LangGraph ReAct loop (<code>rag_agent</code>) with streaming trace + iteration caps.</td><td><span class="badge phase">—</span></td></tr>
+        <tr><td>Stakeholder communication</td><td class="pct">92%</td><td><span class="badge partial">partial</span></td><td class="note">Dashboards exist, but README speaks to engineers only — no problem framing, no results, no demo.</td><td><span class="badge phase">P0 · P5</span></td></tr>
+        <tr><td>Cloud (AWS/Azure/GCP)</td><td class="pct">80 / 72 / 64%</td><td><span class="badge missing">missing</span></td><td class="note">Nothing deployed. One containerised cloud deployment flips this.</td><td><span class="badge phase">P3</span></td></tr>
+        <tr><td>Prompt engineering</td><td class="pct">72%</td><td><span class="badge partial">partial</span></td><td class="note"><code>prompts.py</code> has a unified contract. Senior-level = versioned prompts treated as experiments: the P4 registry gives every prompt an ID, and prompt A/B variants run through the P1 harness so each change lands with RAGAS scores attached.</td><td><span class="badge phase">P1 · P4</span></td></tr>
+        <tr><td>LangChain / LangGraph</td><td class="pct">64 / 48%</td><td><span class="badge proven">proven</span></td><td class="note">Both used in anger, not tutorial-style. The depth signal comes free from later phases: Langfuse-traced LangGraph runs (P4) + eval-scored agent behaviour (P1) + injection-hardening (P5) is what separates "used the framework" from "operated it".</td><td><span class="badge phase">P1 · P4 deepen</span></td></tr>
+        <tr><td>CI/CD</td><td class="pct">64%</td><td><span class="badge missing">missing</span></td><td class="note">No workflows at all — cheapest gap to close.</td><td><span class="badge phase">P0</span></td></tr>
+        <tr><td>Docker</td><td class="pct">64%</td><td><span class="badge missing">missing</span></td><td class="note">No Dockerfile.</td><td><span class="badge phase">P3</span></td></tr>
+        <tr><td>Vector databases</td><td class="pct">56%</td><td><span class="badge proven">proven</span></td><td class="note">Chroma with three collections and metadata filtering.</td><td><span class="badge phase">—</span></td></tr>
+        <tr><td>MLOps / LLMOps</td><td class="pct">56%</td><td><span class="badge partial">partial</span></td><td class="note">Local MLflow runs today. The locked stack for this project: <b>MLflow</b> (experiment history) + <b>Langfuse</b> (tracing &amp; cost) + <b>RAGAS</b> (quality) + <b>GitHub Actions</b> (gates) + <b>Terraform</b> (infra). Alternatives deliberately not used — LangSmith (vendor-tied), Phoenix/Arize (overlaps Langfuse), W&amp;B (training-centric) — knowing why is interview material.</td><td><span class="badge phase">P4</span></td></tr>
+        <tr><td>Model evaluation &amp; monitoring</td><td class="pct">40% ↗</td><td><span class="badge missing">missing</span></td><td class="note">The differentiator. Cosine similarity ≠ evaluation. Named in every Jul-2026 spec you saved.</td><td><span class="badge phase">P1</span></td></tr>
+        <tr><td>Model routing / multi-provider</td><td class="pct">Sirius, LiteLLM</td><td><span class="badge partial">descoped ✓</span></td><td class="note">Your call (17 Jul): keep DeepSeek as the answer model and spend the effort on evals + cost tracking. The stack still runs two providers — Claude judges in P1 — so you can speak to multi-provider trade-offs; a router stays a documented "next in production" step.</td><td><span class="badge phase">by design</span></td></tr>
+        <tr><td>LLM observability (Langfuse/OTel)</td><td class="pct">12% ↗</td><td><span class="badge missing">missing</span></td><td class="note">Low % but named in your highest-fit specs (Sirius, CBA). Cheap to add, high signal.</td><td><span class="badge phase">P4</span></td></tr>
+        <tr><td>Guardrails / AI safety</td><td class="pct">24%</td><td><span class="badge missing">missing</span></td><td class="note">Transcripts are untrusted input — a genuine injection surface, great story.</td><td><span class="badge phase">P5</span></td></tr>
+        <tr><td>Responsible AI / governance</td><td class="pct">32%</td><td><span class="badge missing">missing</span></td><td class="note">ADRs, model card, risk notes — distil from <code>ai_specs/</code>.</td><td><span class="badge phase">P5</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="rag-100" style="margin-top:26px;">
+    <h2 style="font-size:17px;"><span class="no">02b</span> Zoom in: does this repo get RAG to 100%?</h2>
+    <p class="sub">"RAG" in a JD is really ~12 sub-skills. Here's the honest split after the roadmap. Verdict: <b style="color:var(--teal-bright)">~95% of interview-probed RAG competence</b> — and 100% of what a single project can credibly prove. The residual is <em>variant breadth</em>, not depth, and belongs in other repos or a talk-track.</p>
+    <div class="cols">
+      <div class="card good">
+        <h3><span class="dot g"></span>Covered by this repo after P1 + P2</h3>
+        <ul>
+          <li><b>Ingestion &amp; normalisation</b> — real API source, async jobs, caching, bulk runs. <span class="why">exists</span></li>
+          <li><b>Chunking strategy</b> — segment-aware chunking <i>plus a measured size ablation</i>. <span class="why">exists → P2 makes it defensible</span></li>
+          <li><b>Embeddings &amp; vector store</b> — sentence-transformers + Chroma, three collections, metadata filtering. <span class="why">exists</span></li>
+          <li><b>Hybrid retrieval</b> — dense + BM25 with RRF fusion. <span class="why">P2</span></li>
+          <li><b>Reranking</b> — cross-encoder, 50→10. <span class="why">P2</span></li>
+          <li><b>Multi-stage &amp; multi-hop retrieval</b> — summary-first filtering, recursive fan-out, agentic ReAct loop. <span class="why">exists — rare in portfolios</span></li>
+          <li><b>Grounding &amp; citations</b> — timestamped source links in every answer. <span class="why">exists</span></li>
+          <li><b>Retrieval evaluation</b> — golden dataset, recall@k, MRR, nDCG, CI gate. <span class="why">P1</span></li>
+          <li><b>Answer evaluation</b> — LLM-as-judge faithfulness/groundedness. <span class="why">P1</span></li>
+          <li><b>Cost/latency trade-off analysis</b> — tokens &amp; latency per strategy, per model. <span class="why">P1 · P4</span></li>
+          <li><b>Failure analysis</b> — worked examples of where each retriever loses. <span class="why">P2</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--amber);"><span class="dot" style="background:var(--amber);"></span>The last ~5% — and where it lives</h3>
+        <ul>
+          <li><b>Managed / enterprise vector stores</b> (pgvector, Azure AI Search — named in Sirius). <span class="why">Cheapest close: in P3, put storage behind a small interface and add <code>pgvector</code> as a swap-in backend (~3h). This is the one stretch worth doing here.</span></li>
+          <li><b>Messy-document ingestion</b> (PDF/OCR/tables — docling territory). <span class="why">Confirmed: a separate project, not this repo — transcripts are clean text and forcing PDFs in muddies the story. Concrete project ideas: (1) extend <b>CUAD-agent</b> with docling PDF parsing — contract clauses are the classic messy-doc corpus and the repo already exists; (2) ASX annual-report Q&amp;A — tables + finance synergy with this repo's corpus; (3) council development-application PDFs — property synergy. Any one of them, run through this repo's P1 harness pattern, completes the pair.</span></li>
+          <li><b>GraphRAG / knowledge graphs</b>. <span class="why">Good news: this one <b>can</b> live in this repo and be evaluated against standard RAG — transcripts are entity-rich (people, companies, policies, suburbs, dates). Added as optional <a href="#p6" style="color:var(--blue)">Phase 6</a>: extract an entity graph, add a <code>--retriever graph</code> mode, and score it against dense/hybrid through the same P1 harness.</span></li>
+          <li><b>Web-scale / multi-tenant retrieval</b>. <span class="why">No side project proves this; it's a talk-track ("here's how I'd shard and isolate tenants"), which the "What I'd do next in production" section (P5) covers.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="no">03</span> Target architecture</h2>
+  <p class="sub">What the system looks like after the roadmap. Solid grey nodes exist today; teal nodes are new. The quality loop on the right is the part interviewers will ask about.</p>
+  <div class="mermaid-wrap">
+    <pre class="mermaid">
+flowchart LR
+  subgraph ING["Ingestion (exists)"]
+    URL["YouTube URL / channel"] --> SUP["Supadata fetch"]
+    SUP --> RAW[("raw_transcripts")]
+    RAW --> CHK["segment-aware chunking"]
+    CHK --> EMB["MiniLM embeddings"]
+    EMB --> VDB[("transcript_chunks<br/>Chroma")]
+    SUP --> SUM[("transcript_summaries")]
+  end
+
+  subgraph RET["Retrieval"]
+    Q["question"] --> DENSE["dense search (exists)"]
+    Q --> BM25["BM25 keyword search"]
+    DENSE --> RRF["RRF fusion"]
+    BM25 --> RRF
+    RRF --> RERANK["cross-encoder reranker"]
+  end
+
+  subgraph AG["Agents (exist)"]
+    RERANK --> LLM1["rag_llm: single-hop / recursive"]
+    RERANK --> LLM2["rag_agent: LangGraph ReAct"]
+  end
+
+  subgraph SVC["Service"]
+    API["FastAPI /ask /index<br/>Pydantic + SSE"] --> DOCKER["Docker image"]
+    DOCKER --> CLOUD["cloud deploy + auth + rate limit"]
+  end
+
+  subgraph QL["Quality loop"]
+    GOLD[("golden dataset<br/>~40 labelled Q&amp;A")] --> HARNESS["eval harness<br/>recall@k · MRR · LLM-judge"]
+    HARNESS --> CI["CI regression gate"]
+    HARNESS --> REPORT["results table in README"]
+  end
+
+  VDB --> DENSE
+  VDB --> BM25
+  LLM1 --> API
+  LLM2 --> API
+  LLM1 -.-> HARNESS
+  LLM2 -.-> HARNESS
+  API --> TRACE["tracing: spans + tokens + cost"]
+  ROUTER["LiteLLM router<br/>DeepSeek · Claude · GPT"] --> LLM1
+  ROUTER --> LLM2
+
+  classDef existing fill:#202c33,stroke:#3a4a54,color:#e9edef
+  classDef newnode fill:#0b3b33,stroke:#00a884,color:#7ff0d4
+  classDef store fill:#111b21,stroke:#3a4a54,color:#8696a0
+  class URL,SUP,CHK,EMB,Q,DENSE,LLM1,LLM2 existing
+  class RAW,VDB,SUM store
+  class BM25,RRF,RERANK,API,DOCKER,CLOUD,GOLD,HARNESS,CI,REPORT,TRACE,ROUTER newnode
+    </pre>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:#202c33;border:1px solid #3a4a54;"></span>exists today</span>
+    <span><span class="sw" style="background:#0b3b33;border:1px solid #00a884;"></span>new in this plan</span>
+    <span><span class="sw" style="background:#111b21;border:1px solid #3a4a54;"></span>Chroma collections</span>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2><span class="no">04</span> The roadmap — 6 phases, ~8 part-time weeks</h2>
+  <p class="sub">Ordered so each phase makes the next one measurable. Phase 1 is the flagship: build it before touching retrieval, so every improvement lands with a number attached. Effort assumes ~8–10 focused hours/week.</p>
+
+  <div class="timeline">
+    <div class="tl-grid">
+      <div></div>
+      <div class="tl-head">wk 1</div><div class="tl-head">wk 2</div><div class="tl-head">wk 3</div><div class="tl-head">wk 4</div>
+      <div class="tl-head">wk 5</div><div class="tl-head">wk 6</div><div class="tl-head">wk 7</div><div class="tl-head">wk 8</div>
+      <div class="tl-label">P0 baseline</div><div class="tl-cell"><div class="tl-bar"></div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      <div class="tl-label">P1 evals ★</div><div></div><div class="tl-cell"><div class="tl-bar hot"></div></div><div class="tl-cell"><div class="tl-bar hot"></div></div><div></div><div></div><div></div><div></div><div></div>
+      <div class="tl-label">P2 retrieval</div><div></div><div></div><div></div><div class="tl-cell"><div class="tl-bar"></div></div><div class="tl-cell"><div class="tl-bar"></div></div><div></div><div></div><div></div>
+      <div class="tl-label">P3 service</div><div></div><div></div><div></div><div></div><div></div><div class="tl-cell"><div class="tl-bar"></div></div><div class="tl-cell"><div class="tl-bar"></div></div><div></div>
+      <div class="tl-label">P4 LLMOps</div><div></div><div></div><div></div><div></div><div></div><div></div><div class="tl-cell"><div class="tl-bar"></div></div><div></div>
+      <div class="tl-label">P5 story</div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div class="tl-cell"><div class="tl-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="phase-grid">
+    <div class="phase">
+      <div class="phase-top"><h3>P0 · Engineering baseline</h3><span class="eff">wk 1 · ~7h</span></div>
+      <p class="why">Closes <b>CI/CD 64%</b> + first pass at <b>stakeholder comms 92%</b>. Cheapest credibility per hour in the plan.</p>
+      <div class="task">Add <code>[tool.ruff]</code> + <code>[tool.mypy]</code> to <code>pyproject.toml</code> (strict on <code>src/rag</code>, <code>src/evals</code> first); fix findings.</div>
+      <div class="task"><code>.github/workflows/ci.yml</code>: uv sync → ruff → mypy → pytest + coverage; badge in README.</div>
+      <div class="task">Rewrite README top: problem statement, architecture diagram (export the one above), 5-minute quickstart, results placeholder. Move the command reference to <code>docs/cli.md</code>.</div>
+      <div class="task">Add <code>.env.example</code>, MIT <code>LICENSE</code>, pre-commit hooks.</div>
+      <div class="proof"><b>PROOF</b> — green CI badge; a recruiter understands the repo in 60 seconds.</div>
+    </div>
+
+    <div class="phase flag">
+      <div class="phase-top"><h3>P1 · Evaluation backbone ★</h3><span class="eff">wks 2–3 · ~18h</span></div>
+      <p class="why">The senior differentiator. Every Jul-2026 spec you saved screens for it; your own analysis says build it first. <b>Do not skip to P2.</b></p>
+      <div class="task"><code>src/evals/golden/questions.jsonl</code> — 30–50 questions over the indexed corpus with reference answers + labelled relevant video/chunk IDs. Question classes: single-video, cross-video, <b>cross-domain routing</b> (property vs AI-engineering — your point: the agent must find the right transcripts in a mixed real-world corpus), and unanswerable.</div>
+      <div class="task"><code>src/evals/retrieval_metrics.py</code> — recall@k, MRR, nDCG against the labels, plus <b>summary-filter routing precision</b> (did it pick transcripts from the right domain?). Deterministic, runs in pytest.</div>
+      <div class="task"><b>RAGAS</b> judge layer (faithfulness, context precision, answer relevance) across all three setups — <b>DeepSeek answers, Claude grades</b> (via claude-agent-sdk as the judge/teacher model). <span style="color:var(--muted)">[locked D1]</span></div>
+      <div class="task">Latency + token-cost columns per setup; <code>uv run python -m src.evals.run</code> writes versioned results to <code>dashboard/eval_history/</code>.</div>
+      <div class="task">CI regression gate: retrieval metrics on every PR (free, deterministic); judge runs cached / on-demand.</div>
+      <div class="proof"><b>PROOF</b> — a results table in the README with real numbers, and a gate that fails when retrieval regresses.</div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-top"><h3>P2 · Retrieval upgrades</h3><span class="eff">wks 4–5 · ~15h</span></div>
+      <p class="why">Turns <b>RAG 88%</b> from "partial" to "deep". Named verbatim in the Sirius spec: <b>"hybrid and re-ranked retrieval."</b></p>
+      <div class="task"><code>src/rag/hybrid.py</code> — BM25 (rank-bm25) alongside dense, fused with reciprocal-rank fusion; <code>--retriever dense|hybrid</code> flag.</div>
+      <div class="task"><code>src/rag/rerank.py</code> — cross-encoder reranker (e.g. bge-reranker-base), retrieve 50 → rerank → top 10; <code>--rerank</code> flag.</div>
+      <div class="task">Chunk-size ablation (800 / 1200 / 1600 chars) through the P1 harness.</div>
+      <div class="task"><code>docs/retrieval-ablation.md</code> — before/after metrics + 5 worked failure cases (where dense loses to hybrid, and where it doesn't).</div>
+      <div class="proof"><b>PROOF</b> — "hybrid + rerank moved recall@10 from X → Y" with a failure analysis. Your core interview story.</div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-top"><h3>P3 · Ship it as a service</h3><span class="eff">wks 6–7 · ~12h</span></div>
+      <p class="why">Closes <b>Docker 64%</b> + <b>cloud 80%</b>. FastAPI is already a dependency — it's currently unused; this makes it real.</p>
+      <div class="task"><code>src/api/main.py</code> — <code>POST /ask</code> (setup, question, optional URL filter → structured Pydantic answer with citations, SSE streaming), <code>POST /index</code>, <code>GET /health</code>.</div>
+      <div class="task">API-key auth, per-key rate limit, and a per-request token budget cap.</div>
+      <div class="task">Multi-stage <code>Dockerfile</code> (uv-based) + <code>docker-compose.yml</code> (app + Chroma volume).</div>
+      <div class="task">Deploy to <b>AWS reusing the data-qa-agent pattern</b>: Terraform modules under <code>infra/terraform/</code>, App Runner service, GitHub-OIDC <code>deploy-aws.yml</code>, CloudWatch billing/5xx alarms → SNS. Copy the runbook, swap the app. <span style="color:var(--muted)">[locked D2]</span></div>
+      <div class="task">Stretch (~3h): vector storage behind a small interface + <code>pgvector</code> swap-in backend — data-qa-agent's Aurora Serverless v2 (scale-to-zero) Terraform is directly reusable, and it closes the "enterprise vector store" gap named in the Sirius spec (<a href="#rag-100" style="color:var(--blue)">see RAG coverage</a>).</div>
+      <div class="proof"><b>PROOF</b> — a curl-able endpoint (or one-command local Docker demo) in the README.</div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-top"><h3>P4 · Observability &amp; LLMOps</h3><span class="eff">wk 7 · ~8h</span></div>
+      <p class="why">Closes <b>MLOps 56%</b> and the Sirius nice-to-haves: tracing and cost tracking. (Multi-model routing descoped by your call — DeepSeek stays the answer model.)</p>
+      <div class="task"><b>Langfuse</b> tracing — spans for retrieve → rerank → generate with per-request tokens and cost; LangChain callback = low-effort integration. <span style="color:var(--muted)">[locked D3]</span></div>
+      <div class="task">Cost accounting: per-question DeepSeek cost + Claude judge cost tracked in Langfuse; cost-per-question trend lands in <code>dashboard/eval_history/</code> so optimisation is visible over time.</div>
+      <div class="task">Prompt registry: version IDs on <code>src/agents/prompts.py</code>, logged into traces + MLflow; prompt A/B variants run through the P1 harness so every prompt change ships with RAGAS scores.</div>
+      <div class="proof"><b>PROOF</b> — trace screenshot + a measured "prompt v2 beat v1 on faithfulness at equal cost" claim in the README.</div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-top"><h3>P5 · Governance &amp; storytelling</h3><span class="eff">wk 8 · ~8h</span></div>
+      <p class="why">Closes <b>responsible AI 32%</b> / <b>guardrails 24%</b>, and finishes <b>stakeholder comms 92%</b> — the #2 screened skill.</p>
+      <div class="task">Prompt-injection test suite: adversarial transcript fixtures ("ignore your instructions…") — transcripts are genuinely untrusted input here. Document mitigations.</div>
+      <div class="task">Distil <code>ai_specs/s1–s7</code> into <code>docs/adr/</code> — architecture decision records with trade-offs.</div>
+      <div class="task">3-minute demo video/GIF + a "What I'd do next in a production team" README section (scaling, pgvector migration, feedback loops, monitoring).</div>
+      <div class="task">Write the resume bullets + LinkedIn/GitHub profile update off the measured results.</div>
+      <div class="proof"><b>PROOF</b> — a repo a hiring manager can assess in 5 minutes, and interview answers with numbers in them.</div>
+    </div>
+
+    <div class="phase" id="p6" style="border-style:dashed;">
+      <div class="phase-top"><h3 style="color:var(--amber);">P6 · GraphRAG comparison <span style="font-size:11px;font-family:var(--mono);color:var(--dim);">(optional)</span></h3><span class="eff">+2 wks · ~15h</span></div>
+      <p class="why">Your question answered: yes, GraphRAG fits <b>this</b> repo — transcripts are entity-rich, and the P1 harness makes it the rare portfolio where GraphRAG is <b>measured against</b> standard RAG, not just demoed. Strongest for Culture Amp / SAP / Databricks–style roles; skip it if applications start sooner.</p>
+      <div class="task"><code>src/rag/graph.py</code> — LLM-extracted triples per chunk (people, companies, policies, suburbs, dates → typed relations), stored in NetworkX (or Neo4j if you want the JD keyword) with chunk-ID provenance.</div>
+      <div class="task"><code>--retriever graph</code> mode: entity-match the question → neighbourhood expansion → return the chunks behind the subgraph, so answers keep timestamped citations.</div>
+      <div class="task">Run graph vs dense vs hybrid through the P1 harness — where graphs win (multi-entity "how does X relate to Y" questions) and where they lose (fuzzy topical questions), written up with examples.</div>
+      <div class="proof"><b>PROOF</b> — "GraphRAG beat hybrid by X on multi-entity questions, lost by Y elsewhere" — a claim almost nobody interviewing can make with their own data.</div>
+    </div>
+  </div>
+</section>
+
+<section id="story">
+  <h2><span class="no">05</span> The senior narrative this buys you</h2>
+  <p class="sub">Senior isn't "I used LangChain" — it's measured trade-offs, failure analysis, and operational ownership. After the roadmap, your story arc is:</p>
+  <div class="story">
+    <ol>
+      <li><b>Framing:</b> <span class="q">"I built three retrieval-augmented strategies over the same corpus — single-hop, recursive multi-hop, and an agentic LangGraph loop — specifically so I could measure when agentic complexity pays for itself."</span></li>
+      <li><b>Evaluation:</b> <span class="q">"I labelled a golden dataset and gated CI on recall@k and MRR; LLM-as-judge scores faithfulness. The gate caught a regression when I changed chunking."</span></li>
+      <li><b>Iteration:</b> <span class="q">"Hybrid BM25+dense with a cross-encoder reranker moved recall@10 from X to Y. Here's a query where dense retrieval failed and exactly why."</span></li>
+      <li><b>Trade-offs:</b> <span class="q">"The agent beats single-hop on multi-topic questions but costs ~3× tokens and ~2× latency — here's when I'd ship each."</span></li>
+      <li><b>Operations:</b> <span class="q">"It's containerised, Terraform-deployed to AWS, traced per-request with token cost. I deliberately run a cheap answer model against a stronger judge model — and I can show the cost-per-question trend that justifies it."</span></li>
+    </ol>
+    <div class="bullets">
+      <p class="sub" style="margin-bottom:6px;">Resume bullets this generates (fill placeholders from P1/P2 results):</p>
+      <div class="rb">Built and deployed a production-grade RAG platform (LangChain/LangGraph, ChromaDB, FastAPI, Docker, AWS) comparing single-hop, recursive, and agentic retrieval over <span class="ph">N</span> indexed video transcripts.</div>
+      <div class="rb">Designed an evaluation harness (golden dataset, recall@k/MRR, LLM-as-judge faithfulness) gating CI; improved retrieval recall@10 by <span class="ph">X%</span> via hybrid BM25+dense fusion and cross-encoder reranking.</div>
+      <div class="rb">Instrumented per-request Langfuse tracing with token-level cost attribution; ran a cost-optimised answer model (DeepSeek) scored by an independent judge model (Claude), cutting cost-per-question by <span class="ph">Z%</span> at measured quality.</div>
+    </div>
+  </div>
+</section>
+
+<section id="risks">
+  <h2><span class="no">06</span> Risks &amp; how the plan handles them</h2>
+  <div class="risk"><span class="sev hi">high</span><p><b>Scope creep.</b> Your ai_plan lists 10+ libraries and 6 project ideas; this repo could try to absorb them all and finish none. <span class="mit">Mitigation: this repo is Portfolio Project #2 (RAG + evaluation) only. Text-to-SQL, fine-tuning/LoRA, and memory belong in separate repos — ConvFinQA-agent and data-qa-agent already cover some.</span></p></div>
+  <div class="risk"><span class="sev hi">high</span><p><b>Evals skipped under time pressure.</b> The temptation is to jump to hybrid retrieval (more fun). Without P1 first, P2 produces no numbers and the senior story collapses to "I added BM25". <span class="mit">Mitigation: phase order is a hard dependency; P2 tasks all consume the P1 harness.</span></p></div>
+  <div class="risk"><span class="sev md">med</span><p><b>Demo corpus optics — resolved (17 Jul).</b> Your call: the corpus stays deliberately mixed (finance/property <em>and</em> AI-engineering), because real users ask a mixed corpus about anything — the agent has to route to the right transcripts. <span class="mit">That reframing turns the optics concern into a feature under test: cross-domain routing questions go into the golden dataset and summary-filter routing precision becomes a P1 metric.</span></p></div>
+  <div class="risk"><span class="sev md">med</span><p><b>LLM-judge cost &amp; flakiness in CI.</b> Judge calls are non-deterministic and cost money on every PR. <span class="mit">Mitigation: deterministic retrieval metrics gate every PR; judge runs are cached, versioned, and triggered on demand/labels only.</span></p></div>
+  <div class="risk"><span class="sev md">med</span><p><b>Cloud bill drift.</b> A demo service left running quietly costs money. <span class="mit">Mitigation: teardown script, scale-to-zero platform choice, billing alarm — and the README documents the one-command local Docker fallback.</span></p></div>
+</section>
+
+<section id="decisions">
+  <h2><span class="no">07</span> Decisions — locked 17 Jul 2026</h2>
+  <p class="sub">All four came back from your review, plus one scope call. Recorded here with their consequences; the roadmap above already reflects every one of them.</p>
+  <div class="cols">
+    <div class="card">
+      <h3 style="color:var(--teal-bright);">D1 · Eval tooling → RAGAS, with Claude as judge</h3>
+      <ul>
+        <li>RAGAS supplies the judge-metric vocabulary interviewers recognise: faithfulness, context precision, answer relevance.</li>
+        <li>Your twist, adopted: <b>DeepSeek stays the answering agent; Claude (via claude-agent-sdk) is the judge/teacher</b> — grading answers and flagging weak retrievals. Independent judge ≠ self-grading, which is itself a defensible eval-design choice.</li>
+        <li>Retrieval metrics (recall@k, MRR, routing precision) stay hand-rolled either way — they need your chunk labels, not a framework.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--teal-bright);">D2 · Cloud → AWS, reusing the data-qa-agent stack</h3>
+      <ul>
+        <li>Verified reusable from <code>data-qa-agent</code>: Terraform under <code>infra/terraform/</code>, App Runner services, GitHub-OIDC <code>deploy-aws.yml</code> (no stored keys), CloudWatch billing/5xx alarms → SNS, teardown-able by design.</li>
+        <li>This repo copies the pattern with one service (the FastAPI app) — much smaller surface than data-qa-agent's four.</li>
+        <li>Bonus: its Aurora Serverless v2 module makes the P3 <b>pgvector stretch</b> nearly free, closing the enterprise-vector-store gap.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--teal-bright);">D3 · Observability → Langfuse</h3>
+      <ul>
+        <li>Named in your highest-fit specs (Sirius, CBA). LangChain callback integration keeps the lift small.</li>
+        <li>Spans for retrieve → rerank → generate; per-request tokens and cost for both DeepSeek answers and Claude judging.</li>
+        <li>MLflow stays for experiment history — the two tools answer different questions and saying why is interview material.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--teal-bright);">D4 · Corpus → deliberately mixed, routing under test</h3>
+      <ul>
+        <li>Finance/property stays canonical <b>and</b> the corpus keeps both domains — your framing: real users ask a mixed corpus about anything, so finding the right transcripts <em>is the product</em>.</li>
+        <li>Consequence in P1: golden dataset gains a cross-domain routing question class, and summary-filter <b>routing precision</b> becomes a first-class metric.</li>
+        <li>Scope call, also locked: <b>no LiteLLM router</b> — effort goes to evals + cost tracking of DeepSeek instead; routing stays a documented "next in production" step.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="walkthrough">
+  <h2><span class="no">08</span> Implementation walkthrough — one branch per phase, one PR ladder</h2>
+  <p class="sub">Your directive: use a fresh branch to close all the market gaps and stand the app up. The safest shape for a solo repo that must always stay demoable: <b>short-lived branch per slice → PR into <code>main</code> → CI green → merge</b>. <code>main</code> is always the thing you'd show a hiring manager; every PR is a self-contained, reviewable story that also becomes interview material ("walk me through a recent PR").</p>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>PR</th><th>Branch</th><th>Scope</th><th>Key files</th><th>Merge when</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>p0-baseline</code></td><td>Ruff + mypy + GitHub Actions CI + coverage badge; README rewrite (problem, architecture, quickstart); <code>.env.example</code>, LICENSE, pre-commit</td><td class="note"><code>pyproject.toml</code> · <code>.github/workflows/ci.yml</code> · <code>README.md</code> · <code>docs/cli.md</code></td><td class="note">CI green on the PR itself</td></tr>
+        <tr><td>2</td><td><code>p1-golden-dataset</code></td><td>30–50 labelled questions incl. cross-domain routing class; labelling helper script</td><td class="note"><code>src/evals/golden/questions.jsonl</code> · <code>scripts/label_golden.py</code></td><td class="note">Dataset reviewed by you, schema-validated in tests</td></tr>
+        <tr><td>3</td><td><code>p1-retrieval-metrics</code></td><td>recall@k / MRR / nDCG / routing precision + pytest + CI regression gate</td><td class="note"><code>src/evals/retrieval_metrics.py</code> · <code>tests/evals/</code></td><td class="note">Baseline numbers recorded in <code>dashboard/eval_history/</code></td></tr>
+        <tr><td>4</td><td><code>p1-ragas-judge</code></td><td>RAGAS + Claude-as-judge runner; latency + cost columns; eval report</td><td class="note"><code>src/evals/run.py</code> · <code>src/evals/judge.py</code></td><td class="note">Full eval runs end-to-end on the mixed corpus</td></tr>
+        <tr><td>5</td><td><code>p2-hybrid</code></td><td>BM25 + RRF fusion behind <code>--retriever</code> flag; evals re-run</td><td class="note"><code>src/rag/hybrid.py</code></td><td class="note">Before/after metrics in the PR description</td></tr>
+        <tr><td>6</td><td><code>p2-rerank-ablation</code></td><td>Cross-encoder reranker + chunk-size ablation + failure-analysis writeup</td><td class="note"><code>src/rag/rerank.py</code> · <code>docs/retrieval-ablation.md</code></td><td class="note">The recall@10 X→Y story is written down</td></tr>
+        <tr><td>7</td><td><code>p3-api-docker</code></td><td>FastAPI <code>/ask</code> <code>/index</code> <code>/health</code> + auth/rate-limit/budget caps + Dockerfile/compose</td><td class="note"><code>src/api/main.py</code> · <code>Dockerfile</code> · <code>docker-compose.yml</code></td><td class="note">One-command local Docker demo works</td></tr>
+        <tr><td>8</td><td><code>p3-aws-terraform</code></td><td>Terraform (data-qa-agent modules) + OIDC deploy workflow + alarms; optional pgvector/Aurora stretch</td><td class="note"><code>infra/terraform/</code> · <code>.github/workflows/deploy-aws.yml</code></td><td class="note">Live URL smoke-tested; teardown script proven</td></tr>
+        <tr><td>9</td><td><code>p4-langfuse-prompts</code></td><td>Langfuse tracing + cost accounting + prompt registry + prompt A/B through the harness</td><td class="note"><code>src/observability.py</code> · <code>src/agents/prompts.py</code></td><td class="note">Trace screenshot + prompt-A/B result in README</td></tr>
+        <tr><td>10</td><td><code>p5-governance-story</code></td><td>Injection test suite + ADRs from <code>ai_specs/</code> + demo video + final README + resume bullets</td><td class="note"><code>tests/security/</code> · <code>docs/adr/</code></td><td class="note">5-minute hiring-manager read test passes</td></tr>
+        <tr><td>11</td><td><code>p6-graphrag</code> <span class="badge partial">optional</span></td><td>Entity graph + <code>--retriever graph</code> + harness comparison vs dense/hybrid</td><td class="note"><code>src/rag/graph.py</code></td><td class="note">Graph-vs-vector results written up</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub" style="margin-top:14px;">Cadence per PR: I implement with tests → you review the diff (and the eval delta from PR 3 onward, every retrieval-touching PR carries its before/after numbers) → merge → next branch. First up is <b>PR 1 (<code>p0-baseline</code>)</b> — say the word and I'll cut the branch and start.</p>
+</section>
+
+<footer class="pagefoot">
+  Sources: transcript-rag-agent working tree (verified 2026-07-16) · ai-engineer-fit/ai-engineer-skills-analysis.md (25 AU roles, Mar 2026) · ai-role-summary-v1.md · ai-role/20260715 specs (Sirius, Insight Timer, Harper FDE) · design system matched to dashboard/chat.html
+</footer>
+
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+
+  // Render Mermaid in a theme that matches the artifact page, and re-render when
+  // the viewer flips the page theme - Mermaid never restyles an already-rendered
+  // SVG on its own, so a fixed theme clashes in either light or dark mode.
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+
+  function compositeRgba(foreground, background) {
+    const foregroundAlpha = foreground[3] / 255;
+    const backgroundAlpha = background[3] / 255;
+    const alpha = foregroundAlpha + backgroundAlpha * (1 - foregroundAlpha);
+    if (alpha === 0) return [0, 0, 0, 0];
+    return [
+      (foreground[0] * foregroundAlpha + background[0] * backgroundAlpha * (1 - foregroundAlpha)) / alpha,
+      (foreground[1] * foregroundAlpha + background[1] * backgroundAlpha * (1 - foregroundAlpha)) / alpha,
+      (foreground[2] * foregroundAlpha + background[2] * backgroundAlpha * (1 - foregroundAlpha)) / alpha,
+      alpha * 255,
+    ];
+  }
+
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBackground = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBackground = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0, 0, 0, 0];
+    const [r, g, b, a] = compositeRgba(bodyBackground, rootBackground);
+    if (a > 0) {
+      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+    }
+    const colorScheme = getComputedStyle(root).colorScheme;
+    if (colorScheme.includes("dark") && !colorScheme.includes("light")) return true;
+    if (colorScheme.includes("light") && !colorScheme.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied;
+  let rendering = false;
+  let queued = false;
+  function queueRender() {
+    queued = true;
+    if (rendering) return;
+    void render();
+  }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict", flowchart: { curve: "basis" } });
+        for (const { el, src } of diagrams) {
+          el.removeAttribute("data-processed");
+          el.textContent = src;
+        }
+        try {
+          await mermaid.run({ nodes: diagrams.map((d) => d.el) });
+        } catch (error) {
+          console.error("Mermaid diagram render failed:", error);
+          return;
+        }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, {
+      attributes: true,
+      attributeFilter: ["data-theme", "class", "style"],
+    });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener(
+    "transitionend",
+    ({ propertyName }) => {
+      if (propertyName === "background-color") queueRender();
+    },
+    true,
+  );
+  darkQuery.addEventListener("change", queueRender);
+</script>
+</body>
+</html>

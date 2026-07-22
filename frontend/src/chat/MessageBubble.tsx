@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { Answer, AgentStep } from '../api/types';
+import type { Answer, AgentStep, Followup } from '../api/types';
 import { AgentTrace } from './AgentTrace';
 import { AnswerBody } from './AnswerBody';
 import { ScoreStrip, fmtScore } from './ScoreStrip';
@@ -26,6 +26,13 @@ interface Props {
    * rather than the history file, so the trace survives until reload only.
    */
   traces?: Record<string, AgentStep[]>;
+  /**
+   * The question these answers reply to. Passed down to the score breakdown so
+   * answer relevancy can show it beside the question the judge reconstructed.
+   */
+  question?: string;
+  /** Ask a proposed follow-up, reusing this answer's retrieval scope. */
+  onAskFollowup?: (query: string) => void;
 }
 
 /** Re-render on an interval so running timers advance. */
@@ -62,6 +69,8 @@ export function MessageBubble({
   onCompare,
   remainingSetups,
   traces,
+  question,
+  onAskFollowup,
 }: Props) {
   useTick(running.length > 0);
 
@@ -138,7 +147,11 @@ export function MessageBubble({
             <AgentTrace steps={traces[active.key]!} running={false} />
           ) : null}
           <AnswerBody answer={active} />
-          <ScoreStrip evaluation={active.evaluation} judging={judging && !active.evaluation} />
+          <ScoreStrip
+            evaluation={active.evaluation}
+            judging={judging && !active.evaluation}
+            {...(question ? { question } : {})}
+          />
         </>
       ) : null}
 
@@ -206,6 +219,48 @@ export function MessageBubble({
           ) : null}
         </div>
       ) : null}
+      <Followups
+        followups={active?.followups ?? []}
+        busy={busy}
+        onAsk={onAskFollowup}
+      />
+    </div>
+  );
+}
+
+/**
+ * The follow-ups the answering LLM proposed, as one-click next questions.
+ *
+ * The agent contract returns these on every answer; offering them keeps a
+ * research thread going without the user having to phrase the next question.
+ */
+function Followups({
+  followups,
+  busy,
+  onAsk,
+}: {
+  followups: Followup[];
+  busy?: boolean;
+  onAsk?: (query: string) => void;
+}) {
+  const usable = followups.filter((f) => f.followup_query?.trim());
+  if (!usable.length || !onAsk) return null;
+  return (
+    <div className="followups">
+      <span className="microlabel">Follow up</span>
+      <div className="suggest">
+        {usable.map((followup) => (
+          <button
+            key={followup.followup_query}
+            type="button"
+            disabled={busy}
+            title={followup.rationale || undefined}
+            onClick={() => onAsk(followup.followup_query)}
+          >
+            {followup.topic || followup.followup_query}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

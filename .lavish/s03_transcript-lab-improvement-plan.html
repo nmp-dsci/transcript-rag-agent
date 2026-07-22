@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>transcript·lab — Review &amp; Improvement Plan</title>
+<style>
+/* ── transcript·lab "Instrument" tokens (mirrors frontend/src/theme.css) ── */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --on-accent:#0b1220; --hover:#182029; --btn-hover:#232b38; --accent-hover:#4b93f8;
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+*,*::before,*::after { box-sizing:border-box; }
+:where(.tl-grid,.tl-flex,[style*="display:grid"],[style*="display: grid"],[style*="display:flex"],[style*="display: flex"]) > * { min-width:0; }
+:where(p,h1,h2,h3,h4,li,td,th,dd,figcaption,.tl-badge) { overflow-wrap:anywhere; }
+:where(img,svg,video,canvas) { max-width:100%; height:auto; }
+html,body { margin:0; }
+body { background:var(--bg); color:var(--text); font:13.5px/1.55 'Segoe UI',Helvetica,Arial,sans-serif; }
+
+/* ── shell ── */
+.tl-topbar {
+  position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:14px;
+  padding:0 18px; height:48px; background:var(--panel); border-bottom:1px solid var(--border);
+}
+.tl-brand { font-weight:700; font-size:14px; white-space:nowrap; }
+.tl-brand em { color:var(--accent2); font-style:normal; }
+.tl-topmeta { margin-left:auto; font:11px var(--mono); color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; }
+.wrap { max-width:1240px; margin:0 auto; padding:26px 20px 90px; }
+
+.microlabel { font:600 10px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--dim); }
+.eyebrow { font:600 10.5px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--accent2); margin:0 0 6px; }
+h1 { font-size:24px; margin:6px 0 8px; line-height:1.25; }
+h2 { font-size:17px; margin:0 0 4px; }
+h3 { font-size:14px; margin:0 0 6px; color:var(--text); }
+.sub { color:var(--muted); font-size:12.5px; margin:0 0 12px; }
+section.ws { margin-top:42px; }
+.ws-head { display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--border2); padding-bottom:10px; margin-bottom:18px; flex-wrap:wrap; }
+.ws-head .n { font:700 20px var(--mono); color:var(--accent2); }
+.ws-head h2 { font-size:19px; }
+.ws-head .tag { margin-left:auto; }
+
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+.panel.tint { background:var(--panel3); }
+.tl-grid { display:grid; gap:14px; }
+.cols2 { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+.cols3 { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+
+.tl-badge { display:inline-block; border-radius:4px; padding:2px 7px; font:600 10px var(--mono); white-space:nowrap; vertical-align:middle; }
+.tl-badge.good { background:var(--good-dim); color:var(--good); border:1px solid var(--good-border); }
+.tl-badge.acc  { background:var(--accent-dim); color:var(--accent2); border:1px solid var(--accent-border); }
+.tl-badge.warn { background:var(--warn-dim); color:var(--warn); border:1px solid var(--warn-border); }
+.tl-badge.bad  { background:var(--bad-dim); color:var(--bad); border:1px solid var(--bad-border); }
+.tl-badge.plain{ background:var(--panel2); color:var(--muted); border:1px solid var(--border2); }
+.fileref { font:10.5px var(--mono); color:var(--accent2); background:var(--accent-dim); border:1px solid var(--accent-border); border-radius:4px; padding:1px 6px; white-space:nowrap; }
+
+.statstrip { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0 4px; }
+.stat { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+.stat b { font:600 19px var(--mono); color:var(--text); display:block; }
+.stat span { font-size:11px; color:var(--muted); }
+.stat .hint { font:10px var(--mono); color:var(--accent2); display:block; margin-top:3px; }
+
+ul.tick { margin:8px 0; padding-left:2px; list-style:none; }
+ul.tick li { margin:7px 0; padding-left:22px; position:relative; }
+ul.tick li::before { content:'✓'; position:absolute; left:0; color:var(--good); font-weight:700; }
+ul.gap li::before { content:'▲'; color:var(--warn); font-size:10px; top:3px; }
+ul.plain-list { margin:8px 0; padding-left:18px; }
+ul.plain-list li { margin:6px 0; color:var(--text2); }
+p { color:var(--text2); }
+strong { color:var(--text); }
+code { font:12px var(--mono); background:var(--panel2); border:1px solid var(--border2); border-radius:4px; padding:0 5px; color:var(--text2); }
+
+/* screenshots */
+.shot { border:1px solid var(--border2); border-radius:8px; overflow:hidden; background:#000; }
+.shot img { display:block; width:100%; }
+.shot-cap { font-size:11.5px; color:var(--muted); margin-top:8px; }
+.shot-cap b { color:var(--text2); }
+
+/* option cards */
+.optgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin-top:12px; }
+.opt { background:var(--panel3); border:1px solid var(--border2); border-radius:9px; padding:13px 15px; position:relative; }
+.opt.rec { border-color:var(--accent-border); box-shadow:0 0 0 1px var(--accent-border); }
+.opt .rectag { position:absolute; top:-9px; right:12px; }
+.opt h4 { margin:0 0 6px; font-size:13px; color:var(--text); }
+.opt .cost { font:10.5px var(--mono); color:var(--dim); margin-top:8px; border-top:1px dashed var(--border2); padding-top:7px; }
+.opt .cost b { color:var(--muted); }
+
+/* impact/effort chips */
+.iechips { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+
+/* ── composer mock (matches app) ── */
+.mock { background:var(--bg); border:1px solid var(--border2); border-radius:10px; padding:0; overflow:hidden; }
+.mock .mock-title { font:600 10px var(--mono); letter-spacing:.07em; text-transform:uppercase; color:var(--dim); background:var(--panel3); border-bottom:1px solid var(--border); padding:6px 12px; }
+.composer-mock { padding:12px 14px; background:var(--panel); }
+.composer-mock textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:10px;
+  color:var(--text); padding:10px 12px; font:13.5px/1.45 'Segoe UI',Helvetica,sans-serif; resize:none; height:44px;
+}
+.crow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:9px; }
+.crow .lbl { font:10px var(--mono); text-transform:uppercase; letter-spacing:.06em; color:var(--dim); }
+select.chipselect, .chipselect {
+  background:var(--bg); border:1px solid var(--border2); border-radius:13px;
+  padding:4px 10px; font-size:11.5px; color:var(--text2); max-width:280px;
+}
+select.chipselect:focus { border-color:var(--accent); outline:none; }
+.btn { background:var(--panel2); border:1px solid var(--border2); color:var(--text2); border-radius:6px; padding:5px 14px; font-size:12.5px; cursor:pointer; white-space:nowrap; }
+.btn.pri { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700; }
+.btn:hover { background:var(--btn-hover); } .btn.pri:hover { background:var(--accent-hover); }
+.scopestate { font:11px var(--mono); color:var(--muted); background:var(--panel3); border:1px dashed var(--border2); border-radius:7px; padding:7px 11px; margin-top:10px; }
+.scopestate b { color:var(--accent2); font-weight:600; }
+
+/* pipeline stage mock */
+.stages { display:flex; gap:0; flex-wrap:wrap; margin:12px 0 4px; }
+.stage-step { flex:1 1 110px; min-width:104px; text-align:center; position:relative; padding:10px 6px 8px; }
+.stage-step:not(:last-child)::after { content:'→'; position:absolute; right:-7px; top:26px; color:var(--dim); font-size:13px; z-index:2; }
+.stage-dot { width:30px; height:30px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; background:var(--panel2); border:1px solid var(--border2); }
+.stage-step.done .stage-dot { background:var(--good-dim); border-color:var(--good-border); color:var(--good); }
+.stage-step.live .stage-dot { background:var(--accent-dim); border-color:var(--accent-border); color:var(--accent2); animation:tlpulse 1.1s infinite; }
+@keyframes tlpulse { 0%,100%{box-shadow:0 0 0 0 rgba(47,129,247,.35);} 50%{box-shadow:0 0 0 6px rgba(47,129,247,0);} }
+.stage-step .sn { font-size:11px; color:var(--text2); font-weight:600; }
+.stage-step .sm { font:9.5px var(--mono); color:var(--dim); }
+
+/* metric explainer */
+.formula { font:12.5px var(--mono); background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:9px 12px; color:var(--accent2); margin:9px 0; overflow-x:auto; white-space:nowrap; }
+.claimrow { display:flex; gap:9px; align-items:baseline; padding:5px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.claimrow:last-child { border-bottom:none; }
+.claimrow .v { flex:0 0 auto; font-weight:700; }
+.claimrow .v.ok { color:var(--good); } .claimrow .v.no { color:var(--bad); }
+.claimrow .why { color:var(--dim); font-size:11px; }
+.mbar { height:6px; background:var(--panel2); border-radius:3px; overflow:hidden; flex:1; }
+.mbar i { display:block; height:100%; background:var(--accent); border-radius:3px; }
+.mrow { display:flex; align-items:center; gap:9px; margin:5px 0; }
+.mrow .mlab { width:120px; flex:0 0 auto; font:10px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.mrow .mval { width:44px; text-align:right; font:11px var(--mono); color:var(--text2); flex:0 0 auto; }
+
+/* tables */
+.tblwrap { overflow-x:auto; background:var(--panel); border:1px solid var(--border); border-radius:8px; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:12.5px; min-width:640px; }
+th { font:600 10px var(--mono); letter-spacing:.07em; text-transform:uppercase; color:var(--muted); text-align:left; padding:9px 12px; border-bottom:1px solid var(--border2); background:var(--panel3); white-space:nowrap; }
+td { padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text2); }
+tr:last-child td { border-bottom:none; }
+td.mono { font:11.5px var(--mono); white-space:nowrap; }
+
+/* mermaid holder */
+.diagram { background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:14px; margin:12px 0; overflow-x:auto; }
+.diagram .microlabel { display:block; margin-bottom:8px; }
+pre.mermaid { margin:0; display:flex; justify-content:center; background:transparent; }
+
+/* decision / input */
+.decision { background:var(--panel); border:1px solid var(--accent-border); border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+.decision h3 { color:var(--accent2); }
+.decision label.choice { display:flex; gap:9px; align-items:flex-start; padding:8px 10px; border:1px solid var(--border2); border-radius:8px; margin:7px 0; cursor:pointer; background:var(--panel3); }
+.decision label.choice:hover { border-color:var(--accent-border); }
+.decision input { accent-color:var(--accent); margin-top:2px; }
+.decision .cl-t { font-size:12.5px; color:var(--text); font-weight:600; }
+.decision .cl-d { font-size:11.5px; color:var(--muted); }
+.queued-note { font:10.5px var(--mono); color:var(--good); margin-left:10px; display:none; }
+textarea.free { width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:8px; color:var(--text); padding:9px 11px; font:12.5px/1.5 'Segoe UI',Helvetica,sans-serif; min-height:64px; resize:vertical; }
+.footer-note { margin-top:34px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--border); padding-top:14px; }
+@media (max-width:700px){ .ws-head .tag{margin-left:0;} }
+</style>
+</head>
+<body>
+
+<div class="tl-topbar">
+  <div class="tl-brand">transcript<em>·lab</em> — review &amp; improvement plan</div>
+  <div class="tl-topmeta">
+    <span>branch feature/transcript-lab-review</span>
+    <span>21/07/2026</span>
+    <span>10 videos · 281 chunks · 5 channels</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════ HERO ══════════════ -->
+<p class="eyebrow">Review · every tab walked live + full code map</p>
+<h1>Three workstreams to take transcript·lab to a senior-AI-engineer-level RAG workbench</h1>
+<p class="sub" style="max-width:880px">
+  I ran the app (<code>uv run python -m src.cli serve</code>), walked the <b>Chat</b>, <b>Library</b> and <b>Scoreboard</b> tabs in the browser,
+  and mapped the React frontend, the retrieval/agent backend, and the RAGAS judge in the code. Every claim below carries a file reference.
+  Annotate anything you disagree with, and use the decision panels at the bottom to green-light work.
+</p>
+
+<div class="statstrip">
+  <div class="stat"><b>A · Chat</b><span>Channel ▸ video linked scope, visual polish, answer quality</span><span class="hint">6 improvements</span></div>
+  <div class="stat"><b>B · RAG Pipeline</b><span>Rename Library, bigger indexing panel, corpus insights, chunk graph</span><span class="hint">5 improvements</span></div>
+  <div class="stat"><b>C · Evals</b><span>Show how RAGAS scores are made, harden agent evals</span><span class="hint">6 improvements</span></div>
+  <div class="stat"><b>4 phases</b><span>Quick wins first — rename, filters, explainers ship in a day or two</span><span class="hint">roadmap below</span></div>
+</div>
+
+<!-- ══════════════ CURRENT STATE ══════════════ -->
+<section class="ws">
+  <div class="ws-head"><span class="n">◎</span><h2>What exists today — live walkthrough</h2><span class="tag tl-badge plain">screenshots from this session</span></div>
+  <div class="tl-grid cols3">
+    <div>
+      <div class="shot"><img src="s03_current_chat.jpg" alt="Chat tab: conversation with setup tabs, RAGAS bars, compare grid"></div>
+      <p class="shot-cap"><b>Chat.</b> Strong bones: multi-setup answer tabs, inline citations, live agent trace, RAGAS bars, compare grid.
+      Scope is a flat 10-video dropdown — no channel level <span class="fileref">Composer.tsx:90–107</span>.</p>
+    </div>
+    <div>
+      <div class="shot"><img src="s03_current_library.jpg" alt="Library tab: corpus tree grouped by channel, retrieval lab, index panel"></div>
+      <p class="shot-cap"><b>Library.</b> Channel→video→chunk tree, Retrieval Lab (semantic vs BM25 side-by-side). The
+      "+ Index new content" panel is a bare URL box; no corpus summary or insights anywhere.</p>
+    </div>
+    <div>
+      <div class="shot"><img src="s03_current_scoreboard.jpg" alt="Scoreboard tab: setup × model table with RAGAS aggregates"></div>
+      <p class="shot-cap"><b>Scoreboard.</b> Solid aggregates + provenance bar. But the three scores are opaque — nothing shows
+      <i>how</i> Faithful / Relevant / Precision were derived for any answer.</p>
+    </div>
+  </div>
+  <div class="panel tint" style="margin-top:14px">
+    <span class="microlabel">Overall verdict</span>
+    <p style="margin:6px 0 0">This is already an unusually good eval workbench — persisted contexts per answer, one shared history across CLI/web,
+    provenance-aware scoreboard. The gaps are: <strong>scoping stops at video level</strong>, <strong>retrieval is semantic-only in the answer path</strong>
+    (BM25 exists but is display-only <span class="fileref">src/api/ranking.py</span>), <strong>no conversational memory</strong>, and
+    <strong>the judge throws away every intermediate artifact</strong> that would explain its scores <span class="fileref">src/evals/judge.py:116–141</span>.</p>
+  </div>
+</section>
+
+<!-- ══════════════ WORKSTREAM A ══════════════ -->
+<section class="ws" id="ws-a">
+  <div class="ws-head"><span class="n">A</span><h2>Chat — channel/video scope, visual polish, answer quality</h2><span class="tag tl-badge acc">your feedback #1</span></div>
+
+  <!-- A1 -->
+  <div class="panel">
+    <h3>A1 · Linked Channel ▸ Video scope filters <span class="tl-badge good">quick win</span> <span class="tl-badge acc">high impact</span></h3>
+    <p>Today the composer offers <b>Whole corpus</b> or one of 10 videos in a single flat <code>&lt;select&gt;</code>; the API accepts only a video
+    <code>url</code> <span class="fileref">src/api/main.py:72–80</span>. Your corpus already spans 5 channels, and the Library tree already groups by
+    channel — Chat should too.</p>
+
+    <div class="mock" style="margin-top:12px">
+      <div class="mock-title">Proposed composer — try it, the two filters update each other (live mock, real corpus data)</div>
+      <div class="composer-mock">
+        <textarea readonly placeholder="Ask the indexed transcripts anything…  (Enter to send, Shift+Enter for a newline)"></textarea>
+        <div class="crow">
+          <span class="lbl">Scope</span>
+          <select class="chipselect" id="mock-channel" aria-label="Channel scope">
+            <option value="">All channels</option>
+          </select>
+          <select class="chipselect" id="mock-video" aria-label="Video scope">
+            <option value="">All videos</option>
+          </select>
+          <span class="lbl" style="margin-left:8px">Agent</span>
+          <span class="chipselect">rag_agent (agentic) ▾</span>
+          <span class="chipselect">⚙ advanced</span>
+          <span style="flex:1"></span>
+          <button class="btn pri" type="button">Send</button>
+        </div>
+        <div class="scopestate" id="mock-state">Retrieval scope → <b>whole corpus</b> (10 videos, 281 chunks)</div>
+      </div>
+    </div>
+
+    <ul class="tick" style="margin-top:12px">
+      <li><strong>Channel picked</strong> → video list filters to that channel; retrieval scopes to all its videos.</li>
+      <li><strong>Video picked</strong> → channel auto-selects to its owner; retrieval scopes to that one video (current behaviour preserved).</li>
+      <li><strong>Channel cleared</strong> → video keeps working standalone; both cleared → whole corpus.</li>
+      <li>Scope chip echoes into the answer bubble's meta chips so judged runs record what they searched.</li>
+    </ul>
+
+    <p style="margin-top:10px"><b>Why this needs a small backend change:</b> chunk metadata carries only <code>video_id</code> — channel lives solely on
+    the <code>raw_transcripts</code> collection <span class="fileref">src/rag/storage.py:374</span>. Three ways to bridge it:</p>
+
+    <div class="optgrid">
+      <div class="opt">
+        <h4>Option 1 — Join at query time</h4>
+        <p style="font-size:12px;margin:0">Resolve channel → <code>video_id</code>s from raw-transcript metadata (already exposed per video by
+        <span class="fileref">src/api/corpus.py:55</span>), then call the existing <code>query_by_video_ids()</code>
+        <span class="fileref">src/rag/storage.py:180</span>. Add <code>channel</code> to <code>AskRequest</code>.</p>
+        <div class="cost"><b>Cost:</b> zero data migration · slightly slower (N per-video queries merged) · channel logic lives in app code</div>
+      </div>
+      <div class="opt rec">
+        <span class="rectag tl-badge acc">RECOMMENDED</span>
+        <h4>Option 2 — Metadata backfill, no re-embedding</h4>
+        <p style="font-size:12px;margin:0">One-off script: Chroma's <code>collection.update(ids, metadatas=…)</code> stamps
+        <code>channel_id</code>/<code>channel_name</code> onto all 281 existing chunks <em>without re-embedding</em>; also add channel to
+        <code>_chunk_metadata()</code> for future ingests. Retrieval then uses a native <code>where={"channel_id": …}</code> filter — one query, clean.</p>
+        <div class="cost"><b>Cost:</b> ~30-line backfill script · runs in seconds at this scale · new ingests get it for free</div>
+      </div>
+      <div class="opt">
+        <h4>Option 3 — Full re-index</h4>
+        <p style="font-size:12px;margin:0">Re-run <code>index-rag</code> for all 10 videos after extending chunk metadata. Simplest mental model, but
+        re-fetches transcripts and re-embeds 281 chunks for no additional benefit over Option 2.</p>
+        <div class="cost"><b>Cost:</b> minutes of compute + Supadata API calls · risk of transcript drift · unnecessary here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- A2 -->
+  <div class="panel">
+    <h3>A2 · Visual polish <span class="tl-badge good">quick win</span></h3>
+    <p>The Instrument design system (<span class="fileref">frontend/src/theme.css</span>) is coherent — polish means using data you already store, not a redesign:</p>
+    <ul class="plain-list">
+      <li><strong>Video thumbnails</strong> — <code>thumbnail_url</code> is already on every raw transcript <span class="fileref">src/rag/models.py:15</span>.
+        Show them in the scope picker, the Sources list, and the Library tree. Instantly makes the corpus feel real.</li>
+      <li><strong>Suggestion chips grouped by channel</strong> — the empty-state prompts are a flat list today; group them under channel microlabels so the two-domain corpus (careers vs property) reads at a glance.</li>
+      <li><strong>Channel color coding</strong> — assign each channel a stable hue (like the existing per-setup swatches <span class="fileref">theme.css:220–222</span>); use it on tree rows, scope chips, source citations, and the future chunk graph.</li>
+      <li><strong>Answer skeleton while streaming</strong> — the agent trace streams beautifully, but the final answer pops in as one block; a shimmer placeholder under the trace smooths the ~30s agentic runs.</li>
+      <li><strong>Score strip labels</strong> — "FAITHFUL 1.00" with no affordance; add an ⓘ that opens the Workstream-C score breakdown (see C1) so the bubble teaches the metric.</li>
+    </ul>
+  </div>
+
+  <!-- A3 -->
+  <div class="panel">
+    <h3>A3 · How the agent answers — senior-level upgrades</h3>
+    <p>Ranked by payoff. The first two directly lift the RAGAS numbers you already track; the third makes Chat feel like a chat.</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th>#</th><th>Upgrade</th><th>Today</th><th>Proposal</th><th>Effort</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">1</td>
+          <td><strong>Hybrid retrieval (RRF)</strong> <span class="tl-badge acc">precision ↑</span></td>
+          <td>Answer path is semantic-only; BM25 exists but is display-only in the Retrieval Lab <span class="fileref">src/rag/bm25.py</span></td>
+          <td>Fuse semantic + BM25 with Reciprocal Rank Fusion inside the context provider; expose <code>retrieval=semantic|hybrid</code> per ask so the Scoreboard can A/B it under the same judge</td>
+          <td class="mono">~1 day</td>
+        </tr>
+        <tr>
+          <td class="mono">2</td>
+          <td><strong>Cross-encoder reranker</strong> <span class="tl-badge acc">precision ↑</span></td>
+          <td>Chunks go to the LLM in raw vector-score order</td>
+          <td>Retrieve top-30, rerank to top-k with a local cross-encoder (<code>ms-marco-MiniLM-L-6-v2</code> — same sentence-transformers stack as embeddings, no new API)</td>
+          <td class="mono">~1 day</td>
+        </tr>
+        <tr>
+          <td class="mono">3</td>
+          <td><strong>Conversational memory</strong></td>
+          <td>Every ask is independent — history is a log, never fed to the LLM <span class="fileref">src/agents/rag_agent.py:299</span></td>
+          <td>Condense-then-rewrite: summarize the active thread, rewrite follow-up questions into standalone retrieval queries, inject the condensed history into the answer prompt</td>
+          <td class="mono">~2 days</td>
+        </tr>
+        <tr>
+          <td class="mono">4</td>
+          <td><strong>Follow-up chips</strong> <span class="tl-badge good">quick win</span></td>
+          <td>The LLM contract <em>already returns</em> proposed follow-up queries on every answer — the UI drops them <span class="fileref">src/agents/prompts.py:45</span></td>
+          <td>Render them as tappable chips under the bubble; tapping asks with the same scope. Zero backend work</td>
+          <td class="mono">hours</td>
+        </tr>
+        <tr>
+          <td class="mono">5</td>
+          <td><strong>Expose the S4 summary filter</strong> <span class="tl-badge good">quick win</span></td>
+          <td>Transcript-summary pre-filtering works but is CLI-only — <code>AskRequest</code> can't reach it <span class="fileref">src/rag/context.py:92–110</span></td>
+          <td>Add a "smart-filter transcripts" toggle in ⚙ advanced; it's a boolean pass-through to the existing provider</td>
+          <td class="mono">hours</td>
+        </tr>
+        <tr>
+          <td class="mono">6</td>
+          <td><strong>Citation coverage guard</strong></td>
+          <td>Fallback regex maps <code>[n]</code> to chunks when the LLM forgets references <span class="fileref">src/agents/rag_transcript_agent.py:473</span></td>
+          <td>Flag answer sentences with no citation ("unsupported" underline) — pairs naturally with per-claim faithfulness in C1</td>
+          <td class="mono">~1 day</td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <div class="diagram">
+      <span class="microlabel">Proposed ask pipeline (additions in blue)</span>
+      <pre class="mermaid">
+flowchart LR
+  Q["question +\nthread context"] --> RW["query rewrite\n(memory-aware)"]
+  RW --> SCOPE["scope resolve\nchannel / video"]
+  SCOPE --> SEM["semantic top-30"]
+  SCOPE --> BM["BM25 top-30"]
+  SEM --> RRF["RRF fusion"]
+  BM --> RRF
+  RRF --> RE["cross-encoder\nrerank to top-k"]
+  RE --> AG["agent answer\n+ citations"]
+  AG --> J["RAGAS judge"]
+  style RW fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style SCOPE fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style BM fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style RRF fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style RE fill:#132339,stroke:#1f4a7a,color:#79b8ff
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ WORKSTREAM B ══════════════ -->
+<section class="ws" id="ws-b">
+  <div class="ws-head"><span class="n">B</span><h2>Library → RAG Pipeline — rename, richer indexing, insights, chunk graph</h2><span class="tag tl-badge acc">your feedback #2</span></div>
+
+  <div class="panel">
+    <h3>B1 · Rename the tab to "RAG Pipeline" <span class="tl-badge good">trivial</span></h3>
+    <p>One-line label change in <span class="fileref">frontend/src/App.tsx:10–16</span> plus a hash-route alias so old
+    <code>#library</code> links keep working (<code>#pipeline</code> becomes canonical). The name also better matches what the tab already is:
+    ingest → chunks → retrieval comparison.</p>
+  </div>
+
+  <div class="panel">
+    <h3>B2 · Top-line corpus summary with insights <span class="tl-badge good">quick win</span></h3>
+    <p>The tab currently opens with a bare tree. Give it a header strip computed from data <code>/api/corpus</code> already returns — numbers below are your real corpus:</p>
+    <div class="statstrip" style="margin-top:12px">
+      <div class="stat"><b>10</b><span>videos indexed</span></div>
+      <div class="stat"><b>281</b><span>chunks · ~1,200 chars each</span></div>
+      <div class="stat"><b>5</b><span>channels</span></div>
+      <div class="stat"><b>7 / 10</b><span>videos with summaries</span><span class="hint">3 missing — summary filter blind spot</span></div>
+      <div class="stat"><b>MiniLM-L6-v2</b><span>embeddings · 384 dims</span></div>
+    </div>
+    <ul class="plain-list" style="margin-top:10px">
+      <li><strong>Insight chips</strong>, not just counts: <em>"Smart Property Investment holds 156/281 chunks (56%) — retrieval will skew there on whole-corpus asks"</em>;
+      <em>"3 videos have no transcript summary, so the S4 filter can never select them"</em>; <em>"2 topic domains detected (careers / AU property)"</em>.</li>
+      <li>Chips deep-link: clicking the summary-gap insight selects those videos; clicking a channel insight filters the tree.</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>B3 · "Index new content" panel — bigger, staged, and it teaches the pipeline <span class="tl-badge acc">high impact</span></h3>
+    <p>Today it's a URL box and a button (<span class="fileref">frontend/src/library/IndexPanel.tsx</span>) — you can't see what indexing actually does.
+    (I read your "New Context" note as this panel; if you meant the chunk-detail context viewer, annotate here and I'll re-scope.)
+    Make it a full-width panel that renders ingestion as the pipeline it is:</p>
+
+    <div class="mock" style="margin-top:12px">
+      <div class="mock-title">Proposed indexing panel — mid-run state</div>
+      <div style="padding:14px 16px;background:var(--panel)">
+        <div class="crow" style="margin-top:0">
+          <span class="chipselect">Single video</span>
+          <span class="chipselect" style="border-color:var(--accent-border);color:var(--accent2)">Channel · latest N</span>
+          <input class="chipselect" style="flex:1;min-width:200px" value="https://www.youtube.com/@aiDotEngineer" readonly>
+          <button class="btn pri" type="button">Start indexing</button>
+        </div>
+        <div class="stages">
+          <div class="stage-step done"><div class="stage-dot">✓</div><div class="sn">Discover</div><div class="sm">5 videos found</div></div>
+          <div class="stage-step done"><div class="stage-dot">✓</div><div class="sn">Fetch</div><div class="sm">transcript 2/5</div></div>
+          <div class="stage-step live"><div class="stage-dot">●</div><div class="sn">Chunk</div><div class="sm">34 chunks · 1.2k chars</div></div>
+          <div class="stage-step"><div class="stage-dot">4</div><div class="sn">Embed</div><div class="sm">MiniLM · 384d</div></div>
+          <div class="stage-step"><div class="stage-dot">5</div><div class="sn">Summarize</div><div class="sm">for S4 filter</div></div>
+        </div>
+        <div class="scopestate">After the run: a result card — <b>+2 videos · +70 chunks · channel Kun Chen</b> · "ask about this" and "view in tree" actions,
+        plus deltas on the B2 stat strip.</div>
+      </div>
+    </div>
+    <p style="margin-top:10px"><b>Backend note:</b> <code>POST /api/index</code> currently shells out to the CLI and reports only at the end
+    <span class="fileref">src/api/main.py:482</span>. Staged progress needs it to emit SSE events per pipeline stage — same pattern as
+    <code>/api/ask</code> already uses, and the ingestion steps are already discrete functions in <span class="fileref">src/rag/indexing.py</span>.</p>
+  </div>
+
+  <div class="panel">
+    <h3>B4 · A graph out of chunks — yes, and the hard parts already exist</h3>
+    <p>The legacy <code>rag_pipeline.html</code> dashboard has a 2-D PCA "Chunk Space" scatter that never made it into the React app.
+    All primitives are in place: every chunk embedding is loadable <span class="fileref">src/dashboard/rag_pipeline.py:858</span>, PCA projection is
+    implemented <span class="fileref">src/dashboard/chunk_space.py:39–52</span>, and question-to-chunk kNN in the full 384-dim space exists
+    <span class="fileref">src/dashboard/chunk_space.py:70</span>. What's new is chunk↔chunk edges and a React view.</p>
+    <div class="optgrid">
+      <div class="opt rec">
+        <span class="rectag tl-badge acc">RECOMMENDED</span>
+        <h4>Similarity graph + question overlay</h4>
+        <p style="font-size:12px;margin:0">New <code>GET /api/chunk-graph?k=5</code>: cosine kNN edges over the 281×384 matrix (trivial at this scale).
+        Force-directed layout, nodes colored by channel, sized by times-retrieved. Type a query → its retrieval neighborhood lights up, edges show why
+        neighboring chunks came along. This is the "explain retrieval" view.</p>
+        <div class="cost"><b>Cost:</b> ~2–3 days · pure-frontend force layout (d3-force or hand-rolled) + one endpoint</div>
+      </div>
+      <div class="opt">
+        <h4>Port the PCA scatter as-is</h4>
+        <p style="font-size:12px;margin:0">Fastest: reuse <code>projection.json</code>, render an SVG scatter with channel colors and question overlay.
+        No edges — it shows clusters, not relationships. Caveat: PCA explains only 14%+5% of variance here, so distances mislead.</p>
+        <div class="cost"><b>Cost:</b> ~1 day · but limited insight; risks being a pretty dead-end</div>
+      </div>
+      <div class="opt">
+        <h4>Map + edges hybrid</h4>
+        <p style="font-size:12px;margin:0">UMAP layout (better local structure than PCA) with kNN edges drawn on top, retrieval overlay as in option 1.
+        Most informative, adds a <code>umap-learn</code> dependency and layout tuning time.</p>
+        <div class="cost"><b>Cost:</b> ~4–5 days · new dependency · best long-term visual</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>B5 · Pipeline-side senior RAG upgrades</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Upgrade</th><th>What &amp; why</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Contextual chunk headers</strong> <span class="tl-badge acc">retrieval ↑</span></td>
+          <td>Prepend <code>channel · video title · timestamp window</code> to each chunk's text <em>before embedding</em> (Anthropic "contextual retrieval" pattern).
+          Spoken-word chunks like <em>"had. So, I'm going to just copy…"</em> are near-meaningless to the embedder without it — this is the single biggest
+          retrieval-quality lever for transcript corpora.</td>
+          <td class="mono">src/rag/chunking.py · storage.py</td>
+        </tr>
+        <tr>
+          <td><strong>Chunk metadata enrichment</strong></td>
+          <td>Add <code>channel_id/name</code>, <code>title</code>, <code>upload_date</code> to chunk metadata (Option 2 backfill from A1 covers it).
+          Unlocks native filters (channel, date range) and graph coloring.</td>
+          <td class="mono">storage.py:374</td>
+        </tr>
+        <tr>
+          <td><strong>Neighbor expansion at synthesis</strong></td>
+          <td>Retrieve precise small chunks, then hand the LLM each hit ±1 adjacent chunk (segment indices already stored). Cheap version of parent-document retrieval — fixes answers cut off mid-thought.</td>
+          <td class="mono">src/rag/context.py</td>
+        </tr>
+        <tr>
+          <td><strong>Embedding upgrade path</strong></td>
+          <td>MiniLM-L6 (384d, 2021-era) is the current ceiling. Benchmark <code>bge-small-en-v1.5</code> / <code>nomic-embed-text</code> on your own judged questions —
+          the Scoreboard already records <code>embedding_model</code> per answer, so the A/B is free.</td>
+          <td class="mono">config.py:148</td>
+        </tr>
+        <tr>
+          <td><strong>Index health check</strong></td>
+          <td>Surface in the B2 strip: videos missing summaries (3 today), duplicate indexing, chunks never retrieved by any judged question.</td>
+          <td class="mono">src/api/corpus.py</td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ══════════════ WORKSTREAM C ══════════════ -->
+<section class="ws" id="ws-c">
+  <div class="ws-head"><span class="n">C</span><h2>Evals — show how RAGAS judges, then harden it for agents</h2><span class="tag tl-badge acc">your feedback #3</span></div>
+
+  <div class="panel">
+    <h3>C1 · "How was this scored?" — the metrics, made visible</h3>
+    <p>The judge wraps the real RAGAS 0.4.3 metrics <span class="fileref">src/evals/judge.py:54–114</span>. Internally RAGAS produces
+    per-claim verdicts with reasons, a generated question, and per-chunk verdicts — <strong>then the judge keeps only three floats and discards all of it</strong>
+    <span class="fileref">judge.py:116–141</span>. Two deliverables: an explainer (ship immediately) and a per-answer breakdown (needs persistence).</p>
+
+    <div class="tl-grid cols3" style="margin-top:14px">
+      <div class="opt">
+        <h4>FAITHFUL — is the answer supported?</h4>
+        <div class="formula">supported claims ÷ total claims</div>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">The judge LLM splits the answer into standalone claims, then NLI-checks each one against the retrieved chunks only.</p>
+        <div class="claimrow"><span class="v ok">✓</span><span>Gold Coast has boom-and-bust history<br><span class="why">directly stated in chunk #c2</span></span></div>
+        <div class="claimrow"><span class="v ok">✓</span><span>Vacancy swung 0.5% → 9%<br><span class="why">figure appears in chunk #c2</span></span></div>
+        <div class="claimrow"><span class="v no">✗</span><span><em>example:</em> "prices fell 20% in 2024"<br><span class="why">not inferable from any retrieved chunk → unfaithful</span></span></div>
+        <div class="mrow" style="margin-top:9px"><span class="mlab">faithful</span><div class="mbar"><i style="width:100%"></i></div><span class="mval">1.00</span></div>
+      </div>
+      <div class="opt">
+        <h4>RELEVANT — does it answer the question?</h4>
+        <div class="formula">cos( E(genʼd question), E(original) ) × committal</div>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">The judge writes the question this answer <em>would</em> answer, embeds both, compares. Evasive answers score 0.</p>
+        <div class="claimrow"><span class="v" style="color:var(--accent2)">Q</span><span>asked: "Is the Gold Coast market at risk of collapse, and why?"</span></div>
+        <div class="claimrow"><span class="v" style="color:var(--warn)">Q'</span><span>generated: "What risks does the Gold Coast property market face?"<br><span class="why">similar but not identical → 0.74</span></span></div>
+        <div class="mrow" style="margin-top:9px"><span class="mlab">relevant</span><div class="mbar"><i style="width:74%"></i></div><span class="mval">0.74</span></div>
+        <p style="font-size:11px;color:var(--warn);margin:8px 0 0">⚠ Currently computed from a <b>single</b> generated question (<code>strictness=1</code>
+        <span class="fileref">judge.py:89</span>) — the noisiest possible setting; see C2.</p>
+      </div>
+      <div class="opt">
+        <h4>PRECISION — were the chunks useful, in order?</h4>
+        <div class="formula">Σ precision@k × verdict_k ÷ Σ verdict_k</div>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 0 8px">One verdict per retrieved chunk: "was this useful in arriving at the answer?" — rank-weighted, so useful chunks buried low cost you.</p>
+        <div class="claimrow"><span class="v ok">✓</span><span>#1 · #c2 vacancy swings <span class="why">used → P@1 = 1.00</span></span></div>
+        <div class="claimrow"><span class="v ok">✓</span><span>#2 · #c7 off-the-plan risk <span class="why">used → P@2 = 1.00</span></span></div>
+        <div class="claimrow"><span class="v no">✗</span><span>#3 · #c11 resume formatting <span class="why">irrelevant — cross-domain bleed</span></span></div>
+        <div class="claimrow"><span class="v ok">✓</span><span>#4 · #c1 spruiker marketing <span class="why">used → P@4 = 0.75</span></span></div>
+        <div class="mrow" style="margin-top:9px"><span class="mlab">precision</span><div class="mbar"><i style="width:71%"></i></div><span class="mval">0.71</span></div>
+      </div>
+    </div>
+
+    <div class="diagram" style="margin-top:16px">
+      <span class="microlabel">One judge run — what happens, and what to persist (blue = currently discarded)</span>
+      <pre class="mermaid">
+flowchart TB
+  A["answer + stored contexts\n(chat_history.json)"] --> F["Faithfulness"]
+  A --> R["Answer relevancy"]
+  A --> P["Context precision"]
+  F --> F1["claims + per-claim\nverdict & reason"]
+  R --> R1["generated question\n+ noncommittal flag"]
+  P --> P1["per-chunk verdict\n& reason, in rank order"]
+  F1 --> S["3 floats + composite\n(all that survives today)"]
+  R1 --> S
+  P1 --> S
+  F1 -.persist.-> D["evaluation.details\n→ score-breakdown drawer"]
+  R1 -.persist.-> D
+  P1 -.persist.-> D
+  style F1 fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style R1 fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style P1 fill:#132339,stroke:#1f4a7a,color:#79b8ff
+  style D fill:#173a2b,stroke:#1f5937,color:#3fb950
+      </pre>
+    </div>
+
+    <ul class="tick">
+      <li><strong>Ship now (no judge changes):</strong> metric explainer cards like the three above — on the Scoreboard and behind an ⓘ on every score strip.</li>
+      <li><strong>Then persist intermediates:</strong> capture the metric LLM traffic via a LangChain callback handler in <span class="fileref">judge.py</span>,
+      store as <code>evaluation.details</code> (schema defaults to <code>null</code> so old history keeps loading — same pattern the codebase already uses for provenance fields).</li>
+      <li><strong>Score-breakdown drawer:</strong> click any RAGAS bar → claims table with ✓/✗ + judge reasons, the generated question side-by-side with the original, per-chunk verdicts in retrieval order with the average-precision arithmetic shown.</li>
+      <li>Old entries without details render the explainer instead of the breakdown — no re-judge stampede required (re-judging all 10 entries ≈ 10 min at the observed ~57s/entry).</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h3>C2 · Hardening evals for agents</h3>
+    <div class="tblwrap"><table>
+      <thead><tr><th>Gap</th><th>Today</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Self-grading judge</strong> <span class="tl-badge warn">bias</span></td>
+          <td>Judge defaults to the same DeepSeek model that wrote the answers <span class="fileref">judge.py:72</span>; env override exists but nothing surfaces it</td>
+          <td>Make an independent judge the documented default; show a persistent "self-graded" warning badge in Chat + Scoreboard (the judge-filter machinery already exists)</td>
+        </tr>
+        <tr>
+          <td><strong>Single-sample scoring</strong> <span class="tl-badge warn">noisy</span></td>
+          <td><code>strictness=1</code> because DeepSeek rejects <code>n&gt;1</code>; one verdict per chunk, temperature 0</td>
+          <td>Loop k=3 independent calls per metric and report mean ± spread; show the spread as a whisker on score bars so 0.74 vs 0.76 stops looking meaningful</td>
+        </tr>
+        <tr>
+          <td><strong>No recall, no correctness</strong></td>
+          <td>All three metrics are reference-free — nothing measures what retrieval <em>missed</em> or whether the answer is <em>right</em></td>
+          <td>Curate <code>evals/golden.json</code> (question, reference answer, expected chunk ids) for the 7 core questions → unlocks RAGAS <code>context_recall</code> + <code>answer_correctness</code>; add a Scoreboard toggle for referenced metrics</td>
+        </tr>
+        <tr>
+          <td><strong>Agent-blind metrics</strong></td>
+          <td>rag_agent burns 19k tokens vs single-hop's 3k for a <em>lower</em> composite on your Gold Coast question — no metric captures that</td>
+          <td>Efficiency panel: composite-per-1k-tokens, iterations vs score scatter, novel-chunks-per-iteration from the already-persisted agent trace</td>
+        </tr>
+        <tr>
+          <td><strong>No regression story</strong></td>
+          <td>Scores exist per entry; nothing compares configs over time</td>
+          <td><code>cli eval run</code>: re-ask + re-judge the golden set against the current config, snapshot to a run file, diff view against the previous run — turns the workbench into a regression harness</td>
+        </tr>
+        <tr>
+          <td><strong>Small-N confidence</strong></td>
+          <td>Averages over ≤7 questions, win rates over 3 contests, presented without caveats</td>
+          <td>Show n everywhere scores aggregate; grey out comparisons where n &lt; 5 rather than letting 1-question "wins" look decisive</td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ══════════════ ROADMAP ══════════════ -->
+<section class="ws" id="roadmap">
+  <div class="ws-head"><span class="n">▶</span><h2>Suggested sequence</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Phase</th><th>Contents</th><th>Effort</th><th>Why this order</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono"><b>1 · Quick wins</b></td>
+        <td>B1 rename · A1 channel/video linked scope · B2 corpus stat strip + insights · C1 metric explainer cards · A3-4 follow-up chips · A3-5 summary-filter toggle</td>
+        <td class="mono">1–2 days</td>
+        <td>Every item of your feedback gets a visible first answer; nothing here blocks on anything</td>
+      </tr>
+      <tr>
+        <td class="mono"><b>2 · Transparency &amp; ingest</b></td>
+        <td>C1 persist judge intermediates + breakdown drawer · B3 staged indexing panel with SSE + post-run insights · A2 thumbnails/channel colors</td>
+        <td class="mono">3–4 days</td>
+        <td>The two "show me what's happening" features — judging and ingestion — share the SSE pattern already proven in /api/ask</td>
+      </tr>
+      <tr>
+        <td class="mono"><b>3 · Retrieval quality</b></td>
+        <td>A3-1 hybrid RRF · A3-2 reranker · B5 contextual chunk headers · A3-3 conversational memory</td>
+        <td class="mono">4–6 days</td>
+        <td>Do these <em>after</em> Phase 2 so the improved judge can prove each change moved the numbers</td>
+      </tr>
+      <tr>
+        <td class="mono"><b>4 · Analysis &amp; hardening</b></td>
+        <td>B4 chunk graph · C2 golden dataset + recall/correctness · C2 independent judge + multi-sample · C2 efficiency panel + regression runs</td>
+        <td class="mono">~1 week</td>
+        <td>The graph and the regression harness are the payoff features once retrieval and judging are trustworthy</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="panel tint">
+    <span class="microlabel">Risks &amp; constraints</span>
+    <ul class="plain-list" style="margin-bottom:0">
+      <li><strong>DeepSeek rejects <code>n&gt;1</code></strong> — multi-sample judging must loop independent calls (slower, ~3× judge cost) rather than batch.</li>
+      <li><strong>RAGAS internals coupling</strong> — capturing intermediates leans on ragas 0.4.3 prompt/callback structure; pin the version and add a contract test so upgrades fail loudly.</li>
+      <li><strong>Judge latency</strong> — observed ~57s per 3-answer entry; breakdown persistence doesn't add calls, but golden-set metrics and k=3 sampling do. Budget it in the UI (progress per metric).</li>
+      <li><strong>Metadata backfill is one-way</strong> — trivial at 281 chunks, but land the <code>_chunk_metadata()</code> change in the same PR so new ingests never regress.</li>
+      <li><strong>Two-domain corpus</strong> — careers vs property makes whole-corpus retrieval look worse than it is (cross-domain bleed shows up in precision); channel scoping in A1 largely defuses this.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════════ DECISIONS ══════════════ -->
+<section class="ws" id="decisions">
+  <div class="ws-head"><span class="n">?</span><h2>Your calls</h2><span class="tag tl-badge plain">answers queue as feedback — press Send to Agent when done</span></div>
+
+  <div class="decision">
+    <h3>1 · Channel scope — implementation</h3>
+    <form data-lavish-question="channel-scope" onsubmit="event.preventDefault(); queueChoice(this,'channel-scope','Implement the Chat channel/video scope using');">
+      <label class="choice"><input type="radio" name="channel-scope" value="Option 2: Chroma metadata backfill + native where filter (recommended)">
+        <span><span class="cl-t">Option 2 — metadata backfill (recommended)</span><br><span class="cl-d">One-off collection.update, no re-embedding; native channel filter; new ingests covered.</span></span></label>
+      <label class="choice"><input type="radio" name="channel-scope" value="Option 1: join channel to video_ids at query time, no data changes">
+        <span><span class="cl-t">Option 1 — query-time join</span><br><span class="cl-d">Zero migration; channel logic in app code; N merged queries per ask.</span></span></label>
+      <label class="choice"><input type="radio" name="channel-scope" value="Option 3: full re-index with channel in chunk metadata">
+        <span><span class="cl-t">Option 3 — full re-index</span><br><span class="cl-d">Cleanest slate; re-fetches and re-embeds everything for no extra benefit today.</span></span></label>
+      <button class="btn pri" type="submit">Queue answer</button><span class="queued-note">✓ queued</span>
+    </form>
+  </div>
+
+  <div class="decision">
+    <h3>2 · Chunk graph — which flavor</h3>
+    <form data-lavish-question="chunk-graph" onsubmit="event.preventDefault(); queueChoice(this,'chunk-graph','Build the chunk graph as');">
+      <label class="choice"><input type="radio" name="chunk-graph" value="kNN similarity graph with question/retrieval overlay (recommended)">
+        <span><span class="cl-t">Similarity graph + retrieval overlay (recommended)</span><br><span class="cl-d">Force-directed kNN edges, channel colors, query lights up its neighborhood.</span></span></label>
+      <label class="choice"><input type="radio" name="chunk-graph" value="port the existing PCA scatter first, graph later">
+        <span><span class="cl-t">PCA scatter port first</span><br><span class="cl-d">Fastest visible result; limited insight (19% variance explained); no edges.</span></span></label>
+      <label class="choice"><input type="radio" name="chunk-graph" value="UMAP map with kNN edges (adds umap-learn dependency)">
+        <span><span class="cl-t">UMAP map + edges</span><br><span class="cl-d">Best visual; new dependency and tuning time.</span></span></label>
+      <label class="choice"><input type="radio" name="chunk-graph" value="skip the graph for now">
+        <span><span class="cl-t">Skip for now</span><br><span class="cl-d">Drop B4 from the roadmap.</span></span></label>
+      <button class="btn pri" type="submit">Queue answer</button><span class="queued-note">✓ queued</span>
+    </form>
+  </div>
+
+  <div class="decision">
+    <h3>3 · Green-light phases</h3>
+    <form data-lavish-question="phases" onsubmit="event.preventDefault(); queuePhases(this);">
+      <label class="choice"><input type="checkbox" name="phase" value="Phase 1 (quick wins: rename, channel/video scope, stat strip, metric explainers, follow-up chips, summary-filter toggle)" checked>
+        <span><span class="cl-t">Phase 1 — quick wins</span><br><span class="cl-d">1–2 days · rename, linked scope, corpus insights, metric explainers, follow-up chips.</span></span></label>
+      <label class="choice"><input type="checkbox" name="phase" value="Phase 2 (judge intermediates + breakdown drawer, staged indexing panel, thumbnails)">
+        <span><span class="cl-t">Phase 2 — transparency &amp; ingest</span><br><span class="cl-d">3–4 days · score breakdowns, staged indexing with insights.</span></span></label>
+      <label class="choice"><input type="checkbox" name="phase" value="Phase 3 (hybrid RRF, reranker, contextual chunk headers, conversational memory)">
+        <span><span class="cl-t">Phase 3 — retrieval quality</span><br><span class="cl-d">4–6 days · hybrid, rerank, contextual headers, memory.</span></span></label>
+      <label class="choice"><input type="checkbox" name="phase" value="Phase 4 (chunk graph, golden dataset, independent judge, efficiency + regression)">
+        <span><span class="cl-t">Phase 4 — analysis &amp; hardening</span><br><span class="cl-d">~1 week · graph, golden set, judge hardening, regression runs.</span></span></label>
+      <button class="btn pri" type="submit">Queue answer</button><span class="queued-note">✓ queued</span>
+    </form>
+  </div>
+
+  <div class="decision">
+    <h3>4 · Anything I got wrong or missed?</h3>
+    <form data-lavish-question="free-note" onsubmit="event.preventDefault(); queueNote(this);">
+      <textarea class="free" name="note" placeholder="e.g. 'New Context actually meant the chunk detail pane', different priorities, extra ideas…"></textarea>
+      <div style="margin-top:8px"><button class="btn pri" type="submit">Queue note</button><span class="queued-note">✓ queued</span></div>
+    </form>
+  </div>
+</section>
+
+<p class="footer-note">
+  Design source: this artifact reuses transcript·lab's own Instrument design system (tokens from <code>frontend/src/theme.css</code>) so proposed UI reads as the real product.
+  Facts verified against the running app and code on 21/07/2026; file references are clickable anchors for review, not links.
+</p>
+</div>
+
+<script>
+/* ── Live cascading scope mock — real corpus data from GET /api/corpus ── */
+const CORPUS = [
+  { ch:'Greg Langstaff', t:'FREE ATS-Friendly Resume Template (and instructions…)', chunks:4 },
+  { ch:'Greg Langstaff', t:'Write a Better Resume - Step-by-Step Resume Upgrade', chunks:14 },
+  { ch:'Greg Langstaff', t:'Write the Perfect Professional Summary for Your Resume!', chunks:5 },
+  { ch:'Kun Chen', t:"L8 Principal's Agentic Dev Environment From Scratch", chunks:36 },
+  { ch:'Kun Chen', t:"L8 Principal's Agentic Engineering Workflow", chunks:41 },
+  { ch:'Suburb Data', t:"Ep. 55: What's Happening Across Australia's Property Markets", chunks:21 },
+  { ch:'Smart Property Investment', t:'The strategy to win after this budget', chunks:53 },
+  { ch:'Smart Property Investment', t:'The budget has sparked panic, but has anything really changed?', chunks:37 },
+  { ch:'Smart Property Investment', t:'The end of the old property playbook? Taxes, rates…', chunks:66 },
+  { ch:'The Follio Property Podcast Clips', t:'The Real Reason Gold Coast Market Could Collapse Hardest', chunks:4 },
+];
+const chSel = document.getElementById('mock-channel');
+const vidSel = document.getElementById('mock-video');
+const stateEl = document.getElementById('mock-state');
+const channels = [...new Set(CORPUS.map(v=>v.ch))];
+channels.forEach(c => chSel.add(new Option(c + ' (' + CORPUS.filter(v=>v.ch===c).length + ' videos)', c)));
+function fillVideos(channel){
+  const cur = vidSel.value;
+  while (vidSel.options.length > 1) vidSel.remove(1);
+  CORPUS.filter(v => !channel || v.ch === channel)
+        .forEach(v => vidSel.add(new Option(v.t.slice(0,58), v.t)));
+  vidSel.value = [...vidSel.options].some(o=>o.value===cur) ? cur : '';
+}
+function renderState(){
+  const ch = chSel.value, vid = vidSel.value;
+  if (vid){
+    const v = CORPUS.find(x=>x.t===vid);
+    stateEl.innerHTML = 'Retrieval scope → <b>1 video</b> · ' + v.chunks + ' chunks · channel auto-set to <b>' + v.ch + '</b>';
+  } else if (ch){
+    const vs = CORPUS.filter(x=>x.ch===ch);
+    stateEl.innerHTML = 'Retrieval scope → <b>channel "' + ch + '"</b> · ' + vs.length + ' videos · ' + vs.reduce((a,b)=>a+b.chunks,0) + ' chunks';
+  } else {
+    stateEl.innerHTML = 'Retrieval scope → <b>whole corpus</b> (10 videos, 281 chunks)';
+  }
+}
+chSel.addEventListener('change', () => { fillVideos(chSel.value); renderState(); });
+vidSel.addEventListener('change', () => {
+  if (vidSel.value){ chSel.value = CORPUS.find(x=>x.t===vidSel.value).ch; fillVideos(chSel.value); vidSel.value = [...vidSel.options].find(o=>o.value)?[...vidSel.options].some(o=>o.value===vidSel.value)?vidSel.value:'':''; }
+  renderState();
+});
+fillVideos(''); renderState();
+
+/* ── Lavish input plumbing (guards for direct-open without lavish) ── */
+function mark(form){ const n = form.querySelector('.queued-note'); if(n){ n.style.display='inline'; setTimeout(()=>n.style.display='none', 4000);} }
+function queueChoice(form, key, prefix){
+  const val = new FormData(form).get(key);
+  if(!val) return;
+  if (window.lavish) window.lavish.queuePrompt(prefix + ' ' + val, { tag:'choice', text:key + ': ' + val, element:form, queueKey:key, data:{question:key, answer:val} });
+  mark(form);
+}
+function queuePhases(form){
+  const vals = [...form.querySelectorAll('input[name=phase]:checked')].map(i=>i.value);
+  const msg = vals.length ? 'Green-light and implement, in order: ' + vals.join('; ') : 'Do not start any phase yet — plan only.';
+  if (window.lavish) window.lavish.queuePrompt(msg, { tag:'choice', text:'Phases: ' + (vals.length || 'none'), element:form, queueKey:'phases', data:{question:'phases', answer:vals} });
+  mark(form);
+}
+function queueNote(form){
+  const note = new FormData(form).get('note');
+  if(!note || !note.trim()) return;
+  if (window.lavish) window.lavish.queuePrompt('Reviewer note on the transcript-lab plan: ' + note.trim(), { tag:'note', text:note.trim().slice(0,80), element:form, queueKey:'free-note' });
+  mark(form);
+}
+</script>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color){ paint.clearRect(0,0,1,1); paint.fillStyle="#000"; paint.fillStyle=color; paint.fillRect(0,0,1,1); return paint.getImageData(0,0,1,1).data; }
+  function compositeRgba(f,b){ const fa=f[3]/255, ba=b[3]/255, a=fa+ba*(1-fa); if(a===0) return [0,0,0,0];
+    return [(f[0]*fa+b[0]*ba*(1-fa))/a,(f[1]*fa+b[1]*ba*(1-fa))/a,(f[2]*fa+b[2]*ba*(1-fa))/a,a*255]; }
+  function pageIsDark(){
+    const root=document.documentElement;
+    const rb=toRgba(getComputedStyle(root).backgroundColor);
+    const bb=document.body?toRgba(getComputedStyle(document.body).backgroundColor):[0,0,0,0];
+    const [r,g,b,a]=compositeRgba(bb,rb);
+    if(a>0) return (0.2126*r+0.7152*g+0.0722*b)/255<0.5;
+    const cs=getComputedStyle(root).colorScheme;
+    if(cs.includes("dark")&&!cs.includes("light")) return true;
+    if(cs.includes("light")&&!cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams=[...document.querySelectorAll(".mermaid")].map(el=>({el,src:el.textContent}));
+  let applied, rendering=false, queued=false;
+  function queueRender(){ queued=true; if(rendering) return; void render(); }
+  async function render(){
+    rendering=true;
+    try{
+      while(queued){
+        queued=false;
+        const theme=pageIsDark()?"dark":"default";
+        if(theme===applied) continue;
+        mermaid.initialize({startOnLoad:false, theme, securityLevel:"strict"});
+        for(const {el,src} of diagrams){ el.removeAttribute("data-processed"); el.textContent=src; }
+        try{ await mermaid.run({nodes:diagrams.map(d=>d.el)}); }
+        catch(e){ console.error("Mermaid render failed:", e); return; }
+        applied=theme;
+      }
+    } finally { rendering=false; if(queued) queueRender(); }
+  }
+  if(document.readyState==="complete") queueRender();
+  else window.addEventListener("load", queueRender, {once:true});
+  const mo=new MutationObserver(queueRender);
+  for(const el of [document.documentElement, document.body]){ if(!el) continue; mo.observe(el,{attributes:true, attributeFilter:["data-theme","class","style"]}); }
+  darkQuery.addEventListener("change", queueRender);
+</script>
+</body>
+</html>

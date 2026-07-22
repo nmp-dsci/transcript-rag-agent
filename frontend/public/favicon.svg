@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!--
+    Same mark as src/Logo.tsx. A standalone favicon cannot read the app's CSS
+    variables, so the neutral colour is switched here instead — otherwise the
+    mark disappears against a light tab strip.
+  -->
+  <style>
+    .span { fill: #1f2328 }
+    .hit { fill: #2f81f7 }
+    @media (prefers-color-scheme: dark) { .span { fill: #e6edf3 } }
+  </style>
+  <rect class="span" x="4" y="3" width="9" height="3" rx="1.5" opacity="0.55" />
+  <rect class="span" x="3" y="8" width="15" height="3" rx="1.5" opacity="0.55" />
+  <rect class="hit" x="6" y="13" width="8" height="3" rx="1.5" />
+  <rect class="span" x="7" y="18" width="14" height="3" rx="1.5" opacity="0.55" />
+</svg>

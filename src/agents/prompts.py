@@ -242,8 +242,50 @@ def build_question_prompt(question: str, video_id: str) -> str:
     )
 
 
-def build_rag_question_prompt(question: str) -> str:
-    return RAG_QUESTION_USER_PROMPT.format(question=question.replace('"', '\\"'))
+def build_rag_question_prompt(question: str, history: list[str] | None = None) -> str:
+    prompt = RAG_QUESTION_USER_PROMPT.format(question=question.replace('"', '\\"'))
+    if not history:
+        return prompt
+    return f"{build_history_prompt(history)}\n\n{prompt}"
+
+
+# Kept small on purpose: prior turns are context for resolving references like
+# "that" or "the second one", not extra evidence. Only retrieved chunks are
+# evidence, and blurring that line is how ungrounded answers get cited.
+HISTORY_PROMPT = """Earlier turns in this conversation, oldest first:
+
+{turns}
+
+Use them only to interpret what the new question refers to. They are not
+evidence: every claim must still be supported by the retrieved transcript
+chunks."""
+
+
+def build_history_prompt(history: list[str]) -> str:
+    turns = "\n".join(f"- {turn}" for turn in history if turn.strip())
+    return HISTORY_PROMPT.format(turns=turns)
+
+
+REWRITE_PROMPT = """Rewrite the user's new question as a standalone search query.
+
+Earlier turns, oldest first:
+{turns}
+
+New question: "{question}"
+
+Resolve pronouns and references ("that", "it", "the second one") using the
+earlier turns so the query makes sense with no conversation context. Keep the
+user's own wording wherever it is already specific. If the question is already
+standalone, return it unchanged.
+
+Return JSON only: {{"query": "<standalone query>"}}"""
+
+
+def build_rewrite_prompt(question: str, history: list[str]) -> str:
+    return REWRITE_PROMPT.format(
+        turns="\n".join(f"- {turn}" for turn in history if turn.strip()),
+        question=question.replace('"', '\\"'),
+    )
 
 
 def build_recursive_synthesis_prompt(

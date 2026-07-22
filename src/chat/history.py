@@ -44,12 +44,20 @@ class ChatAnswer:
     error: str | None = None
     # Retrieved chunk texts (judge input) and the RAGAS evaluation record.
     contexts: list[str] = field(default_factory=list)
+    # What retrieval returned, in order — the input to recall metrics.
+    retrieved_chunk_ids: list[str] = field(default_factory=list)
     evaluation: dict[str, Any] | None = None
     # Stack identity, recorded so the scoreboard can group by model instead of
     # averaging across them. Entries written before this existed keep ``None``.
     model: str | None = None
     embedding_model: str | None = None
     top_k: int | None = None
+    # Retrieval scope and strategy for this answer. ``None`` on entries written
+    # before scoping existed, which the scoreboard reports as pre-provenance.
+    channel_id: str | None = None
+    retrieval_mode: str | None = None
+    # Follow-up questions the LLM proposed, offered to the user as next asks.
+    followups: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -67,9 +75,13 @@ class ChatAnswer:
             elapsed_seconds=result.elapsed_seconds,
             error=result.error,
             contexts=list(result.contexts),
+            retrieved_chunk_ids=list(result.retrieved_chunk_ids),
             model=result.model,
             embedding_model=result.embedding_model,
             top_k=result.top_k,
+            channel_id=result.channel_id,
+            retrieval_mode=result.retrieval_mode,
+            followups=list(result.followups),
         )
 
 

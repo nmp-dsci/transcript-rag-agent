@@ -109,6 +109,39 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
 
+    golden = subparsers.add_parser(
+        "eval-golden",
+        help="Run the golden question set under the current config and snapshot it",
+    )
+    golden.add_argument(
+        "--setup",
+        default="rag_llm",
+        choices=["rag_llm", "rag_llm_recursive", "rag_agent"],
+        help="Which RAG setup answers the golden questions",
+    )
+    golden.add_argument(
+        "--retrieval",
+        choices=["semantic", "hybrid"],
+        default=None,
+        help="Override the configured retrieval mode for this run",
+    )
+    golden.add_argument("--top-k", type=int, default=None)
+    golden.add_argument(
+        "--no-judge",
+        action="store_true",
+        help="Skip RAGAS scoring and report reference metrics only (much faster)",
+    )
+    golden.add_argument(
+        "--reference-metrics",
+        action="store_true",
+        help="Also run LLM reference metrics (answer correctness/similarity, recall)",
+    )
+    golden.add_argument(
+        "--diff",
+        action="store_true",
+        help="Diff the two most recent saved runs instead of running a new one",
+    )
+
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
 
@@ -210,6 +243,73 @@ def _parse_date_arg(value: str) -> date:
         raise argparse.ArgumentTypeError(f"Invalid date: {value}") from exc
 
 
+def _run_eval_golden(args, settings) -> int:
+    """Snapshot the golden set under the current config, or diff two snapshots."""
+    from src.chat.setups import AskScope, RagSetupRunner
+    from src.evals.regression import (
+        diff_runs,
+        list_runs,
+        load_run,
+        run_golden_eval,
+        save_run,
+    )
+
+    if args.diff:
+        runs = list_runs()
+        if len(runs) < 2:
+            print(f"Need two saved runs to diff; found {len(runs)}.")
+            return 1
+        before, after = load_run(runs[-2]), load_run(runs[-1])
+        diff = diff_runs(before, after)
+        print(f"{diff['before_run']}  →  {diff['after_run']}\n")
+        for move in diff["metrics"]:
+            arrow = {"better": "▲", "worse": "▼", "unchanged": "·"}[move["direction"]]
+            print(
+                f"  {arrow} {move['metric']:<22} "
+                f"{move['before']:.3f} → {move['after']:.3f}  ({move['delta']:+.3f})"
+            )
+        if diff["entries"]:
+            print("\nquestions that moved:")
+            for entry in diff["entries"]:
+                metrics = ", ".join(
+                    f"{name} {change['delta']:+.2f}"
+                    for name, change in entry["changes"].items()
+                )
+                print(f"  {entry['id']}: {metrics}")
+        print(
+            f"\nregressed: {', '.join(diff['regressed']) or 'none'}"
+            f"   improved: {', '.join(diff['improved']) or 'none'}"
+        )
+        return 1 if diff["regressed"] else 0
+
+    from src.evals.golden import answer_correctness_fns
+    from src.evals.judge import RagasJudge
+
+    runner = RagSetupRunner.from_settings(settings)
+    judge = None if args.no_judge else RagasJudge.from_settings(settings)
+    reference_fns = answer_correctness_fns(settings) if args.reference_metrics else None
+    run = run_golden_eval(
+        runner,
+        settings,
+        setup=args.setup,
+        judge=judge,
+        reference_fns=reference_fns,
+        scope=AskScope(retrieval_mode=args.retrieval),
+        top_k=args.top_k,
+        on_progress=print,
+    )
+    path = save_run(run)
+    summary = run["summary"]
+    print(f"\n{run['run_id']} — {summary['scored']}/{summary['entries']} scored")
+    for metric, value in sorted(summary["averages"].items()):
+        print(f"  {metric:<22} {value:.3f}")
+    if summary["failed"]:
+        print(f"  {summary['failed']} question(s) failed and were excluded")
+    print(f"\nsaved {path}")
+    print("compare against the previous run with: eval-golden --diff")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -227,6 +327,8 @@ def main(argv: list[str] | None = None) -> int:
 
             uvicorn.run(create_app(settings), host=args.host, port=args.port)
             return 0
+        if args.command == "eval-golden":
+            return _run_eval_golden(args, settings)
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):

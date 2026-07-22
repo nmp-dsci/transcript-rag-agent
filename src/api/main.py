@@ -33,7 +33,12 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from src.api.corpus import list_chunks, list_corpus, load_chunk_corpus
+from src.api.corpus import (
+    list_chunks,
+    list_corpus,
+    load_chunk_corpus,
+    load_chunk_embeddings,
+)
 from src.api.ranking import MODES, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.chat.frontend import (
@@ -51,7 +56,13 @@ from src.chat.history import (
     load_history,
     update_entry,
 )
-from src.chat.setups import SETUP_KEYS, SETUP_SPECS, RagSetupRunner, setup_spec
+from src.chat.setups import (
+    SETUP_KEYS,
+    SETUP_SPECS,
+    AskScope,
+    RagSetupRunner,
+    setup_spec,
+)
 from src.config import Settings, load_settings
 from src.evals.judge import RagasJudge, unjudgeable
 
@@ -78,6 +89,21 @@ class AskRequest(BaseModel):
     # setups on a question already asked has to land in the same entry, or the
     # scoreboard would never see them as competing answers.
     entry_id: str | None = None
+    # Scope retrieval to one channel. Ignored when ``url`` pins a single video,
+    # which is already narrower.
+    channel_id: str | None = None
+    retrieval_mode: Literal["semantic", "hybrid"] | None = None
+    # Summary-first transcript filtering (the S4 path), previously CLI-only.
+    filter_transcripts: bool = False
+    # Prior turns to condense into a standalone retrieval query.
+    history: list[str] = Field(default_factory=list)
+
+
+class GraphRequest(BaseModel):
+    k: int = Field(default=5, ge=1, le=20)
+    min_similarity: float = Field(default=0.0, ge=-1.0, le=1.0)
+    query: str | None = None
+    top_k: int = Field(default=10, ge=1, le=50)
 
 
 class JudgeRequest(BaseModel):
@@ -105,6 +131,50 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
+# Discovery and fetch are real, observable moments ahead of the single
+# blocking CLI call that does everything else (chunking, embedding,
+# summarizing), so only those two get their own stage.
+_INDEX_STAGES = [
+    ("discover", "Resolving target(s) ..."),
+    ("fetch", "Fetching transcripts and building the index ..."),
+]
+
+# The CLI call is one indivisible unit of work with no internal progress
+# reporting, so it gets a single ongoing stage rather than a fake progression
+# through invented sub-steps. The heartbeat repeats that stage name at
+# intervals so a reverse proxy or load balancer never sees an idle SSE
+# connection during a multi-minute bulk index.
+_INDEX_PROCESSING_STAGE = "processing"
+_INDEX_PROCESSING_MESSAGE = "Chunking, embedding, and summarizing ..."
+_INDEX_HEARTBEAT_MESSAGE = "Still indexing..."
+_INDEX_HEARTBEAT_INTERVAL_SECONDS = 8.0
+
+
+def _index_argv(payload: "IndexRequest") -> tuple[list[str], str]:
+    """The CLI argv for an index request, and the human-readable target."""
+    if payload.mode == "video":
+        if not payload.url:
+            raise HTTPException(
+                status_code=422, detail="url is required when mode is 'video'"
+            )
+        return ["index-rag", payload.url], payload.url
+    if not payload.channel:
+        raise HTTPException(
+            status_code=422, detail="channel is required when mode is 'channel'"
+        )
+    return (
+        [
+            "bulk-index",
+            "channel",
+            "--channel",
+            payload.channel,
+            "--latest",
+            str(payload.latest),
+        ],
+        payload.channel,
+    )
+
+
 _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 
@@ -126,7 +196,12 @@ def _append_answers(
 
 
 def _run_setup_streaming(
-    runner: Any, key: str, question: str, url: str | None, top_k: int | None
+    runner: Any,
+    key: str,
+    question: str,
+    url: str | None,
+    top_k: int | None,
+    scope: Any = None,
 ) -> Iterator[tuple[str, Any]]:
     """Run one setup, yielding ``("step", event)`` then ``("result", result)``.
 
@@ -145,6 +220,7 @@ def _run_setup_streaming(
                 url=url,
                 top_k=top_k,
                 on_agent_event=lambda event: events.put(("step", event)),
+                scope=scope,
             )
         except Exception as exc:  # pragma: no cover - runner captures its own
             holder["error"] = exc
@@ -164,6 +240,44 @@ def _run_setup_streaming(
     yield "result", holder["result"]
 
 
+def _run_index_streaming(
+    index_fn: IndexFn, argv: list[str]
+) -> Iterator[tuple[str, Any]]:
+    """Run ``index_fn`` on a worker thread, yielding ``("heartbeat", None)`` while waiting.
+
+    Same worker+queue shape as ``_run_setup_streaming``, except ``index_fn``
+    reports no progress of its own, so the wait loop's ``queue.get`` is given a
+    timeout: each time it elapses without the worker finishing, a heartbeat is
+    yielded and the wait resumes. Yields ``("result", exit_code)`` once the
+    worker completes.
+    """
+    events: queue.Queue = queue.Queue()
+    holder: dict[str, Any] = {}
+
+    def worker() -> None:
+        try:
+            holder["exit_code"] = index_fn(argv)
+        except Exception as exc:
+            holder["error"] = exc
+        finally:
+            events.put(("finished", None))
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    while True:
+        try:
+            kind, _value = events.get(timeout=_INDEX_HEARTBEAT_INTERVAL_SECONDS)
+        except queue.Empty:
+            yield "heartbeat", None
+            continue
+        if kind == "finished":
+            break
+    thread.join()
+    if "error" in holder:
+        raise holder["error"]
+    yield "result", holder["exit_code"]
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -172,6 +286,7 @@ def create_app(
     corpus_fn: Callable[[], dict[str, Any]] | None = None,
     chunks_fn: Callable[[str], dict[str, Any]] | None = None,
     chunk_records_fn: Callable[[str | None], list[dict[str, Any]]] | None = None,
+    graph_records_fn: Callable[[], list[dict[str, Any]]] | None = None,
     history_path: Path = DEFAULT_HISTORY_PATH,
     chat_html_path: Path = DEFAULT_CHAT_HTML_PATH,
     index_fn: IndexFn = _default_index_fn,
@@ -196,6 +311,9 @@ def create_app(
         lambda video_id: load_chunk_corpus(
             resolved.chroma_path, resolved.chunk_collection, video_id
         )
+    )
+    graph_records_fn = graph_records_fn or (
+        lambda: load_chunk_embeddings(resolved.chroma_path, resolved.chunk_collection)
     )
     judge_model_name = resolved.judge_model or resolved.deepseek_model
 
@@ -230,6 +348,15 @@ def create_app(
         if bundle_index().is_file():
             return FileResponse(bundle_index())
         return HTMLResponse(INDEX_HTML_PATH.read_text(encoding="utf-8"))
+
+    @app.get("/favicon.svg")
+    def favicon() -> Any:
+        # Vite emits this at the bundle root rather than under /assets, so it
+        # needs its own route — the StaticFiles mount below would not reach it.
+        icon = frontend_dist / "favicon.svg"
+        if icon.is_file():
+            return FileResponse(icon, media_type="image/svg+xml")
+        raise HTTPException(status_code=404, detail="favicon not built")
 
     @app.get("/assets/render.js")
     def render_js() -> PlainTextResponse:
@@ -371,6 +498,14 @@ def create_app(
                     )
                 runner = get_runner()
                 results = []
+                scope = AskScope(
+                    # A pinned video is already narrower than its channel, so
+                    # sending both would silently widen the user's scope.
+                    channel_id=None if url else payload.channel_id,
+                    retrieval_mode=payload.retrieval_mode,
+                    filter_transcripts=payload.filter_transcripts,
+                    history=list(payload.history),
+                )
                 for key in keys:
                     yield _sse(
                         "progress",
@@ -378,7 +513,7 @@ def create_app(
                     )
                     result = None
                     for kind, value in _run_setup_streaming(
-                        runner, key, question, url, payload.top_k
+                        runner, key, question, url, payload.top_k, scope
                     ):
                         if kind == "step":
                             yield _sse(
@@ -449,8 +584,14 @@ def create_app(
                             },
                         )
                         assert ragas_judge is not None
+                        # Pass the model that wrote THIS answer, so self_graded
+                        # reflects the actual pairing rather than the currently
+                        # configured answering model.
                         answer.evaluation = ragas_judge.score(
-                            entry.question, answer.answer, answer.contexts
+                            entry.question,
+                            answer.answer,
+                            answer.contexts,
+                            answer_model=answer.model,
                         )
                     yield _sse(
                         "scored",
@@ -479,31 +620,135 @@ def create_app(
             stream(), media_type="text/event-stream", headers=_SSE_HEADERS
         )
 
+    @app.post("/api/chunk-graph")
+    def chunk_graph(payload: GraphRequest) -> dict:
+        """A kNN similarity graph over chunk embeddings, optionally highlighted.
+
+        Structure is built from stored vectors alone, so drawing the graph never
+        loads a model. Only the query overlay does, and only when asked for.
+        """
+        from src.rag.graph import build_chunk_graph_cached, nearest_chunks
+
+        try:
+            records = graph_records_fn()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to read chunk embeddings: {exc}",
+            ) from exc
+        if not records:
+            raise HTTPException(
+                status_code=404,
+                detail="No chunk embeddings found. Index a video first.",
+            )
+        try:
+            graph = build_chunk_graph_cached(
+                records, k=payload.k, min_similarity=payload.min_similarity
+            )
+        except ValueError as exc:
+            # The corpus is too large to graph on demand, not a request/state
+            # conflict, so 422 (oversized request given current data) fits
+            # better than 409.
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        query = (payload.query or "").strip()
+        if query:
+            embedding = get_runner().provider.chunk_store.embedding_model.embed_query(
+                query
+            )
+            try:
+                nearest = nearest_chunks(records, embedding, payload.top_k)
+            except ValueError as exc:
+                # Raised when the query vector's width differs from the stored
+                # ones, which means the corpus was indexed with another
+                # embedding model — a config problem, not a server fault.
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            graph = {**graph, "query": {"text": query, "nearest": nearest}}
+        return graph
+
     @app.post("/api/index")
     def index_content(payload: IndexRequest) -> dict:
-        if payload.mode == "video":
-            if not payload.url:
-                raise HTTPException(
-                    status_code=422, detail="url is required when mode is 'video'"
-                )
-            argv = ["index-rag", payload.url]
-            target = payload.url
-        else:
-            if not payload.channel:
-                raise HTTPException(
-                    status_code=422, detail="channel is required when mode is 'channel'"
-                )
-            argv = [
-                "bulk-index",
-                "channel",
-                "--channel",
-                payload.channel,
-                "--latest",
-                str(payload.latest),
-            ]
-            target = payload.channel
+        argv, target = _index_argv(payload)
         exit_code = index_fn(argv)
         return {"ok": exit_code == 0, "exit_code": exit_code, "target": target}
+
+    @app.post("/api/index/stream")
+    def index_content_streaming(payload: IndexRequest) -> StreamingResponse:
+        """Index with per-stage progress, and report what actually changed.
+
+        The underlying CLI reports only at the end, so ``discover`` and
+        ``fetch`` are announced before it starts, the whole blocking call runs
+        under a single ``processing`` stage (with periodic heartbeats so the
+        connection never looks idle), and completion is derived from corpus
+        state either side of the run: a caller watching this stream sees
+        exactly which videos and chunks were added.
+        """
+        argv, target = _index_argv(payload)
+
+        def stream() -> Iterator[str]:
+            try:
+                before = corpus_fn()
+                before_ids = {v["video_id"] for v in before.get("videos", [])}
+                for stage, message in _INDEX_STAGES:
+                    yield _sse("stage", {"stage": stage, "message": message})
+                yield _sse(
+                    "stage",
+                    {
+                        "stage": _INDEX_PROCESSING_STAGE,
+                        "message": _INDEX_PROCESSING_MESSAGE,
+                    },
+                )
+                exit_code = None
+                for kind, value in _run_index_streaming(index_fn, argv):
+                    if kind == "heartbeat":
+                        yield _sse(
+                            "stage",
+                            {
+                                "stage": _INDEX_PROCESSING_STAGE,
+                                "message": _INDEX_HEARTBEAT_MESSAGE,
+                            },
+                        )
+                    else:
+                        exit_code = value
+                assert exit_code is not None
+                if exit_code != 0:
+                    yield _sse(
+                        "error",
+                        {
+                            "message": (
+                                f"Indexing failed (exit {exit_code}). "
+                                "Check the server log for the CLI output."
+                            )
+                        },
+                    )
+                    return
+                after = corpus_fn()
+                added = [
+                    v
+                    for v in after.get("videos", [])
+                    if v["video_id"] not in before_ids
+                ]
+                yield _sse(
+                    "done",
+                    {
+                        "ok": True,
+                        "target": target,
+                        "added_videos": added,
+                        "added_video_count": len(added),
+                        "added_chunk_count": (
+                            after.get("totals", {}).get("chunks", 0)
+                            - before.get("totals", {}).get("chunks", 0)
+                        ),
+                        "totals": after.get("totals", {}),
+                        "insights": after.get("insights", []),
+                        "channels": after.get("channels", []),
+                    },
+                )
+            except Exception as exc:
+                yield _sse("error", {"message": str(exc)})
+
+        return StreamingResponse(
+            stream(), media_type="text/event-stream", headers=_SSE_HEADERS
+        )
 
     # Mounted last so it can never shadow an /api route. Absent until the
     # frontend is built, which is why `/` falls back to the legacy page.

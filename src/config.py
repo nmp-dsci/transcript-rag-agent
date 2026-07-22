@@ -37,6 +37,19 @@ class Settings:
     rag_agent_max_iterations: int = 10
     chunk_target_chars: int = 1200
     chunk_overlap_chars: int = 150
+    # Retrieval strategy. "semantic" is the historical behaviour; "hybrid" fuses
+    # semantic and BM25 rankings with RRF before the answer call.
+    retrieval_mode: str = "semantic"
+    # Candidates pulled per retriever before fusion/reranking collapse them to
+    # top_k. Wider than top_k on purpose — reranking can only reorder what it sees.
+    retrieval_candidates: int = 30
+    rerank_enabled: bool = False
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Adjacent chunks pasted around each hit so answers stop cutting off
+    # mid-thought. 0 disables neighbour expansion.
+    neighbor_span: int = 0
+    # Independent judge samples per metric; >1 reports mean plus spread.
+    judge_samples: int = 1
     supadata_timeout_seconds: float = 120.0
     supadata_poll_interval_seconds: float = 2.0
     supadata_max_poll_seconds: float = 600.0
@@ -92,6 +105,18 @@ def _float_env(name: str, default: float) -> float:
         return float(value)
     except ValueError as exc:
         raise ConfigError(f"{name} must be a number") from exc
+
+
+RETRIEVAL_MODES = ("semantic", "hybrid")
+
+
+def _retrieval_mode_env(name: str, default: str) -> str:
+    value = (os.environ.get(name) or "").strip().lower()
+    if not value:
+        return default
+    if value not in RETRIEVAL_MODES:
+        raise ConfigError(f"{name} must be one of: {', '.join(RETRIEVAL_MODES)}")
+    return value
 
 
 def load_settings(require_keys: bool = True) -> Settings:
@@ -164,6 +189,16 @@ def load_settings(require_keys: bool = True) -> Settings:
         rag_agent_max_iterations=_int_env("YT_AGENT_RAG_AGENT_MAX_ITERATIONS", 10),
         chunk_target_chars=_int_env("YT_AGENT_CHUNK_TARGET_CHARS", 1200),
         chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
+        retrieval_mode=_retrieval_mode_env("YT_AGENT_RETRIEVAL_MODE", "semantic"),
+        retrieval_candidates=_int_env("YT_AGENT_RETRIEVAL_CANDIDATES", 30),
+        rerank_enabled=_bool_env(
+            os.environ.get("YT_AGENT_RERANK_ENABLED"), default=False
+        ),
+        rerank_model=os.environ.get(
+            "YT_AGENT_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        ),
+        neighbor_span=_int_env("YT_AGENT_NEIGHBOR_SPAN", 0),
+        judge_samples=_int_env("YT_AGENT_JUDGE_SAMPLES", 1),
         supadata_timeout_seconds=_float_env("SUPADATA_TIMEOUT_SECONDS", 120.0),
         supadata_poll_interval_seconds=_float_env(
             "SUPADATA_POLL_INTERVAL_SECONDS", 2.0

@@ -45,6 +45,12 @@ YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS=
 YT_AGENT_RAG_AGENT_MAX_ITERATIONS=10
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
+YT_AGENT_RETRIEVAL_MODE=semantic
+YT_AGENT_RETRIEVAL_CANDIDATES=30
+YT_AGENT_RERANK_ENABLED=false
+YT_AGENT_RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+YT_AGENT_NEIGHBOR_SPAN=0
+YT_AGENT_JUDGE_SAMPLES=1
 YT_AGENT_DISCOVERY_CACHE_TTL_HOURS=24
 SUPADATA_TIMEOUT_SECONDS=120
 SUPADATA_POLL_INTERVAL_SECONDS=2
@@ -55,6 +61,42 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 ```
 
 `SUPADATA_API_KEY` is used with the Supadata transcript API. DeepSeek is called through the OpenAI-compatible LangChain client.
+
+### Retrieval strategy
+
+`YT_AGENT_RETRIEVAL_MODE` selects how chunks are found:
+
+- `semantic` (default) — embed the question, cosine-rank chunk embeddings.
+- `hybrid` — rank semantically *and* with BM25, then fuse the two rankings with
+  Reciprocal Rank Fusion. Keyword and embedding retrieval disagree most on exact
+  terms (figures, names, dates), which is what fusion recovers.
+
+Both modes pull `YT_AGENT_RETRIEVAL_CANDIDATES` chunks before narrowing to
+`top_k`, because reranking can only reorder what it was given. Set
+`YT_AGENT_RERANK_ENABLED=true` to rerank those candidates with a local
+cross-encoder (`YT_AGENT_RERANK_MODEL`); it loads lazily on first use and adds
+no API calls. `YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each
+hit into the context, which stops answers being cut off mid-sentence at a chunk
+boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
+setup can be compared under both modes with the same judge.
+
+Retrieval can be scoped to a **channel** or a **single video**. Channel
+filtering is a native metadata filter, which is why chunks carry
+`channel_id`/`channel_name`. Chunks indexed before that existed need a one-off
+backfill:
+
+```bash
+uv run python scripts/backfill_chunk_metadata.py --dry-run   # report only
+uv run python scripts/backfill_chunk_metadata.py             # stamp metadata
+uv run python scripts/backfill_chunk_metadata.py --re-embed  # + contextual headers
+```
+
+The plain form only rewrites metadata and never re-embeds. `--re-embed` also
+rebuilds every chunk vector with a contextual header (`[channel — title @
+mm:ss-mm:ss]`) prepended before embedding. Transcript chunks are conversational
+fragments that frequently lose their subject ("had. So, I'm going to just
+copy…"), and the header restores the context the speaker left implicit; the
+header is embedded but is not part of the text shown to the answering LLM.
 
 Supadata can return async jobs for longer videos. `SUPADATA_MAX_POLL_SECONDS=600` lets indexing wait up to 10 minutes for those jobs before timing out.
 
@@ -185,35 +227,57 @@ before `serve` shows the React UI. Without a build, `/` falls back to the
 legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
-Three views:
+Three views (the tab formerly called **Library** is now **RAG Pipeline**; old
+`#library` links still resolve):
 
 - **Chat** — the landing tab. Type a question and it is answered in a
   conversation thread with citations back to source timestamps. The default
   agent is `rag_agent` (agentic), whose retrieval loop streams into the bubble
   live — one line per iteration showing the query it chose and how many chunks
   came back — so a ~30s research run reads as progress rather than a stall.
-  Composer chips switch the scope (whole corpus or one video) and the
-  answering agent; **⚙ advanced** exposes `top_k`, the auto-judge toggle, and
-  additional setups to run alongside the default. When several setups answer
-  the same question they share **one bubble with tabs**, each carrying its own
-  answer, citations, and RAGAS score, with the best composite badged TOP and a
-  compare grid underneath. "Compare N more setups" runs the remaining ones
-  into the *same* history entry so the scoreboard sees them as competing
-  answers. Esc cancels a running ask.
-- **Library** — an interactive corpus tree (all videos → channel → video →
-  chunks) with a sort control for "top" ordering by views, recency, chunk
-  count, or title. Expanding a video lazily loads its chunks; selecting one
-  shows its full text, timestamp range, segment span, and a deep link into
-  the video at that moment. The **Retrieval Lab** at the top ranks the corpus
-  for any query with **BM25, semantic, or both side by side** — aligned rows
-  show each chunk's rank in the other mode (`↑2`, `↓1`, `only here`) plus an
-  overlap count, which is the fastest way to see where keyword and embedding
-  retrieval disagree. Indexing (single video or latest-N channel) lives in a
-  panel here.
+  Composer selects scope the question to a **channel** and/or a single
+  **video** with linked dropdowns — picking a channel narrows the video list
+  to it, picking a video adopts its channel, and a pinned video is sent alone
+  since it is already the narrower scope. **⚙ advanced** exposes `top_k`, the
+  auto-judge toggle, the smart transcript filter, a semantic/hybrid retrieval
+  toggle, and additional setups to run alongside the default. Every answer
+  proposes follow-up questions as clickable chips; asking one carries the
+  prior question and answer as history so retrieval runs against a standalone
+  rewritten query, while the answering prompt marks that history as context
+  only — every claim must still come from retrieved chunks, never from an
+  earlier turn. When several setups answer the same question they share
+  **one bubble with tabs**, each carrying its own answer, citations, and
+  RAGAS score (flagged `self-graded` when the judge and answering model
+  match), with the best composite badged TOP and a compare grid underneath.
+  "Compare N more setups" runs the remaining ones into the *same* history
+  entry so the scoreboard sees them as competing answers. Esc cancels a
+  running ask.
+- **RAG Pipeline** (formerly **Library**) — two sub-tabs. **Corpus &
+  retrieval** opens on a summary strip of derived insights — e.g. one channel
+  holding over half the corpus's chunks (skews whole-corpus retrieval toward
+  it), videos with no transcript summary (invisible to the summary filter), or
+  videos with no chunks at all — each clickable as a filter on the corpus tree
+  below. The tree itself (all videos → channel → video → chunks) has a sort
+  control for "top" ordering by views, recency, chunk count, or title.
+  Expanding a video lazily loads its chunks; selecting one shows its full
+  text, timestamp range, segment span, and a deep link into the video at that
+  moment. The **Retrieval Lab** at the top ranks the corpus for any query with
+  **BM25, semantic, or both side by side** — aligned rows show each chunk's
+  rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap count,
+  which is the fastest way to see where keyword and embedding retrieval
+  disagree. Indexing (single video or latest-N channel) lives in a panel here
+  and streams live per-stage progress (discover → fetch → chunk → embed →
+  summarize) instead of reporting only at the end. **Chunk graph** renders a
+  kNN similarity graph of every chunk embedding as an SVG force-style layout,
+  colour-coded by channel; typing a query highlights its retrieval
+  neighbourhood in place, which is the fastest way to see whether the corpus
+  actually clusters around what a question is asking.
 - **Scoreboard** — per-setup aggregates across everything judged, groupable by
   **setup × answering model** so scores from different model versions are never
   silently averaged. Each row shows average score per RAGAS metric, composite,
-  win rate, latency, and token estimate. A judge filter keeps self-graded and
+  win rate, latency, and token estimate. An **efficiency panel** ranks setups
+  by composite score per 1k tokens, so a setup spending more to score lower is
+  visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
   ragas version, embedding model, metric definitions, and last-judged time.
   Answers captured before model identity was recorded appear as
@@ -258,13 +322,15 @@ Endpoints (JSON unless noted):
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
 | `/api/setups` | GET | The three RAG setup descriptors |
 | `/api/history` | GET | All captured conversations (with evaluations) |
-| `/api/corpus` | GET | Indexed videos with metadata and chunk counts |
+| `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
 | `/api/scoreboard` | GET | RAGAS aggregates; `group_by=setup\|setup_model`, `judge_model` filter |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
 | `/api/rank` | POST | Rank the corpus for a query by `semantic` and/or `bm25` |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
+| `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
+| `/api/chunk-graph` | POST | kNN similarity graph over chunk embeddings; `query` highlights its retrieval neighbourhood |
 
 `/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
 per `rag_agent` retrieval iteration, carrying its query and chunk count),
@@ -281,7 +347,58 @@ The judge LLM defaults to the configured DeepSeek model (self-grading); set
 `YT_AGENT_JUDGE_MODEL`, `YT_AGENT_JUDGE_API_KEY`, and `YT_AGENT_JUDGE_BASE_URL`
 to grade with an independent provider instead — any OpenAI-compatible API
 works. Answer-relevancy embeddings use the same local sentence-transformers
-model as retrieval.
+model as retrieval. Each evaluation records `self_graded`, so a score the model
+gave its own answer is never quietly compared against an independently graded
+one.
+
+#### How a score is derived
+
+Every evaluation persists the judge's workings under `evaluation.details`, and
+the workbench renders them when a metric bar is clicked:
+
+- **faithfulness** — the claims extracted from the answer, each with a 0/1
+  verdict and the judge's reason. Score is `supported / total`.
+- **answer relevancy** — the question the judge generated from the answer, its
+  cosine similarity to the real question, and the noncommittal flag. Score is
+  the mean cosine, zeroed if the answer was evasive.
+- **context precision** — a usefulness verdict per retrieved chunk in rank
+  order. Score is average precision, so a useful chunk ranked low costs more
+  than one ranked high.
+
+Scores are computed *from* these intermediates rather than captured alongside
+them, so a breakdown can never disagree with the number above it. Evaluations
+judged before this existed have `details: null` and fall back to a static
+explainer of each metric.
+
+`YT_AGENT_JUDGE_SAMPLES` (default `1`) runs each metric several times and
+records the mean plus the spread. DeepSeek rejects `n>1`, so samples are
+independent calls — raising it multiplies judge time and cost. A single sample
+is noisy enough that the UI shows the spread rather than implying more precision
+than one pass supports.
+
+#### Golden set and regression runs
+
+`src/evals/golden_dataset.json` holds curated questions with reference answers
+and the chunk ids a good retriever must surface. It unlocks the two things the
+reference-free RAGAS metrics cannot measure: what retrieval **missed**
+(`context_recall`, `video_recall`) and whether an answer is actually **right**
+(`answer_correctness`, `answer_similarity`).
+
+```bash
+uv run python -m src.cli eval-golden --setup rag_llm
+uv run python -m src.cli eval-golden --setup rag_llm --retrieval hybrid
+uv run python -m src.cli eval-golden --no-judge          # recall only, fast
+uv run python -m src.cli eval-golden --reference-metrics # + LLM reference metrics
+uv run python -m src.cli eval-golden --diff              # compare the last two runs
+```
+
+Each run snapshots to `.yt-agent/eval_runs/` together with the configuration
+that produced it (models, retrieval mode, rerank, top_k). `--diff` reports
+per-metric and per-question movement and exits non-zero when a metric regresses,
+so a config change can be shown to have helped rather than assumed to have.
+Movements under 0.02 are reported as unchanged: one judged sample does not
+support reading meaning into the third decimal. A question that errors is
+recorded with its error and excluded from the averages rather than scored zero.
 
 Dependencies: `ragas` (the eval metrics) and `uvicorn` (the server), both
 installed by `uv sync`. `src/evals/_ragas_compat.py` shims two legacy Vertex AI
@@ -562,18 +679,22 @@ The report shows:
 ```text
 src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
-  rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25
-  agents/        # Full-transcript agent and RAG agent with optional recursive multi-hop retrieval
-  api/           # FastAPI workbench: ask/judge SSE, corpus, chunks, ranking, scoreboard
+  rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25,
+                 #   RRF fusion, cross-encoder reranking, chunk similarity graph
+  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
+                 #   with follow-up query rewriting for conversational history
+  api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
+                 #   scoreboard, chunk graph
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
-  evals/         # Demo/evaluation scripts, RAGAS judge, HTML report generation
+  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, regression runs
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
+scripts/         # One-off maintenance, incl. chunk-metadata backfill
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
-  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, history rail
-  src/library/   # Corpus tree, chunk detail, Retrieval Lab, indexing panel
-  src/scoreboard/# Grouped aggregates and provenance bar
+  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
+  src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
+  src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
 tests/
 ```
 

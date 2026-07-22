@@ -51,10 +51,31 @@ class TranscriptChunk(BaseModel):
     start_segment_index: int | None = None
     end_segment_index: int | None = None
     segment_count: int = 0
+    # Video-level identity copied onto every chunk so retrieval can filter on it
+    # natively. Optional because chunks indexed before the backfill lack them.
+    channel_id: str | None = None
+    channel_name: str | None = None
+    title: str | None = None
+    upload_date: str | None = None
+    # The channel/title/timestamp preamble prepended before embedding, kept
+    # separate so the UI and the LLM prompt can show the spoken text alone.
+    context_header: str | None = None
 
     @property
     def chunk_id(self) -> str:
         return f"chunk:{self.video_id}:{self.chunk_index}"
+
+    @property
+    def embedding_text(self) -> str:
+        """What gets embedded: the contextual header plus the spoken text.
+
+        Transcript chunks are conversational fragments that often lose their
+        subject ("had. So, I'm going to just copy…"), which embeds poorly. The
+        header restores the video-level context the speaker left implicit.
+        """
+        if not self.context_header:
+            return self.text
+        return f"{self.context_header}\n{self.text}"
 
 
 class RetrievedChunk(TranscriptChunk):

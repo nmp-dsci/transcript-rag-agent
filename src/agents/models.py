@@ -57,6 +57,14 @@ class RagQuestionRequest(BaseModel):
     transcript_filter_min_score: float = 0.25
     recursive: bool = False
     recursion_options: RecursionOptions | None = None
+    # Scope retrieval to one channel. Ignored when source_url pins a single
+    # video, which is already the narrower scope.
+    channel_id: str | None = None
+    # Per-request override of the provider's configured retrieval strategy, so
+    # the scoreboard can compare semantic and hybrid under the same judge.
+    retrieval_mode: Literal["semantic", "hybrid"] | None = None
+    # Prior turns, condensed, for follow-up questions that depend on context.
+    history: list[str] = Field(default_factory=list)
 
 
 class FollowupSubtopic(BaseModel):
