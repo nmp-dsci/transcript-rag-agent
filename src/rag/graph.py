@@ -39,11 +39,19 @@ except ImportError:  # pragma: no cover
     fit_chunk_projection = None  # type: ignore[assignment]
     nearest_chunks_for_question = None  # type: ignore[assignment]
 
-__all__ = ["build_chunk_graph", "nearest_chunks"]
+__all__ = [
+    "build_chunk_graph",
+    "build_chunk_graph_cached",
+    "clear_cache",
+    "nearest_chunks",
+]
 
 PREVIEW_CHARS = 120
 _LAYOUT_MODEL_LABEL = "chunk-graph-layout"
 _ROUND_TO = 6
+MAX_GRAPH_CHUNKS = 5000
+
+_CACHE: dict[tuple[int, int, float], dict[str, Any]] = {}
 
 
 def build_chunk_graph(
@@ -111,6 +119,41 @@ def build_chunk_graph(
             isolated,
         ),
     }
+
+
+def build_chunk_graph_cached(
+    records: Sequence[Mapping[str, Any]],
+    k: int = 5,
+    min_similarity: float = 0.0,
+    layout: bool = True,
+    max_chunks: int = MAX_GRAPH_CHUNKS,
+) -> dict[str, Any]:
+    """Cached ``build_chunk_graph``, capped so the corpus can't grow unbounded.
+
+    The graph is O(n^2) in the number of chunks, so a request over a corpus
+    past ``max_chunks`` fails fast instead of getting slower and slower.
+    Results are cached per ``(chunk_count, k, min_similarity)``, keyed the same
+    way ``rag.bm25`` caches its index, so a growing/shrinking corpus
+    invalidates automatically. Every call returns a fresh shallow copy so a
+    caller mutating the top-level dict (e.g. adding a ``"query"`` key) can
+    never corrupt what is stored for the next cache hit.
+    """
+    count = len(records)
+    if count > max_chunks:
+        raise ValueError(
+            f"corpus has {count} chunks, exceeding the {max_chunks}-chunk "
+            "graph limit; narrow the query or increase the limit"
+        )
+    key = (count, int(k), float(min_similarity))
+    cached = _CACHE.get(key)
+    if cached is None:
+        cached = build_chunk_graph(records, k=k, min_similarity=min_similarity, layout=layout)
+        _CACHE[key] = cached
+    return {**cached}
+
+
+def clear_cache() -> None:
+    _CACHE.clear()
 
 
 def nearest_chunks(

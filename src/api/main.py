@@ -131,16 +131,23 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-# Announced around the single CLI indexing call so the UI can show the pipeline
-# advancing. Ingestion is one process, so these mark stage boundaries, not
-# independently observable steps.
+# Discovery and fetch are real, observable moments ahead of the single
+# blocking CLI call that does everything else (chunking, embedding,
+# summarizing), so only those two get their own stage.
 _INDEX_STAGES = [
     ("discover", "Resolving target(s) ..."),
     ("fetch", "Fetching transcripts and building the index ..."),
-    ("chunk", "Chunking transcripts ..."),
-    ("embed", "Embedding chunks ..."),
-    ("summarize", "Generating transcript summaries ..."),
 ]
+
+# The CLI call is one indivisible unit of work with no internal progress
+# reporting, so it gets a single ongoing stage rather than a fake progression
+# through invented sub-steps. The heartbeat repeats that stage name at
+# intervals so a reverse proxy or load balancer never sees an idle SSE
+# connection during a multi-minute bulk index.
+_INDEX_PROCESSING_STAGE = "processing"
+_INDEX_PROCESSING_MESSAGE = "Chunking, embedding, and summarizing ..."
+_INDEX_HEARTBEAT_MESSAGE = "Still indexing..."
+_INDEX_HEARTBEAT_INTERVAL_SECONDS = 8.0
 
 
 def _index_argv(payload: "IndexRequest") -> tuple[list[str], str]:
@@ -231,6 +238,44 @@ def _run_setup_streaming(
     if "error" in holder:
         raise holder["error"]
     yield "result", holder["result"]
+
+
+def _run_index_streaming(
+    index_fn: IndexFn, argv: list[str]
+) -> Iterator[tuple[str, Any]]:
+    """Run ``index_fn`` on a worker thread, yielding ``("heartbeat", None)`` while waiting.
+
+    Same worker+queue shape as ``_run_setup_streaming``, except ``index_fn``
+    reports no progress of its own, so the wait loop's ``queue.get`` is given a
+    timeout: each time it elapses without the worker finishing, a heartbeat is
+    yielded and the wait resumes. Yields ``("result", exit_code)`` once the
+    worker completes.
+    """
+    events: queue.Queue = queue.Queue()
+    holder: dict[str, Any] = {}
+
+    def worker() -> None:
+        try:
+            holder["exit_code"] = index_fn(argv)
+        except Exception as exc:
+            holder["error"] = exc
+        finally:
+            events.put(("finished", None))
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    while True:
+        try:
+            kind, _value = events.get(timeout=_INDEX_HEARTBEAT_INTERVAL_SECONDS)
+        except queue.Empty:
+            yield "heartbeat", None
+            continue
+        if kind == "finished":
+            break
+    thread.join()
+    if "error" in holder:
+        raise holder["error"]
+    yield "result", holder["exit_code"]
 
 
 def create_app(
@@ -582,17 +627,29 @@ def create_app(
         Structure is built from stored vectors alone, so drawing the graph never
         loads a model. Only the query overlay does, and only when asked for.
         """
-        from src.rag.graph import build_chunk_graph, nearest_chunks
+        from src.rag.graph import build_chunk_graph_cached, nearest_chunks
 
-        records = graph_records_fn()
+        try:
+            records = graph_records_fn()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to read chunk embeddings: {exc}",
+            ) from exc
         if not records:
             raise HTTPException(
                 status_code=404,
                 detail="No chunk embeddings found. Index a video first.",
             )
-        graph = build_chunk_graph(
-            records, k=payload.k, min_similarity=payload.min_similarity
-        )
+        try:
+            graph = build_chunk_graph_cached(
+                records, k=payload.k, min_similarity=payload.min_similarity
+            )
+        except ValueError as exc:
+            # The corpus is too large to graph on demand, not a request/state
+            # conflict, so 422 (oversized request given current data) fits
+            # better than 409.
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         query = (payload.query or "").strip()
         if query:
             embedding = get_runner().provider.chunk_store.embedding_model.embed_query(
@@ -605,7 +662,7 @@ def create_app(
                 # ones, which means the corpus was indexed with another
                 # embedding model — a config problem, not a server fault.
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
-            graph["query"] = {"text": query, "nearest": nearest}
+            graph = {**graph, "query": {"text": query, "nearest": nearest}}
         return graph
 
     @app.post("/api/index")
@@ -618,10 +675,12 @@ def create_app(
     def index_content_streaming(payload: IndexRequest) -> StreamingResponse:
         """Index with per-stage progress, and report what actually changed.
 
-        The underlying CLI reports only at the end, so stages are derived from
-        corpus state either side of the run: a caller watching this stream sees
-        the pipeline advance and, when it finishes, exactly which videos and
-        chunks were added.
+        The underlying CLI reports only at the end, so ``discover`` and
+        ``fetch`` are announced before it starts, the whole blocking call runs
+        under a single ``processing`` stage (with periodic heartbeats so the
+        connection never looks idle), and completion is derived from corpus
+        state either side of the run: a caller watching this stream sees
+        exactly which videos and chunks were added.
         """
         argv, target = _index_argv(payload)
 
@@ -631,22 +690,37 @@ def create_app(
                 before_ids = {v["video_id"] for v in before.get("videos", [])}
                 for stage, message in _INDEX_STAGES:
                     yield _sse("stage", {"stage": stage, "message": message})
-                    if stage == "fetch":
-                        # Everything downstream of discovery happens inside one
-                        # CLI call, so the remaining stages are announced around
-                        # it rather than driven by it.
-                        exit_code = index_fn(argv)
-                        if exit_code != 0:
-                            yield _sse(
-                                "error",
-                                {
-                                    "message": (
-                                        f"Indexing failed (exit {exit_code}). "
-                                        "Check the server log for the CLI output."
-                                    )
-                                },
+                yield _sse(
+                    "stage",
+                    {
+                        "stage": _INDEX_PROCESSING_STAGE,
+                        "message": _INDEX_PROCESSING_MESSAGE,
+                    },
+                )
+                exit_code = None
+                for kind, value in _run_index_streaming(index_fn, argv):
+                    if kind == "heartbeat":
+                        yield _sse(
+                            "stage",
+                            {
+                                "stage": _INDEX_PROCESSING_STAGE,
+                                "message": _INDEX_HEARTBEAT_MESSAGE,
+                            },
+                        )
+                    else:
+                        exit_code = value
+                assert exit_code is not None
+                if exit_code != 0:
+                    yield _sse(
+                        "error",
+                        {
+                            "message": (
+                                f"Indexing failed (exit {exit_code}). "
+                                "Check the server log for the CLI output."
                             )
-                            return
+                        },
+                    )
+                    return
                 after = corpus_fn()
                 added = [
                     v

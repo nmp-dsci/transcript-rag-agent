@@ -16,6 +16,9 @@ import {
 } from './graph';
 
 const DIMMED = 0.09;
+const K_MIN = 1;
+const K_MAX = 20;
+const MAX_RENDERED_NODES = 500;
 
 interface EdgeLayerProps {
   edges: GraphEdge[];
@@ -126,6 +129,16 @@ export function ChunkGraphView() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
 
+  // Guards state updates against a slow request outliving the component, e.g.
+  // the user switching away from this sub-tab before it resolves.
+  const liveRef = useRef(true);
+  useEffect(
+    () => () => {
+      liveRef.current = false;
+    },
+    [],
+  );
+
   const load = useCallback(
     async (queryText: string) => {
       setBusy(true);
@@ -137,14 +150,16 @@ export function ChunkGraphView() {
           query: queryText.trim() || null,
           top_k: 10,
         });
+        if (!liveRef.current) return;
         setGraph(next);
         setPinned(null);
         setHovered(null);
       } catch (err) {
+        if (!liveRef.current) return;
         setError((err as Error).message);
         setGraph(null);
       } finally {
-        setBusy(false);
+        if (liveRef.current) setBusy(false);
       }
     },
     [k, minSimilarity],
@@ -159,7 +174,22 @@ export function ChunkGraphView() {
     void load('');
   }, [load]);
 
-  const nodes = graph?.nodes ?? [];
+  const totalNodeCount = graph?.nodes.length ?? 0;
+  // Rendering scales directly with the DOM this produces (two circles and two
+  // handlers per node, a line per edge), so a huge corpus is capped to the
+  // highest-degree chunks rather than drawn in full.
+  const nodes = useMemo(() => {
+    const allNodes = graph?.nodes ?? [];
+    if (allNodes.length <= MAX_RENDERED_NODES) return allNodes;
+    return [...allNodes].sort((a, b) => b.degree - a.degree).slice(0, MAX_RENDERED_NODES);
+  }, [graph]);
+  const truncated = nodes.length < totalNodeCount;
+  const edges = useMemo(() => {
+    const allEdges = graph?.edges ?? [];
+    if (!truncated) return allEdges;
+    const ids = new Set(nodes.map((node) => node.id));
+    return allEdges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+  }, [graph, nodes, truncated]);
   const positions = useMemo(
     () => new Map(nodes.map((node) => [node.id, projectNode(node)] as const)),
     [nodes],
@@ -207,12 +237,14 @@ export function ChunkGraphView() {
           k
           <input
             type="number"
-            min={1}
-            max={20}
+            min={K_MIN}
+            max={K_MAX}
             value={k}
             style={{ width: 54 }}
             aria-label="Neighbours per chunk"
-            onChange={(event) => setK(Math.max(1, Number(event.target.value) || 1))}
+            onChange={(event) =>
+              setK(Math.min(K_MAX, Math.max(K_MIN, Number(event.target.value) || K_MIN)))
+            }
           />
         </label>
         <label className="toggle">
@@ -253,6 +285,12 @@ export function ChunkGraphView() {
             <span className="badge acc">mean sim {stats.mean_similarity.toFixed(3)}</span>
           </>
         ) : null}
+        {truncated ? (
+          <span className="badge warn">
+            Showing the {MAX_RENDERED_NODES} highest-degree of {totalNodeCount} chunks — raise min
+            similarity or lower k to see the full graph
+          </span>
+        ) : null}
       </div>
 
       {error ? <div className="errtext" style={{ padding: '10px 16px' }}>{error}</div> : null}
@@ -281,7 +319,7 @@ export function ChunkGraphView() {
               aria-label={`Similarity graph of ${nodes.length} chunks`}
             >
               <EdgeLayer
-                edges={graph?.edges ?? []}
+                edges={edges}
                 positions={positions}
                 minSimilarity={minSimilarity}
                 highlight={highlight}
@@ -308,7 +346,7 @@ export function ChunkGraphView() {
               ) : null}
             </svg>
           )}
-          {graph && nodes.length > 0 && graph.edges.length === 0 ? (
+          {graph && nodes.length > 0 && edges.length === 0 ? (
             <p className="graph-note">
               No edges clear a similarity of {minSimilarity.toFixed(2)} — lower the threshold to
               see how these chunks relate.

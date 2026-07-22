@@ -365,6 +365,11 @@ class RagasJudge:
         with ``sample_scores[metric][0]`` — and, when ``samples`` is 1, with
         ``scores[metric]`` itself.
 
+        ``judge_samples`` is the *requested* sample count, the same for every
+        metric. ``sample_counts`` is the per-metric count of attempts that
+        actually succeeded (``len(sample_scores[metric])``), which can be
+        lower than ``judge_samples`` when some attempts errored.
+
         ``answer_model`` names the model that wrote ``answer``; it overrides
         the judge's configured default and decides the ``self_graded`` flag.
         """
@@ -372,6 +377,7 @@ class RagasJudge:
         scores: dict[str, float] = {}
         spread: dict[str, float] = {}
         sample_scores: dict[str, list[float]] = {}
+        sample_counts: dict[str, int] = {}
         details: dict[str, dict[str, Any] | None] = {}
         errors: list[str] = []
         samples = max(1, self.samples)
@@ -398,6 +404,7 @@ class RagasJudge:
                 continue
             scores[name] = round(sum(values) / len(values), 4)
             sample_scores[name] = [round(value, 4) for value in values]
+            sample_counts[name] = len(values)
             spread[name] = round(max(values) - min(values), 4)
             details[name] = captured
 
@@ -416,6 +423,7 @@ class RagasJudge:
             "composite": composite,
             "spread": spread,
             "sample_scores": sample_scores,
+            "sample_counts": sample_counts,
             "judge_samples": samples,
             "details": details if captured_any else None,
             "self_graded": None if not graded_by else graded_by == self.judge_model,
@@ -437,6 +445,7 @@ def unjudgeable(reason: str, judge_model: str = "") -> dict[str, Any]:
         "composite": None,
         "spread": {},
         "sample_scores": {},
+        "sample_counts": {},
         "judge_samples": 0,
         "details": None,
         "self_graded": None,

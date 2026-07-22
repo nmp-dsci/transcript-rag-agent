@@ -62,7 +62,7 @@ class RagQuestionRequest(BaseModel):
     channel_id: str | None = None
     # Per-request override of the provider's configured retrieval strategy, so
     # the scoreboard can compare semantic and hybrid under the same judge.
-    retrieval_mode: str | None = None
+    retrieval_mode: Literal["semantic", "hybrid"] | None = None
     # Prior turns, condensed, for follow-up questions that depend on context.
     history: list[str] = Field(default_factory=list)
 

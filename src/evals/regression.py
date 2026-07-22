@@ -40,6 +40,11 @@ QUALITY_METRICS = [
     "llm_context_recall",
 ]
 
+#: Metrics computed deterministically from golden.py's id-based comparisons
+#: (see its module docstring: "No LLM, no cost"). These have no sampling
+#: noise to excuse with a nonzero threshold, unlike the RAGAS-judged metrics.
+DETERMINISTIC_METRICS = {"context_recall", "video_recall"}
+
 
 @dataclass
 class EntryResult:
@@ -195,14 +200,23 @@ def load_run(path: Path) -> dict[str, Any]:
 
 
 def diff_runs(
-    before: dict[str, Any], after: dict[str, Any], threshold: float = 0.02
+    before: dict[str, Any],
+    after: dict[str, Any],
+    threshold: float = 0.02,
+    deterministic_threshold: float = 0.0,
 ) -> dict[str, Any]:
     """Per-metric and per-question movement between two runs.
 
-    ``threshold`` is the movement below which a change is treated as noise. A
+    ``threshold`` is the movement below which a change is treated as noise for
+    the RAGAS-judged metrics (faithfulness, answer_relevancy, and the like). A
     single judged sample is not precise enough for every third decimal to mean
     something, so small drifts are reported as unchanged rather than dressed up
     as regressions.
+
+    ``deterministic_threshold`` applies instead to :data:`DETERMINISTIC_METRICS`
+    (``context_recall``, ``video_recall``), which golden.py computes exactly
+    from chunk/video ids rather than LLM judging. There is no sampling noise to
+    excuse there, so it defaults to 0 — any movement is a real change.
     """
     metric_moves: list[dict[str, Any]] = []
     before_avg = before.get("summary", {}).get("averages", {})
@@ -212,13 +226,16 @@ def diff_runs(
         if old is None or new is None:
             continue
         delta = round(new - old, 4)
+        metric_threshold = (
+            deterministic_threshold if metric in DETERMINISTIC_METRICS else threshold
+        )
         metric_moves.append(
             {
                 "metric": metric,
                 "before": old,
                 "after": new,
                 "delta": delta,
-                "direction": _direction(delta, threshold),
+                "direction": _direction(delta, metric_threshold),
             }
         )
 
@@ -234,7 +251,10 @@ def diff_runs(
             if not isinstance(old, (int, float)) or not isinstance(new, (int, float)):
                 continue
             delta = round(new - old, 4)
-            if _direction(delta, threshold) != "unchanged":
+            metric_threshold = (
+                deterministic_threshold if metric in DETERMINISTIC_METRICS else threshold
+            )
+            if _direction(delta, metric_threshold) != "unchanged":
                 changes[metric] = {"before": old, "after": new, "delta": delta}
         if changes:
             entry_moves.append(
@@ -250,6 +270,7 @@ def diff_runs(
         "before_run": before.get("run_id"),
         "after_run": after.get("run_id"),
         "threshold": threshold,
+        "deterministic_threshold": deterministic_threshold,
         "metrics": metric_moves,
         "entries": entry_moves,
         "regressed": [m["metric"] for m in regressions],

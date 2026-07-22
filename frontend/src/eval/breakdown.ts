@@ -91,9 +91,15 @@ export interface SpreadRange {
  * spread on the mean when only the width was persisted. Null whenever a single
  * sample was taken — one run has no spread to show, and inventing a whisker
  * would make it look more measured than it is.
+ *
+ * The count that gates and labels this is the metric's own `sample_counts`
+ * entry (how many attempts actually succeeded for it), not the top-level
+ * `judge_samples` (how many were requested) — a metric that failed on most
+ * of its attempts must not be reported as if every requested run had landed.
+ * Older records without `sample_counts` fall back to `judge_samples`.
  */
 export function spreadRange(evaluation: Evaluation, metric: string): SpreadRange | null {
-  const samples = evaluation.judge_samples ?? 0;
+  const samples = evaluation.sample_counts?.[metric] ?? evaluation.judge_samples ?? 0;
   if (samples < 2) return null;
   const values = evaluation.sample_scores?.[metric];
   if (values && values.length > 1) {

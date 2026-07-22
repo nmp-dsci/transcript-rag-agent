@@ -158,14 +158,12 @@ def test_listing_runs_before_any_exist_is_empty(tmp_path):
     assert list_runs(tmp_path / "nothing-here") == []
 
 
-def make_run(run_id, faithfulness, entry_score=None):
+def make_run(run_id, faithfulness, entry_score=None, metric="faithfulness"):
     score = faithfulness if entry_score is None else entry_score
     return {
         "run_id": run_id,
-        "summary": {"averages": {"faithfulness": faithfulness}},
-        "entries": [
-            {"id": "g001", "question": "q", "scores": {"faithfulness": score}}
-        ],
+        "summary": {"averages": {metric: faithfulness}},
+        "entries": [{"id": "g001", "question": "q", "scores": {metric: score}}],
     }
 
 
@@ -181,10 +179,32 @@ def test_diff_flags_a_rise_as_an_improvement():
 
 
 def test_movement_below_threshold_is_noise_not_a_regression():
-    """One judged sample is not precise enough for every decimal to matter."""
-    diff = diff_runs(make_run("a", 0.80), make_run("b", 0.79))
+    """One judged sample is not precise enough for every decimal to matter.
+
+    ``faithfulness`` is LLM-judged, so the default noise threshold applies.
+    """
+    diff = diff_runs(
+        make_run("a", 0.80, metric="faithfulness"),
+        make_run("b", 0.79, metric="faithfulness"),
+    )
     assert diff["regressed"] == []
     assert diff["metrics"][0]["direction"] == "unchanged"
+
+
+def test_small_deterministic_recall_drop_is_still_a_regression():
+    """context_recall is exact and id-based (see golden.py), not judged.
+
+    A movement of 0.01 would be noise under the old uniform 0.02 threshold,
+    but there is no sampling noise in a deterministic metric, so it must be
+    flagged as a real regression.
+    """
+    diff = diff_runs(
+        make_run("a", 0.80, metric="context_recall"),
+        make_run("b", 0.79, metric="context_recall"),
+    )
+    assert "context_recall" in diff["regressed"]
+    moves = {m["metric"]: m for m in diff["metrics"]}
+    assert moves["context_recall"]["direction"] == "worse"
 
 
 def test_diff_reports_which_questions_moved():

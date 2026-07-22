@@ -106,6 +106,29 @@ describe('spreadRange', () => {
     expect(range?.min).toBeCloseTo(0.71, 6);
     expect(range?.max).toBeCloseTo(0.77, 6);
   });
+
+  it('is null when only one attempt actually landed, even though three were requested', () => {
+    // Reproduces the bug: judge_samples says 3 were requested, but this metric
+    // only had 1 real success — a single sample must never be reported as 3.
+    const range = spreadRange(
+      evaluation({
+        judge_samples: 3,
+        sample_scores: { faithfulness: [0.5] },
+        spread: { faithfulness: 0 },
+        sample_counts: { faithfulness: 1 },
+      }),
+      'faithfulness',
+    );
+    expect(range).toBeNull();
+  });
+
+  it('falls back to judge_samples when sample_counts is absent (older records)', () => {
+    const range = spreadRange(
+      evaluation({ judge_samples: 3, spread: { faithfulness: 0.06 } }),
+      'faithfulness',
+    );
+    expect(range?.samples).toBe(3);
+  });
 });
 
 describe('efficiency', () => {

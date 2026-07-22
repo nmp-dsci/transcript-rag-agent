@@ -1,6 +1,11 @@
 """Corpus channel grouping and insight derivation."""
 
-from src.api.corpus import build_channels, build_insights
+from pathlib import Path
+
+import chromadb
+import pytest
+
+from src.api.corpus import build_channels, build_insights, list_corpus, load_chunk_embeddings
 
 
 def video(video_id, channel_id, channel_name, chunks, summary="s"):
@@ -73,3 +78,58 @@ def test_channel_keys_match_the_ids_stamped_on_chunks():
         [video("v1", "UCwC81boH8aT3ognPmLiE6kw", "Smart Property Investment", 10)]
     )
     assert channels[0]["channel_id"] == "UCwC81boH8aT3ognPmLiE6kw"
+
+
+def test_list_corpus_exception_path_matches_the_success_shape(monkeypatch, tmp_path: Path):
+    """A genuine backend read failure must return the same keys as success,
+    just empty/zeroed, so a strict consumer can't tell it apart from a
+    schema perspective (only the values differ).
+    """
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("chroma store corrupted")
+
+    monkeypatch.setattr(chromadb, "PersistentClient", boom)
+    result = list_corpus(tmp_path / "chroma")
+    assert result == {
+        "videos": [],
+        "channels": [],
+        "totals": {"videos": 0, "chunks": 0, "channels": 0},
+        "insights": [],
+    }
+
+
+def test_list_corpus_missing_collections_is_also_a_graceful_empty_corpus(
+    tmp_path: Path,
+):
+    """A fresh Chroma path with nothing indexed yet is not a failure."""
+    result = list_corpus(tmp_path / "chroma")
+    assert result == {
+        "videos": [],
+        "channels": [],
+        "totals": {"videos": 0, "chunks": 0, "channels": 0},
+        "insights": [],
+    }
+
+
+def test_load_chunk_embeddings_returns_empty_when_collection_missing(
+    tmp_path: Path,
+):
+    """Nothing indexed yet is benign and must stay a quiet empty list."""
+    assert load_chunk_embeddings(tmp_path / "chroma") == []
+
+
+def test_load_chunk_embeddings_propagates_non_missing_collection_errors(
+    monkeypatch, tmp_path: Path
+):
+    """A real backend fault (corruption, permissions, I/O) must not be
+    swallowed and mistaken for "not indexed yet".
+    """
+
+    class FakeClient:
+        def get_collection(self, name):
+            raise PermissionError("cannot open chroma store")
+
+    monkeypatch.setattr(chromadb, "PersistentClient", lambda path: FakeClient())
+    with pytest.raises(PermissionError, match="cannot open chroma store"):
+        load_chunk_embeddings(tmp_path / "chroma")

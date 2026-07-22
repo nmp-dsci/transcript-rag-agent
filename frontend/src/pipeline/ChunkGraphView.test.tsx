@@ -156,6 +156,17 @@ describe('ChunkGraphView', () => {
     expect(chunkGraph.mock.calls[1]?.[0]).toMatchObject({ query: 'retrieval', k: 9 });
   });
 
+  it('clamps an out-of-range typed value for neighbours per chunk', async () => {
+    render(<ChunkGraphView />);
+    await waitFor(() => expect(chunkGraph).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('Neighbours per chunk'), { target: { value: '500' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Rebuild' }));
+
+    await waitFor(() => expect(chunkGraph).toHaveBeenCalledTimes(2));
+    expect(chunkGraph.mock.calls[1]?.[0]).toMatchObject({ k: 20 });
+  });
+
   it('shows a chunk preview with a deep link when a node is picked', async () => {
     const { container } = render(<ChunkGraphView />);
     await waitFor(() => expect(nodeGroups(container)).toHaveLength(3));
@@ -201,5 +212,48 @@ describe('ChunkGraphView', () => {
     chunkGraph.mockRejectedValue(new Error('chunk graph unavailable'));
     render(<ChunkGraphView />);
     expect(await screen.findByText('chunk graph unavailable')).toBeInTheDocument();
+  });
+
+  it('caps rendered nodes to the highest-degree ones and notes the truncation', async () => {
+    const TOTAL = 520;
+    const MAX_RENDERED_NODES = 500;
+    const manyNodes = Array.from({ length: TOTAL }, (_, index) =>
+      graphNode({
+        id: `many:${index}`,
+        video_id: 'many',
+        chunk_index: index,
+        degree: TOTAL - index,
+        preview: index === 0 ? 'hub chunk preview text' : `filler preview ${index}`,
+        x: (index % 20) / 10 - 1,
+        y: (Math.floor(index / 20) % 20) / 10 - 1,
+      }),
+    );
+    const buried = manyNodes[manyNodes.length - 1]!;
+    expect(buried.preview).not.toMatch(/hub chunk preview text/);
+
+    chunkGraph.mockResolvedValue(
+      graph({
+        nodes: manyNodes,
+        edges: [],
+        stats: {
+          nodes: TOTAL,
+          edges: 0,
+          k: 6,
+          min_similarity: 0.55,
+          channels: 1,
+          mean_similarity: 0,
+          isolated_nodes: TOTAL,
+        },
+      }),
+    );
+
+    const { container } = render(<ChunkGraphView />);
+    await waitFor(() => expect(nodeGroups(container)).toHaveLength(MAX_RENDERED_NODES));
+
+    expect(
+      screen.getByText(/Showing the 500 highest-degree of 520 chunks/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/hub chunk preview text/)).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(buried.preview))).not.toBeInTheDocument();
   });
 });

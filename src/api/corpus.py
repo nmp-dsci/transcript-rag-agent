@@ -23,7 +23,12 @@ def list_corpus(
         raw = client.get_collection(raw_collection)
         metadatas = raw.get(include=["metadatas"]).get("metadatas") or []
     except Exception:
-        return {"videos": [], "totals": {"videos": 0, "chunks": 0}}
+        return {
+            "videos": [],
+            "channels": [],
+            "totals": {"videos": 0, "chunks": 0, "channels": 0},
+            "insights": [],
+        }
 
     chunk_counts: dict[str, int] = {}
     total_chunks = 0
@@ -233,13 +238,14 @@ def load_chunk_embeddings(
     embedding model — and drawing the graph never needs to embed anything new.
     """
     import chromadb
+    from chromadb.errors import NotFoundError
 
+    client = chromadb.PersistentClient(path=str(chroma_path))
     try:
-        client = chromadb.PersistentClient(path=str(chroma_path))
         collection = client.get_collection(chunk_collection)
-        result = collection.get(include=["embeddings", "documents", "metadatas"])
-    except Exception:
+    except NotFoundError:
         return []
+    result = collection.get(include=["embeddings", "documents", "metadatas"])
 
     embeddings = result.get("embeddings")
     embeddings = [] if embeddings is None else list(embeddings)

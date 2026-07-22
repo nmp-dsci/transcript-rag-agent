@@ -349,7 +349,7 @@ export function ChatView({
                 <p>
                   {corpus?.totals.videos
                     ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks · ${corpus.totals.channels} channels indexed. Narrow the scope below, or ask across everything. Answers are cited back to the source timestamp and scored with RAGAS.`
-                    : 'No transcripts indexed yet — add one from the Library tab first.'}
+                    : 'No transcripts indexed yet — add one from the RAG Pipeline tab first.'}
                 </p>
                 <div className="suggest">
                   {suggestions.map((suggestion) => (

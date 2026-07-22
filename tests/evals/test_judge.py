@@ -77,6 +77,7 @@ def test_unjudgeable_record() -> None:
     assert record["details"] is None
     assert record["self_graded"] is None
     assert record["spread"] == {}
+    assert record["sample_counts"] == {}
 
 
 # --- details -------------------------------------------------------------
@@ -221,6 +222,7 @@ def test_default_samples_is_one_call_per_metric() -> None:
     assert len(calls) == 1
     assert evaluation["spread"] == {"faithfulness": 0.0}
     assert evaluation["sample_scores"] == {"faithfulness": [0.5]}
+    assert evaluation["sample_counts"] == {"faithfulness": 1}
     assert evaluation["judge_samples"] == 1
 
 
@@ -236,6 +238,7 @@ def test_multiple_samples_report_mean_and_spread() -> None:
     assert evaluation["scores"] == {"faithfulness": 0.5}
     assert evaluation["spread"] == {"faithfulness": pytest.approx(0.6)}
     assert evaluation["sample_scores"] == {"faithfulness": [0.2, 0.5, 0.8]}
+    assert evaluation["sample_counts"] == {"faithfulness": 3}
     assert evaluation["judge_samples"] == 3
 
 
@@ -255,7 +258,30 @@ def test_multiple_samples_survive_one_failed_run() -> None:
 
     assert evaluation["scores"] == {"faithfulness": 0.5}
     assert evaluation["sample_scores"] == {"faithfulness": [0.4, 0.6]}
+    assert evaluation["sample_counts"] == {"faithfulness": 2}
     assert evaluation["error"] is None
+
+
+def test_sample_counts_reflect_actual_successes_not_requested_count() -> None:
+    """Reproduces the finding: judge_samples is the request, sample_counts is reality."""
+    outcomes = iter([0.9, RuntimeError("timeout"), RuntimeError("timeout")])
+
+    def mostly_flaky(q: str, a: str, c: list[str]) -> float:
+        value = next(outcomes)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    judge = RagasJudge(
+        score_fns={"faithfulness": mostly_flaky}, judge_model="test-judge", samples=3
+    )
+    evaluation = judge.score("q?", "a", ["c"])
+
+    assert evaluation["judge_samples"] == 3
+    assert evaluation["sample_counts"] == {"faithfulness": 1}
+    assert evaluation["sample_scores"] == {"faithfulness": [0.9]}
+    assert evaluation["spread"] == {"faithfulness": 0.0}
+    assert evaluation["judge_samples"] != evaluation["sample_counts"]["faithfulness"]
 
 
 def test_details_reconcile_with_the_first_sample() -> None:

@@ -86,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     updated_metas: list[dict] = []
     updated_docs: list[str] = []
     skipped_no_identity = 0
+    metadata_changed = 0
 
     for index, chunk_id in enumerate(ids):
         meta = dict(metadatas[index] or {})
@@ -103,7 +104,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         if header:
             merged["context_header"] = header
-        if merged == meta:
+        needs_metadata_write = merged != meta
+        if needs_metadata_write:
+            metadata_changed += 1
+        if not needs_metadata_write and not args.re_embed:
             continue
         updated_ids.append(chunk_id)
         updated_metas.append(merged)
@@ -113,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"chunks stored          : {len(ids)}")
     print(f"videos with identity   : {len(identity)}")
     print(f"channels               : {len(channels)} — {', '.join(channels)}")
+    print(f"chunks with metadata changes : {metadata_changed}")
     print(f"chunks needing update  : {len(updated_ids)}")
     if skipped_no_identity:
         print(f"chunks with no raw doc : {skipped_no_identity} (left unchanged)")

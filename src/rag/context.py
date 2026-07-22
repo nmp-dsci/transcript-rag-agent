@@ -130,8 +130,25 @@ class MultiTranscriptRagContextProvider:
                         "--transcript-filter-min-score or run without "
                         "--filter-transcripts."
                     )
+                filtered_video_ids = [
+                    summary.video_id for summary in selected_transcripts
+                ]
+                if channel_id:
+                    channel_video_ids = set(
+                        self.chunk_store.channel_video_ids(channel_id)
+                    )
+                    filtered_video_ids = [
+                        vid for vid in filtered_video_ids if vid in channel_video_ids
+                    ]
+                    if not filtered_video_ids:
+                        raise ValueError(
+                            "No transcript summaries matched the question within "
+                            f"channel {channel_id!r}. Try lowering "
+                            "--transcript-filter-min-score, running without "
+                            "--filter-transcripts, or checking the channel_id."
+                        )
                 retrieved = self.chunk_store.query_by_video_ids(
-                    [summary.video_id for summary in selected_transcripts],
+                    filtered_video_ids,
                     question,
                     candidates,
                 )
@@ -188,8 +205,13 @@ class MultiTranscriptRagContextProvider:
     ) -> list:
         """Fuse, rerank, and widen a candidate set down to the final top_k."""
         if mode == "hybrid":
+            fuse_width = (
+                max(top_k, self.retrieval_candidates)
+                if self.reranker is not None
+                else top_k
+            )
             retrieved = self._fuse_with_bm25(
-                question, retrieved, top_k, channel_id, video_id
+                question, retrieved, fuse_width, channel_id, video_id
             )
         if self.reranker is not None and retrieved:
             try:
@@ -208,7 +230,7 @@ class MultiTranscriptRagContextProvider:
         self,
         question: str,
         semantic: list,
-        top_k: int,
+        fuse_width: int,
         channel_id: str | None,
         video_id: str | None,
     ) -> list:
@@ -221,10 +243,10 @@ class MultiTranscriptRagContextProvider:
         keyword = bm25.search(
             records,
             question,
-            max(top_k, self.retrieval_candidates),
+            max(fuse_width, self.retrieval_candidates),
             cache_key=f"hybrid:{video_id or channel_id or 'all'}",
         )
-        return fuse_chunks(semantic, keyword, top_k=top_k)
+        return fuse_chunks(semantic, keyword, top_k=fuse_width)
 
     def _bm25_records(
         self, channel_id: str | None, video_id: str | None

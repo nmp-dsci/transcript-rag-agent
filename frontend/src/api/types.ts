@@ -68,6 +68,8 @@ export interface Evaluation {
   /** Optional: absent on evaluations written before each field existed. */
   spread?: Record<string, number>;
   sample_scores?: Record<string, number[]>;
+  /** Per-metric count of attempts that actually succeeded; absent on older records. */
+  sample_counts?: Record<string, number>;
   judge_samples?: number;
   /** True when the judge model also wrote the answer; null when unknown. */
   self_graded?: boolean | null;
