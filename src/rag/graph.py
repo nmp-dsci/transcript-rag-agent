@@ -1,9 +1,10 @@
 """k-nearest-neighbour similarity graph over transcript chunk embeddings.
 
-The Retrieval Lab shows chunks as points in a PCA projection, which answers
-"where does this chunk sit?" but not "what is it actually close to?". This
-module answers the second question by linking every chunk to its ``k`` most
-similar neighbours, producing a graph the frontend renders force-directed.
+The dashboard's Chunk Space tab shows chunks as points in a PCA projection,
+which answers "where does this chunk sit?" but not "what is it actually close
+to?". This module answers the second question by linking every chunk to its
+``k`` most similar neighbours, producing a graph the frontend renders
+force-directed.
 
 The corpus is small (hundreds of chunks), so similarity is computed exactly as
 a dense n x n cosine matrix rather than through an approximate index. numpy

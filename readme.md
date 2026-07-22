@@ -235,28 +235,49 @@ Three views (the tab formerly called **Library** is now **RAG Pipeline**; old
   agent is `rag_agent` (agentic), whose retrieval loop streams into the bubble
   live — one line per iteration showing the query it chose and how many chunks
   came back — so a ~30s research run reads as progress rather than a stall.
-  Composer chips switch the scope (whole corpus or one video) and the
-  answering agent; **⚙ advanced** exposes `top_k`, the auto-judge toggle, and
-  additional setups to run alongside the default. When several setups answer
-  the same question they share **one bubble with tabs**, each carrying its own
-  answer, citations, and RAGAS score, with the best composite badged TOP and a
-  compare grid underneath. "Compare N more setups" runs the remaining ones
-  into the *same* history entry so the scoreboard sees them as competing
-  answers. Esc cancels a running ask.
-- **Library** — an interactive corpus tree (all videos → channel → video →
-  chunks) with a sort control for "top" ordering by views, recency, chunk
-  count, or title. Expanding a video lazily loads its chunks; selecting one
-  shows its full text, timestamp range, segment span, and a deep link into
-  the video at that moment. The **Retrieval Lab** at the top ranks the corpus
-  for any query with **BM25, semantic, or both side by side** — aligned rows
-  show each chunk's rank in the other mode (`↑2`, `↓1`, `only here`) plus an
-  overlap count, which is the fastest way to see where keyword and embedding
-  retrieval disagree. Indexing (single video or latest-N channel) lives in a
-  panel here.
+  Composer selects scope the question to a **channel** and/or a single
+  **video** with linked dropdowns — picking a channel narrows the video list
+  to it, picking a video adopts its channel, and a pinned video is sent alone
+  since it is already the narrower scope. **⚙ advanced** exposes `top_k`, the
+  auto-judge toggle, the smart transcript filter, a semantic/hybrid retrieval
+  toggle, and additional setups to run alongside the default. Every answer
+  proposes follow-up questions as clickable chips; asking one carries the
+  prior question and answer as history so retrieval runs against a standalone
+  rewritten query, while the answering prompt marks that history as context
+  only — every claim must still come from retrieved chunks, never from an
+  earlier turn. When several setups answer the same question they share
+  **one bubble with tabs**, each carrying its own answer, citations, and
+  RAGAS score (flagged `self-graded` when the judge and answering model
+  match), with the best composite badged TOP and a compare grid underneath.
+  "Compare N more setups" runs the remaining ones into the *same* history
+  entry so the scoreboard sees them as competing answers. Esc cancels a
+  running ask.
+- **RAG Pipeline** (formerly **Library**) — two sub-tabs. **Corpus &
+  retrieval** opens on a summary strip of derived insights — e.g. one channel
+  holding over half the corpus's chunks (skews whole-corpus retrieval toward
+  it), videos with no transcript summary (invisible to the summary filter), or
+  videos with no chunks at all — each clickable as a filter on the corpus tree
+  below. The tree itself (all videos → channel → video → chunks) has a sort
+  control for "top" ordering by views, recency, chunk count, or title.
+  Expanding a video lazily loads its chunks; selecting one shows its full
+  text, timestamp range, segment span, and a deep link into the video at that
+  moment. The **Retrieval Lab** at the top ranks the corpus for any query with
+  **BM25, semantic, or both side by side** — aligned rows show each chunk's
+  rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap count,
+  which is the fastest way to see where keyword and embedding retrieval
+  disagree. Indexing (single video or latest-N channel) lives in a panel here
+  and streams live per-stage progress (discover → fetch → chunk → embed →
+  summarize) instead of reporting only at the end. **Chunk graph** renders a
+  kNN similarity graph of every chunk embedding as an SVG force-style layout,
+  colour-coded by channel; typing a query highlights its retrieval
+  neighbourhood in place, which is the fastest way to see whether the corpus
+  actually clusters around what a question is asking.
 - **Scoreboard** — per-setup aggregates across everything judged, groupable by
   **setup × answering model** so scores from different model versions are never
   silently averaged. Each row shows average score per RAGAS metric, composite,
-  win rate, latency, and token estimate. A judge filter keeps self-graded and
+  win rate, latency, and token estimate. An **efficiency panel** ranks setups
+  by composite score per 1k tokens, so a setup spending more to score lower is
+  visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
   ragas version, embedding model, metric definitions, and last-judged time.
   Answers captured before model identity was recorded appear as
@@ -301,7 +322,7 @@ Endpoints (JSON unless noted):
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
 | `/api/setups` | GET | The three RAG setup descriptors |
 | `/api/history` | GET | All captured conversations (with evaluations) |
-| `/api/corpus` | GET | Indexed videos with metadata and chunk counts |
+| `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
 | `/api/scoreboard` | GET | RAGAS aggregates; `group_by=setup\|setup_model`, `judge_model` filter |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
@@ -660,7 +681,8 @@ src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
   rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25,
                  #   RRF fusion, cross-encoder reranking, chunk similarity graph
-  agents/        # Full-transcript agent and RAG agent with optional recursive multi-hop retrieval
+  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
+                 #   with follow-up query rewriting for conversational history
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
                  #   scoreboard, chunk graph
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer

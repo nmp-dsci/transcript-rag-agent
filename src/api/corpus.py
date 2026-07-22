@@ -1,4 +1,4 @@
-"""Lightweight corpus listing for the Library view.
+"""Lightweight corpus listing for the RAG Pipeline view.
 
 Reads raw-transcript and chunk metadata straight from Chroma with a plain
 client — deliberately avoiding ``RagSetupRunner`` so listing the corpus never
