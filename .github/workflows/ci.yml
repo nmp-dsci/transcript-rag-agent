@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python — lint, type, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install Python and dependencies
+        run: |
+          uv python install 3.12
+          uv sync
+      - name: Ruff (lint)
+        run: uv run ruff check src tests scripts
+      - name: mypy (retrieval + evaluation core)
+        run: uv run mypy
+      - name: pytest
+        run: uv run pytest -q
+
+  eval-gate:
+    name: Eval regression gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install Python and dependencies
+        run: |
+          uv python install 3.12
+          uv sync
+      # Deterministic and API-key-free: it re-scores the committed golden/ablation
+      # snapshots (evals/runs/) and fails if the headline retrieval claims regress
+      # or a run is malformed. Regenerating the snapshots needs the local corpus
+      # (see evals/runs/README.md); the gate itself does not.
+      - name: Validate committed eval snapshots and enforce floors
+        run: uv run pytest tests/evals/test_committed_runs.py -q
+
+  frontend:
+    name: Frontend — type, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+      - name: Vitest
+        run: npm test
+      - name: Build
+        run: npm run build

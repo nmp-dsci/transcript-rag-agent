@@ -436,3 +436,37 @@ class _null_run:
 
     def __exit__(self, exc_type, exc, tb):
         return False
+
+
+def test_eval_ablation_does_not_require_api_keys(monkeypatch, tmp_path, capsys) -> None:
+    import src.evals.ablation as ablation
+    import src.evals.regression as regression
+
+    seen = {}
+
+    def fake_load_settings(require_keys=True):
+        seen["require_keys"] = require_keys
+        return Settings(
+            superdata_api_key="",
+            deepseek_api_key="",
+            deepseek_model="deepseek-v4",
+            deepseek_base_url=None,
+            chroma_path=tmp_path / "chroma",
+            mlflow_tracking_uri=f"file:{tmp_path / 'mlruns'}",
+            mlflow_experiment_name="test-cli",
+            log_transcript_artifacts=False,
+        )
+
+    monkeypatch.setattr(cli, "load_settings", fake_load_settings)
+    result = {"run_id": "ablation-test", "entries": 0}
+    monkeypatch.setattr(
+        ablation,
+        "run_default_ablation",
+        lambda settings, top_k=None, on_progress=None: result,
+    )
+    monkeypatch.setattr(ablation, "format_table", lambda run: "table")
+    monkeypatch.setattr(regression, "save_run", lambda run: tmp_path / "run.json")
+
+    assert cli.main(["eval-ablation"]) == 0
+    assert seen["require_keys"] is False
+    capsys.readouterr()

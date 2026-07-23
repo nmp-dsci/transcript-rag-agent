@@ -276,7 +276,8 @@ class RagasJudge:
         llm = LangchainLLMWrapper(
             ChatOpenAI(
                 model=model,
-                api_key=settings.judge_api_key or settings.deepseek_api_key,
+                # langchain types api_key as SecretStr but accepts a plain str at runtime.
+                api_key=settings.judge_api_key or settings.deepseek_api_key,  # type: ignore[arg-type]
                 base_url=settings.judge_base_url or settings.deepseek_base_url,
                 temperature=0.0,
             )

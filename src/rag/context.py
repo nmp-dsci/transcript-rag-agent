@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from typing import Protocol
+
 from src.agents.context import TranscriptContext
 from src.rag.chunking import format_timestamp
 from src.rag.indexing import RagIndexer
 from src.rag.references import format_chunk_reference
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript_from_raw_document
 from src.rag.summaries import TranscriptSummaryStore
+
+
+class _Reranker(Protocol):
+    """The shape ``_refine`` needs from a reranker — see :mod:`src.rag.rerank`."""
+
+    def rerank(self, query: str, chunks: list, top_k: int) -> list: ...
 
 
 class RagTranscriptContextProvider:
@@ -77,7 +85,7 @@ class MultiTranscriptRagContextProvider:
         summary_store: TranscriptSummaryStore | None = None,
         retrieval_mode: str = "semantic",
         retrieval_candidates: int = 30,
-        reranker: object | None = None,
+        reranker: _Reranker | None = None,
         neighbor_span: int = 0,
     ) -> None:
         self.raw_store = raw_store
@@ -246,7 +254,13 @@ class MultiTranscriptRagContextProvider:
             max(fuse_width, self.retrieval_candidates),
             cache_key=f"hybrid:{video_id or channel_id or 'all'}",
         )
-        return fuse_chunks(semantic, keyword, top_k=fuse_width)
+        # Widen recall, don't merely re-rank: a resolver rebuilds a real
+        # RetrievedChunk for any keyword hit the semantic pass missed, so fusion
+        # can surface a BM25-only chunk instead of dropping it. Records that lack
+        # the identity a citation needs are skipped, never fabricated.
+        return fuse_chunks(
+            semantic, keyword, top_k=fuse_width, resolver=_record_resolver(records)
+        )
 
     def _bm25_records(
         self, channel_id: str | None, video_id: str | None
@@ -257,7 +271,8 @@ class MultiTranscriptRagContextProvider:
         elif channel_id:
             where = {"channel_id": channel_id}
         result = self.chunk_store.collection.get(
-            where=where, include=["documents", "metadatas"]
+            where=where,  # type: ignore[arg-type]  # chromadb's Where is a nested TypedDict
+            include=["documents", "metadatas"],
         )
         documents = result.get("documents") or []
         metadatas = result.get("metadatas") or []
@@ -269,12 +284,19 @@ class MultiTranscriptRagContextProvider:
                 continue
             records.append(
                 {
-                    "video_id": str(meta.get("video_id", "")),
-                    "chunk_index": int(meta.get("chunk_index", index) or 0),
+                    # transcript_id / source_url are what let a keyword-only hit be
+                    # rebuilt into a citable RetrievedChunk in _chunk_from_record.
+                    "transcript_id": _meta_str(meta.get("transcript_id")),
+                    "video_id": _meta_str(meta.get("video_id")),
+                    "chunk_index": _meta_int(meta.get("chunk_index"), index),
                     "text": text,
                     "start_seconds": meta.get("start_seconds"),
                     "end_seconds": meta.get("end_seconds"),
-                    "source_url": meta.get("source_url") or None,
+                    "source_url": _meta_str(meta.get("source_url")) or None,
+                    "channel_id": _meta_str(meta.get("channel_id")) or None,
+                    "channel_name": _meta_str(meta.get("channel_name")) or None,
+                    "title": _meta_str(meta.get("title")) or None,
+                    "upload_date": _meta_str(meta.get("upload_date")) or None,
                 }
             )
         return records
@@ -299,6 +321,76 @@ class MultiTranscriptRagContextProvider:
                 widened.append(_as_retrieved(neighbor))
             widened.append(chunk)
         return widened
+
+
+def _meta_str(value: object) -> str:
+    """A Chroma metadata value as a plain string (``""`` for ``None``/missing)."""
+    return "" if value is None else str(value)
+
+
+def _meta_int(value: object, default: int) -> int:
+    """A Chroma metadata value as an int, falling back when it is not numeric."""
+    if isinstance(value, (int, float, str)):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
+def _record_resolver(records: list[dict]):
+    """A ``fuse_chunks`` resolver over a set of BM25 records, keyed like fusion.
+
+    Only keyword-only keys reach it — fusion resolves the semantic objects first —
+    so a chunk is rebuilt at most once, and only if it actually enters the result.
+    """
+    from src.rag.fusion import chunk_key
+
+    by_key = {
+        chunk_key(record.get("video_id", ""), record.get("chunk_index", 0)): record
+        for record in records
+    }
+
+    def resolve(key: str):
+        record = by_key.get(key)
+        return _chunk_from_record(record) if record is not None else None
+
+    return resolve
+
+
+def _chunk_from_record(record: dict):
+    """Rebuild a ``RetrievedChunk`` from a BM25 record, or ``None`` if it can't be.
+
+    A citation must point at a real chunk, so a record missing the identity
+    ``RetrievedChunk`` requires — ``transcript_id`` or ``source_url`` — is dropped
+    rather than reconstructed with invented values. The chunk carries no score:
+    it was found only by keyword, so it has no semantic distance of its own.
+    """
+    from pydantic import HttpUrl, ValidationError
+
+    from src.rag.models import RetrievedChunk
+
+    transcript_id = record.get("transcript_id")
+    source_url = record.get("source_url")
+    if not transcript_id or not source_url:
+        return None
+    try:
+        return RetrievedChunk(
+            transcript_id=str(transcript_id),
+            video_id=str(record.get("video_id", "")),
+            source_url=HttpUrl(str(source_url)),
+            chunk_index=int(record.get("chunk_index", 0) or 0),
+            text=str(record.get("text", "")),
+            start_seconds=record.get("start_seconds"),
+            end_seconds=record.get("end_seconds"),
+            channel_id=record.get("channel_id"),
+            channel_name=record.get("channel_name"),
+            title=record.get("title"),
+            upload_date=record.get("upload_date"),
+            score=None,
+        )
+    except (ValidationError, ValueError):
+        return None
 
 
 def _as_retrieved(chunk):

@@ -1,3 +1,106 @@
+# transcript·lab — an evaluation-first RAG workbench
+
+[![CI](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A YouTube-transcript RAG system built to be **measured, not asserted**. Three
+comparable answer paths run over one shared retrieval stack (hybrid BM25 + dense
+fusion, cross-encoder reranking, multi-hop and agentic loops), and every claim
+about retrieval quality is backed by a committed, reproducible eval run.
+
+> **Licence:** MIT (`LICENSE`). **CI:** lint · type-check · tests · a deterministic
+> eval-regression gate — see `.github/workflows/ci.yml`. Copy `.env.example` to
+> `~/.env` to configure keys.
+
+## The thesis
+
+Full-transcript prompting is the quality baseline but burns tokens; RAG cuts the
+cost but only if retrieval actually surfaces the right evidence. The interesting
+question is not "does RAG work" but **"which retrieval configuration ranks the
+evidence best, and how do you know?"** — so this repo treats retrieval as an
+experiment with a golden set, IR metrics, an ablation harness, and a CI gate,
+rather than a setting you tune by vibes.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph ING["Ingestion"]
+    U["YouTube URL / channel / search"] --> CH["segment-aware chunking<br/>+ context headers"]
+    CH --> EMB["MiniLM local embeddings"] --> TC[("transcript_chunks")]
+  end
+  subgraph QRY["Query path"]
+    Q["question"] --> SEM["semantic top-30"]
+    Q --> BM["BM25 top-30"]
+    SEM --> RRF["RRF fusion"]
+    BM --> RRF
+    RRF --> RER["cross-encoder rerank → top-k"]
+    RER --> A{"3 answer paths"}
+    A --> A1["single-hop"]
+    A --> A2["recursive multi-hop"]
+    A --> A3["agentic ReAct"]
+    A1 & A2 & A3 --> ANS["answer + timestamped citations"]
+  end
+  TC -.-> SEM
+  TC -.-> BM
+  ANS --> J["RAGAS judge + golden-set IR metrics"]
+```
+
+## Results: does hybrid retrieval help?
+
+`eval-ablation` sweeps three retrieval configurations over the golden set and
+reports rank-aware IR metrics. On the committed run (9 questions, 6 videos;
+`evals/runs/ablation-*.json`, reproducible with `uv run python -m src.cli
+eval-ablation`):
+
+| config | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
+|--------|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
+| semantic | 0.263 | 0.397 | **0.628** | 0.639 | 0.526 | 1.000 |
+| **hybrid** | **0.390** | **0.467** | 0.612 | **0.667** | **0.554** | 1.000 |
+| hybrid+rerank | 0.336 | 0.422 | 0.573 | 0.660 | 0.532 | 1.000 |
+
+The honest finding: **hybrid fusion improves early-rank retrieval** — recall@3
++0.13, recall@5 +0.07, MRR +0.03, NDCG +0.03 over plain semantic — putting
+relevant chunks higher, which is what the answer model actually reads. Reranking
+sharpens recall@1 but trades a little deep recall on a set this small. And
+`video_recall` is a perfect 1.0 everywhere: the corpus always contains the right
+source video, so the open problem is chunk-level *ranking*, not finding the
+source. This is exactly the kind of segment-level, defensible conclusion the eval
+harness exists to produce; it renders live in the workbench **Experiments** tab.
+
+## Quickstart
+
+```bash
+uv sync                                          # Python deps
+cp .env.example ~/.env                           # then fill in your API keys
+cd frontend && npm install && npm run build && cd ..   # build the React UI
+uv run python -m src.cli serve                   # http://127.0.0.1:8000
+```
+
+Then measure retrieval and validate everything:
+
+```bash
+uv run python -m src.cli eval-ablation           # retrieval science (free, deterministic)
+uv run pytest -q                                 # 470+ Python tests
+cd frontend && npm test                          # frontend tests
+```
+
+## What's inside
+
+- **Retrieval:** segment-aware chunking, local dense embeddings (Chroma), BM25,
+  RRF hybrid fusion that *widens* recall, cross-encoder reranking, contextual
+  headers, neighbour expansion, channel/video scoping.
+- **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
+  RAG, and a LangGraph ReAct agent — all comparable side by side.
+- **Evaluation:** a RAGAS judge that derives each score from its own persisted
+  intermediates, a golden set with chunk-level labels, deterministic IR metrics
+  (`recall@k`, `MRR`, `NDCG`), an ablation harness, independent (non-DeepSeek)
+  judging, and committed run snapshots gated in CI.
+
+---
+
+The rest of this document is the detailed command and internals reference.
+
 ## YouTube Transcript RAG Demo
 
 CLI prototype that demonstrates the value of RAG over full-transcript prompting for YouTube transcript Q&A.
@@ -20,7 +123,7 @@ uv sync
 
 The dashboard Chunk Space tab uses `scikit-learn` for deterministic PCA projection of stored chunk embeddings; it is installed by `uv sync`.
 
-Create `~/.env`:
+Create `~/.env` (the tracked `.env.example` is a ready-to-fill template):
 
 ```text
 SUPADATA_API_KEY=<Supadata API key>
@@ -47,7 +150,7 @@ YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
 YT_AGENT_RETRIEVAL_MODE=semantic
 YT_AGENT_RETRIEVAL_CANDIDATES=30
-YT_AGENT_RERANK_ENABLED=false
+YT_AGENT_RERANK_ENABLED=true
 YT_AGENT_RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
 YT_AGENT_NEIGHBOR_SPAN=0
 YT_AGENT_JUDGE_SAMPLES=1
@@ -72,12 +175,14 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
   terms (figures, names, dates), which is what fusion recovers.
 
 Both modes pull `YT_AGENT_RETRIEVAL_CANDIDATES` chunks before narrowing to
-`top_k`, because reranking can only reorder what it was given. Set
-`YT_AGENT_RERANK_ENABLED=true` to rerank those candidates with a local
-cross-encoder (`YT_AGENT_RERANK_MODEL`); it loads lazily on first use and adds
-no API calls. `YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each
-hit into the context, which stops answers being cut off mid-sentence at a chunk
-boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
+`top_k`, because reranking can only reorder what it was given. Reranking those
+candidates with a local cross-encoder (`YT_AGENT_RERANK_MODEL`) is **on by
+default**; it loads lazily on first use and adds no API calls. Set
+`YT_AGENT_RERANK_ENABLED=false` to retrieve without it — the `eval-ablation`
+harness (below) quantifies its effect, which on this small set is a tradeoff:
+it sharpens recall@1 but slightly reduces deeper recall versus plain hybrid.
+`YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each hit into the
+context, which stops answers being cut off mid-sentence at a chunk boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
 setup can be compared under both modes with the same judge.
 
 Retrieval can be scoped to a **channel** or a **single video**. Channel
@@ -227,7 +332,7 @@ before `serve` shows the React UI. Without a build, `/` falls back to the
 legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
-Three views (the tab formerly called **Library** is now **RAG Pipeline**; old
+Four views (the tab formerly called **Library** is now **RAG Pipeline**; old
 `#library` links still resolve):
 
 - **Chat** — the landing tab. Type a question and it is answered in a
@@ -282,6 +387,13 @@ Three views (the tab formerly called **Library** is now **RAG Pipeline**; old
   ragas version, embedding model, metric definitions, and last-judged time.
   Answers captured before model identity was recorded appear as
   `— pre-provenance` and are excluded from cross-model comparison.
+- **Experiments** — the committed retrieval science. Renders the
+  `eval-ablation` sweeps from `evals/runs/` as a comparison table (semantic vs
+  hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value
+  per metric highlighted, deltas versus the semantic baseline, and a per-domain
+  toggle. Below it, the end-to-end golden runs with their retrieval config, judge
+  model, and headline scores. Everything shown is reproducible from a snapshot in
+  the repo — served by `GET /api/experiments`.
 
 #### Frontend development
 
@@ -321,6 +433,7 @@ Endpoints (JSON unless noted):
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
 | `/api/setups` | GET | The three RAG setup descriptors |
+| `/api/experiments` | GET | Committed ablation + golden-run snapshots for the Experiments tab |
 | `/api/history` | GET | All captured conversations (with evaluations) |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
@@ -381,24 +494,48 @@ than one pass supports.
 `src/evals/golden_dataset.json` holds curated questions with reference answers
 and the chunk ids a good retriever must surface. It unlocks the two things the
 reference-free RAGAS metrics cannot measure: what retrieval **missed**
-(`context_recall`, `video_recall`) and whether an answer is actually **right**
-(`answer_correctness`, `answer_similarity`).
+(`context_recall`, `video_recall`, and the rank-aware `recall@k`, `mrr`,
+`ndcg@10` from `src/evals/ir_metrics.py`) and whether an answer is actually
+**right** (`answer_correctness`, `answer_similarity`).
 
 ```bash
 uv run python -m src.cli eval-golden --setup rag_llm
 uv run python -m src.cli eval-golden --setup rag_llm --retrieval hybrid
-uv run python -m src.cli eval-golden --no-judge          # recall only, fast
+uv run python -m src.cli eval-golden --no-judge          # recall + IR metrics only, fast
 uv run python -m src.cli eval-golden --reference-metrics # + LLM reference metrics
 uv run python -m src.cli eval-golden --diff              # compare the last two runs
 ```
 
-Each run snapshots to `.yt-agent/eval_runs/` together with the configuration
-that produced it (models, retrieval mode, rerank, top_k). `--diff` reports
-per-metric and per-question movement and exits non-zero when a metric regresses,
-so a config change can be shown to have helped rather than assumed to have.
-Movements under 0.02 are reported as unchanged: one judged sample does not
-support reading meaning into the third decimal. A question that errors is
-recorded with its error and excluded from the averages rather than scored zero.
+Grade with an **independent judge** instead of self-grading: point
+`YT_AGENT_JUDGE_MODEL` / `YT_AGENT_JUDGE_API_KEY` / `YT_AGENT_JUDGE_BASE_URL` at
+any OpenAI-compatible API (e.g. `gpt-4o-mini`). Every evaluation records
+`self_graded`, so a score a model gave its own answer is never quietly compared
+against an independently graded one.
+
+Each run snapshots to `evals/runs/` — **tracked in git**, not the gitignored
+`.yt-agent/` — together with the configuration that produced it (models,
+retrieval mode, rerank, top_k, judge). Committing the snapshots is what lets a
+reviewer open the numbers and CI gate on them; see `evals/runs/README.md`.
+`--diff` reports per-metric and per-question movement and exits non-zero when a
+metric regresses. Movements under 0.02 are reported as unchanged for the judged
+metrics; the deterministic id-based metrics (recall/IR) use a zero threshold, so
+any movement there is real. A question that errors is recorded with its error and
+excluded from the averages rather than scored zero.
+
+**Retrieval ablation.** `eval-ablation` sweeps semantic vs hybrid vs
+hybrid+rerank over the golden set and reports `recall@k`, `MRR` and `NDCG` per
+configuration and per domain. It is retrieval-only and deterministic — no answer
+is generated and no judge runs — so it needs no API key and is cheap to re-run:
+
+```bash
+uv run python -m src.cli eval-ablation
+```
+
+`--top-k N` overrides the final chunk count each configuration retrieves
+(default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
+**Experiments** tab. To grow the
+golden set past its curated 9, see `docs/golden-set-curation.md` and the
+`scripts/generate_golden_candidates.py` drafting scaffold.
 
 Dependencies: `ragas` (the eval metrics) and `uvicorn` (the server), both
 installed by `uv sync`. `src/evals/_ragas_compat.py` shims two legacy Vertex AI
@@ -684,15 +821,20 @@ src/
   agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
                  #   with follow-up query rewriting for conversational history
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
-                 #   scoreboard, chunk graph
+                 #   scoreboard, chunk graph, committed experiments
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
-  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, regression runs
+  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
+                 #   ablation harness, regression runs
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
-scripts/         # One-off maintenance, incl. chunk-metadata backfill
+evals/runs/      # Committed eval snapshots (ablation + golden runs), gated in CI
+docs/            # Process docs, e.g. growing the golden set
+scripts/         # One-off maintenance (chunk-metadata backfill) and the
+                 #   golden-candidate drafting scaffold
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
   src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
+  src/experiments/ # Experiments tab: ablation tables + golden-run summaries
   src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
   src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
 tests/
@@ -876,10 +1018,16 @@ Each CLI command creates a run with command metadata, cache status, transcript m
 
 ```bash
 uv run pytest                        # Python: pipeline, API, evals
+uv run ruff check src tests scripts  # lint
+uv run mypy                          # types, scoped to the retrieval + eval core (see pyproject.toml)
 cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI, theme
 ```
 
 External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automated tests where appropriate. Frontend tests run in jsdom with no network access.
+
+CI (`.github/workflows/ci.yml`) runs the same lint/type/test steps, the frontend
+typecheck and build, and a deterministic eval-regression gate that re-scores the
+committed snapshots in `evals/runs/` (see `evals/runs/README.md`).
 
 ### Agent Work
 

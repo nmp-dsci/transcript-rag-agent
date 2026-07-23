@@ -43,7 +43,10 @@ class Settings:
     # Candidates pulled per retriever before fusion/reranking collapse them to
     # top_k. Wider than top_k on purpose — reranking can only reorder what it sees.
     retrieval_candidates: int = 30
-    rerank_enabled: bool = False
+    # On by default: retrieve wide, then let the local cross-encoder reorder to
+    # top_k. The eval-ablation harness measures the recall/NDCG lift this buys;
+    # set YT_AGENT_RERANK_ENABLED=false to retrieve without it.
+    rerank_enabled: bool = True
     rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     # Adjacent chunks pasted around each hit so answers stop cutting off
     # mid-thought. 0 disables neighbour expansion.
@@ -192,7 +195,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         retrieval_mode=_retrieval_mode_env("YT_AGENT_RETRIEVAL_MODE", "semantic"),
         retrieval_candidates=_int_env("YT_AGENT_RETRIEVAL_CANDIDATES", 30),
         rerank_enabled=_bool_env(
-            os.environ.get("YT_AGENT_RERANK_ENABLED"), default=False
+            os.environ.get("YT_AGENT_RERANK_ENABLED"), default=True
         ),
         rerank_model=os.environ.get(
             "YT_AGENT_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
