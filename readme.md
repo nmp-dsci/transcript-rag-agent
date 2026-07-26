@@ -155,6 +155,10 @@ YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS=
 YT_AGENT_RAG_AGENT_MAX_ITERATIONS=10
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=yt-agent-graph
+YT_AGENT_GRAPH_CACHE_PATH=.yt-agent/graph_cache
 YT_AGENT_RETRIEVAL_MODE=semantic
 YT_AGENT_RETRIEVAL_CANDIDATES=30
 YT_AGENT_RERANK_ENABLED=true
@@ -253,9 +257,10 @@ The ask flow has three prompts:
 
    ```text
    RAG setups:
-     [1] rag_llm (single-hop) — One retrieval across all indexed transcripts, then a single LLM answer.
-     [2] rag_llm (recursive)  — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
-     [3] rag_agent (agentic)  — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
+     [1] rag_llm (single-hop)        — One retrieval across all indexed transcripts, then a single LLM answer.
+     [2] rag_llm (recursive)         — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
+     [3] rag_agent (agentic)         — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
+     [4] graph_rag (knowledge graph) — Routes local/global/temporal, answers over the Neo4j entity/claim graph. Requires index-graph.
      [a] all (compare every setup)
    Choose setup(s) (e.g. 1,3 or a; blank to cancel):
    ```
@@ -339,7 +344,7 @@ before `serve` shows the React UI. Without a build, `/` falls back to the
 legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
-Four views (the tab formerly called **Library** is now **RAG Pipeline**; old
+Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
 `#library` links still resolve):
 
 - **Chat** — the landing tab. Type a question and it is answered in a
@@ -398,9 +403,18 @@ Four views (the tab formerly called **Library** is now **RAG Pipeline**; old
   `eval-ablation` sweeps from `evals/runs/` as a comparison table (semantic vs
   hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value
   per metric highlighted, deltas versus the semantic baseline, and a per-domain
-  toggle. Below it, the end-to-end golden runs with their retrieval config, judge
+  toggle. Above it, the head-to-head `eval-matrix` runs render as an engines ×
+  metrics table with a question-type switcher (`overall` / `local` / `global` /
+  `temporal`) plus per-engine average latency and context tokens. Below the
+  ablation table, the end-to-end golden runs with their retrieval config, judge
   model, and headline scores. Everything shown is reproducible from a snapshot in
   the repo — served by `GET /api/experiments`.
+- **Prompts** — every LLM prompt in the app, grouped by system (chat,
+  vector/recursive/agentic RAG, summary filter, GraphRAG) and read live off the
+  running `PROMPT_REGISTRY` constants, so the tab can never drift from what the
+  engines actually send. Each entry shows its role, template variables, source
+  module, and a copy button; RAGAS judge prompts live in the `ragas` library
+  itself and are linked out rather than duplicated. Served by `GET /api/prompts`.
 
 #### Frontend development
 
@@ -439,8 +453,9 @@ Endpoints (JSON unless noted):
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
-| `/api/setups` | GET | The three RAG setup descriptors |
-| `/api/experiments` | GET | Committed ablation + golden-run snapshots for the Experiments tab |
+| `/api/setups` | GET | The four RAG setup descriptors |
+| `/api/experiments` | GET | Committed ablation + golden-run + matrix-run snapshots for the Experiments tab |
+| `/api/prompts` | GET | The live prompt registry, grouped by system, for the Prompts tab |
 | `/api/history` | GET | All captured conversations (with evaluations) |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
@@ -508,10 +523,13 @@ reference-free RAGAS metrics cannot measure: what retrieval **missed**
 ```bash
 uv run python -m src.cli eval-golden --setup rag_llm
 uv run python -m src.cli eval-golden --setup rag_llm --retrieval hybrid
+uv run python -m src.cli eval-golden --setup graph_rag    # score the GraphRAG agent (needs index-graph)
 uv run python -m src.cli eval-golden --no-judge          # recall + IR metrics only, fast
 uv run python -m src.cli eval-golden --reference-metrics # + LLM reference metrics
 uv run python -m src.cli eval-golden --diff              # compare the last two runs
 ```
+
+`--setup` accepts `rag_llm`, `rag_llm_recursive`, `rag_agent`, or `graph_rag`.
 
 Grade with an **independent judge** instead of self-grading: point
 `YT_AGENT_JUDGE_MODEL` / `YT_AGENT_JUDGE_API_KEY` / `YT_AGENT_JUDGE_BASE_URL` at
@@ -751,10 +769,11 @@ uv run python -m src.cli rag-ask "$question" --rag_agent --max-iterations 8
 
 The agent inherits `--url`, `--filter-transcripts`, and `--top-k` for every retrieval call; only the query string changes per iteration.
 
-Agentic RAG flags (`--rag_llm` and `--rag_agent` are mutually exclusive):
+Agentic RAG flags (`--rag_llm`, `--rag_agent`, and `--graph_rag` are mutually exclusive):
 
 - `--rag_agent` — use the agentic LangGraph RAG agent (`rag_agent`) instead of the pipeline agent (`rag_llm`).
 - `--rag_llm` — use the pipeline RAG agent (`rag_llm`) explicitly. This is also the default when neither flag is passed.
+- `--graph_rag` — use the GraphRAG agent (`graph_rag`) instead; see §4b.
 - `--max-iterations N` — hard cap on ReAct loop iterations; only used with `--rag_agent`. Defaults to `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (or `10`). Ignored without `--rag_agent`.
 
 With `--rag_agent`, output streams live to the terminal: a `Researching...` header, then one `[N] Retrieving: "<query>"  →  K chunks` line per retrieval iteration (color-cycled on a TTY, plain text when piped), followed by the standard `Answer` / `References` blocks and an `Agent: N iterations (rag_agent)` footer. The `Answer` body uses a `## Key Findings` summary followed by one `## Finding N: <title>` section per insight, each with inline citations.
@@ -789,6 +808,8 @@ graph build:
 docker compose up -d neo4j                       # bolt://localhost:7687, browser UI on :7474
 uv run python -m src.cli index-graph             # extract entities/claims per chunk + Leiden communities + summaries
 uv run python -m src.cli index-graph --refresh   # wipe and rebuild (extraction cache still applies)
+uv run python -m src.cli index-graph --skip-communities   # extraction only, no Leiden/summaries
+uv run python -m src.cli index-graph --max-chunks 20       # smoke-test on the first N chunks
 ```
 
 Extraction is one DeepSeek call per chunk against a validated JSON contract,
@@ -797,7 +818,9 @@ re-indexing only re-extracts changed chunks. Every claim carries its source
 chunk id, video, timestamps and `upload_date` — graph answers keep the same
 deep-linkable citations as vector answers, and the temporal layer is just a
 sort on `upload_date`. Communities are detected with Leiden (igraph) and
-summarized up-front (Full GraphRAG — the whole-corpus bill is cents).
+summarized up-front (Full GraphRAG — the whole-corpus bill is cents). Python
+deps: `neo4j` (the Bolt driver) and `python-igraph` (Leiden), both installed
+by `uv sync`.
 
 Ask through the graph:
 
@@ -845,6 +868,24 @@ with per-engine latency and context-token columns). The Experiments tab
 renders the newest matrix as an engines × metrics table with a question-type
 switcher.
 
+A full judged matrix is many LLM calls and can run for hours, and a single
+`eval-matrix` process loses all progress if it is interrupted;
+`scripts/run_matrix_chunked.py` scores one (setup, question) cell at a time
+through the same pipeline,
+appending each result to a JSONL checkpoint (`.yt-agent/matrix_checkpoint.jsonl`)
+as it goes, so a killed or re-run process resumes from wherever it left off
+instead of re-scoring finished cells:
+
+```bash
+uv run python scripts/run_matrix_chunked.py
+uv run python scripts/run_matrix_chunked.py --setups rag_llm,graph_rag
+uv run python scripts/run_matrix_chunked.py --max-seconds 1200   # bounded run; exits 3 and resumes next time
+uv run python scripts/run_matrix_chunked.py --fresh              # discard the checkpoint and start over
+```
+
+Once every (setup, question) cell is scored it assembles and saves the same
+`matrix-<timestamp>.json` shape as `eval-matrix`.
+
 #### 5. Compare and evaluate
 
 Compare full-transcript prompting against single-transcript RAG in the terminal:
@@ -890,24 +931,31 @@ The report shows:
 src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
   rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25,
-                 #   RRF fusion, cross-encoder reranking, chunk similarity graph
-  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
-                 #   with follow-up query rewriting for conversational history
+                 #   RRF fusion, cross-encoder reranking, chunk similarity graph, and the
+                 #   GraphRAG store/extraction (graph_store, graph_extract, communities,
+                 #   graph_models)
+  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic,
+                 #   GraphRAG) with follow-up query rewriting for conversational history;
+                 #   prompts.py is the live prompt registry the Prompts tab reads
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
-                 #   scoreboard, chunk graph, committed experiments
+                 #   scoreboard, chunk graph, committed experiments, prompt registry
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
   evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
-                 #   ablation harness, regression runs
+                 #   ablation harness, regression runs, the head-to-head matrix (matrix.py),
+                 #   graph-extraction quality check (graph_extraction.py)
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
-evals/runs/      # Committed eval snapshots (ablation + golden runs), gated in CI
+evals/runs/      # Committed eval snapshots (ablation + golden + matrix runs); ablation
+                 #   and golden runs are gated in CI, matrix runs are not
 docs/            # Process docs, e.g. growing the golden set
-scripts/         # One-off maintenance (chunk-metadata backfill) and the
-                 #   golden-candidate drafting scaffold
+scripts/         # One-off maintenance (chunk-metadata backfill), the golden-candidate
+                 #   drafting scaffold, and the checkpoint-resumable matrix driver
+                 #   (run_matrix_chunked.py)
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
   src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
-  src/experiments/ # Experiments tab: ablation tables + golden-run summaries
+  src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries
+  src/prompts/   # Prompts tab: live prompt registry grouped by system
   src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
   src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
 tests/
@@ -938,16 +986,24 @@ There are two agent paths:
 
 A third path, the agentic RAG agent (`RagAgent`), is available via `rag-ask --rag_agent`.
 
-#### rag_llm vs rag_agent
+A fourth path, the GraphRAG agent (`GraphRagAgent`, see §4b), is available via
+`rag-ask --graph_rag`. It routes each question to `local`/`global`/`temporal`
+and answers over the Neo4j entity/claim graph instead of a single vector
+retrieval — but returns the same `RagTranscriptAnswer` shape as the other
+three, so it slots into the same chat setups, scoreboard, and eval-matrix
+comparisons.
 
-Two labels are used in the CLI, specs, and eval reports to distinguish the two `rag-ask` agent paths:
+#### rag_llm vs rag_agent vs graph_rag
+
+Three labels are used in the CLI, specs, and eval reports to distinguish the three `rag-ask` agent paths:
 
 | Label | Class | File | Selected by | Behavior |
 |---|---|---|---|---|
 | `rag_llm` | `RagTranscriptAgent` | `src/agents/rag_transcript_agent.py` | `--rag_llm`, or no flag (default) | Single-shot pipeline: one retrieval (or bounded recursive fan-out), then an LLM answer. |
 | `rag_agent` | `RagAgent` | `src/agents/rag_agent.py` | `rag-ask --rag_agent` | Agentic LangGraph ReAct loop: the LLM iteratively retrieves across sub-topics, accumulating evidence, until it decides it has enough, then writes a cited answer. |
+| `graph_rag` | `GraphRagAgent` | `src/agents/graph_agent.py` | `rag-ask --graph_rag` | Router classifies the question `local`/`global`/`temporal`, then answers from subgraph claims, community summaries, or a dated claim timeline (see §4b). |
 
-`rag_llm` is a documentation and CLI label only — no class, file, or import path was renamed. It refers to the existing `RagTranscriptAgent` exactly as it is. `--rag_agent` selects `rag_agent` (`RagAgent`); `--rag_llm` (or no flag) keeps `rag-ask` on `rag_llm`. The two flags are mutually exclusive. Both agents accept the same question and return the same `RagTranscriptAnswer` shape, so the two approaches can be compared side-by-side.
+`rag_llm` is a documentation and CLI label only — no class, file, or import path was renamed. It refers to the existing `RagTranscriptAgent` exactly as it is. `--rag_agent` selects `rag_agent` (`RagAgent`), `--graph_rag` selects `graph_rag` (`GraphRagAgent`); `--rag_llm` (or no flag) keeps `rag-ask` on `rag_llm`. The three flags are mutually exclusive. All three agents accept the same question and return the same `RagTranscriptAnswer` shape, so the approaches can be compared side-by-side.
 
 Indexing flow:
 

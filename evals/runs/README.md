@@ -5,12 +5,13 @@ and answer-quality claims. Unlike the working data under the gitignored
 `.yt-agent/`, they live in source control so a reviewer can open the exact numbers
 a configuration produced, and so CI can gate on them without a live corpus.
 
-Two kinds of run land here:
+Three kinds of run land here:
 
 | Prefix | Produced by | What it measures |
 |--------|-------------|------------------|
 | `ablation-*.json` | `uv run python -m src.cli eval-ablation` | Retrieval only — semantic vs hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG` over the golden set. Deterministic, no LLM, no API key. |
 | `eval-*.json` | `uv run python -m src.cli eval-golden …` | End-to-end — answers generated and (optionally) RAGAS-judged, alongside the deterministic recall/IR metrics. |
+| `matrix-*.json` | `uv run python -m src.cli eval-matrix` or `scripts/run_matrix_chunked.py` | Head-to-head — every answer engine (`rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`) answers the same golden questions, scored by the same pipeline; a comparison pivot by metric × setup, overall and per `question_type`. |
 
 ## Provenance
 
@@ -42,13 +43,22 @@ YT_AGENT_JUDGE_BASE_URL=https://api.openai.com/v1 \
 
 # Compare the two most recent golden runs (same-config regression check)
 uv run python -m src.cli eval-golden --diff
+
+# Head-to-head matrix — every engine over the same golden questions
+uv run python -m src.cli eval-matrix
+
+# The same matrix, but checkpointed cell-by-cell so a killed/long-running
+# process resumes instead of losing the run (see readme.md §4c)
+uv run python scripts/run_matrix_chunked.py
 ```
 
 ## The CI eval gate
 
-`tests/evals/test_committed_runs.py` re-scores these snapshots on every CI run: it
-checks the schema and provenance are complete and enforces floors on the headline
-retrieval claims (for example, that hybrid fusion still improves early-rank recall
-over plain semantic). The gate is deterministic and needs no corpus or API key —
-only the committed JSON here. Regenerating the snapshots needs the local corpus;
-validating them does not.
+`tests/evals/test_committed_runs.py` re-scores the `ablation-*.json` and
+`eval-*.json` snapshots on every CI run: it checks the schema and provenance are
+complete and enforces floors on the headline retrieval claims (for example, that
+hybrid fusion still improves early-rank recall over plain semantic). The gate is
+deterministic and needs no corpus or API key — only the committed JSON here.
+Regenerating the snapshots needs the local corpus; validating them does not.
+`matrix-*.json` runs are not part of this gate — they are comparison evidence for
+the Experiments tab, not a regression floor.
