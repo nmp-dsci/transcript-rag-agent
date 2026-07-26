@@ -4601,6 +4601,1365 @@
           "followups": []
         }
       ]
+    },
+    {
+      "id": "q-20260723-021217-3f15",
+      "question": "Whats the ai engineer workflow Kun uses, what the tools he's using for every step",
+      "url": null,
+      "asked_at": "2026-07-23T02:12:17.810960+00:00",
+      "answers": [
+        {
+          "key": "rag_agent",
+          "title": "rag_agent (agentic)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_agent",
+          "answer": "Now I have enough information to provide a comprehensive answer. Let me compile everything.\n\n{\n  \"question\": \"Whats the ai engineer workflow Kun uses, what the tools he's using for every step\",\n  \"answer\": \"## Key Findings\\n1. Kun frames his AI engineering workflow as a \\\"captain and crew mates\\\" metaphor, where he acts as the captain orchestrating multiple AI agent sessions in parallel [2][6].\\n2. He uses a reproducible environment stack with Nix, nix-darwin, Home Manager, Westerm terminal emulator, and Neovim \u2014 all declaratively configured via dotfiles [8][10].\\n3. Agent onboarding is done through a two-part memory system: a minimal global memory file (27 lines) for cross-project preferences, and more verbose project-level memory files that accumulate learnings from agent corrections [1][9].\\n4. Conditional knowledge is offloaded into \\\"skills\\\" with progressive disclosure to avoid bloating system prompts, installed via Vercel's `npx skills` CLI [6][8].\\n5. Planning happens through Lavish AXI \u2014 a rich editor that generates interactive HTML artifacts for visual requirement clarification, with voice input via Open Super Whisper [2][9].\\n6. During implementation, agents work autonomously in isolated git work trees managed by Treehouse, with long-running tasks handled by \\\"Good Night, Have Fun\\\" [1][4][7].\\n7. Instead of manually reviewing diffs, Kun sends changes into the \\\"No Mistakes\\\" pipeline, which performs adversarial review, end-to-end testing with evidence capture, documentation updates, linting, and PR babysitting [3][4][1].\\n8. For scaling beyond manual session management, Kun built \\\"First Mate\\\" \u2014 an orchestrator agent that accepts high-level goals, spawns parallel agent sessions in T-Max/Herder tabs, and manages the full build-validate-PR lifecycle autonomously [5][6][9].\\n\\n## Finding 1: Reproducible Environment Stack\\nKun's entire development environment is declaratively configured for full reproducibility. On a fresh Mac, he uses the Determinate Nix installer to set up Nix, then configures macOS-level settings via nix-darwin and user-level settings via Home Manager, with Homebrew installed as a Nix package [2][8]. The terminal emulator is Westerm \u2014 chosen for being truly cross-platform (identical on Windows, Mac, Linux) and highly customizable through Lua scripts with hot-reload [1][6][7]. Inside Westerm, he runs a terminal multiplexer: originally T-Max, but more recently switching to Herder which he describes as \\\"built in this agent era\\\" with native integration for agent harnesses [3][4]. His primary code editor is Neovim, configured with Lua and managed via the Lazy plugin manager, with plugins like Which-Key for discoverable keybindings [5][7][9]. The shell prompt is customized with Starship, and Zsh is configured with auto-suggestions and syntax highlighting \u2014 all managed through the Nix/home-manager config [5][7]. On rebuild, the entire setup is instantly reproducible from a single cloned dotfiles repo [4][5].\\n\\n## Finding 2: Agent Harnesses and Onboarding (Memory Files + Skills)\\nKun keeps his workflow agent-agnostic and uses four different agent harnesses regularly: Claude Code (best out-of-box experience, practical for Anthropic subscriptions), Codex CLI (written in Rust, smoother, open source), Pi coding agent (minimal and highly extensible), and Open Code (buttery smooth TUI, model agnostic) [7][8]. New agents are \\\"fresh recruits\\\" that need onboarding through memory files and skills [1][9]. The global memory file (agents.md symlinked to claude.md and other agent locations) is deliberately minimal \u2014 only ~27 lines \u2014 containing personal preferences like \\\"never use mdash\\\" and \\\"when making technical decisions, don't give too much weight to development cost\\\" [2][9]. Each project also has a project-level memory file built organically: every time Kun sees an agent making a mistake, he corrects it and asks the agent to store the learning into this file, so agents get \\\"smarter and more experienced\\\" over time [7][9]. To prevent memory files from bloating, conditional information (like end-to-end testing instructions) is extracted into skills with progressive disclosure \u2014 only a tiny description field loads into the system prompt initially, and the full content loads only when the skill is activated [6][8][10]. Skills are managed via `npx skills` CLI from Vercel, and Kun warns strongly against installing random skills from the internet due to security risks and unverified performance claims [6][8].\\n\\n## Finding 3: Planning Phase \u2014 Lavish AXI with Voice Input\\nFor planning any complex work, Kun relies on Lavish AXI \u2014 a custom tool that instructs the agent to generate interactive HTML artifacts that visualize what needs to be discussed, always using the same design system as the current project [2][9]. He describes this as \\\"so much easier to understand than the huge wall of text\\\" and states he \\\"can never go back to reading text in the terminal anymore\\\" [1][9]. The Lavish editor allows him to annotate and comment on specific parts of artifacts to give feedback, and at the bottom there are interactive decision options he can click to make choices \u2014 all without leaving the Lavish interface [9]. For input, he uses Open Super Whisper for local voice transcription, only falling back to typing for URLs and file paths [5][9]. Once requirements are clarified in this planning phase, he tells the agent to \\\"start building\\\" and exits the session, confident that the implementation phase will run autonomously [1][9].\\n\\n## Finding 4: Implementation Phase \u2014 Parallel Autonomous Agent Sessions\\nAfter planning, Kun does not interfere during implementation \u2014 \\\"I only come back to this when the agent has done\\\" [1][9]. To run multiple agents in parallel without conflicts, he uses Treehouse \u2014 a tool he built that manages git work trees (lightweight isolated copies of the repo). Running `treehouse` drops him into a fresh work tree, he can spin up many of them, and when done, closing the tab frees the work tree for reuse instead of creating new ones each time [4][7]. For long-running autonomous tasks (e.g., overnight), he uses \\\"Good Night, Have Fun\\\" \u2014 another free open-source tool that keeps an agent running in a loop until a stop condition (token cap, iteration cap, etc.) is met. He gives an example of telling it to \\\"pretend you are a seven-year-old kid and use the app end to end, find the first usability problem, fix it, and repeat\\\" \u2014 and the agent keeps iterating autonomously [1][2][3]. He uses T-Max (or Herder) tabs to run all these parallel agent sessions, switching between them with keyboard shortcuts and monitoring their status via the top status bar [4][7][9].\\n\\n## Finding 5: Validation and PR Pipeline \u2014 \\\"No Mistakes\\\"\\nKun's core insight is that manually reviewing diffs creates a bottleneck because \\\"AI writes code so fast\\\" and \\\"reviewing diff is just not fun\\\" [3][9]. Instead, he sends changes into a pipeline he built called \\\"No Mistakes\\\" (free and open source) [2][3]. The pipeline executes in an isolated work tree so nothing affects the current repo. It first analyzes the agent session to understand the real intent, then rebases on the latest main branch and resolves merge conflicts upfront [1][3]. Next, it runs an adversarial review in its own fresh context window \u2014 \\\"this is where most problems get caught\\\" \u2014 with obvious problems self-corrected and ambiguous ones escalated to the human for a product decision [1][4]. After review, it does end-to-end testing against the original intent, recording evidence (screenshots, video demos, log files) that proves the change is working [3][4]. It then updates all relevant documentation and checks for linting problems before pushing the branch and raising a PR [1][4]. Crucially, No Mistakes continues \\\"babysitting\\\" the PR until it's merged \u2014 handling merge conflicts and CI pipeline failures autonomously [1][4]. Kun's review process is then risk-based: he looks at the risk assessment on the PR, and for low-risk changes doesn't review the diff at all, relying on the pipeline's evidence [3][6].\\n\\n## Finding 6: First Mate \u2014 The Orchestrator for True Scale\\nKun discovered that even with parallelized agent sessions, \\\"juggling between all these sessions... the constant context switch\\\" was exhausting [6][9]. His solution is \\\"First Mate\\\" \u2014 another free open-source tool \u2014 an orchestrator agent that acts as the captain's primary interface. He talks to First Mate and gives it high-level goals like \\\"for all three projects, I'd like to add an update command on the CLI that will update their version to the latest on npm\\\" [7][9]. First Mate realizes this is three parallel tasks, spins up T-Max/Herder tabs, creates Treehouse work trees, runs agents in those work trees, and runs No Mistakes to validate and get PRs ready \u2014 all autonomously [6][9][10]. While waiting for those background tasks, Kun can give First Mate additional work like \\\"look at the most recent three open issues\\\" \u2014 First Mate pulls the issues while agents are still running in the background [6][9]. He describes watching First Mate context-switch as \\\"an oddly satisfying experience\\\" [9][10]. This final layer transforms Kun from someone managing many agents directly into a true captain focused on \\\"big picture stuff like where should we go next\\\" [6][9].\\n\\n## Finding 7: Efficient Agent Tool Design (AXI Standards) and Tool Selection\\nKun is meticulous about tool efficiency for agents. He authored \\\"AXI\\\" \u2014 a set of design standards for building tools that treat agents as first-class citizens, optimizing for \\\"agent ergonomics.\\\" For example, using token-efficient output formats can save ~40% tokens compared to JSON [1][2]. He benchmarked various ways to access GitHub and found that the GitHub MCP server costs \\\"three times more on token cost and more than double the latency\\\" compared to using the CLI, while his GitHub AXI achieved the lowest cost and highest success rate [2]. He built custom AXI tools including GitHub AXI, Chrome DevTools AXI (benchmarked against various browser tools), and Lavish AXI for planning [2][9]. All AXI tools are available on axi.md with a public catalog, and he warns against using unverified tools: he tested the popular \\\"Andrej Karpathy skills\\\" repo (177k stars) with Program Bench and found it used 5% more tokens while making results worse \u2014 and notes it wasn't even written by Karpathy himself [6][8].\",\n  \"references\": [\n    {\n      \"label\": \"[1]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=0s\",\n      \"start_seconds\": 0.0,\n      \"end_seconds\": 66.0,\n      \"chunk_index\": 0,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[2]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=60s\",\n      \"start_seconds\": 60.0,\n      \"end_seconds\": 132.0,\n      \"chunk_index\": 4,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[3]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=1754s\",\n      \"start_seconds\": 1754.0,\n      \"end_seconds\": 1829.0,\n      \"chunk_index\": 2,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[4]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=1823s\",\n      \"start_seconds\": 1823.0,\n      \"end_seconds\": 1895.0,\n      \"chunk_index\": 0,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[5]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=0s\",\n      \"start_seconds\": 0.0,\n      \"end_seconds\": 74.0,\n      \"chunk_index\": 7,\n      \"video_id\": \"5N-okeDdIuI\"\n    },\n    {\n      \"label\": \"[6]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=2429s\",\n      \"start_seconds\": 2429.0,\n      \"end_seconds\": 2505.0,\n      \"chunk_index\": 5,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[7]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2042s\",\n      \"start_seconds\": 2042.0,\n      \"end_seconds\": 2103.0,\n      \"chunk_index\": 2,\n      \"video_id\": \"5N-okeDdIuI\"\n    },\n    {\n      \"label\": \"[8]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=896s\",\n      \"start_seconds\": 896.0,\n      \"end_seconds\": 971.0,\n      \"chunk_index\": 4,\n      \"video_id\": \"5N-okeDdIuI\"\n    },\n    {\n      \"label\": \"[9]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=iQyg-KypKAA&t=656s\",\n      \"start_seconds\": 656.0,\n      \"end_seconds\": 728.0,\n      \"chunk_index\": 8,\n      \"video_id\": \"iQyg-KypKAA\"\n    },\n    {\n      \"label\": \"[10]\",\n      \"source_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI\",\n      \"timestamp_url\": \"https://www.youtube.com/watch?v=5N-okeDdIuI&t=2583s\",\n      \"start_seconds\": 2583.0,\n      \"end_seconds\": 2663.0,\n      \"chunk_index\": 8,\n      \"video_id\": \"5N-okeDdIuI\"\n    }\n  ]\n}",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=0s",
+              "start_seconds": 0.16,
+              "end_seconds": 66.32000000000001,
+              "chunk_index": 0,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[2]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2657s",
+              "start_seconds": 2657.68,
+              "end_seconds": 2670.16,
+              "chunk_index": 35,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1754s",
+              "start_seconds": 1754.48,
+              "end_seconds": 1829.6,
+              "chunk_index": 26,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[4]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=2701s",
+              "start_seconds": 2701.2,
+              "end_seconds": 2743.44,
+              "chunk_index": 40,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=60s",
+              "start_seconds": 60.96,
+              "end_seconds": 132.64,
+              "chunk_index": 1,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[6]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1484s",
+              "start_seconds": 1484.08,
+              "end_seconds": 1562.96,
+              "chunk_index": 22,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[7]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=189s",
+              "start_seconds": 189.84,
+              "end_seconds": 261.28,
+              "chunk_index": 3,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[8]",
+              "source_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=2235s",
+              "timestamp_url": "https://www.youtube.com/watch?v=5N-okeDdIuI&t=0s",
+              "start_seconds": 0.08,
+              "end_seconds": 74.64,
+              "chunk_index": 0,
+              "video_id": "5N-okeDdIuI"
+            },
+            {
+              "label": "[9]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=656s",
+              "start_seconds": 656.16,
+              "end_seconds": 728.8,
+              "chunk_index": 10,
+              "video_id": "iQyg-KypKAA"
+            },
+            {
+              "label": "[10]",
+              "source_url": "https://www.youtube.com/watch?v=iQyg-KypKAA",
+              "timestamp_url": "https://www.youtube.com/watch?v=iQyg-KypKAA&t=1688s",
+              "start_seconds": 1688.16,
+              "end_seconds": 1762.0,
+              "chunk_index": 25,
+              "video_id": "iQyg-KypKAA"
+            }
+          ],
+          "token_estimate": 33664,
+          "chunk_count": 55,
+          "llm_calls": null,
+          "iterations": 11,
+          "terminated_reason": "completed",
+          "elapsed_seconds": 68.32,
+          "error": null,
+          "contexts": [
+            "Hi everyone, welcome to this video and this will\u00a0\nbe a full walkthrough of my agentic engineering workflow. My name is Kun. I was previously\u00a0\nan L8 principal engineer worked at Meta, Microsoft and Atlassian on many large scale\u00a0\nsystems like the Bing search engine, Windows and Facebook games. In the recent couple of years,\u00a0\nI have been building frontier coding agents at Atlassian and helped many engineering teams\u00a0\nfigure out how to use them effectively. And I have been building heavily with agents myself and\u00a0\nshipping 40 to 50 PRs almost every day, sometimes more. And these are all well- tested and shipped\u00a0\nto production, not those Minecraft demos you see people vibe code on social media. I have shaped\u00a0\nmy workflow to be both highly productive and enjoyable. Many people recently asked me what it\u00a0\nlooks like. To be honest, I did debate a lot with myself whether I should make this video a paid\u00a0\ncourse because it does have that level of value. But ultimately, I decided to just share it here\u00a0\nwith everyone because I want to stay focused on building products as my main business. You can see\u00a0\nthis is a bit of a long video because I'm going to",
+            "my previous video about my agentic engineering\u00a0\nworkflow yet, now is a great time to catch up and see how I actually get work done with this setup.\u00a0\nThank you for watching and see you next time.",
+            "diffs all day. My advice here is that in order to\u00a0\nreally scale ourselves with AI, we have to think of ourselves more as an engineering manager or\u00a0\nengineering director. Your directors most likely don't review any PRs. Yet, they can influence the\u00a0\nquality of their team's software by creating good culture and processes and rely on the team to\u00a0\ncarry them out. That's what we should do with AI. What I do here when the agent says the work\u00a0\nis done is not to start reviewing the diffs or start manually testing the changes. That's too\u00a0\nmuch overhead on myself. I send the change into a pipeline I built called no mistakes. No mistakes\u00a0\nis also free and open source. It orchestrates your agent to execute a series of steps that takes this\u00a0\nfirst pass code all the way through to a clean PR. It would first create a branch if one doesn't\u00a0\nexist yet and then create a commit and then take it through a pipeline in an isolated work tree.\u00a0\nSo nothing during the validation would affect your current repo. It would first understand your\u00a0\nreal intent behind the change by analyzing your agent session. Then rebase the change on top\u00a0\nof the latest main branch on remote origin and",
+            "doing that, congratulations. You have successfully\u00a0\ntransitioned from a sailor into a great captain. All right, we have gone from not having a ship\u00a0\nto being a captain that has a first mate and a big crew that sail together. This is a pretty\u00a0\ngood time to wrap up this video. All my tools can be found on my GitHub and will be linked in\u00a0\nthe description below. They are all free and open source. I built them because I just want to see\u00a0\nmore people learning how to do aic engineering effectively and doing it in an enjoyable way. And\u00a0\nthat's what I hope you can get out of this video. I will continue to share more of my workflow\u00a0\nand things I find useful on my channel. So, don't forget to subscribe if\u00a0\nyou don't want to miss anything.",
+            "building products as my main business. You can see\u00a0\nthis is a bit of a long video because I'm going to walk through many fundamental concepts of agentic\u00a0\nengineering that not only show you how I do it, but also the why and how things really work under\u00a0\nthe hood. These are not gimmicks that look cool, but can't actually be used for real work. These\u00a0\nare all real workflows that professionals like myself use to get real work done. By the end of\u00a0\nthis video, I want you to feel like a captain that can sail a large ship with a crew of agents\u00a0\nworking for you and do so in a stress-free and satisfying way. Largely speaking, we will be\u00a0\nwalking through these chapters. We'll start with assembling our ship where I will introduce\u00a0\nthe core setup. We will then talk through how we recruit and ramp up our crew mates with the right\u00a0\nusage of memory and skills. I'll then demonstrate how we work with a single crew mate effectively.\u00a0\nThen we'll upgrade to working with multiple crew mates all at the same time. And lastly, we will\u00a0\nrecruit a first mate that manages a lot of the overhead for us so we can stay focused on the big\u00a0\npicture as a captain. The very first level is to",
+            "work on here. Hibbit is an AI tutor I'm\u00a0\nbuilding for kids. Um I'll just create a test profile here. You can see here um at the\u00a0\ntop I have these two buttons what I can do and my progress. They are showing very similar\u00a0\ncontent right now uh which is a problem. So um and also the UI is not very exciting or\u00a0\nfun. So, uh, let me go back and talk to Claude. I'll still use, uh, voice input here.\u00a0\nI'll just say, I'd like to consolidate, um, the what I can do and my progress buttons\u00a0\nbecause their functionality is very similar, and I'd like to revamp the experience there\u00a0\nto be something more fun and exciting, like an uh, an achievement system. Come up with some\u00a0\noptions, and let's discuss. Don't use lavish. Okay, the reason I said don't use Lavish is that\u00a0\nI wanted to show you what the default workflow today looks like for many people. And then I'm\u00a0\ngoing to show you the difference Lavish makes. Because I already have Lavish skills installed, my\u00a0\ncloud will automatically use Lavish for this type of question, which is why I had to tell it not to\u00a0\ndo that right now. Okay, cloud is doing its work.",
+            "paradigm for GUI apps, and it's hard to build the\u00a0\ndiscipline of hands-on keyboard when every once in a while you still have to use the mouse. Terminal\u00a0\napps, on the other hand, are all designed for the keyboard. So, there's no reason for your hands\u00a0\nto move anywhere else. The other very important factor that drives me to use the terminal is that\u00a0\nI can keep the exact same workflow everywhere, even on my phone. But if you really don't like the\u00a0\nterminal, that's okay, too. I designed this video to be more about the fundamental concepts behind\u00a0\nagentic engineering rather than the mechanics. So, most of the things that I talk about should be\u00a0\napplicable to GUI based workflows as well. Now, since we are looking at a terminal here, let\u00a0\nme share what it is. I'm using this beautiful, clean, and elegant terminal emulator you're\u00a0\nlooking at here is called Westerm. Westerm is a highly performance terminal emulator built by a\u00a0\nguy named Wes. It's got 26k GitHub stars and has existed for many years. I like it mostly for two\u00a0\nreasons. One is that it's truly crossplatform. It's pretty much the only terminal emulator I can\u00a0\nfind that can work on Windows exactly the same",
+            "What's up everyone? I'm still in shock that\u00a0\nmy last video about agentic engineering got hundreds of thousands of views. I'm really happy\u00a0\nto see many of you are leaning into building with agents and I plan to continue sharing what I found\u00a0\nthat's truly useful for getting real work done. Today, by popular demand, I'm going to be sharing\u00a0\nmy entire development environment by setting up all my config files from scratch, step by step,\u00a0\nso we can all go from a freshly installed Mac to my complete agentic engineering setup that's\u00a0\nready to go. Let's get started. All right, here we are at our starting point, a freshly\u00a0\ninstalled Mac OS on my Mac Mini. I have only done some of the most basic things like installing\u00a0\nChrome, Git, and set up my SSH key for GitHub. I also downloaded this custom wallpaper here just so\u00a0\nthe video looks a little bit more pleasant. I will drop a link in the description for where I got\u00a0\nthis. And that's all there is right now. We will set up everything else together from this point\u00a0\non. Now, the very first problem I want to solve is the reproducibility of my configuration. It means\u00a0\nonce I have things all set up on this machine,",
+            "from the shelf and just go, Open Code is a pretty\u00a0\ngood choice. For the rest of this video though, I'm going to use cloud code because I know many\u00a0\npeople are already familiar with it. But I have been very strict about making my workflow agent\u00a0\nagnostic because the landscape is changing very very fast. Who knows which model or agent\u00a0\nwill be the best performing one next month, right? So everything I show here in the video\u00a0\nis agent agnostic and should be applicable regardless of which model or harness you use.\u00a0\nNow the problem with these crew mates is that they are fresh recruits and they have no idea how\u00a0\nwe run our ship or how we like to work. We need a proper onboarding process to ramp them up. We'll\u00a0\ndo this mostly through two ways. Memory files and skills. There are a few types of memory files.\u00a0\nGlobal memory files and project level memory files. The global memory file for cloud code is\u00a0\nat this location. And every other agent uses the other standard location here. So what I do is\u00a0\nthat I use this command which made clots.m MD a symbolic link to agents.md. So they both exist but\u00a0\nunder the hood they point to the same file. Here's",
+            "back to reading text in the terminal anymore. This\u00a0\nis just like way too much more efficient. Now, the agent has made updates to the HTML and I\u00a0\nfeel happy about this. So, I'll just tell the agent to start building uh start building and\u00a0\nwe'll end the session. We can then go back to the terminal now and see the agent uh will start\u00a0\nto work on the implementation. Because we already clarified all the requirements in the planning\u00a0\nphase, I typically don't need to interfere at all during this implementation phase. I only come\u00a0\nback to this when the agent has done. And when the agent says it's done, that's actually when things\u00a0\nget really tricky. This is where a lot of people will spin up their editor and start reviewing the\u00a0\ndiff. The problem is AI writes code so fast and if every piece of code requires your review then you\u00a0\nare creating a big bottleneck on yourself because you can only review so many diffs every day. Your\u00a0\nvelocity will be hardcapped by it. And even more importantly reviewing diff is just not fun. No one\u00a0\nsays I became an engineer because I love reviewing diffs all day. My advice here is that in order to\u00a0\nreally scale ourselves with AI, we have to think",
+            "using token efficient output format can save about\u00a0\n40% tokens compared to using JSON. And then I built a few axis with them. Besides the GitHub\u00a0\naxi I showed earlier, I also built ChromeDev tools axi and benchmarked it against other various\u00a0\nbrowser tools. Here you can see the agent taking less turns and using less tokens to get the same\u00a0\ntasks done with axi. The main point here is when you give tools to your agent, do some research on\u00a0\ntheir efficiency because they can greatly affect how much mileage you get out of your agents. If\u00a0\nyou want to use the axis I mentioned earlier, you can just go to this site called axi.mmd\u00a0\nand find them in this catalog. You can just go to their repo and find instructions for how\u00a0\nto start using them. Speaking of this catalog, there is something called lavish axi here. This\u00a0\nis a very important tool in my setup. I pretty much rely on this tool for planning any kind\u00a0\nof complex work. Let's do a real feature live and I'll show you how it works. Let me first\u00a0\nlaunch Hibbit to show you what I'm trying to work on here. Hibbit is an AI tutor I'm\u00a0\nbuilding for kids. Um I'll just create a",
+            "This is the lavish editor. The reason I named it\u00a0\nlavish is that it's richer than a rich editor. I almost named it filthy rich editor, but um that's\u00a0\njust not the best sounding name. Lavish editor basically instructed the agent to create an HTML\u00a0\nartifact to visualize what we need to discuss. It always uses the same design system as the current\u00a0\nproject being worked on. So this is consistent with how the hybits app actually looks. This makes\u00a0\nit very easy to review concepts and prototypes. see the option is laid out here. This is so much\u00a0\neasier to understand than the huge wall of text we were looking at earlier in the terminal, right?\u00a0\nI can also annotate and make comments on specific parts of the artifacts to give feedback to the\u00a0\nagent. This is something that's really hard to do with the wall of text or a markdown file. And at\u00a0\nthe bottom, there are things for me to decide on. And I can just click on these options to make the\u00a0\ndecisions. and I just send this feedback back to the agents inside of Lavish without even having to\u00a0\ngo back to the terminal. Honestly, I can never go back to reading text in the terminal anymore. This\u00a0\nis just like way too much more efficient. Now,",
+            "tasks. And it's now spinning up these tabs in\u00a0\nT-Max just like we would behind the scenes. It would also call treehouse to create work trees\u00a0\nand then run an agent in that work tree to get the work done and then it will run no mistakes\u00a0\nto validate the change and get the PRs ready for us to review. Now you can see it's first mate\u00a0\nthat is doing the juggling. I don't need to worry about any of this now. I can just keep giving\u00a0\nit more work. Hey first mate, let's also look at the most recent three open issues in lavish axi\u00a0\nrepo and let's discuss which ones are actionable. Boom. First mate now is pulling the open\u00a0\nissues from the repo while waiting for the three background agents working in parallel. All\u00a0\nright. First mate said number 87 is cleanest. Uh it's very actionable. And uh let me just see\u00a0\nwhat is this. Uh don't toggle in annotation mode. Uh okay, that's a clear bug. All right,\u00a0\nfirst mate. Let's uh address number 87. Look now, First Mate is juggling a lot of tasks\u00a0\nfor me that I otherwise would have to manage by myself. Watching it context switch is actually\u00a0\nan oddly satisfying experience because I know",
+            "it's quite exhausting. The constant context\u00a0\nswitch and having to remind yourself what each session was even doing just doesn't feel like an\u00a0\nideal endgame experience. So, I kept pushing the boundary on this. And I discovered that I needed\u00a0\na first mate. Someone I can talk to as a captain that will carry out all my directions and manage\u00a0\nall the crew mates for me so I can focus on the big picture stuff like where should we go next?\u00a0\nNot playing whack-a-ole with this increasingly high number of crew mates. This is how I level\u00a0\nup and truly become a captain. My first mate is another free and open- source project and it's\u00a0\nvery new. The way to use it is by just cloning it. And then I can run an agent in this repository.\u00a0\nNow I just talk to it and ask it to work on any projects I like. Let's say I'd like to work\u00a0\non Lavish AXI, GitHub AXI and Chrome DevTools AXI. They are all GitHub projects I own. First\u00a0\nM is starting up and the first time we run it, it will do some setup and ask for some\u00a0\npreferences, but it's all through just talking to it, which is pretty easy. And you\u00a0\nmight wonder why uh is the transcription so good",
+            "agent is making changes, right? So, if I just\u00a0\nask the agent a question, this whole section is totally useless and would be wasting tokens. The\u00a0\nway to improve efficiency here is by converting this kind of conditionally useful information\u00a0\nfrom the memory file into skills. I typically just ask the agent to do this. Uh here let me do\u00a0\nit live. I would say uh let's extract the end to end testing instructions uh instructions in our\u00a0\nagents.md file into a project level skill. Claude already knew how um to do this uh what skills mean\u00a0\nand how to create them. But other agent harnesses may not understand how to do that uh out of the\u00a0\nbox. To teach your agent how to create skills, you can install a skill called skill creator which uh\u00a0\nwhich was written by Anthropic. Uh you can do that by running this command. This npx skills thing uh\u00a0\nis a CLI from Versel that is very handy. Um, it's basically my main tool for installing and managing\u00a0\nskills. Uh, it supports pretty much any agent. Um, once this skill is installed, your agent will be\u00a0\nable to follow the rules and create new skills for you moving forward. All right, Cloud has done\u00a0\nits work. Let's look at uh what Claude created for",
+            "It's also got a pretty rich feature set. The\u00a0\ndownside is that sometimes it's a little bit buggy and it's not as customizable as some of the\u00a0\nother options. The next one I use a lot is codeex CLI. It's written in Rust and you can feel it's a\u00a0\nlittle bit smoother than cloud code when you use it. It's also open source. So if you run into some\u00a0\nproblems, you can often just have Codeex inspect its own source code and figure out a workaround by\u00a0\nitself. It's a bit lacking in terms of bells and whistles. And it's also not very customizable.\u00a0\nAnd then there's the PI coding agent and its whole philosophy is to be minimal and highly\u00a0\nextensible. It's great if you don't want any bloat and you'd like to tinker around and kind of\u00a0\nmake it your own. And lastly, there is open code. I like it a lot. It's got a buttery smooth TUI\u00a0\nand it's got good integration with pretty much every model you can find. It's also got a more\u00a0\ncomplete out ofthe-box feature set than Pi. So, if you want to use an agent harness that is\u00a0\nmodel agnostic and one that you can just grab from the shelf and just go, Open Code is a pretty\u00a0\ngood choice. For the rest of this video though,",
+            "agent session. Then rebase the change on top\u00a0\nof the latest main branch on remote origin and resolve merge conflicts up front. Then starts\u00a0\nan adversarial review in its own fresh context window. This is where most problems get caught\u00a0\nand obvious problems will get self-corrected but ambiguous ones that have product implications will\u00a0\nbe escalated to us humans for a decision. After review, it also tries to test the change end to\u00a0\nend against the original intent and this step will actually record evidence that proves the change is\u00a0\nworking that we can then later on look at to gain more confidence. It will then do a documentation\u00a0\npass of updating all relevant documentation to reflect the latest change and also finally make\u00a0\nsure there's no linking problems before pushing the branch to remote and raise a PR. The no\u00a0\nmistakes pipeline will also keep babysitting the PR until it's merged. Because during the PR\u00a0\nphase, we can still have merge conflicts that come in or CI pipeline failures that are very annoying\u00a0\nas well. With no mistakes during the babysitting, we don't have to waste our own time at all.\u00a0\nAnother way to trigger no mistakes is as a",
+            "we don't have to waste our own time at all.\u00a0\nAnother way to trigger no mistakes is as a skill. I can just type no mistakes in the agent\u00a0\nand it will do the same pipeline as well. This may seem very slow, but in practice, I never stare\u00a0\nat this screen. I would go spin up other tasks. I come back only when no mistakes says all checks\u00a0\npassed. And that's when I go to the PR and apply my judgment. Here's the PR from the change we just\u00a0\ndid. We can see here it summarized the original intent, what changed, how it's tested, and what\u00a0\nhappened during the no mistakes pipeline. We can click to see the evidence from its testing to\u00a0\nknow whether it's really done what we asked for. Depending on what the change is, the evidence\u00a0\ncould be a screenshot like this, a video demo, a log file, or something else. It's designed to\u00a0\ngive you the most direct way to see the change working as you intended. We can also see that\u00a0\nthe pipeline discovers some problems and fix them before raising the PR. This is a good time\u00a0\nto audit whether these changes are actually what we need. If anything doesn't look right, we can\u00a0\ngo back to the agent and ask for more changes",
+            "we need. If anything doesn't look right, we can\u00a0\ngo back to the agent and ask for more changes before merging this PR. This risk assessment here\u00a0\nis also very useful. I basically look at this to decide how much time I should spend on reviewing\u00a0\nthis change in more detail. For low-risk changes, I don't really look at the diff at all because I\u00a0\nhave validated time and time again for low-risk changes. Any problem I could catch is very likely\u00a0\nalready caught by the pipeline. Only more risky changes are worth my time. This is how I scale\u00a0\nup the volume of code changes I do every day through a large crew of agents without losing\u00a0\ncontrol on quality. One thing we are starting to see now is that the place where I spend time\u00a0\nis towards the beginning and the end of the task. At the beginning, I would spend time in lavish to\u00a0\nplan the requirements more clearly. At the end, I would come in and hold a bar on quality. All\u00a0\nthese parts in the middle is done by AI which frees me up to spin up other tasks. This is a\u00a0\ncore aspect of how I work. And you can see the more time I can free up in the middle, the more\u00a0\nwork I can go do in parallel. So an interesting",
+            "talking to it, which is pretty easy. And you\u00a0\nmight wonder why uh is the transcription so good because it's recognizing these project names.\u00a0\nLet me show you. Open super whisperer actually uh supports this customization through uh\u00a0\nsystem prompt. So what we can do here is uh in this model menu uh in the transcription\u00a0\nmenu uh there is an initial prompt and we can put in some common vocabulary that we use\u00a0\ninto this system prompt and this prompt is what makes the transcription really good. First\u00a0\nmade here is asking how strict I want to be with uh the code changes in this repos and uh I want\u00a0\nto select full gate to PR. Uh this is basically going to be using no mistakes as the pipeline\u00a0\nto validate each change. Um, and first task, uh, yeah, I'll describe it. All right. Now, a\u00a0\nreal thing I want to do is for all three projects, I'd like to add an update command on the COI that\u00a0\nwill update their version to the latest on npm. And let's see what first mate does. It realizes\u00a0\nthat this is not one task, but three parallel tasks. And it's now spinning up these tabs in\u00a0\nT-Max just like we would behind the scenes.",
+            "what I put into this file. It has some context on\u00a0\nwhat this project is, how the repo is laid out, some terminology, how some of the most important\u00a0\ncomponents work, and how to do end to end testing uh and some conventions at the bottom. This file\u00a0\nis a lot more verbose than the global memory file because this is basically the collective learning\u00a0\nof all the agent sessions in this project. The way I built this file is not by writing everything by\u00a0\nhand, but rather that every time I saw the agent doing something wrong, I would correct it and ask\u00a0\nit to remember to not make the same mistake again by storing the learning into this memory file. So\u00a0\nover time, our crew mates working on this project get smarter and more experienced. You don't\u00a0\nneed any fancy memory system to do that. This markdown file is all it takes. Over time, it does\u00a0\ntend to get more and more bloated though. Um, one way I reduce the size of this file is by moving\u00a0\nsome conditional information that is not always needed into a skill. For example, the end to end\u00a0\ntesting instruction here um is only needed if the agent is making changes, right? So, if I just\u00a0\nask the agent a question, this whole section is",
+            "anything on your machine. This is a very risky\u00a0\nthing to do because the agent can leak your API keys or even credentials to your bank account\u00a0\nto untrusted third parties without you knowing. And even if we put aside the security problem,\u00a0\nsome of the skills actually degrade your agents performance. Look at this repo here called Andre\u00a0\nKaparthi skills which has 177,000 GitHub stars. That's like massive. So, it must be really good,\u00a0\nright? I actually evaluated the skill in this repo with program bench, which tests the agent's\u00a0\nability to build programs end to end. And the result shows that by using this skill, the agent\u00a0\nwill use 5% more tokens while making the results worse. And if you look closely, this skill is not\u00a0\neven written by Andre Kapathy himself. I'm not here to criticize the author of this repo, though.\u00a0\nUh, and many saying that being popular is not the same as actually being good. A lot of the skills\u00a0\nbeing widely shared today have not been rigorously evaluated and are typically just some random guy\u00a0\nwho found something that worked for themselves anecdotally and somehow got it to go viral. Their\u00a0\nGitHub stars only tell you how popular they are",
+            "means terminal multiplexer and is probably the OG.\u00a0\nI showed it briefly in my previous video. Westerm also comes with multiplexing functionality\u00a0\nout of the box, but recently I have come across something better called Herder. The best\u00a0\nthing about it is that it's built in this agent era. It understands what agents are, how they\u00a0\nwork, and integrated with most of the mainstream agent harnesses really well. I have been using\u00a0\nT-Max for years and years. So, moving to a different system was not an easy decision. But\u00a0\nnow that I have used Herder for a few weeks, I can confidently say it gives a better experience.\u00a0\nIt also might be the only terminal multiplexer that works on Windows as well. So, if you are\u00a0\non Windows, this is very much worth trying out. So let's set it up. Let's go to our homebrew\u00a0\nconfiguration in this configuration.nix file and instead of casks uh it's a normal brew. So\u00a0\nwe will uh copy that here and uh list it here. And now let's also uh create this configuration\u00a0\nuh directory. Let's also go create the config file for it. Uh and it's at this location\u00a0\nuh config.tomol. and let's paste it in. Uh,",
+            "lets you customize your shell prompt, which\u00a0\nis this whole prefix before my cursor here. The system default is just really ugly. Let's\u00a0\nget back to our home manager config and add in uh this additional snippet. This gets home manager\u00a0\nto install starship for us and puts in some basic customization. Here I'll just keep it simple for\u00a0\nnow. But Starship is very powerful and you can do a lot more customization on your own. If we\u00a0\nrebuild now and we start yet another uh clean westm session, we can see we have a much cleaner\u00a0\nshell prompt here. The next big upgrade that will greatly improve our experience is to configure\u00a0\nWesterm. I introduced Western briefly in my last video. It's a highly performant terminal emulator\u00a0\nwritten in Rust. And the part I like the most about Westerm is that it's truly cross-platform.\u00a0\nEven if I get forced to use Windows from time to time, I can still bring Westernerm with me and\u00a0\nit will give me a consistent experience there and it's highly customizable through Lua scripts.\u00a0\nLet's create the config file for Westerm. First, we should make sure the directory exist.\u00a0\nUh so it should be this directory.",
+            "casks you want to install should also go\u00a0\nhere as well. Now, let's go run a rebuild, which should get homerew set up for us. And we\u00a0\ncan verify by running brew- version. and it's working. We now also have Westerm installed.\u00a0\nSo, let's get it open. So, now it's time to close the default terminal and I'll be using\u00a0\nwestern moving forward. Besides homebrew, another very important tool we need to use\u00a0\nis called home manager. Unlike Nyx Darwin, which manages MacOSS level settings, home\u00a0\nmanager manages everything that belongs to our user directory aka home directory.\u00a0\nSimilar to homebrew, we'll first go to our flakemix file and we will be first adding in\u00a0\nhome manager as an input like this. And then we also need to add it as a module here. Um, and\u00a0\nwe need to make sure it's listed here as well. All right. And this last line here, this is the\u00a0\nkey. This is basically saying for this username, we will use the home.nix file to manage it. And\u00a0\nthis reminds me that we actually need to edit the configuration.nix file here as well. And we need\u00a0\nto make sure uh this section exist. This basically sets the home directory for this user correctly.\u00a0\nOtherwise uh it will not work. And then we're",
+            "messing up with the clipboard. It just makes\u00a0\nthe experience much more intuitive for me. All right, there is a whole bunch of other things\u00a0\nI can go into about Neoim like LSP and Treitter, but there are actually plenty of good videos\u00a0\nout there showing specifically how to make those things work well. So, I'll leave that for\u00a0\nyou uh to explore by yourself and skip ahead to a very important chapter, which is about\u00a0\nmanaging terminal sessions. Up until now, we're just setting some config files and we do it\u00a0\none at a time. But as soon as you start to work with agents, you will need to manage multiple\u00a0\nagent sessions in parallel. When one agent is working, you will need to kick off another. When\u00a0\none agent is done, you might want to launch new of them to review its output. In a regular\u00a0\nterminal window, it's hard to do that. This is where terminal multiplexers come in. They\u00a0\nallow you to create sessions, windows, tabs, and splitting tabs into panes, etc., etc. A really\u00a0\npopular option here is T-Max, which literally means terminal multiplexer and is probably the OG.\u00a0\nI showed it briefly in my previous video. Westerm",
+            "test failures and test flakiness. If you see one,\u00a0\neven if it's not caused by what you are working on right now, still get it fixed. These are also\u00a0\nrules I find very helpful in holding a high quality bar. Now I'm going to use home manager\u00a0\nto distribute this file to all the agents. Um so we'll come to home.nix and we will be pasting\u00a0\nthis in. This is creating sim links into each agent's global memory file location. Claude use\u00a0\nthis cla.md and other agents use uh different locations as well. So now after a rebuild that\u00a0\nsame global memory file will be loaded by all my agents consistently. And the really cool thing\u00a0\nnow is the rebuild script can fully reproduce everything we have configured so far. No matter\u00a0\nwhat the current state of the system is, I can now go to a freshly installed Mac, clone this file\u00a0\nrepo, and immediately get the entire setup up and running. All right, this files repo has now been\u00a0\npublished onto my GitHub. You now have pretty much the same development environment that I use. It's\u00a0\ntime to start building. If you haven't come across my previous video about my agentic engineering\u00a0\nworkflow yet, now is a great time to catch up and",
+            "for you moving forward. All right, Cloud has done\u00a0\nits work. Let's look at uh what Claude created for us. It basically uh removed a large chunk of the\u00a0\ncontent from our agents.mmd file and moved that into this uh this skill file. This is a good thing\u00a0\nabout skills is that it's designed for progressive disclosure. Which means when your agent starts, it\u00a0\nonly loads this tiny description field from your skills into the system prompt to know what these\u00a0\nskills do. And only when it actually decides that it needs to use a certain skill, it will then read\u00a0\nthe rest of this file. This allows you to store a lot of the knowledge about how to do various kind\u00a0\nof things without blowing up your system prompt and memory file with a ton of content that uses\u00a0\nyour tokens for every single request whether the request actually needs those skills or not. One\u00a0\nthing I do want you to know about skills is that you should generally avoid installing random\u00a0\nskills from the internet even the ones that have a lot of GitHub stars. First of all, these\u00a0\nskills can instruct your agent to run pretty much anything on your machine. This is a very risky\u00a0\nthing to do because the agent can leak your API",
+            "of this paper, look who's here. It's our guy\u00a0\nDario. What is the CEO of Anthropic doing here? Apparently, if we follow this link, Dario was\u00a0\ndoing some speech recognition stuff back in 2016. Now, we're using speech recognition technology to\u00a0\ntalk to Claude, which is also created by Dario. What a small world. The voice input we just did\u00a0\nuh was actually transcribed locally using this app called open super whisper. It's completely free\u00a0\nand open source which is what I think this type of software should be. It runs the whisper model\u00a0\nlocally on your machine and do the transcription and the quality is like really really good. So\u00a0\nthis is how I do most of my prompts. Now, the only case where I fall back to typing is when I need to\u00a0\ngive the agent a URL or a file path or something like that. Trust me, you don't want to speak a\u00a0\nURL out loud, whether it's by yourself or with other humans around. Now, if we come back to this\u00a0\nprompt and let the agent run, you will see that because we asked the agent to look at recent PRs,\u00a0\nit will need to call GitHub to fetch the data. This is an important thing to pay attention to\u00a0\nbecause agents rely on external tools like GitHub",
+            "happened so far, I can just uh split another pane\u00a0\nand use new vim and use git to see the diff. Uh this is a very typical flow for how I work. Now a\u00a0\nreally important piece about working with agents is the global memory file that affects all our\u00a0\nagents behavior. I want all my agents whether it's cloud or codeex or open code or pi or grock\u00a0\nor whatever to behave somewhat consistently and follow my rules. I do this by creating a central\u00a0\nmemory file. I put it here uh in my files repo. I'll uh put it here uh home agents.m MD. And here\u00a0\nis a set of rules I wrote for my agents. Never use m dash use plain dash instead. Uh for some reason\u00a0\na lot of the AI models are trained to use M dash uh whenever it needs to use a dash. Uh so now\u00a0\nwhenever I see m dash I just feel really robotic. So whenever I need the agent to write something\u00a0\nfor me like a commit message or a PR description, I don't want to use the mdash. Uh so that's my\u00a0\npreference. Uh whenever uh when writing commit messages, never auto add your agent's name as\u00a0\nco-author. That is something Claude really loves to do and this uh system prompt will fight against\u00a0\nthat. Um I don't think it's too useful for agents",
+            "occurrences of rows in the current uh codebase. I\u00a0\ncan type uh space f to find files by their names. Like if I type flake, I'll get to the flake file\u00a0\nimmediately. Working with Vim has a learning curve for sure. Um but once you get used to it, it just\u00a0\nfeels really really good. Whenever I'm in Neo Vim, I'm just flying like a bird and it's awesome.\u00a0\nOkay, I have to stop here before this turns into a Vim tutorial. You can find a lot of great\u00a0\nYouTube videos that will help you get started on Vim and become a master. Maybe one last tip from\u00a0\nme is just how to exit. Here you go. All right, our ship is ready to sail, but we have no\u00a0\ncrew mates yet. We're the captain. We can't do everything by ourselves. We need to bring in\u00a0\nagents as our crew mates. I use four different agent harnesses regularly. There is Claude, which\u00a0\nis uh Claude Code, which is basically the only practical choice if you are using the subscription\u00a0\nfrom Anthropic. Generally speaking though, it's a pretty good harness. I think it has the\u00a0\nmost sensible default experience out of the box. It's also got a pretty rich feature set. The\u00a0\ndownside is that sometimes it's a little bit",
+            "it, uh a git work tree is basically creating a\u00a0\nclone of your repo directory. I can create one by typing gork tree add and give a path\u00a0\nhere. Now we have to think about a name. This is when you waste five minutes and eventually\u00a0\ngive up and just say high bit two. Now we have a work tree and we can navigate to it. Uh so let's\u00a0\ngo find it. It's in high bit 2. This is a separate directory on the file system. So we can have an\u00a0\nagent doing anything here and it won't conflict with goodn night have fun which is running in\u00a0\nthe original repo directory. The problem with work trees is that we now have something to\u00a0\nmaintain in our head. I need to remember, oh, I have hybrid 2 here. Next time I come into\u00a0\nthis hybrid 2 directory, I would wonder what was I doing in this work tree last time. Is there\u00a0\nstill an agent running or is it free? All of that has to exist in my head and there's no way I'm\u00a0\ngoing to remember all that. So, this work tree basically becomes a debt. To get rid of it,\u00a0\nI need to run this remove command. Remove. This is just a lot of overhead. My solution to\u00a0\nthat is another tool I built called treehouse.",
+            "popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin up a new tab, treehouse claw. And this time I'll\u00a0\nsay the image attachment dropdown menu should have an action that takes a screenshot of the current\u00a0\napp and use that as the attachment. All right, one more tab. Treehouse claw. Our agent status bar\u00a0\nright above the chat input is not always showing bot activity. Look into what happened there\u00a0\nand make sure when any bots are in progress, it always displays something that reflects the\u00a0\nlatest activity. Boom. We now have three sessions running in parallel. Now I can keep going because\u00a0\nnone of these sessions will need my attention anytime soon. Especially if I tell them to run no\u00a0\nmistakes after implementation. I know whether they need me by looking at the top status bar and I can\u00a0\nswitch between the tabs using keyboard shortcuts like this. That's very important for managing a\u00a0\nlot of parallel sessions efficiently. That said, after doing this for a while, you will discover\u00a0\nthat juggling between all these sessions, it's quite exhausting. The constant context\u00a0\nswitch and having to remind yourself what each",
+            "This is just a lot of overhead. My solution to\u00a0\nthat is another tool I built called treehouse. It's very simple. I just come into this repo and I\u00a0\nrun treehouse. It would drop me into a fresh work tree where I can start doing whatever I want.\u00a0\nI can keep spinning up more and more of these work trees by running treehouse again. And if I\u00a0\nwant, I can see a list of all the work trees by typing treehouse status. So I can see which ones\u00a0\nare being used versus not. When I'm done, I can just close this tab and treehouse knows that I'm\u00a0\ndone. So it will free up that work tree for future use. Next time I ask for a work tree, it will\u00a0\ntry to reuse one of the idle work trees instead of creating a brand new one. So let's start some\u00a0\nreal work. I have a bunch of user feedback from my son's last round of play testing. So let me uh\u00a0\nuse this first work tree we created and launch claude and I'll say I remember it's hard for the\u00a0\nkids to realize they can press and hold the voice input button to talk by default they just click\u00a0\nit and then they will see a popover. Maybe in the popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin",
+            "on a metric. These are all well suited for a\u00a0\nlongunning loop to tackle. The recently introduced /go command in codeex and cloud code can also do\u00a0\nsomething similar. But good night have fun still gives me a better experience because I can set\u00a0\na token cap or iteration cap or stop condition more precisely. Whereas in cloud code and codeex\u00a0\nif I set a goal before I go to bed I might wake up realizing my weekly quota is all gone. Good\u00a0\nnight, have fun solved a very important problem, which is to keep the agents running for a\u00a0\nlong time. So, when the agents are running, I'm freed up to do more things. This is when we\u00a0\nlevel up and start working with multiple crew mates in parallel. So, let's spin up another\u00a0\ntab in T-Max and get more work started. Now, here's the problem. In this directory, I already\u00a0\nhave good night have fun running. So if I spin up another agent working in the same directory,\u00a0\nthey will step on each other's toes and cause conflicts. The default solution here is git work\u00a0\ntree. For those of you who aren't familiar with it, uh a git work tree is basically creating a\u00a0\nclone of your repo directory. I can create one",
+            "symbolic link to agents.md. So they both exist but\u00a0\nunder the hood they point to the same file. Here's the content of my actual global memory file. You\u00a0\ncan see it's pretty minimal. There's only 27 lines because everything in this file gets loaded into\u00a0\nthe system prompt of every single agent session across all our projects. If we have too much\u00a0\ncontent in this file, it will silently use a lot of our tokens. I mostly write down my personal\u00a0\npreferences here like never use mdash. Somehow AI models are trained to use mdash by default instead\u00a0\nof a plain dash. So now whenever I see mdash, I just feel like it's robotic and I don't like\u00a0\nthat when I need the agent to write something for me like PR descriptions. Oh, and this is\u00a0\na good one. When making technical decisions, don't give too much weight to development cost.\u00a0\nHere is something interesting that you may not know. Let me show you. If we ask a Frontier model\u00a0\nto estimate the development cost of a project, let's say I want to build a 3D firsterson shooting\u00a0\ngame that I can play locally with AI enemies. How long do you think that will take? Let's see\u00a0\nwhat Cloud will say. Okay, here it is. See,",
+            "by default like to write unit tests which are\u00a0\noften not sufficient and not really covering the product behaviors we want to guard. I found\u00a0\nthat leaning into end toend testing is a lot more reliable. Besides these preferences, I also have\u00a0\nsome interesting stuff like opinions.mmd which is super useful. That's a slightly different topic\u00a0\nthough, so I won't go into too much detail here, but I do have a blog post explaining how that\u00a0\nworks, which I'll link here in case you're interested. Besides the global memory file, each\u00a0\nproject can also have a project level memory file. Let me show you one example here by going into\u00a0\nthis project called H Highbit. This is an AI Twitter app I have been working on. The project\u00a0\nlevel memory file is typically stored as claw.md or agents.md uh depending on which agent you use.\u00a0\nI did the same thing here with a symbolic link. So the same file is shared for both cloud and other\u00a0\nagents. This one we're looking at here is a little bit verbose I would say. I'll probably clean this\u00a0\nup after this. But let me show you on a high level what I put into this file. It has some context on\u00a0\nwhat this project is, how the repo is laid out,",
+            "to do and this uh system prompt will fight against\u00a0\nthat. Um I don't think it's too useful for agents to be like a co-author of the human. uh it's\u00a0\nultimately still the human that's going to be accountable for the quality of the code change. Um\u00a0\nnever manually modify change lock.md files or any files that are marked as autogenerated. That's\u00a0\na no-brainer. When making technical decisions, do not give much weight to development cost.\u00a0\nInstead, prefer quality, simplicity, robustness, scalability, and long-term maintainability.\u00a0\nThis is a very very important rule. And the reason I have this rule is that agents uh the\u00a0\nlarge chunkage models today are trained from human data. And when when we humans are making\u00a0\nestimations about our projects, our estimations are usually in days, weeks or months. But agents\u00a0\ncan work a lot faster. But because the agents are trained from human data, it tends to assume the\u00a0\nestimation, the development cost is going to be as high as what humans estimate. So when agents are\u00a0\nmaking decisions, sometimes it will put too much weight onto the development cost and prefer those\u00a0\nreally cheap and not very scalable solutions. That",
+            "This is an important thing to pay attention to\u00a0\nbecause agents rely on external tools like GitHub to do its tasks. The design of these external\u00a0\ntools can greatly affect your agents performance. Take GitHub as an example. Many people use the\u00a0\nGitHub MCP server for accessing GitHub. However, I ran this benchmark here that measured various\u00a0\nkind of ways to access GitHub for the exact same tasks. Using GitHub MCP server will cost you\u00a0\nto spend three times more on token cost and more than double the latency compared to using\u00a0\nthe COI. If you're using the GitHub MCP, you are pretty much wasting both time and money for no\u00a0\nclear benefit. Now you can see there's this thing called Axi which has the lowest cost but highest\u00a0\nsuccess rate. So what is it? Let me show you. AXI is a set of design standards I authored\u00a0\nafter discovering the huge upside we can have by designing our tools to treat agents as a first\u00a0\nclass citizen and optimize for agent ergonomics. I created 10 principles for how to make a tool\u00a0\nhighly efficient for agents. For example, using token efficient output format can save about\u00a0\n40% tokens compared to using JSON. And then I",
+            "typing this command here to start a T-Max session.\u00a0\nNow, I'm inside of T-Max. You can see not much uh is different except for that there's a bar at\u00a0\nthe top showing some information. And I still get a shell where I can type commands. But now I can\u00a0\nsplit my terminal into multiple panes, as many of them as I like. This is super useful because I can\u00a0\nspin up an agent in one pane and spin up an editor in another uh and still have a pane to myself.\u00a0\nSo I can just run commands. I can also spin up multiple tabs uh and they are also called windows\u00a0\nin T-Max. This is very useful for running multiple agent sessions in parallel. The other cool thing\u00a0\nis that uh T-Max sessions are persistent in the T-Max server. So, if I use a keyboard shortcut\u00a0\nhere to detach from T-Max, you can see I'm back in the normal shell without the T-max status bar at\u00a0\nthe top. But if I type the same command to launch T-Max again, I get back to the exact same state\u00a0\nI was in before. So, I can continue my work here. What's even more useful is that I can connect\u00a0\nto the same session from another device like my laptop or my phone. That's a real gamecher that's\u00a0\nvery hard to replicate without this terminal",
+            "file for it. Uh and it's at this location\u00a0\nuh config.tomol. and let's paste it in. Uh, these are pretty much just key binds that allow\u00a0\nme to preserve my muscle memory in T-max. If you haven't used T-Max before, you might be able to\u00a0\njust rely on the defaults instead. And similarly uh to other config directories, let's create a\u00a0\nsymbolic link so that we can apply the directory. All right. Now uh let's rebuild Nyx. Now\u00a0\nlet's get into Herder. Uh here you can see uh it has a side panel on the left where it\u00a0\norganizes your workspaces and agents and a main area that is similar to our default terminal\u00a0\nexperience. Now I can use the key binds we set earlier to create new tabs. Uh like this I can\u00a0\nname the tab as well. uh I can say dot files as well and I can split a tab into panes like this\u00a0\num and like this. These are just basics that T-Mox can do as well. What's really cool about Herder\u00a0\nis that its integration with agent harnesses is really good. So now let's get to agents as well.\u00a0\nLet's probably demo this using cloud code. Uh so let's uh detach from herder. Uh let's go edit our\u00a0\nhomebrew configuration to install uh cloud code",
+            "laptop or my phone. That's a real gamecher that's\u00a0\nvery hard to replicate without this terminal centric workflow. If you just install T-Max,\u00a0\nby default, it doesn't have the same experience we're showing here, uh, like the tab bar and\u00a0\nthe metadata. You'll probably need to do a bit of configuration and customize it. Let me show\u00a0\nyou my T-max config. Here it is. Most of these settings are key binds that I have been using\u00a0\nfor many years and built into my muscle memory. Some of these are for styling and various kind\u00a0\nof behaviors. There are many YouTube videos that go into more details about T-Max configuration.\u00a0\nSo, I'm not going to go down the rabbit hole here for now. You just need to know that you are likely\u00a0\nwant to spend some time configuring your T-Max for it to look good and work well for you. This text\u00a0\neditor here is Neo Vim. It's basically the modern version of Vim. It's my favorite text editor. If\u00a0\nyou are not familiar with Vim yet, it's an editor whose main purpose is to keep your hands on the\u00a0\nkeyboard. So, if you watch my keystrokes here, I can move the cursor up and down, left and right\u00a0\nwith keys. I can also scrub up uh or scroll down.",
+            "It's pretty much the only terminal emulator I can\u00a0\nfind that can work on Windows exactly the same way it works on Mac and Linux. Right now, I mostly\u00a0\nonly work on Mac, but it was a big lifesaver when I was working for Microsoft and was forced to use\u00a0\nWindows for work. The other reason is that it's highly customizable. You can write Lua scripts\u00a0\nto configure pretty much everything here. Let me show you my config in my files. It's all in this\u00a0\nfile called westterm.la. It's a Lua script. So, it's not just static values. You can actually\u00a0\nset conditions and write various kind of logic to make your config very dynamic and\u00a0\nflexible. If I change some settings here, let's say I change the color scheme to chalk,\u00a0\nyou will see that it does a hot reload instantly, which is super handy. But I still like my rose\u00a0\npine moon. So, let's come back to it. I can't use anything else. Inside of Western, I run something\u00a0\ncalled T-Max. It's short for terminal multiplexer. If you haven't come across this yet, it's probably\u00a0\neasiest to just show you what this does. So, I'm typing this command here to start a T-Max session.\u00a0\nNow, I'm inside of T-Max. You can see not much",
+            "terminal window that's basically entirely\u00a0\nused to render whatever content we care about. Look how beautiful this is. I really care about\u00a0\nmaking my development experience pleasant because if I enjoy the experience, I will stay focused\u00a0\nmore easily and end up doing better work with it. Now that our terminal looks good, let's get the\u00a0\nbig boss Neoim. Neov is my primary code editor, so it's a really important thing to set up.\u00a0\nWell, its configuration starts with an init.la Lua file in the config dot uh neoim uh nvm\u00a0\ndirectory. So let's make sure the directory exist. Uh and then let's uh set up the file\u00a0\nas well. And now we can actually use neoim to edit neoim config. So let's uh go to create the\u00a0\ninit.la file. Let's leave the file empty for now and we will go to uh home.nix. And just like\u00a0\nbefore, we need to create a symbolic link here so that uh the neoim config can come from our\u00a0\nfiles repo. And now let's rebuild the next config. And we will start neoim to make sure it\u00a0\nstill loads. Let's see. Yep, still loads. Okay. Now in this uh init.la Lua file. I'll just ask it\u00a0\nto require other files. I'll start with requiring",
+            "If I typed a capital letter, then it becomes a\u00a0\ncase-sensitive search. Cliffboard unnamed plus somehow means using the system clipboard for\u00a0\ncopying and pasting. Scroll off here means at least reserve 16 lines between my cursor and the\u00a0\nedge of the screen when I scroll. So I always have some visibility what's above and below my cursor\u00a0\nline. This undo file basically allows undo and redo to be persistent across NeoVim sessions which\u00a0\nis very useful. There are a lot more Vim options available. Whenever I need to change something\u00a0\nthat's about the Vim behavior, I set it in this file. So it's all centralized and easy to find.\u00a0\nThe other file that we will uh require from the init.la file uh let's go back to init.la lure.\u00a0\nThat's going to be plugins. One of the biggest advantages of Neo Vim over Vanilla Vim is its rich\u00a0\nplug-in ecosystem. There are so many great plugins available. And I use a plug-in manager called\u00a0\nLazy to help me install and update them. This is probably the most widely adopted plug-in manager\u00a0\nfor Neovim right now, written by a legend named Folky. You can follow this repos instructions to\u00a0\nset it up. I will just paste uh the boiler plate",
+            "also see this event equals buff win enter uh is a\u00a0\nprimitive in the lazy plug-in manager which means only load this plugin when this event happens. And\u00a0\nthis event means when we actually enter a buffer. You can do a lot of optimizations like this to\u00a0\nspeed up uh your NeoVim experience by loading things only when they are needed. If we reload Neo\u00a0\nVim and let Lazy install the plug-in for us and launch Neoit by using the keybind, we can see uh\u00a0\nwe now have a very helpful tool to see and operate on the code changes tracked by Git. Uh I use this\u00a0\na lot to review diffs um and to stage changes uh I have reviewed and feel good about. Now that we\u00a0\nhave a few plugins that need to be launched by a keybind. Sometimes we might forget which key\u00a0\nis for what. This is where I rely on a plugin called which key. Let's put it under a um UI. Lua\u00a0\nfile and I'll paste it here. Surprise, surprise. It's also written by our guy Folky. Uh, let's\u00a0\njust install it and I'll show you what it does. Now, if I press the leader key, which\u00a0\nis space, you can see this popup at the bottom that shows what I can press next.\u00a0\nThis is particularly helpful when you just",
+            "try to do different things and find the first\u00a0\nusability problem that would confuse you as a kid or stop you from knowing how to proceed. If you\u00a0\nfind a problem, stop and fix it. Then rinse and repeat. Here he goes. Good night. have fun is now\u00a0\nrunning in a loop to execute on what I just asked for. I can monitor token usage here or how many\u00a0\niterations have been done. The iterations will be showing up as the moons in this row. And I can\u00a0\nsee how many commits have been made as well. Or I can just go to bed knowing the agents won't stop\u00a0\nuntil there is no more problem to be found. When I wake up, I can review a list of commits made\u00a0\non this new branch and decide which ones I want. I typically use good night have fun for improving\u00a0\non some verifiable objectives or objectives where I trust the agent to have the reasonable\u00a0\njudgment over like the one we just did. Verifiable objectives are more like um reducing\u00a0\npage load time, improving end to end test coverage or like Android caps auto research um keep\u00a0\nexperimenting different hypothesis to improve on a metric. These are all well suited for a\u00a0\nlongunning loop to tackle. The recently introduced",
+            "more time I can free up in the middle, the more\u00a0\nwork I can go do in parallel. So an interesting question now is how do we get the agent to work\u00a0\nfor longer and longer in the middle? That depends on us giving them more and more complex tasks\u00a0\nthat take longer to complete. But more complex tasks are often not as easy for our agents to\u00a0\ncomplete autonomously. An extreme version of this is when I go to bed, I sleep for seven to eight\u00a0\nhours every night. How do I keep the agents busy for eight hours? This is where I say good night.\u00a0\nHave fun. It's another free and open source tool I built specifically for longunning tasks. It's\u00a0\nbecoming quite popular. It's that simple to use. Just give it an objective and it will keep going\u00a0\nuntil it meets some stop condition you defined. Let me show you a real example that I often do.\u00a0\nThis is again in the high bit repo. I'll run good night. Have fun and give a prompt. Pretend you are\u00a0\na seven-year-old kid and use the high bit app end to end. Don't mind the profile creation step which\u00a0\nis designed for parents. In the rest of the app, try to do different things and find the first\u00a0\nusability problem that would confuse you as a kid",
+            "sets the home directory for this user correctly.\u00a0\nOtherwise uh it will not work. And then we're going to be creating this uh home.nix file that\u00a0\nwe mentioned earlier. Here's the initial contents we'll be putting in. You'll want to update your\u00a0\nusername to whatever you actually use. And the interesting bit here is this line where we created\u00a0\na symbolic link for west term's config directory. This basically says we should create a symbolic\u00a0\nlink at the current user's home directoryconfigerm that points to this path in our dotfiles repo.\u00a0\nThis is how we store configuration in our dotfiles repo and have them automatically used\u00a0\nby the actual programs. And because this whole directory is a symbolic link, if west term update\u00a0\nany of its configuration at runtime, those updates will reflect in our doiles repo as well. So all\u00a0\nthe config changes will be version controlled, which is really useful. And remember earlier we\u00a0\ncreated a symbolic link at this location in our home directory. This is how we make use of it.\u00a0\nwe can just always use this path to find our dot files regardless of where the actual git clone is.\u00a0\nNow the next set of things we add to home manager",
+            "there is fast key repeat, uh there's short delay\u00a0\nbefore repeat, there's autohiding uh the menu bar, there's uh always showing the file extensions,\u00a0\nthere's autohiding the dock and uh using list view for finder and uh have a clean desktop that shows\u00a0\nuh nothing on it except the wallpaper and making uh tapping on the trackpad uh click it. You can\u00a0\npretty much set anything you want about your Mac system through this configuration and you can\u00a0\nfind all the settings in the next Darwin repo. Now let's uh rebuild and see that apply. You\u00a0\ncan see our doc already changed the behavior as a result. So now the doc is hiding itself. Next\u00a0\nthing is to install the apps that we need. On Mac, a lot of the useful apps can be installed through\u00a0\nhomebrew. So let's get homerew installed first. We could just go to the homebrew website and\u00a0\ncopy paste uh their install command and get homerew installed, but that's not going to be\u00a0\nreproducible. Next time we set up a new machine, we would have to manually go do that again.\u00a0\nTo make everything reproducible, we should do it the next way. And the way to do it is to\u00a0\ninstall homebrew as a Nyx package. The package",
+            "we'll come to our home manager config again, um\u00a0\nhome.nix, and we will be dropping this in. This enables auto suggestion which will give us ghost\u00a0\ntext autocomp completion for shell commands based on what is in our command history. It also enables\u00a0\nsyntax highlighting which is very useful. The init content here basically just gets pasted into\u00a0\nzshells rc file directly. And this line will give me a key bind so that I can press ctrl f to accept\u00a0\nthe ghost text suggestions which I'll show you in a bit. And then I set a bunch of shell aliases\u00a0\nhere. This just makes some of the most common commands I type a lot shorter, which saves a few\u00a0\nseconds each time and it will add up. When I die, it's going to feel awesome knowing that these\u00a0\naliases gave me a few more hours of life. All right, let's go rebuild our next config again. And\u00a0\nlet's now uh start a new Western session. Now you can see this auto suggestions already kicking in\u00a0\nand uh syntax highlighting is working correctly as well. Another thing that will greatly improve our\u00a0\nshell experience is Starship. It's a program that lets you customize your shell prompt, which\u00a0\nis this whole prefix before my cursor here.",
+            "the reproducibility of my configuration. It means\u00a0\nonce I have things all set up on this machine, can I easily apply it on another machine and get\u00a0\nthe exact same results? Or in the less likely but still very possible scenario, if my AI agent\u00a0\ndid something stupid and completely destroyed my system, can I recover it instantly and get\u00a0\neverything back exactly the way they were? My solution to this is something called Nyx.\u00a0\nIf you haven't heard of Nyx before, Nyx is a declarative and reproducible configuration\u00a0\nsystem primarily designed for Nyx OS, which is an operating system based on Linux. But\u00a0\nyou don't have to use Linux to use Nyx. People have made Nyx portable. And here's an installer\u00a0\nthat works on Mac as well called determinate Nyx. And this is what we will install now by\u00a0\nfollowing their install command here. So this is what we will copy. We'll just run this command\u00a0\nin our terminal and finish the installation here. We will choose yes. Now it says the installation is done. So let's\u00a0\nfollow its instruction and let's copy this command and we will run it. This will basically refresh\u00a0\nour environment. All right. Now Nyx is properly",
+            "files regardless of where the actual git clone is.\u00a0\nNow the next set of things we add to home manager is a list of packages that we want to install\u00a0\nat user level and we can just let home manager install all of them for us. Interestingly even\u00a0\nfonts can be installed by home manager this way. Here we are installing the hack nerd font which is\u00a0\nmy favorite monospace font for terminal encoding. We install it through home manager here. So we\u00a0\ndon't need to manually click through and download the font from their website. We can also set uh\u00a0\nenvironment variables like this. So for example, I want my default editor to to be neoim. So here I\u00a0\nhave this variable set. Let's run another rebuild. And uh remember to add all the files uh to be\u00a0\ntracked by git as well. and we will be rebuilding. Before we go deep into configurations, I\u00a0\njust want to get one last thing set up, which is our shell. By default, Mac already\u00a0\ngave us uh the Zshell, which is pretty good, but it's the raw Zshell without any of the\u00a0\ngood stuff, and I need the good stuff. So, we'll come to our home manager config again, um\u00a0\nhome.nix, and we will be dropping this in. This",
+            "do it the next way. And the way to do it is to\u00a0\ninstall homebrew as a Nyx package. The package is called Nyx Homebrew. And here's the repo. It\u00a0\nhas detailed instructions for how to set it up. We need to modify our flake.next file. Uh so\u00a0\nwe'll come here and uh go to flake.next. And the main pieces we need to add uh is this input\u00a0\num here and also add this module. Now we can get back to our configuration.nix file and add homerew\u00a0\nconfiguration in. This will basically uh just get homebrew installed. And this cleanup uh setting\u00a0\nhere uh cleanup equals to zap basically says each time we rebuild our next configuration, it will\u00a0\nremove homebrew packages that aren't listed in our next config. This is a useful setting because\u00a0\nit's going to force us to install every homebrew package through our next config instead of ad\u00a0\nhoc. And if everything is installed through Nyx, we know the whole system is reproducible. I\u00a0\nalso listed casks here to install. And for now, I just added Westerm, which is the terminal\u00a0\nemulator I will be using. Other homebrew casks you want to install should also go\u00a0\nhere as well. Now, let's go run a rebuild,",
+            "for now. It's not as good, but uh should be enough\u00a0\nto carry us through uh the initial phase until we have Neo Vim set up. I'm pasting the boiler place\u00a0\nin as is. This file uh basically just tells Nyx where to get the packages, where to get uh Nick\u00a0\nDarwin as well. We don't really need to worry too much about this file. Um the only thing we need to\u00a0\nchange is that I'm not John. So I'm going to call this uh files and there's another John here.\u00a0\nUh let's just name this whole thing Mac. Um, and something I do want to change is that uh\u00a0\nI want to pin the version from the current uh unstable version to a stable version uh to\u00a0\na at least a pinned uh version number. So I'm going to copy this uh and I'm going to replace\u00a0\nthat and uh I'll do the same for this as well. Uh okay. So this will basically allow us to\u00a0\nhave a um stable version that uh we will be using uh so we don't get surprises and then\u00a0\nwe are going to create this configuration.nix file that's being referenced here. Uh so what\u00a0\nI'll do is I'll do configuration.nix to save us some time for the rest of this video. I'm\u00a0\nnot going to literally type in every character"
+          ],
+          "retrieved_chunk_ids": [
+            "chunk:iQyg-KypKAA:0",
+            "chunk:5N-okeDdIuI:35",
+            "chunk:iQyg-KypKAA:26",
+            "chunk:iQyg-KypKAA:40",
+            "chunk:iQyg-KypKAA:1",
+            "chunk:iQyg-KypKAA:22",
+            "chunk:iQyg-KypKAA:3",
+            "chunk:5N-okeDdIuI:0",
+            "chunk:iQyg-KypKAA:10",
+            "chunk:iQyg-KypKAA:25",
+            "chunk:iQyg-KypKAA:21",
+            "chunk:iQyg-KypKAA:24",
+            "chunk:iQyg-KypKAA:38",
+            "chunk:iQyg-KypKAA:36",
+            "chunk:iQyg-KypKAA:15",
+            "chunk:iQyg-KypKAA:9",
+            "chunk:iQyg-KypKAA:27",
+            "chunk:iQyg-KypKAA:28",
+            "chunk:iQyg-KypKAA:29",
+            "chunk:iQyg-KypKAA:37",
+            "chunk:iQyg-KypKAA:14",
+            "chunk:iQyg-KypKAA:17",
+            "chunk:5N-okeDdIuI:27",
+            "chunk:5N-okeDdIuI:12",
+            "chunk:5N-okeDdIuI:8",
+            "chunk:5N-okeDdIuI:26",
+            "chunk:5N-okeDdIuI:34",
+            "chunk:iQyg-KypKAA:16",
+            "chunk:iQyg-KypKAA:19",
+            "chunk:5N-okeDdIuI:31",
+            "chunk:iQyg-KypKAA:8",
+            "chunk:iQyg-KypKAA:33",
+            "chunk:iQyg-KypKAA:35",
+            "chunk:iQyg-KypKAA:34",
+            "chunk:iQyg-KypKAA:32",
+            "chunk:iQyg-KypKAA:11",
+            "chunk:iQyg-KypKAA:13",
+            "chunk:5N-okeDdIuI:32",
+            "chunk:iQyg-KypKAA:20",
+            "chunk:iQyg-KypKAA:5",
+            "chunk:5N-okeDdIuI:28",
+            "chunk:iQyg-KypKAA:6",
+            "chunk:iQyg-KypKAA:4",
+            "chunk:5N-okeDdIuI:14",
+            "chunk:5N-okeDdIuI:17",
+            "chunk:5N-okeDdIuI:23",
+            "chunk:iQyg-KypKAA:31",
+            "chunk:iQyg-KypKAA:30",
+            "chunk:5N-okeDdIuI:9",
+            "chunk:5N-okeDdIuI:6",
+            "chunk:5N-okeDdIuI:11",
+            "chunk:5N-okeDdIuI:1",
+            "chunk:5N-okeDdIuI:10",
+            "chunk:5N-okeDdIuI:7",
+            "chunk:5N-okeDdIuI:3"
+          ],
+          "evaluation": {
+            "judge": "ragas",
+            "judge_model": "deepseek-v4-flash",
+            "rubric_version": "ragas-v1",
+            "ragas_version": "0.4.3",
+            "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+            "scores": {
+              "faithfulness": 0.9796,
+              "answer_relevancy": 0.9835,
+              "context_precision": 0.379
+            },
+            "composite": 0.7807,
+            "spread": {
+              "faithfulness": 0.0,
+              "answer_relevancy": 0.0,
+              "context_precision": 0.0
+            },
+            "sample_scores": {
+              "faithfulness": [
+                0.9796
+              ],
+              "answer_relevancy": [
+                0.9835
+              ],
+              "context_precision": [
+                0.379
+              ]
+            },
+            "sample_counts": {
+              "faithfulness": 1,
+              "answer_relevancy": 1,
+              "context_precision": 1
+            },
+            "judge_samples": 1,
+            "details": {
+              "faithfulness": {
+                "claims": [
+                  {
+                    "claim": "Kun frames the AI engineering workflow as a \"captain and crew mates\" metaphor.",
+                    "verdict": 1,
+                    "reason": "The context repeatedly uses the captain and crew mates analogy, e.g., \"I want you to feel like a captain that can sail a large ship with a crew of agents\"."
+                  },
+                  {
+                    "claim": "Kun acts as the captain orchestrating multiple AI agent sessions in parallel.",
+                    "verdict": 1,
+                    "reason": "Kun describes himself as a captain managing multiple agent sessions in parallel, e.g., \"I would go spin up other tasks\" and discusses managing multiple crew mates."
+                  },
+                  {
+                    "claim": "Kun uses a reproducible environment stack with Nix, nix-darwin, Home Manager, Westerm terminal emulator, and Neovim.",
+                    "verdict": 1,
+                    "reason": "The context explicitly sets up Nix, nix-darwin, Home Manager, Westerm, and Neovim as part of the reproducible environment."
+                  },
+                  {
+                    "claim": "All of these components are declaratively configured via dotfiles.",
+                    "verdict": 1,
+                    "reason": "Kun stores configuration in a dotfiles repo and uses symbolic links to apply them declaratively."
+                  },
+                  {
+                    "claim": "Agent onboarding is done through a two-part memory system.",
+                    "verdict": 1,
+                    "reason": "Kun describes a two-part memory system: global memory file and project-level memory files."
+                  },
+                  {
+                    "claim": "The two-part memory system includes a minimal global memory file (27 lines) for cross-project preferences.",
+                    "verdict": 1,
+                    "reason": "Kun explicitly states the global memory file is minimal with only 27 lines and is used for cross-project preferences."
+                  },
+                  {
+                    "claim": "The two-part memory system also includes more verbose project-level memory files that accumulate learnings from agent corrections.",
+                    "verdict": 1,
+                    "reason": "Kun says project-level memory files accumulate learnings from corrections and are more verbose."
+                  },
+                  {
+                    "claim": "Conditional knowledge is offloaded into \"skills\" with progressive disclosure to avoid bloating system prompts.",
+                    "verdict": 1,
+                    "reason": "Kun explains that skills have progressive disclosure, loading only a description initially, to avoid bloating system prompts."
+                  },
+                  {
+                    "claim": "Skills are installed via Vercel's `npx skills` CLI.",
+                    "verdict": 1,
+                    "reason": "Kun mentions \"npx skills\" as a CLI from Vercel for installing and managing skills."
+                  },
+                  {
+                    "claim": "Planning happens through Lavish AXI.",
+                    "verdict": 1,
+                    "reason": "Kun says \"I pretty much rely on this tool for planning any kind of complex work\" referring to Lavish AXI."
+                  },
+                  {
+                    "claim": "Lavish AXI is a rich editor that generates interactive HTML artifacts for visual requirement clarification.",
+                    "verdict": 1,
+                    "reason": "Kun describes Lavish AXI as instructing the agent to create an HTML artifact to visualize what needs to be discussed."
+                  },
+                  {
+                    "claim": "Lavish AXI uses voice input via Open Super Whisper.",
+                    "verdict": 0,
+                    "reason": "Voice input via Open Super Whisper is used to interact with the agent, but not specifically as part of Lavish AXI itself; Lavish AXI is a tool invoked by the agent after voice input."
+                  },
+                  {
+                    "claim": "During implementation, agents work autonomously in isolated git work trees managed by Treehouse.",
+                    "verdict": 1,
+                    "reason": "Kun explains that Treehouse manages isolated git work trees and agents run autonomously in them."
+                  },
+                  {
+                    "claim": "Long-running tasks are handled by \"Good Night, Have Fun\".",
+                    "verdict": 1,
+                    "reason": "Kun introduces \"Good Night, Have Fun\" for long-running autonomous tasks."
+                  },
+                  {
+                    "claim": "Instead of manually reviewing diffs, Kun sends changes into the \"No Mistakes\" pipeline.",
+                    "verdict": 1,
+                    "reason": "Kun explicitly says he does not start reviewing diffs but sends changes into the \"No Mistakes\" pipeline."
+                  },
+                  {
+                    "claim": "The \"No Mistakes\" pipeline performs adversarial review.",
+                    "verdict": 1,
+                    "reason": "Kun states the pipeline \"starts an adversarial review in its own fresh context window\"."
+                  },
+                  {
+                    "claim": "The \"No Mistakes\" pipeline performs end-to-end testing with evidence capture.",
+                    "verdict": 1,
+                    "reason": "Kun says the pipeline \"tries to test the change end to end against the original intent and this step will actually record evidence\"."
+                  },
+                  {
+                    "claim": "The \"No Mistakes\" pipeline performs documentation updates.",
+                    "verdict": 1,
+                    "reason": "Kun says the pipeline \"will then do a documentation pass of updating all relevant documentation\"."
+                  },
+                  {
+                    "claim": "The \"No Mistakes\" pipeline performs linting.",
+                    "verdict": 0,
+                    "reason": "The context mentions checking for \"linking problems\" not explicitly \"linting\"; this is not directly inferable as linting."
+                  },
+                  {
+                    "claim": "The \"No Mistakes\" pipeline performs PR babysitting.",
+                    "verdict": 1,
+                    "reason": "Kun states the pipeline \"will also keep babysitting the PR until it's merged\"."
+                  },
+                  {
+                    "claim": "For scaling beyond manual session management, Kun built \"First Mate\".",
+                    "verdict": 1,
+                    "reason": "Kun says he built \"First Mate\" to manage multiple sessions and reduce overhead."
+                  },
+                  {
+                    "claim": "\"First Mate\" is an orchestrator agent that accepts high-level goals.",
+                    "verdict": 1,
+                    "reason": "Kun describes First Mate as someone who \"will carry out all my directions\" and accept high-level goals."
+                  },
+                  {
+                    "claim": "\"First Mate\" spawns parallel agent sessions in T-Max/Herder tabs.",
+                    "verdict": 1,
+                    "reason": "Kun shows First Mate spinning up tabs in T-Max and running agents in parallel."
+                  },
+                  {
+                    "claim": "\"First Mate\" manages the full build-validate-PR lifecycle autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun explains that First Mate runs the entire process including Treehouse, No Mistakes, and raising PRs autonomously."
+                  },
+                  {
+                    "claim": "Kun's entire development environment is declaratively configured for full reproducibility.",
+                    "verdict": 1,
+                    "reason": "Kun emphasizes reproducibility through Nix, dotfiles, and the ability to recreate the setup from scratch."
+                  },
+                  {
+                    "claim": "On a fresh Mac, Kun uses the Determinate Nix installer to set up Nix.",
+                    "verdict": 1,
+                    "reason": "Kun explicitly uses the Determinate Nix installer to install Nix on a fresh Mac."
+                  },
+                  {
+                    "claim": "Kun configures macOS-level settings via nix-darwin.",
+                    "verdict": 1,
+                    "reason": "Kun mentions nix-darwin for macOS-level settings."
+                  },
+                  {
+                    "claim": "Kun configures user-level settings via Home Manager.",
+                    "verdict": 1,
+                    "reason": "Kun uses Home Manager for user-level configuration."
+                  },
+                  {
+                    "claim": "Homebrew is installed as a Nix package.",
+                    "verdict": 1,
+                    "reason": "Kun installs Homebrew as a Nix package via nix-homebrew."
+                  },
+                  {
+                    "claim": "The terminal emulator is Westerm.",
+                    "verdict": 1,
+                    "reason": "Kun uses Westerm as his terminal emulator."
+                  },
+                  {
+                    "claim": "Westerm is chosen for being truly cross-platform (identical on Windows, Mac, Linux).",
+                    "verdict": 1,
+                    "reason": "Kun states Westerm is the only terminal emulator that works identically on Windows, Mac, and Linux."
+                  },
+                  {
+                    "claim": "Westerm is highly customizable through Lua scripts with hot-reload.",
+                    "verdict": 1,
+                    "reason": "Kun demonstrates Lua scripting and hot-reload feature of Westerm."
+                  },
+                  {
+                    "claim": "Inside Westerm, Kun runs a terminal multiplexer.",
+                    "verdict": 1,
+                    "reason": "Kun runs T-Max (and later Herder) inside Westerm."
+                  },
+                  {
+                    "claim": "Originally Kun used T-Max as the terminal multiplexer.",
+                    "verdict": 1,
+                    "reason": "Kun says he used T-Max for years."
+                  },
+                  {
+                    "claim": "More recently Kun switches to Herder as the terminal multiplexer.",
+                    "verdict": 1,
+                    "reason": "Kun mentions switching to Herder after a few weeks of use."
+                  },
+                  {
+                    "claim": "Herder is described as \"built in this agent era\" with native integration for agent harnesses.",
+                    "verdict": 1,
+                    "reason": "Kun describes Herder as built in this agent era and well-integrated with agent harnesses."
+                  },
+                  {
+                    "claim": "Kun's primary code editor is Neovim.",
+                    "verdict": 1,
+                    "reason": "Kun uses Neovim as his primary code editor."
+                  },
+                  {
+                    "claim": "Neovim is configured with Lua and managed via the Lazy plugin manager.",
+                    "verdict": 1,
+                    "reason": "Kun uses init.lua and Lazy plugin manager for Neovim configuration."
+                  },
+                  {
+                    "claim": "Neovim includes plugins like Which-Key for discoverable keybindings.",
+                    "verdict": 1,
+                    "reason": "Kun installs the Which-Key plugin and demonstrates its functionality."
+                  },
+                  {
+                    "claim": "The shell prompt is customized with Starship.",
+                    "verdict": 1,
+                    "reason": "Kun installs and configures Starship for shell prompt customization."
+                  },
+                  {
+                    "claim": "Zsh is configured with auto-suggestions and syntax highlighting.",
+                    "verdict": 1,
+                    "reason": "Kun enables auto-suggestions and syntax highlighting in Zsh via home manager."
+                  },
+                  {
+                    "claim": "All shell configurations are managed through the Nix/home-manager config.",
+                    "verdict": 1,
+                    "reason": "Kun manages shell settings through home.nix and home manager."
+                  },
+                  {
+                    "claim": "On rebuild, the entire setup is instantly reproducible from a single cloned dotfiles repo.",
+                    "verdict": 1,
+                    "reason": "Kun states that after a rebuild, the setup can be reproduced on a fresh Mac by cloning the dotfiles repo."
+                  },
+                  {
+                    "claim": "Kun keeps the workflow agent-agnostic.",
+                    "verdict": 1,
+                    "reason": "Kun explicitly says he keeps his workflow agent-agnostic because the landscape changes fast."
+                  },
+                  {
+                    "claim": "Kun uses four different agent harnesses regularly.",
+                    "verdict": 1,
+                    "reason": "Kun says \"I use four different agent harnesses regularly\" and lists them."
+                  },
+                  {
+                    "claim": "The four agent harnesses are Claude Code, Codex CLI, Pi coding agent, and Open Code.",
+                    "verdict": 1,
+                    "reason": "Kun explicitly names these four agent harnesses."
+                  },
+                  {
+                    "claim": "Claude Code has the best out-of-box experience and is practical for Anthropic subscriptions.",
+                    "verdict": 1,
+                    "reason": "Kun says Claude Code has the most sensible default experience and is the only practical choice for Anthropic subscriptions."
+                  },
+                  {
+                    "claim": "Codex CLI is written in Rust and is smoother and open source.",
+                    "verdict": 1,
+                    "reason": "Kun states Codex CLI is written in Rust, smoother than Claude Code, and open source."
+                  },
+                  {
+                    "claim": "Pi coding agent is minimal and highly extensible.",
+                    "verdict": 1,
+                    "reason": "Kun says the Pi coding agent's philosophy is to be minimal and highly extensible."
+                  },
+                  {
+                    "claim": "Open Code has a buttery smooth TUI and is model agnostic.",
+                    "verdict": 1,
+                    "reason": "Kun describes Open Code as having a buttery smooth TUI and good model integration, and it is model agnostic."
+                  },
+                  {
+                    "claim": "New agents are \"fresh recruits\" that need onboarding through memory files and skills.",
+                    "verdict": 1,
+                    "reason": "Kun uses the term \"fresh recruits\" and says onboarding is done via memory files and skills."
+                  },
+                  {
+                    "claim": "The global memory file (agents.md symlinked to claude.md and other agent locations) is deliberately minimal with only approximately 27 lines.",
+                    "verdict": 1,
+                    "reason": "Kun shows the global memory file has 27 lines and is symlinked."
+                  },
+                  {
+                    "claim": "The global memory file contains personal preferences like \"never use mdash\" and \"when making technical decisions, do not give too much weight to development cost\".",
+                    "verdict": 1,
+                    "reason": "Kun explicitly lists these rules as part of the global memory file."
+                  },
+                  {
+                    "claim": "Each project also has a project-level memory file built organically.",
+                    "verdict": 1,
+                    "reason": "Kun describes project-level memory files that accumulate over time."
+                  },
+                  {
+                    "claim": "Every time Kun sees an agent making a mistake, Kun corrects the agent.",
+                    "verdict": 1,
+                    "reason": "Kun says \"every time I saw the agent doing something wrong, I would correct it\"."
+                  },
+                  {
+                    "claim": "Kun asks the agent to store the learning into the project-level memory file.",
+                    "verdict": 1,
+                    "reason": "Kun asks the agent to store the learning into the memory file."
+                  },
+                  {
+                    "claim": "Agents get \"smarter and more experienced\" over time.",
+                    "verdict": 1,
+                    "reason": "Kun says agents get smarter and more experienced over time."
+                  },
+                  {
+                    "claim": "To prevent memory files from bloating, conditional information is extracted into skills with progressive disclosure.",
+                    "verdict": 1,
+                    "reason": "Kun explains that conditional information is moved into skills to reduce bloat, and skills use progressive disclosure."
+                  },
+                  {
+                    "claim": "Only a tiny description field loads into the system prompt initially.",
+                    "verdict": 1,
+                    "reason": "Kun states that only the description field loads into the system prompt initially."
+                  },
+                  {
+                    "claim": "The full content loads only when the skill is activated.",
+                    "verdict": 1,
+                    "reason": "Kun says the full content loads only when the skill is needed."
+                  },
+                  {
+                    "claim": "Skills are managed via `npx skills` CLI from Vercel.",
+                    "verdict": 1,
+                    "reason": "Kun mentions the `npx skills` CLI from Vercel."
+                  },
+                  {
+                    "claim": "Kun warns strongly against installing random skills from the internet due to security risks and unverified performance claims.",
+                    "verdict": 1,
+                    "reason": "Kun warns against installing random skills, citing security risks and performance degradation."
+                  },
+                  {
+                    "claim": "For planning any complex work, Kun relies on Lavish AXI.",
+                    "verdict": 1,
+                    "reason": "Kun states he relies on Lavish AXI for planning complex work."
+                  },
+                  {
+                    "claim": "Lavish AXI is a custom tool that instructs the agent to generate interactive HTML artifacts.",
+                    "verdict": 1,
+                    "reason": "Kun says Lavish AXI instructs the agent to create an HTML artifact."
+                  },
+                  {
+                    "claim": "The artifacts visualize what needs to be discussed.",
+                    "verdict": 1,
+                    "reason": "Kun says the artifacts visualize what needs to be discussed."
+                  },
+                  {
+                    "claim": "The artifacts always use the same design system as the current project.",
+                    "verdict": 1,
+                    "reason": "Kun says Lavish AXI always uses the same design system as the current project."
+                  },
+                  {
+                    "claim": "Kun describes this process as \"so much easier to understand than the huge wall of text\".",
+                    "verdict": 1,
+                    "reason": "Kun says exactly that."
+                  },
+                  {
+                    "claim": "Kun states that reading text in the terminal is no longer acceptable.",
+                    "verdict": 1,
+                    "reason": "Kun says \"I can never go back to reading text in the terminal anymore\"."
+                  },
+                  {
+                    "claim": "The Lavish editor allows Kun to annotate and comment on specific parts of artifacts to give feedback.",
+                    "verdict": 1,
+                    "reason": "Kun says he can annotate and comment on specific parts of artifacts."
+                  },
+                  {
+                    "claim": "At the bottom of the Lavish editor there are interactive decision options.",
+                    "verdict": 1,
+                    "reason": "Kun says there are things at the bottom to decide on and click options."
+                  },
+                  {
+                    "claim": "Kun can click the decision options to make choices.",
+                    "verdict": 1,
+                    "reason": "Kun says he can click on these options to make decisions."
+                  },
+                  {
+                    "claim": "All interactions happen without leaving the Lavish interface.",
+                    "verdict": 1,
+                    "reason": "Kun says he sends feedback inside Lavish without going back to the terminal."
+                  },
+                  {
+                    "claim": "For input, Kun uses Open Super Whisper for local voice transcription.",
+                    "verdict": 1,
+                    "reason": "Kun describes using Open Super Whisper for local voice transcription."
+                  },
+                  {
+                    "claim": "Kun only falls back to typing for URLs and file paths.",
+                    "verdict": 1,
+                    "reason": "Kun says he only types when giving a URL or file path."
+                  },
+                  {
+                    "claim": "Once requirements are clarified in the planning phase, Kun tells the agent to \"start building\".",
+                    "verdict": 1,
+                    "reason": "Kun says he tells the agent to \"start building\" and ends the session."
+                  },
+                  {
+                    "claim": "Kun exits the session.",
+                    "verdict": 1,
+                    "reason": "Kun says \"we'll end the session\"."
+                  },
+                  {
+                    "claim": "Kun is confident that the implementation phase will run autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun says he typically does not need to interfere during implementation."
+                  },
+                  {
+                    "claim": "After planning, Kun does not interfere during implementation.",
+                    "verdict": 1,
+                    "reason": "Kun says he does not interfere during implementation."
+                  },
+                  {
+                    "claim": "Kun only returns to the work when the agent has finished.",
+                    "verdict": 1,
+                    "reason": "Kun says he only comes back when the agent has done."
+                  },
+                  {
+                    "claim": "To run multiple agents in parallel without conflicts, Kun uses Treehouse.",
+                    "verdict": 1,
+                    "reason": "Kun introduces Treehouse to manage isolated work trees for parallel agents."
+                  },
+                  {
+                    "claim": "Treehouse is a tool Kun built that manages git work trees (lightweight isolated copies of the repo).",
+                    "verdict": 1,
+                    "reason": "Kun says he built Treehouse and it manages git work trees."
+                  },
+                  {
+                    "claim": "Running `treehouse` drops Kun into a fresh work tree.",
+                    "verdict": 1,
+                    "reason": "Kun says running treehouse drops him into a fresh work tree."
+                  },
+                  {
+                    "claim": "Kun can spin up many work trees.",
+                    "verdict": 1,
+                    "reason": "Kun says he can keep spinning up more work trees."
+                  },
+                  {
+                    "claim": "When done, closing the tab frees the work tree for reuse instead of creating new ones each time.",
+                    "verdict": 1,
+                    "reason": "Kun says closing the tab frees the work tree and later reuses idle ones."
+                  },
+                  {
+                    "claim": "For long-running autonomous tasks (e.g., overnight), Kun uses \"Good Night, Have Fun\".",
+                    "verdict": 1,
+                    "reason": "Kun introduces \"Good Night, Have Fun\" for overnight tasks."
+                  },
+                  {
+                    "claim": "\"Good Night, Have Fun\" is another free open-source tool.",
+                    "verdict": 1,
+                    "reason": "Kun says it is free and open source."
+                  },
+                  {
+                    "claim": "\"Good Night, Have Fun\" keeps an agent running in a loop until a stop condition (token cap, iteration cap, etc.) is met.",
+                    "verdict": 1,
+                    "reason": "Kun says it keeps going until a stop condition like token cap or iteration cap is met."
+                  },
+                  {
+                    "claim": "Kun gives an example of telling the agent to pretend to be a seven-year-old kid, use the app end to end, find the first usability problem, fix the problem, and repeat.",
+                    "verdict": 1,
+                    "reason": "Kun provides this exact example."
+                  },
+                  {
+                    "claim": "The agent keeps iterating autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun says the agent runs in a loop autonomously."
+                  },
+                  {
+                    "claim": "Kun uses T-Max (or Herder) tabs to run all these parallel agent sessions.",
+                    "verdict": 1,
+                    "reason": "Kun uses terminal multiplexer tabs to run parallel sessions."
+                  },
+                  {
+                    "claim": "Kun switches between tabs with keyboard shortcuts.",
+                    "verdict": 1,
+                    "reason": "Kun says he uses keyboard shortcuts to switch tabs."
+                  },
+                  {
+                    "claim": "Kun monitors the status of sessions via the top status bar.",
+                    "verdict": 1,
+                    "reason": "Kun says he looks at the top status bar to know if they need him."
+                  },
+                  {
+                    "claim": "Kun's core insight is that manually reviewing diffs creates a bottleneck.",
+                    "verdict": 1,
+                    "reason": "Kun says reviewing diffs creates a big bottleneck."
+                  },
+                  {
+                    "claim": "Kun believes that AI writes code too fast for manual review and that reviewing diffs is not enjoyable.",
+                    "verdict": 1,
+                    "reason": "Kun says AI writes code fast and reviewing diffs is not fun."
+                  },
+                  {
+                    "claim": "Instead, Kun sends changes into a pipeline called \"No Mistakes\".",
+                    "verdict": 1,
+                    "reason": "Kun says he sends changes into the \"No Mistakes\" pipeline."
+                  },
+                  {
+                    "claim": "\"No Mistakes\" is free and open source.",
+                    "verdict": 1,
+                    "reason": "Kun says it is free and open source."
+                  },
+                  {
+                    "claim": "The pipeline executes in an isolated work tree so nothing affects the current repo.",
+                    "verdict": 1,
+                    "reason": "Kun says it runs in an isolated work tree so nothing affects the current repo."
+                  },
+                  {
+                    "claim": "The pipeline first analyzes the agent session to understand the real intent.",
+                    "verdict": 1,
+                    "reason": "Kun says it first understands the real intent by analyzing the agent session."
+                  },
+                  {
+                    "claim": "Then the pipeline rebases on the latest main branch and resolves merge conflicts upfront.",
+                    "verdict": 1,
+                    "reason": "Kun says it rebases and resolves merge conflicts upfront."
+                  },
+                  {
+                    "claim": "Next, the pipeline runs an adversarial review in its own fresh context window.",
+                    "verdict": 1,
+                    "reason": "Kun says it starts an adversarial review in its own fresh context window."
+                  },
+                  {
+                    "claim": "The adversarial review catches most problems.",
+                    "verdict": 1,
+                    "reason": "Kun says most problems get caught in the adversarial review."
+                  },
+                  {
+                    "claim": "Obvious problems are self-corrected.",
+                    "verdict": 1,
+                    "reason": "Kun says obvious problems will get self-corrected."
+                  },
+                  {
+                    "claim": "Ambiguous problems are escalated to the human for a product decision.",
+                    "verdict": 1,
+                    "reason": "Kun says ambiguous problems with product implications are escalated to humans."
+                  },
+                  {
+                    "claim": "After review, the pipeline does end-to-end testing against the original intent.",
+                    "verdict": 1,
+                    "reason": "Kun says it tests end to end against the original intent."
+                  },
+                  {
+                    "claim": "The pipeline records evidence (screenshots, video demos, log files) that proves the change is working.",
+                    "verdict": 1,
+                    "reason": "Kun says it records evidence such as screenshots, video demos, log files."
+                  },
+                  {
+                    "claim": "Then the pipeline updates all relevant documentation.",
+                    "verdict": 1,
+                    "reason": "Kun says it updates all relevant documentation."
+                  },
+                  {
+                    "claim": "The pipeline checks for linting problems.",
+                    "verdict": 0,
+                    "reason": "The context mentions checking for \"linking problems\" not \"linting\"; not directly inferable."
+                  },
+                  {
+                    "claim": "Then the pipeline pushes the branch and raises a PR.",
+                    "verdict": 1,
+                    "reason": "Kun says it pushes the branch and raises a PR."
+                  },
+                  {
+                    "claim": "Crucially, \"No Mistakes\" continues \"babysitting\" the PR until the PR is merged.",
+                    "verdict": 1,
+                    "reason": "Kun says it babysits the PR until merged."
+                  },
+                  {
+                    "claim": "\"No Mistakes\" handles merge conflicts autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun implies it handles merge conflicts during babysitting without human intervention."
+                  },
+                  {
+                    "claim": "\"No Mistakes\" handles CI pipeline failures autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun implies it handles CI failures during babysitting without human intervention."
+                  },
+                  {
+                    "claim": "Kun's review process is risk-based.",
+                    "verdict": 1,
+                    "reason": "Kun decides how much to review based on risk assessment."
+                  },
+                  {
+                    "claim": "Kun looks at the risk assessment on the PR.",
+                    "verdict": 1,
+                    "reason": "Kun says the risk assessment is very useful and he looks at it."
+                  },
+                  {
+                    "claim": "For low-risk changes, Kun does not review the diff at all.",
+                    "verdict": 1,
+                    "reason": "Kun says for low-risk changes he does not look at the diff."
+                  },
+                  {
+                    "claim": "For low-risk changes, Kun relies on the pipeline's evidence.",
+                    "verdict": 1,
+                    "reason": "Kun says any problem would be caught by the pipeline, so he relies on evidence."
+                  },
+                  {
+                    "claim": "Kun discovered that even with parallelized agent sessions, the constant context switch was exhausting.",
+                    "verdict": 1,
+                    "reason": "Kun says juggling sessions is exhausting."
+                  },
+                  {
+                    "claim": "Kun's solution is \"First Mate\".",
+                    "verdict": 1,
+                    "reason": "Kun says he needed a first mate to solve this."
+                  },
+                  {
+                    "claim": "\"First Mate\" is another free open-source tool.",
+                    "verdict": 1,
+                    "reason": "Kun says it is free and open source."
+                  },
+                  {
+                    "claim": "\"First Mate\" is an orchestrator agent that acts as the captain's primary interface.",
+                    "verdict": 1,
+                    "reason": "Kun says he talks to First Mate and it carries out directions."
+                  },
+                  {
+                    "claim": "Kun talks to First Mate.",
+                    "verdict": 1,
+                    "reason": "Kun gives commands to First Mate in the context."
+                  },
+                  {
+                    "claim": "Kun gives First Mate high-level goals, for example, to add an update command on the CLI that updates the version of all three projects to the latest on npm.",
+                    "verdict": 1,
+                    "reason": "Kun gives exactly that example."
+                  },
+                  {
+                    "claim": "First Mate realizes this task is three parallel tasks.",
+                    "verdict": 1,
+                    "reason": "Kun says First Mate realizes it is three parallel tasks."
+                  },
+                  {
+                    "claim": "First Mate spins up T-Max/Herder tabs.",
+                    "verdict": 1,
+                    "reason": "Kun says it spins up tabs in T-Max."
+                  },
+                  {
+                    "claim": "First Mate creates Treehouse work trees.",
+                    "verdict": 1,
+                    "reason": "Kun says it calls Treehouse to create work trees."
+                  },
+                  {
+                    "claim": "First Mate runs agents in those work trees.",
+                    "verdict": 1,
+                    "reason": "Kun says it runs an agent in the work tree."
+                  },
+                  {
+                    "claim": "First Mate runs No Mistakes to validate and get PRs ready.",
+                    "verdict": 1,
+                    "reason": "Kun says it runs No Mistakes to validate and get PRs ready."
+                  },
+                  {
+                    "claim": "All these actions are done autonomously.",
+                    "verdict": 1,
+                    "reason": "Kun implies First Mate operates autonomously while he gives more tasks."
+                  },
+                  {
+                    "claim": "While waiting for those background tasks, Kun can give First Mate additional work, such as looking at the most recent three open issues.",
+                    "verdict": 1,
+                    "reason": "Kun demonstrates giving additional work while agents run."
+                  },
+                  {
+                    "claim": "First Mate pulls the issues while agents are still running in the background.",
+                    "verdict": 1,
+                    "reason": "Kun says First Mate pulls issues while waiting for background agents."
+                  },
+                  {
+                    "claim": "Kun describes watching First Mate context-switch as \"an oddly satisfying experience\".",
+                    "verdict": 1,
+                    "reason": "Kun says exactly that."
+                  },
+                  {
+                    "claim": "This final layer transforms Kun from someone managing many agents directly into a true captain.",
+                    "verdict": 1,
+                    "reason": "Kun says this is how he levels up and truly becomes a captain."
+                  },
+                  {
+                    "claim": "The true captain focuses on big picture questions like where the team should go next.",
+                    "verdict": 1,
+                    "reason": "Kun says he can focus on where should we go next."
+                  },
+                  {
+                    "claim": "Kun is meticulous about tool efficiency for agents.",
+                    "verdict": 1,
+                    "reason": "Kun discusses benchmarks and token efficiency for tools."
+                  },
+                  {
+                    "claim": "Kun authored \"AXI\".",
+                    "verdict": 1,
+                    "reason": "Kun says he authored AXI design standards."
+                  },
+                  {
+                    "claim": "\"AXI\" is a set of design standards for building tools that treat agents as first-class citizens.",
+                    "verdict": 1,
+                    "reason": "Kun says AXI designs tools treating agents as first-class citizens."
+                  },
+                  {
+                    "claim": "\"AXI\" optimizes for \"agent ergonomics\".",
+                    "verdict": 1,
+                    "reason": "Kun uses the term \"agent ergonomics\"."
+                  },
+                  {
+                    "claim": "For example, using token-efficient output formats can save approximately 40% tokens compared to JSON.",
+                    "verdict": 1,
+                    "reason": "Kun states that token-efficient output formats save about 40% tokens vs JSON."
+                  },
+                  {
+                    "claim": "Kun benchmarked various ways to access GitHub.",
+                    "verdict": 1,
+                    "reason": "Kun says he ran a benchmark measuring various ways to access GitHub."
+                  },
+                  {
+                    "claim": "Kun found that the GitHub MCP server costs three times more on token cost and more than double the latency compared to using the CLI.",
+                    "verdict": 1,
+                    "reason": "Kun says GitHub MCP server costs three times more tokens and more than double latency vs CLI."
+                  },
+                  {
+                    "claim": "Kun's GitHub AXI achieved the lowest cost and highest success rate.",
+                    "verdict": 1,
+                    "reason": "Kun says AXI has the lowest cost but highest success rate."
+                  },
+                  {
+                    "claim": "Kun built custom AXI tools.",
+                    "verdict": 1,
+                    "reason": "Kun says he built a few AXI tools."
+                  },
+                  {
+                    "claim": "The custom AXI tools include GitHub AXI, Chrome DevTools AXI (benchmarked against various browser tools), and Lavish AXI for planning.",
+                    "verdict": 1,
+                    "reason": "Kun lists GitHub AXI, Chrome DevTools AXI, and Lavish AXI."
+                  },
+                  {
+                    "claim": "All AXI tools are available on axi.md with a public catalog.",
+                    "verdict": 1,
+                    "reason": "Kun says they can be found at axi.mmd catalog."
+                  },
+                  {
+                    "claim": "Kun warns against using unverified tools.",
+                    "verdict": 1,
+                    "reason": "Kun warns against random skills from the internet."
+                  },
+                  {
+                    "claim": "Kun tested the popular \"Andrej Karpathy skills\" repo (177k stars) with Program Bench.",
+                    "verdict": 1,
+                    "reason": "Kun says he evaluated the repo with Program Bench."
+                  },
+                  {
+                    "claim": "The test found that the repo used 5% more tokens while making results worse.",
+                    "verdict": 1,
+                    "reason": "Kun says the skill used 5% more tokens and made results worse."
+                  },
+                  {
+                    "claim": "Kun notes that the repo was not even written by Karpathy.",
+                    "verdict": 1,
+                    "reason": "Kun says the skill is not even written by Andrej Karpathy."
+                  }
+                ],
+                "supported": 144,
+                "total": 147
+              },
+              "answer_relevancy": {
+                "generated_questions": [
+                  "What's the AI engineer workflow Kun uses, what the tools he's using for every step?"
+                ],
+                "noncommittal": false,
+                "similarities": [
+                  0.9835
+                ]
+              },
+              "context_precision": {
+                "verdicts": [
+                  {
+                    "rank": 1,
+                    "verdict": 0,
+                    "reason": "The provided context is only the introductory part of a video where Kun talks about his background and intention to share his workflow, but it does not include any specific details about the steps or tools he uses. The answer contains extensive details about specific tools like Lavish AXI, Treehouse, No Mistakes, First Mate, etc., which are not present in the given context. Therefore, the context was not useful in arriving at the answer.",
+                    "chunk_preview": "Hi everyone, welcome to this video and this will\u00a0\nbe a full walkthrough of my agentic engineering workflow. My name is Kun. I was previously\u00a0\nan L8 principal en"
+                  },
+                  {
+                    "rank": 2,
+                    "verdict": 0,
+                    "reason": "The provided context is a brief sign-off message from a video and does not contain any specific details about the AI engineer workflow or the tools used. The answer, however, is a lengthy and detailed response with multiple findings and references, which clearly comes from a different, more comprehensive source. Therefore, the context was not useful in arriving at the answer.",
+                    "chunk_preview": "my previous video about my agentic engineering\u00a0\nworkflow yet, now is a great time to catch up and see how I actually get work done with this setup.\u00a0\nThank you f"
+                  },
+                  {
+                    "rank": 3,
+                    "verdict": 1,
+                    "reason": "The provided context contains key information about Kun's AI engineer workflow, specifically the \"No Mistakes\" pipeline and the approach of not manually reviewing diffs, which are directly referenced in the answer. Thus, the context was useful in arriving at the answer.",
+                    "chunk_preview": "diffs all day. My advice here is that in order to\u00a0\nreally scale ourselves with AI, we have to think of ourselves more as an engineering manager or\u00a0\nengineering "
+                  },
+                  {
+                    "rank": 4,
+                    "verdict": 0,
+                    "reason": "The provided context is a short generic transcript snippet about becoming a captain and mentioning tools on GitHub, but it lacks the detailed information about Kun's specific AI engineer workflow, tools, and steps that are presented in the answer. The answer includes many specific tools and processes not found in the context, so the context was not useful in arriving at the answer.",
+                    "chunk_preview": "doing that, congratulations. You have successfully\u00a0\ntransitioned from a sailor into a great captain. All right, we have gone from not having a ship\u00a0\nto being a "
+                  },
+                  {
+                    "rank": 5,
+                    "verdict": 0,
+                    "reason": "The context only provides a brief introductory metaphor and does not contain the specific tools and workflow steps detailed in the answer. The answer clearly relies on additional sources not present in the given context.",
+                    "chunk_preview": "building products as my main business. You can see\u00a0\nthis is a bit of a long video because I'm going to walk through many fundamental concepts of agentic\u00a0\nengine"
+                  },
+                  {
+                    "rank": 6,
+                    "verdict": 0,
+                    "reason": "The provided context is a brief transcript about an AI tutor app and mentions 'Lavish' and 'Kun', but it does not contain the detailed workflow steps, tools (Nix, Neovim, Treehouse, No Mistakes, First Mate, etc.), or the comprehensive descriptions found in the answer. The answer appears to come from a different source (a full video transcript) not present in the given context. Therefore, the context was not useful in arriving at the given answer.",
+                    "chunk_preview": "work on here. Hibbit is an AI tutor I'm\u00a0\nbuilding for kids. Um I'll just create a test profile here. You can see here um at the\u00a0\ntop I have these two buttons wh"
+                  },
+                  {
+                    "rank": 7,
+                    "verdict": 0,
+                    "reason": "The provided context only discusses terminal emulator preferences and does not contain the extensive details about Kun's AI engineer workflow, tools like Nix, Lavish AXI, Treehouse, No Mistakes, First Mate, etc., which are all present in the answer. Thus, the context was not useful in arriving at the given answer.",
+                    "chunk_preview": "paradigm for GUI apps, and it's hard to build the\u00a0\ndiscipline of hands-on keyboard when every once in a while you still have to use the mouse. Terminal\u00a0\napps, o"
+                  },
+                  {
+                    "rank": 8,
+                    "verdict": 0,
+                    "reason": "The provided context only covers the beginning of a video about setting up a reproducible environment, but the answer details a comprehensive AI engineering workflow with many specific tools (e.g., First Mate, No Mistakes, Lavish AXI) that are not mentioned in the given context. Therefore, the context was not useful in arriving at the answer.",
+                    "chunk_preview": "What's up everyone? I'm still in shock that\u00a0\nmy last video about agentic engineering got hundreds of thousands of views. I'm really happy\u00a0\nto see many of you ar"
+                  },
+                  {
+                    "rank": 9,
+                    "verdict": 0,
+                    "reason": "The provided context is a short, incomplete transcript snippet mentioning only a few aspects of the workflow (e.g., Open Code, cloud code, memory files, skills). The answer is a comprehensive and detailed description of Kun's entire AI engineer workflow, including many tools and concepts (such as Nix, Westerm, Lavish AXI, Treehouse, No Mistakes, First Mate, etc.) that are not present in the context. Thus, the context was insufficient to derive the answer.",
+                    "chunk_preview": "from the shelf and just go, Open Code is a pretty\u00a0\ngood choice. For the rest of this video though, I'm going to use cloud code because I know many\u00a0\npeople are a"
+                  },
+                  {
+                    "rank": 10,
+                    "verdict": 0,
+                    "reason": "The provided context is a brief excerpt focusing on not reviewing diffs and the agent's autonomous implementation. It lacks the detailed information about Kun's workflow steps and tools (e.g., Nix, memory files, Lavish AXI, No Mistakes, First Mate) that are extensively covered in the answer. Therefore, the context was not sufficient to derive the comprehensive answer.",
+                    "chunk_preview": "back to reading text in the terminal anymore. This\u00a0\nis just like way too much more efficient. Now, the agent has made updates to the HTML and I\u00a0\nfeel happy abou"
+                  },
+                  {
+                    "rank": 11,
+                    "verdict": 0,
+                    "reason": "The context snippet only mentions token-efficient output formats, GitHub AXI, Chrome DevTools AXI, and Lavish AXI, but the answer covers a comprehensive workflow including reproducible environment, memory files, skills, Treehouse, No Mistakes, First Mate, etc., which are not present in the context. Therefore the context was insufficient to arrive at the detailed answer.",
+                    "chunk_preview": "using token efficient output format can save about\u00a0\n40% tokens compared to using JSON. And then I built a few axis with them. Besides the GitHub\u00a0\naxi I showed e"
+                  },
+                  {
+                    "rank": 12,
+                    "verdict": 1,
+                    "reason": "The context describes the Lavish editor and its features (HTML artifacts, annotations, decision options) which are directly referenced in the answer's Finding 3 about the planning phase using Lavish AXI. Although the answer contains many additional details not present in the context, the context contributed to a specific and important part of the overall workflow described. Hence, it was useful.",
+                    "chunk_preview": "This is the lavish editor. The reason I named it\u00a0\nlavish is that it's richer than a rich editor. I almost named it filthy rich editor, but um that's\u00a0\njust not t"
+                  },
+                  {
+                    "rank": 13,
+                    "verdict": 1,
+                    "reason": "The context includes mentions of T-Max, treehouse, agent, no mistakes, and First Mate, which are central to the workflow described in the answer. Although the answer is more detailed, the context provided relevant information that contributed to understanding the workflow.",
+                    "chunk_preview": "tasks. And it's now spinning up these tabs in\u00a0\nT-Max just like we would behind the scenes. It would also call treehouse to create work trees\u00a0\nand then run an ag"
+                  },
+                  {
+                    "rank": 14,
+                    "verdict": 1,
+                    "reason": "The context describes Kun's workflow involving 'First Mate' as an orchestrator agent and the captain metaphor, which is directly referenced in the answer's Finding 6. This information contributed to the comprehensive answer, making the context useful.",
+                    "chunk_preview": "it's quite exhausting. The constant context\u00a0\nswitch and having to remind yourself what each session was even doing just doesn't feel like an\u00a0\nideal endgame expe"
+                  },
+                  {
+                    "rank": 15,
+                    "verdict": 1,
+                    "reason": "The context discusses extracting instructions into skills and using the 'npx skills' CLI, which directly corresponds to the mention of skills management and Vercel's CLI in the answer. Although the answer is much more comprehensive, the context provides relevant information that is incorporated into the answer, making it useful.",
+                    "chunk_preview": "agent is making changes, right? So, if I just\u00a0\nask the agent a question, this whole section is totally useless and would be wasting tokens. The\u00a0\nway to improve "
+                  },
+                  {
+                    "rank": 16,
+                    "verdict": 0,
+                    "reason": "The provided context only briefly describes a few AI agent harnesses (Claude Code, Codex CLI, Pi, Open Code) but the answer contains an extensive and detailed workflow covering many other tools and concepts (Nix, Lavish AXI, Treehouse, No Mistakes, First Mate, etc.) that are not present in the context. Therefore, the context was not sufficient to arrive at the comprehensive answer given.",
+                    "chunk_preview": "It's also got a pretty rich feature set. The\u00a0\ndownside is that sometimes it's a little bit buggy and it's not as customizable as some of the\u00a0\nother options. The"
+                  },
+                  {
+                    "rank": 17,
+                    "verdict": 1,
+                    "reason": "The context provides specific details about the 'No Mistakes' pipeline (rebase, adversarial review, testing, documentation, PR babysitting) which are directly incorporated into the answer. The answer describes the overall workflow and tools, and the context contributes a key part of that description.",
+                    "chunk_preview": "agent session. Then rebase the change on top\u00a0\nof the latest main branch on remote origin and resolve merge conflicts up front. Then starts\u00a0\nan adversarial revie"
+                  },
+                  {
+                    "rank": 18,
+                    "verdict": 1,
+                    "reason": "The context specifically describes the 'No Mistakes' pipeline and the subsequent PR review process, which are key components of Kun's workflow mentioned in the answer. Therefore, the context was useful in providing direct information that contributed to the answer.",
+                    "chunk_preview": "we don't have to waste our own time at all.\u00a0\nAnother way to trigger no mistakes is as a skill. I can just type no mistakes in the agent\u00a0\nand it will do the same"
+                  },
+                  {
+                    "rank": 19,
+                    "verdict": 0,
+                    "reason": "The provided context is a generic description of an AI engineer's workflow involving risk assessment and pipeline, but it does not mention Kun, specific tools like Treehouse, Herder, No Mistakes, First Mate, Lavish AXI, or the detailed steps and tools described in the answer. Therefore, the context was not useful in arriving at the given answer.",
+                    "chunk_preview": "we need. If anything doesn't look right, we can\u00a0\ngo back to the agent and ask for more changes before merging this PR. This risk assessment here\u00a0\nis also very u"
+                  },
+                  {
+                    "rank": 20,
+                    "verdict": 1,
+                    "reason": "The provided context directly discusses the AI engineer workflow Kun uses, mentioning specific tools like Open Super Whisper and First Mate, which are key components of the answer's detailed findings. Therefore, the context was useful in arriving at the answer.",
+                    "chunk_preview": "talking to it, which is pretty easy. And you\u00a0\nmight wonder why uh is the transcription so good because it's recognizing these project names.\u00a0\nLet me show you. O"
+                  },
+                  {
+                    "rank": 21,
+                    "verdict": 0,
+                    "reason": "The provided context only covers a small part of the workflow (memory files and skills), while the answer includes extensive details about many other tools and steps (e.g., Nix, Lavish AXI, Treehouse, No Mistakes, First Mate) that are not present in the context. Thus, the context was insufficient to derive the full answer.",
+                    "chunk_preview": "what I put into this file. It has some context on\u00a0\nwhat this project is, how the repo is laid out, some terminology, how some of the most important\u00a0\ncomponents "
+                  },
+                  {
+                    "rank": 22,
+                    "verdict": 0,
+                    "reason": "The context provided discusses risks and evaluation of AI agent skills, but does not contain any information about Kun's AI engineer workflow, tools, or steps. The answer references detailed workflow and tools from other sources, so the context is not useful.",
+                    "chunk_preview": "anything on your machine. This is a very risky\u00a0\nthing to do because the agent can leak your API keys or even credentials to your bank account\u00a0\nto untrusted thir"
+                  },
+                  {
+                    "rank": 23,
+                    "verdict": 1,
+                    "reason": "The context provides specific details about Kun's terminal multiplexer choices (T-Max and Herder), which are referenced in the answer's description of the reproducible environment stack and parallel agent sessions. This information is directly used in the answer to describe the workflow tools.",
+                    "chunk_preview": "means terminal multiplexer and is probably the OG.\u00a0\nI showed it briefly in my previous video. Westerm also comes with multiplexing functionality\u00a0\nout of the box"
+                  },
+                  {
+                    "rank": 24,
+                    "verdict": 0,
+                    "reason": "The provided context only covers a small portion of the workflow (Starship prompt and Wezterm terminal setup), but the answer details an extensive AI engineering workflow with many tools and steps (like Nix, agent harnesses, Lavish AXI, Treehouse, No Mistakes, First Mate) that are not present in the context. The context is therefore insufficient and not directly useful for arriving at the comprehensive answer given.",
+                    "chunk_preview": "lets you customize your shell prompt, which\u00a0\nis this whole prefix before my cursor here. The system default is just really ugly. Let's\u00a0\nget back to our home man"
+                  },
+                  {
+                    "rank": 25,
+                    "verdict": 1,
+                    "reason": "The context provides information about the initial setup steps (homebrew, home manager, Westerm) that are part of Kun's workflow as described in the answer. Therefore, the context was useful in arriving at the given answer.",
+                    "chunk_preview": "casks you want to install should also go\u00a0\nhere as well. Now, let's go run a rebuild, which should get homerew set up for us. And we\u00a0\ncan verify by running brew-"
+                  },
+                  {
+                    "rank": 26,
+                    "verdict": 0,
+                    "reason": "The provided context is a brief excerpt about terminal multiplexers and specific tools like T-Max and Westerm, but the answer contains a comprehensive AI engineering workflow covering many other tools (e.g., Nix, Neovim, Lavish AXI, Treehouse, No Mistakes, First Mate) and detailed process steps not present in the context. Therefore, the context was not sufficient or useful in arriving at the detailed answer.",
+                    "chunk_preview": "messing up with the clipboard. It just makes\u00a0\nthe experience much more intuitive for me. All right, there is a whole bunch of other things\u00a0\nI can go into about "
+                  },
+                  {
+                    "rank": 27,
+                    "verdict": 0,
+                    "reason": "The provided context is a short excerpt about test failures and home manager configuration, but the detailed answer about Kun's AI engineer workflow, including tools like Lavish AXI, First Mate, and No Mistakes, is not present in this context. Therefore, the context was not useful in arriving at the answer.",
+                    "chunk_preview": "test failures and test flakiness. If you see one,\u00a0\neven if it's not caused by what you are working on right now, still get it fixed. These are also\u00a0\nrules I fin"
+                  },
+                  {
+                    "rank": 28,
+                    "verdict": 1,
+                    "reason": "The provided context discusses skills with progressive disclosure and warns against installing random skills, which is directly used in the answer's description of Kun's workflow (Finding 2 about conditional knowledge offloaded into skills). Although the answer covers many other aspects not in the context, the context contributed useful information to a specific part of the answer.",
+                    "chunk_preview": "for you moving forward. All right, Cloud has done\u00a0\nits work. Let's look at uh what Claude created for us. It basically uh removed a large chunk of the\u00a0\ncontent "
+                  },
+                  {
+                    "rank": 29,
+                    "verdict": 0,
+                    "reason": "The provided context only briefly mentions Open Super Whisper for voice input, which is just one small part of Kun's workflow. The answer includes extensive details about many other tools and steps (e.g., Nix, Neovim, Treehouse, No Mistakes, First Mate) that are not present in the context. Therefore, the context was not useful in arriving at the comprehensive answer.",
+                    "chunk_preview": "of this paper, look who's here. It's our guy\u00a0\nDario. What is the CEO of Anthropic doing here? Apparently, if we follow this link, Dario was\u00a0\ndoing some speech r"
+                  },
+                  {
+                    "rank": 30,
+                    "verdict": 1,
+                    "reason": "The context directly describes Kun's typical workflow, including splitting panes, using vim and git for diffs, and managing a global memory file for agent behavior. These elements are foundational to the detailed workflow described in the answer, making the context useful for understanding the overarching approach.",
+                    "chunk_preview": "happened so far, I can just uh split another pane\u00a0\nand use new vim and use git to see the diff. Uh this is a very typical flow for how I work. Now a\u00a0\nreally imp"
+                  },
+                  {
+                    "rank": 31,
+                    "verdict": 0,
+                    "reason": "The provided context is only a brief fragment discussing Vim/Neovim and Claude Code as an agent harness. The answer contains a highly detailed workflow including many tools (Nix, memory files, Lavish AXI, Treehouse, No Mistakes, First Mate, etc.) and specific references that are not present in the given context. Therefore the context was not useful in arriving at the comprehensive answer.",
+                    "chunk_preview": "occurrences of rows in the current uh codebase. I\u00a0\ncan type uh space f to find files by their names. Like if I type flake, I'll get to the flake file\u00a0\nimmediate"
+                  },
+                  {
+                    "rank": 32,
+                    "verdict": 1,
+                    "reason": "The context describes git work trees and the treehouse tool, which is part of Kun's workflow as mentioned in the answer. The answer directly references treehouse and the concept of isolated work trees, so the context was useful.",
+                    "chunk_preview": "it, uh a git work tree is basically creating a\u00a0\nclone of your repo directory. I can create one by typing gork tree add and give a path\u00a0\nhere. Now we have to thi"
+                  },
+                  {
+                    "rank": 33,
+                    "verdict": 1,
+                    "reason": "The provided context, though a brief excerpt, describes elements of Kun's workflow such as running multiple parallel agent sessions using treehouse claw and monitoring via a status bar. These details are directly reflected in the answer's discussion of parallel autonomous agent sessions and session management. Therefore, the context contributed useful information to the overall answer.",
+                    "chunk_preview": "popover we add a label that tells them they can\u00a0\nalso press and hold and I'll enter. Then I'll spin up a new tab, treehouse claw. And this time I'll\u00a0\nsay the im"
+                  },
+                  {
+                    "rank": 34,
+                    "verdict": 1,
+                    "reason": "The context provides specific details about Kun's workflow, including the use of treehouse for managing git work trees, launching Claude, and handling user feedback. These details are directly reflected in the answer, particularly in Finding 4 about the implementation phase and the use of Treehouse. Thus, the context contributed to the answer.",
+                    "chunk_preview": "This is just a lot of overhead. My solution to\u00a0\nthat is another tool I built called treehouse. It's very simple. I just come into this repo and I\u00a0\nrun treehouse"
+                  },
+                  {
+                    "rank": 35,
+                    "verdict": 0,
+                    "reason": "The context is a short excerpt about \"good night have fun\" and git work tree, but the answer is a long detailed response covering many tools and workflow steps (Nix, Home Manager, Westerm, Neovim, Lavish AXI, etc.) that are not present in the provided context. Therefore, the context was not sufficient to derive the full answer.",
+                    "chunk_preview": "on a metric. These are all well suited for a\u00a0\nlongunning loop to tackle. The recently introduced /go command in codeex and cloud code can also do\u00a0\nsomething sim"
+                  },
+                  {
+                    "rank": 36,
+                    "verdict": 0,
+                    "reason": "The provided context is a small fragment that only mentions a symbolic link to agents.md, the global memory file (27 lines), and personal preferences like avoiding mdash. In contrast, the answer is a comprehensive description of Kun's entire AI engineering workflow, including environment setup, agent onboarding with memory files and skills, planning with Lavish AXI, implementation with Treehouse and parallel sessions, validation via No Mistakes, and orchestration with First Mate. None of these detailed steps or tools (Nix, Westerm, Neovim, Treehouse, First Mate, etc.) are present in the context. Thus, the context was insufficient and not useful for deriving the answer.",
+                    "chunk_preview": "symbolic link to agents.md. So they both exist but\u00a0\nunder the hood they point to the same file. Here's the content of my actual global memory file. You\u00a0\ncan see"
+                  },
+                  {
+                    "rank": 37,
+                    "verdict": 1,
+                    "reason": "The context provided information about Kun's testing preferences and memory file system, which are directly referenced in the answer's findings (e.g., end-to-end testing preferences, global and project-level memory files). Thus it contributed to the answer.",
+                    "chunk_preview": "by default like to write unit tests which are\u00a0\noften not sufficient and not really covering the product behaviors we want to guard. I found\u00a0\nthat leaning into e"
+                  },
+                  {
+                    "rank": 38,
+                    "verdict": 0,
+                    "reason": "The provided context only contains a brief discussion about development cost considerations in agent behavior, but the answer includes a highly detailed workflow with specific tools (e.g., Nix, Lavish AXI, Treehouse, First Mate) that are not mentioned in the context. The context is therefore insufficient to derive the comprehensive answer given.",
+                    "chunk_preview": "to do and this uh system prompt will fight against\u00a0\nthat. Um I don't think it's too useful for agents to be like a co-author of the human. uh it's\u00a0\nultimately s"
+                  },
+                  {
+                    "rank": 39,
+                    "verdict": 0,
+                    "reason": "The provided context only contains a brief discussion about AXI tool design standards, but the answer describes an extensive AI engineer workflow with many specific tools and steps (Nix, Westerm, Neovim, Treehouse, No Mistakes, First Mate, etc.) that are not present in the context. Therefore, the context was not useful in arriving at the detailed answer given.",
+                    "chunk_preview": "This is an important thing to pay attention to\u00a0\nbecause agents rely on external tools like GitHub to do its tasks. The design of these external\u00a0\ntools can great"
+                  },
+                  {
+                    "rank": 40,
+                    "verdict": 1,
+                    "reason": "The context describes T-Max terminal multiplexer and its features like splitting panes and persistence, which are directly referenced in the answer as part of Kun's workflow for managing parallel agent sessions. Thus, the context contributed to the answer.",
+                    "chunk_preview": "typing this command here to start a T-Max session.\u00a0\nNow, I'm inside of T-Max. You can see not much uh is different except for that there's a bar at\u00a0\nthe top sho"
+                  },
+                  {
+                    "rank": 41,
+                    "verdict": 0,
+                    "reason": "The provided context is only a small fragment about setting up dotfiles, Nix, Herder, and some keybinds. It does not contain the extensive information about Kun's AI engineer workflow, including tools like memory files, skills, Lavish AXI, Treehouse, No Mistakes, First Mate, etc., that are detailed in the answer. Therefore, the context was not useful in arriving at the given comprehensive answer.",
+                    "chunk_preview": "file for it. Uh and it's at this location\u00a0\nuh config.tomol. and let's paste it in. Uh, these are pretty much just key binds that allow\u00a0\nme to preserve my muscle"
+                  },
+                  {
+                    "rank": 42,
+                    "verdict": 1,
+                    "reason": "The context discusses T-Max and Neo Vim, which are explicitly mentioned in the answer as part of Kun's workflow. Therefore, the context was useful in providing specific tools.",
+                    "chunk_preview": "laptop or my phone. That's a real gamecher that's\u00a0\nvery hard to replicate without this terminal centric workflow. If you just install T-Max,\u00a0\nby default, it doe"
+                  },
+                  {
+                    "rank": 43,
+                    "verdict": 0,
+                    "reason": "The provided context only discusses a terminal emulator and T-Max, but the answer contains a detailed workflow with many tools (Nix, Neovim, Treehouse, No Mistakes, First Mate, etc.) and concepts not present in the context. The context is insufficient to derive the answer.",
+                    "chunk_preview": "It's pretty much the only terminal emulator I can\u00a0\nfind that can work on Windows exactly the same way it works on Mac and Linux. Right now, I mostly\u00a0\nonly work "
+                  },
+                  {
+                    "rank": 44,
+                    "verdict": 0,
+                    "reason": "The provided context only contains a brief snippet about terminal and Neovim setup, which is a very small part of the extensive answer about Kun's AI engineer workflow. The answer includes detailed descriptions of multiple tools and processes (e.g., Nix, agent harnesses, memory files, skills, Lavish AXI, Treehouse, No Mistakes, First Mate) that are not mentioned in the context at all. Therefore, the context is not useful in arriving at the comprehensive answer.",
+                    "chunk_preview": "terminal window that's basically entirely\u00a0\nused to render whatever content we care about. Look how beautiful this is. I really care about\u00a0\nmaking my development"
+                  },
+                  {
+                    "rank": 45,
+                    "verdict": 0,
+                    "reason": "The provided context only contains a brief description of Neovim settings and the Lazy plugin manager, and does not cover the AI engineer workflow, tools like Nix, Westerm, Treehouse, No Mistakes, First Mate, or other details mentioned in the answer. Therefore, the context was not useful in arriving at the comprehensive answer.",
+                    "chunk_preview": "If I typed a capital letter, then it becomes a\u00a0\ncase-sensitive search. Cliffboard unnamed plus somehow means using the system clipboard for\u00a0\ncopying and pasting"
+                  },
+                  {
+                    "rank": 46,
+                    "verdict": 1,
+                    "reason": "The context provides information about Neovim's Lazy plugin manager and Which-Key plugin, which are directly referenced in the answer describing Kun's development environment. Therefore, the context was useful.",
+                    "chunk_preview": "also see this event equals buff win enter uh is a\u00a0\nprimitive in the lazy plug-in manager which means only load this plugin when this event happens. And\u00a0\nthis ev"
+                  },
+                  {
+                    "rank": 47,
+                    "verdict": 0,
+                    "reason": "The provided context is a brief excerpt mentioning a loop and \"good night have fun\" but lacks the detailed workflow, tools, and steps (e.g., Nix, Lavish AXI, Treehouse, No Mistakes, First Mate) that the answer comprehensively describes. The answer clearly relies on much more extensive information from multiple video sources, not just the context given. Therefore, the context was not useful in arriving at the given answer.",
+                    "chunk_preview": "try to do different things and find the first\u00a0\nusability problem that would confuse you as a kid or stop you from knowing how to proceed. If you\u00a0\nfind a problem"
+                  },
+                  {
+                    "rank": 48,
+                    "verdict": 1,
+                    "reason": "The context contains detailed information about Kun's AI engineer workflow and the tools he uses, including 'Good Night, Have Fun', 'Lavish AXI', 'Treehouse', 'No Mistakes', and 'First Mate'. The answer is a comprehensive compilation of these findings, directly derived from the context.",
+                    "chunk_preview": "more time I can free up in the middle, the more\u00a0\nwork I can go do in parallel. So an interesting question now is how do we get the agent to work\u00a0\nfor longer and"
+                  },
+                  {
+                    "rank": 49,
+                    "verdict": 0,
+                    "reason": "The provided context only covers a small fragment of the environment setup (dotfiles, home-manager, symbolic links), whereas the answer describes a comprehensive AI engineer workflow including many tools and processes (Lavish AXI, Treehouse, No Mistakes, First Mate, etc.) that are not mentioned in the context. Thus, the context is insufficient and not useful for arriving at the full answer.",
+                    "chunk_preview": "sets the home directory for this user correctly.\u00a0\nOtherwise uh it will not work. And then we're going to be creating this uh home.nix file that\u00a0\nwe mentioned ea"
+                  },
+                  {
+                    "rank": 50,
+                    "verdict": 0,
+                    "reason": "The provided context only discusses Mac system configuration with Nix and homebrew, but the answer details a comprehensive AI engineering workflow including tools like Lavish AXI, Treehouse, No Mistakes, First Mate, etc., which are not mentioned in the context. Hence, the context was not useful.",
+                    "chunk_preview": "there is fast key repeat, uh there's short delay\u00a0\nbefore repeat, there's autohiding uh the menu bar, there's uh always showing the file extensions,\u00a0\nthere's aut"
+                  },
+                  {
+                    "rank": 51,
+                    "verdict": 1,
+                    "reason": "The provided context discusses the configuration of shell environment using Nix, Home Manager, zsh with auto-suggestions and syntax highlighting, and Starship prompt. These details are directly referenced in the answer, particularly in Finding 1 about the reproducible environment stack. Therefore, the context was useful in arriving at the given answer.",
+                    "chunk_preview": "we'll come to our home manager config again, um\u00a0\nhome.nix, and we will be dropping this in. This enables auto suggestion which will give us ghost\u00a0\ntext autocomp"
+                  },
+                  {
+                    "rank": 52,
+                    "verdict": 0,
+                    "reason": "The provided context only discusses Nyx, a declarative configuration system, and its installation on a Mac. It does not contain information about Kun's broader AI engineer workflow, including agent harnesses, planning tools like Lavish AXI, implementation with Treehouse and Good Night Have Fun, validation pipeline No Mistakes, or orchestrator First Mate, which are all detailed in the answer. The answer is derived from other sources (video references) not present in the context.",
+                    "chunk_preview": "the reproducibility of my configuration. It means\u00a0\nonce I have things all set up on this machine, can I easily apply it on another machine and get\u00a0\nthe exact sa"
+                  },
+                  {
+                    "rank": 53,
+                    "verdict": 1,
+                    "reason": "The context provides specific details about Kun's environment setup using Nix, home-manager, fonts, and environment variables, which directly correspond to the 'Reproducible Environment Stack' section in the answer. This information was used in formulating that part of the answer, so the context was indeed useful.",
+                    "chunk_preview": "files regardless of where the actual git clone is.\u00a0\nNow the next set of things we add to home manager is a list of packages that we want to install\u00a0\nat user lev"
+                  },
+                  {
+                    "rank": 54,
+                    "verdict": 1,
+                    "reason": "The provided context includes details about setting up homebrew via Nix and Westerm terminal emulator, which are directly referenced in the answer's description of Kun's reproducible environment stack. Thus the context was useful.",
+                    "chunk_preview": "do it the next way. And the way to do it is to\u00a0\ninstall homebrew as a Nyx package. The package is called Nyx Homebrew. And here's the repo. It\u00a0\nhas detailed ins"
+                  },
+                  {
+                    "rank": 55,
+                    "verdict": 0,
+                    "reason": "The context provided is a brief snippet about setting up Nix and nix-darwin, which mentions a few tools but lacks the comprehensive details of Kun's workflow including memory files, skills, planning with Lavish AXI, implementation with Treehouse, validation pipeline (No Mistakes), and orchestrator (First Mate) that are central to the answer. Therefore, the context was not sufficient to arrive at the detailed answer given.",
+                    "chunk_preview": "for now. It's not as good, but uh should be enough\u00a0\nto carry us through uh the initial phase until we have Neo Vim set up. I'm pasting the boiler place\u00a0\nin as i"
+                  }
+                ],
+                "average_precision": 0.379
+              }
+            },
+            "self_graded": true,
+            "elapsed_seconds": 493.6,
+            "scored_at": "2026-07-23T02:20:38.572583+00:00",
+            "error": null
+          },
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 10,
+          "channel_id": "UCb69t9ZkE5z1KvCmfJoaifA",
+          "retrieval_mode": "semantic",
+          "followups": []
+        }
+      ]
     }
   ]
 }
