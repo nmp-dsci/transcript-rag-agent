@@ -113,11 +113,11 @@ class GraphStore:
                 MERGE (e:Entity {id: row.id})
                 ON CREATE SET e.name = row.name, e.type = row.type,
                               e.aliases = row.aliases, e.chunk_ids = [row.chunk_id]
-                ON MATCH SET e.aliases = [x IN e.aliases WHERE NOT x IN row.aliases]
+                ON MATCH SET e.aliases = [x IN coalesce(e.aliases, []) WHERE NOT x IN row.aliases]
                                          + row.aliases,
-                             e.chunk_ids = CASE WHEN row.chunk_id IN e.chunk_ids
-                                                 THEN e.chunk_ids
-                                                 ELSE e.chunk_ids + row.chunk_id END
+                             e.chunk_ids = CASE WHEN row.chunk_id IN coalesce(e.chunk_ids, [])
+                                                 THEN coalesce(e.chunk_ids, [])
+                                                 ELSE coalesce(e.chunk_ids, []) + row.chunk_id END
                 SET e.mentions = size(e.chunk_ids)
                 """,
                 entities=entities,
