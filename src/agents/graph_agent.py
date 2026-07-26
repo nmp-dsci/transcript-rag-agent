@@ -39,7 +39,7 @@ from src.agents.prompts import (
 )
 from src.config import Settings
 from src.rag.context import MultiTranscriptRagContextProvider
-from src.rag.graph_models import GraphClaim, GraphCommunity
+from src.rag.graph_models import GraphClaim, GraphCommunity, GraphEntity
 from src.rag.graph_store import GraphStore
 from src.rag.models import RetrievedChunk
 from src.rag.references import youtube_timestamp_url
@@ -185,9 +185,13 @@ class GraphRagAgent:
         if not entities:
             # Router phrases ("budget tax changes") rarely match entity names
             # verbatim; retry on the content words of the terms and question so
-            # "budget" still anchors the subgraph.
+            # "budget" still anchors the subgraph. A single short content word
+            # can coincidentally substring-match an unrelated entity's name, so
+            # the fallback only keeps entities with a strong enough match
+            # (one long word or two distinct words) instead of any match.
             words = question_terms(" ".join([*terms, question]))
-            entities = self.store.resolve_entities(words)
+            candidates = self.store.resolve_entities(words)
+            entities = [entity for entity in candidates if _strong_fallback_match(entity, words)]
         return [entity.id for entity in entities]
 
     def _local_evidence(self, request: RagQuestionRequest, entity_terms: list[str]) -> _Evidence:
@@ -275,6 +279,26 @@ def question_terms(question: str) -> list[str]:
     """Fallback entity terms when the router names none: content words."""
     words = re.findall(r"[a-zA-Z][a-zA-Z0-9'-]{3,}", question.lower())
     return [word for word in words if word not in _STOPWORDS][:8]
+
+
+#: A single content word this long or longer is specific enough on its own to
+#: anchor the fallback; shorter words need a second, independent match so a
+#: common-word coincidence can't anchor to an unrelated entity.
+_STRONG_FALLBACK_TOKEN_LEN = 6
+
+
+def _strong_fallback_match(entity: GraphEntity, words: list[str]) -> bool:
+    """Whether the content-word fallback's match on ``entity`` is strong enough.
+
+    Requires either one long word or two distinct words to appear in the
+    entity's name/aliases, rather than any single short word coincidentally
+    matching a substring of an unrelated entity's name.
+    """
+    names = [entity.name.lower(), *(alias.lower() for alias in entity.aliases)]
+    matched = {word for word in words if any(word in name for name in names)}
+    if any(len(word) >= _STRONG_FALLBACK_TOKEN_LEN for word in matched):
+        return True
+    return len(matched) >= 2
 
 
 def _claim_line(claim: GraphClaim) -> str:

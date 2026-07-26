@@ -71,12 +71,28 @@ _NOTES = [
     "https://github.com/explodinggradients/ragas."
 ]
 
+#: Fields PromptsView.tsx reads off every prompt entry. Validated at load time
+#: so a malformed registry entry fails fast server-side instead of throwing in
+#: the frontend (e.g. ``prompt.role.replace(...)`` on a missing ``role``).
+_REQUIRED_FIELDS = ("name", "system", "role", "template_vars", "text")
+
+
+def _validate_prompt_shape(entry: dict[str, Any]) -> dict[str, Any]:
+    missing = [field for field in _REQUIRED_FIELDS if field not in entry]
+    if missing:
+        raise ValueError(
+            f"prompt entry {entry.get('name', '<unnamed>')!r} is missing required "
+            f"field(s): {', '.join(missing)}"
+        )
+    return entry
+
 
 def load_prompts() -> dict[str, Any]:
     """The registry grouped by system, in SYSTEMS display order."""
     prompts: list[dict[str, Any]] = [
-        {**entry, "module": "src/agents/prompts.py"} for entry in PROMPT_REGISTRY
-    ] + _EXTRA_PROMPTS
+        _validate_prompt_shape({**entry, "module": "src/agents/prompts.py"})
+        for entry in PROMPT_REGISTRY
+    ] + [_validate_prompt_shape(entry) for entry in _EXTRA_PROMPTS]
     groups = []
     for system in SYSTEMS:
         members = [prompt for prompt in prompts if prompt["system"] == system["key"]]

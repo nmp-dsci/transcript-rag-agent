@@ -38,7 +38,13 @@ def load_checkpoint() -> dict[tuple[str, str], dict]:
         for line in CHECKPOINT.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
-            record = json.loads(line)
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                # A kill mid-append can truncate the trailing line; that cell
+                # simply re-scores on this run rather than aborting resume.
+                print(f"matrix: dropping truncated checkpoint line: {line!r}", file=sys.stderr)
+                continue
             cells[(record["setup"], record["entry"]["id"])] = record
     return cells
 

@@ -97,10 +97,14 @@ class GraphStore:
                 "name": entity.name,
                 "type": entity.type,
                 "aliases": entity.aliases,
+                "chunk_id": extraction.chunk_id,
             }
             for entity in extraction.entities
         ]
         if entities:
+            # mentions is derived from chunk_ids (the set of chunks that named
+            # this entity), not an incrementing counter, so re-upserting the
+            # same chunk's extraction (a warm cache re-run) never inflates it.
             # The ON MATCH alias expression is a list union — no APOC in the
             # community image, so it is spelled out inline.
             self._run(
@@ -108,10 +112,13 @@ class GraphStore:
                 UNWIND $entities AS row
                 MERGE (e:Entity {id: row.id})
                 ON CREATE SET e.name = row.name, e.type = row.type,
-                              e.aliases = row.aliases, e.mentions = 1
-                ON MATCH SET e.mentions = e.mentions + 1,
-                             e.aliases = [x IN e.aliases WHERE NOT x IN row.aliases]
-                                         + row.aliases
+                              e.aliases = row.aliases, e.chunk_ids = [row.chunk_id]
+                ON MATCH SET e.aliases = [x IN e.aliases WHERE NOT x IN row.aliases]
+                                         + row.aliases,
+                             e.chunk_ids = CASE WHEN row.chunk_id IN e.chunk_ids
+                                                 THEN e.chunk_ids
+                                                 ELSE e.chunk_ids + row.chunk_id END
+                SET e.mentions = size(e.chunk_ids)
                 """,
                 entities=entities,
             )
@@ -249,7 +256,7 @@ class GraphStore:
                    c.source_url AS source_url, c.video_title AS video_title,
                    c.upload_date AS upload_date, c.start_seconds AS start_seconds,
                    c.end_seconds AS end_seconds, c.polarity AS polarity
-            ORDER BY coalesce(c.upload_date, '') ASC, c.video_id, c.start_seconds
+            ORDER BY c.upload_date ASC, c.video_id, c.start_seconds
             LIMIT $limit
             """,
             ids=entity_ids,
@@ -341,7 +348,7 @@ class GraphStore:
                    c.source_url AS source_url, c.video_title AS video_title,
                    c.upload_date AS upload_date, c.start_seconds AS start_seconds,
                    c.end_seconds AS end_seconds, c.polarity AS polarity
-            ORDER BY anchored DESC, coalesce(c.upload_date, '') ASC
+            ORDER BY anchored DESC, c.upload_date ASC
             LIMIT $limit
             """,
             id=community_id,
