@@ -148,7 +148,7 @@ def main() -> int:
                 }
                 error = record["entry"].get("error")
                 with write_lock:
-                    configs[setup] = run["config"]
+                    configs[setup] = record["config"]
                     with CHECKPOINT.open("a", encoding="utf-8") as handle:
                         handle.write(json.dumps(record) + "\n")
                     print(
