@@ -81,7 +81,7 @@ Then measure retrieval and validate everything:
 
 ```bash
 uv run python -m src.cli eval-ablation           # retrieval science (free, deterministic)
-uv run pytest -q                                 # 470+ Python tests
+uv run pytest -q                                 # 500+ Python tests
 cd frontend && npm test                          # frontend tests
 ```
 
@@ -91,11 +91,18 @@ cd frontend && npm test                          # frontend tests
   RRF hybrid fusion that *widens* recall, cross-encoder reranking, contextual
   headers, neighbour expansion, channel/video scoping.
 - **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
-  RAG, and a LangGraph ReAct agent — all comparable side by side.
+  RAG, a LangGraph ReAct agent, and a GraphRAG agent over a Neo4j entity/claim
+  knowledge graph — all comparable side by side.
+- **GraphRAG (P4):** per-chunk LLM entity/claim extraction (cached by chunk
+  hash), Leiden communities with up-front summaries, and a router that answers
+  local questions with subgraph + vector evidence, global questions over
+  community summaries, and temporal questions as dated claim timelines.
 - **Evaluation:** a RAGAS judge that derives each score from its own persisted
-  intermediates, a golden set with chunk-level labels, deterministic IR metrics
-  (`recall@k`, `MRR`, `NDCG`), an ablation harness, independent (non-DeepSeek)
-  judging, and committed run snapshots gated in CI.
+  intermediates, a golden set with chunk-level labels plus global/temporal
+  question types, deterministic IR metrics (`recall@k`, `MRR`, `NDCG`), an
+  ablation harness, a head-to-head engine matrix (`eval-matrix`), an
+  extraction-quality check, independent (non-DeepSeek) judging, and committed
+  run snapshots gated in CI.
 
 ---
 
@@ -771,6 +778,72 @@ Summarize one transcript:
 ```bash
 uv run python -m src.cli summarize "$url"
 ```
+
+#### 4b. GraphRAG — the knowledge-graph answer path
+
+GraphRAG (roadmap P4) builds an entity/claim knowledge graph over the indexed
+chunks and answers over it. It needs Neo4j (a docker-compose service) and one
+graph build:
+
+```bash
+docker compose up -d neo4j                       # bolt://localhost:7687, browser UI on :7474
+uv run python -m src.cli index-graph             # extract entities/claims per chunk + Leiden communities + summaries
+uv run python -m src.cli index-graph --refresh   # wipe and rebuild (extraction cache still applies)
+```
+
+Extraction is one DeepSeek call per chunk against a validated JSON contract,
+cached under `.yt-agent/graph_cache/` keyed on chunk id + text hash, so
+re-indexing only re-extracts changed chunks. Every claim carries its source
+chunk id, video, timestamps and `upload_date` — graph answers keep the same
+deep-linkable citations as vector answers, and the temporal layer is just a
+sort on `upload_date`. Communities are detected with Leiden (igraph) and
+summarized up-front (Full GraphRAG — the whole-corpus bill is cents).
+
+Ask through the graph:
+
+```bash
+uv run python -m src.cli rag-ask "$question" --graph_rag
+```
+
+A router call classifies each question and picks the evidence:
+
+| Route | Evidence | Answers |
+|---|---|---|
+| `local` | entity-anchored subgraph claims + the normal vector retrieval | specific facts ("do I keep negative gearing…") |
+| `global` | community summaries + representative dated claims | corpus-wide themes ("what arguments recur…") |
+| `temporal` | the entities' claim timeline ordered by `upload_date` | trend questions ("how did the stance evolve…") |
+
+Configuration: `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD` (defaults match
+`docker-compose.yml`) and `YT_AGENT_GRAPH_CACHE_PATH`. The graph is derived
+state — rebuildable from the corpus at any time.
+
+Check extraction quality against the hand-labelled sample (no LLM calls):
+
+```bash
+uv run python -m src.cli eval-graph-extraction
+```
+
+#### 4c. The head-to-head matrix
+
+Every answer engine — `rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`
+— answers the *same* golden questions and is scored by the *same* pipeline:
+deterministic id/IR metrics where the entry declares expected chunks, the
+RAGAS judge (faithfulness, answer relevancy, context precision) over each
+engine's own retrieved contexts, and reference-based metrics
+(`answer_correctness` against the hand-written reference — the primary verdict
+for `global`/`temporal` questions, which have no expected chunk list).
+
+```bash
+uv run python -m src.cli eval-matrix                 # full judged run (slow: many LLM calls)
+uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics   # deterministic only, fast
+uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag
+```
+
+One run writes a committed `matrix-<timestamp>.json` under `evals/runs/` with
+the per-setup runs plus a comparison pivot (overall and per question type,
+with per-engine latency and context-token columns). The Experiments tab
+renders the newest matrix as an engines × metrics table with a question-type
+switcher.
 
 #### 5. Compare and evaluate
 

@@ -6,16 +6,18 @@ import { ChatView } from './chat/ChatView';
 import { ExperimentsView } from './experiments/ExperimentsView';
 import { Logo } from './Logo';
 import { PipelineView } from './pipeline/PipelineView';
+import { PromptsView } from './prompts/PromptsView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
 
-export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments';
+export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'prompts';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
   { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
   { id: 'experiments', label: 'Experiments' },
+  { id: 'prompts', label: 'Prompts' },
 ];
 
 /** Old #library links stay valid; #pipeline is canonical. */
@@ -169,6 +171,7 @@ export function App() {
         )}
         {tab === 'board' && <ScoreboardView />}
         {tab === 'experiments' && <ExperimentsView />}
+        {tab === 'prompts' && <PromptsView />}
       </main>
     </div>
   );

@@ -388,6 +388,12 @@ def create_app(
 
         return load_experiments()
 
+    @app.get("/api/prompts")
+    def prompts() -> dict:
+        from src.api.prompts import load_prompts
+
+        return load_prompts()
+
     @app.get("/api/history")
     def history() -> dict:
         return {

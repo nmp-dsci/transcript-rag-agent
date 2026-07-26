@@ -14,6 +14,7 @@ import type {
   Health,
   IndexResult,
   IndexStage,
+  Prompts,
   RankMode,
   Rankings,
   Scoreboard,
@@ -67,6 +68,7 @@ export const api = {
     getJson<ChunkList>(`/api/corpus/${encodeURIComponent(videoId)}/chunks`),
 
   experiments: () => getJson<Experiments>('/api/experiments'),
+  prompts: () => getJson<Prompts>('/api/prompts'),
 
   scoreboard: (groupBy: string, judgeModel?: string | null) => {
     const params = new URLSearchParams({ group_by: groupBy });

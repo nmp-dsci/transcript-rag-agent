@@ -93,7 +93,12 @@ def test_ask_flow_invalid_then_valid_setup(settings, tmp_path) -> None:
         index_fn=lambda argv: 0,
     )
 
-    assert runner.calls[0][0] == ["rag_llm", "rag_llm_recursive", "rag_agent"]
+    assert runner.calls[0][0] == [
+        "rag_llm",
+        "rag_llm_recursive",
+        "rag_agent",
+        "graph_rag",
+    ]
 
 
 def test_fetch_single_url_invokes_index(settings, tmp_path) -> None:

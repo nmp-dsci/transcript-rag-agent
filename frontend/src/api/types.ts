@@ -356,6 +356,55 @@ export interface GoldenRunSummary {
 export interface Experiments {
   ablations: AblationRun[];
   golden_runs: GoldenRunSummary[];
+  matrix_runs: MatrixRunSummary[];
+}
+
+/** One head-to-head matrix run (eval-matrix), summarized for the tab. */
+export interface MatrixRunSummary {
+  run_id: string;
+  created_at: string;
+  setups: string[];
+  entry_count: number;
+  judged: boolean;
+  reference_scored: boolean;
+  question_types: Record<string, number>;
+  comparison: {
+    overall: Record<string, Record<string, number>>;
+    by_question_type: Record<string, Record<string, Record<string, number>>>;
+    ops: Record<
+      string,
+      {
+        avg_elapsed_seconds?: number | null;
+        avg_token_estimate?: number | null;
+        answered: number;
+        failed: number;
+      }
+    >;
+  };
+}
+
+/** One prompt from the live registry (GET /api/prompts). */
+export interface PromptEntry {
+  name: string;
+  system: string;
+  role: string;
+  template_vars: string[];
+  text: string;
+  module: string;
+}
+
+export interface PromptSystem {
+  key: string;
+  title: string;
+  description: string;
+  count: number;
+  prompts: PromptEntry[];
+}
+
+export interface Prompts {
+  systems: PromptSystem[];
+  total: number;
+  notes: string[];
 }
 
 /** One stage of an indexing run, streamed by POST /api/index/stream. */

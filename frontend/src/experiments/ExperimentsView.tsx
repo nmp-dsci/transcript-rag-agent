@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '../api/client';
-import type { AblationRun, Experiments, GoldenRunSummary } from '../api/types';
+import type {
+  AblationRun,
+  Experiments,
+  GoldenRunSummary,
+  MatrixRunSummary,
+} from '../api/types';
 import { useExperimentStyles } from './styles';
 
 /** 3-decimal fixed, or an em dash for a metric a run did not report. */
@@ -137,6 +142,112 @@ function AblationTable({ run }: { run: AblationRun }) {
   );
 }
 
+/** The engines × metrics head-to-head, filterable by question type (s05 §06). */
+function MatrixTable({ run }: { run: MatrixRunSummary }) {
+  const types = useMemo(
+    () => ['overall', ...Object.keys(run.comparison.by_question_type ?? {}).sort()],
+    [run],
+  );
+  const [view, setView] = useState('overall');
+  const active = types.includes(view) ? view : 'overall';
+  const rows =
+    active === 'overall'
+      ? (run.comparison.overall ?? {})
+      : (run.comparison.by_question_type?.[active] ?? {});
+  const metrics = Object.keys(rows);
+  const ops = run.comparison.ops ?? {};
+
+  return (
+    <section className="exp-card">
+      <div className="exp-cardhead">
+        <div>
+          <h3>Head-to-head matrix — engines × question types</h3>
+          <span className="exp-sub">
+            {run.run_id} · {run.entry_count} questions ·{' '}
+            {Object.entries(run.question_types)
+              .map(([name, count]) => `${count} ${name}`)
+              .join(' · ')}
+            {run.judged ? ' · RAGAS judged' : ''}
+            {run.reference_scored ? ' · reference scored' : ''}
+          </span>
+        </div>
+        {types.length > 1 && (
+          <div className="exp-seg" role="tablist" aria-label="Question type">
+            {types.map((name) => (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                aria-selected={active === name}
+                className={active === name ? 'on' : ''}
+                onClick={() => setView(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="exp-scroll">
+        <table className="exp-table">
+          <thead>
+            <tr>
+              <th>metric</th>
+              {run.setups.map((setup) => (
+                <th key={setup} className="num">
+                  {setup}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map((metric) => {
+              const cells = rows[metric] ?? {};
+              const values = run.setups
+                .map((setup) => cells[setup])
+                .filter((value): value is number => typeof value === 'number');
+              const best = values.length > 0 ? Math.max(...values) : undefined;
+              return (
+                <tr key={metric}>
+                  <td className="exp-cfg">{metric}</td>
+                  {run.setups.map((setup) => {
+                    const value = cells[setup];
+                    const isBest = typeof value === 'number' && value === best;
+                    return (
+                      <td key={setup} className={`num${isBest ? ' best' : ''}`}>
+                        {fmt(value)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+            <tr>
+              <td className="exp-cfg">avg seconds / answer</td>
+              {run.setups.map((setup) => (
+                <td key={setup} className="num">
+                  {fmt(ops[setup]?.avg_elapsed_seconds ?? undefined)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="exp-cfg">avg context tokens</td>
+              {run.setups.map((setup) => (
+                <td key={setup} className="num">
+                  {typeof ops[setup]?.avg_token_estimate === 'number'
+                    ? Math.round(ops[setup]!.avg_token_estimate as number).toString()
+                    : '—'}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function GoldenRuns({ runs }: { runs: GoldenRunSummary[] }) {
   return (
     <section className="exp-card">
@@ -198,7 +309,12 @@ export function ExperimentsView() {
 
   const ablations = data?.ablations ?? [];
   const goldenRuns = data?.golden_runs ?? [];
-  const nothing = data !== null && ablations.length === 0 && goldenRuns.length === 0;
+  const matrixRuns = data?.matrix_runs ?? [];
+  const nothing =
+    data !== null &&
+    ablations.length === 0 &&
+    goldenRuns.length === 0 &&
+    matrixRuns.length === 0;
 
   return (
     <div className="scrollview">
@@ -218,6 +334,10 @@ export function ExperimentsView() {
             <code>uv run python -m src.cli eval-golden</code>.
           </p>
         )}
+
+        {matrixRuns.map((run) => (
+          <MatrixTable key={run.run_id} run={run} />
+        ))}
 
         {ablations.map((run) => (
           <AblationTable key={run.run_id} run={run} />

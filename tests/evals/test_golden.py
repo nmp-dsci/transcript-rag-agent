@@ -75,8 +75,11 @@ def test_shipped_entries_are_well_formed(shipped: list[GoldenEntry]) -> None:
         assert entry.question.strip(), entry.id
         assert entry.reference_answer.strip(), entry.id
         assert entry.domain in DOMAINS, entry.id
-        assert entry.expected_chunk_ids, entry.id
-        assert entry.expected_video_ids, entry.id
+        # Global/temporal entries have corpus-wide answers: no chunk list is
+        # "the" reference, so their expected id lists are legitimately empty.
+        if entry.question_type == "local":
+            assert entry.expected_chunk_ids, entry.id
+            assert entry.expected_video_ids, entry.id
         for chunk_id in entry.expected_chunk_ids:
             assert CHUNK_ID_PATTERN.match(chunk_id), f"{entry.id}: {chunk_id}"
         videos_from_chunks = {chunk_video_id(c) for c in entry.expected_chunk_ids}

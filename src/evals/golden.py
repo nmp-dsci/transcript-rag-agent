@@ -37,7 +37,14 @@ DEFAULT_DATASET_PATH = Path(__file__).with_name("golden_dataset.json")
 #: Chunk identity as produced by :attr:`src.rag.models.TranscriptChunk.chunk_id`.
 CHUNK_ID_PATTERN = re.compile(r"^chunk:(?P<video_id>[^:]+):(?P<chunk_index>\d+)$")
 
-DOMAINS = ("property", "ai-coding")
+DOMAINS = ("property", "ai-coding", "corpus")
+
+#: How the answer must be assembled, which decides which metrics can apply.
+#: ``local`` answers live in specific chunks, so id-based retrieval metrics
+#: work. ``global``/``temporal`` answers are spread across the corpus — no
+#: chunk list is "the" reference, so those entries may leave the expected-id
+#: lists empty and are scored on answer-level metrics only.
+QUESTION_TYPES = ("local", "global", "temporal")
 
 #: Keys always present in an :func:`evaluate_entry` result. The ``recall@k``,
 #: ``mrr`` and ``ndcg@10`` entries come from :mod:`src.evals.ir_metrics` and, like
@@ -74,6 +81,7 @@ class GoldenEntry(BaseModel):
     expected_video_ids: list[str]
     expected_chunk_ids: list[str]
     domain: str
+    question_type: str = "local"
     notes: str = ""
 
     @field_validator("id", "question", "reference_answer", "domain")
@@ -90,11 +98,16 @@ class GoldenEntry(BaseModel):
             raise ValueError(f"must be one of {DOMAINS}, got {value!r}")
         return value
 
+    @field_validator("question_type")
+    @classmethod
+    def _known_question_type(cls, value: str) -> str:
+        if value not in QUESTION_TYPES:
+            raise ValueError(f"must be one of {QUESTION_TYPES}, got {value!r}")
+        return value
+
     @field_validator("expected_video_ids", "expected_chunk_ids")
     @classmethod
-    def _non_empty_list(cls, value: list[str]) -> list[str]:
-        if not value:
-            raise ValueError("must list at least one id")
+    def _no_duplicates(cls, value: list[str]) -> list[str]:
         if len(set(value)) != len(value):
             raise ValueError("must not contain duplicates")
         return value
@@ -115,7 +128,16 @@ class GoldenEntry(BaseModel):
 
         Catches the two ways this file drifts by hand: adding a chunk from a
         video nobody listed, and listing a video no chunk backs up.
+
+        ``local`` entries must declare expectations — a local question with no
+        expected chunks cannot regress retrieval. ``global``/``temporal``
+        entries may leave both lists empty: their answers are spread across the
+        corpus, so answer-level metrics carry the verdict instead.
         """
+        if self.question_type == "local" and (
+            not self.expected_video_ids or not self.expected_chunk_ids
+        ):
+            raise ValueError("local entries must list expected video and chunk ids")
         from_chunks = {chunk_video_id(chunk_id) for chunk_id in self.expected_chunk_ids}
         declared = set(self.expected_video_ids)
         if from_chunks - declared:
@@ -329,13 +351,27 @@ def evaluate_entry(
     retrieved_video_ids = [
         video_id for video_id in map(chunk_video_id, retrieved_chunk_ids) if video_id
     ]
+    # Id-based metrics only apply where the entry declares expectations. A
+    # global/temporal entry with empty lists gets None, not a free 1.0 — the
+    # recall-of-nothing convention would silently inflate averages.
     scores: dict[str, float | None] = {
-        "context_recall": round(context_recall(retrieved_chunk_ids, entry.expected_chunk_ids), 4),
-        "video_recall": round(video_recall(retrieved_video_ids, entry.expected_video_ids), 4),
+        "context_recall": (
+            round(context_recall(retrieved_chunk_ids, entry.expected_chunk_ids), 4)
+            if entry.expected_chunk_ids
+            else None
+        ),
+        "video_recall": (
+            round(video_recall(retrieved_video_ids, entry.expected_video_ids), 4)
+            if entry.expected_video_ids
+            else None
+        ),
     }
     # Rank-aware IR metrics over the same ids: how well retrieval *ordered* the
     # relevant chunks, not just whether it found them. Deterministic and free.
-    scores.update(entry_ir_metrics(retrieved_chunk_ids, entry.expected_chunk_ids))
+    if entry.expected_chunk_ids:
+        scores.update(entry_ir_metrics(retrieved_chunk_ids, entry.expected_chunk_ids))
+    else:
+        scores.update({name: None for name in IR_METRIC_NAMES})
     for name in ("answer_correctness", "answer_similarity", "llm_context_recall"):
         fn = fns.get(name)
         if fn is None:

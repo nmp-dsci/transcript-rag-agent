@@ -64,6 +64,15 @@ SETUP_SPECS: list[SetupSpec] = [
             "judges it has enough evidence."
         ),
     ),
+    SetupSpec(
+        key="graph_rag",
+        title="graph_rag (knowledge graph)",
+        description=(
+            "GraphRAG (P4): routes local/global/temporal, answers over the "
+            "Neo4j entity/claim graph — plus vector retrieval on local "
+            "questions. Requires index-graph."
+        ),
+    ),
 ]
 
 SETUP_KEYS: list[str] = [spec.key for spec in SETUP_SPECS]
@@ -160,6 +169,7 @@ def command_for(key: str, url: str | None = None) -> str:
         "rag_llm": "--rag_llm",
         "rag_llm_recursive": "--rag_llm --recursive",
         "rag_agent": "--rag_agent",
+        "graph_rag": "--graph_rag",
     }[key]
     return f'uv run python -m src.cli rag-ask "$question" {flags}{url_flag}'
 
@@ -180,6 +190,7 @@ class RagSetupRunner:
         self._provider = provider
         self._rag_llm_agent: RagTranscriptAgent | None = None
         self._rag_agent: RagAgent | None = None
+        self._graph_rag_agent = None  # GraphRagAgent, built lazily (needs Neo4j)
 
     @property
     def provider(self) -> MultiTranscriptRagContextProvider:
@@ -247,6 +258,15 @@ class RagSetupRunner:
             self._rag_agent = RagAgent.from_settings(self._settings, self._provider)
         return self._rag_agent
 
+    def _graph(self):
+        if self._graph_rag_agent is None:
+            from src.agents.graph_agent import GraphRagAgent
+
+            self._graph_rag_agent = GraphRagAgent.from_settings(
+                self._settings, self._provider
+            )
+        return self._graph_rag_agent
+
     def run_many(
         self,
         keys: list[str],
@@ -297,6 +317,22 @@ class RagSetupRunner:
                     top_k=effective_top_k,
                     iterations=agent.last_iteration_count,
                     terminated_reason=agent.last_terminated_reason,
+                    elapsed=time.monotonic() - started,
+                    scope=scope,
+                )
+            if key == "graph_rag":
+                agent = self._graph()
+                answer = agent.answer(
+                    self._request(question, url, effective_top_k, scope)
+                )
+                return self._build_result(
+                    spec,
+                    url,
+                    answer,
+                    agent.last_context,
+                    top_k=effective_top_k,
+                    llm_calls=agent.last_llm_calls,
+                    terminated_reason=agent.last_route,
                     elapsed=time.monotonic() - started,
                     scope=scope,
                 )

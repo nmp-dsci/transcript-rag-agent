@@ -250,6 +250,21 @@ class TranscriptChunkStore:
             )
         return sorted(chunks, key=lambda chunk: chunk.chunk_index)
 
+    def all_chunks(self) -> list[TranscriptChunk]:
+        """Every indexed chunk, in (video_id, chunk_index) order.
+
+        The GraphRAG extraction pass iterates the whole corpus; deterministic
+        order keeps its progress output and cache behaviour reproducible.
+        """
+        result = self.collection.get(include=["documents", "metadatas"])
+        documents = result.get("documents") or []
+        metadatas = result.get("metadatas") or []
+        chunks = [
+            _chunk_from_metadata(meta or {}, documents[index] if index < len(documents) else "")
+            for index, meta in enumerate(metadatas)
+        ]
+        return sorted(chunks, key=lambda chunk: (chunk.video_id, chunk.chunk_index))
+
     def all_embeddings(self) -> list[dict[str, object]]:
         """Every chunk with its embedding, for similarity-graph construction."""
         result = self.collection.get(include=["embeddings", "documents", "metadatas"])

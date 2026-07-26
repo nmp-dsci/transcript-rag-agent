@@ -60,6 +60,7 @@ class EntryResult:
     id: str
     question: str
     domain: str
+    question_type: str = "local"
     answer: str = ""
     error: str | None = None
     scores: dict[str, float | None] = field(default_factory=dict)
@@ -72,6 +73,7 @@ class EntryResult:
             "id": self.id,
             "question": self.question,
             "domain": self.domain,
+            "question_type": self.question_type,
             "answer": self.answer,
             "error": self.error,
             "scores": self.scores,
@@ -106,7 +108,12 @@ def run_golden_eval(
     for index, entry in enumerate(entries, start=1):
         if on_progress is not None:
             on_progress(f"[{index}/{len(entries)}] {entry.id}: {entry.question[:60]}")
-        result = EntryResult(id=entry.id, question=entry.question, domain=entry.domain)
+        result = EntryResult(
+            id=entry.id,
+            question=entry.question,
+            domain=entry.domain,
+            question_type=getattr(entry, "question_type", "local"),
+        )
         try:
             answered = runner.run(setup, entry.question, top_k=top_k, scope=scope)
             if answered.error:

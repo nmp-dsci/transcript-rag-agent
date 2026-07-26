@@ -61,6 +61,13 @@ class Settings:
     judge_model: str | None = None
     judge_api_key: str | None = None
     judge_base_url: str | None = None
+    # GraphRAG (P4) knowledge-graph store. Neo4j runs locally via docker-compose;
+    # the graph is derived from the chunk corpus and rebuildable with index-graph,
+    # so these are conveniences, not secrets worth guarding at load time.
+    neo4j_uri: str = "bolt://localhost:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str = "yt-agent-graph"
+    graph_cache_dir: Path | None = None
 
 
 def _project_root() -> Path:
@@ -213,4 +220,10 @@ def load_settings(require_keys: bool = True) -> Settings:
         judge_model=os.environ.get("YT_AGENT_JUDGE_MODEL") or None,
         judge_api_key=os.environ.get("YT_AGENT_JUDGE_API_KEY") or None,
         judge_base_url=os.environ.get("YT_AGENT_JUDGE_BASE_URL") or None,
+        neo4j_uri=os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+        neo4j_user=os.environ.get("NEO4J_USER", "neo4j"),
+        neo4j_password=os.environ.get("NEO4J_PASSWORD", "yt-agent-graph"),
+        graph_cache_dir=_resolve_project_path(
+            os.environ.get("YT_AGENT_GRAPH_CACHE_PATH", ".yt-agent/graph_cache")
+        ),
     )

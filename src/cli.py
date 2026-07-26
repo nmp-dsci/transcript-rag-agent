@@ -116,7 +116,7 @@ def build_parser() -> argparse.ArgumentParser:
     golden.add_argument(
         "--setup",
         default="rag_llm",
-        choices=["rag_llm", "rag_llm_recursive", "rag_agent"],
+        choices=["rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"],
         help="Which RAG setup answers the golden questions",
     )
     golden.add_argument(
@@ -151,6 +151,66 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Final chunk count each configuration retrieves (default: YT_AGENT_RAG_TOP_K)",
+    )
+
+    matrix = subparsers.add_parser(
+        "eval-matrix",
+        help=(
+            "Head-to-head: every RAG setup answers the same golden questions, "
+            "scored by the same RAGAS + reference metrics (s05 §06)"
+        ),
+    )
+    matrix.add_argument(
+        "--setups",
+        default=None,
+        help="Comma-separated setup keys (default: rag_llm,rag_llm_recursive,rag_agent,graph_rag)",
+    )
+    matrix.add_argument("--top-k", type=int, default=None)
+    matrix.add_argument(
+        "--no-judge",
+        action="store_true",
+        help="Skip the RAGAS judge (faithfulness/relevancy/precision); much faster",
+    )
+    matrix.add_argument(
+        "--no-reference-metrics",
+        action="store_true",
+        help=(
+            "Skip answer_correctness/answer_similarity/llm_context_recall. On by "
+            "default for the matrix: answer_correctness is the primary verdict "
+            "on global/temporal questions"
+        ),
+    )
+
+    index_graph = subparsers.add_parser(
+        "index-graph",
+        help=(
+            "Build the GraphRAG knowledge graph: extract entities/claims per "
+            "chunk (cached by chunk hash), then Leiden communities + summaries"
+        ),
+    )
+    index_graph.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Wipe the graph before rebuilding (extraction cache still applies)",
+    )
+    index_graph.add_argument(
+        "--skip-communities",
+        action="store_true",
+        help="Extraction only; skip community detection and summaries",
+    )
+    index_graph.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help="Only process the first N chunks (smoke-testing)",
+    )
+
+    subparsers.add_parser(
+        "eval-graph-extraction",
+        help=(
+            "Score cached graph extractions against the hand-labelled sample "
+            "(entity/claim recall; no LLM calls)"
+        ),
     )
 
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
@@ -218,6 +278,16 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Use the pipeline RAG agent (rag_llm). This is the default when "
             "neither --rag_llm nor --rag_agent is passed."
+        ),
+    )
+    agent_group.add_argument(
+        "--graph_rag",
+        dest="graph_rag",
+        action="store_true",
+        default=False,
+        help=(
+            "Use the GraphRAG agent (graph_rag): routes local/global/temporal "
+            "and answers over the knowledge graph. Requires index-graph."
         ),
     )
     rag_ask.add_argument(
@@ -321,6 +391,165 @@ def _run_eval_golden(args, settings) -> int:
     return 0
 
 
+def _run_eval_matrix(args, settings) -> int:
+    """Every setup × the same golden questions, one committed comparison run."""
+    from src.chat.setups import RagSetupRunner, SETUP_KEYS
+    from src.evals.golden import answer_correctness_fns
+    from src.evals.judge import RagasJudge
+    from src.evals.matrix import (
+        DEFAULT_MATRIX_SETUPS,
+        format_matrix_table,
+        run_matrix,
+    )
+    from src.evals.regression import save_run
+
+    setups = (
+        [token.strip() for token in args.setups.split(",") if token.strip()]
+        if args.setups
+        else list(DEFAULT_MATRIX_SETUPS)
+    )
+    unknown = [setup for setup in setups if setup not in SETUP_KEYS]
+    if unknown:
+        print(f"Unknown setups: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+
+    runner = RagSetupRunner.from_settings(settings)
+    judge = None if args.no_judge else RagasJudge.from_settings(settings)
+    reference_fns = (
+        None if args.no_reference_metrics else answer_correctness_fns(settings)
+    )
+    result = run_matrix(
+        runner,
+        settings,
+        setups=setups,
+        judge=judge,
+        reference_fns=reference_fns,
+        top_k=args.top_k,
+        on_progress=print,
+    )
+    path = save_run(result)
+    print(f"\n{result['run_id']} — {result['entry_count']} questions × {len(setups)} setups")
+    print(f"question types: {result['question_types']}\n")
+    print(format_matrix_table(result))
+    print(f"\nsaved {path}")
+    return 0
+
+
+def _run_index_graph(args, settings) -> int:
+    """Build the knowledge graph: extraction (cached) → Leiden → summaries."""
+    from langchain_openai import ChatOpenAI
+
+    from src.rag.communities import CommunitySummarizer, build_communities
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.graph_extract import GraphExtractor
+    from src.rag.graph_store import GraphStore
+    from src.rag.storage import TranscriptChunkStore
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    chunk_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    )
+    chunks = chunk_store.all_chunks()
+    if args.max_chunks is not None:
+        chunks = chunks[: args.max_chunks]
+    if not chunks:
+        print("No chunks indexed. Run index-rag / bulk-index first.", file=sys.stderr)
+        return 1
+
+    llm_kwargs: dict[str, object] = {
+        "api_key": settings.deepseek_api_key,
+        "model": settings.deepseek_model,
+    }
+    if settings.deepseek_base_url:
+        llm_kwargs["base_url"] = settings.deepseek_base_url
+    llm = ChatOpenAI(**llm_kwargs)
+
+    store = GraphStore.from_settings(settings)
+    try:
+        store.ensure_schema()
+        if args.refresh:
+            store.wipe()
+            print("Graph wiped.")
+
+        extractor = GraphExtractor(llm, cache_dir=settings.graph_cache_dir)
+        print(f"Extracting {len(chunks)} chunks (cache: {settings.graph_cache_dir}) ...")
+        extractions = extractor.extract_all(chunks, on_progress=print)
+        failed = [x for x in extractions if x.error is not None]
+        for extraction in extractions:
+            if extraction.error is None:
+                store.upsert_extraction(extraction)
+
+        summarized = 0
+        if not args.skip_communities:
+            print("Detecting communities ...")
+            summarized = build_communities(
+                store, CommunitySummarizer(llm), on_progress=print
+            )
+
+        counts = store.counts()
+        print("\nGraph built")
+        print(f"  Entities:    {counts.get('entities', 0)}")
+        print(f"  Relations:   {counts.get('relations', 0)}")
+        print(f"  Claims:      {counts.get('claims', 0)}")
+        print(f"  Communities: {counts.get('communities', 0)} ({summarized} summarized)")
+        print(f"  Chunks:      {len(chunks)} ({len(failed)} extraction failures)")
+        print(f"  Neo4j:       {settings.neo4j_uri}")
+        if failed:
+            print("\nFailed chunks:")
+            for extraction in failed:
+                print(f"  {extraction.chunk_id}: {extraction.error}")
+        return 0
+    finally:
+        store.close()
+
+
+def _run_eval_graph_extraction(settings) -> int:
+    """Score cached extractions against the hand-labelled sample. Cache-only."""
+    from src.evals.graph_extraction import load_labelled, score_all
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.graph_extract import GraphExtractor
+    from src.rag.storage import TranscriptChunkStore
+
+    class _CacheOnly:
+        """Fails extraction for any chunk the cache does not already cover."""
+
+        def invoke(self, messages: list) -> object:
+            raise ValueError("not in extraction cache; run index-graph first")
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    chunk_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    )
+    labelled = load_labelled()
+    wanted = {label.chunk_id for label in labelled}
+    extractor = GraphExtractor(_CacheOnly(), cache_dir=settings.graph_cache_dir)
+    extractions = {
+        chunk.chunk_id: extractor.extract(chunk)
+        for chunk in chunk_store.all_chunks()
+        if chunk.chunk_id in wanted
+    }
+    report = score_all(extractions, labelled)
+    print(
+        f"graph extraction eval — {report['labelled_chunks']} labelled chunks\n"
+        f"  entity_recall  {report['entity_recall']}\n"
+        f"  claim_recall   {report['claim_recall']}"
+    )
+    for result in report["results"]:
+        line = f"  {result['chunk_id']}: entities {result['entity_recall']}"
+        if result["claim_recall"] is not None:
+            line += f", claims {result['claim_recall']}"
+        if result["missed_entities"]:
+            line += f" — missed {result['missed_entities']}"
+        if result["error"]:
+            line += f" — ERROR: {result['error']}"
+        print(line)
+    return 0
+
+
 def _run_eval_ablation(args, settings) -> int:
     """Sweep retrieval configurations over the golden set and snapshot the table.
 
@@ -359,6 +588,12 @@ def main(argv: list[str] | None = None) -> int:
             return _run_eval_golden(args, settings)
         if args.command == "eval-ablation":
             return _run_eval_ablation(args, settings)
+        if args.command == "eval-matrix":
+            return _run_eval_matrix(args, settings)
+        if args.command == "index-graph":
+            return _run_index_graph(args, settings)
+        if args.command == "eval-graph-extraction":
+            return _run_eval_graph_extraction(settings)
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):
@@ -592,6 +827,8 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if args.rag_agent:
                     return _run_rag_agent(args, settings, context_provider, top_k)
+                if args.graph_rag:
+                    return _run_graph_rag_ask(args, settings, context_provider, top_k)
                 agent = RagTranscriptAgent.from_settings(settings, context_provider)
                 filter_top_k = (
                     args.transcript_filter_top_k or settings.transcript_filter_top_k
@@ -697,6 +934,33 @@ _ITERATION_COLORS = (
     "\033[97m",  # bright white  (iteration 6)
 )
 _ANSI_RESET = "\033[0m"
+
+
+def _run_graph_rag_ask(args, settings, context_provider, top_k: int) -> int:
+    """Answer one question with the GraphRAG agent and print route + citations."""
+    from src.agents.graph_agent import GraphRagAgent
+
+    agent = GraphRagAgent.from_settings(settings, context_provider)
+    answer = agent.answer(
+        RagQuestionRequest(
+            question=args.question,
+            source_url=args.url,
+            top_k=top_k,
+        )
+    )
+    if agent.last_context is not None:
+        log_context_details(
+            context_mode=agent.last_context.context_mode,
+            top_k=agent.last_context.top_k,
+            retrieved_chunks=agent.last_context.retrieved_chunks,
+            rag_prompt_tokens_estimate=estimate_tokens(
+                agent.last_context.context_text or ""
+            ),
+        )
+    print(f"Route: {agent.last_route}")
+    print("")
+    print(_format_rag_answer(answer))
+    return 0
 
 
 def _run_rag_agent(args, settings, context_provider, top_k: int) -> int:
