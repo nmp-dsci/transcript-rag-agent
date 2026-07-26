@@ -18,11 +18,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+logger = logging.getLogger(__name__)
 
 from src.config import load_settings  # noqa: E402
 from src.evals.golden import load_golden  # noqa: E402
@@ -80,7 +83,7 @@ def main() -> int:
     )
 
     settings = load_settings()
-    config: dict = {}
+    configs: dict[str, dict] = {}
     if todo:
         import time
         from concurrent.futures import ThreadPoolExecutor
@@ -103,21 +106,40 @@ def main() -> int:
             sequentially in the main thread first — concurrent Chroma client
             construction against one path races in the rust bindings.
             """
-            nonlocal config, timed_out
+            nonlocal timed_out
             runner, judge, reference_fns = stack
             for entry in queue:
                 if args.max_seconds is not None and time.monotonic() - started > args.max_seconds:
                     timed_out = True
                     return
-                run = run_golden_eval(
-                    runner,
-                    settings,
-                    setup=setup,
-                    judge=judge,
-                    reference_fns=reference_fns,
-                    entries=[entry],
-                )
-                record = {"setup": setup, "config": run["config"], "entry": run["entries"][0]}
+                try:
+                    run = run_golden_eval(
+                        runner,
+                        settings,
+                        setup=setup,
+                        judge=judge,
+                        reference_fns=reference_fns,
+                        entries=[entry],
+                    )
+                    record = {"setup": setup, "config": run["config"], "entry": run["entries"][0]}
+                except Exception as exc:  # noqa: BLE001 - one bad cell must not drop the queue
+                    logger.warning("cell %s x %s failed: %s", setup, entry.id, exc)
+                    record = {
+                        "setup": setup,
+                        "config": {},
+                        "entry": {
+                            "id": entry.id,
+                            "question": entry.question,
+                            "domain": entry.domain,
+                            "question_type": getattr(entry, "question_type", "local"),
+                            "answer": "",
+                            "error": str(exc),
+                            "scores": {},
+                            "retrieved_chunk_ids": [],
+                            "elapsed_seconds": 0.0,
+                            "token_estimate": 0,
+                        },
+                    }
                 scores = record["entry"]["scores"]
                 headline = {
                     key: scores.get(key)
@@ -126,7 +148,7 @@ def main() -> int:
                 }
                 error = record["entry"].get("error")
                 with write_lock:
-                    config = run["config"]
+                    configs[setup] = run["config"]
                     with CHECKPOINT.open("a", encoding="utf-8") as handle:
                         handle.write(json.dumps(record) + "\n")
                     print(
@@ -169,7 +191,9 @@ def main() -> int:
         setup_entries = [
             cells[(setup, entry.id)]["entry"] for entry in entries if (setup, entry.id) in cells
         ]
-        config = config or next((cells[key]["config"] for key in cells if key[0] == setup), {})
+        config = configs.get(setup) or next(
+            (cells[key]["config"] for key in cells if key[0] == setup), {}
+        )
         results = [
             EntryResult(
                 id=e["id"],

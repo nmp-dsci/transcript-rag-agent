@@ -169,6 +169,16 @@ class GraphExtractor:
         for attempt in range(2):
             try:
                 response = self.llm.invoke(messages)
+            except Exception as exc:  # noqa: BLE001 - one bad chunk must not abort the backfill
+                last_error = str(exc)
+                logger.warning(
+                    "extraction call failed for %s (attempt %s): %s",
+                    chunk.chunk_id,
+                    attempt + 1,
+                    exc,
+                )
+                continue
+            try:
                 content = str(getattr(response, "content", response) or "")
                 return stamp_provenance(parse_extraction(content), chunk)
             except ValueError as exc:
@@ -189,7 +199,7 @@ class GraphExtractor:
                         )
                     ),
                 ]
-        failed = ChunkExtraction(error=f"unparseable after retry: {last_error}")
+        failed = ChunkExtraction(error=f"extraction failed after retry: {last_error}")
         return stamp_provenance(failed, chunk)
 
     # ── cache ─────────────────────────────────────────────────────────────

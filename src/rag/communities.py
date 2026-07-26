@@ -35,6 +35,8 @@ def detect_communities(nodes: list[str], edges: list[tuple[str, str, float]]) ->
     """
     if not nodes:
         return {}
+    import random
+
     import igraph
 
     index_of = {node: index for index, node in enumerate(nodes)}
@@ -48,6 +50,9 @@ def detect_communities(nodes: list[str], edges: list[tuple[str, str, float]]) ->
         weight for source, target, weight in edges if source in index_of and target in index_of
     ]
     graph.add_edges(edge_pairs)
+    # A fixed seed keeps community assignments (and their downstream LLM
+    # summaries) stable across re-runs of an unchanged corpus.
+    random.seed(0)
     clustering = graph.community_leiden(
         objective_function="modularity",
         weights=weights or None,

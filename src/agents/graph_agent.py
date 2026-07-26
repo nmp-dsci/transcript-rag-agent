@@ -34,6 +34,7 @@ from src.agents.models import (
 from src.agents.prompts import (
     GRAPH_ANSWER_SYSTEM_PROMPT,
     GRAPH_GLOBAL_SYSTEM_PROMPT,
+    GRAPH_ROUTER_SYSTEM_PROMPT,
     GRAPH_TEMPORAL_SYSTEM_PROMPT,
     build_graph_router_prompt,
 )
@@ -129,7 +130,9 @@ class GraphRagAgent:
         """Classify the question and name its entities; degrade to local."""
         self.last_llm_calls += 1
         try:
-            response = self.llm.invoke([_human(build_graph_router_prompt(question))])
+            response = self.llm.invoke(
+                [_system(GRAPH_ROUTER_SYSTEM_PROMPT), _human(build_graph_router_prompt(question))]
+            )
             data = _json_object(str(getattr(response, "content", response) or ""))
             route = str(data.get("route", "local")).strip().lower()
             entities = [
