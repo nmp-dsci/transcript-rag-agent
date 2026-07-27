@@ -382,17 +382,25 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   below. The tree itself (all videos → channel → video → chunks) has a sort
   control for "top" ordering by views, recency, chunk count, or title.
   Expanding a video lazily loads its chunks; selecting one shows its full
-  text, timestamp range, segment span, and a deep link into the video at that
-  moment. The **Retrieval Lab** at the top ranks the corpus for any query with
-  **BM25, semantic, or both side by side** — aligned rows show each chunk's
-  rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap count,
-  which is the fastest way to see where keyword and embedding retrieval
-  disagree. Indexing lives in a panel here as a **queue**: adding a video or
+  text, timestamp range, segment span, a deep link into the video at that
+  moment, and — beside the chunk — the entities and dated claims GraphRAG
+  extracted from it, so a reviewer can see what the graph made of a chunk
+  next to the chunk itself. The **Retrieval Lab** at the top ranks the corpus
+  for any query with **semantic, BM25, and/or graph side by side**; aligned
+  rows show each chunk's rank in the other modes (`↑2`, `↓1`, `only here`)
+  plus an overlap count, which is the fastest way to see where keyword,
+  embedding, and graph retrieval disagree — a mode that cannot run (e.g. Neo4j
+  unreachable) reports "unavailable" instead of failing the whole comparison.
+  Indexing lives in a panel here as a **queue**: adding a video or
   channel never locks the form, so several can be queued back to back — each
   job runs to completion in submission order (one worker, so a channel run
   never contends with itself), and every job's live stage is visible in the
   queue list at once, across every open browser tab, via
-  `GET /api/index/queue/stream`. **Chunk graph** renders a
+  `GET /api/index/queue/stream`. A job's graph extraction stage runs
+  automatically after its vector index succeeds, keeping the knowledge graph
+  current for newly indexed videos without a manual `index-graph` pass;
+  extraction failure is enrichment-only and is reported in that job's result
+  without failing the (already-successful) vector index. **Chunk graph** renders a
   kNN similarity graph of every chunk embedding as an SVG force-style layout,
   colour-coded by channel; typing a query highlights its retrieval
   neighbourhood in place, which is the fastest way to see whether the corpus
@@ -1026,11 +1034,12 @@ scripts/         # One-off maintenance (chunk-metadata backfill), the golden-can
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
-  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
-  src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries
-  src/prompts/   # Prompts tab: live prompt registry grouped by system
-  src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
-  src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
+  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score strip
+  src/design/    # System Design tab: click-through node graph of prompts + live config
+  src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
+  src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries + the Run eval matrix trigger
+  src/pipeline/  # Corpus tree, chunk detail (+ per-chunk graph enrichment), Retrieval Lab, knowledge graph, indexing panel, chunk graph
+  src/scoreboard/# Run picker, grouped aggregates, provenance bar, efficiency panel
 tests/
 ```
 
