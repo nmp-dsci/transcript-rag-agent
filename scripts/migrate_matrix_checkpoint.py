@@ -94,8 +94,13 @@ def migrate(
         # Compare only the fields the checkpoint actually recorded. Config has
         # gained keys since (``ragas_version``), and a key the old format never
         # wrote is not evidence of a different configuration — a key it wrote
-        # with a different value is.
-        recorded = row.get("config") or {}
+        # with a different value is. But a row that recorded no config at all
+        # gives us nothing to vouch for, so treat that as unverifiable rather
+        # than an automatic match.
+        recorded = row.get("config")
+        if not recorded:
+            counts["config_mismatch"] += 1
+            continue
         if any(expected_config.get(key) != value for key, value in recorded.items()):
             counts["config_mismatch"] += 1
             continue

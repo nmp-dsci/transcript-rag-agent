@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api/client";
 import type {
@@ -151,15 +151,24 @@ export function KnowledgeGraphView() {
     (community) => community.id === selectedNode?.community_id,
   );
 
+  const detailRequestRef = useRef(0);
+
   const pick = (id: string) => {
+    const requestId = ++detailRequestRef.current;
     setSelectedId(id);
     setDetail(null);
     setDetailLoading(true);
     void api
       .knowledgeGraphEntity(id)
-      .then(setDetail)
-      .catch(() => setDetail(null))
-      .finally(() => setDetailLoading(false));
+      .then((result) => {
+        if (detailRequestRef.current === requestId) setDetail(result);
+      })
+      .catch(() => {
+        if (detailRequestRef.current === requestId) setDetail(null);
+      })
+      .finally(() => {
+        if (detailRequestRef.current === requestId) setDetailLoading(false);
+      });
   };
 
   if (error) {
