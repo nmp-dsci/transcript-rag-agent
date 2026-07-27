@@ -134,9 +134,7 @@ def test_fetch_bulk_channel_invokes_index(settings, tmp_path) -> None:
         index_fn=lambda argv: invoked.append(argv) or 0,
     )
 
-    assert invoked == [
-        ["bulk-index", "channel", "--channel", "@channel", "--latest", "5"]
-    ]
+    assert invoked == [["bulk-index", "channel", "--channel", "@channel", "--latest", "5"]]
 
 
 def test_quit_immediately_returns_zero(settings, tmp_path) -> None:

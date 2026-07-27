@@ -31,7 +31,9 @@ def rankings(semantic_hits, modes=("semantic", "bm25"), query="capital gains tax
 
 def test_aligns_ranks_across_modes() -> None:
     # Semantic prefers chunk 2; BM25 (term frequency) will order differently.
-    result = rankings([record(2, CORPUS[2]["text"], score=0.9), record(0, CORPUS[0]["text"], score=0.5)])
+    result = rankings(
+        [record(2, CORPUS[2]["text"], score=0.9), record(0, CORPUS[0]["text"], score=0.5)]
+    )
 
     semantic = result["modes"]["semantic"]
     keyword = result["modes"]["bm25"]

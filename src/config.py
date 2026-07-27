@@ -157,26 +157,19 @@ def load_settings(require_keys: bool = True) -> Settings:
         superdata_api_key=superdata_api_key,
         deepseek_api_key=deepseek_api_key,
         deepseek_model=api_model,
-        deepseek_base_url=os.environ.get("DEEPSEEK_BASE_URL")
-        or "https://api.deepseek.com",
+        deepseek_base_url=os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com",
         chroma_path=_resolve_project_path(
             os.environ.get("YT_AGENT_CHROMA_PATH", ".yt-agent/chroma")
         ),
-        mlflow_tracking_uri=os.environ.get(
-            "MLFLOW_TRACKING_URI", "file:.yt-agent/mlruns"
-        ),
-        mlflow_experiment_name=os.environ.get(
-            "MLFLOW_EXPERIMENT_NAME", "yt-agent-v1"
-        ),
+        mlflow_tracking_uri=os.environ.get("MLFLOW_TRACKING_URI", "file:.yt-agent/mlruns"),
+        mlflow_experiment_name=os.environ.get("MLFLOW_EXPERIMENT_NAME", "yt-agent-v1"),
         log_transcript_artifacts=_bool_env(
             os.environ.get("YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS"), default=False
         ),
         raw_transcript_collection=os.environ.get(
             "YT_AGENT_RAW_TRANSCRIPT_COLLECTION", "raw_transcripts"
         ),
-        chunk_collection=os.environ.get(
-            "YT_AGENT_CHUNK_COLLECTION", "transcript_chunks"
-        ),
+        chunk_collection=os.environ.get("YT_AGENT_CHUNK_COLLECTION", "transcript_chunks"),
         transcript_summary_collection=os.environ.get(
             "YT_AGENT_TRANSCRIPT_SUMMARY_COLLECTION", "transcript_summaries"
         ),
@@ -185,9 +178,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         ),
         rag_top_k=_int_env("YT_AGENT_RAG_TOP_K", 10),
         transcript_filter_top_k=_int_env("YT_AGENT_TRANSCRIPT_FILTER_TOP_K", 5),
-        transcript_filter_min_score=_float_env(
-            "YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE", 0.25
-        ),
+        transcript_filter_min_score=_float_env("YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE", 0.25),
         rag_recursive_default=_bool_env(
             os.environ.get("YT_AGENT_RAG_RECURSIVE_DEFAULT"), default=False
         ),
@@ -201,22 +192,16 @@ def load_settings(require_keys: bool = True) -> Settings:
         chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
         retrieval_mode=_retrieval_mode_env("YT_AGENT_RETRIEVAL_MODE", "semantic"),
         retrieval_candidates=_int_env("YT_AGENT_RETRIEVAL_CANDIDATES", 30),
-        rerank_enabled=_bool_env(
-            os.environ.get("YT_AGENT_RERANK_ENABLED"), default=True
-        ),
+        rerank_enabled=_bool_env(os.environ.get("YT_AGENT_RERANK_ENABLED"), default=True),
         rerank_model=os.environ.get(
             "YT_AGENT_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
         ),
         neighbor_span=_int_env("YT_AGENT_NEIGHBOR_SPAN", 0),
         judge_samples=_int_env("YT_AGENT_JUDGE_SAMPLES", 1),
         supadata_timeout_seconds=_float_env("SUPADATA_TIMEOUT_SECONDS", 120.0),
-        supadata_poll_interval_seconds=_float_env(
-            "SUPADATA_POLL_INTERVAL_SECONDS", 2.0
-        ),
+        supadata_poll_interval_seconds=_float_env("SUPADATA_POLL_INTERVAL_SECONDS", 2.0),
         supadata_max_poll_seconds=_float_env("SUPADATA_MAX_POLL_SECONDS", 600.0),
-        discovery_cache_ttl_hours=_float_env(
-            "YT_AGENT_DISCOVERY_CACHE_TTL_HOURS", 24.0
-        ),
+        discovery_cache_ttl_hours=_float_env("YT_AGENT_DISCOVERY_CACHE_TTL_HOURS", 24.0),
         judge_model=os.environ.get("YT_AGENT_JUDGE_MODEL") or None,
         judge_api_key=os.environ.get("YT_AGENT_JUDGE_API_KEY") or None,
         judge_base_url=os.environ.get("YT_AGENT_JUDGE_BASE_URL") or None,

@@ -151,6 +151,7 @@ def test_router_failure_degrades_to_local() -> None:
     agent.answer(RagQuestionRequest(question="Anything?"))
     assert agent.last_route == "local"
 
+
 def test_resolution_falls_back_to_content_words() -> None:
     class PhraseBlindStore(FakeStore):
         """Matches single words only, like CONTAINS against short entity names."""

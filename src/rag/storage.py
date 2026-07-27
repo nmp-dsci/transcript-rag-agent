@@ -8,7 +8,12 @@ import chromadb
 from pydantic import HttpUrl, ValidationError
 
 from src.rag.embeddings import EmbeddingModel
-from src.rag.models import RawTranscriptDocument, RawTranscriptSegment, RetrievedChunk, TranscriptChunk
+from src.rag.models import (
+    RawTranscriptDocument,
+    RawTranscriptSegment,
+    RetrievedChunk,
+    TranscriptChunk,
+)
 from src.transcripts.fetcher import SuperdataTranscriptFetcher
 from src.transcripts.models import Transcript
 from src.transcripts.youtube import extract_video_id
@@ -65,13 +70,10 @@ class RawTranscriptStore:
             view_count=_int_or_none(metadata.get("view_count")),
             like_count=_int_or_none(metadata.get("like_count")),
             tags=[str(tag) for tag in body.get("tags", [])],
-            transcript_languages=[
-                str(lang) for lang in body.get("transcript_languages", [])
-            ],
+            transcript_languages=[str(lang) for lang in body.get("transcript_languages", [])],
             language=_none_if_empty(metadata.get("language")),
             segments=[
-                RawTranscriptSegment.model_validate(segment)
-                for segment in body.get("segments", [])
+                RawTranscriptSegment.model_validate(segment) for segment in body.get("segments", [])
             ],
             fetched_at=str(metadata.get("fetched_at", _now_iso())),
             source_collection=str(metadata.get("source_collection", self.collection_name)),
@@ -79,9 +81,7 @@ class RawTranscriptStore:
             summary_model=_none_if_empty(metadata.get("summary_model")),
             summary_generated_at=_none_if_empty(metadata.get("summary_generated_at")),
             summary_embedding=body.get("summary_embedding"),
-            summary_embedding_model=_none_if_empty(
-                metadata.get("summary_embedding_model")
-            ),
+            summary_embedding_model=_none_if_empty(metadata.get("summary_embedding_model")),
             summary_embedded_at=_none_if_empty(metadata.get("summary_embedded_at")),
         )
 
@@ -172,14 +172,10 @@ class TranscriptChunkStore:
     def query_all(self, query: str, top_k: int) -> list[RetrievedChunk]:
         return self._query(query=query, top_k=top_k, where=None)
 
-    def query_by_url(
-        self, source_url: str, query: str, top_k: int
-    ) -> list[RetrievedChunk]:
+    def query_by_url(self, source_url: str, query: str, top_k: int) -> list[RetrievedChunk]:
         return self.query_by_video_id(extract_video_id(source_url), query, top_k)
 
-    def query_by_video_id(
-        self, video_id: str, query: str, top_k: int
-    ) -> list[RetrievedChunk]:
+    def query_by_video_id(self, video_id: str, query: str, top_k: int) -> list[RetrievedChunk]:
         return self._query(query=query, top_k=top_k, where={"video_id": video_id})
 
     def query_by_video_ids(
@@ -196,9 +192,7 @@ class TranscriptChunkStore:
             reverse=True,
         )[:top_k]
 
-    def query_by_channel(
-        self, channel_id: str, query: str, top_k: int
-    ) -> list[RetrievedChunk]:
+    def query_by_channel(self, channel_id: str, query: str, top_k: int) -> list[RetrievedChunk]:
         """Retrieve across every chunk belonging to one channel.
 
         A native Chroma metadata filter, which is why chunks carry channel
@@ -209,9 +203,7 @@ class TranscriptChunkStore:
 
     def channel_video_ids(self, channel_id: str) -> list[str]:
         """The video ids whose chunks are tagged with this channel."""
-        result = self.collection.get(
-            where={"channel_id": channel_id}, include=["metadatas"]
-        )
+        result = self.collection.get(where={"channel_id": channel_id}, include=["metadatas"])
         seen: dict[str, None] = {}
         for meta in result.get("metadatas") or []:
             video_id = str((meta or {}).get("video_id", ""))
@@ -244,9 +236,7 @@ class TranscriptChunkStore:
         for index, meta in enumerate(metadatas):
             meta = meta or {}
             chunks.append(
-                _chunk_from_metadata(
-                    meta, documents[index] if index < len(documents) else ""
-                )
+                _chunk_from_metadata(meta, documents[index] if index < len(documents) else "")
             )
         return sorted(chunks, key=lambda chunk: chunk.chunk_index)
 
@@ -395,7 +385,9 @@ def raw_document_from_transcript(
         for segment in transcript.segments
     ]
     if not segments and transcript.raw_text:
-        segments.append(RawTranscriptSegment(text=transcript.raw_text, language=transcript.language))
+        segments.append(
+            RawTranscriptSegment(text=transcript.raw_text, language=transcript.language)
+        )
     return RawTranscriptDocument(
         transcript_id=_raw_transcript_id(transcript.video_id),
         video_id=transcript.video_id,
@@ -438,9 +430,7 @@ def transcript_from_raw_document(document: RawTranscriptDocument) -> Transcript:
         language=document.language,
         provider=document.provider,
         raw_text=" ".join(segment.text for segment in document.segments).strip(),
-        segments=[
-            _transcript_segment_from_raw(segment) for segment in document.segments
-        ],
+        segments=[_transcript_segment_from_raw(segment) for segment in document.segments],
         fetched_at=fetched_at,
     )
 
@@ -581,9 +571,7 @@ def _raw_document_with_metadata(
     author = metadata.get("author") if isinstance(metadata.get("author"), dict) else {}
     media = metadata.get("media") if isinstance(metadata.get("media"), dict) else {}
     additional = (
-        metadata.get("additionalData")
-        if isinstance(metadata.get("additionalData"), dict)
-        else {}
+        metadata.get("additionalData") if isinstance(metadata.get("additionalData"), dict) else {}
     )
     tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
     transcript_languages = (
@@ -596,24 +584,18 @@ def _raw_document_with_metadata(
     return document.model_copy(
         update={
             "title": _none_if_empty(metadata.get("title")) or document.title,
-            "description": _none_if_empty(metadata.get("description"))
-            or document.description,
+            "description": _none_if_empty(metadata.get("description")) or document.description,
             "channel_id": _none_if_empty(additional.get("channelId"))
             or _none_if_empty(author.get("id"))
             or document.channel_id,
             "channel_name": _none_if_empty(author.get("displayName"))
             or _none_if_empty(author.get("username"))
             or document.channel_name,
-            "duration_seconds": _float_or_none(media.get("duration"))
-            or document.duration_seconds,
-            "thumbnail_url": _http_url_or_none(media.get("thumbnailUrl"))
-            or document.thumbnail_url,
-            "upload_date": _none_if_empty(metadata.get("createdAt"))
-            or document.upload_date,
-            "view_count": _int_or_none(_nested(metadata, "stats", "views"))
-            or document.view_count,
-            "like_count": _int_or_none(_nested(metadata, "stats", "likes"))
-            or document.like_count,
+            "duration_seconds": _float_or_none(media.get("duration")) or document.duration_seconds,
+            "thumbnail_url": _http_url_or_none(media.get("thumbnailUrl")) or document.thumbnail_url,
+            "upload_date": _none_if_empty(metadata.get("createdAt")) or document.upload_date,
+            "view_count": _int_or_none(_nested(metadata, "stats", "views")) or document.view_count,
+            "like_count": _int_or_none(_nested(metadata, "stats", "likes")) or document.like_count,
             "tags": [str(tag) for tag in tags] or document.tags,
             "transcript_languages": [str(lang) for lang in transcript_languages]
             or document.transcript_languages,

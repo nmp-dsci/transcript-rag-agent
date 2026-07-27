@@ -44,16 +44,13 @@ SETUP_SPECS: list[SetupSpec] = [
     SetupSpec(
         key="rag_llm",
         title="rag_llm (single-hop)",
-        description=(
-            "One retrieval across all indexed transcripts, then a single LLM answer."
-        ),
+        description=("One retrieval across all indexed transcripts, then a single LLM answer."),
     ),
     SetupSpec(
         key="rag_llm_recursive",
         title="rag_llm (recursive)",
         description=(
-            "Multi-hop retrieval: follow-up queries fan out, then a final "
-            "synthesis call."
+            "Multi-hop retrieval: follow-up queries fan out, then a final synthesis call."
         ),
     ),
     SetupSpec(
@@ -248,9 +245,7 @@ class RagSetupRunner:
 
     def _rag_llm(self) -> RagTranscriptAgent:
         if self._rag_llm_agent is None:
-            self._rag_llm_agent = RagTranscriptAgent.from_settings(
-                self._settings, self._provider
-            )
+            self._rag_llm_agent = RagTranscriptAgent.from_settings(self._settings, self._provider)
         return self._rag_llm_agent
 
     def _agentic(self) -> RagAgent:
@@ -262,9 +257,7 @@ class RagSetupRunner:
         if self._graph_rag_agent is None:
             from src.agents.graph_agent import GraphRagAgent
 
-            self._graph_rag_agent = GraphRagAgent.from_settings(
-                self._settings, self._provider
-            )
+            self._graph_rag_agent = GraphRagAgent.from_settings(self._settings, self._provider)
         return self._graph_rag_agent
 
     def run_many(
@@ -322,9 +315,7 @@ class RagSetupRunner:
                 )
             if key == "graph_rag":
                 agent = self._graph()
-                answer = agent.answer(
-                    self._request(question, url, effective_top_k, scope)
-                )
+                answer = agent.answer(self._request(question, url, effective_top_k, scope))
                 return self._build_result(
                     spec,
                     url,
@@ -336,9 +327,7 @@ class RagSetupRunner:
                     elapsed=time.monotonic() - started,
                     scope=scope,
                 )
-            answer, agent, llm_calls = self._run_rag_llm(
-                key, question, url, effective_top_k, scope
-            )
+            answer, agent, llm_calls = self._run_rag_llm(key, question, url, effective_top_k, scope)
             return self._build_result(
                 spec,
                 url,
@@ -400,9 +389,7 @@ class RagSetupRunner:
             )
             answer = agent.answer(request)
             recursion = answer.recursion
-            llm_calls = (
-                sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
-            )
+            llm_calls = sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
             return answer, agent, llm_calls
         return agent.answer(self._request(question, url, top_k, scope)), agent, 1
 

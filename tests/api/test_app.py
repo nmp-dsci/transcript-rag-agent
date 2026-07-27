@@ -226,9 +226,7 @@ class Harness:
     def seed_matrix_run(self, data: dict) -> None:
         """Commit a matrix run for the Scoreboard/Experiments tabs to read."""
         self.runs_dir.mkdir(parents=True, exist_ok=True)
-        (self.runs_dir / f"{data['run_id']}.json").write_text(
-            json.dumps(data), encoding="utf-8"
-        )
+        (self.runs_dir / f"{data['run_id']}.json").write_text(json.dumps(data), encoding="utf-8")
 
 
 @pytest.fixture
@@ -677,9 +675,7 @@ def test_scoreboard_is_empty_without_any_committed_run(harness: Harness) -> None
 
 
 def test_scoreboard_lists_runs_and_selects_one_by_id(harness: Harness) -> None:
-    harness.seed_matrix_run(
-        matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00")
-    )
+    harness.seed_matrix_run(matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00"))
     harness.seed_matrix_run(
         matrix_run(
             "matrix-newer",
@@ -781,7 +777,9 @@ def test_scoreboard_judge_filter_keeps_answers_count(harness: Harness) -> None:
     assert filtered_row["judged"] == 0
 
 
-def test_eval_matrix_endpoint_starts_a_run_and_reports_it(tmp_path: Path, settings: Settings) -> None:
+def test_eval_matrix_endpoint_starts_a_run_and_reports_it(
+    tmp_path: Path, settings: Settings
+) -> None:
     calls: list[list[str]] = []
 
     def matrix_run_fn(setups, on_cell):
@@ -833,9 +831,7 @@ def test_eval_matrix_defaults_to_every_setup_in_the_matrix(
         index_fn=lambda argv: 0,
         frontend_dist=tmp_path / "no-bundle",
         runs_dir=tmp_path / "runs",
-        matrix_run_fn=lambda setups, on_cell: (
-            calls.append(setups) or {"run_id": "matrix-all"}
-        ),
+        matrix_run_fn=lambda setups, on_cell: calls.append(setups) or {"run_id": "matrix-all"},
     )
     client = TestClient(app)
     client.post("/api/eval/matrix", json={})
@@ -1015,10 +1011,14 @@ def test_rank_reports_an_unreachable_graph_without_losing_the_other_modes(
         graph_store_factory=lambda: BrokenGraphStore(),
     )
 
-    payload = TestClient(app).post(
-        "/api/rank",
-        json={"query": "capital gains tax", "modes": ["bm25", "graph"], "top_k": 5},
-    ).json()
+    payload = (
+        TestClient(app)
+        .post(
+            "/api/rank",
+            json={"query": "capital gains tax", "modes": ["bm25", "graph"], "top_k": 5},
+        )
+        .json()
+    )
 
     # The query still succeeds and BM25 still ranks — but the graph column says
     # why it is empty instead of passing for "nothing matched".
