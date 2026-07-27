@@ -37,7 +37,10 @@ DEFAULT_DATASET_PATH = Path(__file__).with_name("golden_dataset.json")
 #: Chunk identity as produced by :attr:`src.rag.models.TranscriptChunk.chunk_id`.
 CHUNK_ID_PATTERN = re.compile(r"^chunk:(?P<video_id>[^:]+):(?P<chunk_index>\d+)$")
 
-DOMAINS = ("property", "ai-coding", "corpus")
+#: Content segments the corpus covers. Reported separately so a headline
+#: number is never an average hiding a segment that fails. ``corpus`` is for
+#: questions about the whole library rather than any one segment.
+DOMAINS = ("property", "ai-coding", "career", "corpus")
 
 #: How the answer must be assembled, which decides which metrics can apply.
 #: ``local`` answers live in specific chunks, so id-based retrieval metrics

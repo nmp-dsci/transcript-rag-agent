@@ -265,6 +265,27 @@ class TranscriptChunkStore:
         ]
         return sorted(chunks, key=lambda chunk: (chunk.video_id, chunk.chunk_index))
 
+    def chunks_for_videos(self, video_ids: list[str]) -> list[TranscriptChunk]:
+        """Every chunk belonging to any of ``video_ids``, in chunk-index order.
+
+        The GraphRAG extraction hook only has just-added videos to catch up,
+        not the whole corpus — this scopes the fetch instead of filtering
+        :meth:`all_chunks` in Python, which would load every chunk's metadata
+        just to discard most of it as the corpus grows.
+        """
+        if not video_ids:
+            return []
+        result = self.collection.get(
+            where={"video_id": {"$in": video_ids}}, include=["documents", "metadatas"]
+        )
+        documents = result.get("documents") or []
+        metadatas = result.get("metadatas") or []
+        chunks = [
+            _chunk_from_metadata(meta or {}, documents[index] if index < len(documents) else "")
+            for index, meta in enumerate(metadatas)
+        ]
+        return sorted(chunks, key=lambda chunk: (chunk.video_id, chunk.chunk_index))
+
     def all_embeddings(self) -> list[dict[str, object]]:
         """Every chunk with its embedding, for similarity-graph construction."""
         result = self.collection.get(include=["embeddings", "documents", "metadatas"])

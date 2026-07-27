@@ -11,7 +11,15 @@ import type {
 import { ExperimentsView } from './ExperimentsView';
 
 const experiments = vi.fn();
-vi.mock('../api/client', () => ({ api: { experiments: () => experiments() } }));
+vi.mock('../api/client', () => ({
+  api: {
+    experiments: () => experiments(),
+    // The run panel opens a persistent stream that never resolves, exactly as
+    // the real endpoint behaves; the view must render without waiting on it.
+    subscribeMatrixRun: () => new Promise<void>(() => undefined),
+    startMatrixRun: () => Promise.resolve(null),
+  },
+}));
 
 function ablation(overrides: Partial<AblationRun> = {}): AblationRun {
   return {

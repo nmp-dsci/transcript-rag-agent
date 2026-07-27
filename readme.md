@@ -350,7 +350,7 @@ legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
 Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
-`#library` links still resolve):
+`#library` and `#prompts` links still resolve):
 
 - **Chat** — the landing tab. Type a question and it is answered in a
   conversation thread with citations back to source timestamps. The default
@@ -387,39 +387,69 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   **BM25, semantic, or both side by side** — aligned rows show each chunk's
   rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap count,
   which is the fastest way to see where keyword and embedding retrieval
-  disagree. Indexing (single video or latest-N channel) lives in a panel here
-  and streams live per-stage progress (discover → fetch → chunk → embed →
-  summarize) instead of reporting only at the end. **Chunk graph** renders a
+  disagree. Indexing lives in a panel here as a **queue**: adding a video or
+  channel never locks the form, so several can be queued back to back — each
+  job runs to completion in submission order (one worker, so a channel run
+  never contends with itself), and every job's live stage is visible in the
+  queue list at once, across every open browser tab, via
+  `GET /api/index/queue/stream`. **Chunk graph** renders a
   kNN similarity graph of every chunk embedding as an SVG force-style layout,
   colour-coded by channel; typing a query highlights its retrieval
   neighbourhood in place, which is the fastest way to see whether the corpus
-  actually clusters around what a question is asking.
-- **Scoreboard** — per-setup aggregates across everything judged, groupable by
+  actually clusters around what a question is asking. **Knowledge graph**
+  gives GraphRAG's Neo4j entity/claim graph the same treatment — the graph
+  `graph_rag` actually reasons over is otherwise invisible from this tab, the
+  same way the raw chunk-similarity plot would be without Chunk graph. Nodes
+  are entities, laid out by Fruchterman-Reingold over the same weighted graph
+  (RELATES + co-mention) Leiden clusters — colour-coded by community, sized
+  by mention count. Clicking an entity opens its community's LLM summary,
+  aliases, and every dated claim extracted about it, each linking straight to
+  the source video at that timestamp — served by `GET /api/graph/knowledge`
+  and `GET /api/graph/knowledge/entities/{id}`.
+- **Scoreboard** — the leaderboard for one **committed matrix run**: every setup
+  answering the *same* golden questions under one recorded config, graded by one
+  judge. A run picker selects which committed `matrix-*.json` to rank (newest by
+  default), so an older run stays available for comparison. Rows are groupable by
   **setup × answering model** so scores from different model versions are never
-  silently averaged. Each row shows average score per RAGAS metric, composite,
+  silently averaged, and each shows average score per RAGAS metric, composite,
   win rate, latency, and token estimate. An **efficiency panel** ranks setups
   by composite score per 1k tokens, so a setup spending more to score lower is
   visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
   ragas version, embedding model, metric definitions, and last-judged time.
-  Answers captured before model identity was recorded appear as
-  `— pre-provenance` and are excluded from cross-model comparison.
-- **Experiments** — the committed retrieval science. Renders the
-  `eval-ablation` sweeps from `evals/runs/` as a comparison table (semantic vs
-  hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value
-  per metric highlighted, deltas versus the semantic baseline, and a per-domain
-  toggle. Above it, the head-to-head `eval-matrix` runs render as an engines ×
-  metrics table with a question-type switcher (`overall` / `local` / `global` /
-  `temporal`) plus per-engine average latency and context tokens. Below the
-  ablation table, the end-to-end golden runs with their retrieval config, judge
-  model, and headline scores. Everything shown is reproducible from a snapshot in
-  the repo — served by `GET /api/experiments`.
-- **Prompts** — every LLM prompt in the app, grouped by system (chat,
-  vector/recursive/agentic RAG, summary filter, GraphRAG) and read live off the
-  running `PROMPT_REGISTRY` constants, so the tab can never drift from what the
-  engines actually send. Each entry shows its role, template variables, source
-  module, and a copy button; RAGAS judge prompts live in the `ragas` library
-  itself and are linked out rather than duplicated. Served by `GET /api/prompts`.
+
+  This tab reads the **eval** set, not the live one. Chat and its history stay
+  exploratory — ask anything, judge it, keep it — but they no longer decide the
+  ranking, because whichever questions happened to be asked would otherwise
+  determine which engine "won", and a newly added engine stayed invisible until
+  someone manually re-asked every question through it.
+- **Experiments** — the committed retrieval science, and where you start a run.
+  **Run eval matrix** kicks off a judged head-to-head in the background with live
+  per-cell progress (`POST /api/eval/matrix` + an SSE feed), committing a new
+  `matrix-*.json` the Scoreboard can then rank; cells already scored under the
+  same configuration are reused, so re-running after adding one question only
+  pays for what changed. The **head-to-head matrix** table renders first: every
+  RAG engine — including `graph_rag` — against the same golden questions, scored
+  by the same RAGAS + reference metrics, with a question-type switcher
+  (overall / local / global / temporal) and per-engine latency and context-token
+  columns, so "GraphRAG wins temporal, ties local, costs more" is a number
+  instead of a claim. Below it, the `eval-ablation` sweeps (semantic vs hybrid
+  vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value per
+  metric highlighted, deltas versus the semantic baseline, and a per-domain
+  toggle; then the end-to-end golden runs with their retrieval config, judge
+  model, and headline scores. Everything shown is reproducible from a snapshot
+  in the repo — served by `GET /api/experiments`.
+- **System Design** — how the app is actually built, as a click-through graph
+  rather than a document that drifts from the code. Left column: every answer
+  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`), the
+  summary-filter stage, the shared models (DeepSeek, the embedding model, the
+  reranker), and the stores each depends on (the three Chroma collections,
+  Neo4j) laid out as a node graph. Click any node to open its detail panel:
+  the exact system prompts it runs (highlighted `{template_vars}`, one-click
+  copy) and its live configuration — `top_k`, retrieval mode, Neo4j URI,
+  chunking parameters, whatever applies to that node — read straight off the
+  running `Settings` instance via `GET /api/system-design`, so the view can
+  never show a prompt or a setting the server isn't actually using.
 
 #### Frontend development
 
@@ -459,14 +489,17 @@ Endpoints (JSON unless noted):
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
 | `/api/setups` | GET | The four RAG setup descriptors |
-| `/api/experiments` | GET | Committed ablation + golden-run + matrix-run snapshots for the Experiments tab |
-| `/api/prompts` | GET | The live prompt registry, grouped by system, for the Prompts tab |
-| `/api/history` | GET | All captured conversations (with evaluations) |
+| `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
+| `/api/prompts` | GET | The live prompt registry, grouped by system |
+| `/api/system-design` | GET | The System Design graph: nodes, edges, and each node's prompts and live config |
+| `/api/history` | GET | All captured conversations (with evaluations) — the live set |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
-| `/api/scoreboard` | GET | RAGAS aggregates; `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/scoreboard` | GET | Leaderboard for one committed matrix run; `run_id` picks it, `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any) |
+| `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
-| `/api/rank` | POST | Rank the corpus for a query by `semantic` and/or `bm25` |
+| `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
 | `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
@@ -564,7 +597,7 @@ uv run python -m src.cli eval-ablation
 `--top-k N` overrides the final chunk count each configuration retrieves
 (default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
 **Experiments** tab. To grow the
-golden set past its curated 9, see `docs/golden-set-curation.md` and the
+golden set past its curated 20, see `docs/golden-set-curation.md` and the
 `scripts/generate_golden_candidates.py` drafting scaffold.
 
 Dependencies: `ragas` (the eval metrics) and `uvicorn` (the server), both
@@ -861,17 +894,49 @@ engine's own retrieved contexts, and reference-based metrics
 (`answer_correctness` against the hand-written reference — the primary verdict
 for `global`/`temporal` questions, which have no expected chunk list).
 
+**Every cell is cached by default.** Judging is the expensive part — several
+RAGAS sub-calls per metric, per engine, per question — so re-running
+`eval-matrix` after adding one new `--setups` entry does not re-score the
+engines that were already there. Each `(engine, question)` cell is cached
+under a fingerprint of the question plus the exact answering/judging
+configuration (`src/evals/matrix_cache.py`): the answer model, embedding
+model, retrieval mode, `top_k`, rerank config, and the judge model + RAGAS
+version. Change any of those — swap models, edit a golden question, upgrade
+the judge — and only the affected cells recompute; everything else is
+reused, at zero cost. A cell that errored is never cached, so it always
+retries on the next run rather than pinning the failure.
+
 ```bash
-uv run python -m src.cli eval-matrix                 # full judged run (slow: many LLM calls)
-uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics   # deterministic only, fast
-uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag
+uv run python -m src.cli eval-matrix                                    # scores only uncached cells
+uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag,new_variant  # only new_variant is fresh
+uv run python -m src.cli eval-matrix --refresh                          # bypass cache, rescore everything
+uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics  # deterministic only, fast
+```
+
+A fully judged run over every engine can still take well over an hour the
+*first* time — judging is the bottleneck, not the cache. `scripts/run_matrix_chunked.py`
+is a driver for that: it reads and writes the exact same cache as `eval-matrix`
+(a run started with one can be finished with the other), adds one worker
+thread per engine so judging overlaps instead of running back to back, and
+supports a time budget so a bounded shell call is guaranteed to exit cleanly
+instead of being killed mid-cell.
+
+```bash
+uv run python scripts/run_matrix_chunked.py
+uv run python scripts/run_matrix_chunked.py --setups rag_llm,graph_rag
+uv run python scripts/run_matrix_chunked.py --max-seconds 300   # bounded pass, exit 3 to resume later
 ```
 
 One run writes a committed `matrix-<timestamp>.json` under `evals/runs/` with
 the per-setup runs plus a comparison pivot (overall and per question type,
 with per-engine latency and context-token columns). The Experiments tab
 renders the newest matrix as an engines × metrics table with a question-type
-switcher.
+switcher, and the **Scoreboard** aggregates the same file into its leaderboard
+and win-rate table — one run, two views.
+
+You do not have to leave the app to produce one: **Run eval matrix** in the
+Experiments tab starts the same sweep as a background job with live per-cell
+progress, and commits the run when it finishes.
 
 A full judged matrix is many LLM calls and can run for hours, and a single
 `eval-matrix` process loses all progress if it is interrupted;

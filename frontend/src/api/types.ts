@@ -152,8 +152,8 @@ export interface Channel {
 
 /** An observation about corpus shape that affects retrieval quality. */
 export interface CorpusInsight {
-  kind: 'channel_skew' | 'missing_summaries' | 'unindexed' | 'size_spread';
-  level: 'info' | 'warn' | 'bad';
+  kind: "channel_skew" | "missing_summaries" | "unindexed" | "size_spread";
+  level: "info" | "warn" | "bad";
   message: string;
   channel_id?: string;
   video_ids?: string[];
@@ -207,6 +207,63 @@ export interface ChunkGraph {
   };
 }
 
+/** One entity node in the GraphRAG knowledge graph (GET /api/graph/knowledge). */
+export interface EntityNode {
+  id: string;
+  name: string;
+  type: string;
+  mentions: number;
+  community_id: number | null;
+  x: number;
+  y: number;
+}
+
+export interface EntityEdge {
+  source: string;
+  target: string;
+  weight: number;
+}
+
+export interface GraphCommunity {
+  id: number;
+  summary: string | null;
+  entity_count: number;
+  claim_count: number;
+}
+
+export interface KnowledgeGraph {
+  nodes: EntityNode[];
+  edges: EntityEdge[];
+  communities: GraphCommunity[];
+}
+
+/** One entity's metadata plus its dated claim timeline. */
+export interface GraphClaim {
+  id: string;
+  text: string;
+  entities: string[];
+  chunk_id: string;
+  video_id: string;
+  source_url: string;
+  video_title: string | null;
+  upload_date: string | null;
+  start_seconds: number | null;
+  end_seconds: number | null;
+  polarity: string;
+}
+
+export interface EntityDetail {
+  entity: {
+    id: string;
+    name: string;
+    type: string;
+    aliases: string[];
+    mentions: number;
+    community_id: number | null;
+  } | null;
+  claims: GraphClaim[];
+}
+
 export interface Chunk {
   chunk_index: number;
   text: string;
@@ -224,7 +281,7 @@ export interface ChunkList {
   total: number;
 }
 
-export type RankMode = 'semantic' | 'bm25';
+export type RankMode = "semantic" | "bm25" | "graph";
 
 export interface RankRow {
   chunk_id: string;
@@ -236,8 +293,12 @@ export interface RankRow {
   start_seconds: number | null;
   end_seconds: number | null;
   source_url: string | null;
-  /** Rank of this chunk in the other mode; null when only this mode found it. */
+  /** Best rank this chunk holds in any other selected mode; null when only
+   * this mode found it. */
   other_rank: number | null;
+  /** Graph mode only: which of the query's resolved entities this chunk's
+   * claims cover. */
+  matched_entities?: string[];
 }
 
 export interface Rankings {
@@ -246,6 +307,17 @@ export interface Rankings {
   top_k: number;
   modes: Partial<Record<RankMode, RankRow[]>>;
   overlap: { count: number; of: number; chunk_ids: string[] };
+}
+
+/** One chunk's GraphRAG enrichment — entities and claims the extraction pass
+ * read into it (GET /api/graph/knowledge/videos/{video_id}/chunks). */
+export interface ChunkEnrichment {
+  entities: string[];
+  claims: { id: string; text: string; polarity: string }[];
+}
+
+export interface VideoChunkEnrichment {
+  chunks: Record<string, ChunkEnrichment>;
 }
 
 export interface ScoreboardRow {
@@ -273,6 +345,15 @@ export interface Provenance {
   composite: string;
 }
 
+/** One committed matrix run, as the Scoreboard's run picker lists it. */
+export interface MatrixRunOption {
+  run_id: string;
+  created_at: string | null;
+  setups: string[];
+  entry_count: number | null;
+  judged: boolean;
+}
+
 export interface Scoreboard {
   setups: ScoreboardRow[];
   entries_total: number;
@@ -280,18 +361,22 @@ export interface Scoreboard {
   group_by: string;
   judge_model: string;
   provenance: Provenance;
+  /** The matrix run these rows were aggregated from; null when none exists. */
+  run_id: string | null;
+  /** Every committed run, newest first — the picker's options. */
+  runs: MatrixRunOption[];
 }
 
 /** Per-iteration research step emitted by the agentic setup while it runs. */
 export interface AgentStep {
   key: string;
   iteration: number;
-  event_type: 'retrieval_start' | 'retrieval_complete' | 'answer_start';
+  event_type: "retrieval_start" | "retrieval_complete" | "answer_start";
   query: string | null;
   chunk_count: number | null;
 }
 
-export type RetrievalMode = 'semantic' | 'hybrid';
+export type RetrievalMode = "semantic" | "hybrid";
 
 export interface AskRequest {
   question: string;
@@ -359,6 +444,21 @@ export interface Experiments {
   matrix_runs: MatrixRunSummary[];
 }
 
+/** A matrix run started from the Experiments tab (POST/GET /api/eval/matrix). */
+export interface MatrixJob {
+  id: string;
+  setups: string[];
+  status: "running" | "done" | "error";
+  message: string | null;
+  cells_done: number;
+  cells_total: number;
+  cache_hits: number;
+  cache_misses: number;
+  /** The committed run this produced, once it finished. */
+  run_id: string | null;
+  error: string | null;
+}
+
 /** One head-to-head matrix run (eval-matrix), summarized for the tab. */
 export interface MatrixRunSummary {
   run_id: string;
@@ -407,10 +507,44 @@ export interface Prompts {
   notes: string[];
 }
 
+/** One node of the System Design graph (GET /api/system-design). */
+export interface SystemDesignNode {
+  id: string;
+  label: string;
+  kind: "agent" | "stage" | "model" | "store";
+  x: number;
+  y: number;
+  description: string;
+  prompts: PromptEntry[];
+  config: Record<string, unknown>;
+}
+
+export interface SystemDesignEdge {
+  source: string;
+  target: string;
+}
+
+export interface SystemDesign {
+  nodes: SystemDesignNode[];
+  edges: SystemDesignEdge[];
+}
+
 /** One stage of an indexing run, streamed by POST /api/index/stream. */
 export interface IndexStage {
-  stage: 'discover' | 'fetch' | 'chunk' | 'embed' | 'summarize';
+  stage: "discover" | "fetch" | "chunk" | "embed" | "summarize";
   message: string;
+}
+
+/** entities/claims extraction the ingestion queue ran automatically for
+ * newly added videos, once the vector index step succeeded. Absent when no
+ * videos were added; `ok: false` means extraction failed (vector RAG for the
+ * new video is unaffected — only GraphRAG stays uncaught-up until the next
+ * `index-graph` run). */
+export interface GraphIngestResult {
+  ok: boolean;
+  extracted?: number;
+  failed?: number;
+  error?: string;
 }
 
 export interface IndexResult {
@@ -422,4 +556,18 @@ export interface IndexResult {
   totals: { videos: number; chunks: number; channels: number };
   insights: CorpusInsight[];
   channels: Channel[];
+  graph?: GraphIngestResult;
+}
+
+/** One queued/running/finished ingestion job (GET/POST /api/index/queue). */
+export interface IngestionJob {
+  id: string;
+  mode: "video" | "channel";
+  target: string;
+  latest: number | null;
+  status: "queued" | "running" | "done" | "error";
+  stage: string | null;
+  message: string | null;
+  result: IndexResult | null;
+  error: string | null;
 }

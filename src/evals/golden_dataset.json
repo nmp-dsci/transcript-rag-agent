@@ -1,13 +1,13 @@
 {
- "description": "Curated reference set for reference-based RAG evaluation. Every question is one that was actually asked through the workbench (see dashboard/chat_history.json); every reference_answer is written from the stored transcript chunks listed in expected_chunk_ids, not from model output or outside knowledge. Entries g010+ extend the set with global/temporal question types (s05 P4): their answers are spread across the corpus, so expected id lists are empty and scoring is answer-level (answer_correctness against the reference) rather than id-based.",
+ "description": "Curated reference set for reference-based RAG evaluation. Every reference_answer is written from the stored transcript chunks listed in expected_chunk_ids, not from model output or outside knowledge. Entries g001-g009 were questions actually asked through the workbench (see dashboard/chat_history.json). Entries g010+ extend the set with global/temporal question types (s05 P4): their answers are spread across the corpus, so expected id lists are empty and scoring is answer-level (answer_correctness against the reference) rather than id-based. Entries g015-g020 cover the career segment (resumes, LinkedIn, interviews) added when the corpus grew past the original property/ai-coding libraries.",
  "corpus": {
   "chunk_collection": "transcript_chunks",
-  "videos": 10,
-  "chunks": 281,
+  "videos": 23,
+  "chunks": 488,
   "chunk_target_chars": 1200,
   "chunk_overlap_chars": 150,
-  "verified_at": "2026-07-21",
-  "note": "expected_chunk_ids were checked against the live Chroma corpus on the date above. Chunk indices are chunking-dependent: re-indexing with different chunk_target_chars/chunk_overlap_chars invalidates them, and some chunk indices cited in chat_history.json already refer to a previous chunking. Re-verify after any re-index."
+  "verified_at": "2026-07-27",
+  "note": "expected_chunk_ids were checked against the live Chroma corpus on the date above — every id in this file resolved. Chunk indices are chunking-dependent: re-indexing with different chunk_target_chars/chunk_overlap_chars invalidates them, so re-verify after any re-index. Some chunk indices cited in chat_history.json already refer to a previous chunking."
  },
  "entries": [
   {
@@ -203,7 +203,7 @@
   {
    "id": "g013",
    "question": "How did the property channels' stance on the budget's tax changes evolve across June 2026?",
-   "reference_answer": "The stance evolved from alarm to adaptation to patience. On 10 June the framing was whether the budget means the end of the old property playbook, reassessing strategy around taxes and rates. On 11 June the commentary warned about vulnerable markets, arguing the Gold Coast could fall hardest. By 15 June the tone pushed back on panic \u2014 asking whether anything has really changed yet, since the main measures only take effect from 1 July 2027. On 16 June the focus turned to adaptation: a strategy to win after the budget, using grandfathering, new builds, SMSF structures and commercial property. By 23 June the data-focused review noted weakening sentiment, rising stock on market and days on market, and advised waiting for policy clarity before buying.",
+   "reference_answer": "The stance evolved from alarm to adaptation to patience. On 10 June the framing was whether the budget means the end of the old property playbook, reassessing strategy around taxes and rates. On 11 June the commentary warned about vulnerable markets, arguing the Gold Coast could fall hardest. By 15 June the tone pushed back on panic — asking whether anything has really changed yet, since the main measures only take effect from 1 July 2027. On 16 June the focus turned to adaptation: a strategy to win after the budget, using grandfathering, new builds, SMSF structures and commercial property. By 23 June the data-focused review noted weakening sentiment, rising stock on market and days on market, and advised waiting for policy clarity before buying.",
    "expected_video_ids": [],
    "expected_chunk_ids": [],
    "domain": "property",
@@ -213,12 +213,111 @@
   {
    "id": "g014",
    "question": "How did Kun Chen's agentic engineering content evolve between June and July 2026?",
-   "reference_answer": "It moved from the workflow layer down to the foundations. The 20 June video presented the working agentic engineering workflow: multiple agent harnesses (Claude Code, Codex CLI and others), memory files and skills for onboarding agents, an automated PR pipeline with adversarial review, parallel isolated worktrees, and orchestration aimed at scaling to dozens of PRs a day. The 5 July video went a level deeper, building the reproducible Mac dev environment that workflow runs on from scratch: Nix, Nix Darwin and Home Manager with dotfiles, Wezterm, Neovim with plugins, the Herd multiplexer, and a global agent memory file \u2014 all rebuildable with a single script.",
+   "reference_answer": "It moved from the workflow layer down to the foundations. The 20 June video presented the working agentic engineering workflow: multiple agent harnesses (Claude Code, Codex CLI and others), memory files and skills for onboarding agents, an automated PR pipeline with adversarial review, parallel isolated worktrees, and orchestration aimed at scaling to dozens of PRs a day. The 5 July video went a level deeper, building the reproducible Mac dev environment that workflow runs on from scratch: Nix, Nix Darwin and Home Manager with dotfiles, Wezterm, Neovim with plugins, the Herd multiplexer, and a global agent memory file — all rebuildable with a single script.",
    "expected_video_ids": [],
    "expected_chunk_ids": [],
    "domain": "ai-coding",
    "question_type": "temporal",
    "notes": "Two-point timeline; tests whether temporal routing degrades gracefully with few dates."
+  },
+  {
+   "id": "g015",
+   "question": "How do I make my resume ATS-friendly?",
+   "reference_answer": "An ATS-friendly template on its own is not enough — you also have to keyword optimise the key skills section and the bullet points. Start with the layout: pick a template that works for both the AI scanning the resume and the human reading it. Then paste the job description into an AI with a prompt asking for the 25 most important keywords, each one to three words, prioritising hard skills, job tasks, industry terminology, technology and equipment, and excluding generic traits like 'detail-oriented' or 'strong communication'. Put the job title of the role you are applying to at the top, as close as still makes sense, and add as many of those keywords as you can to the key skills section. Then go one step further: add short bolded lead-in titles to the start of each bullet point that tie the skills you listed back to the keywords pulled from the job description. Stopping at the skills section is what separates people who do not land the job from those who do — hiring managers need to see that you actually have the skills, not just that you listed them.",
+   "expected_video_ids": [
+    "012UjJeZY2k",
+    "KuXPeGH_Vag"
+   ],
+   "expected_chunk_ids": [
+    "chunk:012UjJeZY2k:0",
+    "chunk:012UjJeZY2k:2",
+    "chunk:012UjJeZY2k:3",
+    "chunk:KuXPeGH_Vag:1"
+   ],
+   "domain": "career",
+   "question_type": "local",
+   "notes": "The method spans two Greg Langstaff videos: the template/keyword walkthrough and the layout advice. Tests multi-video retrieval within one channel."
+  },
+  {
+   "id": "g016",
+   "question": "What should the professional summary at the top of a resume say?",
+   "reference_answer": "It is the part that wins the reader over in the few seconds they spend before deciding whether the resume goes in the bin, so it has to say who you are and why they should hire you. State what you are (the job title and level), how many years of experience you have, and the environments or industry you have worked in — then by the second sentence be bragging about specific accomplishments, backed with facts and figures from previous roles, so the reader thinks 'you did that for your last employer, I want you to do that for me'. The reader already knows your objective is to get a job; what they do not know is what you can do for them. There are variants for other situations: a career changer's summary shows that while you do not currently do the work being hired for, you are eagerly learning it and working hard to get good at it fast; a new professional's or student's summary showcases potential and the effort you are willing to put in to learn and grow.",
+   "expected_video_ids": [
+    "QPUmFKboiqY",
+    "KuXPeGH_Vag",
+    "owIP4Qr39BY"
+   ],
+   "expected_chunk_ids": [
+    "chunk:QPUmFKboiqY:0",
+    "chunk:QPUmFKboiqY:1",
+    "chunk:KuXPeGH_Vag:3",
+    "chunk:owIP4Qr39BY:1"
+   ],
+   "domain": "career",
+   "question_type": "local",
+   "notes": "Three videos agree on the same structure; a good retriever should surface more than the single dedicated professional-summary video."
+  },
+  {
+   "id": "g017",
+   "question": "How should I write my LinkedIn about section and skills so recruiters find me?",
+   "reference_answer": "LinkedIn search relies on keywords much like Google, so the about section is where those keywords belong. Find them empirically: review five to ten job descriptions for the role you want, paste them into a document, and run that through a word cloud generator to see which terms appear most often. Then write three to four concise paragraphs — introduce yourself briefly with your years of experience, the roles you have led and the technologies you have worked with; write a compelling summary of your skills, experience and career goals using numbers and data to demonstrate impact; and conclude by stating the types of opportunities you are looking for. The opening matters most: LinkedIn evaluates roughly the first 300 characters before deciding whether to surface your profile in results, and most people waste that on their name, company or founding year, none of which tells the algorithm who you help — lead instead with the buyer and the outcome they get, using the words they would actually search rather than the words you want to be known for. For skills, only skills with at least one endorsement count, and you need five endorsed skills to fully use the section, so pick five from your keyword research and ask colleagues, friends, family or classmates to endorse them. You can also paste two or three target job descriptions into an AI and ask for skills to add, emphasising hard skills, technology and equipment, job functions, industry terminology and leadership skills, while avoiding generic entry-level ones like attention to detail and teamwork.",
+   "expected_video_ids": [
+    "dQ6RNltrXro",
+    "MGjXraYMbhQ",
+    "qfL4K_afFRE"
+   ],
+   "expected_chunk_ids": [
+    "chunk:dQ6RNltrXro:4",
+    "chunk:dQ6RNltrXro:5",
+    "chunk:MGjXraYMbhQ:4",
+    "chunk:qfL4K_afFRE:16"
+   ],
+   "domain": "career",
+   "question_type": "local",
+   "notes": "Spans three different channels covering the same surface; the strongest cross-channel local question in the career segment."
+  },
+  {
+   "id": "g018",
+   "question": "What does a recruiter actually look for on an AI engineer resume?",
+   "reference_answer": "Qualifications, not keywords — that is the central correction. The recruiter wants roughly 75% of a specific list: AI, LLM and NLP; Python (preferred over C or Java); agile systems or architecture design of AI; agentic work such as LangChain, CrewAI, MCP or A2A; generative AI such as RAG; ML frameworks such as TensorFlow and PyTorch; Git/GitHub; API design (the type does not matter, only that you designed them); cloud; NumPy; R; SDLC; CI/CD; DevOps; and explaining technical work to non-technical people, with SDKs a nice-to-have. Crucially, those must not sit in a skills section. There is a misconception that recruiters hunt keywords; they do not. They hunt qualifications, which means full sentences stating the keyword, how you did it, the reason and result of using it, and where you did it. Without all four, you are not considered. A recruiter has about 20 seconds per resume, and in the example reviewed the only things visible in that time were AWS and APIs — no AI at all, from someone applying for AI engineering roles. Application ratio is the diagnostic: one interview per 50 applications is a C-minus resume that is good enough, anything worse than 50-to-1 is terrible (this candidate was over 150-to-1), and the method being taught aims for about 7-to-1, with exceptions of 30-to-1 to 100-to-1 for international candidates and about 1 in 40 for fully remote roles.",
+   "expected_video_ids": [
+    "by8wrrXW3So"
+   ],
+   "expected_chunk_ids": [
+    "chunk:by8wrrXW3So:0",
+    "chunk:by8wrrXW3So:1",
+    "chunk:by8wrrXW3So:2"
+   ],
+   "domain": "career",
+   "question_type": "local",
+   "notes": "Single-video, densely factual (skill list, 20-second scan, application ratios) — the career segment's precision test."
+  },
+  {
+   "id": "g019",
+   "question": "How should I prepare for behavioural interview questions?",
+   "reference_answer": "Build a story bank of five or six stories you can reuse across many questions — 'tell me about a conflict' and 'tell me about a time you failed' can draw on the same story — and answer with the STAR method: situation (what job you were in when it happened), task (the problem you had to solve or opportunity you were working toward), action (every step you took), and result (what showed you succeeded). That framing makes your impact clear immediately. Where a company publishes its values, answer against them: Amazon has 16 leadership principles such as bias for action, ownership and customer obsession, and answers should address them. Prepare the common questions in advance — why you want to work at the company, a time you disagreed with someone on a project and how you resolved it, a time you had to convince others to take your solution, a bold or difficult decision, and a time you solved a pain point for customers. To generate questions for a specific role, pull the job tasks, software, equipment and industry terminology out of the job description, turn each into a 'tell us about a time' question, jot shorthand bullets prompting a real story from your career for each, and practise answering them out loud, consistently.",
+   "expected_video_ids": [
+    "uC-FmLvw1u0",
+    "KuXPeGH_Vag"
+   ],
+   "expected_chunk_ids": [
+    "chunk:uC-FmLvw1u0:8",
+    "chunk:uC-FmLvw1u0:9",
+    "chunk:KuXPeGH_Vag:12"
+   ],
+   "domain": "career",
+   "question_type": "local",
+   "notes": "One first-person account plus one instructional breakdown; both land on STAR and a reusable story bank."
+  },
+  {
+   "id": "g020",
+   "question": "What advice do the job-search videos in this corpus repeat across resumes, LinkedIn and interviews?",
+   "reference_answer": "Four themes recur regardless of which surface is being discussed. First, mine the target job descriptions for the exact language and reuse it: extract keywords for the resume's skills section and bullet points, run job descriptions through a word cloud or an AI prompt to choose LinkedIn skills and about-section wording, and turn job tasks and terminology into interview questions to rehearse. Second, prove rather than list: recruiters hunt qualifications (what you did, how, why, with what result and where) not keywords, resume bullets should describe accomplishments rather than generic responsibilities, and summaries and about sections should carry facts and figures. Third, front-load your value, because the reader gives you seconds — a hiring manager spends around six seconds on a resume, a recruiter around twenty, and LinkedIn judges roughly the first 300 characters — so brand yourself with a professional summary or opening line before any experience. Fourth, respect the machine as well as the human: choose an ATS-optimised layout that reads well both ways, and treat rehearsal as part of the work, with a reusable STAR story bank practised out loud.",
+   "expected_video_ids": [],
+   "expected_chunk_ids": [],
+   "domain": "career",
+   "question_type": "global",
+   "notes": "Cross-channel synthesis over the job-search segment; no chunk list can be 'the' reference, so answer_correctness carries the verdict."
   }
  ]
 }

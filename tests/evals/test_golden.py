@@ -92,7 +92,9 @@ def test_shipped_reference_answers_are_substantial(shipped: list[GoldenEntry]) -
         assert len(entry.reference_answer) > 200, entry.id
 
 
-def test_shipped_dataset_covers_both_domains(shipped: list[GoldenEntry]) -> None:
+def test_shipped_dataset_covers_every_domain(shipped: list[GoldenEntry]) -> None:
+    """A domain the corpus holds but the golden set never asks about is a blind
+    spot: its retrieval quality is unmeasured however good the headline looks."""
     assert {entry.domain for entry in shipped} == set(DOMAINS)
 
 

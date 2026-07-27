@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,7 +13,9 @@ from src.api import main as api_main
 from src.api.main import create_app
 from src.chat.setups import SETUP_KEYS, SetupResult, setup_spec
 from src.config import Settings
+from src.evals.matrix import DEFAULT_MATRIX_SETUPS
 from src.rag.models import RetrievedChunk
+from tests.api.matrix_fixtures import matrix_cell, matrix_run
 
 
 class FakeChunkStore:
@@ -22,9 +25,7 @@ class FakeChunkStore:
         self.by_video = by_video
         self.calls: list[tuple] = []
 
-    def query_by_video_id(
-        self, video_id: str, query: str, top_k: int
-    ) -> list[RetrievedChunk]:
+    def query_by_video_id(self, video_id: str, query: str, top_k: int) -> list[RetrievedChunk]:
         self.calls.append(("scoped", video_id, query, top_k))
         return self.by_video.get(video_id, [])[:top_k]
 
@@ -43,9 +44,7 @@ class FakeProvider:
     def get_context(
         self, *, question: str, source_url: str | None, top_k: int, **kwargs
     ) -> SimpleNamespace:
-        return SimpleNamespace(
-            retrieved_chunks=self.chunk_store.query_all(question, top_k)
-        )
+        return SimpleNamespace(retrieved_chunks=self.chunk_store.query_all(question, top_k))
 
 
 class FakeRunner:
@@ -170,9 +169,7 @@ FAKE_CHUNKS = {
 
 
 class Harness:
-    def __init__(
-        self, settings: Settings, tmp_path: Path, agent_steps: list | None = None
-    ) -> None:
+    def __init__(self, settings: Settings, tmp_path: Path, agent_steps: list | None = None) -> None:
         self.runner = FakeRunner(agent_steps)
         self.judge = FakeJudge()
         self.factory_calls = 0
@@ -180,6 +177,9 @@ class Harness:
         self.index_argv: list[list[str]] = []
         self.history_path = tmp_path / "chat_history.json"
         self.chat_html_path = tmp_path / "chat.html"
+        # The Scoreboard and Experiments tabs read committed eval runs, not the
+        # live chat history — seed via ``seed_matrix_run``.
+        self.runs_dir = tmp_path / "runs"
 
         def factory() -> FakeRunner:
             self.factory_calls += 1
@@ -212,6 +212,7 @@ class Harness:
             chat_html_path=self.chat_html_path,
             index_fn=index_fn,
             frontend_dist=tmp_path / "no-bundle",
+            runs_dir=self.runs_dir,
         )
         self.client = TestClient(app)
 
@@ -221,6 +222,13 @@ class Harness:
         events = sse_events(response.text)
         assert events[-1][0] == "done", events
         return events[-1][1]["id"]
+
+    def seed_matrix_run(self, data: dict) -> None:
+        """Commit a matrix run for the Scoreboard/Experiments tabs to read."""
+        self.runs_dir.mkdir(parents=True, exist_ok=True)
+        (self.runs_dir / f"{data['run_id']}.json").write_text(
+            json.dumps(data), encoding="utf-8"
+        )
 
 
 @pytest.fixture
@@ -314,9 +322,7 @@ def test_ask_passes_url_filter(harness: Harness) -> None:
 
 
 def test_ask_rejects_unknown_setup(harness: Harness) -> None:
-    response = harness.client.post(
-        "/api/ask", json={"question": "Hello?", "setups": ["nope"]}
-    )
+    response = harness.client.post("/api/ask", json={"question": "Hello?", "setups": ["nope"]})
     assert response.status_code == 422
     assert "nope" in response.json()["detail"]
 
@@ -328,12 +334,8 @@ def test_ask_rejects_blank_question(harness: Harness, question: str) -> None:
 
 
 def test_runner_built_once_across_questions(harness: Harness) -> None:
-    first = harness.client.post(
-        "/api/ask", json={"question": "One?", "setups": ["rag_llm"]}
-    )
-    second = harness.client.post(
-        "/api/ask", json={"question": "Two?", "setups": ["rag_llm"]}
-    )
+    first = harness.client.post("/api/ask", json={"question": "One?", "setups": ["rag_llm"]})
+    second = harness.client.post("/api/ask", json={"question": "Two?", "setups": ["rag_llm"]})
     assert harness.factory_calls == 1
     loading = [
         d["message"]
@@ -373,19 +375,13 @@ def test_index_video_invokes_cli_path(harness: Harness) -> None:
 
 
 def test_index_channel_invokes_bulk_path(harness: Harness) -> None:
-    harness.client.post(
-        "/api/index", json={"mode": "channel", "channel": "@some", "latest": 3}
-    )
-    assert harness.index_argv == [
-        ["bulk-index", "channel", "--channel", "@some", "--latest", "3"]
-    ]
+    harness.client.post("/api/index", json={"mode": "channel", "channel": "@some", "latest": 3})
+    assert harness.index_argv == [["bulk-index", "channel", "--channel", "@some", "--latest", "3"]]
 
 
 def test_index_requires_target(harness: Harness) -> None:
     assert harness.client.post("/api/index", json={"mode": "video"}).status_code == 422
-    assert (
-        harness.client.post("/api/index", json={"mode": "channel"}).status_code == 422
-    )
+    assert harness.client.post("/api/index", json={"mode": "channel"}).status_code == 422
 
 
 def test_index_stream_reports_discover_fetch_processing_then_done(
@@ -410,9 +406,7 @@ def test_index_stream_reports_discover_fetch_processing_then_done(
     assert "channels" in done
 
 
-def test_index_stream_reports_added_videos_and_totals(
-    settings: Settings, tmp_path: Path
-) -> None:
+def test_index_stream_reports_added_videos_and_totals(settings: Settings, tmp_path: Path) -> None:
     before_corpus = {"videos": [], "totals": {"videos": 0, "chunks": 0}}
     after_corpus = {
         "videos": [{"video_id": "abc123"}],
@@ -476,9 +470,7 @@ def test_index_stream_emits_heartbeats_while_indexing_is_slow(
         timer.cancel()
     events = sse_events(response.text)
     stage_events = [data for event, data in events if event == "stage"]
-    heartbeats = [
-        data for data in stage_events if data["message"] == "Still indexing..."
-    ]
+    heartbeats = [data for data in stage_events if data["message"] == "Still indexing..."]
     assert len(heartbeats) >= 1
     assert all(data["stage"] == "processing" for data in heartbeats)
     assert events[-1][0] == "done"
@@ -637,9 +629,7 @@ def test_judge_skips_already_judged_unless_forced(harness: Harness) -> None:
     assert len(harness.judge.calls) == 2
 
 
-def test_judge_marks_answers_without_contexts(
-    settings: Settings, tmp_path: Path
-) -> None:
+def test_judge_marks_answers_without_contexts(settings: Settings, tmp_path: Path) -> None:
     harness = Harness(settings, tmp_path)
     entry_id = harness.ask(setups=["rag_llm"])
     # Simulate a pre-persistence record: strip the stored contexts.
@@ -653,15 +643,15 @@ def test_judge_marks_answers_without_contexts(
     assert "no stored retrieval contexts" in scored[0]["evaluation"]["error"]
 
 
-def test_scoreboard_aggregates_by_setup(harness: Harness) -> None:
-    for _ in range(2):
-        entry_id = harness.ask(setups=["rag_llm", "rag_agent"])
-        harness.client.post("/api/judge", json={"entry_id": entry_id})
+def test_scoreboard_aggregates_a_committed_matrix_run(harness: Harness) -> None:
+    harness.seed_matrix_run(matrix_run())
 
     board = harness.client.get("/api/scoreboard").json()
     assert board["entries_total"] == 2
     assert board["entries_judged"] == 2
+    # The run's own judge, not the server's configured one.
     assert board["judge_model"] == "deepseek-v4"
+    assert board["run_id"] == "matrix-20260727-010101"
 
     rows = {row["key"]: row for row in board["setups"]}
     assert rows["rag_agent"]["avg_composite"] == 0.9
@@ -673,56 +663,76 @@ def test_scoreboard_aggregates_by_setup(harness: Harness) -> None:
     assert board["setups"][0]["key"] == "rag_agent"
 
 
-def test_scoreboard_groups_by_model(harness: Harness) -> None:
+def test_scoreboard_is_empty_without_any_committed_run(harness: Harness) -> None:
+    # Asking and judging live must NOT feed the leaderboard any more — chat
+    # history is the live set, the matrix run is the eval set.
     entry_id = harness.ask(setups=["rag_llm"])
     harness.client.post("/api/judge", json={"entry_id": entry_id})
 
-    board = harness.client.get(
-        "/api/scoreboard", params={"group_by": "setup_model"}
-    ).json()
+    board = harness.client.get("/api/scoreboard").json()
+    assert board["setups"] == []
+    assert board["entries_total"] == 0
+    assert board["run_id"] is None
+    assert board["runs"] == []
+
+
+def test_scoreboard_lists_runs_and_selects_one_by_id(harness: Harness) -> None:
+    harness.seed_matrix_run(
+        matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00")
+    )
+    harness.seed_matrix_run(
+        matrix_run(
+            "matrix-newer",
+            created_at="2026-07-27T00:00:00+00:00",
+            setups={"rag_llm": [matrix_cell("g001", composite=0.42)]},
+        )
+    )
+
+    default = harness.client.get("/api/scoreboard").json()
+    assert [run["run_id"] for run in default["runs"]] == ["matrix-newer", "matrix-older"]
+    assert default["run_id"] == "matrix-newer"  # newest by default
+    assert default["setups"][0]["avg_composite"] == 0.42
+
+    picked = harness.client.get("/api/scoreboard", params={"run_id": "matrix-older"}).json()
+    assert picked["run_id"] == "matrix-older"
+    assert {row["key"] for row in picked["setups"]} == {"rag_llm", "rag_agent"}
+
+
+def test_scoreboard_unknown_run_id_renders_empty_rather_than_erroring(
+    harness: Harness,
+) -> None:
+    harness.seed_matrix_run(matrix_run())
+    board = harness.client.get("/api/scoreboard", params={"run_id": "nope"}).json()
+    assert board["run_id"] is None
+    assert board["setups"] == []
+    # The picker still lists what *is* available, so the user can recover.
+    assert [run["run_id"] for run in board["runs"]] == ["matrix-20260727-010101"]
+
+
+def test_scoreboard_groups_by_model(harness: Harness) -> None:
+    harness.seed_matrix_run(matrix_run())
+
+    board = harness.client.get("/api/scoreboard", params={"group_by": "setup_model"}).json()
     assert board["group_by"] == "setup_model"
     row = board["setups"][0]
     assert row["model"] == "deepseek-v4"
     assert row["legacy"] is False
 
 
-def test_scoreboard_separates_legacy_answers(harness: Harness) -> None:
-    first = harness.ask(setups=["rag_llm"])
-    harness.client.post("/api/judge", json={"entry_id": first})
-    # Simulate an entry captured before model identity was recorded.
-    saved = json.loads(harness.history_path.read_text(encoding="utf-8"))
-    legacy = json.loads(json.dumps(saved["conversations"][0]))
-    legacy["id"] = "q-legacy"
-    legacy["answers"][0]["model"] = None
-    saved["conversations"].append(legacy)
-    harness.history_path.write_text(json.dumps(saved), encoding="utf-8")
-
-    board = harness.client.get(
-        "/api/scoreboard", params={"group_by": "setup_model"}
-    ).json()
-    rows = {(r["key"], r["model"]): r for r in board["setups"]}
-    assert (("rag_llm", "deepseek-v4")) in rows
-    assert (("rag_llm", None)) in rows
-    assert rows[("rag_llm", None)]["legacy"] is True
-
-
 def test_scoreboard_reports_provenance(harness: Harness) -> None:
-    entry_id = harness.ask(setups=["rag_llm"])
-    harness.client.post("/api/judge", json={"entry_id": entry_id})
+    harness.seed_matrix_run(matrix_run())
 
     provenance = harness.client.get("/api/scoreboard").json()["provenance"]
-    assert provenance["judge_models"] == ["fake-judge"]
-    assert provenance["last_judged"] == "2026-07-20T00:00:00+00:00"
+    assert provenance["judge_models"] == ["deepseek-v4"]
+    assert provenance["embedding_models"] == ["fake-embeddings"]
+    assert provenance["last_judged"] == "2026-07-27T01:01:01+00:00"
     assert "faithfulness" in provenance["metrics"]
 
 
 def test_scoreboard_filters_by_judge(harness: Harness) -> None:
-    entry_id = harness.ask(setups=["rag_llm"])
-    harness.client.post("/api/judge", json={"entry_id": entry_id})
+    harness.seed_matrix_run(matrix_run())
 
-    board = harness.client.get(
-        "/api/scoreboard", params={"judge_model": "someone-else"}
-    ).json()
+    board = harness.client.get("/api/scoreboard", params={"judge_model": "someone-else"}).json()
     assert board["entries_judged"] == 0
 
 
@@ -730,19 +740,85 @@ def test_scoreboard_judge_filter_keeps_answers_count(harness: Harness) -> None:
     # An answer judged by a *different* judge than the filter must still count
     # toward "answers" (it exists), even though it's excluded from "judged"/
     # win-rate accounting because that judge's scale isn't comparable.
-    entry_id = harness.ask(setups=["rag_llm"])
-    harness.client.post("/api/judge", json={"entry_id": entry_id})
+    harness.seed_matrix_run(matrix_run(setups={"rag_llm": [matrix_cell("g001")]}))
 
     unfiltered = harness.client.get("/api/scoreboard").json()
-    filtered = harness.client.get(
-        "/api/scoreboard", params={"judge_model": "someone-else"}
-    ).json()
+    filtered = harness.client.get("/api/scoreboard", params={"judge_model": "someone-else"}).json()
 
     unfiltered_row = next(r for r in unfiltered["setups"] if r["key"] == "rag_llm")
     filtered_row = next(r for r in filtered["setups"] if r["key"] == "rag_llm")
     assert unfiltered_row["answers"] == filtered_row["answers"] == 1
     assert unfiltered_row["judged"] == 1
     assert filtered_row["judged"] == 0
+
+
+def test_eval_matrix_endpoint_starts_a_run_and_reports_it(tmp_path: Path, settings: Settings) -> None:
+    calls: list[list[str]] = []
+
+    def matrix_run_fn(setups, on_cell):
+        calls.append(setups)
+        on_cell({"setup": setups[0], "entry_id": "g001", "cached": True, "done": 1, "total": 1})
+        return {"run_id": "matrix-from-ui", "cache_hits": 1, "cache_misses": 0}
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: FakeRunner(),  # type: ignore[arg-type]
+        judge_factory=lambda: FakeJudge(),  # type: ignore[arg-type]
+        corpus_fn=lambda: FAKE_CORPUS,
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        runs_dir=tmp_path / "runs",
+        matrix_run_fn=matrix_run_fn,
+    )
+    client = TestClient(app)
+
+    started = client.post("/api/eval/matrix", json={"setups": ["rag_llm"]}).json()
+    assert started["status"] == "running"
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        job = client.get("/api/eval/matrix").json()["job"]
+        if job["status"] == "done":
+            break
+        time.sleep(0.01)
+    assert job["status"] == "done"
+    assert job["run_id"] == "matrix-from-ui"
+    assert job["cells_done"] == 1
+    assert calls == [["rag_llm"]]
+
+
+def test_eval_matrix_defaults_to_every_setup_in_the_matrix(
+    tmp_path: Path, settings: Settings
+) -> None:
+    calls: list[list[str]] = []
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: FakeRunner(),  # type: ignore[arg-type]
+        judge_factory=lambda: FakeJudge(),  # type: ignore[arg-type]
+        corpus_fn=lambda: FAKE_CORPUS,
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        runs_dir=tmp_path / "runs",
+        matrix_run_fn=lambda setups, on_cell: (
+            calls.append(setups) or {"run_id": "matrix-all"}
+        ),
+    )
+    client = TestClient(app)
+    client.post("/api/eval/matrix", json={})
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline and not calls:
+        time.sleep(0.01)
+    assert calls == [DEFAULT_MATRIX_SETUPS]
+
+
+def test_eval_matrix_snapshot_is_null_before_any_run(harness: Harness) -> None:
+    assert harness.client.get("/api/eval/matrix").json() == {"job": None}
 
 
 def test_corpus_endpoint(harness: Harness) -> None:
@@ -768,9 +844,7 @@ def test_ask_streams_agent_steps(settings: Settings, tmp_path: Path) -> None:
     from src.agents.models import AgentProgressEvent
 
     steps = [
-        AgentProgressEvent(
-            iteration=1, event_type="retrieval_start", query="capital gains"
-        ),
+        AgentProgressEvent(iteration=1, event_type="retrieval_start", query="capital gains"),
         AgentProgressEvent(
             iteration=1,
             event_type="retrieval_complete",
@@ -779,9 +853,7 @@ def test_ask_streams_agent_steps(settings: Settings, tmp_path: Path) -> None:
         ),
     ]
     harness = Harness(settings, tmp_path, agent_steps=steps)
-    response = harness.client.post(
-        "/api/ask", json={"question": "Why?", "setups": ["rag_agent"]}
-    )
+    response = harness.client.post("/api/ask", json={"question": "Why?", "setups": ["rag_agent"]})
     emitted = [d for e, d in sse_events(response.text) if e == "agent_step"]
     assert [s["event_type"] for s in emitted] == [
         "retrieval_start",
@@ -791,9 +863,7 @@ def test_ask_streams_agent_steps(settings: Settings, tmp_path: Path) -> None:
     assert emitted[1]["chunk_count"] == 7
 
 
-def test_ask_emits_no_agent_steps_for_pipeline_setups(
-    settings: Settings, tmp_path: Path
-) -> None:
+def test_ask_emits_no_agent_steps_for_pipeline_setups(settings: Settings, tmp_path: Path) -> None:
     from src.agents.models import AgentProgressEvent
 
     harness = Harness(
@@ -801,9 +871,7 @@ def test_ask_emits_no_agent_steps_for_pipeline_setups(
         tmp_path,
         agent_steps=[AgentProgressEvent(iteration=1, event_type="answer_start")],
     )
-    response = harness.client.post(
-        "/api/ask", json={"question": "Why?", "setups": ["rag_llm"]}
-    )
+    response = harness.client.post("/api/ask", json={"question": "Why?", "setups": ["rag_llm"]})
     assert [e for e, _ in sse_events(response.text) if e == "agent_step"] == []
 
 
@@ -919,9 +987,7 @@ def test_chunk_graph_returns_graph_for_records(settings: Settings, tmp_path: Pat
     assert len(payload["nodes"]) == 2
 
 
-def test_chunk_graph_500_on_backend_read_failure(
-    settings: Settings, tmp_path: Path
-) -> None:
+def test_chunk_graph_500_on_backend_read_failure(settings: Settings, tmp_path: Path) -> None:
     def broken_records_fn() -> list[dict]:
         raise RuntimeError("chroma store corrupted")
 
@@ -954,9 +1020,7 @@ def test_ui_and_assets_served(harness: Harness) -> None:
     assert ".bubble" in answer_css.text
 
 
-def test_built_bundle_is_served_when_present(
-    settings: Settings, tmp_path: Path
-) -> None:
+def test_built_bundle_is_served_when_present(settings: Settings, tmp_path: Path) -> None:
     dist = tmp_path / "dist"
     (dist / "assets").mkdir(parents=True)
     (dist / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
@@ -996,18 +1060,14 @@ def test_ask_prefers_video_scope_over_channel(harness: Harness) -> None:
 
 
 def test_ask_passes_retrieval_mode_and_filter(harness: Harness) -> None:
-    harness.ask(
-        setups=["rag_llm"], retrieval_mode="hybrid", filter_transcripts=True
-    )
+    harness.ask(setups=["rag_llm"], retrieval_mode="hybrid", filter_transcripts=True)
     scope = harness.runner.scopes[-1]
     assert scope.retrieval_mode == "hybrid"
     assert scope.filter_transcripts is True
 
 
 def test_ask_rejects_unknown_retrieval_mode(harness: Harness) -> None:
-    response = harness.client.post(
-        "/api/ask", json={"question": "q", "retrieval_mode": "magic"}
-    )
+    response = harness.client.post("/api/ask", json={"question": "q", "retrieval_mode": "magic"})
     assert response.status_code == 422
 
 
@@ -1022,7 +1082,265 @@ def test_ask_persists_retrieved_chunk_ids(harness: Harness) -> None:
     """References cover only cited chunks, so recall needs the full list."""
     entry_id = harness.ask(setups=["rag_llm"])
     entry = next(
-        e for e in harness.client.get("/api/history").json()["conversations"]
-        if e["id"] == entry_id
+        e for e in harness.client.get("/api/history").json()["conversations"] if e["id"] == entry_id
     )
     assert "retrieved_chunk_ids" in entry["answers"][0]
+
+
+def test_index_queue_enqueue_returns_immediately_while_a_job_runs(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """The whole point of the queue: a second submission never blocks."""
+    release = threading.Event()
+
+    def slow_index_fn(argv: list[str]) -> int:
+        release.wait(timeout=2)
+        return 0
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=slow_index_fn,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    try:
+        first = client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/a"})
+        second = client.post(
+            "/api/index/queue", json={"mode": "video", "url": "https://youtu.be/b"}
+        )
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["status"] == "queued"
+        assert second.json()["status"] == "queued"
+        assert first.json()["id"] != second.json()["id"]
+    finally:
+        release.set()
+
+
+def test_index_queue_snapshot_lists_jobs_in_order(settings: Settings, tmp_path: Path) -> None:
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/a"})
+    client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/b"})
+
+    def snapshot() -> list[dict]:
+        return client.get("/api/index/queue").json()["jobs"]
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        jobs = snapshot()
+        if len(jobs) == 2 and all(j["status"] == "done" for j in jobs):
+            break
+        time.sleep(0.02)
+    jobs = snapshot()
+    assert [job["target"] for job in jobs] == [
+        "https://youtu.be/a",
+        "https://youtu.be/b",
+    ]
+
+
+def test_index_queue_channel_mode_carries_latest(settings: Settings, tmp_path: Path) -> None:
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/index/queue",
+        json={"mode": "channel", "channel": "@some", "latest": 7},
+    )
+    assert response.json()["mode"] == "channel"
+    assert response.json()["latest"] == 7
+    assert response.json()["target"] == "@some"
+
+
+def test_index_queue_stream_seeds_then_broadcasts_over_a_real_server(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """/api/index/queue/stream never ends, so FastAPI's TestClient can't run it.
+
+    ``TestClient`` is built on ``httpx.ASGITransport``, which fully drains a
+    StreamingResponse's generator before returning control — fine for the
+    finite ``/api/ask``/``/api/judge`` streams, but an infinite queue feed
+    (by design: it stays open for the life of a browser tab) hangs it
+    forever. A real uvicorn server plus a real ``httpx`` network connection
+    supports true incremental reads, so this one test runs the app for real
+    on an ephemeral port instead, with a hard client-side timeout so a
+    regression fails loudly instead of hanging the suite.
+    """
+    import socket
+    import time as time_module
+
+    import httpx
+    import uvicorn
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    try:
+        deadline = time_module.monotonic() + 5
+        while not server.started and time_module.monotonic() < deadline:
+            time_module.sleep(0.02)
+        assert server.started, "uvicorn did not start in time"
+
+        base_url = f"http://127.0.0.1:{port}"
+        with httpx.Client(timeout=5.0) as client:
+            client.post(
+                f"{base_url}/api/index/queue",
+                json={"mode": "video", "url": "https://youtu.be/a"},
+            )
+            with client.stream("GET", f"{base_url}/api/index/queue/stream") as response:
+                assert response.status_code == 200
+                lines = response.iter_lines()
+                assert next(lines) == "event: snapshot"
+                assert "https://youtu.be/a" in next(lines)
+
+                client.post(
+                    f"{base_url}/api/index/queue",
+                    json={"mode": "video", "url": "https://youtu.be/b"},
+                )
+                seen_event_names: list[str] = []
+                for line in lines:
+                    if line.startswith("event: "):
+                        seen_event_names.append(line[len("event: ") :])
+                    if len(seen_event_names) >= 2:
+                        break
+                assert seen_event_names[0] == "job"
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+
+
+def test_system_design_route_returns_nodes_and_edges(settings: Settings, tmp_path: Path) -> None:
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    response = client.get("/api/system-design")
+    assert response.status_code == 200
+    body = response.json()
+    node_ids = {node["id"] for node in body["nodes"]}
+    assert "graph_rag" in node_ids
+    assert "vector_rag" in node_ids
+    assert "neo4j" in node_ids
+
+
+def test_knowledge_graph_route_returns_nodes_edges_and_communities(
+    settings: Settings, tmp_path: Path
+) -> None:
+    class FakeGraphStore:
+        def all_entities(self, limit: int = 2000):
+            from src.rag.graph_models import GraphEntity
+
+            return [GraphEntity(id="a", name="Alpha", mentions=3, community_id=0)]
+
+        def entity_edges(self):
+            return ["a"], []
+
+        def communities(self):
+            from src.rag.graph_models import GraphCommunity
+
+            return [GraphCommunity(id=0, entity_ids=["a"], entity_names=["Alpha"], claim_count=1)]
+
+        def get_entity(self, entity_id: str):
+            from src.rag.graph_models import GraphEntity
+
+            return (
+                GraphEntity(id="a", name="Alpha", mentions=3, community_id=0)
+                if entity_id == "a"
+                else None
+            )
+
+        def claims_about(self, entity_ids, limit=40, hops=1):
+            from src.rag.graph_models import GraphClaim
+
+            return [GraphClaim(id="c1", text="Alpha does things.", upload_date="2026-01-01")]
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        graph_store_factory=lambda: FakeGraphStore(),
+    )
+    client = TestClient(app)
+
+    response = client.get("/api/graph/knowledge")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["nodes"] == [
+        {
+            "id": "a",
+            "name": "Alpha",
+            "type": "concept",
+            "mentions": 3,
+            "community_id": 0,
+            "x": 0.0,
+            "y": 0.0,
+        }
+    ]
+    assert body["communities"][0]["summary"] is None
+
+    entity_response = client.get("/api/graph/knowledge/entities/a")
+    assert entity_response.status_code == 200
+    assert entity_response.json()["entity"]["name"] == "Alpha"
+    assert len(entity_response.json()["claims"]) == 1
+
+    missing_response = client.get("/api/graph/knowledge/entities/nope")
+    assert missing_response.status_code == 404
+
+
+def test_knowledge_graph_route_reports_503_when_store_unreachable(
+    settings: Settings, tmp_path: Path
+) -> None:
+    class BrokenGraphStore:
+        def all_entities(self, limit: int = 2000):
+            raise ConnectionError("neo4j unreachable")
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        graph_store_factory=lambda: BrokenGraphStore(),
+    )
+    client = TestClient(app)
+    response = client.get("/api/graph/knowledge")
+    assert response.status_code == 503
+    assert "neo4j unreachable" in response.json()["detail"]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../api/client';
 import type {
@@ -7,6 +7,7 @@ import type {
   GoldenRunSummary,
   MatrixRunSummary,
 } from '../api/types';
+import { MatrixRunPanel } from './MatrixRunPanel';
 import { useExperimentStyles } from './styles';
 
 /** 3-decimal fixed, or an em dash for a metric a run did not report. */
@@ -296,16 +297,18 @@ export function ExperimentsView() {
   const [data, setData] = useState<Experiments | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        setData(await api.experiments());
-        setError(null);
-      } catch (err) {
-        setError((err as Error).message);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      setData(await api.experiments());
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const ablations = data?.ablations ?? [];
   const goldenRuns = data?.golden_runs ?? [];
@@ -320,18 +323,20 @@ export function ExperimentsView() {
     <div className="scrollview">
       <div className="pagewrap">
         <p className="exp-intro">
-          Committed retrieval experiments — the ablation sweeps and end-to-end golden runs
-          under <code>evals/runs/</code>. Every number here is reproducible from a snapshot a
-          reviewer can open in the repo.
+          Committed retrieval experiments under <code>evals/runs/</code> — the head-to-head
+          matrix the Scoreboard ranks, the ablation sweeps, and the end-to-end golden runs.
+          Every number here is reproducible from a snapshot a reviewer can open in the repo.
         </p>
+
+        <MatrixRunPanel onRunFinished={() => void load()} />
 
         {error && <p className="exp-empty">Could not load experiments: {error}</p>}
 
         {nothing && (
           <p className="exp-empty">
-            No committed experiment runs yet. Generate them with{' '}
-            <code>uv run python -m src.cli eval-ablation</code> and{' '}
-            <code>uv run python -m src.cli eval-golden</code>.
+            No committed experiment runs yet. Start a head-to-head sweep with the button
+            above, or generate the retrieval-only ones with{' '}
+            <code>uv run python -m src.cli eval-ablation</code>.
           </p>
         )}
 

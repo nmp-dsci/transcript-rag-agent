@@ -6,10 +6,11 @@ the `expected_chunk_ids` a good retriever must surface. Those labels are what th
 reference-free RAGAS metrics cannot give you — recall (what retrieval *missed*) and
 correctness (whether the answer is actually *right*).
 
-It currently holds 14 curated entries (9 `local`, 3 `global`, 2 `temporal`). The
-target is **40+**, reported per domain (property vs ai-coding), so a headline
-number is never an average hiding a segment that fails. This guide is the
-process for getting there without diluting quality.
+It currently holds 20 curated entries (14 `local`, 4 `global`, 2 `temporal`) spread
+across four domains — 7 property, 6 ai-coding, 6 career, 1 corpus. The target is
+**40+**, reported per domain, so a headline number is never an average hiding a
+segment that fails. This guide is the process for getting there without diluting
+quality.
 
 ## Why it stays hand-curated
 
@@ -39,16 +40,17 @@ Each entry is a `GoldenEntry` (`src/evals/golden.py`), validated on load:
 Validation enforces the invariants that catch hand-edited drift: chunk ids must be
 `chunk:<video_id>:<index>`, every `expected_chunk_id`'s video must appear in
 `expected_video_ids` and vice versa, no duplicates, and `domain` must be one of the
-known domains (`property`, `ai-coding`, `corpus` — `corpus` is for entries whose
-question spans the whole corpus rather than one segment). `question_type` must be
-one of `local`, `global`, or `temporal` (default `local`) and decides which metrics
-apply: a `local` entry must declare `expected_video_ids`/`expected_chunk_ids`
-because its answer lives in specific chunks the deterministic recall/IR metrics can
-check. `global` (corpus-wide themes) and `temporal` (trend-over-time) entries may
-leave both lists empty — no chunk list is "the" reference for those — and are
-instead scored on answer-level metrics (`answer_correctness` against
-`reference_answer`), which is what the head-to-head matrix (`eval-matrix`) uses to
-compare engines on question types the chunk-recall path can't.
+known domains (`property`, `ai-coding`, `career`, `corpus` — `career` covers the
+job-search/resume/LinkedIn videos, and `corpus` is for entries whose question spans
+the whole library rather than one segment). `question_type` must be one of `local`,
+`global`, or `temporal` (default `local`) and decides which metrics apply: a `local`
+entry must declare `expected_video_ids`/`expected_chunk_ids` because its answer lives
+in specific chunks the deterministic recall/IR metrics can check. `global`
+(corpus-wide themes) and `temporal` (trend-over-time) entries may leave both lists
+empty — no chunk list is "the" reference for those — and are instead scored on
+answer-level metrics (`answer_correctness` against `reference_answer`), which is what
+the head-to-head matrix (`eval-matrix`) uses to compare engines on question types the
+chunk-recall path can't.
 
 ## Adding an entry by hand
 

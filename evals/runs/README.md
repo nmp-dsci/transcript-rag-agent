@@ -10,8 +10,37 @@ Three kinds of run land here:
 | Prefix | Produced by | What it measures |
 |--------|-------------|------------------|
 | `ablation-*.json` | `uv run python -m src.cli eval-ablation` | Retrieval only — semantic vs hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG` over the golden set. Deterministic, no LLM, no API key. |
-| `eval-*.json` | `uv run python -m src.cli eval-golden …` | End-to-end — answers generated and (optionally) RAGAS-judged, alongside the deterministic recall/IR metrics. |
-| `matrix-*.json` | `uv run python -m src.cli eval-matrix` or `scripts/run_matrix_chunked.py` | Head-to-head — every answer engine (`rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`) answers the same golden questions, scored by the same pipeline; a comparison pivot by metric × setup, overall and per `question_type`. |
+| `eval-*.json` | `uv run python -m src.cli eval-golden …` | End-to-end for **one** setup — answers generated and (optionally) RAGAS-judged, alongside the deterministic recall/IR metrics. |
+| `matrix-*.json` | `uv run python -m src.cli eval-matrix`, `scripts/run_matrix_chunked.py`, or the Experiments tab's **Run eval matrix** button | Head-to-head — every answer engine (`rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`) answers the same golden questions under one config and one judge; a comparison pivot by metric × setup, overall and per `question_type`. |
+
+### Why `matrix-*.json` is the important one
+
+It is the only run shape where the setups are directly comparable: same questions,
+same retrieval config, same judge, in one file. That is why it powers **both**
+comparison tabs — Experiments renders its `comparison` pivot (metric × setup, overall
+and by question type), and the **Scoreboard** aggregates its per-entry `scores` into
+the leaderboard and win-rate table, selectable per run from a dropdown.
+
+The Scoreboard deliberately does **not** read `dashboard/chat_history.json` any more.
+Chat history is the *live* set — whatever a human happened to ask and judge — so a
+newly added engine stayed invisible there until someone manually re-asked every
+question through it. Ranking on a matrix run instead means an engine appears as soon
+as its cells exist.
+
+Structure: `runs` is keyed by setup, each holding that setup's `entries` (one per
+golden question, with `scores`, `answer`, `retrieved_chunk_ids`, `elapsed_seconds`,
+`token_estimate`) and a `summary`; `comparison` holds the pivot; `cache_hits` /
+`cache_misses` record how much of the run was reused rather than re-scored.
+
+### Cell caching
+
+Every `(setup, question)` cell is cached by a fingerprint of the question plus the
+exact answering and judging configuration (`src/evals/matrix_cache.py`, under the
+gitignored `.yt-agent/eval_cache/`). Adding one question or one engine re-scores only
+the cells that do not already exist — changing the answer model, embedding model,
+retrieval mode, `top_k`, rerank settings or judge changes the fingerprint, so stale
+numbers are never silently reused. Pass `--refresh` to bypass the cache.
+
 
 ## Provenance
 
@@ -44,12 +73,13 @@ YT_AGENT_JUDGE_BASE_URL=https://api.openai.com/v1 \
 # Compare the two most recent golden runs (same-config regression check)
 uv run python -m src.cli eval-golden --diff
 
-# Head-to-head matrix — every engine over the same golden questions
+# Head-to-head across every setup (what the Scoreboard ranks). Cached by cell,
+# so re-running after adding a question only pays for the new cells.
 uv run python -m src.cli eval-matrix
 
-# The same matrix, but checkpointed cell-by-cell so a killed/long-running
-# process resumes instead of losing the run (see readme.md §4c)
-uv run python scripts/run_matrix_chunked.py
+# The same matrix, parallel across engines and resumable: every cell is cached
+# as it completes, so a killed or time-budgeted process loses nothing
+uv run python scripts/run_matrix_chunked.py --max-seconds 600
 ```
 
 ## The CI eval gate

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '../api/client';
-import type { Scoreboard } from '../api/types';
+import type { MatrixRunOption, Scoreboard } from '../api/types';
 import { METRICS, fmtScore } from '../chat/ScoreStrip';
 import { LOW_N } from '../eval/breakdown';
 import { MetricExplainers } from '../eval/MetricExplainer';
@@ -11,21 +11,32 @@ import { ProvenanceBar } from './ProvenanceBar';
 
 type GroupBy = 'setup' | 'setup_model';
 
+/** "matrix-20260727-015519 · 14 questions · 4 setups" */
+function runLabel(run: MatrixRunOption): string {
+  const parts = [run.run_id];
+  if (run.entry_count != null) parts.push(`${run.entry_count} questions`);
+  parts.push(`${run.setups.length} setup${run.setups.length === 1 ? '' : 's'}`);
+  if (!run.judged) parts.push('unjudged');
+  return parts.join(' · ');
+}
+
 export function ScoreboardView() {
   useEvalStyles();
   const [board, setBoard] = useState<Scoreboard | null>(null);
   const [groupBy, setGroupBy] = useState<GroupBy>('setup_model');
   const [judgeFilter, setJudgeFilter] = useState('');
+  // '' means "whatever the server picks", i.e. the newest committed run.
+  const [runId, setRunId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setBoard(await api.scoreboard(groupBy, judgeFilter || null));
+      setBoard(await api.scoreboard(groupBy, judgeFilter || null, runId || null));
       setError(null);
     } catch (err) {
       setError((err as Error).message);
     }
-  }, [groupBy, judgeFilter]);
+  }, [groupBy, judgeFilter, runId]);
 
   useEffect(() => {
     void load();
@@ -34,15 +45,16 @@ export function ScoreboardView() {
   const rows = (board?.setups ?? []).filter((row) => row.answers > 0);
   const bestKey = rows[0]?.avg_composite != null ? rows[0] : null;
   const judgeOptions = board?.provenance.judge_models ?? [];
+  const runOptions = board?.runs ?? [];
 
   return (
     <div className="scrollview">
       <div className="pagewrap">
         <div className="statusstrip">
           <div className="stat">
-            <div className="microlabel">questions judged</div>
+            <div className="microlabel">eval set</div>
             <b>{board?.entries_judged ?? '—'}</b>
-            <span>of {board?.entries_total ?? '—'}</span>
+            <span>of {board?.entries_total ?? '—'} golden questions judged</span>
           </div>
           <div className="stat">
             <div className="microlabel">judge model</div>
@@ -61,6 +73,22 @@ export function ScoreboardView() {
         </div>
 
         <div className="formrow" style={{ marginBottom: 12 }}>
+          <span className="microlabel">matrix run</span>
+          <select
+            value={runId}
+            onChange={(event) => setRunId(event.target.value)}
+            aria-label="Matrix run"
+            disabled={runOptions.length === 0}
+          >
+            <option value="">
+              {runOptions.length === 0 ? 'no committed runs' : 'newest run'}
+            </option>
+            {runOptions.map((run) => (
+              <option key={run.run_id} value={run.run_id}>
+                {runLabel(run)}
+              </option>
+            ))}
+          </select>
           <span className="microlabel">group by</span>
           <select
             value={groupBy}
@@ -93,8 +121,10 @@ export function ScoreboardView() {
         <div className="tblwrap">
           {rows.length === 0 || !board?.entries_judged ? (
             <div className="rankempty" style={{ padding: 30 }}>
-              Nothing judged yet — ask a question with auto-judge on, or open one from history
-              and press “Judge with RAGAS”.
+              {runOptions.length === 0
+                ? 'No committed matrix run yet — run one from the Experiments tab (or ' +
+                  '`eval-matrix` on the CLI) to score every setup over the golden set.'
+                : 'This run has no judged answers — re-run it with judging enabled.'}
             </div>
           ) : (
             <table>
@@ -209,14 +239,16 @@ export function ScoreboardView() {
         {board ? <ProvenanceBar provenance={board.provenance} /> : null}
 
         <p className="board-note">
-          All answers are graded under one eval process — <b>RAGAS</b>: faithfulness (is the
-          answer supported by the retrieved chunks?), answer relevancy (does it address the
-          question?), context precision (were the retrieved chunks useful?). Composite is their
-          mean. A win counts a question where a setup scored highest <em>among answers graded by
-          the same judge</em>, so self-graded and independently-graded runs never compete.
-          Rows marked <span className="badge plain">— pre-provenance</span> were captured before
-          model identity was recorded and cannot be attributed to a specific model. Rows judged on
-          fewer than {LOW_N} questions are dimmed and marked{' '}
+          Every row comes from one <b>committed matrix run</b>: each setup answering the same
+          golden questions under one recorded configuration, graded by one judge. That is what
+          makes these rows comparable — unlike the Chat tab, where whichever questions happened
+          to be asked would decide the ranking. Chat and its history are the <em>live</em> set
+          for exploring the corpus; this tab is the <em>eval</em> set. All answers are graded
+          under one eval process — <b>RAGAS</b>: faithfulness (is the answer supported by the
+          retrieved chunks?), answer relevancy (does it address the question?), context precision
+          (were the retrieved chunks useful?). Composite is their mean. A win counts a question
+          where a setup scored highest <em>among answers graded by the same judge</em>. Rows
+          judged on fewer than {LOW_N} questions are dimmed and marked{' '}
           <span className="badge warn">thin</span>: an average over a handful of questions moves
           several points on one bad answer, so read those as a hint rather than a ranking.
         </p>

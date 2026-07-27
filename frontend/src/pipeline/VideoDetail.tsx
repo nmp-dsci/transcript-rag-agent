@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import type { Chunk, Video } from '../api/types';
+import { api } from '../api/client';
+import type { Chunk, VideoChunkEnrichment, Video } from '../api/types';
 import { fmtSeconds } from '../answers/render';
 
 interface Props {
@@ -19,10 +20,28 @@ function timestampUrl(video: Video, chunk: Chunk): string | null {
 
 export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props) {
   const selectedRef = useRef<HTMLDivElement>(null);
+  const [enrichment, setEnrichment] = useState<VideoChunkEnrichment | null>(null);
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [selectedChunk, chunks]);
+
+  useEffect(() => {
+    setEnrichment(null);
+    if (!video) return;
+    let live = true;
+    void api
+      .chunkEnrichment(video.video_id)
+      .then((data) => {
+        if (live) setEnrichment(data);
+      })
+      .catch(() => {
+        if (live) setEnrichment({ chunks: {} });
+      });
+    return () => {
+      live = false;
+    };
+  }, [video?.video_id]);
 
   if (!video) {
     return (
@@ -88,25 +107,53 @@ export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props)
         chunks.map((chunk) => {
           const selected = chunk.chunk_index === selectedChunk;
           const link = timestampUrl(video, chunk);
+          const chunkEnrichment = enrichment?.chunks[String(chunk.chunk_index)];
           return (
             <div
               className={`chunkcard${selected ? ' on' : ''}`}
               key={chunk.chunk_index}
               ref={selected ? selectedRef : undefined}
             >
-              <div className="h">
-                <span className="id">#c{chunk.chunk_index}</span>
-                <span>
-                  {fmtSeconds(chunk.start_seconds)}–{fmtSeconds(chunk.end_seconds)}
-                </span>
-                {chunk.segment_count ? <span>{chunk.segment_count} segments</span> : null}
-                {link ? (
-                  <a href={link} target="_blank" rel="noreferrer">
-                    ▸ open at {fmtSeconds(chunk.start_seconds)}
-                  </a>
-                ) : null}
+              <div className="cbody">
+                <div className="h">
+                  <span className="id">#c{chunk.chunk_index}</span>
+                  <span>
+                    {fmtSeconds(chunk.start_seconds)}–{fmtSeconds(chunk.end_seconds)}
+                  </span>
+                  {chunk.segment_count ? <span>{chunk.segment_count} segments</span> : null}
+                  {link ? (
+                    <a href={link} target="_blank" rel="noreferrer">
+                      ▸ open at {fmtSeconds(chunk.start_seconds)}
+                    </a>
+                  ) : null}
+                </div>
+                <p>{chunk.text}</p>
               </div>
-              <p>{chunk.text}</p>
+              <div className="cgraph">
+                <span className="microlabel">graph rag</span>
+                {enrichment === null ? (
+                  <span className="cgraph-empty">loading…</span>
+                ) : !chunkEnrichment ? (
+                  <span className="cgraph-empty">not extracted</span>
+                ) : (
+                  <>
+                    <div className="cgraph-entities">
+                      {chunkEnrichment.entities.map((name) => (
+                        <span className="badge acc" key={name}>
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                    <ul className="cgraph-claims">
+                      {chunkEnrichment.claims.map((claim) => (
+                        <li key={claim.id} className={`polarity-${claim.polarity}`}>
+                          {claim.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             </div>
           );
         })

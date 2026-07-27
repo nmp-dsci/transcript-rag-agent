@@ -227,6 +227,35 @@ class GraphStore:
         )
         return [GraphEntity.model_validate(row) for row in rows]
 
+    def get_entity(self, entity_id: str) -> GraphEntity | None:
+        rows = self._run(
+            """
+            MATCH (e:Entity {id: $id})
+            RETURN e.id AS id, e.name AS name, e.type AS type,
+                   e.aliases AS aliases, e.mentions AS mentions,
+                   e.community_id AS community_id
+            """,
+            id=entity_id,
+        )
+        return GraphEntity.model_validate(rows[0]) if rows else None
+
+    def all_entities(self, limit: int = 2000) -> list[GraphEntity]:
+        """Every entity, by mentions — the population the knowledge-graph
+        visualization draws, as opposed to ``resolve_entities``' query-scoped
+        subset used to anchor a question's evidence."""
+        rows = self._run(
+            """
+            MATCH (e:Entity)
+            RETURN e.id AS id, e.name AS name, e.type AS type,
+                   e.aliases AS aliases, e.mentions AS mentions,
+                   e.community_id AS community_id
+            ORDER BY e.mentions DESC
+            LIMIT $limit
+            """,
+            limit=limit,
+        )
+        return [GraphEntity.model_validate(row) for row in rows]
+
     def claims_about(
         self, entity_ids: list[str], limit: int = 40, hops: int = 1
     ) -> list[GraphClaim]:
@@ -260,6 +289,32 @@ class GraphStore:
             LIMIT $limit
             """,
             ids=entity_ids,
+            limit=limit,
+        )
+        return [GraphClaim.model_validate(row) for row in rows]
+
+    def claims_for_video(self, video_id: str, limit: int = 1000) -> list[GraphClaim]:
+        """Every claim extracted from this video, in chunk order.
+
+        Unlike :meth:`claims_about`, which is entity-scoped for answering,
+        this is chunk-scoped for the RAG Pipeline tab's per-chunk enrichment
+        view — it needs everything a chunk yielded, not just what a question
+        anchors to.
+        """
+        rows = self._run(
+            """
+            MATCH (c:Claim {video_id: $video_id})
+            OPTIONAL MATCH (c)-[:ABOUT]->(about:Entity)
+            WITH c, collect(about.name) AS entity_names
+            RETURN c.id AS id, c.text AS text, entity_names AS entities,
+                   c.chunk_id AS chunk_id, c.video_id AS video_id,
+                   c.source_url AS source_url, c.video_title AS video_title,
+                   c.upload_date AS upload_date, c.start_seconds AS start_seconds,
+                   c.end_seconds AS end_seconds, c.polarity AS polarity
+            ORDER BY c.start_seconds ASC
+            LIMIT $limit
+            """,
+            video_id=video_id,
             limit=limit,
         )
         return [GraphClaim.model_validate(row) for row in rows]
