@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
@@ -33,18 +32,24 @@ def _settings(tmp_path: Path) -> Settings:
     )
 
 
-def test_main_checkpoints_failed_cell_without_nameerror(monkeypatch, tmp_path) -> None:
-    """``run`` is only bound inside the ``try`` block around ``run_golden_eval``;
-    when a cell raises (the except branch), the checkpoint writer must read the
-    always-bound ``record["config"]`` rather than the unbound ``run["config"]``,
-    or every *failed* cell crashes the driver instead of being checkpointed as
-    an error and moved past. Exercises the real nested ``score_setup`` closure
-    inside ``main`` end to end, with ``run_golden_eval`` stubbed to raise.
+def test_main_records_a_failed_cell_and_keeps_going(monkeypatch, tmp_path) -> None:
+    """One cell raising must not take the driver down with it.
+
+    A sweep is long and expensive; a single provider error (a 402, a timeout)
+    has to be recorded against that cell and the remaining queue still run,
+    or one bad question throws away every result beside it. Exercises the real
+    nested ``score_setup`` closure inside ``main`` end to end, with
+    ``run_golden_eval`` stubbed to raise.
+
+    Originally written against the checkpoint-file driver; the driver now
+    records cells in the shared eval cache instead, but the guarantee under
+    test is the same one.
     """
     module = _load_module()
     settings = _settings(tmp_path)
+    cache_dir = tmp_path / "eval_cache"
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(module, "CHECKPOINT", tmp_path / ".yt-agent" / "matrix_checkpoint.jsonl")
+    monkeypatch.setattr(module, "DEFAULT_CACHE_DIR", cache_dir)
     monkeypatch.setattr(module, "load_settings", lambda: settings)
 
     entry = GoldenEntry(
@@ -77,18 +82,20 @@ def test_main_checkpoints_failed_cell_without_nameerror(monkeypatch, tmp_path) -
     monkeypatch.setattr("src.evals.golden.answer_correctness_fns", lambda settings: {})
 
     saved: dict = {}
-    monkeypatch.setattr(module, "save_run", lambda result: saved.setdefault("result", result) or Path("evals/runs/fake.json"))
 
+    def fake_save_run(result):
+        saved["result"] = result
+        return Path("evals/runs/fake.json")
+
+    monkeypatch.setattr(module, "save_run", fake_save_run)
     monkeypatch.setattr(sys, "argv", ["run_matrix_chunked.py", "--setups", "rag_llm"])
 
     exit_code = module.main()
 
     assert exit_code == 0
-    checkpoint_lines = module.CHECKPOINT.read_text(encoding="utf-8").splitlines()
-    assert len(checkpoint_lines) == 1
-    checkpointed = json.loads(checkpoint_lines[0])
-    assert checkpointed["config"] == {}
-    assert "402 Insufficient Balance" in checkpointed["entry"]["error"]
-    # The failed cell still made it into the assembled matrix result rather
-    # than crashing main() with an unbound-variable NameError.
-    assert saved["result"]["runs"]["rag_llm"]["entries"][0]["error"]
+    # The failed cell reaches the assembled result rather than crashing main().
+    failed = saved["result"]["runs"]["rag_llm"]["entries"][0]
+    assert "402 Insufficient Balance" in failed["error"]
+    # ...and is never cached, so the next run retries it instead of treating a
+    # transient provider error as this cell's permanent score.
+    assert not cache_dir.exists() or list(cache_dir.glob("*.json")) == []
