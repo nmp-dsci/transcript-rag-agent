@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import dataclasses
+
+from src.config import Settings
 from src.evals.golden import GoldenEntry
-from src.evals.matrix_cache import cell_fingerprint, load_cell, save_cell
+from src.evals.matrix_cache import (
+    _ENGINE_SETTINGS,
+    _SETTINGS_DEFAULTS,
+    cell_fingerprint,
+    load_cell,
+    save_cell,
+)
 
 
 def entry(**overrides) -> GoldenEntry:
@@ -28,6 +37,16 @@ class FakeSettings:
     rerank_model = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     neighbor_span = 0
     neo4j_uri = "bolt://localhost:7687"
+    # Engine-specific settings, at the defaults a shipped Settings carries.
+    retrieval_candidates = _SETTINGS_DEFAULTS["retrieval_candidates"]
+    transcript_filter_top_k = _SETTINGS_DEFAULTS["transcript_filter_top_k"]
+    transcript_filter_min_score = _SETTINGS_DEFAULTS["transcript_filter_min_score"]
+    rag_max_depth = _SETTINGS_DEFAULTS["rag_max_depth"]
+    rag_max_followups = _SETTINGS_DEFAULTS["rag_max_followups"]
+    rag_followup_top_k = _SETTINGS_DEFAULTS["rag_followup_top_k"]
+    rag_novelty_min_chunks = _SETTINGS_DEFAULTS["rag_novelty_min_chunks"]
+    rag_max_total_followups = _SETTINGS_DEFAULTS["rag_max_total_followups"]
+    rag_agent_max_iterations = _SETTINGS_DEFAULTS["rag_agent_max_iterations"]
 
 
 def test_same_inputs_produce_the_same_fingerprint() -> None:
@@ -85,6 +104,77 @@ def test_neo4j_uri_only_affects_graph_rags_fingerprint() -> None:
     settings.neo4j_uri = "bolt://otherhost:7687"
     graph_rag_after = cell_fingerprint("graph_rag", e, settings, judge_model="j")
     assert graph_rag_before != graph_rag_after
+
+
+def test_engine_settings_name_real_settings_fields() -> None:
+    """A typo'd field name would silently stop tracking that setting."""
+    field_names = {field.name for field in dataclasses.fields(Settings)}
+    assert set(_ENGINE_SETTINGS) <= field_names
+
+
+def test_changing_a_setting_an_engine_ignores_leaves_its_fingerprint_alone() -> None:
+    settings = FakeSettings()
+    e = entry()
+    before = {
+        setup: cell_fingerprint(setup, e, settings, judge_model="j")
+        for setup in ("rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag")
+    }
+
+    # The agent's iteration cap: only rag_agent runs a ReAct loop.
+    settings.rag_agent_max_iterations = 20
+    assert cell_fingerprint("rag_agent", e, settings, judge_model="j") != before["rag_agent"]
+    for untouched in ("rag_llm", "rag_llm_recursive", "graph_rag"):
+        assert cell_fingerprint(untouched, e, settings, judge_model="j") == before[untouched]
+
+    # The recursion budget: only rag_llm_recursive fans out follow-ups.
+    settings.rag_agent_max_iterations = _SETTINGS_DEFAULTS["rag_agent_max_iterations"]
+    settings.rag_max_depth = 3
+    assert (
+        cell_fingerprint("rag_llm_recursive", e, settings, judge_model="j")
+        != before["rag_llm_recursive"]
+    )
+    for untouched in ("rag_llm", "rag_agent", "graph_rag"):
+        assert cell_fingerprint(untouched, e, settings, judge_model="j") == before[untouched]
+
+
+def test_changing_retrieval_breadth_changes_every_engines_fingerprint() -> None:
+    """Every engine retrieves through the shared context provider, so widening
+    the candidate pool can change any of their answers."""
+    settings = FakeSettings()
+    e = entry()
+    before = {
+        setup: cell_fingerprint(setup, e, settings, judge_model="j")
+        for setup in ("rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag")
+    }
+
+    settings.retrieval_candidates = 60
+
+    for setup, fingerprint in before.items():
+        assert cell_fingerprint(setup, e, settings, judge_model="j") != fingerprint
+
+
+def test_settings_left_at_their_defaults_do_not_enter_the_fingerprint() -> None:
+    """Cells scored before an engine setting was tracked stay valid as long as
+    that setting is still at its default — only a deviation from it, the case
+    the cache would otherwise answer with a stale score, forces a rescore."""
+
+    class Minimal:
+        """A settings stand-in that predates the engine-specific fields."""
+
+        deepseek_model = FakeSettings.deepseek_model
+        embedding_model = FakeSettings.embedding_model
+        retrieval_mode = FakeSettings.retrieval_mode
+        rag_top_k = FakeSettings.rag_top_k
+        rerank_enabled = FakeSettings.rerank_enabled
+        rerank_model = FakeSettings.rerank_model
+        neighbor_span = FakeSettings.neighbor_span
+        neo4j_uri = FakeSettings.neo4j_uri
+
+    e = entry()
+    for setup in ("rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"):
+        assert cell_fingerprint(setup, e, Minimal(), judge_model="j") == cell_fingerprint(
+            setup, e, FakeSettings(), judge_model="j"
+        )
 
 
 def test_save_then_load_round_trips(tmp_path) -> None:

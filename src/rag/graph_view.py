@@ -34,6 +34,8 @@ def _fr_layout_coordinates(
     if len(nodes) == 1:
         return {nodes[0]: (0.0, 0.0)}
 
+    import random
+
     import igraph
 
     index_of = {node: index for index, node in enumerate(nodes)}
@@ -44,6 +46,13 @@ def _fr_layout_coordinates(
         if source in index_of and target in index_of
     ]
     graph.add_edges(edge_pairs)
+    # Fruchterman-Reingold starts from a random placement, so an unseeded run
+    # reshuffles every node on each request and an entity cannot be re-found
+    # by position. Seeding igraph's own generator (rather than the module-level
+    # `random`) keeps the layout deterministic without making the rest of the
+    # process deterministic too — same reasoning as
+    # :func:`~src.rag.communities.detect_communities`.
+    igraph.set_random_number_generator(random.Random(0))
     coords = list(graph.layout("fr"))
     return dict(zip(nodes, _normalise(coords)))
 
@@ -148,11 +157,12 @@ def rank_chunks_by_graph(
     same chunk records BM25/semantic rank) supplies the actual chunk text for
     the preview, so all three modes render identically in the UI.
 
-    ``video_id`` scopes the ranking *before* it is cut to ``top_k``.
-    :meth:`~src.rag.graph_store.GraphStore.claims_about` is corpus-wide, so
-    filtering afterwards would rank globally, keep the best ``top_k``, and then
-    throw away everything outside the selected video — usually leaving the
-    column near-empty even when that video has plenty of matching claims.
+    ``video_id`` scopes the ranking *before* anything is cut: it is handed to
+    :meth:`~src.rag.graph_store.GraphStore.claims_about`, which applies it in
+    Cypher ahead of its own ``LIMIT``. Narrowing any later — after the claim
+    limit or after ``top_k`` — ranks the corpus and then discards everything
+    outside the selected video, leaving the column near-empty even when that
+    video has plenty of matching claims.
     """
     from src.agents.graph_agent import question_terms
 
@@ -164,10 +174,14 @@ def rank_chunks_by_graph(
         return []
 
     entity_names = {entity.name for entity in entities}
-    claims = store.claims_about([entity.id for entity in entities], limit=200, hops=0)
+    claims = store.claims_about(
+        [entity.id for entity in entities], limit=200, hops=0, video_id=video_id
+    )
 
     by_chunk: dict[str, dict[str, Any]] = {}
     for claim in claims:
+        # Cheap guard: the store already scoped the query, so this only ever
+        # fires for a store that ignores the argument.
         if video_id is not None and claim.video_id != video_id:
             continue
         matched = {name for name in claim.entities if name in entity_names}

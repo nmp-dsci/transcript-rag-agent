@@ -306,6 +306,11 @@ export interface Rankings {
   video_id: string | null;
   top_k: number;
   modes: Partial<Record<RankMode, RankRow[]>>;
+  /** Why a selected mode produced no ranking — graph mode reports an
+   * unreachable Neo4j here, so an unavailable column stays distinguishable
+   * from one that legitimately matched nothing. A mode listed here is left
+   * out of `overlap`. */
+  errors?: Partial<Record<RankMode, string>>;
   overlap: { count: number; of: number; chunk_ids: string[] };
 }
 

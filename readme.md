@@ -496,10 +496,10 @@ Endpoints (JSON unless noted):
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
 | `/api/scoreboard` | GET | Leaderboard for one committed matrix run; `run_id` picks it, `group_by=setup\|setup_model`, `judge_model` filter |
-| `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any) |
+| `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any; 422 on an unknown setup) |
 | `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
-| `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` |
+| `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` (a mode that cannot run is reported in `errors` and left out of `overlap`, rather than failing the request) |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
 | `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
@@ -901,9 +901,12 @@ engines that were already there. Each `(engine, question)` cell is cached
 under a fingerprint of the question plus the exact answering/judging
 configuration (`src/evals/matrix_cache.py`): the answer model, embedding
 model, retrieval mode, `top_k`, rerank config, and the judge model + RAGAS
-version. Change any of those — swap models, edit a golden question, upgrade
-the judge — and only the affected cells recompute; everything else is
-reused, at zero cost. A cell that errored is never cached, so it always
+version — plus the settings the answering engine itself reads, scoped to the
+engines that read them (the recursion budget for `rag_llm_recursive`, the
+iteration cap for `rag_agent`, retrieval breadth for all of them), so tuning
+one engine's loop does not discard every other engine's cells. Change any of
+those — swap models, edit a golden question, upgrade the judge — and only the
+affected cells recompute; everything else is reused, at zero cost. A cell that errored is never cached, so it always
 retries on the next run rather than pinning the failure.
 
 ```bash

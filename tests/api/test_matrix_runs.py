@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 
 from src.api.matrix_runs import (
-    list_matrix_runs,
-    load_matrix_run,
+    describe_matrix_run,
+    load_matrix_runs,
     matrix_entries,
+    select_matrix_run,
 )
 from src.api.scoreboard import build_scoreboard
 from tests.api.matrix_fixtures import matrix_cell as cell
@@ -72,7 +73,7 @@ def test_scoreboard_over_a_matrix_run_ranks_and_scores_contests() -> None:
     assert board["setups"][0]["key"] == "rag_agent"
 
 
-def test_list_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path) -> None:
+def test_load_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path) -> None:
     write_run(tmp_path, matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00"))
     write_run(tmp_path, matrix_run("matrix-newer", created_at="2026-07-27T00:00:00+00:00"))
     (tmp_path / "ablation-x.json").write_text(
@@ -80,21 +81,25 @@ def test_list_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path
     )
     (tmp_path / "broken.json").write_text("{not json", encoding="utf-8")
 
-    runs = list_matrix_runs(tmp_path)
+    runs = load_matrix_runs(tmp_path)
     assert [run["run_id"] for run in runs] == ["matrix-newer", "matrix-older"]
-    assert runs[0]["setups"] == ["rag_llm", "rag_agent"]
-    assert runs[0]["judged"] is True
+    # The same pass feeds the picker and the selected run — no second read.
+    descriptor = describe_matrix_run(runs[0])
+    assert descriptor["setups"] == ["rag_llm", "rag_agent"]
+    assert descriptor["judged"] is True
+    assert set(descriptor) == {"run_id", "created_at", "setups", "entry_count", "judged"}
 
 
-def test_load_matrix_run_defaults_to_newest_and_selects_by_id(tmp_path: Path) -> None:
+def test_select_matrix_run_defaults_to_newest_and_selects_by_id(tmp_path: Path) -> None:
     write_run(tmp_path, matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00"))
     write_run(tmp_path, matrix_run("matrix-newer", created_at="2026-07-27T00:00:00+00:00"))
+    runs = load_matrix_runs(tmp_path)
 
-    assert load_matrix_run(None, tmp_path)["run_id"] == "matrix-newer"
-    assert load_matrix_run("matrix-older", tmp_path)["run_id"] == "matrix-older"
+    assert select_matrix_run(runs)["run_id"] == "matrix-newer"
+    assert select_matrix_run(runs, "matrix-older")["run_id"] == "matrix-older"
 
 
-def test_load_matrix_run_returns_none_when_missing(tmp_path: Path) -> None:
-    assert load_matrix_run(None, tmp_path) is None
+def test_select_matrix_run_returns_none_when_missing(tmp_path: Path) -> None:
+    assert select_matrix_run(load_matrix_runs(tmp_path)) is None
     write_run(tmp_path, matrix_run())
-    assert load_matrix_run("no-such-run", tmp_path) is None
+    assert select_matrix_run(load_matrix_runs(tmp_path), "no-such-run") is None

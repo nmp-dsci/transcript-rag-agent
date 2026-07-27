@@ -51,8 +51,11 @@ def detect_communities(nodes: list[str], edges: list[tuple[str, str, float]]) ->
     ]
     graph.add_edges(edge_pairs)
     # A fixed seed keeps community assignments (and their downstream LLM
-    # summaries) stable across re-runs of an unchanged corpus.
-    random.seed(0)
+    # summaries) stable across re-runs of an unchanged corpus. Seeding igraph's
+    # own generator rather than calling random.seed() scopes that to igraph:
+    # index-graph shares its process with the rest of the pipeline, which must
+    # not silently inherit a fixed global RNG.
+    igraph.set_random_number_generator(random.Random(0))
     clustering = graph.community_leiden(
         objective_function="modularity",
         weights=weights or None,

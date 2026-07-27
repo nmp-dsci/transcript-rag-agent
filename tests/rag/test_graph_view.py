@@ -80,6 +80,24 @@ def test_fr_layout_places_every_node() -> None:
         assert -1.0 <= y <= 1.0
 
 
+def test_fr_layout_is_deterministic_across_calls() -> None:
+    """Same graph, same positions — otherwise every refresh of the Knowledge
+    Graph sub-tab reshuffles the nodes and an entity cannot be re-found."""
+    nodes = ["a", "b", "c", "d", "e"]
+    edges = [("a", "b", 1.0), ("b", "c", 1.0), ("c", "d", 1.0), ("d", "e", 1.0)]
+    assert _fr_layout_coordinates(nodes, edges) == _fr_layout_coordinates(nodes, edges)
+
+
+def test_fr_layout_leaves_the_global_rng_alone() -> None:
+    import random
+
+    random.seed(4321)
+    expected = random.random()
+    random.seed(4321)
+    _fr_layout_coordinates(["a", "b", "c"], [("a", "b", 1.0)])
+    assert random.random() == expected
+
+
 def test_build_knowledge_graph_assembles_nodes_edges_and_communities() -> None:
     result = build_knowledge_graph(FakeStore())
     node_ids = {node["id"] for node in result["nodes"]}
@@ -155,14 +173,22 @@ class VideoFakeStore:
         ]
         return [entity for entity in catalogue if any(term in entity.name for term in wanted)]
 
-    def claims_about(self, entity_ids, limit=200, hops=0):
+    #: Stands in for the store's Cypher ``LIMIT``: however many claims match,
+    #: only this many come back, oldest first. Small so a test can fill it.
+    quota = 10
+
+    def claims_about(self, entity_ids, limit=200, hops=0, video_id=None):
         names = {
             "negative-gearing": "negative gearing",
             "budget": "budget",
             "agentic-coding": "agentic coding",
         }
         wanted = {names[eid] for eid in entity_ids if eid in names}
-        return [claim for claim in self.claims if wanted & set(claim.entities)]
+        matched = [claim for claim in self.claims if wanted & set(claim.entities)]
+        if video_id is not None:
+            matched = [claim for claim in matched if claim.video_id == video_id]
+        matched.sort(key=lambda claim: claim.upload_date or "")
+        return matched[: self.quota]
 
 
 def test_chunk_enrichment_groups_claims_by_chunk_index() -> None:
@@ -213,6 +239,24 @@ def test_rank_chunks_by_graph_scopes_to_a_video_before_truncating() -> None:
     # top-1; scoping to v2 must still return v2's matching chunk.
     assert [row["video_id"] for row in rows] == ["v2"]
     assert rows[0]["chunk_index"] == 0
+
+
+def test_rank_chunks_by_graph_scopes_inside_the_claim_query_not_after_it() -> None:
+    """The scope must reach the store, not just the rows it returned.
+
+    The store answers with a bounded number of claims (its Cypher ``LIMIT``).
+    Ask it corpus-wide and other videos' claims spend that budget first, so a
+    filter applied to the result leaves nothing — even though the selected
+    video has a matching claim the store would have returned had it been asked
+    for that video.
+    """
+    store = VideoFakeStore()
+    store.quota = 1  # v1's claim is older, so it alone fills a corpus-wide ask
+    records = [{"video_id": "v2", "chunk_index": 0, "text": "other video text"}]
+
+    rows = rank_chunks_by_graph(store, "negative gearing", records, top_k=10, video_id="v2")
+
+    assert [(row["video_id"], row["chunk_index"]) for row in rows] == [("v2", 0)]
 
 
 def test_rank_chunks_by_graph_without_a_video_ranks_the_whole_corpus() -> None:

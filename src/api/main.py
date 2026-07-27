@@ -42,7 +42,12 @@ from src.api.corpus import (
 )
 from src.api.ingestion_queue import IngestionQueue
 from src.api.matrix_runner import MatrixRunner, RunFn
-from src.api.matrix_runs import list_matrix_runs, load_matrix_run, matrix_entries
+from src.api.matrix_runs import (
+    describe_matrix_run,
+    load_matrix_runs,
+    matrix_entries,
+    select_matrix_run,
+)
 from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.chat.frontend import (
@@ -501,8 +506,8 @@ def create_app(
         newly added engine appears as soon as its matrix cells exist, with no
         manual re-asking. ``/api/history`` still serves the live chat set.
         """
-        runs = list_matrix_runs(runs_dir)
-        run = load_matrix_run(run_id, runs_dir)
+        runs = load_matrix_runs(runs_dir)
+        run = select_matrix_run(runs, run_id)
         board = build_scoreboard(
             matrix_entries(run) if run is not None else [],
             group_by=group_by,
@@ -512,7 +517,7 @@ def create_app(
         # configured judge only describes what a *future* run would use.
         board["judge_model"] = (run or {}).get("config", {}).get("judge_model") or judge_model_name
         board["run_id"] = (run or {}).get("run_id")
-        board["runs"] = runs
+        board["runs"] = [describe_matrix_run(data) for data in runs]
         return board
 
     @app.post("/api/rank")
@@ -546,22 +551,17 @@ def create_app(
             ]
 
         def graph(text: str, top_k: int) -> list[dict[str, Any]]:
-            """Graph ranking, degrading to empty if the graph store is down.
-
-            Raising here would take the semantic and BM25 columns down with
-            it: the graph is one of three side-by-side comparisons, and losing
-            Neo4j is not a reason to fail the whole query.
-            """
+            """Graph ranking. A failure here degrades to a labelled-unavailable
+            column rather than a 500: ``build_rankings`` catches it, records it
+            under ``errors["graph"]`` and keeps the semantic and BM25 columns
+            (and their overlap) intact — losing Neo4j is not a reason to fail
+            the whole query, nor to look like an empty result."""
             from src.rag.graph_view import rank_chunks_by_graph
 
             records = list(chunk_records_fn(payload.video_id))
-            try:
-                return rank_chunks_by_graph(
-                    get_graph_store(), text, records, top_k, video_id=payload.video_id
-                )
-            except Exception:
-                logger.warning("graph ranking unavailable", exc_info=True)
-                return []
+            return rank_chunks_by_graph(
+                get_graph_store(), text, records, top_k, video_id=payload.video_id
+            )
 
         try:
             return build_rankings(
@@ -947,9 +947,17 @@ def create_app(
 
         Returns immediately with the job; pressing this while a run is already
         in flight returns that run rather than starting a second one.
+
+        Unknown setups are rejected here, the way ``eval-matrix`` exits 2 on
+        them: every cell of a typo'd sweep fails, and the run function still
+        commits the resulting all-errors ``matrix-*.json`` into ``evals/runs/``,
+        where the Scoreboard's picker would offer it as a real run.
         """
-        job = matrix_runner.start(payload.setups or list(DEFAULT_MATRIX_SETUPS))
-        return job.to_dict()
+        setups = list(payload.setups or DEFAULT_MATRIX_SETUPS)
+        unknown = [key for key in setups if key not in SETUP_KEYS]
+        if unknown:
+            raise HTTPException(status_code=422, detail=f"Unknown setup(s): {', '.join(unknown)}")
+        return matrix_runner.start(setups).to_dict()
 
     @app.get("/api/eval/matrix")
     def eval_matrix_snapshot() -> dict:

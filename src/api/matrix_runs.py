@@ -50,35 +50,40 @@ def _sort_key(data: dict[str, Any]) -> str:
     return str(data.get("created_at") or data.get("run_id") or "")
 
 
-def list_matrix_runs(runs_dir: Path | None = None) -> list[dict[str, Any]]:
-    """Descriptors for the Scoreboard's run picker, newest first.
+def load_matrix_runs(runs_dir: Path | None = None) -> list[dict[str, Any]]:
+    """Every committed matrix run, newest first, from one pass over the
+    directory.
 
-    Deliberately lightweight — the picker only needs to label each run, not
-    render it; the selected run is loaded separately.
+    The Scoreboard needs both the picker's list *and* one selected run per
+    request, and a committed run is a large document (hundreds of KB once a
+    sweep covers four engines). Reading and parsing the directory once and
+    deriving both from that pass keeps an ordinary interaction — changing the
+    group-by, the judge filter or the selected run — from re-parsing every
+    file twice.
     """
-    runs = sorted(_iter_matrix_files(runs_dir), key=_sort_key, reverse=True)
-    return [
-        {
-            "run_id": data.get("run_id"),
-            "created_at": data.get("created_at"),
-            "setups": data.get("setups", []),
-            "entry_count": data.get("entry_count"),
-            "judged": bool(data.get("judged", False)),
-        }
-        for data in runs
-    ]
+    return sorted(_iter_matrix_files(runs_dir), key=_sort_key, reverse=True)
 
 
-def load_matrix_run(
-    run_id: str | None = None, runs_dir: Path | None = None
+def describe_matrix_run(data: dict[str, Any]) -> dict[str, Any]:
+    """One descriptor for the run picker, which only needs to label a run."""
+    return {
+        "run_id": data.get("run_id"),
+        "created_at": data.get("created_at"),
+        "setups": data.get("setups", []),
+        "entry_count": data.get("entry_count"),
+        "judged": bool(data.get("judged", False)),
+    }
+
+
+def select_matrix_run(
+    runs: list[dict[str, Any]], run_id: str | None = None
 ) -> dict[str, Any] | None:
-    """One committed matrix run, or the newest when ``run_id`` is omitted.
+    """The named run out of ``runs`` (newest first), or the newest one.
 
     Returns ``None`` when nothing matches — an unknown ``run_id`` and an empty
     ``evals/runs/`` are the same situation for the caller: there is no run to
     score, so the Scoreboard renders its empty state rather than erroring.
     """
-    runs = sorted(_iter_matrix_files(runs_dir), key=_sort_key, reverse=True)
     if run_id is not None:
         return next((data for data in runs if data.get("run_id") == run_id), None)
     return runs[0] if runs else None

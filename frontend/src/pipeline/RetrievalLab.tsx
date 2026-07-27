@@ -69,6 +69,10 @@ export function RetrievalLab({
   };
 
   const modes = result ? (Object.keys(result.modes) as RankMode[]) : [];
+  // A mode that errored (an unreachable graph store) has no ranking to compare
+  // against, so it neither counts towards the overlap badge nor turns every
+  // row of the surviving modes into an "only here".
+  const answered = modes.filter((mode) => !result?.errors?.[mode]);
   // Chunk indices restart per video, so "#c11" alone is ambiguous whenever the
   // results span more than one video.
   const multiVideo =
@@ -119,8 +123,8 @@ export function RetrievalLab({
         <button type="button" className="btn pri" onClick={() => void search()} disabled={busy || !query.trim()}>
           {busy ? 'Ranking…' : 'Rank'}
         </button>
-        {result && modes.length >= 2 ? (
-          <span className="badge acc" title="Chunks both modes agreed on">
+        {result && answered.length >= 2 ? (
+          <span className="badge acc" title="Chunks every available mode agreed on">
             overlap {result.overlap.count}/{result.overlap.of}
           </span>
         ) : null}
@@ -132,17 +136,25 @@ export function RetrievalLab({
         <div className="ranks">
           {modes.map((mode) => {
             const rows = result.modes[mode] ?? [];
+            const failure = result.errors?.[mode];
             return (
               <div className="rankcol" key={mode}>
                 <div className="h">
                   {MODE_META[mode].title}
-                  <span className="badge plain">{MODE_META[mode].note}</span>
+                  <span className={failure ? 'badge warn' : 'badge plain'}>
+                    {failure ? 'unavailable' : MODE_META[mode].note}
+                  </span>
                 </div>
-                {rows.length === 0 ? (
+                {failure ? (
+                  <div className="rankempty" title={failure}>
+                    Unavailable — this mode could not be ranked, so it is left out of the
+                    overlap. {failure}
+                  </div>
+                ) : rows.length === 0 ? (
                   <div className="rankempty">No matches for this query.</div>
                 ) : (
                   rows.map((row) => {
-                    const move = modes.length >= 2 ? movement(row) : null;
+                    const move = answered.length >= 2 ? movement(row) : null;
                     return (
                       <button
                         type="button"

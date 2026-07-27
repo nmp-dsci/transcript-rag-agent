@@ -62,6 +62,62 @@ def test_single_mode_has_no_alignment_or_overlap() -> None:
     assert result["overlap"]["count"] == 0
 
 
+def graph_failure(query: str, top_k: int):
+    raise RuntimeError("Neo4j query failed (bolt://localhost:7687) — is the container up?")
+
+
+def test_a_failing_graph_mode_is_reported_rather_than_looking_empty() -> None:
+    bm25.clear_cache()
+    result = build_rankings(
+        "capital gains tax",
+        modes=["semantic", "bm25", "graph"],
+        top_k=5,
+        semantic_fn=lambda q, k: [record(0, CORPUS[0]["text"], score=0.9)],
+        records_fn=lambda: CORPUS,
+        graph_fn=graph_failure,
+    )
+    # The column is still there so the UI can label it, but it carries a reason
+    # instead of passing for "no matches".
+    assert result["modes"]["graph"] == []
+    assert "is the container up" in result["errors"]["graph"]
+
+
+def test_an_errored_mode_is_left_out_of_the_overlap() -> None:
+    bm25.clear_cache()
+    result = build_rankings(
+        "capital gains tax",
+        modes=["semantic", "bm25", "graph"],
+        top_k=5,
+        semantic_fn=lambda q, k: [record(0, CORPUS[0]["text"], score=0.9)],
+        records_fn=lambda: CORPUS,
+        graph_fn=graph_failure,
+    )
+    # Semantic and BM25 still agree on chunk 0; an unreachable graph must not
+    # collapse that agreement to 0/0.
+    assert result["overlap"]["count"] == 1
+    assert result["overlap"]["chunk_ids"] == ["vid1:0"]
+    assert result["modes"]["semantic"][0]["other_rank"] is not None
+
+
+def test_a_graph_mode_that_matches_nothing_is_not_an_error() -> None:
+    bm25.clear_cache()
+    result = build_rankings(
+        "capital gains tax",
+        modes=["semantic", "graph"],
+        top_k=5,
+        semantic_fn=lambda q, k: [record(0, CORPUS[0]["text"], score=0.9)],
+        records_fn=lambda: CORPUS,
+        graph_fn=lambda q, k: [],
+    )
+    assert result["errors"] == {}
+    # An empty answer is a real answer: it still tightens the intersection.
+    assert result["overlap"]["count"] == 0
+
+
+def test_healthy_modes_report_no_errors() -> None:
+    assert rankings([record(0, CORPUS[0]["text"], score=0.9)])["errors"] == {}
+
+
 def test_truncates_long_previews() -> None:
     long_text = "capital " * 200
     bm25.clear_cache()

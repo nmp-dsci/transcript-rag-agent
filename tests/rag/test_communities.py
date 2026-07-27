@@ -30,6 +30,23 @@ def test_detect_communities_handles_empty_and_isolated_nodes() -> None:
     assert lonely["solo"] != lonely["duo1"]
 
 
+def test_detect_communities_is_seeded_without_touching_the_global_rng() -> None:
+    """Assignments stay stable across runs, but index-graph shares its process
+    with the rest of the pipeline, which must not inherit a fixed seed."""
+    import random
+
+    nodes = ["a", "b", "c", "x", "y", "z"]
+    edges = [("a", "b", 3.0), ("b", "c", 3.0), ("x", "y", 3.0), ("y", "z", 3.0)]
+
+    random.seed(1234)
+    expected = random.random()
+    random.seed(1234)
+    first = detect_communities(nodes, edges)
+
+    assert random.random() == expected
+    assert detect_communities(nodes, edges) == first
+
+
 def test_format_claims_block_carries_dates() -> None:
     claims = [
         GraphClaim(id="c1", text="Rates on hold.", upload_date="2026-03-01"),

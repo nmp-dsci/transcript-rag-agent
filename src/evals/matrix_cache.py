@@ -10,10 +10,13 @@ or genuinely changed cells cost anything on the next run.
 Cache identity is a fingerprint of everything that could change the score:
 the question and its reference answer (editing the golden set invalidates a
 cell), and the answering + judging configuration — swap the model, the
-retrieval mode, ``top_k``, or the judge itself, and the fingerprint changes,
+retrieval mode, ``top_k``, the judge itself, or a setting the answering engine
+reads (its recursion budget, its iteration cap), and the fingerprint changes,
 so the old score is never mistaken for still being valid. Settings that
 cannot change what got scored (Neo4j's password, cache directories) are
-deliberately excluded from the fingerprint. This mirrors
+deliberately excluded from the fingerprint, and the engine-specific ones are
+scoped to the engines that read them — see :func:`_engine_material`. This
+mirrors
 :mod:`src.rag.graph_extract`'s chunk-hash cache for the same reason: cache
 identity should track only what the cached thing actually depends on.
 
@@ -26,6 +29,7 @@ cache, a failure should retry on the next run rather than being pinned.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 from pathlib import Path
@@ -35,6 +39,54 @@ from src.config import Settings
 from src.evals.golden import GoldenEntry
 
 DEFAULT_CACHE_DIR = Path(".yt-agent/eval_cache")
+
+#: Settings outside the shared material above that change an answer, mapped to
+#: the setups whose engine actually reads them: the recursion budget only
+#: shapes ``rag_llm_recursive``'s follow-up fan-out, the iteration cap only
+#: bounds ``rag_agent``'s ReAct loop, and the summary pre-filter is threaded
+#: through the request by the three vector engines (``graph_rag`` calls
+#: ``get_context`` without it). Retrieval breadth is read by every engine that
+#: retrieves through the shared context provider.
+_ENGINE_SETTINGS: dict[str, tuple[str, ...]] = {
+    "retrieval_candidates": ("rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"),
+    "transcript_filter_top_k": ("rag_llm", "rag_llm_recursive", "rag_agent"),
+    "transcript_filter_min_score": ("rag_llm", "rag_llm_recursive", "rag_agent"),
+    "rag_max_depth": ("rag_llm_recursive",),
+    "rag_max_followups": ("rag_llm_recursive",),
+    "rag_followup_top_k": ("rag_llm_recursive",),
+    "rag_novelty_min_chunks": ("rag_llm_recursive",),
+    "rag_max_total_followups": ("rag_llm_recursive",),
+    "rag_agent_max_iterations": ("rag_agent",),
+}
+
+_SETTINGS_DEFAULTS: dict[str, Any] = {
+    field.name: field.default
+    for field in dataclasses.fields(Settings)
+    if field.default is not dataclasses.MISSING
+}
+
+
+def _engine_material(setup: str, settings: Settings) -> dict[str, Any]:
+    """The engine-specific half of the fingerprint material.
+
+    Two rules, both load-bearing. A field is included only for the setups that
+    read it, so tuning ``rag_agent``'s loop does not throw away every
+    ``rag_llm`` cell. And a field is included only when it *deviates* from its
+    declared default, so cells scored before a field was tracked stay valid at
+    the shipped configuration while any deviation from it — the case the cache
+    would otherwise answer with a stale score — changes the fingerprint. That
+    is a fingerprint, not a config record: the run's own ``config`` block is
+    what documents the settings a run used.
+    """
+    material: dict[str, Any] = {}
+    for name, setups in _ENGINE_SETTINGS.items():
+        if setup not in setups:
+            continue
+        default = _SETTINGS_DEFAULTS[name]
+        value = getattr(settings, name, default)
+        if value != default:
+            material[name] = value
+    return material
 
 
 def cell_fingerprint(
@@ -78,6 +130,7 @@ def cell_fingerprint(
         "ragas_version": ragas_version,
         "reference_scored": reference_scored,
     }
+    material.update(_engine_material(setup, settings))
     encoded = json.dumps(material, sort_keys=True, default=str).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()[:24]
 

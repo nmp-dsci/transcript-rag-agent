@@ -38,8 +38,11 @@ Every `(setup, question)` cell is cached by a fingerprint of the question plus t
 exact answering and judging configuration (`src/evals/matrix_cache.py`, under the
 gitignored `.yt-agent/eval_cache/`). Adding one question or one engine re-scores only
 the cells that do not already exist — changing the answer model, embedding model,
-retrieval mode, `top_k`, rerank settings or judge changes the fingerprint, so stale
-numbers are never silently reused. Pass `--refresh` to bypass the cache.
+retrieval mode, `top_k`, rerank settings, judge, or a setting the answering engine
+reads (its recursion budget, its iteration cap, retrieval breadth) changes the
+fingerprint, so stale numbers are never silently reused. Engine-specific settings
+are scoped to the engines that read them, so tuning one engine keeps the others'
+cells valid. Pass `--refresh` to bypass the cache.
 
 
 ## Provenance

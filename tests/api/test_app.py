@@ -698,6 +698,35 @@ def test_scoreboard_lists_runs_and_selects_one_by_id(harness: Harness) -> None:
     assert {row["key"] for row in picked["setups"]} == {"rag_llm", "rag_agent"}
 
 
+def test_scoreboard_reads_the_runs_directory_once_per_request(
+    harness: Harness, monkeypatch
+) -> None:
+    """The picker's list and the selected run come from one pass.
+
+    A committed matrix run is a large document, and the Scoreboard reloads on
+    every group-by, judge-filter and run-picker change — parsing the whole
+    directory twice per request makes ordinary interaction cost double.
+    """
+    from src.api import matrix_runs
+
+    passes = 0
+    original = matrix_runs._iter_matrix_files
+
+    def counting(runs_dir=None):
+        nonlocal passes
+        passes += 1
+        return original(runs_dir)
+
+    monkeypatch.setattr(matrix_runs, "_iter_matrix_files", counting)
+    harness.seed_matrix_run(matrix_run())
+
+    board = harness.client.get("/api/scoreboard").json()
+
+    assert passes == 1
+    assert board["run_id"] == "matrix-20260727-010101"
+    assert [run["run_id"] for run in board["runs"]] == ["matrix-20260727-010101"]
+
+
 def test_scoreboard_unknown_run_id_renders_empty_rather_than_erroring(
     harness: Harness,
 ) -> None:
@@ -817,6 +846,38 @@ def test_eval_matrix_defaults_to_every_setup_in_the_matrix(
     assert calls == [DEFAULT_MATRIX_SETUPS]
 
 
+def test_eval_matrix_rejects_an_unknown_setup_before_starting_a_run(
+    tmp_path: Path, settings: Settings
+) -> None:
+    """A typo'd engine would fail every cell, and the run function still commits
+    the all-errors matrix-*.json the Scoreboard's picker then offers as a run."""
+    calls: list[list[str]] = []
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: FakeRunner(),  # type: ignore[arg-type]
+        judge_factory=lambda: FakeJudge(),  # type: ignore[arg-type]
+        corpus_fn=lambda: FAKE_CORPUS,
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        runs_dir=tmp_path / "runs",
+        matrix_run_fn=lambda setups, on_cell: (
+            calls.append(setups) or {"run_id": "matrix-should-not-exist"}
+        ),
+    )
+    client = TestClient(app)
+
+    response = client.post("/api/eval/matrix", json={"setups": ["rag_lmm"]})
+
+    assert response.status_code == 422
+    assert "rag_lmm" in response.json()["detail"]
+    time.sleep(0.05)
+    assert calls == []
+    assert client.get("/api/eval/matrix").json() == {"job": None}
+
+
 def test_eval_matrix_snapshot_is_null_before_any_run(harness: Harness) -> None:
     assert harness.client.get("/api/eval/matrix").json() == {"job": None}
 
@@ -932,6 +993,38 @@ def test_rank_semantic_scopes_to_video_id_beyond_global_top_k(
     assert harness.runner.provider.chunk_store.calls == [
         ("scoped", "abc123", "capital gains tax", 2)
     ]
+
+
+def test_rank_reports_an_unreachable_graph_without_losing_the_other_modes(
+    settings: Settings, tmp_path: Path
+) -> None:
+    class BrokenGraphStore:
+        def resolve_entities(self, terms, limit=6):
+            raise ConnectionError("neo4j unreachable")
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: FakeRunner(),  # type: ignore[arg-type]
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        chunk_records_fn=lambda video_id: [
+            {**chunk, "video_id": "abc123"} for chunk in FAKE_CHUNKS["abc123"]
+        ],
+        graph_store_factory=lambda: BrokenGraphStore(),
+    )
+
+    payload = TestClient(app).post(
+        "/api/rank",
+        json={"query": "capital gains tax", "modes": ["bm25", "graph"], "top_k": 5},
+    ).json()
+
+    # The query still succeeds and BM25 still ranks — but the graph column says
+    # why it is empty instead of passing for "nothing matched".
+    assert payload["modes"]["bm25"]
+    assert payload["modes"]["graph"] == []
+    assert "neo4j unreachable" in payload["errors"]["graph"]
 
 
 def test_rank_rejects_blank_query(harness: Harness) -> None:

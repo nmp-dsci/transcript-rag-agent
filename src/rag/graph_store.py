@@ -257,23 +257,38 @@ class GraphStore:
         return [GraphEntity.model_validate(row) for row in rows]
 
     def claims_about(
-        self, entity_ids: list[str], limit: int = 40, hops: int = 1
+        self,
+        entity_ids: list[str],
+        limit: int = 40,
+        hops: int = 1,
+        video_id: str | None = None,
     ) -> list[GraphClaim]:
         """Claims about the entities (and, with hops=1, their direct neighbours).
 
         Ordered by ``upload_date`` so the same result set serves both the local
         answer path and the temporal timeline — the temporal layer is a sort,
         not a second store.
+
+        ``video_id`` narrows the claims to one video *inside* Cypher, before
+        ``LIMIT`` applies. Filtering the returned rows instead is not
+        equivalent: the limit is spent on the corpus-wide oldest claims first,
+        so a video with plenty of matching claims can come back empty simply
+        because older videos filled the quota. Omitted, the query is
+        corpus-wide exactly as before.
         """
         if not entity_ids:
             return []
-        anchor = "MATCH (c:Claim)-[:ABOUT]->(e:Entity) WHERE e.id IN $ids"
+        scope = " AND c.video_id = $video_id" if video_id is not None else ""
+        anchor = f"MATCH (c:Claim)-[:ABOUT]->(e:Entity) WHERE e.id IN $ids{scope}"
         if hops >= 1:
             anchor = (
                 "MATCH (seed:Entity) WHERE seed.id IN $ids "
                 "MATCH (c:Claim)-[:ABOUT]->(e:Entity) "
-                "WHERE e.id IN $ids OR (e)-[:RELATES]-(seed)"
+                f"WHERE (e.id IN $ids OR (e)-[:RELATES]-(seed)){scope}"
             )
+        params: dict[str, Any] = {"ids": entity_ids, "limit": limit}
+        if video_id is not None:
+            params["video_id"] = video_id
         rows = self._run(
             f"""
             {anchor}
@@ -288,8 +303,7 @@ class GraphStore:
             ORDER BY c.upload_date ASC, c.video_id, c.start_seconds
             LIMIT $limit
             """,
-            ids=entity_ids,
-            limit=limit,
+            **params,
         )
         return [GraphClaim.model_validate(row) for row in rows]
 
