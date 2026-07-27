@@ -947,25 +947,24 @@ and win-rate table — one run, two views.
 
 You do not have to leave the app to produce one: **Run eval matrix** in the
 Experiments tab starts the same sweep as a background job with live per-cell
-progress, and commits the run when it finishes.
+progress, and commits the run when it finishes. The server runs at most one
+matrix sweep at a time (`src/api/matrix_runner.py`) — a second `POST
+/api/eval/matrix` while one is in flight returns that same run rather than
+starting a competing one, since two concurrent sweeps would contend on the
+one cell cache and stand up a second agent/judge stack against one Chroma
+path.
 
-A full judged matrix is many LLM calls and can run for hours, and a single
-`eval-matrix` process loses all progress if it is interrupted;
-`scripts/run_matrix_chunked.py` scores one (setup, question) cell at a time
-through the same pipeline,
-appending each result to a JSONL checkpoint (`.yt-agent/matrix_checkpoint.jsonl`)
-as it goes, so a killed or re-run process resumes from wherever it left off
-instead of re-scoring finished cells:
+`scripts/run_matrix_chunked.py` used to resume from a bespoke JSONL
+checkpoint (`.yt-agent/matrix_checkpoint.jsonl`) before the cell cache
+existed. `scripts/migrate_matrix_checkpoint.py` is the one-time, re-runnable
+migration that back-fills any rows still sitting in that legacy checkpoint
+into the cache (refusing a row whose recorded `config` no longer matches
+current settings), so switching over cost nothing already paid for:
 
 ```bash
-uv run python scripts/run_matrix_chunked.py
-uv run python scripts/run_matrix_chunked.py --setups rag_llm,graph_rag
-uv run python scripts/run_matrix_chunked.py --max-seconds 1200   # bounded run; exits 3 and resumes next time
-uv run python scripts/run_matrix_chunked.py --fresh              # discard the checkpoint and start over
+uv run python scripts/migrate_matrix_checkpoint.py            # migrate legacy checkpoint rows into the cache
+uv run python scripts/migrate_matrix_checkpoint.py --dry-run  # report only
 ```
-
-Once every (setup, question) cell is scored it assembles and saves the same
-`matrix-<timestamp>.json` shape as `eval-matrix`.
 
 #### 5. Compare and evaluate
 
@@ -1017,7 +1016,7 @@ src/
                  #   graph_models)
   agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic,
                  #   GraphRAG) with follow-up query rewriting for conversational history;
-                 #   prompts.py is the live prompt registry the Prompts tab reads
+                 #   prompts.py is the live prompt registry the System Design tab reads
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
                  #   scoreboard, chunk graph, committed experiments, prompt registry
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
@@ -1028,9 +1027,9 @@ src/
 evals/runs/      # Committed eval snapshots (ablation + golden + matrix runs); ablation
                  #   and golden runs are gated in CI, matrix runs are not
 docs/            # Process docs, e.g. growing the golden set
-scripts/         # One-off maintenance (chunk-metadata backfill), the golden-candidate
-                 #   drafting scaffold, and the checkpoint-resumable matrix driver
-                 #   (run_matrix_chunked.py)
+scripts/         # One-off maintenance (chunk-metadata backfill, legacy matrix-checkpoint
+                 #   migration), the golden-candidate drafting scaffold, and the
+                 #   cache-resumable matrix driver (run_matrix_chunked.py)
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
