@@ -45,7 +45,11 @@ def test_enqueue_returns_immediately_even_while_a_job_is_running() -> None:
         # queue. The real proof is below — the job is still running and only
         # the first has reached index_fn.
         assert elapsed < 1.0
-        assert first.status == "queued"
+        # The worker thread races with this assertion: it may already have
+        # picked the first job off the queue and flipped it to "running" by
+        # the time we check, so either status is consistent with enqueue not
+        # blocking. What must not happen is the second job starting early.
+        assert first.status in ("queued", "running")
         assert second.status == "queued"
 
         wait_until(lambda: queue_.snapshot()[0]["status"] == "running")
