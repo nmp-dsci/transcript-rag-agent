@@ -28,6 +28,8 @@ flowchart LR
   subgraph ING["Ingestion"]
     U["YouTube URL / channel / search"] --> CH["segment-aware chunking<br/>+ context headers"]
     CH --> EMB["MiniLM local embeddings"] --> TC[("transcript_chunks")]
+    TC --> GEX["LLM entity/claim extraction<br/>(index-graph)"] --> GS[("Neo4j knowledge graph")]
+    GS --> COM["Leiden communities<br/>+ summaries"]
   end
   subgraph QRY["Query path"]
     Q["question"] --> SEM["semantic top-30"]
@@ -35,14 +37,17 @@ flowchart LR
     SEM --> RRF["RRF fusion"]
     BM --> RRF
     RRF --> RER["cross-encoder rerank → top-k"]
-    RER --> A{"3 answer paths"}
+    RER --> A{"4 answer paths"}
     A --> A1["single-hop"]
     A --> A2["recursive multi-hop"]
     A --> A3["agentic ReAct"]
-    A1 & A2 & A3 --> ANS["answer + timestamped citations"]
+    A --> A4["GraphRAG router<br/>local / global / temporal"]
+    A1 & A2 & A3 & A4 --> ANS["answer + timestamped citations"]
   end
   TC -.-> SEM
   TC -.-> BM
+  GS -.-> A4
+  COM -.-> A4
   ANS --> J["RAGAS judge + golden-set IR metrics"]
 ```
 
