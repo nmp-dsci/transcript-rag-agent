@@ -16,6 +16,7 @@ import logging
 from typing import Callable, Protocol
 
 from src.agents.prompts import build_community_summary_prompt
+from src.rag.graph_algo_lock import igraph_rng_lock
 from src.rag.graph_models import GraphClaim
 from src.rag.graph_store import GraphStore
 
@@ -54,13 +55,16 @@ def detect_communities(nodes: list[str], edges: list[tuple[str, str, float]]) ->
     # summaries) stable across re-runs of an unchanged corpus. Seeding igraph's
     # own generator rather than calling random.seed() scopes that to igraph:
     # index-graph shares its process with the rest of the pipeline, which must
-    # not silently inherit a fixed global RNG.
-    igraph.set_random_number_generator(random.Random(0))
-    clustering = graph.community_leiden(
-        objective_function="modularity",
-        weights=weights or None,
-        n_iterations=5,
-    )
+    # not silently inherit a fixed global RNG. igraph's generator is
+    # process-global, so the seed-then-cluster pair must be serialized against
+    # any other thread doing the same (see graph_algo_lock).
+    with igraph_rng_lock:
+        igraph.set_random_number_generator(random.Random(0))
+        clustering = graph.community_leiden(
+            objective_function="modularity",
+            weights=weights or None,
+            n_iterations=5,
+        )
     return {node: clustering.membership[index_of[node]] for node in nodes}
 
 

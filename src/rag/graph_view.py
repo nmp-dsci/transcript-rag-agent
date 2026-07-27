@@ -20,6 +20,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from src.rag.graph_algo_lock import igraph_rng_lock
 from src.rag.graph_store import GraphStore
 
 _ROUND_TO = 6
@@ -51,9 +52,12 @@ def _fr_layout_coordinates(
     # by position. Seeding igraph's own generator (rather than the module-level
     # `random`) keeps the layout deterministic without making the rest of the
     # process deterministic too — same reasoning as
-    # :func:`~src.rag.communities.detect_communities`.
-    igraph.set_random_number_generator(random.Random(0))
-    coords = list(graph.layout("fr"))
+    # :func:`~src.rag.communities.detect_communities`. igraph's generator is
+    # process-global, so the seed-then-layout pair must be serialized against
+    # any other thread doing the same (see graph_algo_lock).
+    with igraph_rng_lock:
+        igraph.set_random_number_generator(random.Random(0))
+        coords = list(graph.layout("fr"))
     return dict(zip(nodes, _normalise(coords)))
 
 
