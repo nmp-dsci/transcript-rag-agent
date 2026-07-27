@@ -17,6 +17,7 @@ browser can show progress and render results as they complete.
 from __future__ import annotations
 
 import json
+import logging
 import queue
 import threading
 from dataclasses import asdict
@@ -73,6 +74,8 @@ from src.evals.matrix import DEFAULT_MATRIX_SETUPS
 INDEX_HTML_PATH = Path(__file__).parent / "static" / "index.html"
 # Built React bundle (frontend/npm run build). Gitignored, so it may be absent.
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+logger = logging.getLogger(__name__)
 
 IndexFn = Callable[[list[str]], int]
 
@@ -543,13 +546,22 @@ def create_app(
             ]
 
         def graph(text: str, top_k: int) -> list[dict[str, Any]]:
+            """Graph ranking, degrading to empty if the graph store is down.
+
+            Raising here would take the semantic and BM25 columns down with
+            it: the graph is one of three side-by-side comparisons, and losing
+            Neo4j is not a reason to fail the whole query.
+            """
             from src.rag.graph_view import rank_chunks_by_graph
 
             records = list(chunk_records_fn(payload.video_id))
-            rows = rank_chunks_by_graph(get_graph_store(), text, records, top_k)
-            if payload.video_id:
-                rows = [row for row in rows if row.get("video_id") == payload.video_id]
-            return rows
+            try:
+                return rank_chunks_by_graph(
+                    get_graph_store(), text, records, top_k, video_id=payload.video_id
+                )
+            except Exception:
+                logger.warning("graph ranking unavailable", exc_info=True)
+                return []
 
         try:
             return build_rankings(

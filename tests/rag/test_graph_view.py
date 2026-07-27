@@ -153,11 +153,7 @@ class VideoFakeStore:
             GraphEntity(id="budget", name="budget", mentions=8),
             GraphEntity(id="agentic-coding", name="agentic coding", mentions=4),
         ]
-        return [
-            entity
-            for entity in catalogue
-            if any(term in entity.name for term in wanted)
-        ]
+        return [entity for entity in catalogue if any(term in entity.name for term in wanted)]
 
     def claims_about(self, entity_ids, limit=200, hops=0):
         names = {
@@ -193,13 +189,39 @@ def test_rank_chunks_by_graph_ranks_multi_entity_chunk_first() -> None:
         {"video_id": "v1", "chunk_index": 2, "text": "raw chunk text", "start_seconds": 30.0},
         {"video_id": "v1", "chunk_index": 5, "text": "other raw text", "start_seconds": 90.0},
     ]
-    rows = rank_chunks_by_graph(
-        VideoFakeStore(), "negative gearing budget", records, top_k=10
-    )
+    rows = rank_chunks_by_graph(VideoFakeStore(), "negative gearing budget", records, top_k=10)
     assert rows[0]["chunk_index"] == 2  # covers both matched entities
     assert rows[0]["text"] == "raw chunk text"  # real chunk text, not the claim
     assert set(rows[0]["matched_entities"]) == {"negative gearing", "budget"}
     assert rows[0]["score"] == 1.0  # both resolved entities covered
+
+
+def test_rank_chunks_by_graph_scopes_to_a_video_before_truncating() -> None:
+    """Scoping must narrow the ranking, not slice it after the fact.
+
+    claims_about is corpus-wide, so filtering after the top_k cut would rank
+    globally, keep the best k, and then discard everything outside the chosen
+    video — leaving the column empty whenever the winners came from elsewhere.
+    """
+    records = [
+        {"video_id": "v2", "chunk_index": 0, "text": "other video text"},
+    ]
+    rows = rank_chunks_by_graph(
+        VideoFakeStore(), "negative gearing", records, top_k=1, video_id="v2"
+    )
+    # v1 chunk 2 covers "negative gearing" too and would win a corpus-wide
+    # top-1; scoping to v2 must still return v2's matching chunk.
+    assert [row["video_id"] for row in rows] == ["v2"]
+    assert rows[0]["chunk_index"] == 0
+
+
+def test_rank_chunks_by_graph_without_a_video_ranks_the_whole_corpus() -> None:
+    records = [
+        {"video_id": "v1", "chunk_index": 2, "text": "v1 text"},
+        {"video_id": "v2", "chunk_index": 0, "text": "v2 text"},
+    ]
+    rows = rank_chunks_by_graph(VideoFakeStore(), "negative gearing", records, top_k=10)
+    assert {row["video_id"] for row in rows} == {"v1", "v2"}
 
 
 def test_rank_chunks_by_graph_returns_empty_when_no_entities_resolve() -> None:

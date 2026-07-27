@@ -113,15 +113,11 @@ def chunk_enrichment_for_video(store: GraphStore, video_id: str) -> dict[str, An
     claims = store.claims_for_video(video_id)
     by_chunk: dict[str, dict[str, Any]] = {}
     for claim in claims:
-        bucket = by_chunk.setdefault(
-            str(claim.chunk_index), {"entities": [], "claims": []}
-        )
+        bucket = by_chunk.setdefault(str(claim.chunk_index), {"entities": [], "claims": []})
         for name in claim.entities:
             if name not in bucket["entities"]:
                 bucket["entities"].append(name)
-        bucket["claims"].append(
-            {"id": claim.id, "text": claim.text, "polarity": claim.polarity}
-        )
+        bucket["claims"].append({"id": claim.id, "text": claim.text, "polarity": claim.polarity})
     return {"chunks": by_chunk}
 
 
@@ -140,6 +136,7 @@ def rank_chunks_by_graph(
     query: str,
     records: list[dict[str, Any]],
     top_k: int,
+    video_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """How ``graph_rag`` would retrieve for this query, for the Retrieval Lab.
 
@@ -150,6 +147,12 @@ def rank_chunks_by_graph(
     ranks higher, the graph analogue of a relevance score. ``records`` (the
     same chunk records BM25/semantic rank) supplies the actual chunk text for
     the preview, so all three modes render identically in the UI.
+
+    ``video_id`` scopes the ranking *before* it is cut to ``top_k``.
+    :meth:`~src.rag.graph_store.GraphStore.claims_about` is corpus-wide, so
+    filtering afterwards would rank globally, keep the best ``top_k``, and then
+    throw away everything outside the selected video — usually leaving the
+    column near-empty even when that video has plenty of matching claims.
     """
     from src.agents.graph_agent import question_terms
 
@@ -165,6 +168,8 @@ def rank_chunks_by_graph(
 
     by_chunk: dict[str, dict[str, Any]] = {}
     for claim in claims:
+        if video_id is not None and claim.video_id != video_id:
+            continue
         matched = {name for name in claim.entities if name in entity_names}
         if not matched:
             continue
@@ -188,8 +193,7 @@ def rank_chunks_by_graph(
         return []
 
     records_by_id = {
-        f"{record.get('video_id')}:{record.get('chunk_index')}": record
-        for record in records
+        f"{record.get('video_id')}:{record.get('chunk_index')}": record for record in records
     }
     ranked = sorted(
         by_chunk.items(),
