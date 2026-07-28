@@ -547,6 +547,11 @@ def create_app(
         config, rather than from whichever questions were asked live — so a
         newly added engine appears as soon as its matrix cells exist, with no
         manual re-asking. ``/api/history`` still serves the live chat set.
+
+        Alongside the aggregated ``setups`` rows, ``questions`` carries the
+        run pivoted the other way — one row per golden question with each
+        setup's composite on it — so the averages can be read back down to
+        what they average.
         """
         runs = load_matrix_runs(runs_dir)
         run = select_matrix_run(runs, run_id)

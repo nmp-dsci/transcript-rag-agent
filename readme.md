@@ -435,6 +435,13 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
   ragas version, embedding model, metric definitions, and last-judged time.
+  Underneath, a collapsed **Questions** panel opens the averages back up: one
+  row per golden question in the selected run — its text, domain, and question
+  type — with every setup's composite *on that question*, so a leading average
+  is traceable to the questions that produced it rather than taken on trust. A
+  cell the judge never scored reads `unjudged` (a run committed with
+  `--no-judge` has questions but no scores) and one whose engine failed reads
+  `error` with the message on hover, so a blank is never mistaken for a zero.
 
   This tab reads the **eval** set, not the live one. Chat and its history stay
   exploratory — ask anything, judge it, keep it — but they no longer decide the
@@ -523,7 +530,7 @@ Endpoints (JSON unless noted):
 | `/api/history` | GET | All captured conversations (with evaluations) — the live set |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
-| `/api/scoreboard` | GET | Leaderboard for one committed matrix run; `run_id` picks it, `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/scoreboard` | GET | Leaderboard for one committed matrix run — aggregated `setups` rows plus the run's per-question rows (`questions`, each setup's composite on each golden question); `run_id` picks the run, `group_by=setup\|setup_model`, `judge_model` filter |
 | `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any; 422 on an unknown setup) |
 | `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
@@ -886,7 +893,9 @@ uv run python -m src.cli index-graph --max-chunks 20       # smoke-test on the f
 
 Extraction is one DeepSeek call per chunk against a validated JSON contract,
 cached under `.yt-agent/graph_cache/` keyed on chunk id + text hash, so
-re-indexing only re-extracts changed chunks. Every claim carries its source
+re-indexing only re-extracts changed chunks. A chunk whose extraction failed is
+never cached, so it retries on the next run rather than pinning the failure —
+the same rule the matrix cell cache follows. Every claim carries its source
 chunk id, video, timestamps and `upload_date` — graph answers keep the same
 deep-linkable citations as vector answers, and the temporal layer is just a
 sort on `upload_date`. Communities are detected with Leiden (igraph) and
@@ -1069,7 +1078,8 @@ frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
   src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries + the Run eval matrix trigger
   src/pipeline/  # Corpus tree, chunk detail (+ per-chunk graph enrichment), Retrieval Lab, knowledge graph, indexing panel, chunk graph
-  src/scoreboard/# Run picker, grouped aggregates, provenance bar, efficiency panel
+  src/scoreboard/# Run picker, grouped aggregates, provenance bar, efficiency panel,
+                 #   per-question breakdown of the selected run (QuestionsPanel)
 tests/
 ```
 

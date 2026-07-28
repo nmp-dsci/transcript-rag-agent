@@ -19,7 +19,10 @@ It is the only run shape where the setups are directly comparable: same question
 same retrieval config, same judge, in one file. That is why it powers **both**
 comparison tabs — Experiments renders its `comparison` pivot (metric × setup, overall
 and by question type), and the **Scoreboard** aggregates its per-entry `scores` into
-the leaderboard and win-rate table, selectable per run from a dropdown.
+the leaderboard and win-rate table, selectable per run from a dropdown. The
+Scoreboard also pivots the same `entries` the other way in its **Questions** panel —
+one row per golden question, each setup's composite on it — so an aggregate row can
+be read back down to the questions it averages.
 
 The Scoreboard deliberately does **not** read `dashboard/chat_history.json` any more.
 Chat history is the *live* set — whatever a human happened to ask and judge — so a
