@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+from src.api import matrix_runs
 from src.api.matrix_runs import (
     describe_matrix_run,
     load_matrix_runs,
@@ -88,6 +91,38 @@ def test_load_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path
     assert descriptor["setups"] == ["rag_llm", "rag_agent"]
     assert descriptor["judged"] is True
     assert set(descriptor) == {"run_id", "created_at", "setups", "entry_count", "judged"}
+
+
+def test_load_matrix_runs_reparses_only_when_the_directory_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Repeated reads of an unchanged directory are served from the memo.
+
+    A committed run is a large document, and the Scoreboard re-reads the
+    directory on every group-by toggle, judge filter and run-picker change. A
+    newly written run must still appear without a restart, so the memo is keyed
+    on the files' own stat fingerprint rather than on a process-lifetime flag.
+    """
+    reads: list[Path | None] = []
+    real_iter = matrix_runs._iter_matrix_files
+
+    def counting_iter(runs_dir: Path | None = None):
+        reads.append(runs_dir)
+        return real_iter(runs_dir)
+
+    monkeypatch.setattr(matrix_runs, "_iter_matrix_files", counting_iter)
+
+    write_run(tmp_path, matrix_run("matrix-older", created_at="2026-07-01T00:00:00+00:00"))
+    assert [run["run_id"] for run in load_matrix_runs(tmp_path)] == ["matrix-older"]
+    assert [run["run_id"] for run in load_matrix_runs(tmp_path)] == ["matrix-older"]
+    assert len(reads) == 1
+
+    write_run(tmp_path, matrix_run("matrix-newer", created_at="2026-07-27T00:00:00+00:00"))
+    assert [run["run_id"] for run in load_matrix_runs(tmp_path)] == [
+        "matrix-newer",
+        "matrix-older",
+    ]
+    assert len(reads) == 2
 
 
 def test_select_matrix_run_defaults_to_newest_and_selects_by_id(tmp_path: Path) -> None:

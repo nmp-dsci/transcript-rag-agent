@@ -137,8 +137,9 @@ def _graph_rag_flow() -> list[dict[str, Any]]:
         ),
         _step(
             "Retrieve",
-            f"Up to {DEFAULT_MAX_CLAIMS} graph claims about those entities, PLUS a normal vector "
-            "retrieval of transcript chunks (same as vector_rag) — both feed the same answer call.",
+            f"Up to {DEFAULT_MAX_CLAIMS} graph claims about those entities and their directly "
+            "related neighbours (1 hop), PLUS a normal vector retrieval of transcript chunks "
+            "(same as vector_rag) — both feed the same answer call.",
             branch="local",
         ),
         _step(

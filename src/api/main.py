@@ -189,6 +189,31 @@ def _index_argv(payload: "IndexRequest") -> tuple[list[str], str]:
 
 _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
+# How long a subscription stream waits for an event before emitting an SSE
+# comment. The comment itself is inert for the browser, but reaching a yield
+# is what lets the generator notice a closed connection: Starlette drives
+# these sync generators on a worker thread, so a `get()` that blocks forever
+# pins that thread — and the subscriber registration — for the life of the
+# process, even though the tab that opened it is long gone.
+_SSE_KEEPALIVE_INTERVAL_SECONDS = 10.0
+
+
+def _subscription_stream(
+    subscriber: queue.Queue,
+    unsubscribe: Callable[[queue.Queue], None],
+) -> Iterator[str]:
+    """Forward one subscriber's events as SSE until the client goes away."""
+    try:
+        while True:
+            try:
+                event = subscriber.get(timeout=_SSE_KEEPALIVE_INTERVAL_SECONDS)
+            except queue.Empty:
+                yield ": keepalive\n\n"
+                continue
+            yield _sse(event["type"], event)
+    finally:
+        unsubscribe(subscriber)
+
 
 def _append_answers(
     entry_id: str, results: list, history_path: Path
@@ -526,6 +551,17 @@ def create_app(
         if not query:
             raise HTTPException(status_code=422, detail="Query must not be blank")
 
+        # BM25 and graph ranking both read the whole chunk corpus, and each
+        # read opens the Chroma collection and pulls every document. Selecting
+        # both modes is one corpus scan per request, not one per mode.
+        loaded_records: list[dict[str, Any]] | None = None
+
+        def records() -> list[dict[str, Any]]:
+            nonlocal loaded_records
+            if loaded_records is None:
+                loaded_records = list(chunk_records_fn(payload.video_id))
+            return loaded_records
+
         def semantic(text: str, top_k: int) -> list[dict[str, Any]]:
             provider = get_runner().provider
             if payload.video_id:
@@ -558,9 +594,8 @@ def create_app(
             the whole query, nor to look like an empty result."""
             from src.rag.graph_view import rank_chunks_by_graph
 
-            records = list(chunk_records_fn(payload.video_id))
             return rank_chunks_by_graph(
-                get_graph_store(), text, records, top_k, video_id=payload.video_id
+                get_graph_store(), text, records(), top_k, video_id=payload.video_id
             )
 
         try:
@@ -569,7 +604,7 @@ def create_app(
                 modes=payload.modes,
                 top_k=payload.top_k,
                 semantic_fn=semantic,
-                records_fn=lambda: chunk_records_fn(payload.video_id),
+                records_fn=records,
                 graph_fn=graph if "graph" in payload.modes else None,
                 video_id=payload.video_id,
             )
@@ -930,16 +965,11 @@ def create_app(
         sees already-queued and in-progress jobs immediately.
         """
         subscriber = ingestion_queue.subscribe()
-
-        def stream() -> Iterator[str]:
-            try:
-                while True:
-                    event = subscriber.get()
-                    yield _sse(event["type"], event)
-            finally:
-                ingestion_queue.unsubscribe(subscriber)
-
-        return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
+        return StreamingResponse(
+            _subscription_stream(subscriber, ingestion_queue.unsubscribe),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
+        )
 
     @app.post("/api/eval/matrix")
     def start_eval_matrix(payload: MatrixRunRequest) -> dict:
@@ -967,16 +997,11 @@ def create_app(
     def eval_matrix_stream() -> StreamingResponse:
         """Live progress for the current matrix run, seeded with its state."""
         subscriber = matrix_runner.subscribe()
-
-        def stream() -> Iterator[str]:
-            try:
-                while True:
-                    event = subscriber.get()
-                    yield _sse(event["type"], event)
-            finally:
-                matrix_runner.unsubscribe(subscriber)
-
-        return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
+        return StreamingResponse(
+            _subscription_stream(subscriber, matrix_runner.unsubscribe),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
+        )
 
     # Mounted last so it can never shadow an /api route. Absent until the
     # frontend is built, which is why `/` falls back to the legacy page.

@@ -7,7 +7,7 @@
  * provides is untouched by panning or zooming.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface ZoomPanTransform {
   x: number;
@@ -82,12 +82,26 @@ export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
   );
 
   const onWheel = useCallback(
-    (event: React.WheelEvent<SVGSVGElement>) => {
+    (event: WheelEvent) => {
       event.preventDefault();
       zoomAt(event.clientX, event.clientY, Math.exp(-event.deltaY * WHEEL_SENSITIVITY));
     },
     [zoomAt],
   );
+
+  // React registers `wheel` on its root container as a *passive* listener, so
+  // preventDefault() from an onWheel prop is ignored and the page scrolls
+  // behind the diagram while it zooms. The listener has to be native, and
+  // explicitly non-passive, for the scroll to actually be suppressed. No
+  // dependency array: the <svg> mounts only once its data has loaded, and a
+  // ref's change doesn't re-run an effect, so rebinding per render is what
+  // guarantees the handler is attached to whatever element is current.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  });
 
   const onPointerDown = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     if (event.button !== 0) return;
@@ -163,7 +177,6 @@ export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
   return {
     transform,
     svgProps: {
-      onWheel,
       onPointerDown,
       onPointerMove,
       onPointerUp: endDrag,

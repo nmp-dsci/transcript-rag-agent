@@ -152,6 +152,25 @@ describe('SystemDesignView', () => {
     expect(screen.getByText('Up to 30 graph claims plus a vector retrieval.')).toBeInTheDocument();
   });
 
+  it('marks the step where the branches converge so it reads as shared, not temporal-only', async () => {
+    systemDesign.mockResolvedValue(data());
+    render(<SystemDesignView />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /GraphRAG/ }));
+    const converge = screen.getByText('all routes converge');
+    expect(converge).toBeInTheDocument();
+    // It must sit between the last branch's step and the shared answer step.
+    const steps = Array.from(document.querySelectorAll('.ds-flow > div')).map(
+      (node) => node.textContent ?? '',
+    );
+    const convergeIndex = steps.findIndex((text) => text.includes('all routes converge'));
+    expect(steps[convergeIndex]).toContain('One LLM call narrates over the evidence.');
+    expect(steps[convergeIndex - 1]).toContain('Read pre-built community summaries.');
+    // A flow with no branches at all gets no marker.
+    await userEvent.click(screen.getByRole('button', { name: /Vector RAG/ }));
+    expect(screen.queryByText('all routes converge')).not.toBeInTheDocument();
+  });
+
   it('store nodes with no flow show no flow section', async () => {
     systemDesign.mockResolvedValue(data());
     render(<SystemDesignView />);

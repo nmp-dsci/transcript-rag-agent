@@ -1027,6 +1027,46 @@ def test_rank_reports_an_unreachable_graph_without_losing_the_other_modes(
     assert "neo4j unreachable" in payload["errors"]["graph"]
 
 
+def test_rank_reads_the_chunk_corpus_once_for_bm25_and_graph(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """Both keyword and graph ranking need every chunk; one read serves both.
+
+    Each corpus read opens the Chroma collection and pulls every document and
+    its metadata, so reading per mode would double that work for every "All 3"
+    query.
+    """
+    calls: list[str | None] = []
+
+    def records(video_id: str | None) -> list[dict]:
+        calls.append(video_id)
+        return [{**chunk, "video_id": "abc123"} for chunk in FAKE_CHUNKS["abc123"]]
+
+    class EmptyGraphStore:
+        def resolve_entities(self, terms, limit=6):
+            return []
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: FakeRunner(),  # type: ignore[arg-type]
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+        chunk_records_fn=records,
+        graph_store_factory=lambda: EmptyGraphStore(),
+    )
+
+    response = TestClient(app).post(
+        "/api/rank",
+        json={"query": "capital gains tax", "modes": ["bm25", "graph"], "top_k": 5},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["modes"]["bm25"]
+    assert calls == [None]
+
+
 def test_rank_rejects_blank_query(harness: Harness) -> None:
     assert harness.client.post("/api/rank", json={"query": "  "}).status_code == 422
 
@@ -1329,6 +1369,49 @@ def test_index_queue_stream_seeds_then_broadcasts_over_a_real_server(
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+def test_subscription_stream_forwards_events_as_sse() -> None:
+    import queue as queue_module
+
+    subscriber: queue_module.Queue = queue_module.Queue()
+    subscriber.put({"type": "job", "job": {"id": "j1"}})
+    stream = api_main._subscription_stream(subscriber, lambda _sub: None)
+    try:
+        chunk = next(stream)
+    finally:
+        stream.close()
+    assert chunk.startswith("event: job\n")
+    assert '"id": "j1"' in chunk
+
+
+def test_subscription_stream_keeps_alive_so_a_closed_tab_is_noticed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An idle stream must still reach a ``yield``.
+
+    Starlette drives these sync generators on a worker thread, so a ``get()``
+    that blocks until the next broadcast pins that thread — and the subscriber
+    registration — for the life of the process when no job is running, which
+    is exactly when a tab is most likely to be closed. Emitting a keepalive
+    comment on the way round is what lets the disconnect close the generator
+    and run its unsubscribe.
+    """
+    import queue as queue_module
+
+    monkeypatch.setattr(api_main, "_SSE_KEEPALIVE_INTERVAL_SECONDS", 0.01)
+    subscriber: queue_module.Queue = queue_module.Queue()
+    unsubscribed: list = []
+    stream = api_main._subscription_stream(subscriber, unsubscribed.append)
+
+    # Nothing is ever broadcast, and the generator still yields ...
+    assert next(stream).startswith(":")
+    assert unsubscribed == []
+
+    # ... so closing it (what a client disconnect does) deregisters instead of
+    # leaking the subscriber and its thread.
+    stream.close()
+    assert unsubscribed == [subscriber]
 
 
 def test_system_design_route_returns_nodes_and_edges(settings: Settings, tmp_path: Path) -> None:

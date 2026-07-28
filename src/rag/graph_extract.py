@@ -105,12 +105,22 @@ class GraphExtractor:
             cache_dir.mkdir(parents=True, exist_ok=True)
 
     def extract(self, chunk: TranscriptChunk) -> ChunkExtraction:
+        extraction, _from_cache = self._extract_cached(chunk)
+        return extraction
+
+    def _extract_cached(self, chunk: TranscriptChunk) -> tuple[ChunkExtraction, bool]:
+        """The extraction plus whether it came from the cache.
+
+        One cache read serves both, so a warm rebuild reads and validates each
+        cache file once rather than once for the result and again to label the
+        progress line.
+        """
         cached = self._read_cache(chunk)
         if cached is not None:
-            return cached
+            return cached, True
         extraction = self._extract_uncached(chunk)
         self._write_cache(chunk, extraction)
-        return extraction
+        return extraction, False
 
     def extract_all(
         self,
@@ -134,8 +144,8 @@ class GraphExtractor:
         completed = 0
 
         def work(index: int, chunk: TranscriptChunk) -> tuple[int, ChunkExtraction, bool]:
-            cached = self._read_cache(chunk) is not None
-            return index, self.extract(chunk), cached
+            extraction, cached = self._extract_cached(chunk)
+            return index, extraction, cached
 
         workers = max(1, min(max_workers, len(chunks)))
         with ThreadPoolExecutor(max_workers=workers) as pool:

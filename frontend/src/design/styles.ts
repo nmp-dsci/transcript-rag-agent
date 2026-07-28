@@ -70,6 +70,10 @@ const CSS = `
 .ds-flow-branch { margin: 10px 0 4px; font: 700 9.5px var(--mono); letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--accent2); }
 .ds-flow-branch:first-child { margin-top: 0; }
+.ds-flow-converge { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px;
+  font: 600 9.5px var(--mono); letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted); }
+.ds-flow-converge::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
 .ds-flow-step { display: flex; gap: 8px; padding: 5px 0; }
 .ds-flow-num { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--panel2);
   border: 1px solid var(--border2); color: var(--muted); font: 700 9px var(--mono);

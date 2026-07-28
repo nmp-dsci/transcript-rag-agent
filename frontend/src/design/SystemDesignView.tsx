@@ -61,7 +61,9 @@ function formatValue(value: unknown): string {
 }
 
 /** Numbered step list for an agent's flow; steps sharing a `branch` are grouped
- * under a branch header (graph_rag's local/global/temporal routes). */
+ * under a branch header (graph_rag's local/global/temporal routes), and a step
+ * that leaves the branches behind gets a convergence marker so it doesn't read
+ * as belonging to whichever route happened to be listed last. */
 function FlowList({ flow }: { flow: SystemDesignFlowStep[] }) {
   let lastBranch: string | null | undefined = undefined;
   let step = 0;
@@ -69,6 +71,7 @@ function FlowList({ flow }: { flow: SystemDesignFlowStep[] }) {
     <div className="ds-flow">
       {flow.map((item, index) => {
         const branchChanged = item.branch !== lastBranch;
+        const converged = !item.branch && Boolean(lastBranch);
         lastBranch = item.branch;
         step += 1;
         return (
@@ -76,6 +79,7 @@ function FlowList({ flow }: { flow: SystemDesignFlowStep[] }) {
             {branchChanged && item.branch ? (
               <div className="ds-flow-branch">{item.branch} route</div>
             ) : null}
+            {converged ? <div className="ds-flow-converge">all routes converge</div> : null}
             <div className="ds-flow-step">
               <span className="ds-flow-num">{step}</span>
               <div className="ds-flow-body">

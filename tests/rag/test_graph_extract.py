@@ -134,3 +134,31 @@ def test_extractor_recovers_on_retry(tmp_path) -> None:
     result = extractor.extract(make_chunk())
     assert result.error is None
     assert result.entities[0].entity_id == "negative-gearing"
+
+
+def test_extract_all_reads_each_cached_chunk_once(tmp_path) -> None:
+    """A warm rebuild reads and validates each cache file once.
+
+    The progress line labels a chunk "cache" or "llm", which the extraction
+    itself already knows — deriving it from a second read would double the
+    disk reads and pydantic validations of every backfill that mostly hits
+    the cache.
+    """
+    chunks = [make_chunk(text=f"chunk {index}", index=index) for index in range(3)]
+    GraphExtractor(FakeLLM([VALID_RESPONSE] * 3), cache_dir=tmp_path).extract_all(chunks)
+
+    warm = GraphExtractor(FakeLLM([]), cache_dir=tmp_path)
+    reads: list[str] = []
+    original_read = warm._read_cache
+
+    def counting_read(chunk):
+        reads.append(chunk.chunk_id)
+        return original_read(chunk)
+
+    warm._read_cache = counting_read  # type: ignore[method-assign]
+    progress: list[str] = []
+    results = warm.extract_all(chunks, on_progress=progress.append, max_workers=1)
+
+    assert len(results) == 3
+    assert sorted(reads) == sorted(chunk.chunk_id for chunk in chunks)
+    assert all("(cache)" in line for line in progress)

@@ -19,6 +19,7 @@ behind the Chat tab rather than the leaderboard.
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -29,6 +30,10 @@ from src.chat.setups import setup_spec
 #: Recorded on each adapted answer, so a Scoreboard row is traceable to the
 #: command that produced it the way a live answer names its chat command.
 MATRIX_COMMAND = "eval-matrix"
+
+_Fingerprint = tuple[tuple[str, int, int], ...]
+_cache_lock = threading.Lock()
+_cache: dict[Path, tuple[_Fingerprint, list[dict[str, Any]]]] = {}
 
 
 def _iter_matrix_files(runs_dir: Path | None = None) -> Iterator[dict[str, Any]]:
@@ -50,6 +55,23 @@ def _sort_key(data: dict[str, Any]) -> str:
     return str(data.get("created_at") or data.get("run_id") or "")
 
 
+def _fingerprint(directory: Path) -> _Fingerprint:
+    """Name, mtime and size of every ``*.json`` in the directory.
+
+    Stat calls are cheap where parsing is not, and this catches a file being
+    added, removed or rewritten in place — a run committed while the server is
+    up must show up on the next request, not after a restart.
+    """
+    entries: list[tuple[str, int, int]] = []
+    for path in sorted(directory.glob("*.json")):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        entries.append((path.name, stat.st_mtime_ns, stat.st_size))
+    return tuple(entries)
+
+
 def load_matrix_runs(runs_dir: Path | None = None) -> list[dict[str, Any]]:
     """Every committed matrix run, newest first, from one pass over the
     directory.
@@ -60,8 +82,26 @@ def load_matrix_runs(runs_dir: Path | None = None) -> list[dict[str, Any]]:
     deriving both from that pass keeps an ordinary interaction — changing the
     group-by, the judge filter or the selected run — from re-parsing every
     file twice.
+
+    The parsed result is then memoized against the directory's stat
+    fingerprint, so those interactions re-read nothing at all until a run is
+    actually written. The list is fresh per call, but the run documents in it
+    are the cached objects: callers read them (:func:`describe_matrix_run` and
+    :func:`matrix_entries` both build new values) rather than editing them in
+    place.
     """
-    return sorted(_iter_matrix_files(runs_dir), key=_sort_key, reverse=True)
+    directory = runs_dir or DEFAULT_RUNS_DIR
+    if not directory.exists():
+        return []
+    fingerprint = _fingerprint(directory)
+    with _cache_lock:
+        cached = _cache.get(directory)
+        if cached is not None and cached[0] == fingerprint:
+            return list(cached[1])
+    runs = sorted(_iter_matrix_files(directory), key=_sort_key, reverse=True)
+    with _cache_lock:
+        _cache[directory] = (fingerprint, runs)
+    return list(runs)
 
 
 def describe_matrix_run(data: dict[str, Any]) -> dict[str, Any]:

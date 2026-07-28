@@ -10,7 +10,20 @@ import { useSvgZoomPan } from './useSvgZoomPan';
 function fakeSvg(scale = 1): SVGSVGElement {
   const inverse = { a: 1 / scale, b: 0, c: 0, d: 1 / scale, e: 0, f: 0 };
   const ctm = { a: scale, b: 0, c: 0, d: scale, e: 0, f: 0, inverse: () => inverse };
+  const listeners = new Map<string, Set<(event: Event) => void>>();
   const svg = {
+    addEventListener: (type: string, handler: (event: Event) => void) => {
+      const set = listeners.get(type) ?? new Set();
+      set.add(handler);
+      listeners.set(type, set);
+    },
+    removeEventListener: (type: string, handler: (event: Event) => void) => {
+      listeners.get(type)?.delete(handler);
+    },
+    /** Test-only: fire whatever the hook registered natively for `type`. */
+    dispatch: (type: string, event: unknown) => {
+      for (const handler of listeners.get(type) ?? []) handler(event as Event);
+    },
     getScreenCTM: () => ctm,
     createSVGPoint: () => {
       let px = 0;
@@ -57,10 +70,14 @@ function pointerEvent(overrides: Record<string, unknown> = {}) {
   } as unknown as React.PointerEvent<SVGSVGElement>;
 }
 
+interface FakeSvg extends SVGSVGElement {
+  dispatch: (type: string, event: unknown) => void;
+}
+
 function setup(scale = 1) {
-  const svg = fakeSvg(scale);
-  const ref = { current: svg };
-  return renderHook(() => useSvgZoomPan(ref));
+  const svg = fakeSvg(scale) as FakeSvg;
+  const ref = { current: svg as SVGSVGElement };
+  return { ...renderHook(() => useSvgZoomPan(ref)), svg };
 }
 
 describe('useSvgZoomPan', () => {
@@ -103,19 +120,26 @@ describe('useSvgZoomPan', () => {
   });
 
   it('wheel zooms toward the cursor and prevents the page from scrolling', () => {
-    const { result } = setup();
+    const { result, svg } = setup();
     const preventDefault = vi.fn();
-    act(() =>
-      result.current.svgProps.onWheel({
-        clientX: 200,
-        clientY: 100,
-        deltaY: -100,
-        preventDefault,
-      } as unknown as React.WheelEvent<SVGSVGElement>),
-    );
+    // Dispatched through the natively registered listener, not a React prop:
+    // React's own wheel listener is passive, so preventDefault() from an
+    // onWheel prop would be ignored and the page would scroll while zooming.
+    act(() => svg.dispatch('wheel', { clientX: 200, clientY: 100, deltaY: -100, preventDefault }));
     expect(preventDefault).toHaveBeenCalled();
     // Negative deltaY (scroll up / pinch out) zooms in.
     expect(result.current.transform.k).toBeGreaterThan(1);
+  });
+
+  it('registers the wheel listener non-passively and removes it on unmount', () => {
+    const svg = fakeSvg();
+    const add = vi.spyOn(svg, 'addEventListener');
+    const remove = vi.spyOn(svg, 'removeEventListener');
+    const { unmount } = renderHook(() => useSvgZoomPan({ current: svg }));
+
+    expect(add).toHaveBeenCalledWith('wheel', expect.any(Function), { passive: false });
+    unmount();
+    expect(remove).toHaveBeenCalledWith('wheel', expect.any(Function));
   });
 
   it('drags to pan by the screen-pixel delta', () => {
