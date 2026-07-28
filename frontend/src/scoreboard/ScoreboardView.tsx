@@ -8,6 +8,7 @@ import { MetricExplainers } from '../eval/MetricExplainer';
 import { useEvalStyles } from '../eval/styles';
 import { EfficiencyPanel } from './EfficiencyPanel';
 import { ProvenanceBar } from './ProvenanceBar';
+import { QuestionsPanel } from './QuestionsPanel';
 
 type GroupBy = 'setup' | 'setup_model';
 
@@ -226,6 +227,8 @@ export function ScoreboardView() {
         </div>
 
         <EfficiencyPanel rows={rows} />
+
+        <QuestionsPanel questions={board?.questions ?? []} />
 
         <div className="panel">
           <h2>What the metrics mean</h2>

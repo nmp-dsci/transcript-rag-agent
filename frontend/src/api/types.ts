@@ -359,6 +359,24 @@ export interface MatrixRunOption {
   judged: boolean;
 }
 
+/** One setup's answer to one golden question within the selected matrix run. */
+export interface ScoreboardQuestionSetup {
+  key: string;
+  title: string;
+  composite: number | null;
+  judged: boolean;
+  error: string | null;
+}
+
+/** One golden question judged in the selected matrix run, with every setup's score on it. */
+export interface ScoreboardQuestion {
+  id: string;
+  question: string;
+  domain: string | null;
+  question_type: string | null;
+  setups: ScoreboardQuestionSetup[];
+}
+
 export interface Scoreboard {
   setups: ScoreboardRow[];
   entries_total: number;
@@ -370,6 +388,8 @@ export interface Scoreboard {
   run_id: string | null;
   /** Every committed run, newest first — the picker's options. */
   runs: MatrixRunOption[];
+  /** Every golden question in the selected run, for the question-level breakdown. */
+  questions: ScoreboardQuestion[];
 }
 
 /** Per-iteration research step emitted by the agentic setup while it runs. */

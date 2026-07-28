@@ -661,6 +661,16 @@ def test_scoreboard_aggregates_a_committed_matrix_run(harness: Harness) -> None:
     assert board["setups"][0]["key"] == "rag_agent"
 
 
+def test_scoreboard_lists_the_judged_questions_for_the_selected_run(harness: Harness) -> None:
+    harness.seed_matrix_run(matrix_run())
+
+    board = harness.client.get("/api/scoreboard").json()
+    assert [q["id"] for q in board["questions"]] == ["g001", "g002"]
+    setups = {s["key"]: s for s in board["questions"][0]["setups"]}
+    assert setups["rag_agent"]["composite"] == 0.9
+    assert setups["rag_llm"]["composite"] == 0.5
+
+
 def test_scoreboard_is_empty_without_any_committed_run(harness: Harness) -> None:
     # Asking and judging live must NOT feed the leaderboard any more — chat
     # history is the live set, the matrix run is the eval set.
@@ -672,6 +682,7 @@ def test_scoreboard_is_empty_without_any_committed_run(harness: Harness) -> None
     assert board["entries_total"] == 0
     assert board["run_id"] is None
     assert board["runs"] == []
+    assert board["questions"] == []
 
 
 def test_scoreboard_lists_runs_and_selects_one_by_id(harness: Harness) -> None:

@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Scoreboard, ScoreboardRow } from '../api/types';
+import type { Scoreboard, ScoreboardQuestion, ScoreboardRow } from '../api/types';
 import { ScoreboardView } from './ScoreboardView';
 
 const scoreboard = vi.fn();
@@ -52,6 +52,21 @@ function board(setups: ScoreboardRow[], overrides: Partial<Scoreboard> = {}): Sc
       metrics: ['faithfulness', 'answer_relevancy', 'context_precision'],
       composite: 'mean of the three metrics',
     },
+    questions: [],
+    ...overrides,
+  };
+}
+
+function question(overrides: Partial<ScoreboardQuestion> = {}): ScoreboardQuestion {
+  return {
+    id: 'g001',
+    question: 'What are the key tax changes affecting property investors right now?',
+    domain: 'property',
+    question_type: 'local',
+    setups: [
+      { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: 0.71, judged: true, error: null },
+      { key: 'rag_agent', title: 'rag_agent (agentic)', composite: 0.84, judged: true, error: null },
+    ],
     ...overrides,
   };
 }
@@ -179,6 +194,53 @@ describe('ScoreboardView', () => {
         'matrix-20260727-015519',
       ),
     );
+  });
+
+  it('lists the judged questions for the selected run, with each setup\'s score', async () => {
+    scoreboard.mockResolvedValue(
+      board([row()], { questions: [question()] }),
+    );
+    render(<ScoreboardView />);
+    expect(await screen.findByText('Judged questions (1)')).toBeInTheDocument();
+    expect(
+      screen.getByText('What are the key tax changes affecting property investors right now?'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('property')).toBeInTheDocument();
+    expect(screen.getByText('local')).toBeInTheDocument();
+    expect(screen.getByText('0.71')).toBeInTheDocument();
+    expect(screen.getByText('0.84')).toBeInTheDocument();
+  });
+
+  it('marks an unjudged or errored setup for a question instead of showing a score', async () => {
+    scoreboard.mockResolvedValue(
+      board([row()], {
+        questions: [
+          question({
+            setups: [
+              { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: null, judged: false, error: null },
+              {
+                key: 'rag_agent',
+                title: 'rag_agent (agentic)',
+                composite: null,
+                judged: false,
+                error: 'timeout',
+              },
+            ],
+          }),
+        ],
+      }),
+    );
+    render(<ScoreboardView />);
+    await screen.findByText('Judged questions (1)');
+    expect(screen.getByText('unjudged')).toBeInTheDocument();
+    expect(screen.getByText('error')).toBeInTheDocument();
+  });
+
+  it('shows no judged-questions panel when the run has none', async () => {
+    scoreboard.mockResolvedValue(board([row()], { questions: [] }));
+    render(<ScoreboardView />);
+    await screen.findByRole('table');
+    expect(screen.queryByText(/Judged questions/)).not.toBeInTheDocument();
   });
 
   it('points at the Experiments tab when no run has been committed', async () => {

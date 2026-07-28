@@ -216,3 +216,43 @@ def matrix_entries(data: dict[str, Any]) -> list[ChatEntry]:
             entry.answers.append(_answer(setup, cell, config, created_at))
 
     return list(by_question.values())
+
+
+def matrix_questions(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every golden question in this run, with each setup's composite score.
+
+    ``build_scoreboard`` collapses a run down to per-setup averages; this
+    keeps the per-question rows those averages are built from, so a reader can
+    see exactly which golden questions were judged and how each setup scored
+    on each one, not just the aggregate.
+    """
+    by_question: dict[str, dict[str, Any]] = {}
+    for setup, run in (data.get("runs") or {}).items():
+        title = _title_for(setup)
+        for cell in run.get("entries") or []:
+            question_id = str(cell.get("id") or "")
+            row = by_question.get(question_id)
+            if row is None:
+                row = {
+                    "id": question_id,
+                    "question": str(cell.get("question") or ""),
+                    "domain": cell.get("domain"),
+                    "question_type": cell.get("question_type"),
+                    "setups": {},
+                }
+                by_question[question_id] = row
+            scores = cell.get("scores") or {}
+            composite = scores.get("composite")
+            row["setups"][setup] = {
+                "key": setup,
+                "title": title,
+                "composite": composite if isinstance(composite, (int, float)) else None,
+                "judged": isinstance(composite, (int, float)),
+                "error": cell.get("error"),
+            }
+
+    questions = list(by_question.values())
+    questions.sort(key=lambda row: row["id"])
+    for row in questions:
+        row["setups"] = list(row["setups"].values())
+    return questions

@@ -46,6 +46,7 @@ from src.api.matrix_runs import (
     describe_matrix_run,
     load_matrix_runs,
     matrix_entries,
+    matrix_questions,
     select_matrix_run,
 )
 from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
@@ -559,6 +560,7 @@ def create_app(
         board["judge_model"] = (run or {}).get("config", {}).get("judge_model") or judge_model_name
         board["run_id"] = (run or {}).get("run_id")
         board["runs"] = [describe_matrix_run(data) for data in runs]
+        board["questions"] = matrix_questions(run) if run is not None else []
         return board
 
     @app.post("/api/rank")

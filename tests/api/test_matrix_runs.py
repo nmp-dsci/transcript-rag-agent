@@ -12,6 +12,7 @@ from src.api.matrix_runs import (
     describe_matrix_run,
     load_matrix_runs,
     matrix_entries,
+    matrix_questions,
     select_matrix_run,
 )
 from src.api.scoreboard import build_scoreboard
@@ -138,3 +139,29 @@ def test_select_matrix_run_returns_none_when_missing(tmp_path: Path) -> None:
     assert select_matrix_run(load_matrix_runs(tmp_path)) is None
     write_run(tmp_path, matrix_run())
     assert select_matrix_run(load_matrix_runs(tmp_path), "no-such-run") is None
+
+
+def test_matrix_questions_lists_every_question_with_each_setups_score() -> None:
+    questions = matrix_questions(matrix_run())
+    assert [q["id"] for q in questions] == ["g001", "g002"]
+    first = questions[0]
+    assert first["question"] == "question g001?"
+    assert first["domain"] == "property"
+    assert first["question_type"] == "local"
+    by_key = {setup["key"]: setup for setup in first["setups"]}
+    assert by_key["rag_llm"]["composite"] == 0.5
+    assert by_key["rag_llm"]["judged"] is True
+    assert by_key["rag_agent"]["composite"] == 0.9
+
+
+def test_matrix_questions_marks_unjudged_and_errored_cells() -> None:
+    run = matrix_run(
+        setups={
+            "rag_llm": [cell("g001", composite=None)],
+            "rag_agent": [cell("g001", composite=None, error="timeout")],
+        }
+    )
+    setups = {setup["key"]: setup for setup in matrix_questions(run)[0]["setups"]}
+    assert setups["rag_llm"]["judged"] is False
+    assert setups["rag_llm"]["composite"] is None
+    assert setups["rag_agent"]["error"] == "timeout"
