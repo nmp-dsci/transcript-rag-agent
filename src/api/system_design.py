@@ -118,12 +118,17 @@ def _recursive_rag_flow(settings: Settings) -> list[dict[str, Any]]:
             "One LLM call answers from that first retrieval and proposes follow-up subtopics.",
         ),
     ]
-    if settings.rag_max_depth < 1:
+    if settings.rag_max_depth < 1 or settings.rag_max_total_followups == 0:
+        cap = (
+            f"max_depth={settings.rag_max_depth}"
+            if settings.rag_max_depth < 1
+            else "max_total_followups=0"
+        )
         steps.append(
             _step(
                 "Answer",
-                f"max_depth={settings.rag_max_depth} disables the fan-out — that first-pass "
-                "answer is returned as it stands, with no follow-up retrieval.",
+                f"{cap} disables the fan-out — that first-pass answer is returned as it "
+                "stands, with no follow-up retrieval.",
             )
         )
         return steps

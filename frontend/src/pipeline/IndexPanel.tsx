@@ -150,14 +150,19 @@ export function IndexPanel({ onIndexed, onViewVideo }: Props) {
     return () => controller.abort();
   }, []);
 
-  // Refresh the corpus once per job that finishes, instead of on every
-  // progress tick — a channel run can otherwise trigger this dozens of times.
+  // Refresh the corpus once per batch of newly finished jobs, instead of on
+  // every progress tick — a channel run can otherwise trigger this dozens of
+  // times. One batch is usually one job, but the snapshot that seeds a fresh
+  // mount carries every job the server has ever run: those all count as new
+  // to this instance, and they are worth exactly one refresh between them.
   useEffect(() => {
+    let anyNew = false;
     for (const job of jobs) {
       if (job.status !== 'done' || notifiedDoneRef.current.has(job.id)) continue;
       notifiedDoneRef.current.add(job.id);
-      onIndexed();
+      anyNew = true;
     }
+    if (anyNew) onIndexed();
   }, [jobs, onIndexed]);
 
   const submit = async () => {

@@ -152,6 +152,28 @@ def test_recursive_rag_flow_drops_the_fan_out_when_max_depth_is_zero() -> None:
     assert labels == ["Retrieve", "First-pass answer", "Answer"]
 
 
+def test_recursive_rag_flow_drops_the_fan_out_when_total_followups_is_zero() -> None:
+    """max_total_followups=0 blocks every fan-out retrieval, so _answer_recursive
+    returns the first pass with reason max_total_followups_reached."""
+    settings = _settings()
+    object.__setattr__(settings, "rag_max_total_followups", 0)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    flow = by_id["recursive_rag"]["flow"]
+    assert [step["label"] for step in flow] == ["Retrieve", "First-pass answer", "Answer"]
+    assert "max_total_followups=0" in flow[-1]["detail"]
+
+
+def test_recursive_rag_flow_keeps_the_fan_out_for_a_positive_total_cap() -> None:
+    settings = _settings()
+    object.__setattr__(settings, "rag_max_total_followups", 2)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    labels = [step["label"] for step in by_id["recursive_rag"]["flow"]]
+    assert "Follow-up retrieval" in labels
+    assert "Synthesize" in labels
+
+
 def test_recursive_rag_flow_notes_the_one_round_cap_above_max_depth_one() -> None:
     """The agent clamps max_depth to a single round; a config table showing 3
     beside a flow silently running 1 is exactly the drift this flow prevents."""

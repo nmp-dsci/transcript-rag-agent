@@ -360,7 +360,12 @@ def create_app(
     judge_model_name = resolved.judge_model or resolved.deepseek_model
 
     # Both stacks load models, so build each once, lazily, never at startup.
-    locks = {"runner": threading.Lock(), "judge": threading.Lock(), "graph_store": threading.Lock()}
+    locks = {
+        "runner": threading.Lock(),
+        "judge": threading.Lock(),
+        "graph_store": threading.Lock(),
+        "chunk_store": threading.Lock(),
+    }
     holders: dict[str, Any] = {}
 
     def loaded(name: str) -> bool:
@@ -372,6 +377,25 @@ def create_app(
                 holders["graph_store"] = graph_store_factory()
             return holders["graph_store"]
 
+    def get_chunk_store() -> Any:
+        """The ingestion hook's read-only view of the chunk collection.
+
+        Built once for the app's lifetime rather than per job: every job would
+        otherwise open its own Chroma client just to read back the chunks it
+        has already written.
+        """
+        with locks["chunk_store"]:
+            if "chunk_store" not in holders:
+                from src.rag.embeddings import HuggingFaceEmbeddingModel
+                from src.rag.storage import TranscriptChunkStore
+
+                holders["chunk_store"] = TranscriptChunkStore(
+                    resolved.chroma_path,
+                    embedding_model=HuggingFaceEmbeddingModel(resolved.embedding_model),
+                    collection_name=resolved.chunk_collection,
+                )
+            return holders["chunk_store"]
+
     def _default_graph_extract_fn(video_ids: list[str]) -> dict[str, Any]:
         """Catch up entities/claims for just-added videos after an ingest.
 
@@ -379,17 +403,9 @@ def create_app(
         via the LLM, not just what changed) — run `index-graph` manually to
         refresh community summaries after a batch of ingests.
         """
-        from src.rag.embeddings import HuggingFaceEmbeddingModel
         from src.rag.graph_pipeline import build_graph
-        from src.rag.storage import TranscriptChunkStore
 
-        embedding_model = HuggingFaceEmbeddingModel(resolved.embedding_model)
-        chunk_store = TranscriptChunkStore(
-            resolved.chroma_path,
-            embedding_model=embedding_model,
-            collection_name=resolved.chunk_collection,
-        )
-        chunks = chunk_store.chunks_for_videos(video_ids)
+        chunks = get_chunk_store().chunks_for_videos(video_ids)
         stats = build_graph(
             resolved,
             chunks,

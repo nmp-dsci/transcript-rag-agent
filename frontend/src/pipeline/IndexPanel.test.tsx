@@ -249,6 +249,30 @@ describe('IndexPanel', () => {
     expect(screen.getByRole('button', { name: 'Add to queue' })).toBeEnabled();
   });
 
+  it('refreshes the corpus once for a snapshot full of already-finished jobs', async () => {
+    // The server never evicts jobs, so remounting the panel (leaving and
+    // returning to the tab) replays every completed run — one refresh, not one
+    // per historical job.
+    const onIndexed = vi.fn();
+    render(<IndexPanel onIndexed={onIndexed} onViewVideo={vi.fn()} />);
+    await waitFor(() => expect(subscribeIndexQueue).toHaveBeenCalled());
+
+    await emit(() =>
+      handlers.snapshot?.({
+        jobs: [
+          ingestionJob({ id: 'a', status: 'done' }),
+          ingestionJob({ id: 'b', status: 'done' }),
+          ingestionJob({ id: 'c', status: 'done' }),
+        ],
+      }),
+    );
+    expect(onIndexed).toHaveBeenCalledTimes(1);
+
+    // A job finishing later is still its own refresh.
+    await emit(() => handlers.job?.({ job: ingestionJob({ id: 'd', status: 'done' }) }));
+    expect(onIndexed).toHaveBeenCalledTimes(2);
+  });
+
   it('seeds from the initial snapshot on connect', async () => {
     const onIndexed = vi.fn();
     render(<IndexPanel onIndexed={onIndexed} onViewVideo={vi.fn()} />);

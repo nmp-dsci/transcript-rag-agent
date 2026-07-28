@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Protocol
+import threading
+from typing import Any, Protocol
 
 
 class EmbeddingModel(Protocol):
@@ -12,16 +13,36 @@ class EmbeddingModel(Protocol):
 
 
 class HuggingFaceEmbeddingModel:
-    def __init__(self, model_name: str) -> None:
-        from langchain_huggingface import HuggingFaceEmbeddings
+    """Sentence-transformers embeddings, loaded on first embed call.
 
-        self._embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    The weights are hundreds of megabytes and take seconds to load, while
+    several callers only need an ``EmbeddingModel`` to satisfy a store
+    constructor whose read-only methods never embed anything (the ingestion
+    graph hook's ``chunks_for_videos``, for one). Deferring the load to the
+    first ``embed_*`` call keeps those paths free of it, and costs the paths
+    that do embed nothing but the same load a moment later.
+    """
+
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+        self._lock = threading.Lock()
+        self._embeddings: Any | None = None
+
+    def _model(self) -> Any:
+        with self._lock:
+            if self._embeddings is None:
+                from langchain_huggingface import HuggingFaceEmbeddings
+
+                self._embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+            return self._embeddings
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self._embeddings.embed_documents(texts)
+        result: list[list[float]] = self._model().embed_documents(texts)
+        return result
 
     def embed_query(self, text: str) -> list[float]:
-        return self._embeddings.embed_query(text)
+        result: list[float] = self._model().embed_query(text)
+        return result
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
