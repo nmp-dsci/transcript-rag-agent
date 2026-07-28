@@ -52,6 +52,7 @@ export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
   const [transform, setTransform] = useState<ZoomPanTransform>({ x: 0, y: 0, k: 1 });
   const dragOrigin = useRef<{ x: number; y: number } | null>(null);
   const dragged = useRef(false);
+  const dragClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const zoomAt = useCallback(
     (clientX: number, clientY: number, factor: number) => {
@@ -122,6 +123,17 @@ export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
   const endDrag = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     dragOrigin.current = null;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
+    // The terminating click (if any) fires synchronously right after this
+    // pointerup, so defer clearing `dragged` past it — onClickCapture still
+    // needs to see it when the drag ends inside the svg. But if the drag
+    // ends elsewhere (e.g. over the zoom-control buttons, which sit outside
+    // the svg subtree), no click ever reaches onClickCapture to clear it, so
+    // clear it here on a timer to avoid swallowing the next unrelated click.
+    if (dragClearTimer.current !== null) clearTimeout(dragClearTimer.current);
+    dragClearTimer.current = setTimeout(() => {
+      dragged.current = false;
+      dragClearTimer.current = null;
+    }, 0);
   }, []);
 
   // A capture-phase listener runs before the event reaches the node it was
@@ -129,6 +141,10 @@ export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
   // instead of racing it — the drag that just ended must not also select
   // whatever was under the pointer when it lifted.
   const onClickCapture = useCallback((event: React.MouseEvent<SVGSVGElement>) => {
+    if (dragClearTimer.current !== null) {
+      clearTimeout(dragClearTimer.current);
+      dragClearTimer.current = null;
+    }
     if (dragged.current) {
       event.stopPropagation();
       dragged.current = false;
