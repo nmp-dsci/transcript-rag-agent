@@ -161,6 +161,31 @@ describe('useSvgZoomPan', () => {
     expect(clickStop).not.toHaveBeenCalled();
   });
 
+  it('clears the stale drag flag on a timer when a drag ends without a click reaching the svg (e.g. released over the zoom-control buttons)', () => {
+    vi.useFakeTimers();
+    const { result } = setup();
+
+    act(() => result.current.svgProps.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 })));
+    act(() => result.current.svgProps.onPointerMove(pointerEvent({ clientX: 50, clientY: 0 })));
+    // Drag ends outside the svg subtree (e.g. over a zoom button) -
+    // onPointerLeave/onPointerUp fires but no click ever reaches onClickCapture.
+    act(() => result.current.svgProps.onPointerUp(pointerEvent()));
+
+    // Before the timer fires, a genuine unrelated click on the svg must still
+    // not be swallowed once the timer has had a chance to clear the flag.
+    act(() => vi.runAllTimers());
+
+    const laterClickStop = vi.fn();
+    act(() =>
+      result.current.svgProps.onClickCapture({
+        stopPropagation: laterClickStop,
+      } as unknown as React.MouseEvent<SVGSVGElement>),
+    );
+    expect(laterClickStop).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+
   it('double-click zooms in at the click point', () => {
     const { result } = setup();
     act(() =>

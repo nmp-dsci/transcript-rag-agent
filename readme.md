@@ -413,7 +413,12 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   by mention count. Clicking an entity opens its community's LLM summary,
   aliases, and every dated claim extracted about it, each linking straight to
   the source video at that timestamp — served by `GET /api/graph/knowledge`
-  and `GET /api/graph/knowledge/entities/{id}`.
+  and `GET /api/graph/knowledge/entities/{id}`. Only up to 400 of the ~2,000
+  entities render at once (by mention count), so the view supports
+  wheel-to-zoom toward the cursor, drag-to-pan, double-click-to-zoom, and
+  +/−/reset buttons for reaching a dense cluster or a touch/no-wheel input —
+  panning past a small pixel threshold suppresses the click that would
+  otherwise select the node under the pointer on release.
 - **Scoreboard** — the leaderboard for one **committed matrix run**: every setup
   answering the *same* golden questions under one recorded config, graded by one
   judge. A run picker selects which committed `matrix-*.json` to rank (newest by
