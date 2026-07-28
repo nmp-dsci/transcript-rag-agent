@@ -26,10 +26,13 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+import time
+
 from src.agents.models import (
     RagAnswerReference,
     RagQuestionRequest,
     RagTranscriptAnswer,
+    TraceStep,
 )
 from src.agents.prompts import (
     GRAPH_ANSWER_SYSTEM_PROMPT,
@@ -109,6 +112,9 @@ class GraphRagAgent:
         self.last_context: GraphContext | None = None
         self.last_route: str | None = None
         self.last_llm_calls: int = 0
+        # Ordered TraceSteps for the most recent answer() call, so the runner
+        # can persist how the route decision and evidence assembly actually went.
+        self.last_trace: list[TraceStep] = []
 
     @classmethod
     def from_settings(
@@ -156,8 +162,23 @@ class GraphRagAgent:
 
     def answer(self, request: RagQuestionRequest) -> RagTranscriptAnswer:
         self.last_llm_calls = 0
+        self.last_trace = []
+        route_started = time.monotonic()
         route, entity_terms = self.route(request.question)
         self.last_route = route
+        self.last_trace.append(
+            TraceStep(
+                phase="route",
+                label=f"Route → {route}",
+                detail=(
+                    f"router named entities: {', '.join(entity_terms)}"
+                    if entity_terms
+                    else "router named no entities; content words will anchor the graph"
+                ),
+                model=getattr(self.llm, "model_name", None),
+                elapsed_ms=int((time.monotonic() - route_started) * 1000),
+            )
+        )
         if route == "global":
             evidence = self._global_evidence()
             system_prompt = GRAPH_GLOBAL_SYSTEM_PROMPT
@@ -169,6 +190,7 @@ class GraphRagAgent:
             system_prompt = GRAPH_ANSWER_SYSTEM_PROMPT
 
         self.last_llm_calls += 1
+        answer_started = time.monotonic()
         response = self.llm.invoke(
             [
                 _system(system_prompt),
@@ -176,6 +198,15 @@ class GraphRagAgent:
             ]
         )
         answer_text = str(getattr(response, "content", response) or "").strip()
+        self.last_trace.append(
+            TraceStep(
+                phase="llm",
+                label="Answer",
+                detail=f"one narration call over the {route} route's evidence",
+                model=getattr(self.llm, "model_name", None),
+                elapsed_ms=int((time.monotonic() - answer_started) * 1000),
+            )
+        )
         self.last_context = GraphContext(
             context_text=evidence.block,
             retrieved_chunks=_evidence_chunks(evidence),
@@ -205,8 +236,20 @@ class GraphRagAgent:
         return [entity.id for entity in entities]
 
     def _local_evidence(self, request: RagQuestionRequest, entity_terms: list[str]) -> _Evidence:
+        resolve_started = time.monotonic()
         entity_ids = self._resolve(request.question, entity_terms)
         claims = self.store.claims_about(entity_ids, limit=self.max_claims)
+        self.last_trace.append(
+            TraceStep(
+                phase="retrieve",
+                label="Graph claims",
+                detail=(
+                    f"{len(entity_ids)} entities resolved → {len(claims)} claims "
+                    f"(cap {self.max_claims}, 1-hop neighbours included)"
+                ),
+                elapsed_ms=int((time.monotonic() - resolve_started) * 1000),
+            )
+        )
         chunks: list[RetrievedChunk] = []
         if self.context_provider is not None:
             context = self.context_provider.get_context(
@@ -217,6 +260,8 @@ class GraphRagAgent:
                 retrieval_mode=request.retrieval_mode,
             )
             chunks = list(context.retrieved_chunks or [])
+            # The provider recorded its own filter/retrieve/rerank steps.
+            self.last_trace.extend(getattr(context, "trace", None) or [])
         evidence = _Evidence(block="")
         lines: list[str] = []
         if claims:
@@ -238,6 +283,7 @@ class GraphRagAgent:
         return evidence
 
     def _global_evidence(self) -> _Evidence:
+        reduce_started = time.monotonic()
         evidence = _Evidence(block="")
         lines: list[str] = []
         claim_index = 1
@@ -265,11 +311,35 @@ class GraphRagAgent:
         if not lines:
             lines.append("No communities are built yet. Run index-graph to build the graph.")
         evidence.block = "\n".join(lines).strip()
+        self.last_trace.append(
+            TraceStep(
+                phase="retrieve",
+                label="Community summaries",
+                detail=(
+                    f"{len(evidence.communities)} community summaries "
+                    f"(cap {self.max_communities}) with "
+                    f"{len(evidence.claims)} representative claims"
+                ),
+                elapsed_ms=int((time.monotonic() - reduce_started) * 1000),
+            )
+        )
         return evidence
 
     def _temporal_evidence(self, question: str, entity_terms: list[str]) -> _Evidence:
+        timeline_started = time.monotonic()
         entity_ids = self._resolve(question, entity_terms)
         claims = self.store.claims_about(entity_ids, limit=self.timeline_claims, hops=0)
+        self.last_trace.append(
+            TraceStep(
+                phase="retrieve",
+                label="Claim timeline",
+                detail=(
+                    f"{len(entity_ids)} entities resolved → {len(claims)} dated claims "
+                    f"(cap {self.timeline_claims}), ordered oldest first"
+                ),
+                elapsed_ms=int((time.monotonic() - timeline_started) * 1000),
+            )
+        )
         evidence = _Evidence(block="")
         lines = ["Claim timeline (oldest first):"]
         for index, claim in enumerate(claims, 1):

@@ -76,6 +76,17 @@ export interface Evaluation {
   details?: EvaluationDetails | null;
 }
 
+/** One persisted execution step of an answer path (serialized TraceStep). */
+export interface TraceStep {
+  phase: "route" | "filter" | "retrieve" | "rerank" | "merge" | "llm";
+  label: string;
+  detail: string;
+  chunk_ids: string[];
+  model: string | null;
+  elapsed_ms: number | null;
+  iteration: number | null;
+}
+
 export interface Answer {
   key: string;
   title: string;
@@ -99,6 +110,8 @@ export interface Answer {
   retrieval_mode?: string | null;
   /** Follow-up questions the answering LLM proposed for this answer. */
   followups?: Followup[];
+  /** Persisted execution steps; empty/absent on answers predating tracing. */
+  trace?: TraceStep[];
 }
 
 export interface Followup {

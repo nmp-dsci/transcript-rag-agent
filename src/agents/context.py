@@ -19,6 +19,10 @@ class TranscriptContext:
     retrieved_chunks: list[RetrievedChunk] | None = None
     selected_transcripts: list[RetrievedTranscriptSummary] | None = None
     top_k: int | None = None
+    # Ordered record of the retrieval stages that actually ran for this context
+    # (filter/retrieve/rerank/merge TraceSteps), so an answer's persisted trace
+    # reports what happened rather than a description that could drift.
+    trace: list | None = None
 
     def __post_init__(self) -> None:
         if self.context_text is None:
@@ -27,13 +31,14 @@ class TranscriptContext:
             object.__setattr__(self, "retrieved_chunks", [])
         if self.selected_transcripts is None:
             object.__setattr__(self, "selected_transcripts", [])
+        if self.trace is None:
+            object.__setattr__(self, "trace", [])
 
 
 class TranscriptContextProvider(Protocol):
     def get_transcript(
         self, video_id: str, source_url: str, query: str | None = None
-    ) -> TranscriptContext:
-        ...
+    ) -> TranscriptContext: ...
 
 
 class RawTranscriptContextProvider:
@@ -80,9 +85,7 @@ class RawTranscriptContextProvider:
 
     def refresh_transcript(self, source_url: str) -> TranscriptContext:
         if isinstance(self.store, RawTranscriptStore):
-            raw_document, cache_status = self.store.ensure_raw_document(
-                source_url, refresh=True
-            )
+            raw_document, cache_status = self.store.ensure_raw_document(source_url, refresh=True)
             transcript = transcript_from_raw_document(raw_document)
             return TranscriptContext(
                 transcript=transcript,

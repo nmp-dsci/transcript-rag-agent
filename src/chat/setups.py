@@ -17,6 +17,9 @@ from src.agents.models import (
     AgentProgressEvent,
     RagQuestionRequest,
     RecursionOptions,
+    RecursionTrace,
+    TraceStep,
+    chunk_ids_for,
 )
 from src.agents.rag_agent import RagAgent
 from src.agents.rag_transcript_agent import RagTranscriptAgent
@@ -130,6 +133,10 @@ class SetupResult:
     # Follow-up subtopics the answering LLM proposed. The agent contract always
     # returns these; surfacing them lets the UI offer them as next questions.
     followups: list[dict[str, Any]] = field(default_factory=list)
+    # Ordered execution steps (serialized TraceSteps): what this answer's path
+    # actually did — route decisions, retrievals with chunk ids, rerank passes,
+    # LLM calls — persisted so the trace survives beyond the live SSE stream.
+    trace: list[dict[str, Any]] = field(default_factory=list)
 
 
 def select_setups(raw: str) -> list[str]:
@@ -298,8 +305,19 @@ class RagSetupRunner:
         started = time.monotonic()
         try:
             if key == "rag_agent":
+                events: list[AgentProgressEvent] = []
+
+                def collecting(event: AgentProgressEvent) -> None:
+                    events.append(event)
+                    if on_agent_event is not None:
+                        on_agent_event(event)
+
                 answer, agent = self._run_rag_agent(
-                    question, url, effective_top_k, on_agent_event, scope
+                    question,
+                    url,
+                    effective_top_k,
+                    collecting if on_agent_event is not None else None,
+                    scope,
                 )
                 context = agent.last_context
                 return self._build_result(
@@ -312,6 +330,9 @@ class RagSetupRunner:
                     terminated_reason=agent.last_terminated_reason,
                     elapsed=time.monotonic() - started,
                     scope=scope,
+                    trace=_agent_event_steps(
+                        events, agent.last_iteration_count, self._settings.deepseek_model
+                    ),
                 )
             if key == "graph_rag":
                 agent = self._graph()
@@ -326,8 +347,21 @@ class RagSetupRunner:
                     terminated_reason=agent.last_route,
                     elapsed=time.monotonic() - started,
                     scope=scope,
+                    trace=list(getattr(agent, "last_trace", None) or []),
                 )
             answer, agent, llm_calls = self._run_rag_llm(key, question, url, effective_top_k, scope)
+            if answer.recursion is not None:
+                trace = _recursion_steps(answer.recursion, self._settings.deepseek_model)
+            else:
+                trace = [
+                    *(getattr(agent.last_context, "trace", None) or []),
+                    TraceStep(
+                        phase="llm",
+                        label="Answer",
+                        detail="one answer call over the retrieved chunks, citing chunk ids",
+                        model=self._settings.deepseek_model,
+                    ),
+                ]
             return self._build_result(
                 spec,
                 url,
@@ -340,6 +374,7 @@ class RagSetupRunner:
                 ),
                 elapsed=time.monotonic() - started,
                 scope=scope,
+                trace=trace,
             )
         except Exception as exc:  # one failing setup must not abort the comparison
             return SetupResult(
@@ -413,6 +448,7 @@ class RagSetupRunner:
         terminated_reason: str | None = None,
         elapsed: float = 0.0,
         scope: "AskScope | None" = None,
+        trace: list[TraceStep] | None = None,
     ) -> SetupResult:
         scope = scope or AskScope()
         context_text = context.context_text if context is not None else ""
@@ -445,7 +481,118 @@ class RagSetupRunner:
             channel_id=scope.channel_id,
             retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
             followups=_followups_to_dicts(getattr(answer, "subtopics", [])),
+            trace=[step.model_dump(mode="json") for step in (trace or [])],
         )
+
+
+def _agent_event_steps(
+    events: list[AgentProgressEvent], iterations: int | None, model: str
+) -> list[TraceStep]:
+    """The agentic setup's streamed research events, as persistable TraceSteps.
+
+    Events only flow on the streaming path; when none were collected (CLI and
+    eval runs call ``answer()`` directly), a single summary step records the
+    iteration count so the trace never claims steps it did not observe.
+    """
+    steps: list[TraceStep] = []
+    for event in events:
+        if event.event_type == "retrieval_complete":
+            found = f"{event.chunk_count} chunks" if event.chunk_count is not None else "chunks"
+            steps.append(
+                TraceStep(
+                    phase="retrieve",
+                    label=f"Retrieve (iteration {event.iteration})",
+                    detail=(f'"{event.query}" — {found}' if event.query else found),
+                    iteration=event.iteration,
+                )
+            )
+        elif event.event_type == "answer_start":
+            steps.append(
+                TraceStep(
+                    phase="llm",
+                    label="Answer",
+                    detail="the model judged it had enough evidence",
+                    model=model,
+                    iteration=event.iteration,
+                )
+            )
+    if not steps and iterations:
+        steps.append(
+            TraceStep(
+                phase="retrieve",
+                label="ReAct retrievals",
+                detail=(
+                    f"{iterations} retrieval iteration"
+                    f"{'s' if iterations != 1 else ''} (per-step events not "
+                    "streamed on this path)"
+                ),
+            )
+        )
+    return steps
+
+
+def _recursion_steps(recursion: RecursionTrace, model: str) -> list[TraceStep]:
+    """A recursive answer's own RecursionTrace, flattened into TraceSteps.
+
+    Converts rather than re-records: every fact here (subtopic queries, the
+    chunks each follow-up retrieved, merge/skip outcomes, whether synthesis
+    ran) is read off the trace the agent already built while answering.
+    """
+    steps: list[TraceStep] = [
+        TraceStep(
+            phase="retrieve",
+            label="First retrieval",
+            detail="initial retrieval for the question as asked",
+        ),
+        TraceStep(
+            phase="llm",
+            label="First-pass answer",
+            detail=(
+                f"answered and proposed {recursion.total_followups_proposed} follow-up subtopics"
+            ),
+            model=model,
+        ),
+    ]
+    for evidence in recursion.subtopic_evidence:
+        steps.append(
+            TraceStep(
+                phase="retrieve",
+                label=f"Follow-up: {evidence.subtopic.topic}"[:80],
+                detail=f'"{evidence.subtopic.followup_query}" — {evidence.outcome}',
+                chunk_ids=chunk_ids_for(evidence.chunks),
+                iteration=evidence.subtopic_index,
+            )
+        )
+    ran_synthesis = any(stage.name == "final_synthesis" for stage in recursion.stages)
+    if ran_synthesis:
+        steps.append(
+            TraceStep(
+                phase="merge",
+                label="Merge evidence",
+                detail=(
+                    f"{recursion.total_followups_executed} of "
+                    f"{recursion.total_followups_proposed} follow-ups executed; "
+                    "contexts deduplicated"
+                ),
+            )
+        )
+        steps.append(
+            TraceStep(
+                phase="llm",
+                label="Synthesize",
+                detail=f"final synthesis over the merged context ({recursion.terminated_reason})",
+                model=model,
+            )
+        )
+    else:
+        steps.append(
+            TraceStep(
+                phase="merge",
+                label="First-pass answer kept",
+                detail=f"no synthesis ran ({recursion.terminated_reason})",
+            )
+        )
+    return steps
 
 
 def _followups_to_dicts(subtopics: list[Any]) -> list[dict[str, Any]]:

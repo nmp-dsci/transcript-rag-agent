@@ -237,6 +237,15 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .trace-line .c { margin-left: auto; flex: 0 0 auto; color: var(--dim); }
 .trace-line.live .q { color: var(--accent2); }
 .trace summary { cursor: pointer; color: var(--dim); font-size: 10px; }
+/* persisted-trace phase chips */
+.trace-line .ph {
+  flex: 0 0 auto; border-radius: 4px; padding: 0 5px; font: 600 9px var(--mono);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  background: var(--panel2); color: var(--muted); border: 1px solid var(--border2);
+}
+.trace-line .ph-llm { color: var(--accent2); border-color: var(--accent-border); background: var(--accent-dim); }
+.trace-line .ph-route { color: var(--warn); border-color: var(--warn-border); background: var(--warn-dim); }
+.trace-line .ph-retrieve { color: var(--good); border-color: var(--good-border); background: var(--good-dim); }
 
 .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.1s infinite; display: inline-block; }
 @keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }

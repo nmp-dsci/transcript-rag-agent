@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { Answer, AgentStep, Followup } from '../api/types';
 import { AgentTrace } from './AgentTrace';
+import { AnswerTrace } from './AnswerTrace';
 import { AnswerBody } from './AnswerBody';
 import { ScoreStrip, fmtScore } from './ScoreStrip';
 
@@ -143,7 +144,9 @@ export function MessageBubble({
               ) : null}
             </div>
           ) : null}
-          {traces?.[active.key]?.length ? (
+          {active.trace?.length ? (
+            <AnswerTrace steps={active.trace} />
+          ) : traces?.[active.key]?.length ? (
             <AgentTrace steps={traces[active.key]!} running={false} />
           ) : null}
           <AnswerBody answer={active} />

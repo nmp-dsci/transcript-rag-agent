@@ -208,3 +208,53 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/stack exploded/)).toBeInTheDocument();
   });
 });
+
+describe('MessageBubble persisted traces', () => {
+  it('prefers the persisted trace over the session research trace', () => {
+    const traced = {
+      ...answer('rag_llm', 'Single hop.'),
+      trace: [
+        {
+          phase: 'retrieve' as const,
+          label: 'Retrieve candidates',
+          detail: 'semantic search — 10 candidates',
+          chunk_ids: ['chunk:vid1:0'],
+          model: null,
+          elapsed_ms: 12,
+          iteration: null,
+        },
+        {
+          phase: 'llm' as const,
+          label: 'Answer',
+          detail: 'one answer call over the retrieved chunks',
+          chunk_ids: [],
+          model: 'deepseek-v4',
+          elapsed_ms: null,
+          iteration: null,
+        },
+      ],
+    };
+    render(
+      <MessageBubble answers={[traced]} running={[]} judging={false} remainingSetups={0} />,
+    );
+    expect(screen.getByText('trace — 2 steps')).toBeInTheDocument();
+    expect(screen.getByText(/semantic search — 10 candidates/)).toBeInTheDocument();
+  });
+
+  it('falls back to the session trace for answers without a persisted one', () => {
+    render(
+      <MessageBubble
+        answers={[answer('rag_agent', 'Done.')]}
+        running={[]}
+        judging={false}
+        remainingSetups={0}
+        traces={{
+          rag_agent: [
+            { key: 'rag_agent', iteration: 1, event_type: 'retrieval_complete', query: 'q', chunk_count: 9 },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText(/research trace — 1 retrieval/)).toBeInTheDocument();
+  });
+});

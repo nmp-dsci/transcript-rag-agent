@@ -178,7 +178,39 @@ def test_followups_default_to_empty_for_older_answers():
     from src.chat.history import ChatAnswer
     from src.chat.setups import SetupResult
 
-    answer = ChatAnswer.from_result(
-        SetupResult(key="rag_llm", title="t", command="c", answer="a")
-    )
+    answer = ChatAnswer.from_result(SetupResult(key="rag_llm", title="t", command="c", answer="a"))
     assert answer.followups == []
+
+
+def test_trace_is_carried_from_result_and_round_trips(tmp_path):
+    """The persisted trace is what lets a reload still show how an answer ran."""
+    from src.chat.history import ChatAnswer, ChatEntry, load_history, save_history
+    from src.chat.setups import SetupResult
+
+    step = {
+        "phase": "retrieve",
+        "label": "Retrieve candidates",
+        "detail": "semantic search — 10 candidates",
+        "chunk_ids": ["chunk:vid00000001:0"],
+        "model": None,
+        "elapsed_ms": 12,
+        "iteration": None,
+    }
+    answer = ChatAnswer.from_result(
+        SetupResult(key="rag_llm", title="t", command="c", answer="a", trace=[step])
+    )
+    entry = ChatEntry(id="q-1", question="q?", url=None, asked_at="now", answers=[answer])
+
+    path = tmp_path / "history.json"
+    save_history([entry], path)
+    loaded = load_history(path)
+
+    assert loaded[0].answers[0].trace == [step]
+
+
+def test_trace_defaults_to_empty_for_older_answers():
+    from src.chat.history import ChatAnswer
+    from src.chat.setups import SetupResult
+
+    answer = ChatAnswer.from_result(SetupResult(key="rag_llm", title="t", command="c", answer="a"))
+    assert answer.trace == []

@@ -137,9 +137,7 @@ def test_run_many_reports_progress(settings) -> None:
     runner = _runner(settings, rag_llm=FakeRagLlm(), rag_agent=FakeRagAgent())
     messages: list[str] = []
 
-    results = runner.run_many(
-        ["rag_llm", "rag_agent"], "q", on_progress=messages.append
-    )
+    results = runner.run_many(["rag_llm", "rag_agent"], "q", on_progress=messages.append)
 
     assert [r.key for r in results] == ["rag_llm", "rag_agent"]
     assert len(messages) == 2
@@ -149,9 +147,7 @@ def test_followups_serialise_from_agent_subtopics():
     from src.agents.models import FollowupSubtopic
     from src.chat.setups import _followups_to_dicts
 
-    dicts = _followups_to_dicts(
-        [FollowupSubtopic(topic="t", followup_query="q", confidence=0.5)]
-    )
+    dicts = _followups_to_dicts([FollowupSubtopic(topic="t", followup_query="q", confidence=0.5)])
     assert dicts[0]["followup_query"] == "q"
 
 
@@ -160,3 +156,186 @@ def test_followups_tolerate_plain_dicts_and_junk():
 
     assert _followups_to_dicts([{"topic": "t"}, None, "junk"]) == [{"topic": "t"}]
     assert _followups_to_dicts([]) == []
+
+
+# ── persisted traces ─────────────────────────────────────────────────────────
+
+
+def _chunk(video_id: str, index: int):
+    from src.rag.models import RetrievedChunk
+
+    return RetrievedChunk(
+        transcript_id=f"raw_transcript:{video_id}",
+        video_id=video_id,
+        source_url=f"https://www.youtube.com/watch?v={video_id}",
+        chunk_index=index,
+        text=f"text {index}",
+    )
+
+
+class TracingContext(FakeContext):
+    """A context whose provider recorded retrieval-stage TraceSteps."""
+
+    def __init__(self) -> None:
+        from src.agents.models import TraceStep
+
+        super().__init__(chunks=2)
+        self.trace = [
+            TraceStep(
+                phase="retrieve",
+                label="Retrieve candidates",
+                detail="semantic search over the whole corpus — 2 candidates",
+                chunk_ids=["chunk:vid00000001:0", "chunk:vid00000001:1"],
+                elapsed_ms=12,
+            )
+        ]
+
+
+def test_single_hop_trace_combines_context_stages_and_llm_step(settings) -> None:
+    fake = FakeRagLlm()
+    fake.last_context = TracingContext()
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm", "what about X?")
+
+    assert [step["phase"] for step in result.trace] == ["retrieve", "llm"]
+    assert result.trace[0]["chunk_ids"] == ["chunk:vid00000001:0", "chunk:vid00000001:1"]
+    assert result.trace[1]["model"] == settings.deepseek_model
+
+
+def test_recursive_trace_flattens_the_recursion_trace(settings) -> None:
+    from src.agents.models import (
+        FollowupSubtopic,
+        RecursionStage,
+        RecursionTrace,
+        SubtopicEvidence,
+    )
+
+    recursion = RecursionTrace(
+        stages=[
+            RecursionStage(name="first_pass", llm_calls=1, retrievals=1),
+            RecursionStage(name="fan_out", llm_calls=0, retrievals=1),
+            RecursionStage(name="final_synthesis", llm_calls=1, retrievals=0),
+        ],
+        subtopic_evidence=[
+            SubtopicEvidence(
+                subtopic_index=1,
+                subtopic=FollowupSubtopic(
+                    topic="CGT discount", followup_query="how does the CGT discount change?"
+                ),
+                chunks=[_chunk("vid00000002", 4)],
+                outcome="merged 1 new chunk",
+            )
+        ],
+        terminated_reason="completed",
+        total_followups_proposed=2,
+        total_followups_executed=1,
+    )
+
+    class RecursiveFake(FakeRagLlm):
+        def answer(self, request):
+            self.requests.append(request)
+            return RagTranscriptAnswer(
+                question=request.question, answer="synth", recursion=recursion
+            )
+
+    runner = _runner(settings, rag_llm=RecursiveFake())
+    result = runner.run("rag_llm_recursive", "what about X?")
+
+    labels = [step["label"] for step in result.trace]
+    assert labels == [
+        "First retrieval",
+        "First-pass answer",
+        "Follow-up: CGT discount",
+        "Merge evidence",
+        "Synthesize",
+    ]
+    followup = result.trace[2]
+    assert followup["chunk_ids"] == ["chunk:vid00000002:4"]
+    assert "merged 1 new chunk" in followup["detail"]
+
+
+def test_recursive_trace_records_a_kept_first_answer(settings) -> None:
+    from src.agents.models import RecursionStage, RecursionTrace
+
+    recursion = RecursionTrace(
+        stages=[RecursionStage(name="first_pass", llm_calls=1, retrievals=1)],
+        terminated_reason="max_total_followups_reached",
+        total_followups_proposed=3,
+        total_followups_executed=0,
+    )
+
+    class RecursiveFake(FakeRagLlm):
+        def answer(self, request):
+            return RagTranscriptAnswer(
+                question=request.question, answer="first", recursion=recursion
+            )
+
+    runner = _runner(settings, rag_llm=RecursiveFake())
+    result = runner.run("rag_llm_recursive", "q")
+
+    assert result.trace[-1]["label"] == "First-pass answer kept"
+    assert "max_total_followups_reached" in result.trace[-1]["detail"]
+    assert all(step["label"] != "Synthesize" for step in result.trace)
+
+
+def test_agent_trace_built_from_streamed_events(settings) -> None:
+    from src.agents.models import AgentProgressEvent
+
+    class StreamingFakeAgent(FakeRagAgent):
+        def answer_streaming(self, request, on_event):
+            on_event(
+                AgentProgressEvent(
+                    iteration=1,
+                    event_type="retrieval_complete",
+                    query="sub-question one",
+                    chunk_count=5,
+                )
+            )
+            on_event(AgentProgressEvent(iteration=2, event_type="answer_start"))
+            return self.answer(request)
+
+    runner = _runner(settings, rag_agent=StreamingFakeAgent())
+    result = runner.run("rag_agent", "q", on_agent_event=lambda event: None)
+
+    assert [step["phase"] for step in result.trace] == ["retrieve", "llm"]
+    assert "sub-question one" in result.trace[0]["detail"]
+    assert result.trace[0]["iteration"] == 1
+
+
+def test_agent_trace_summarizes_when_events_were_not_streamed(settings) -> None:
+    runner = _runner(settings, rag_agent=FakeRagAgent())
+
+    result = runner.run("rag_agent", "q")
+
+    assert len(result.trace) == 1
+    assert "4 retrieval iterations" in result.trace[0]["detail"]
+
+
+def test_graph_trace_passes_through_the_agents_recorded_steps(settings) -> None:
+    from src.agents.models import TraceStep
+
+    class FakeGraphAgent:
+        def __init__(self) -> None:
+            self.last_context = FakeContext(chunks=1)
+            self.last_llm_calls = 2
+            self.last_route = "temporal"
+            self.last_trace = [
+                TraceStep(phase="route", label="Route → temporal", detail="entities: x"),
+                TraceStep(phase="retrieve", label="Claim timeline", detail="12 dated claims"),
+                TraceStep(phase="llm", label="Answer", detail="one narration call"),
+            ]
+
+        def answer(self, request):
+            return RagTranscriptAnswer(question=request.question, answer="graph answer")
+
+    runner = _runner(settings)
+    runner._graph_rag_agent = FakeGraphAgent()
+    result = runner.run("graph_rag", "q")
+
+    assert [step["label"] for step in result.trace] == [
+        "Route → temporal",
+        "Claim timeline",
+        "Answer",
+    ]
+    assert result.terminated_reason == "temporal"
