@@ -112,6 +112,47 @@ def test_vector_rag_flow_omits_rerank_step_when_disabled() -> None:
     assert "Rerank" not in labels
 
 
+def test_vector_rag_config_keeps_the_answering_model_when_rerank_is_on() -> None:
+    """The rerank config is merged into vector_rag's, so its model key must not
+    collide with the answering LLM — otherwise the node's only ``model`` row
+    names the cross-encoder and the LLM disappears from the panel."""
+    settings = _settings()
+    object.__setattr__(settings, "rerank_enabled", True)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+
+    config = by_id["vector_rag"]["config"]
+    assert config["model"] == settings.deepseek_model
+    assert config["rerank_model"] == settings.rerank_model
+    assert by_id["reranker"]["config"]["rerank_model"] == settings.rerank_model
+
+
+def test_vector_rag_flow_names_the_reason_the_retrieval_is_widened() -> None:
+    """Widening happens for hybrid fusion *or* reranking. Crediting it to
+    reranking while reranking is off contradicts the same panel's config."""
+    settings = _settings()
+    object.__setattr__(settings, "retrieval_mode", "hybrid")
+    object.__setattr__(settings, "rerank_enabled", False)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert "widened for hybrid fusion" in detail
+    assert "widened for reranking" not in detail
+
+    object.__setattr__(settings, "rerank_enabled", True)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert "widened for reranking" in detail
+
+    object.__setattr__(settings, "retrieval_mode", "semantic")
+    object.__setattr__(settings, "rerank_enabled", False)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert "widened" not in detail
+
+
 def test_vector_rag_flow_accounts_for_neighbor_expansion() -> None:
     """neighbor_span widens the context *after* the top_k cut, and is shown in
     the same node's config table — a bare "top_k chunks" would contradict it."""

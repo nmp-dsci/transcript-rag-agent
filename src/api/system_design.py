@@ -72,6 +72,16 @@ def _chat_flow() -> list[dict[str, Any]]:
 def _vector_rag_flow(settings: Settings) -> list[dict[str, Any]]:
     candidates = max(settings.rag_top_k, settings.retrieval_candidates)
     widen = settings.rerank_enabled or settings.retrieval_mode == "hybrid"
+    # ``_refine`` widens for either reason (rag/context.py: hybrid *or* a
+    # reranker), so name the one that actually applies — with reranking off,
+    # the extra candidates exist for RRF fusion, and there is no Rerank step.
+    widened = (
+        ", widened for reranking"
+        if settings.rerank_enabled
+        else ", widened for hybrid fusion"
+        if widen
+        else ""
+    )
     steps = [
         _step(
             "Summary filter (optional)",
@@ -85,7 +95,7 @@ def _vector_rag_flow(settings: Settings) -> list[dict[str, Any]]:
                 if settings.retrieval_mode == "hybrid"
                 else "Semantic",
                 n=candidates if widen else settings.rag_top_k,
-                widened=", widened for reranking" if widen else "",
+                widened=widened,
             ),
         ),
     ]
@@ -211,9 +221,12 @@ def _graph_rag_flow() -> list[dict[str, Any]]:
 def build_system_design(settings: Settings) -> dict[str, Any]:
     """Nodes (agents, models, stores) + edges (what depends on what)."""
     prompts_by_system = _prompts_by_system()
+    # Keyed ``rerank_model`` rather than ``model``: this dict is both the
+    # reranker node's own config *and* spread into vector_rag's, where a bare
+    # ``model`` would overwrite the answering LLM and hide it entirely.
     rerank_config: dict[str, Any] = {"enabled": settings.rerank_enabled}
     if settings.rerank_enabled:
-        rerank_config["model"] = settings.rerank_model
+        rerank_config["rerank_model"] = settings.rerank_model
 
     nodes = [
         # ── answer paths ────────────────────────────────────────────────
