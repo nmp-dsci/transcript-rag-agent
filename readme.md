@@ -3,10 +3,11 @@
 [![CI](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A YouTube-transcript RAG system built to be **measured, not asserted**. Three
+A YouTube-transcript RAG system built to be **measured, not asserted**. Four
 comparable answer paths run over one shared retrieval stack (hybrid BM25 + dense
-fusion, cross-encoder reranking, multi-hop and agentic loops), and every claim
-about retrieval quality is backed by a committed, reproducible eval run.
+fusion, cross-encoder reranking, multi-hop and agentic loops, plus a Neo4j
+entity/claim graph), and every claim about retrieval quality is backed by a
+committed, reproducible eval run.
 
 > **Licence:** MIT (`LICENSE`). **CI:** lint · type-check · tests · a deterministic
 > eval-regression gate — see `.github/workflows/ci.yml`. Copy `.env.example` to
@@ -54,8 +55,9 @@ flowchart LR
 ## Results: does hybrid retrieval help?
 
 `eval-ablation` sweeps three retrieval configurations over the golden set and
-reports rank-aware IR metrics. On the committed run (9 questions, 6 videos;
-`evals/runs/ablation-*.json`, reproducible with `uv run python -m src.cli
+reports rank-aware IR metrics. On the committed run (9 questions, 6 videos —
+the golden set as it stood when that snapshot was taken, since grown to 20
+entries; `evals/runs/ablation-*.json`, re-run with `uv run python -m src.cli
 eval-ablation`):
 
 | config | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
@@ -397,10 +399,13 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   never contends with itself), and every job's live stage is visible in the
   queue list at once, across every open browser tab, via
   `GET /api/index/queue/stream`. A job's graph extraction stage runs
-  automatically after its vector index succeeds, keeping the knowledge graph
-  current for newly indexed videos without a manual `index-graph` pass;
-  extraction failure is enrichment-only and is reported in that job's result
-  without failing the (already-successful) vector index. **Chunk graph** renders a
+  automatically after its vector index succeeds, keeping the knowledge graph's
+  entities and claims current for newly indexed videos without a manual
+  `index-graph` pass; community detection and summaries are *not* rebuilt per
+  job (that re-summarizes the whole graph via the LLM), so run `index-graph`
+  after a batch of ingests to refresh them. Extraction failure is
+  enrichment-only and is reported in that job's result without failing the
+  (already-successful) vector index. **Chunk graph** renders a
   kNN similarity graph of every chunk embedding as an SVG force-style layout,
   colour-coded by channel; typing a query highlights its retrieval
   neighbourhood in place, which is the fastest way to see whether the corpus
@@ -462,7 +467,17 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   copy) and its live configuration — `top_k`, retrieval mode, Neo4j URI,
   chunking parameters, whatever applies to that node — read straight off the
   running `Settings` instance via `GET /api/system-design`, so the view can
-  never show a prompt or a setting the server isn't actually using.
+  never show a prompt or a setting the server isn't actually using. Every
+  answer path also carries **how a question flows through this path**: the
+  ordered, numbered steps it actually runs, with the live values interpolated
+  the same way the config table is — retrieval breadth and `top_k`, the rerank
+  model, the follow-up and novelty caps, the ReAct iteration cap, the graph
+  evidence caps — so a step can never describe behaviour the settings have
+  since changed. `graph_rag`'s flow is grouped by route, which is where the
+  three answer differently: the **local** route retrieves entity claims *and*
+  the same vector chunks `vector_rag` would, **global** reads the pre-built
+  community summaries instead, **temporal** reads the dated claim timeline,
+  and all three converge on one answer call.
 
 #### Frontend development
 
@@ -504,7 +519,7 @@ Endpoints (JSON unless noted):
 | `/api/setups` | GET | The four RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
 | `/api/prompts` | GET | The live prompt registry, grouped by system |
-| `/api/system-design` | GET | The System Design graph: nodes, edges, and each node's prompts and live config |
+| `/api/system-design` | GET | The System Design graph: nodes, edges, and each node's prompts, live config, and (for answer paths) its `flow` steps |
 | `/api/history` | GET | All captured conversations (with evaluations) — the live set |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
@@ -516,7 +531,13 @@ Endpoints (JSON unless noted):
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
 | `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
+| `/api/index/queue` | POST | Queue an index job and return immediately; jobs run one at a time in submission order |
+| `/api/index/queue` | GET | Snapshot of every queued, running and finished job |
+| `/api/index/queue/stream` | GET | Live progress for every job at once (SSE, seeded with the current queue) |
 | `/api/chunk-graph` | POST | kNN similarity graph over chunk embeddings; `query` highlights its retrieval neighbourhood |
+| `/api/graph/knowledge` | GET | The GraphRAG entity graph: laid-out entity nodes, relation/co-mention edges, community summaries (503 if Neo4j is unreachable) |
+| `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
+| `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
 
 `/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
 per `rag_agent` retrieval iteration, carrying its query and chunk count),
@@ -1017,13 +1038,17 @@ src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
   rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25,
                  #   RRF fusion, cross-encoder reranking, chunk similarity graph, and the
-                 #   GraphRAG store/extraction (graph_store, graph_extract, communities,
-                 #   graph_models)
+                 #   GraphRAG store/extraction/build (graph_store, graph_extract,
+                 #   graph_pipeline, communities, graph_models) plus the read-side views
+                 #   the workbench and graph ranking share (graph_view)
   agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic,
                  #   GraphRAG) with follow-up query rewriting for conversational history;
                  #   prompts.py is the live prompt registry the System Design tab reads
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
-                 #   scoreboard, chunk graph, committed experiments, prompt registry
+                 #   scoreboard, chunk graph, knowledge graph, committed experiments,
+                 #   prompt registry, the System Design graph (system_design.py), the
+                 #   one-worker ingestion queue (ingestion_queue.py), and the in-app
+                 #   matrix sweep (matrix_runner.py, matrix_runs.py)
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
   evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
                  #   ablation harness, regression runs, the head-to-head matrix (matrix.py),
@@ -1039,7 +1064,8 @@ frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
   src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score strip
-  src/design/    # System Design tab: click-through node graph of prompts + live config
+  src/design/    # System Design tab: click-through node graph of prompts, live config,
+                 #   and each answer path's step-by-step flow
   src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
   src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries + the Run eval matrix trigger
   src/pipeline/  # Corpus tree, chunk detail (+ per-chunk graph enrichment), Retrieval Lab, knowledge graph, indexing panel, chunk graph

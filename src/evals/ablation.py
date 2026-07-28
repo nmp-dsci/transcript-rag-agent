@@ -90,9 +90,9 @@ def run_ablation(
 
     Each configuration retrieves for each golden question; the ordered chunk ids
     are scored with the deterministic id-based metrics and averaged, both overall
-    and per domain (property vs ai-coding — segment-level reporting, not just a
-    single number). The first configuration is the baseline every other config's
-    ``deltas`` are measured against.
+    and per domain (property, ai-coding, career, corpus — segment-level
+    reporting, not just a single number). The first configuration is the baseline
+    every other config's ``deltas`` are measured against.
     """
     if not configs:
         raise ValueError("run_ablation needs at least one configuration")
