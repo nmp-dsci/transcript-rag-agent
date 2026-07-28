@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from src.rag import graph_view
 from src.rag.graph_models import GraphClaim, GraphCommunity, GraphEntity
 from src.rag.graph_view import (
     _fr_layout_coordinates,
@@ -106,6 +107,83 @@ def test_build_knowledge_graph_assembles_nodes_edges_and_communities() -> None:
     assert result["edges"] == [{"source": "a", "target": "b", "weight": 0.8}]
     assert len(result["communities"]) == 2
     assert result["communities"][0]["summary"] == "Property tax changes."
+
+
+class CappedStore(FakeStore):
+    """A store whose ``all_entities`` cap hides entities the edge query returns.
+
+    Mirrors the real store, where ``all_entities`` takes the top N by mentions
+    while ``entity_edges`` is corpus-wide.
+    """
+
+    def all_entities(self, limit: int = 2000):
+        return self.entities[:2]
+
+    def entity_edges(self):
+        return [e.id for e in self.entities] + ["hidden"], self.edges + [("b", "hidden", 1.0)]
+
+
+def test_build_knowledge_graph_lays_out_only_the_entities_it_returns() -> None:
+    """Entities past ``all_entities``' cap must not enter the layout.
+
+    Placing them costs the layout's worst dimension for coordinates that are
+    then discarded, and they drag the visible nodes around on the way.
+    """
+    graph_view._layout_cache.clear()
+    calls: list[list[str]] = []
+    original = graph_view._fr_layout_coordinates
+
+    def recording(nodes, edges):
+        calls.append(list(nodes))
+        return original(nodes, edges)
+
+    graph_view._fr_layout_coordinates = recording  # type: ignore[assignment]
+    try:
+        result = build_knowledge_graph(CappedStore())
+    finally:
+        graph_view._fr_layout_coordinates = original  # type: ignore[assignment]
+
+    assert calls == [["a", "b"]]
+    assert {node["id"] for node in result["nodes"]} == {"a", "b"}
+
+
+def test_build_knowledge_graph_reuses_the_layout_for_an_unchanged_graph() -> None:
+    """The layout is seeded, so recomputing it per request returns the same
+    coordinates at full cost — and serializes concurrent readers behind the
+    process-global igraph lock while doing it."""
+    graph_view._layout_cache.clear()
+    layouts = 0
+    original = graph_view._fr_layout_coordinates
+
+    def counting(nodes, edges):
+        nonlocal layouts
+        layouts += 1
+        return original(nodes, edges)
+
+    graph_view._fr_layout_coordinates = counting  # type: ignore[assignment]
+    try:
+        first = build_knowledge_graph(FakeStore())
+        second = build_knowledge_graph(FakeStore())
+
+        assert layouts == 1
+        assert first["nodes"] == second["nodes"]
+
+        # A graph that has actually changed is laid out afresh.
+        changed = FakeStore()
+        changed.entities.append(GraphEntity(id="d", name="New entity", mentions=1))
+        build_knowledge_graph(changed)
+        assert layouts == 2
+    finally:
+        graph_view._fr_layout_coordinates = original  # type: ignore[assignment]
+
+
+def test_layout_cache_stays_bounded() -> None:
+    graph_view._layout_cache.clear()
+    for size in range(graph_view._LAYOUT_CACHE_MAX + 3):
+        store = FakeStore()
+        store.entities.append(GraphEntity(id=f"x{size}", name=f"Entity {size}", mentions=1))
+        build_knowledge_graph(store)
+    assert len(graph_view._layout_cache) <= graph_view._LAYOUT_CACHE_MAX
 
 
 def test_entity_claims_returns_metadata_and_dated_timeline() -> None:

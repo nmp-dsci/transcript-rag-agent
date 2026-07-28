@@ -246,13 +246,20 @@ def build_comparison(setup_runs: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "answered": len(entries),
             "failed": len(failed),
         }
+        # Partition once per setup rather than once per (setup, metric): the
+        # split by question type does not depend on which metric is being
+        # averaged, so rebuilding it inside the metric loop repeats the same
+        # filter for every entry in MATRIX_METRICS.
+        typed_entries: dict[str, list[dict[str, Any]]] = {}
+        for entry in entries:
+            typed_entries.setdefault(entry.get("question_type", "local"), []).append(entry)
+
         for metric in MATRIX_METRICS:
             value = _mean(_metric_values(entries, metric))
             if value is not None:
                 overall.setdefault(metric, {})[setup] = value
-            for question_type in sorted({e.get("question_type", "local") for e in entries}):
-                typed = [e for e in entries if e.get("question_type", "local") == question_type]
-                typed_value = _mean(_metric_values(typed, metric))
+            for question_type in sorted(typed_entries):
+                typed_value = _mean(_metric_values(typed_entries[question_type], metric))
                 if typed_value is not None:
                     by_type.setdefault(question_type, {}).setdefault(metric, {})[setup] = (
                         typed_value

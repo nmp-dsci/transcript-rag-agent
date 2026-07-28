@@ -557,7 +557,9 @@ def create_app(
         )
         # The run's own judge is what graded these numbers; the server's
         # configured judge only describes what a *future* run would use.
-        board["judge_model"] = (run or {}).get("config", {}).get("judge_model") or judge_model_name
+        board["judge_model"] = ((run or {}).get("config") or {}).get(
+            "judge_model"
+        ) or judge_model_name
         board["run_id"] = (run or {}).get("run_id")
         board["runs"] = [describe_matrix_run(data) for data in runs]
         board["questions"] = matrix_questions(run) if run is not None else []

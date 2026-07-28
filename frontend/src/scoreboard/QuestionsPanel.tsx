@@ -11,11 +11,19 @@ export function QuestionsPanel({ questions }: { questions: ScoreboardQuestion[] 
   const setupTitles = new Map(
     questions.flatMap((question) => question.setups.map((setup) => [setup.key, setup.title] as const)),
   );
+  // The run carries every golden question whether or not it was judged — a run
+  // committed with --no-judge has none — so the header counts the two separately
+  // rather than calling all of them judged.
+  const judgedCount = questions.filter((question) =>
+    question.setups.some((setup) => setup.judged),
+  ).length;
 
   return (
     <details className="panel qpanel">
       <summary>
-        <h2 style={{ display: 'inline' }}>Judged questions ({questions.length})</h2>
+        <h2 style={{ display: 'inline' }}>
+          Questions ({questions.length}, {judgedCount} judged)
+        </h2>
         <span className="sub"> — every golden question in this run, per-setup composite</span>
       </summary>
       <div className="tblwrap" style={{ marginTop: 10 }}>

@@ -671,6 +671,25 @@ def test_scoreboard_lists_the_judged_questions_for_the_selected_run(harness: Har
     assert setups["rag_llm"]["composite"] == 0.5
 
 
+def test_scoreboard_survives_a_run_whose_config_is_null(harness: Harness) -> None:
+    """A snapshot without a config must not take the whole tab down.
+
+    ``config`` is only how the run describes the judge it used; the rows come
+    from the cells. Reading it must fall back the way the rest of the module
+    tolerates malformed snapshots, not 500 the request.
+    """
+    run = matrix_run()
+    run["config"] = None
+    harness.seed_matrix_run(run)
+
+    response = harness.client.get("/api/scoreboard")
+    assert response.status_code == 200
+    board = response.json()
+    # No recorded judge, so the server's configured one describes the numbers.
+    assert board["judge_model"] == harness.client.get("/api/health").json()["judge_model"]
+    assert {row["key"] for row in board["setups"]} == {"rag_llm", "rag_agent"}
+
+
 def test_scoreboard_is_empty_without_any_committed_run(harness: Harness) -> None:
     # Asking and judging live must NOT feed the leaderboard any more — chat
     # history is the live set, the matrix run is the eval set.

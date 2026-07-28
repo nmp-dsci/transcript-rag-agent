@@ -201,7 +201,7 @@ describe('ScoreboardView', () => {
       board([row()], { questions: [question()] }),
     );
     render(<ScoreboardView />);
-    expect(await screen.findByText('Judged questions (1)')).toBeInTheDocument();
+    expect(await screen.findByText('Questions (1, 1 judged)')).toBeInTheDocument();
     expect(
       screen.getByText('What are the key tax changes affecting property investors right now?'),
     ).toBeInTheDocument();
@@ -231,16 +231,36 @@ describe('ScoreboardView', () => {
       }),
     );
     render(<ScoreboardView />);
-    await screen.findByText('Judged questions (1)');
+    // A run committed with --no-judge has questions but no judged cell, so the
+    // header must not claim it judged them.
+    await screen.findByText('Questions (1, 0 judged)');
     expect(screen.getByText('unjudged')).toBeInTheDocument();
     expect(screen.getByText('error')).toBeInTheDocument();
   });
 
-  it('shows no judged-questions panel when the run has none', async () => {
+  it('counts a question as judged when any one of its setups was', async () => {
+    scoreboard.mockResolvedValue(
+      board([row()], {
+        questions: [
+          question({
+            setups: [
+              { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: 0.71, judged: true, error: null },
+              { key: 'rag_agent', title: 'rag_agent (agentic)', composite: null, judged: false, error: null },
+            ],
+          }),
+          question({ id: 'g002', setups: [] }),
+        ],
+      }),
+    );
+    render(<ScoreboardView />);
+    expect(await screen.findByText('Questions (2, 1 judged)')).toBeInTheDocument();
+  });
+
+  it('shows no questions panel when the run has none', async () => {
     scoreboard.mockResolvedValue(board([row()], { questions: [] }));
     render(<ScoreboardView />);
     await screen.findByRole('table');
-    expect(screen.queryByText(/Judged questions/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Questions \(\d+/)).not.toBeInTheDocument();
   });
 
   it('points at the Experiments tab when no run has been committed', async () => {

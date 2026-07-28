@@ -128,6 +128,22 @@ def test_extractor_retries_once_then_records_failure(tmp_path) -> None:
     assert llm_retry.calls == 1
 
 
+def test_extractor_does_not_cache_a_failure(tmp_path) -> None:
+    """A failed extraction leaves no cache file behind.
+
+    ``_read_cache`` discards a cached failure so the chunk is retried, so
+    writing one only produces a file rewritten and re-read on every run that
+    can never hit — the cache dir fills with entries that do nothing.
+    """
+    GraphExtractor(FakeLLM(["not json", "still not json"]), cache_dir=tmp_path).extract(
+        make_chunk()
+    )
+    assert list(tmp_path.glob("*.json")) == []
+
+    GraphExtractor(FakeLLM([VALID_RESPONSE]), cache_dir=tmp_path).extract(make_chunk())
+    assert len(list(tmp_path.glob("*.json"))) == 1
+
+
 def test_extractor_recovers_on_retry(tmp_path) -> None:
     llm = FakeLLM(["not json", VALID_RESPONSE])
     extractor = GraphExtractor(llm, cache_dir=tmp_path)

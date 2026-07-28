@@ -17,13 +17,23 @@ community detection, so Fruchterman-Reingold reuses it rather than adding one.
 
 from __future__ import annotations
 
+import hashlib
 import math
+import threading
 from typing import Any
 
 from src.rag.graph_algo_lock import igraph_rng_lock
 from src.rag.graph_store import GraphStore
 
 _ROUND_TO = 6
+
+#: Layouts kept keyed by graph fingerprint. A handful covers the realistic
+#: churn — the graph changes only when a backfill runs — while bounding what a
+#: long-lived server holds.
+_LAYOUT_CACHE_MAX = 4
+
+_layout_cache: dict[str, dict[str, tuple[float, float]]] = {}
+_layout_cache_lock = threading.Lock()
 
 
 def _fr_layout_coordinates(
@@ -61,6 +71,43 @@ def _fr_layout_coordinates(
     return dict(zip(nodes, _normalise(coords)))
 
 
+def _layout_fingerprint(nodes: list[str], edges: list[tuple[str, str, float]]) -> str:
+    """A key identifying exactly the graph a layout was computed for."""
+    digest = hashlib.sha256()
+    for node in nodes:
+        digest.update(f"{node}\0".encode())
+    digest.update(b"\1")
+    for source, target, weight in sorted(edges):
+        digest.update(f"{source}\0{target}\0{weight!r}\0".encode())
+    return digest.hexdigest()
+
+
+def _cached_layout_coordinates(
+    nodes: list[str], edges: list[tuple[str, str, float]]
+) -> dict[str, tuple[float, float]]:
+    """:func:`_fr_layout_coordinates`, memoized on the graph it is laying out.
+
+    Force-directed placement is the expensive part of the Knowledge Graph
+    request and it must hold the process-global ``igraph_rng_lock``, so
+    recomputing it per request both burns the time and serializes concurrent
+    readers behind an answer that is identical every time — the layout is
+    seeded precisely so it does not change between calls. The graph only moves
+    when a backfill writes to Neo4j, and the fingerprint notices when it does.
+    """
+    key = _layout_fingerprint(nodes, edges)
+    with _layout_cache_lock:
+        cached = _layout_cache.get(key)
+    if cached is not None:
+        return cached
+
+    positions = _fr_layout_coordinates(nodes, edges)
+    with _layout_cache_lock:
+        _layout_cache[key] = positions
+        while len(_layout_cache) > _LAYOUT_CACHE_MAX:
+            _layout_cache.pop(next(iter(_layout_cache)))
+    return positions
+
+
 def _normalise(coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
     """Centre and scale into [-1, 1], preserving the layout's aspect ratio.
 
@@ -84,8 +131,21 @@ def _normalise(coords: list[tuple[float, float]]) -> list[tuple[float, float]]:
 def build_knowledge_graph(store: GraphStore) -> dict[str, Any]:
     """Entities placed by topology, edges, and the communities they belong to."""
     entities = store.all_entities()
-    nodes, raw_edges = store.entity_edges()
-    positions = _fr_layout_coordinates(nodes, raw_edges)
+    _nodes, raw_edges = store.entity_edges()
+    # Lay out only what is returned: ``all_entities`` caps the population, and
+    # placing entities past that cap costs the layout its worst dimension for
+    # coordinates that are then thrown away. Sorted so the input — and with it
+    # the fingerprint and the placement — does not depend on Neo4j's row order.
+    visible = sorted(entity.id for entity in entities)
+    visible_set = set(visible)
+    positions = _cached_layout_coordinates(
+        visible,
+        [
+            (source, target, weight)
+            for source, target, weight in raw_edges
+            if source in visible_set and target in visible_set
+        ],
+    )
 
     entity_nodes = [
         {

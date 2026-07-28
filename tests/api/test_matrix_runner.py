@@ -97,6 +97,55 @@ def test_a_failed_run_is_reported_without_killing_the_runner() -> None:
     wait_until(lambda: ok.snapshot()["status"] == "done")
 
 
+def test_a_snapshot_never_shows_a_partly_applied_update() -> None:
+    """Progress is written from the worker thread while requests read it.
+
+    Every observed snapshot must be internally consistent: no "done" without
+    the run_id the frontend opens the moment it sees that status, and no cell
+    tally read halfway through an update.
+    """
+    cells = 200
+
+    def run_fn(setups: list[str], on_cell) -> dict:
+        for index in range(cells):
+            on_cell(
+                {
+                    "setup": "rag_llm",
+                    "entry_id": f"g{index}",
+                    "cached": True,
+                    "done": index + 1,
+                    "total": cells,
+                }
+            )
+        return {"run_id": "matrix-abc", "cache_hits": cells, "cache_misses": 0}
+
+    runner = MatrixRunner(run_fn=run_fn)
+    torn: list[dict[str, Any]] = []
+    stop = threading.Event()
+
+    def poll() -> None:
+        while not stop.is_set():
+            job = runner.snapshot()
+            if job is None:
+                continue
+            if job["status"] == "done" and job["run_id"] is None:
+                torn.append(job)
+            if job["cells_done"] > job["cells_total"]:
+                torn.append(job)
+
+    reader = threading.Thread(target=poll, daemon=True)
+    reader.start()
+    try:
+        runner.start(["rag_llm"])
+        wait_until(lambda: runner.snapshot()["status"] == "done")
+    finally:
+        stop.set()
+        reader.join(timeout=2)
+
+    assert torn == []
+    assert runner.snapshot()["cells_done"] == cells
+
+
 def test_snapshot_is_none_before_any_run() -> None:
     assert MatrixRunner(run_fn=instant_run()).snapshot() is None
 

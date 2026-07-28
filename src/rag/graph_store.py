@@ -275,6 +275,13 @@ class GraphStore:
         so a video with plenty of matching claims can come back empty simply
         because older videos filled the quota. Omitted, the query is
         corpus-wide exactly as before.
+
+        The neighbour hop resolves the seeds' RELATES neighbourhood into a
+        single id list *before* matching claims, rather than testing
+        ``(e)-[:RELATES]-(seed)`` inside the claim match. The latter leaves the
+        seed and claim patterns disconnected, so Neo4j takes their cartesian
+        product and re-evaluates the relationship once per (seed, claim-entity)
+        pair; collecting first makes it one indexed ``e.id IN`` lookup.
         """
         if not entity_ids:
             return []
@@ -283,8 +290,12 @@ class GraphStore:
         if hops >= 1:
             anchor = (
                 "MATCH (seed:Entity) WHERE seed.id IN $ids "
+                "OPTIONAL MATCH (seed)-[:RELATES]-(neighbour:Entity) "
+                "WITH collect(DISTINCT seed.id) AS seed_ids, "
+                "collect(DISTINCT neighbour.id) AS neighbour_ids "
+                "WITH seed_ids + neighbour_ids AS scope_ids "
                 "MATCH (c:Claim)-[:ABOUT]->(e:Entity) "
-                f"WHERE (e.id IN $ids OR (e)-[:RELATES]-(seed)){scope}"
+                f"WHERE e.id IN scope_ids{scope}"
             )
         params: dict[str, Any] = {"ids": entity_ids, "limit": limit}
         if video_id is not None:

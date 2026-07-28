@@ -110,23 +110,28 @@ class MatrixRunner:
                 self._subscribers.remove(subscriber)
 
     def _broadcast(self, job: MatrixJob) -> None:
+        # Serialize the job under the same lock its fields are written beneath,
+        # so no reader ever sees a half-applied update — e.g. status "done"
+        # alongside a run_id still at None, which the frontend's done-branch
+        # reads as a finished run it cannot open.
         with self._lock:
+            event = {"type": "job", "job": job.to_dict()}
             subscribers = list(self._subscribers)
-        event = {"type": "job", "job": job.to_dict()}
         for subscriber in subscribers:
             subscriber.put(event)
 
     def _on_cell(self, job: MatrixJob, cell: dict[str, Any]) -> None:
-        job.cells_done = int(cell.get("done", job.cells_done))
-        job.cells_total = int(cell.get("total", job.cells_total))
-        if cell.get("cached"):
-            job.cache_hits += 1
-        else:
-            job.cache_misses += 1
-        job.message = (
-            f"{cell.get('setup')} × {cell.get('entry_id')} — "
-            f"{'cached' if cell.get('cached') else 'scored'}"
-        )
+        with self._lock:
+            job.cells_done = int(cell.get("done", job.cells_done))
+            job.cells_total = int(cell.get("total", job.cells_total))
+            if cell.get("cached"):
+                job.cache_hits += 1
+            else:
+                job.cache_misses += 1
+            job.message = (
+                f"{cell.get('setup')} × {cell.get('entry_id')} — "
+                f"{'cached' if cell.get('cached') else 'scored'}"
+            )
         self._broadcast(job)
 
     def _run(self, job: MatrixJob) -> None:
@@ -155,17 +160,20 @@ class MatrixRunner:
                 break
         thread.join()
 
-        if "error" in holder:
-            job.status = "error"
-            job.error = str(holder["error"])
-            job.message = None
-        else:
-            result = holder.get("result") or {}
-            job.status = "done"
-            job.run_id = result.get("run_id")
-            job.message = None
-            # Prefer the run's own tallies: they count every cell, including any
-            # the runner's callback never saw.
-            job.cache_hits = int(result.get("cache_hits", job.cache_hits))
-            job.cache_misses = int(result.get("cache_misses", job.cache_misses))
+        with self._lock:
+            if "error" in holder:
+                job.status = "error"
+                job.error = str(holder["error"])
+                job.message = None
+            else:
+                result = holder.get("result") or {}
+                job.run_id = result.get("run_id")
+                job.message = None
+                # Prefer the run's own tallies: they count every cell, including
+                # any the runner's callback never saw.
+                job.cache_hits = int(result.get("cache_hits", job.cache_hits))
+                job.cache_misses = int(result.get("cache_misses", job.cache_misses))
+                # Last, so the terminal status is never visible before the
+                # run_id a reader reaches for the moment it sees "done".
+                job.status = "done"
         self._broadcast(job)

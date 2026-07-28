@@ -236,4 +236,10 @@ class GraphExtractor:
         path = self._cache_path(chunk)
         if path is None:
             return
+        # A failure is never served back — ``_read_cache`` discards it so the
+        # chunk is retried — so writing one only leaves a file that is rewritten
+        # and re-read on every run and can never hit. Same rule as
+        # ``matrix_cache.save_cell``, which refuses to persist an errored cell.
+        if extraction.error is not None:
+            return
         path.write_text(extraction.model_dump_json(indent=2) + "\n", encoding="utf-8")

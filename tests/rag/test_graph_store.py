@@ -61,9 +61,26 @@ def test_claims_about_scopes_to_a_video_on_the_neighbour_hop_too() -> None:
     query, params = store.calls[0]
     assert "c.video_id = $video_id" in query
     assert params["video_id"] == "v1"
-    # The hop anchor is a disjunction; the video scope must apply to the whole
-    # of it, not just to the RELATES branch.
-    assert "WHERE (e.id IN $ids OR (e)-[:RELATES]-(seed)) AND c.video_id = $video_id" in query
+    # The hop widens which entities count, so the video scope must sit on the
+    # claim match that consumes the widened set — not on the seed lookup.
+    assert "WHERE e.id IN scope_ids AND c.video_id = $video_id" in query
+
+
+def test_claims_about_resolves_the_neighbour_hop_before_matching_claims() -> None:
+    """The hop must not leave the seed and claim patterns disconnected.
+
+    Testing ``(e)-[:RELATES]-(seed)`` inside the claim match makes the two
+    patterns a cartesian product, re-checked once per (seed, claim-entity)
+    pair. Collecting the neighbourhood into an id list first keeps it to one
+    indexed lookup as the claim count grows.
+    """
+    store = RecordingStore()
+    store.claims_about(["a"], limit=40, hops=1)
+
+    query, _params = store.calls[0]
+    assert "OPTIONAL MATCH (seed)-[:RELATES]-(neighbour:Entity)" in query
+    assert "(e)-[:RELATES]-(seed)" not in query
+    assert query.index("AS scope_ids") < query.index("MATCH (c:Claim)")
 
 
 def test_claims_about_without_a_video_stays_corpus_wide() -> None:
