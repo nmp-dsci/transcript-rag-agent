@@ -10,6 +10,7 @@ import type {
 import { fmtSeconds } from "../answers/render";
 import { VIEW_H, VIEW_W, nodeRadius, projectNode } from "./graph";
 import { communityLegend, communityColourMap } from "./entityGraph";
+import { useSvgZoomPan } from "./useSvgZoomPan";
 
 const MAX_RENDERED_NODES = 400;
 
@@ -102,6 +103,8 @@ export function KnowledgeGraphView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<EntityDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const { transform, svgProps, zoomIn, zoomOut, reset, isZoomed } = useSvgZoomPan(svgRef);
 
   useEffect(() => {
     void api
@@ -209,71 +212,94 @@ export function KnowledgeGraphView() {
 
         <div className="kg-graphwrap">
           <svg
+            ref={svgRef}
             className="kg-graph"
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             role="img"
-            aria-label="Knowledge graph — click an entity for details"
+            aria-label="Knowledge graph — click an entity for details, scroll or drag to zoom and pan"
+            {...svgProps}
           >
-            <g className="kg-edges" stroke="var(--dim)">
-              {graph.edges.map((edge) => {
-                if (
-                  !renderedIds.has(edge.source) ||
-                  !renderedIds.has(edge.target)
-                )
-                  return null;
-                const from = positions.get(edge.source);
-                const to = positions.get(edge.target);
-                if (!from || !to) return null;
-                return (
-                  <line
-                    key={`${edge.source}|${edge.target}`}
-                    x1={from.cx}
-                    y1={from.cy}
-                    x2={to.cx}
-                    y2={to.cy}
-                    strokeWidth={0.6}
-                    opacity={0.12}
-                  />
-                );
-              })}
-            </g>
-            <g className="kg-nodes">
-              {rendered.map((node) => {
-                const point = positions.get(node.id);
-                if (!point) return null;
-                const radius = nodeRadius(node.mentions, maxMentions);
-                const dimmed = matches !== null && !matches.has(node.id);
-                const selected = node.id === selectedId;
-                return (
-                  <g
-                    key={node.id}
-                    className="kg-node"
-                    opacity={dimmed ? 0.12 : 1}
-                    onClick={() => pick(node.id)}
-                  >
-                    <circle
-                      cx={point.cx}
-                      cy={point.cy}
-                      r={radius + 5}
-                      fill="transparent"
+            <g
+              transform={`translate(${transform.x} ${transform.y}) scale(${transform.k})`}
+            >
+              <g className="kg-edges" stroke="var(--dim)">
+                {graph.edges.map((edge) => {
+                  if (
+                    !renderedIds.has(edge.source) ||
+                    !renderedIds.has(edge.target)
+                  )
+                    return null;
+                  const from = positions.get(edge.source);
+                  const to = positions.get(edge.target);
+                  if (!from || !to) return null;
+                  return (
+                    <line
+                      key={`${edge.source}|${edge.target}`}
+                      x1={from.cx}
+                      y1={from.cy}
+                      x2={to.cx}
+                      y2={to.cy}
+                      strokeWidth={0.6}
+                      opacity={0.12}
                     />
-                    <circle
-                      cx={point.cx}
-                      cy={point.cy}
-                      r={selected ? radius + 1.5 : radius}
-                      fill={
-                        colours.get(node.community_id ?? -1) ?? "var(--dim)"
-                      }
-                      stroke={selected ? "var(--text)" : "var(--panel)"}
-                      strokeWidth={selected ? 1.6 : 0.7}
+                  );
+                })}
+              </g>
+              <g className="kg-nodes">
+                {rendered.map((node) => {
+                  const point = positions.get(node.id);
+                  if (!point) return null;
+                  const radius = nodeRadius(node.mentions, maxMentions);
+                  const dimmed = matches !== null && !matches.has(node.id);
+                  const selected = node.id === selectedId;
+                  return (
+                    <g
+                      key={node.id}
+                      className="kg-node"
+                      opacity={dimmed ? 0.12 : 1}
+                      onClick={() => pick(node.id)}
                     >
-                      <title>{`${node.name} (${node.mentions} mentions)`}</title>
-                    </circle>
-                  </g>
-                );
-              })}
+                      <circle
+                        cx={point.cx}
+                        cy={point.cy}
+                        r={radius + 5}
+                        fill="transparent"
+                      />
+                      <circle
+                        cx={point.cx}
+                        cy={point.cy}
+                        r={selected ? radius + 1.5 : radius}
+                        fill={
+                          colours.get(node.community_id ?? -1) ?? "var(--dim)"
+                        }
+                        stroke={selected ? "var(--text)" : "var(--panel)"}
+                        strokeWidth={selected ? 1.6 : 0.7}
+                      >
+                        <title>{`${node.name} (${node.mentions} mentions)`}</title>
+                      </circle>
+                    </g>
+                  );
+                })}
+              </g>
             </g>
           </svg>
+
+          <div className="kg-zoomctl" role="group" aria-label="Zoom controls">
+            <button type="button" onClick={zoomIn} aria-label="Zoom in">
+              +
+            </button>
+            <button type="button" onClick={zoomOut} aria-label="Zoom out">
+              −
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              disabled={!isZoomed}
+              aria-label="Reset zoom"
+            >
+              reset
+            </button>
+          </div>
         </div>
 
         <div className="kg-legend">

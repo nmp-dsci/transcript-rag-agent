@@ -142,9 +142,18 @@ export const PIPELINE_STYLES = `
 .kg-toolbar input { flex: 0 1 260px; }
 .kg-count { font-size: 11px; color: var(--muted); }
 
-.kg-graphwrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.kg-graph { display: block; width: 100%; height: auto; }
+.kg-graphwrap { position: relative; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.kg-graph { display: block; width: 100%; height: auto; cursor: grab; touch-action: none; }
+.kg-graph:active { cursor: grabbing; }
 .kg-node { cursor: pointer; }
+
+.kg-zoomctl { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column;
+  gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.kg-zoomctl button { width: 28px; height: 26px; border: none; background: var(--panel);
+  color: var(--text2); font: 600 14px var(--mono); cursor: pointer; line-height: 1; }
+.kg-zoomctl button:hover:not(:disabled) { background: var(--panel2); color: var(--text); }
+.kg-zoomctl button:disabled { color: var(--dim); cursor: default; }
+.kg-zoomctl button:last-child { font-size: 9px; letter-spacing: 0.02em; }
 
 .kg-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--muted); }
 .kg-legend span { display: inline-flex; align-items: center; gap: 5px; }

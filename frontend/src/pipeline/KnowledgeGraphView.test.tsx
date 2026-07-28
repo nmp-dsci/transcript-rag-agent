@@ -99,6 +99,25 @@ describe('KnowledgeGraphView', () => {
     expect(await screen.findByText('No claims recorded for this entity.')).toBeInTheDocument();
   });
 
+  it('zoom controls scale the graph and reset returns to the default view', async () => {
+    knowledgeGraph.mockResolvedValue(data());
+    const { container } = render(<KnowledgeGraphView />);
+    await screen.findByText(/3 entities/);
+
+    const group = () => container.querySelector('.kg-graph > g') as SVGGElement;
+    expect(group().getAttribute('transform')).toBe('translate(0 0) scale(1)');
+    // Reset starts disabled — there is nothing to reset back to yet.
+    expect(screen.getByRole('button', { name: 'Reset zoom' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+    expect(group().getAttribute('transform')).not.toBe('translate(0 0) scale(1)');
+    expect(screen.getByRole('button', { name: 'Reset zoom' })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reset zoom' }));
+    expect(group().getAttribute('transform')).toBe('translate(0 0) scale(1)');
+    expect(screen.getByRole('button', { name: 'Reset zoom' })).toBeDisabled();
+  });
+
   it('the search box filters visually without removing nodes from the DOM', async () => {
     knowledgeGraph.mockResolvedValue(data());
     render(<KnowledgeGraphView />);
