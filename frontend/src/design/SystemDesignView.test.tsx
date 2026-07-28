@@ -29,6 +29,10 @@ function data(): SystemDesign {
           },
         ],
         config: { model: 'deepseek-v4-flash', top_k: 10, rerank_enabled: true },
+        flow: [
+          { label: 'Retrieve', detail: 'Semantic search — top 10 candidates.', branch: null },
+          { label: 'Answer', detail: 'One LLM call over the retrieved chunks.', branch: null },
+        ],
       },
       {
         id: 'graph_rag',
@@ -48,6 +52,12 @@ function data(): SystemDesign {
           },
         ],
         config: { neo4j_uri: 'bolt://localhost:7687' },
+        flow: [
+          { label: 'Route', detail: 'Classify the question as local, global, or temporal.', branch: null },
+          { label: 'Retrieve', detail: 'Up to 30 graph claims plus a vector retrieval.', branch: 'local' },
+          { label: 'Reduce', detail: 'Read pre-built community summaries.', branch: 'global' },
+          { label: 'Answer', detail: 'One LLM call narrates over the evidence.', branch: null },
+        ],
       },
       {
         id: 'neo4j',
@@ -58,6 +68,7 @@ function data(): SystemDesign {
         description: 'Entities, relations and claims.',
         prompts: [],
         config: { uri: 'bolt://localhost:7687', user: 'neo4j' },
+        flow: [],
       },
     ],
     edges: [
@@ -119,6 +130,34 @@ describe('SystemDesignView', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /GraphRAG/ }));
     expect(screen.getByText('{question}')).toBeInTheDocument();
+  });
+
+  it('shows the flow steps for an agent node, numbered in order', async () => {
+    systemDesign.mockResolvedValue(data());
+    render(<SystemDesignView />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /Vector RAG/ }));
+    expect(screen.getByText('How a question flows through this path')).toBeInTheDocument();
+    expect(screen.getByText('Semantic search — top 10 candidates.')).toBeInTheDocument();
+    expect(screen.getByText('One LLM call over the retrieved chunks.')).toBeInTheDocument();
+  });
+
+  it('groups branching flow steps under a branch header', async () => {
+    systemDesign.mockResolvedValue(data());
+    render(<SystemDesignView />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /GraphRAG/ }));
+    expect(screen.getByText('local route')).toBeInTheDocument();
+    expect(screen.getByText('global route')).toBeInTheDocument();
+    expect(screen.getByText('Up to 30 graph claims plus a vector retrieval.')).toBeInTheDocument();
+  });
+
+  it('store nodes with no flow show no flow section', async () => {
+    systemDesign.mockResolvedValue(data());
+    render(<SystemDesignView />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /Neo4j/ }));
+    expect(screen.queryByText('How a question flows through this path')).not.toBeInTheDocument();
   });
 
   it('shows an error state when the request fails', async () => {

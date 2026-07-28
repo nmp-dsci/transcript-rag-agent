@@ -71,3 +71,96 @@ def test_graph_rag_node_has_no_reranker_edge() -> None:
     }
     assert "reranker" not in graph_rag_targets
     assert "neo4j" in graph_rag_targets
+
+
+def test_non_agent_nodes_carry_no_flow() -> None:
+    design = build_system_design(_settings())
+    by_id = {node["id"]: node for node in design["nodes"]}
+    for node_id in ("summary_filter", "chroma_chunks", "neo4j", "deepseek", "embeddings"):
+        assert by_id[node_id]["flow"] == []
+
+
+def test_every_agent_flow_ends_in_an_answer_step() -> None:
+    """Every path terminates in one identifiable final call — the point the
+    judge scores and the point a reader looks for first. recursive_rag's is
+    "Synthesize" rather than "Answer", precise about what that call does."""
+    design = build_system_design(_settings())
+    for node in design["nodes"]:
+        if node["kind"] != "agent":
+            continue
+        assert node["flow"], node["id"]
+        assert node["flow"][-1]["label"] in {"Answer", "Synthesize"}, node["id"]
+
+
+def test_vector_rag_flow_cites_the_live_top_k_and_reranker() -> None:
+    settings = _settings()
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert f"top_k={settings.rag_top_k}" in detail
+    if settings.rerank_enabled:
+        assert settings.rerank_model in detail
+        assert any(step["label"] == "Rerank" for step in by_id["vector_rag"]["flow"])
+
+
+def test_vector_rag_flow_omits_rerank_step_when_disabled() -> None:
+    settings = _settings()
+    object.__setattr__(settings, "rerank_enabled", False)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    labels = [step["label"] for step in by_id["vector_rag"]["flow"]]
+    assert "Rerank" not in labels
+
+
+def test_recursive_rag_flow_cites_live_followup_settings() -> None:
+    settings = _settings()
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["recursive_rag"]["flow"])
+    assert str(settings.rag_max_followups) in detail
+    assert str(settings.rag_novelty_min_chunks) in detail
+
+
+def test_agentic_rag_flow_cites_the_live_iteration_cap() -> None:
+    settings = _settings()
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["agentic_rag"]["flow"])
+    assert str(settings.rag_agent_max_iterations) in detail
+
+
+def test_graph_rag_flow_covers_all_three_routes() -> None:
+    """The whole point: a reader can see local retrieves chunks AND claims,
+    while global/temporal never touch the vector store."""
+    design = build_system_design(_settings())
+    by_id = {node["id"]: node for node in design["nodes"]}
+    flow = by_id["graph_rag"]["flow"]
+    branches = {step["branch"] for step in flow if step["branch"]}
+    assert branches == {"local", "global", "temporal"}
+
+    local_detail = " ".join(step["detail"] for step in flow if step["branch"] == "local")
+    assert "graph claims" in local_detail
+    assert "vector retrieval" in local_detail
+
+    global_detail = " ".join(step["detail"] for step in flow if step["branch"] == "global")
+    assert "communities" in global_detail
+
+    temporal_detail = " ".join(step["detail"] for step in flow if step["branch"] == "temporal")
+    assert "dated claims" in temporal_detail
+
+
+def test_graph_rag_flow_evidence_caps_match_the_agent_defaults() -> None:
+    """A hardcoded number here that drifted from the agent's real caps would
+    describe a flow the code doesn't actually run."""
+    from src.agents.graph_agent import (
+        DEFAULT_MAX_CLAIMS,
+        DEFAULT_MAX_COMMUNITIES,
+        DEFAULT_TIMELINE_CLAIMS,
+    )
+
+    design = build_system_design(_settings())
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["graph_rag"]["flow"])
+    assert str(DEFAULT_MAX_CLAIMS) in detail
+    assert str(DEFAULT_MAX_COMMUNITIES) in detail
+    assert str(DEFAULT_TIMELINE_CLAIMS) in detail

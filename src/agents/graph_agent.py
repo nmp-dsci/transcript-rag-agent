@@ -49,6 +49,13 @@ logger = logging.getLogger(__name__)
 
 ROUTES = ("local", "global", "temporal")
 
+#: Evidence caps, as __init__ defaults below. Named so the System Design tab's
+#: flow diagram can cite the exact numbers each route runs with, rather than
+#: a description that silently drifts if these ever change.
+DEFAULT_MAX_CLAIMS = 30
+DEFAULT_TIMELINE_CLAIMS = 60
+DEFAULT_MAX_COMMUNITIES = 12
+
 _STOPWORDS = frozenset(
     "a an and are as at be but by did do does for from has have how in is it of on "
     "or that the their this to was we what when where which who why will with you "
@@ -89,9 +96,9 @@ class GraphRagAgent:
         llm,
         store: GraphStore,
         context_provider: MultiTranscriptRagContextProvider | None = None,
-        max_claims: int = 30,
-        timeline_claims: int = 60,
-        max_communities: int = 12,
+        max_claims: int = DEFAULT_MAX_CLAIMS,
+        timeline_claims: int = DEFAULT_TIMELINE_CLAIMS,
+        max_communities: int = DEFAULT_MAX_COMMUNITIES,
     ) -> None:
         self.llm = llm
         self.store = store

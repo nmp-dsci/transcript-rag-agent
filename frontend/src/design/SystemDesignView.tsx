@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '../api/client';
-import type { PromptEntry, SystemDesign, SystemDesignNode } from '../api/types';
+import type { PromptEntry, SystemDesign, SystemDesignFlowStep, SystemDesignNode } from '../api/types';
 import { useDesignStyles } from './styles';
 
 const NODE_WIDTH = 180;
@@ -60,6 +60,36 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+/** Numbered step list for an agent's flow; steps sharing a `branch` are grouped
+ * under a branch header (graph_rag's local/global/temporal routes). */
+function FlowList({ flow }: { flow: SystemDesignFlowStep[] }) {
+  let lastBranch: string | null | undefined = undefined;
+  let step = 0;
+  return (
+    <div className="ds-flow">
+      {flow.map((item, index) => {
+        const branchChanged = item.branch !== lastBranch;
+        lastBranch = item.branch;
+        step += 1;
+        return (
+          <div key={`${item.label}-${index}`}>
+            {branchChanged && item.branch ? (
+              <div className="ds-flow-branch">{item.branch} route</div>
+            ) : null}
+            <div className="ds-flow-step">
+              <span className="ds-flow-num">{step}</span>
+              <div className="ds-flow-body">
+                <div className="ds-flow-label">{item.label}</div>
+                <div className="ds-flow-detail">{item.detail}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DetailPanel({ node }: { node: SystemDesignNode | null }) {
   if (!node) {
     return (
@@ -91,6 +121,13 @@ function DetailPanel({ node }: { node: SystemDesignNode | null }) {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : null}
+
+      {node.flow.length > 0 ? (
+        <div>
+          <h4 className="ds-sectionhead">How a question flows through this path</h4>
+          <FlowList flow={node.flow} />
         </div>
       ) : null}
 

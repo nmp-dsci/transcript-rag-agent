@@ -512,6 +512,13 @@ export interface Prompts {
   notes: string[];
 }
 
+/** One step of an agent node's answer-path flow. */
+export interface SystemDesignFlowStep {
+  label: string;
+  detail: string;
+  branch: string | null;
+}
+
 /** One node of the System Design graph (GET /api/system-design). */
 export interface SystemDesignNode {
   id: string;
@@ -522,6 +529,7 @@ export interface SystemDesignNode {
   description: string;
   prompts: PromptEntry[];
   config: Record<string, unknown>;
+  flow: SystemDesignFlowStep[];
 }
 
 export interface SystemDesignEdge {

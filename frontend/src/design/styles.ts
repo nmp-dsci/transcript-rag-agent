@@ -63,6 +63,20 @@ const CSS = `
 .ds-cfg td.k { color: var(--dim); font: 10.5px var(--mono); white-space: nowrap; padding-right: 10px; }
 .ds-cfg td.v { color: var(--text2); font: 11.5px var(--mono); word-break: break-all; }
 
+.ds-sectionhead { margin: 14px 0 6px; font: 600 9.5px var(--mono); letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--dim); border-top: 1px solid var(--border); padding-top: 10px; }
+
+.ds-flow { display: flex; flex-direction: column; }
+.ds-flow-branch { margin: 10px 0 4px; font: 700 9.5px var(--mono); letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--accent2); }
+.ds-flow-branch:first-child { margin-top: 0; }
+.ds-flow-step { display: flex; gap: 8px; padding: 5px 0; }
+.ds-flow-num { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--panel2);
+  border: 1px solid var(--border2); color: var(--muted); font: 700 9px var(--mono);
+  display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.ds-flow-label { font: 600 11.5px var(--mono); color: var(--text); }
+.ds-flow-detail { color: var(--text2); font-size: 11.5px; line-height: 1.4; margin-top: 1px; }
+
 .ds-prompts { margin: 14px 0 0; border-top: 1px solid var(--border); padding-top: 10px; }
 .ds-item { margin-top: 10px; }
 .ds-item:first-child { margin-top: 0; }
