@@ -112,6 +112,58 @@ def test_vector_rag_flow_omits_rerank_step_when_disabled() -> None:
     assert "Rerank" not in labels
 
 
+def test_vector_rag_flow_accounts_for_neighbor_expansion() -> None:
+    """neighbor_span widens the context *after* the top_k cut, and is shown in
+    the same node's config table — a bare "top_k chunks" would contradict it."""
+    settings = _settings()
+    object.__setattr__(settings, "neighbor_span", 2)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert "neighbor_span" in detail
+    assert "2 chunks either side" in detail
+
+    object.__setattr__(settings, "neighbor_span", 0)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["vector_rag"]["flow"])
+    assert "neighbor_span" not in detail
+
+
+def test_recursive_rag_flow_accounts_for_neighbor_expansion() -> None:
+    """recursive_rag retrieves through the same provider, so the same widening
+    applies to its first retrieval."""
+    settings = _settings()
+    object.__setattr__(settings, "neighbor_span", 1)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["recursive_rag"]["flow"])
+    assert "1 chunk either side" in detail
+
+
+def test_recursive_rag_flow_drops_the_fan_out_when_max_depth_is_zero() -> None:
+    """max_depth=0 makes _answer_recursive return the first-pass answer, so the
+    follow-up/merge/synthesize steps describe calls that never happen."""
+    settings = _settings()
+    object.__setattr__(settings, "rag_max_depth", 0)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    labels = [step["label"] for step in by_id["recursive_rag"]["flow"]]
+    assert labels == ["Retrieve", "First-pass answer", "Answer"]
+
+
+def test_recursive_rag_flow_notes_the_one_round_cap_above_max_depth_one() -> None:
+    """The agent clamps max_depth to a single round; a config table showing 3
+    beside a flow silently running 1 is exactly the drift this flow prevents."""
+    settings = _settings()
+    object.__setattr__(settings, "rag_max_depth", 3)
+    design = build_system_design(settings)
+    by_id = {node["id"]: node for node in design["nodes"]}
+    detail = " ".join(step["detail"] for step in by_id["recursive_rag"]["flow"])
+    assert "max_depth=3" in detail
+    assert "one round" in detail
+
+
 def test_recursive_rag_flow_cites_live_followup_settings() -> None:
     settings = _settings()
     design = build_system_design(settings)

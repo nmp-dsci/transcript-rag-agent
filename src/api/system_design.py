@@ -43,6 +43,22 @@ def _step(label: str, detail: str, branch: str | None = None) -> dict[str, Any]:
     return {"label": label, "detail": detail, "branch": branch}
 
 
+def _neighbor_note(settings: Settings) -> str:
+    """How ``neighbor_span`` widens a retrieval, or ``""`` when it is off.
+
+    ``MultiTranscriptRagContextProvider._refine`` expands neighbours *after* the
+    top_k cut, so any step that claims a bare top_k undercounts what the answer
+    call actually sees — and ``neighbor_span`` is shown in the same config table.
+    """
+    span = settings.neighbor_span
+    if span <= 0:
+        return ""
+    return (
+        f" Each hit is then widened with the {span} chunk{'' if span == 1 else 's'} either "
+        "side of it (neighbor_span), after the top_k cut."
+    )
+
+
 def _chat_flow() -> list[dict[str, Any]]:
     return [
         _step(
@@ -83,30 +99,52 @@ def _vector_rag_flow(settings: Settings) -> list[dict[str, Any]]:
     steps.append(
         _step(
             "Answer",
-            f"One LLM call over the {settings.rag_top_k} retrieved chunks, citing chunk ids.",
+            f"One LLM call over the {settings.rag_top_k} retrieved chunks, citing chunk ids."
+            f"{_neighbor_note(settings)}",
         )
     )
     return steps
 
 
 def _recursive_rag_flow(settings: Settings) -> list[dict[str, Any]]:
-    return [
+    steps = [
         _step(
             "Retrieve",
-            f"Same as vector_rag: top_k={settings.rag_top_k} chunks for the question as asked.",
+            f"Same as vector_rag: top_k={settings.rag_top_k} chunks for the question as asked."
+            f"{_neighbor_note(settings)}",
         ),
         _step(
             "First-pass answer",
             "One LLM call answers from that first retrieval and proposes follow-up subtopics.",
         ),
-        _step(
-            "Follow-up retrieval",
-            f"Up to {settings.rag_max_followups} subtopics each get their own retrieval "
-            f"(skipped if a subtopic would add fewer than {settings.rag_novelty_min_chunks} new chunks).",
-        ),
-        _step("Merge", "Deduplicate and merge every retrieval's chunks into one context."),
-        _step("Synthesize", "One final LLM call answers over the merged context."),
     ]
+    if settings.rag_max_depth < 1:
+        steps.append(
+            _step(
+                "Answer",
+                f"max_depth={settings.rag_max_depth} disables the fan-out — that first-pass "
+                "answer is returned as it stands, with no follow-up retrieval.",
+            )
+        )
+        return steps
+    depth_note = (
+        f" (max_depth={settings.rag_max_depth}, which the agent caps at one round)"
+        if settings.rag_max_depth > 1
+        else ""
+    )
+    steps.extend(
+        [
+            _step(
+                "Follow-up retrieval",
+                f"One round of fan-out{depth_note}: up to {settings.rag_max_followups} subtopics "
+                "each get their own retrieval (skipped if a subtopic would add fewer than "
+                f"{settings.rag_novelty_min_chunks} new chunks).",
+            ),
+            _step("Merge", "Deduplicate and merge every retrieval's chunks into one context."),
+            _step("Synthesize", "One final LLM call answers over the merged context."),
+        ]
+    )
+    return steps
 
 
 def _agentic_rag_flow(settings: Settings) -> list[dict[str, Any]]:
