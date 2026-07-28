@@ -60,9 +60,7 @@ def default_configs(top_k: int = 10) -> list[AblationConfig]:
     return [
         AblationConfig(label="semantic", retrieval_mode="semantic", rerank=False, top_k=top_k),
         AblationConfig(label="hybrid", retrieval_mode="hybrid", rerank=False, top_k=top_k),
-        AblationConfig(
-            label="hybrid+rerank", retrieval_mode="hybrid", rerank=True, top_k=top_k
-        ),
+        AblationConfig(label="hybrid+rerank", retrieval_mode="hybrid", rerank=True, top_k=top_k),
     ]
 
 
@@ -239,8 +237,7 @@ def format_table(result: dict[str, Any]) -> str:
     for cell in result["cells"]:
         avg = cell["averages"]
         row = "  ".join(
-            [f"{cell['label']:<14}"]
-            + [f"{avg.get(m, float('nan')):>13.3f}" for m in metrics]
+            [f"{cell['label']:<14}"] + [f"{avg.get(m, float('nan')):>13.3f}" for m in metrics]
         )
         lines.append(row)
     if result["deltas"]:
