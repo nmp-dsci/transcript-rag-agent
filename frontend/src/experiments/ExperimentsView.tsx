@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../api/client';
-import type { AblationRun, Experiments, GoldenRunSummary } from '../api/types';
+import type {
+  AblationRun,
+  Experiments,
+  GoldenRunSummary,
+  MatrixRunSummary,
+} from '../api/types';
+import { MatrixRunPanel } from './MatrixRunPanel';
 import { useExperimentStyles } from './styles';
 
 /** 3-decimal fixed, or an em dash for a metric a run did not report. */
@@ -137,6 +143,112 @@ function AblationTable({ run }: { run: AblationRun }) {
   );
 }
 
+/** The engines × metrics head-to-head, filterable by question type (s05 §06). */
+function MatrixTable({ run }: { run: MatrixRunSummary }) {
+  const types = useMemo(
+    () => ['overall', ...Object.keys(run.comparison.by_question_type ?? {}).sort()],
+    [run],
+  );
+  const [view, setView] = useState('overall');
+  const active = types.includes(view) ? view : 'overall';
+  const rows =
+    active === 'overall'
+      ? (run.comparison.overall ?? {})
+      : (run.comparison.by_question_type?.[active] ?? {});
+  const metrics = Object.keys(rows);
+  const ops = run.comparison.ops ?? {};
+
+  return (
+    <section className="exp-card">
+      <div className="exp-cardhead">
+        <div>
+          <h3>Head-to-head matrix — engines × question types</h3>
+          <span className="exp-sub">
+            {run.run_id} · {run.entry_count} questions ·{' '}
+            {Object.entries(run.question_types)
+              .map(([name, count]) => `${count} ${name}`)
+              .join(' · ')}
+            {run.judged ? ' · RAGAS judged' : ''}
+            {run.reference_scored ? ' · reference scored' : ''}
+          </span>
+        </div>
+        {types.length > 1 && (
+          <div className="exp-seg" role="tablist" aria-label="Question type">
+            {types.map((name) => (
+              <button
+                key={name}
+                type="button"
+                role="tab"
+                aria-selected={active === name}
+                className={active === name ? 'on' : ''}
+                onClick={() => setView(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="exp-scroll">
+        <table className="exp-table">
+          <thead>
+            <tr>
+              <th>metric</th>
+              {run.setups.map((setup) => (
+                <th key={setup} className="num">
+                  {setup}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map((metric) => {
+              const cells = rows[metric] ?? {};
+              const values = run.setups
+                .map((setup) => cells[setup])
+                .filter((value): value is number => typeof value === 'number');
+              const best = values.length > 0 ? Math.max(...values) : undefined;
+              return (
+                <tr key={metric}>
+                  <td className="exp-cfg">{metric}</td>
+                  {run.setups.map((setup) => {
+                    const value = cells[setup];
+                    const isBest = typeof value === 'number' && value === best;
+                    return (
+                      <td key={setup} className={`num${isBest ? ' best' : ''}`}>
+                        {fmt(value)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+            <tr>
+              <td className="exp-cfg">avg seconds / answer</td>
+              {run.setups.map((setup) => (
+                <td key={setup} className="num">
+                  {fmt(ops[setup]?.avg_elapsed_seconds ?? undefined)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="exp-cfg">avg context tokens</td>
+              {run.setups.map((setup) => (
+                <td key={setup} className="num">
+                  {typeof ops[setup]?.avg_token_estimate === 'number'
+                    ? Math.round(ops[setup]!.avg_token_estimate as number).toString()
+                    : '—'}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function GoldenRuns({ runs }: { runs: GoldenRunSummary[] }) {
   return (
     <section className="exp-card">
@@ -185,39 +297,52 @@ export function ExperimentsView() {
   const [data, setData] = useState<Experiments | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        setData(await api.experiments());
-        setError(null);
-      } catch (err) {
-        setError((err as Error).message);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      setData(await api.experiments());
+      setError(null);
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const ablations = data?.ablations ?? [];
   const goldenRuns = data?.golden_runs ?? [];
-  const nothing = data !== null && ablations.length === 0 && goldenRuns.length === 0;
+  const matrixRuns = data?.matrix_runs ?? [];
+  const nothing =
+    data !== null &&
+    ablations.length === 0 &&
+    goldenRuns.length === 0 &&
+    matrixRuns.length === 0;
 
   return (
     <div className="scrollview">
       <div className="pagewrap">
         <p className="exp-intro">
-          Committed retrieval experiments — the ablation sweeps and end-to-end golden runs
-          under <code>evals/runs/</code>. Every number here is reproducible from a snapshot a
-          reviewer can open in the repo.
+          Committed retrieval experiments under <code>evals/runs/</code> — the head-to-head
+          matrix the Scoreboard ranks, the ablation sweeps, and the end-to-end golden runs.
+          Every number here is reproducible from a snapshot a reviewer can open in the repo.
         </p>
+
+        <MatrixRunPanel onRunFinished={() => void load()} />
 
         {error && <p className="exp-empty">Could not load experiments: {error}</p>}
 
         {nothing && (
           <p className="exp-empty">
-            No committed experiment runs yet. Generate them with{' '}
-            <code>uv run python -m src.cli eval-ablation</code> and{' '}
-            <code>uv run python -m src.cli eval-golden</code>.
+            No committed experiment runs yet. Start a head-to-head sweep with the button
+            above, or generate the retrieval-only ones with{' '}
+            <code>uv run python -m src.cli eval-ablation</code>.
           </p>
         )}
+
+        {matrixRuns.map((run) => (
+          <MatrixTable key={run.run_id} run={run} />
+        ))}
 
         {ablations.map((run) => (
           <AblationTable key={run.run_id} run={run} />

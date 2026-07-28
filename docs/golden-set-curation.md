@@ -6,9 +6,11 @@ the `expected_chunk_ids` a good retriever must surface. Those labels are what th
 reference-free RAGAS metrics cannot give you — recall (what retrieval *missed*) and
 correctness (whether the answer is actually *right*).
 
-It currently holds 9 curated entries. The target is **40+**, reported per domain
-(property vs ai-coding), so a headline number is never an average hiding a segment
-that fails. This guide is the process for getting there without diluting quality.
+It currently holds 20 curated entries (14 `local`, 4 `global`, 2 `temporal`) spread
+across four domains — 7 property, 6 ai-coding, 6 career, 1 corpus. The target is
+**40+**, reported per domain, so a headline number is never an average hiding a
+segment that fails. This guide is the process for getting there without diluting
+quality.
 
 ## Why it stays hand-curated
 
@@ -30,6 +32,7 @@ Each entry is a `GoldenEntry` (`src/evals/golden.py`), validated on load:
   "expected_video_ids": ["<video_id>"],
   "expected_chunk_ids": ["chunk:<video_id>:<index>"],
   "domain": "property",
+  "question_type": "local",
   "notes": "optional — why these chunks, any caveats"
 }
 ```
@@ -37,18 +40,32 @@ Each entry is a `GoldenEntry` (`src/evals/golden.py`), validated on load:
 Validation enforces the invariants that catch hand-edited drift: chunk ids must be
 `chunk:<video_id>:<index>`, every `expected_chunk_id`'s video must appear in
 `expected_video_ids` and vice versa, no duplicates, and `domain` must be one of the
-known domains (`property`, `ai-coding`).
+known domains (`property`, `ai-coding`, `career`, `corpus` — `career` covers the
+job-search/resume/LinkedIn videos, and `corpus` is for entries whose question spans
+the whole library rather than one segment). `question_type` must be one of `local`,
+`global`, or `temporal` (default `local`) and decides which metrics apply: a `local`
+entry must declare `expected_video_ids`/`expected_chunk_ids` because its answer lives
+in specific chunks the deterministic recall/IR metrics can check. `global`
+(corpus-wide themes) and `temporal` (trend-over-time) entries may leave both lists
+empty — no chunk list is "the" reference for those — and are instead scored on
+answer-level metrics (`answer_correctness` against `reference_answer`), which is what
+the head-to-head matrix (`eval-matrix`) uses to compare engines on question types the
+chunk-recall path can't.
 
 ## Adding an entry by hand
 
 1. **Pick a question** a real user would ask, that the corpus can actually answer.
-   Aim for a spread — factual lookups, comparisons, multi-video questions.
-2. **Find the supporting chunks.** Open the workbench **RAG Pipeline → Retrieval
-   Lab**, search your question, and read the top chunks; or list a video's chunks
-   with `GET /api/corpus/{video_id}/chunks`. Note the `chunk:<video_id>:<index>` id
-   of each chunk that genuinely supports the answer.
+   Aim for a spread — factual lookups, comparisons, multi-video questions — and
+   decide its `question_type`: `local` if a specific set of chunks answers it,
+   `global`/`temporal` if the answer is corpus-wide or trend-based instead.
+2. **Find the supporting chunks** (for `local` entries). Open the workbench
+   **RAG Pipeline → Retrieval Lab**, search your question, and read the top
+   chunks; or list a video's chunks with `GET /api/corpus/{video_id}/chunks`.
+   Note the `chunk:<video_id>:<index>` id of each chunk that genuinely supports
+   the answer. `global`/`temporal` entries can leave `expected_video_ids` and
+   `expected_chunk_ids` empty.
 3. **Write the reference answer** from those chunks — grounded, not from memory.
-4. **Assign the domain** and add the entry to `entries` in
+4. **Assign the domain and question_type** and add the entry to `entries` in
    `src/evals/golden_dataset.json`.
 5. **Validate** it loads cleanly:
    ```bash
@@ -80,3 +97,9 @@ Report and grow the set per domain. The ablation harness already breaks every
 metric down by domain (`by_domain` in `ablation-*.json`, shown in the workbench
 **Experiments** tab), so aim for enough questions in each domain that a per-segment
 number is meaningful — not one domain carrying the set.
+
+The same applies to `question_type`: the head-to-head matrix (`eval-matrix`)
+breaks its comparison down by `local`/`global`/`temporal` (`by_question_type` in
+`matrix-*.json`), so a `global`/`temporal` verdict needs enough entries of that
+type to mean something, not one or two questions standing in for the whole
+question type.

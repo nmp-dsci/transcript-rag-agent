@@ -1,0 +1,23 @@
+{
+ "description": "Hand-labelled extraction sample for the GraphRAG extraction-quality check (s05 P4.1). Labels were written by reading each chunk's transcript text in the live corpus (verified 2026-07-26): 'entities' are things the chunk unambiguously talks about that extraction must find; each 'claim_keywords' list is one statement the chunk makes, as keywords that must all appear in a single extracted claim. Labels are must-find, not exhaustive - extraction finding more is expected, which is why the eval reports recall only.",
+ "labelled": [
+  {
+   "chunk_id": "chunk:gXf7fRvuaXA:2",
+   "entities": ["budget", "senate inquiry", "pauline hanson", "angus taylor", "income tax cuts"],
+   "claim_keywords": [["senate", "inquiry"]],
+   "notes": "Speaker says the budget bill is currently sitting with a Senate inquiry committee; names Albanese, Chalmers, Taylor, Hanson; mentions the income tax cuts."
+  },
+  {
+   "chunk_id": "chunk:iQyg-KypKAA:1",
+   "entities": ["agentic engineering", "memory", "skills"],
+   "claim_keywords": [],
+   "notes": "Video intro: fundamental concepts of agentic engineering; ramping up agents with memory and skills. Intro chunks may extract few claims, so only entities are labelled."
+  },
+  {
+   "chunk_id": "chunk:AdRL6tKu3Gk:3",
+   "entities": ["perth", "brisbane", "adelaide", "federal budget"],
+   "claim_keywords": [["perth", "100%"], ["brisbane", "95"]],
+   "notes": "5-year growth figures per city (Perth ~100%, Brisbane 95%, Adelaide ~90%); federal budget proposed changes and the 12 May contract date."
+  }
+ ]
+}

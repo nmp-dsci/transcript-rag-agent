@@ -17,6 +17,7 @@ browser can show progress and render results as they complete.
 from __future__ import annotations
 
 import json
+import logging
 import queue
 import threading
 from dataclasses import asdict
@@ -39,7 +40,16 @@ from src.api.corpus import (
     load_chunk_corpus,
     load_chunk_embeddings,
 )
-from src.api.ranking import MODES, build_rankings
+from src.api.ingestion_queue import IngestionQueue
+from src.api.matrix_runner import MatrixRunner, RunFn
+from src.api.matrix_runs import (
+    describe_matrix_run,
+    load_matrix_runs,
+    matrix_entries,
+    matrix_questions,
+    select_matrix_run,
+)
+from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.chat.frontend import (
     ANSWER_CSS,
@@ -65,10 +75,13 @@ from src.chat.setups import (
 )
 from src.config import Settings, load_settings
 from src.evals.judge import RagasJudge, unjudgeable
+from src.evals.matrix import DEFAULT_MATRIX_SETUPS
 
 INDEX_HTML_PATH = Path(__file__).parent / "static" / "index.html"
 # Built React bundle (frontend/npm run build). Gitignored, so it may be absent.
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+logger = logging.getLogger(__name__)
 
 IndexFn = Callable[[list[str]], int]
 
@@ -122,9 +135,13 @@ class RankRequest(BaseModel):
     query: str = Field(min_length=1)
     video_id: str | None = None
     top_k: int = Field(default=10, ge=1, le=50)
-    modes: list[Literal["semantic", "bm25"]] = Field(
-        default_factory=lambda: list(MODES), min_length=1
-    )
+    modes: list[RankMode] = Field(default_factory=lambda: list(DEFAULT_MODES), min_length=1)
+
+
+class MatrixRunRequest(BaseModel):
+    """Which engines to sweep; empty means every engine in the matrix default."""
+
+    setups: list[str] = Field(default_factory=list)
 
 
 def _sse(event: str, data: dict) -> str:
@@ -154,14 +171,10 @@ def _index_argv(payload: "IndexRequest") -> tuple[list[str], str]:
     """The CLI argv for an index request, and the human-readable target."""
     if payload.mode == "video":
         if not payload.url:
-            raise HTTPException(
-                status_code=422, detail="url is required when mode is 'video'"
-            )
+            raise HTTPException(status_code=422, detail="url is required when mode is 'video'")
         return ["index-rag", payload.url], payload.url
     if not payload.channel:
-        raise HTTPException(
-            status_code=422, detail="channel is required when mode is 'channel'"
-        )
+        raise HTTPException(status_code=422, detail="channel is required when mode is 'channel'")
     return (
         [
             "bulk-index",
@@ -177,6 +190,31 @@ def _index_argv(payload: "IndexRequest") -> tuple[list[str], str]:
 
 _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
+# How long a subscription stream waits for an event before emitting an SSE
+# comment. The comment itself is inert for the browser, but reaching a yield
+# is what lets the generator notice a closed connection: Starlette drives
+# these sync generators on a worker thread, so a `get()` that blocks forever
+# pins that thread — and the subscriber registration — for the life of the
+# process, even though the tab that opened it is long gone.
+_SSE_KEEPALIVE_INTERVAL_SECONDS = 10.0
+
+
+def _subscription_stream(
+    subscriber: queue.Queue,
+    unsubscribe: Callable[[queue.Queue], None],
+) -> Iterator[str]:
+    """Forward one subscriber's events as SSE until the client goes away."""
+    try:
+        while True:
+            try:
+                event = subscriber.get(timeout=_SSE_KEEPALIVE_INTERVAL_SECONDS)
+            except queue.Empty:
+                yield ": keepalive\n\n"
+                continue
+            yield _sse(event["type"], event)
+    finally:
+        unsubscribe(subscriber)
+
 
 def _append_answers(
     entry_id: str, results: list, history_path: Path
@@ -186,9 +224,7 @@ def _append_answers(
 
     def mutate(entry: ChatEntry) -> None:
         replaced = {answer.key for answer in fresh}
-        entry.answers = [
-            answer for answer in entry.answers if answer.key not in replaced
-        ] + fresh
+        entry.answers = [answer for answer in entry.answers if answer.key not in replaced] + fresh
 
     updated, entries = update_entry(entry_id, mutate, history_path)
     assert updated is not None  # existence is checked before the stream starts
@@ -240,9 +276,7 @@ def _run_setup_streaming(
     yield "result", holder["result"]
 
 
-def _run_index_streaming(
-    index_fn: IndexFn, argv: list[str]
-) -> Iterator[tuple[str, Any]]:
+def _run_index_streaming(index_fn: IndexFn, argv: list[str]) -> Iterator[tuple[str, Any]]:
     """Run ``index_fn`` on a worker thread, yielding ``("heartbeat", None)`` while waiting.
 
     Same worker+queue shape as ``_run_setup_streaming``, except ``index_fn``
@@ -287,14 +321,25 @@ def create_app(
     chunks_fn: Callable[[str], dict[str, Any]] | None = None,
     chunk_records_fn: Callable[[str | None], list[dict[str, Any]]] | None = None,
     graph_records_fn: Callable[[], list[dict[str, Any]]] | None = None,
+    graph_store_factory: Callable[[], Any] | None = None,
+    graph_extract_fn: Callable[[list[str]], dict[str, Any]] | None = None,
     history_path: Path = DEFAULT_HISTORY_PATH,
     chat_html_path: Path = DEFAULT_CHAT_HTML_PATH,
     index_fn: IndexFn = _default_index_fn,
     frontend_dist: Path = FRONTEND_DIST,
+    runs_dir: Path | None = None,
+    matrix_run_fn: RunFn | None = None,
 ) -> FastAPI:
     resolved = settings or load_settings(require_keys=True)
     runner_factory = runner_factory or (lambda: RagSetupRunner.from_settings(resolved))
     judge_factory = judge_factory or (lambda: RagasJudge.from_settings(resolved))
+
+    def _default_graph_store() -> Any:
+        from src.rag.graph_store import GraphStore
+
+        return GraphStore.from_settings(resolved)
+
+    graph_store_factory = graph_store_factory or _default_graph_store
     corpus_fn = corpus_fn or (
         lambda: list_corpus(
             resolved.chroma_path,
@@ -303,9 +348,7 @@ def create_app(
         )
     )
     chunks_fn = chunks_fn or (
-        lambda video_id: list_chunks(
-            resolved.chroma_path, video_id, resolved.chunk_collection
-        )
+        lambda video_id: list_chunks(resolved.chroma_path, video_id, resolved.chunk_collection)
     )
     chunk_records_fn = chunk_records_fn or (
         lambda video_id: load_chunk_corpus(
@@ -317,14 +360,94 @@ def create_app(
     )
     judge_model_name = resolved.judge_model or resolved.deepseek_model
 
-    app = FastAPI(title="Transcript RAG Evaluation Workbench", version="0.2.0")
-
     # Both stacks load models, so build each once, lazily, never at startup.
-    locks = {"runner": threading.Lock(), "judge": threading.Lock()}
+    locks = {
+        "runner": threading.Lock(),
+        "judge": threading.Lock(),
+        "graph_store": threading.Lock(),
+        "chunk_store": threading.Lock(),
+    }
     holders: dict[str, Any] = {}
 
     def loaded(name: str) -> bool:
         return name in holders
+
+    def get_graph_store() -> Any:
+        with locks["graph_store"]:
+            if "graph_store" not in holders:
+                holders["graph_store"] = graph_store_factory()
+            return holders["graph_store"]
+
+    def get_chunk_store() -> Any:
+        """The ingestion hook's read-only view of the chunk collection.
+
+        Built once for the app's lifetime rather than per job: every job would
+        otherwise open its own Chroma client just to read back the chunks it
+        has already written.
+        """
+        with locks["chunk_store"]:
+            if "chunk_store" not in holders:
+                from src.rag.embeddings import HuggingFaceEmbeddingModel
+                from src.rag.storage import TranscriptChunkStore
+
+                holders["chunk_store"] = TranscriptChunkStore(
+                    resolved.chroma_path,
+                    embedding_model=HuggingFaceEmbeddingModel(resolved.embedding_model),
+                    collection_name=resolved.chunk_collection,
+                )
+            return holders["chunk_store"]
+
+    def _default_graph_extract_fn(video_ids: list[str]) -> dict[str, Any]:
+        """Catch up entities/claims for just-added videos after an ingest.
+
+        Community rebuild is skipped here (it re-summarizes the whole graph
+        via the LLM, not just what changed) — run `index-graph` manually to
+        refresh community summaries after a batch of ingests.
+        """
+        from src.rag.graph_pipeline import build_graph
+
+        chunks = get_chunk_store().chunks_for_videos(video_ids)
+        stats = build_graph(
+            resolved,
+            chunks,
+            store=get_graph_store(),
+            skip_communities=True,
+        )
+        return {"ok": stats["failed"] == 0, **stats}
+
+    graph_extract_fn = graph_extract_fn or _default_graph_extract_fn
+    ingestion_queue = IngestionQueue(
+        index_fn=index_fn, corpus_fn=corpus_fn, graph_fn=graph_extract_fn
+    )
+
+    def _default_matrix_run_fn(
+        setups: list[str], on_cell: Callable[[dict[str, Any]], None]
+    ) -> dict[str, Any]:
+        """Run and commit a judged matrix — the same path ``eval-matrix`` takes.
+
+        Builds its own runner and judge rather than reusing the app's lazy
+        singletons: those are shared with live `/api/ask` traffic, and a
+        multi-minute sweep must not hold them.
+        """
+        from src.evals.golden import answer_correctness_fns
+        from src.evals.matrix import run_matrix
+        from src.evals.regression import DEFAULT_RUNS_DIR as EVAL_RUNS_DIR
+        from src.evals.regression import save_run
+
+        result = run_matrix(
+            RagSetupRunner.from_settings(resolved),
+            resolved,
+            setups=setups,
+            judge=RagasJudge.from_settings(resolved),
+            reference_fns=answer_correctness_fns(resolved),
+            on_cell=on_cell,
+        )
+        save_run(result, runs_dir or EVAL_RUNS_DIR)
+        return result
+
+    matrix_runner = MatrixRunner(run_fn=matrix_run_fn or _default_matrix_run_fn)
+
+    app = FastAPI(title="Transcript RAG Evaluation Workbench", version="0.2.0")
 
     def get_runner() -> RagSetupRunner:
         with locks["runner"]:
@@ -386,13 +509,23 @@ def create_app(
     def experiments() -> dict:
         from src.api.experiments import load_experiments
 
-        return load_experiments()
+        return load_experiments(runs_dir)
+
+    @app.get("/api/prompts")
+    def prompts() -> dict:
+        from src.api.prompts import load_prompts
+
+        return load_prompts()
+
+    @app.get("/api/system-design")
+    def system_design() -> dict:
+        from src.api.system_design import build_system_design
+
+        return build_system_design(resolved)
 
     @app.get("/api/history")
     def history() -> dict:
-        return {
-            "conversations": [entry.to_dict() for entry in load_history(history_path)]
-        }
+        return {"conversations": [entry.to_dict() for entry in load_history(history_path)]}
 
     @app.get("/api/corpus")
     def corpus() -> dict:
@@ -406,13 +539,35 @@ def create_app(
     def scoreboard(
         group_by: Literal["setup", "setup_model"] = "setup",
         judge_model: str | None = None,
+        run_id: str | None = None,
     ) -> dict:
+        """The leaderboard for one committed matrix run (newest by default).
+
+        Every row comes from the same golden questions under one recorded
+        config, rather than from whichever questions were asked live — so a
+        newly added engine appears as soon as its matrix cells exist, with no
+        manual re-asking. ``/api/history`` still serves the live chat set.
+
+        Alongside the aggregated ``setups`` rows, ``questions`` carries the
+        run pivoted the other way — one row per golden question with each
+        setup's composite on it — so the averages can be read back down to
+        what they average.
+        """
+        runs = load_matrix_runs(runs_dir)
+        run = select_matrix_run(runs, run_id)
         board = build_scoreboard(
-            load_history(history_path),
+            matrix_entries(run) if run is not None else [],
             group_by=group_by,
             judge_model=judge_model,
         )
-        board["judge_model"] = judge_model_name
+        # The run's own judge is what graded these numbers; the server's
+        # configured judge only describes what a *future* run would use.
+        board["judge_model"] = ((run or {}).get("config") or {}).get(
+            "judge_model"
+        ) or judge_model_name
+        board["run_id"] = (run or {}).get("run_id")
+        board["runs"] = [describe_matrix_run(data) for data in runs]
+        board["questions"] = matrix_questions(run) if run is not None else []
         return board
 
     @app.post("/api/rank")
@@ -421,12 +576,21 @@ def create_app(
         if not query:
             raise HTTPException(status_code=422, detail="Query must not be blank")
 
+        # BM25 and graph ranking both read the whole chunk corpus, and each
+        # read opens the Chroma collection and pulls every document. Selecting
+        # both modes is one corpus scan per request, not one per mode.
+        loaded_records: list[dict[str, Any]] | None = None
+
+        def records() -> list[dict[str, Any]]:
+            nonlocal loaded_records
+            if loaded_records is None:
+                loaded_records = list(chunk_records_fn(payload.video_id))
+            return loaded_records
+
         def semantic(text: str, top_k: int) -> list[dict[str, Any]]:
             provider = get_runner().provider
             if payload.video_id:
-                chunks = provider.chunk_store.query_by_video_id(
-                    payload.video_id, text, top_k
-                )
+                chunks = provider.chunk_store.query_by_video_id(payload.video_id, text, top_k)
             else:
                 context = provider.get_context(
                     question=text,
@@ -447,17 +611,46 @@ def create_app(
                 for chunk in chunks
             ]
 
+        def graph(text: str, top_k: int) -> list[dict[str, Any]]:
+            """Graph ranking. A failure here degrades to a labelled-unavailable
+            column rather than a 500: ``build_rankings`` catches it, records it
+            under ``errors["graph"]`` and keeps the semantic and BM25 columns
+            (and their overlap) intact — losing Neo4j is not a reason to fail
+            the whole query, nor to look like an empty result."""
+            from src.rag.graph_view import rank_chunks_by_graph
+
+            return rank_chunks_by_graph(
+                get_graph_store(), text, records(), top_k, video_id=payload.video_id
+            )
+
         try:
             return build_rankings(
                 query,
                 modes=payload.modes,
                 top_k=payload.top_k,
                 semantic_fn=semantic,
-                records_fn=lambda: chunk_records_fn(payload.video_id),
+                records_fn=records,
+                graph_fn=graph if "graph" in payload.modes else None,
                 video_id=payload.video_id,
             )
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    @app.get("/api/graph/knowledge/videos/{video_id}/chunks")
+    def knowledge_graph_video_chunks(video_id: str) -> dict:
+        """Every chunk's GraphRAG enrichment for one video — entities and
+        claims the extraction pass read into each chunk, keyed by chunk
+        index. Powers the raw-chunk view's side-by-side comparison of what
+        vector RAG sees (just text) against what GraphRAG additionally
+        extracted from the same chunk."""
+        from src.rag.graph_view import chunk_enrichment_for_video
+
+        try:
+            return chunk_enrichment_for_video(get_graph_store(), video_id)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Could not reach the knowledge graph store: {exc}"
+            ) from exc
 
     @app.post("/api/ask")
     def ask(payload: AskRequest) -> StreamingResponse:
@@ -466,24 +659,16 @@ def create_app(
             raise HTTPException(status_code=422, detail="Question must not be blank")
         unknown = [key for key in payload.setups if key not in SETUP_KEYS]
         if unknown:
-            raise HTTPException(
-                status_code=422, detail=f"Unknown setup(s): {', '.join(unknown)}"
-            )
+            raise HTTPException(status_code=422, detail=f"Unknown setup(s): {', '.join(unknown)}")
         keys = list(dict.fromkeys(payload.setups))
         url = payload.url.strip() if payload.url and payload.url.strip() else None
         if payload.entry_id:
             target_entry = next(
-                (
-                    entry
-                    for entry in load_history(history_path)
-                    if entry.id == payload.entry_id
-                ),
+                (entry for entry in load_history(history_path) if entry.id == payload.entry_id),
                 None,
             )
             if target_entry is None:
-                raise HTTPException(
-                    status_code=404, detail=f"Unknown entry: {payload.entry_id}"
-                )
+                raise HTTPException(status_code=404, detail=f"Unknown entry: {payload.entry_id}")
             if target_entry.question != question or (
                 target_entry.url is not None and target_entry.url != url
             ):
@@ -532,9 +717,7 @@ def create_app(
                     results.append(result)
                     yield _sse("answer", asdict(ChatAnswer.from_result(result)))
                 if payload.entry_id:
-                    entry, entries = _append_answers(
-                        payload.entry_id, results, history_path
-                    )
+                    entry, entries = _append_answers(payload.entry_id, results, history_path)
                 else:
                     entry = build_entry(question, results, url=url)
                     entries = append_entry(entry, history_path)
@@ -543,25 +726,19 @@ def create_app(
             except Exception as exc:
                 yield _sse("error", {"message": str(exc)})
 
-        return StreamingResponse(
-            stream(), media_type="text/event-stream", headers=_SSE_HEADERS
-        )
+        return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
     @app.post("/api/judge")
     def judge(payload: JudgeRequest) -> StreamingResponse:
         entries = load_history(history_path)
         entry = next((e for e in entries if e.id == payload.entry_id), None)
         if entry is None:
-            raise HTTPException(
-                status_code=404, detail=f"Unknown entry: {payload.entry_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Unknown entry: {payload.entry_id}")
 
         def stream() -> Iterator[str]:
             try:
                 targets = [
-                    answer
-                    for answer in entry.answers
-                    if payload.force or answer.evaluation is None
+                    answer for answer in entry.answers if payload.force or answer.evaluation is None
                 ]
                 scorable = [a for a in targets if not a.error and a.contexts]
                 if scorable and not loaded("judge"):
@@ -577,8 +754,7 @@ def create_app(
                         )
                     elif not answer.contexts:
                         answer.evaluation = unjudgeable(
-                            "no stored retrieval contexts "
-                            "(asked before context persistence)",
+                            "no stored retrieval contexts (asked before context persistence)",
                             judge_model_name,
                         )
                     else:
@@ -622,9 +798,7 @@ def create_app(
             except Exception as exc:
                 yield _sse("error", {"message": str(exc)})
 
-        return StreamingResponse(
-            stream(), media_type="text/event-stream", headers=_SSE_HEADERS
-        )
+        return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
     @app.post("/api/chunk-graph")
     def chunk_graph(payload: GraphRequest) -> dict:
@@ -658,9 +832,7 @@ def create_app(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         query = (payload.query or "").strip()
         if query:
-            embedding = get_runner().provider.chunk_store.embedding_model.embed_query(
-                query
-            )
+            embedding = get_runner().provider.chunk_store.embedding_model.embed_query(query)
             try:
                 nearest = nearest_chunks(records, embedding, payload.top_k)
             except ValueError as exc:
@@ -670,6 +842,43 @@ def create_app(
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
             graph = {**graph, "query": {"text": query, "nearest": nearest}}
         return graph
+
+    @app.get("/api/graph/knowledge")
+    def knowledge_graph() -> dict:
+        """The GraphRAG entity graph: nodes placed by topology (Fruchterman-
+        Reingold over the same weighted graph Leiden clusters), the relation
+        and co-mention edges, and every community's summary. Makes the
+        knowledge graph visible the same way /api/chunk-graph makes chunk
+        similarity visible — the answer path is otherwise a black box.
+        """
+        from src.rag.graph_view import build_knowledge_graph
+
+        try:
+            return build_knowledge_graph(get_graph_store())
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"Could not reach the knowledge graph store: {exc}. "
+                    "Is Neo4j running (docker compose up -d neo4j) and has "
+                    "index-graph been run?"
+                ),
+            ) from exc
+
+    @app.get("/api/graph/knowledge/entities/{entity_id}")
+    def knowledge_graph_entity(entity_id: str) -> dict:
+        """One entity's metadata plus its dated claim timeline."""
+        from src.rag.graph_view import entity_claims
+
+        try:
+            result = entity_claims(get_graph_store(), entity_id)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Could not reach the knowledge graph store: {exc}"
+            ) from exc
+        if result["entity"] is None:
+            raise HTTPException(status_code=404, detail=f"Unknown entity: {entity_id}")
+        return result
 
     @app.post("/api/index")
     def index_content(payload: IndexRequest) -> dict:
@@ -728,11 +937,7 @@ def create_app(
                     )
                     return
                 after = corpus_fn()
-                added = [
-                    v
-                    for v in after.get("videos", [])
-                    if v["video_id"] not in before_ids
-                ]
+                added = [v for v in after.get("videos", []) if v["video_id"] not in before_ids]
                 yield _sse(
                     "done",
                     {
@@ -752,8 +957,75 @@ def create_app(
             except Exception as exc:
                 yield _sse("error", {"message": str(exc)})
 
+        return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+    @app.post("/api/index/queue")
+    def enqueue_index(payload: IndexRequest) -> dict:
+        """Add a job to the ingestion queue; returns immediately.
+
+        Unlike ``/api/index/stream``, this never blocks the request for the
+        job's duration, so the caller can enqueue another video or channel
+        the moment this call returns — even while the first job is still
+        running.
+        """
+        argv, target = _index_argv(payload)
+        job = ingestion_queue.enqueue(
+            mode=payload.mode,
+            target=target,
+            argv=argv,
+            latest=payload.latest if payload.mode == "channel" else None,
+        )
+        return job.to_dict()
+
+    @app.get("/api/index/queue")
+    def index_queue_snapshot() -> dict:
+        return {"jobs": ingestion_queue.snapshot()}
+
+    @app.get("/api/index/queue/stream")
+    def index_queue_stream() -> StreamingResponse:
+        """Live queue progress: every subscriber gets every job's updates.
+
+        A fresh connection is seeded with the current snapshot (see
+        ``IngestionQueue.subscribe``), so a client that loads the page mid-run
+        sees already-queued and in-progress jobs immediately.
+        """
+        subscriber = ingestion_queue.subscribe()
         return StreamingResponse(
-            stream(), media_type="text/event-stream", headers=_SSE_HEADERS
+            _subscription_stream(subscriber, ingestion_queue.unsubscribe),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
+        )
+
+    @app.post("/api/eval/matrix")
+    def start_eval_matrix(payload: MatrixRunRequest) -> dict:
+        """Kick off a judged eval matrix in the background.
+
+        Returns immediately with the job; pressing this while a run is already
+        in flight returns that run rather than starting a second one.
+
+        Unknown setups are rejected here, the way ``eval-matrix`` exits 2 on
+        them: every cell of a typo'd sweep fails, and the run function still
+        commits the resulting all-errors ``matrix-*.json`` into ``evals/runs/``,
+        where the Scoreboard's picker would offer it as a real run.
+        """
+        setups = list(payload.setups or DEFAULT_MATRIX_SETUPS)
+        unknown = [key for key in setups if key not in SETUP_KEYS]
+        if unknown:
+            raise HTTPException(status_code=422, detail=f"Unknown setup(s): {', '.join(unknown)}")
+        return matrix_runner.start(setups).to_dict()
+
+    @app.get("/api/eval/matrix")
+    def eval_matrix_snapshot() -> dict:
+        return {"job": matrix_runner.snapshot()}
+
+    @app.get("/api/eval/matrix/stream")
+    def eval_matrix_stream() -> StreamingResponse:
+        """Live progress for the current matrix run, seeded with its state."""
+        subscriber = matrix_runner.subscribe()
+        return StreamingResponse(
+            _subscription_stream(subscriber, matrix_runner.unsubscribe),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
         )
 
     # Mounted last so it can never shadow an /api route. Absent until the

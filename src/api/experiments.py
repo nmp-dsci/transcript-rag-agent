@@ -22,6 +22,7 @@ def load_experiments(runs_dir: Path | None = None) -> dict[str, Any]:
     directory = runs_dir or DEFAULT_RUNS_DIR
     ablations: list[dict[str, Any]] = []
     golden_runs: list[dict[str, Any]] = []
+    matrix_runs: list[dict[str, Any]] = []
     if directory.exists():
         for path in sorted(directory.glob("*.json")):
             try:
@@ -33,11 +34,18 @@ def load_experiments(runs_dir: Path | None = None) -> dict[str, Any]:
                 continue
             if data.get("kind") == "retrieval-ablation":
                 ablations.append(_ablation_summary(data))
+            elif data.get("kind") == "matrix":
+                matrix_runs.append(_matrix_summary(data))
             elif "setup" in data and "summary" in data:
                 golden_runs.append(_golden_summary(data))
     ablations.sort(key=lambda run: run.get("created_at") or "", reverse=True)
     golden_runs.sort(key=lambda run: run.get("created_at") or "", reverse=True)
-    return {"ablations": ablations, "golden_runs": golden_runs}
+    matrix_runs.sort(key=lambda run: run.get("created_at") or "", reverse=True)
+    return {
+        "ablations": ablations,
+        "golden_runs": golden_runs,
+        "matrix_runs": matrix_runs,
+    }
 
 
 def _ablation_summary(data: dict[str, Any]) -> dict[str, Any]:
@@ -58,6 +66,20 @@ def _ablation_summary(data: dict[str, Any]) -> dict[str, Any]:
             if isinstance(cell, dict)
         ],
         "deltas": data.get("deltas", []),
+    }
+
+
+def _matrix_summary(data: dict[str, Any]) -> dict[str, Any]:
+    """A matrix run without the per-setup entry detail (the pivot is enough)."""
+    return {
+        "run_id": data.get("run_id"),
+        "created_at": data.get("created_at"),
+        "setups": data.get("setups", []),
+        "entry_count": data.get("entry_count"),
+        "judged": data.get("judged", False),
+        "reference_scored": data.get("reference_scored", False),
+        "question_types": data.get("question_types", {}),
+        "comparison": data.get("comparison", {}),
     }
 
 

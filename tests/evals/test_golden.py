@@ -75,8 +75,11 @@ def test_shipped_entries_are_well_formed(shipped: list[GoldenEntry]) -> None:
         assert entry.question.strip(), entry.id
         assert entry.reference_answer.strip(), entry.id
         assert entry.domain in DOMAINS, entry.id
-        assert entry.expected_chunk_ids, entry.id
-        assert entry.expected_video_ids, entry.id
+        # Global/temporal entries have corpus-wide answers: no chunk list is
+        # "the" reference, so their expected id lists are legitimately empty.
+        if entry.question_type == "local":
+            assert entry.expected_chunk_ids, entry.id
+            assert entry.expected_video_ids, entry.id
         for chunk_id in entry.expected_chunk_ids:
             assert CHUNK_ID_PATTERN.match(chunk_id), f"{entry.id}: {chunk_id}"
         videos_from_chunks = {chunk_video_id(c) for c in entry.expected_chunk_ids}
@@ -89,7 +92,9 @@ def test_shipped_reference_answers_are_substantial(shipped: list[GoldenEntry]) -
         assert len(entry.reference_answer) > 200, entry.id
 
 
-def test_shipped_dataset_covers_both_domains(shipped: list[GoldenEntry]) -> None:
+def test_shipped_dataset_covers_every_domain(shipped: list[GoldenEntry]) -> None:
+    """A domain the corpus holds but the golden set never asks about is a blind
+    spot: its retrieval quality is unmeasured however good the headline looks."""
     assert {entry.domain for entry in shipped} == set(DOMAINS)
 
 

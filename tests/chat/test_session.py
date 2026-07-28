@@ -93,7 +93,12 @@ def test_ask_flow_invalid_then_valid_setup(settings, tmp_path) -> None:
         index_fn=lambda argv: 0,
     )
 
-    assert runner.calls[0][0] == ["rag_llm", "rag_llm_recursive", "rag_agent"]
+    assert runner.calls[0][0] == [
+        "rag_llm",
+        "rag_llm_recursive",
+        "rag_agent",
+        "graph_rag",
+    ]
 
 
 def test_fetch_single_url_invokes_index(settings, tmp_path) -> None:
@@ -129,9 +134,7 @@ def test_fetch_bulk_channel_invokes_index(settings, tmp_path) -> None:
         index_fn=lambda argv: invoked.append(argv) or 0,
     )
 
-    assert invoked == [
-        ["bulk-index", "channel", "--channel", "@channel", "--latest", "5"]
-    ]
+    assert invoked == [["bulk-index", "channel", "--channel", "@channel", "--latest", "5"]]
 
 
 def test_quit_immediately_returns_zero(settings, tmp_path) -> None:

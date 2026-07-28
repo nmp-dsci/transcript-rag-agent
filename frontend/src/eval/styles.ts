@@ -87,6 +87,16 @@ const CSS = `
 .bd-why { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
 .bd-pk { font: 11px var(--mono); white-space: nowrap; }
 .bd-pk.on { color: var(--good); }
+
+/* judged-questions breakdown, collapsed by default */
+.qpanel summary { cursor: pointer; list-style: none; }
+.qpanel summary::-webkit-details-marker { display: none; }
+.qpanel summary::before { content: '▸ '; color: var(--dim); font-size: 11px; }
+.qpanel[open] summary::before { content: '▾ '; }
+.qtext {
+  display: block; max-width: 46ch; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 12.5px; color: var(--text2);
+}
 .bd-pk.off { color: var(--dim); }
 
 /* metric explainer cards */

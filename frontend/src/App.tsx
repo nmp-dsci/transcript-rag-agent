@@ -3,23 +3,25 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
+import { SystemDesignView } from './design/SystemDesignView';
 import { ExperimentsView } from './experiments/ExperimentsView';
 import { Logo } from './Logo';
 import { PipelineView } from './pipeline/PipelineView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
 
-export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments';
+export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'design';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
   { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
   { id: 'experiments', label: 'Experiments' },
+  { id: 'design', label: 'System Design' },
 ];
 
-/** Old #library links stay valid; #pipeline is canonical. */
-const HASH_ALIASES: Record<string, Tab> = { library: 'pipeline' };
+/** Old #library and #prompts links stay valid; #pipeline/#design are canonical. */
+const HASH_ALIASES: Record<string, Tab> = { library: 'pipeline', prompts: 'design' };
 
 function tabFromHash(): Tab {
   const hash = window.location.hash.replace('#', '');
@@ -169,6 +171,7 @@ export function App() {
         )}
         {tab === 'board' && <ScoreboardView />}
         {tab === 'experiments' && <ExperimentsView />}
+        {tab === 'design' && <SystemDesignView />}
       </main>
     </div>
   );

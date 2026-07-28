@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>transcript·lab — GraphRAG implementation overview (P4)</title>
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('tlab.review.theme'); } catch (e) {}
+    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+    --border:#252b35; --border2:#2b3442;
+    --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+    --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+    --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+    --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+    --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+    --on-accent:#0b1220; --scroll-thumb:#2b3442; --hover:#182029;
+    --btn-hover:#232b38; --accent-hover:#4b93f8; --best-row:rgba(47,129,247,0.06);
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --scroll-thumb:#c9d1d9; --hover:#eef2f6;
+    --btn-hover:#eef2f6; --accent-hover:#0860ca; --best-row:rgba(9,105,218,0.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .cards, .r-grid, .q-grid, .stat-strip, .ladder, .duo, .proj-grid) > * { min-width: 0; }
+  :where(p,h1,h2,h3,h4,li,td,th,dd,blockquote,figcaption,.chip,.microlabel) { overflow-wrap: anywhere; }
+  img, svg { max-width: 100%; }
+
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 13.5px/1.55 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius:5px; border:2px solid var(--bg); }
+  ::-webkit-scrollbar-track { background: transparent; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font-family: var(--mono); font-size: 12px; background: var(--panel2); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+  .microlabel { font: 600 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 14px; padding: 0 18px; height: 46px;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 14px; letter-spacing: .02em; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+  .brand em { color: var(--accent2); font-style: normal; }
+  .topmeta { margin-left: auto; font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .theme-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 12px; }
+  .theme-btn:hover { background: var(--btn-hover); color: var(--text); }
+
+  main { max-width: 1060px; margin: 0 auto; padding: 26px 18px 80px; }
+
+  h1 { font-size: 21px; margin: 8px 0 4px; letter-spacing: -.01em; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  h3 { font-size: 13.5px; margin: 0 0 6px; }
+  .lede { color: var(--text2); max-width: 74ch; margin: 0 0 10px; }
+  section { margin-top: 42px; }
+  .sec-head { display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px; }
+  .sec-head .n { font: 700 11px var(--mono); color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 5px; padding: 2px 7px; }
+
+  .chip { display: inline-block; font: 600 10px var(--mono); letter-spacing: .05em; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border2); color: var(--muted); white-space: nowrap; }
+  .chip.good { color: var(--good); background: var(--good-dim); border-color: var(--good-border); }
+  .chip.warn { color: var(--warn); background: var(--warn-dim); border-color: var(--warn-border); }
+  .chip.bad  { color: var(--bad);  background: var(--bad-dim);  border-color: var(--bad-border); }
+  .chip.acc  { color: var(--accent2); background: var(--accent-dim); border-color: var(--accent-border); }
+
+  .q-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 16px; }
+  .q-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .q-card .q { color: var(--muted); font-size: 12.5px; }
+  .q-card .verdict { font-size: 15px; font-weight: 700; }
+  .q-card .why { color: var(--text2); font-size: 12.5px; }
+  .stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+  .stat { background: var(--panel3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 15px; font-weight: 700; }
+  .stat span { color: var(--muted); font-size: 11px; }
+
+  .callout { border: 1px solid var(--warn-border); background: var(--warn-dim); border-radius: 10px; padding: 12px 16px; margin: 16px 0; }
+  .callout.acc { border-color: var(--accent-border); background: var(--accent-dim); }
+  .callout.good { border-color: var(--good-border); background: var(--good-dim); }
+  .callout b { color: var(--text); }
+  .callout p { margin: 4px 0 0; color: var(--text2); }
+
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); margin: 10px 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th { text-align: left; font: 600 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--hover); }
+  td.t { color: var(--text); font-weight: 600; }
+  td .file { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .group-row td { background: var(--panel2); color: var(--text); font: 600 10.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; padding: 6px 12px; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-top: 12px; }
+  .duo-col { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .duo-col.diff { border-color: var(--accent-border); }
+  .duo-col h3 .chip { margin-left: 6px; }
+  .duo-col ul { list-style: none; margin: 10px 0 0; padding: 0; }
+  .duo-col li { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--text2); }
+  .duo-col li:last-child { border-bottom: none; }
+  .duo-col li .chip { flex: 0 0 auto; }
+
+  .diagram { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 12px 0; overflow-x: auto; }
+  .diagram .cap { color: var(--dim); font-size: 11.5px; margin-top: 8px; }
+  pre.mermaid { margin: 0; background: transparent; display: flex; justify-content: center; min-height: 40px; }
+  /* Hide the raw flowchart source until Mermaid replaces it with the SVG, so the
+     multi-line source never flashes or reflows the page during async render. */
+  pre.mermaid:not([data-processed]) { visibility: hidden; }
+
+  .codeblock { background: var(--panel3); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; margin: 12px 0; }
+  .codeblock .cap { font: 600 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); padding: 8px 12px 0; }
+  .codeblock pre { margin: 0; padding: 10px 14px; font: 12px/1.55 var(--mono); color: var(--text2); }
+  .codeblock .k { color: var(--accent2); }
+  .codeblock .c { color: var(--dim); }
+  .codeblock .s { color: var(--good); }
+
+  .ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0 6px; }
+  .rung { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .rung.acc { border-color: var(--accent-border); background: var(--accent-dim); }
+  .rung ul { margin: 8px 0 0; padding-left: 18px; color: var(--text2); }
+  .rung li { margin: 3px 0; }
+
+  .proj { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
+  .proj-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .proj-num { font: 700 12px var(--mono); color: var(--on-accent); background: var(--accent); border-radius: 6px; padding: 3px 8px; }
+  .proj-head h3 { font-size: 14px; margin: 0; }
+  .proj-head .dur { margin-left: auto; font: 600 10.5px var(--mono); color: var(--muted); white-space: nowrap; }
+  .proj .goal { color: var(--text2); margin: 6px 0 8px; }
+  .proj ul { margin: 6px 0 0; padding-left: 18px; color: var(--text2); font-size: 12.5px; }
+  .proj li { margin: 3px 0; }
+  .proj .out { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .proj .out b { color: var(--accent2); font-weight: 600; }
+
+  .decide { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 14px; }
+  .decide .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .decide .card h4 { margin: 0 0 6px; font-size: 12.5px; color: var(--text); }
+  .decide .card p { margin: 0 0 8px; color: var(--text2); font-size: 12px; }
+  .decide .opts { display: flex; flex-direction: column; gap: 5px; }
+  .decide .opt { font-size: 12px; color: var(--text2); padding: 5px 8px; border: 1px solid var(--border2); border-radius: 6px; background: var(--panel3); }
+  .decide .opt b { color: var(--text); font-weight: 600; }
+  .decide .opt.rec { border-color: var(--good-border); }
+  .decide .opt.rec::before { content: '★ '; color: var(--good); }
+
+  footer.page { margin-top: 48px; border-top: 1px solid var(--border); padding-top: 14px; color: var(--dim); font-size: 11.5px; }
+  footer.page a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="3" width="9" height="3" rx="1.5" fill="currentColor" opacity="0.55"/>
+      <rect x="3" y="8" width="15" height="3" rx="1.5" fill="currentColor" opacity="0.55"/>
+      <rect x="6" y="13" width="8" height="3" rx="1.5" fill="var(--accent2)"/>
+      <rect x="7" y="18" width="14" height="3" rx="1.5" fill="currentColor" opacity="0.55"/>
+    </svg>
+    transcript<em>·lab</em>
+  </span>
+  <span class="microlabel">GraphRAG · P4 · implementation overview</span>
+  <span class="topmeta">main @ 0c5b7da · P0+P1 shipped · successor to s04 roadmap</span>
+  <button class="theme-btn" id="themeToggle" aria-label="Toggle theme">☀/☾</button>
+</div>
+
+<main>
+
+<h1>How would GraphRAG work in transcript·lab?</h1>
+<p class="lede">GraphRAG is roadmap <b>P4</b> — and it is the project's <i>original</i> goal, "trend tracking across related videos." It answers the corpus-global, thematic and temporal questions that vector search structurally cannot, by building an <b>entity + claim graph</b> over the transcripts rather than just retrieving similar chunks. This is an overview of how that maps onto the modules you already have, grounded in the current codebase on <code>main</code>.</p>
+
+<div class="q-grid">
+  <div class="q-card">
+    <span class="q">What is GraphRAG, concretely?</span>
+    <span class="verdict">An LLM-extracted knowledge graph you retrieve <i>over</i>, not just a similarity graph you draw.</span>
+    <span class="why">Entities and claims are extracted from every chunk into a graph; communities of related entities get LLM summaries. Global questions are answered by map-reducing those summaries; local ones by an entity-anchored subgraph + your existing vector RAG.</span>
+    <span><span class="chip acc">MICROSOFT-STYLE</span> <span class="chip">ENTITY/CLAIM GRAPH</span></span>
+  </div>
+  <div class="q-card">
+    <span class="q">Why does <i>this</i> corpus want it?</span>
+    <span class="verdict">A channel of dated videos is the ideal temporal-graph case.</span>
+    <span class="why">Every chunk already carries <code>upload_date</code>, <code>channel_id</code> and timestamps. Stamp each extracted claim with them and you get trend timelines per entity — "how did this channel's view on rate cuts change over six months?" No competitor portfolio has that demo.</span>
+    <span><span class="chip good">BEST-FIT DIFFERENTIATOR</span></span>
+  </div>
+  <div class="q-card">
+    <span class="q">What does it cost?</span>
+    <span class="verdict">LLM extraction per chunk is the real bill — controllable.</span>
+    <span class="why">Measured against this corpus (§02): a <i>full</i> backfill — extraction plus community summaries — is ≈6¢ and ~300 calls. So Full GraphRAG is the decision (§09). And you still <i>route</i>: local factual questions go to cheaper, better vector RAG. Graph only where graph wins.</span>
+    <span><span class="chip good">≈6¢ FULL BUILD</span> <span class="chip acc">FULL · DECIDED</span></span>
+  </div>
+</div>
+
+<div class="stat-strip">
+  <div class="stat"><b>Original goal</b><span>"trend tracking across related videos" — AGENTS.md future goals</span></div>
+  <div class="stat"><b>graph.py ≠ GraphRAG</b><span>today's chunk graph is a kNN similarity <i>viz</i>, never used in retrieval</span></div>
+  <div class="stat"><b>upload_date</b><span>already stamped on every chunk — the temporal key is free</span></div>
+  <div class="stat"><b>SAP · Culture Amp</b><span>name "knowledge graphs / GraphRAG / Neo4j" in your JD corpus</span></div>
+</div>
+
+<!-- ════════ 01 — THE GAP ════════ -->
+<section id="gap">
+  <div class="sec-head"><span class="n">01</span><h2>The gap: what vector RAG can't do</h2></div>
+  <p class="lede">Your P0/P1 stack is strong at <b>local</b> questions — retrieve the top-k chunks that best match a query and ground an answer in them. It is structurally blind to <b>global</b> questions, where the answer is spread across the whole corpus and lives in no single chunk. GraphRAG closes exactly that gap.</p>
+
+  <div class="duo">
+    <div class="duo-col">
+      <h3>Vector RAG <span class="chip good">TODAY (P0/P1)</span></h3>
+      <ul>
+        <li><span class="chip good">WINS</span> "What did the CGT video say about the 30 June 2027 date?" — one chunk holds the answer.</li>
+        <li><span class="chip">HOW</span> embed → hybrid BM25+dense → rerank → answer over top-k. <code>src/rag</code>, <code>src/agents</code>.</li>
+        <li><span class="chip bad">FAILS</span> "What themes recur across this channel?" — no chunk contains "the themes"; top-k just returns k arbitrary mentions.</li>
+        <li><span class="chip bad">FAILS</span> "How did the view on rate cuts evolve?" — needs claims ordered over time, which similarity ignores.</li>
+      </ul>
+    </div>
+    <div class="duo-col diff">
+      <h3>GraphRAG <span class="chip acc">P4</span></h3>
+      <ul>
+        <li><span class="chip good">WINS</span> Global/thematic questions — map-reduce over community summaries built from the whole corpus.</li>
+        <li><span class="chip good">WINS</span> Temporal questions — claims carry <code>upload_date</code>, so an entity's stance becomes a timeline.</li>
+        <li><span class="chip">HOW</span> extract entities+claims → graph → communities+summaries → route query to local subgraph or global map-reduce.</li>
+        <li><span class="chip warn">COST</span> pays an up-front LLM extraction bill; ties vector RAG on local questions, so you route, not replace.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Important: the chunk graph you have now is <i>not</i> GraphRAG.</b>
+    <p><code>src/rag/graph.py</code> is a "k-nearest-neighbour similarity graph over transcript chunk embeddings" (its own docstring) that the frontend <code>ChunkGraphView</code> draws. It is exact cosine similarity for <i>inspection</i> — it has no entities, no claims, and never participates in answering. GraphRAG builds a semantic entity/claim graph and retrieves over it. P4 upgrades the viz into a real retrieval surface; it does not reuse the similarity edges.</p>
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Question type</th><th>Example over your corpus</th><th>Best engine</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Local / factual</td><td>"Do I keep negative gearing if I bought before budget night?"</td><td><span class="chip good">vector RAG</span></td></tr>
+      <tr><td class="t">Global / thematic</td><td>"What are the recurring arguments this channel makes about property risk?"</td><td><span class="chip acc">GraphRAG</span></td></tr>
+      <tr><td class="t">Temporal / trend</td><td>"How did the channel's stance on rate cuts change across these videos?"</td><td><span class="chip acc">GraphRAG (temporal)</span></td></tr>
+      <tr><td class="t">Entity-centric</td><td>"Everything this corpus says about the First Home Buyer scheme, and where."</td><td><span class="chip warn">hybrid — subgraph + vector</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ════════ 02 — ARCHITECTURE ════════ -->
+<section id="arch">
+  <div class="sec-head"><span class="n">02</span><h2>The architecture — two phases</h2></div>
+  <p class="lede">GraphRAG splits into an <b>offline construction</b> phase (extend indexing) and an <b>online query</b> phase (a new answer path alongside your three existing ones). The diagram answers one question: where does a claim go, from transcript to timeline?</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  subgraph BUILD["Construction — extends index-rag / bulk-index"]
+    C[("transcript_chunks<br/>(Chroma, w/ upload_date)")] --> EX["LLM entity + claim extraction<br/>per chunk (DeepSeek, JSON contract)"]
+    EX --> KG[("knowledge graph<br/>entities · relations · claims")]
+    KG --> COM["community detection (Leiden)"]
+    COM --> SUM["LLM community summaries<br/>(or LazyGraphRAG: defer to query)"]
+    SUM --> KG
+  end
+  subgraph QUERY["Query — a 4th answer path"]
+    Q["question"] --> R{"route: local / global / temporal"}
+    R -->|local| L["entity-anchored subgraph<br/>+ existing vector RAG"]
+    R -->|global| G["map-reduce over<br/>community summaries"]
+    R -->|temporal| T["claims by upload_date<br/>→ trend timeline"]
+    L --> A["answer + citations"]
+    G --> A
+    T --> A
+  end
+  KG -.-> L
+  KG -.-> T
+  SUM -.-> G
+  C -.->|"same chunks power<br/>vector RAG unchanged"| L
+    </pre>
+    <div class="cap">Construction extends the existing ingestion; querying adds a routed graph path beside <code>rag_llm</code>, recursive, and <code>rag_agent</code>. The claim is the unit that carries <code>upload_date</code> all the way to the timeline.</div>
+  </div>
+
+  <div class="callout acc">
+    <b>Full GraphRAG vs LazyGraphRAG — the cost lever.</b>
+    <p>Microsoft's original GraphRAG summarizes <i>every</i> community up-front (thorough, expensive). <a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">LazyGraphRAG</a> builds only the graph at index time and defers summarization to the moment a global question is asked, reportedly matching quality at a fraction of indexing cost. That lever matters at enterprise scale — but the backfill math below prices <i>this</i> corpus's full build at ≈6¢, so the review decision (§09) is <b>Full</b>: summarize up-front, revisit Lazy only if the corpus grows ~100×.</p>
+  </div>
+
+  <h3 id="backfill" style="margin-top:22px">Backfill math — calls &amp; dollars for <i>this</i> corpus, today</h3>
+  <p class="lede">Measured from the live Chroma store (<code>.yt-agent/chroma</code>): <b>10 videos → 281 chunks</b>, 326k chars of chunk text ≈ <b>~82k tokens</b> (~290 tok/chunk). Priced at <code>deepseek-v4-flash</code> — the configured default in <code>src/config.py</code> — at <a href="https://deepseek.ai/pricing">$0.14/M input (miss) · $0.0028/M input (cache hit) · $0.28/M output</a>. The shared extraction prompt rides DeepSeek's automatic prefix cache, so only chunk text pays the miss rate.</p>
+
+  <div class="stat-strip">
+    <div class="stat"><b>281 calls</b><span>Lazy backfill — one extraction call per chunk, that's all</span></div>
+    <div class="stat"><b>~$0.04</b><span>Lazy total — output JSON (~400 tok/chunk) is 70% of the bill</span></div>
+    <div class="stat"><b>~300 calls · ~$0.06</b><span>Full — adds ~20 community-summary calls up front</span></div>
+    <div class="stat"><b>~½¢ / new video</b><span>incremental: ~28 chunks → ~28 calls, chunk-hash cached</span></div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Component</th><th>Calls</th><th>Tokens</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Extraction — chunk text in <span class="file">cache miss · 281 × ~290 tok</span></td><td>281</td><td>~82k in</td><td>$0.011</td></tr>
+      <tr><td class="t">Extraction — shared prompt in <span class="file">cache hit · ~700 tok × 281</span></td><td>—</td><td>~197k in</td><td>&lt;$0.001</td></tr>
+      <tr><td class="t">Extraction — JSON out <span class="file">entities + claims, est. ~400 tok/chunk</span></td><td>—</td><td>~112k out</td><td>$0.031</td></tr>
+      <tr><td class="t">Lazy backfill total</td><td><span class="chip good">281</span></td><td>~390k</td><td><span class="chip good">≈ $0.04</span></td></tr>
+      <tr><td class="t">+ community summaries <span class="file">Full only · est. ~20 × (3k in / 600 out)</span></td><td>~20</td><td>~72k</td><td>+$0.012</td></tr>
+      <tr><td class="t">Full backfill total</td><td><span class="chip acc">~300</span></td><td>~460k</td><td><span class="chip acc">≈ $0.06</span></td></tr>
+      <tr><td class="t">Scale check — 100-video corpus <span class="file">~2.8k chunks, from scratch</span></td><td>~2.8–2.9k</td><td>~3.9–4.6M</td><td>$0.45–0.60</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout good">
+    <b>Verdict: dollars are a rounding error at this scale — the real costs are wall-clock and quality.</b>
+    <p>The only estimated term is JSON output size (~400 tok/chunk); even 3× that keeps Lazy under $0.15. What actually bites: 281 sequential calls ≈ 15–30 min unbatched (run extraction async/batched), and extraction quality (the P4.1 eval). Lazy-vs-Full is a re-index-hygiene decision, not a dollars one, until the corpus is ~100× larger.</p>
+  </div>
+</section>
+
+<!-- ════════ 03 — CODEBASE MAP ════════ -->
+<section id="map">
+  <div class="sec-head"><span class="n">03</span><h2>How it maps onto your codebase</h2></div>
+  <p class="lede">Almost every piece has a home in the existing structure or reuses infrastructure P0–P2 already build. New modules follow your established boundaries (<code>rag/</code>, <code>agents/</code>, <code>evals/</code>, <code>api/</code>, <code>frontend/</code>).</p>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>GraphRAG component</th><th>New / changed</th><th>Reuses what exists</th></tr></thead>
+    <tbody>
+      <tr class="group-row"><td colspan="3">Construction</td></tr>
+      <tr><td class="t">Entity + claim extraction<span class="file">src/rag/graph_extract.py · new</span></td><td><span class="chip acc">NEW</span></td><td>DeepSeek client + the validated-JSON prompt contract pattern in <code>src/agents/prompts.py</code>; chunk texts from <code>transcript_chunks</code>.</td></tr>
+      <tr><td class="t">Graph store<span class="file">src/rag/graph_store.py · new</span></td><td><span class="chip acc">NEW</span></td><td><b>Decided: Neo4j</b> (§09) — docker-compose community image + official Python driver. Cypher powers the subgraph and timeline queries, and the graph never waits on P2's Postgres.</td></tr>
+      <tr><td class="t">Community detection + summaries<span class="file">src/rag/communities.py · new</span></td><td><span class="chip acc">NEW</span></td><td>Leiden via <code>igraph</code>/<code>graspologic</code>; summaries through the same DeepSeek client.</td></tr>
+      <tr class="group-row"><td colspan="3">Query</td></tr>
+      <tr><td class="t">Graph answer path + router<span class="file">src/agents/graph_agent.py · new</span></td><td><span class="chip acc">NEW</span></td><td>The LangGraph <code>StateGraph</code> ReAct pattern already in <code>src/agents/rag_agent.py</code>; the P3 adaptive router if built.</td></tr>
+      <tr><td class="t">Temporal trend layer<span class="file">within graph_store</span></td><td><span class="chip good">MOSTLY FREE</span></td><td><code>upload_date</code> is already a field on <code>TranscriptChunk</code> and written to Chroma metadata — claims inherit it; group + order by it.</td></tr>
+      <tr class="group-row"><td colspan="3">Surface &amp; proof</td></tr>
+      <tr><td class="t">Graph explorer + timelines<span class="file">frontend/src/pipeline/ChunkGraphView.tsx</span></td><td><span class="chip warn">UPGRADE</span></td><td>Turn the similarity viz into a graph-retrieval explorer; add trend timelines. New <code>/api/graph</code> endpoints beside <code>/api/chunk-graph</code>.</td></tr>
+      <tr><td class="t">Prompts tab<span class="file">frontend/src/prompts/ + src/api/prompts.py · new</span></td><td><span class="chip acc">NEW</span></td><td>Every system prompt already lives as a module constant (<code>src/agents/prompts.py</code>, <code>src/rag/summaries.py</code>) — the API just serves the live constants grouped by engine. See §07.</td></tr>
+      <tr><td class="t">Global-question evals<span class="file">src/evals/golden_dataset.json + eval-ablation</span></td><td><span class="chip warn">EXTEND</span></td><td>Add a <code>global</code> question type; benchmark GraphRAG vs vector vs hybrid with the IR/committed-runs harness you already shipped in P1.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ════════ 04 — DATA MODEL ════════ -->
+<section id="model">
+  <div class="sec-head"><span class="n">04</span><h2>The data model</h2></div>
+  <p class="lede">Three record types. The <b>claim</b> is the load-bearing one: it is what an answer cites, and it carries the source chunk id and <code>upload_date</code> that make both grounding and the temporal layer work. It fits your existing pydantic + chunk-id conventions (<code>chunk:&lt;video_id&gt;:&lt;index&gt;</code>).</p>
+
+  <div class="codeblock">
+    <div class="cap">the three graph records (shape sketch)</div>
+<pre><span class="c"># entity — a canonical thing the corpus talks about</span>
+Entity(id=<span class="s">"cgt-discount"</span>, name=<span class="s">"50% CGT discount"</span>, type=<span class="s">"policy"</span>,
+       aliases=[<span class="s">"capital gains discount"</span>], mentions=<span class="k">37</span>)
+
+<span class="c"># relation — a typed edge between two entities</span>
+Relation(source=<span class="s">"cgt-discount"</span>, target=<span class="s">"june-2027"</span>,
+         type=<span class="s">"phased_out_by"</span>, weight=<span class="k">0.8</span>)
+
+<span class="c"># claim — the load-bearing record: cited, dated, entity-linked</span>
+Claim(text=<span class="s">"The 50% CGT discount phases out on 30 June 2027."</span>,
+      entities=[<span class="s">"cgt-discount"</span>, <span class="s">"june-2027"</span>],
+      source_chunk_id=<span class="s">"chunk:7m27Go3K1d0:3"</span>,   <span class="c"># grounds the citation</span>
+      video_id=<span class="s">"7m27Go3K1d0"</span>,
+      upload_date=<span class="s">"2026-05-14"</span>,               <span class="c"># the temporal key — already on the chunk</span>
+      polarity=<span class="s">"asserts"</span>)
+
+<span class="c"># community — a cluster of related entities + its LLM summary (lazy = null until asked)</span>
+Community(id=<span class="k">4</span>, entities=[<span class="s">"cgt-discount"</span>, <span class="s">"negative-gearing"</span>, ...],
+          summary=<span class="s">"This channel frames the budget as..."</span>)</pre>
+  </div>
+  <p class="lede" style="margin-top:6px">Because a claim points back at a real <code>source_chunk_id</code>, graph answers keep the same timestamped, deep-linkable citations your vector answers already produce (<code>src/rag/references.py</code>) — no new citation story to invent.</p>
+</section>
+
+<!-- ════════ 05 — TEMPORAL PAYOFF ════════ -->
+<section id="temporal">
+  <div class="sec-head"><span class="n">05</span><h2>The distinctive payoff: temporal trend tracking</h2></div>
+  <p class="lede">This is the original project vision and the demo nobody else's portfolio has. Because every claim inherits <code>upload_date</code> from its chunk, an entity's claims become a <b>timeline</b> — and "did the view change?" becomes answerable with evidence instead of vibes.</p>
+
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">EX</span><h3>Worked example — "How did this channel's stance on rate cuts evolve?"</h3></div>
+    <ul>
+      <li><b>1. Resolve</b> the entity <code>rate-cuts</code> in the graph.</li>
+      <li><b>2. Gather</b> every claim linked to it, each with its <code>upload_date</code> and <code>source_chunk_id</code>.</li>
+      <li><b>3. Order</b> by date and detect the shift: e.g. <span class="chip warn">Mar</span> "cuts unlikely this year" → <span class="chip acc">May</span> "one cut priced in" → <span class="chip good">Jul</span> "expects two cuts."</li>
+      <li><b>4. Synthesize</b> a dated narrative, each step deep-linked to the exact video moment.</li>
+    </ul>
+    <div class="out"><b>Evidence produced:</b> a trend timeline in the workbench (upgraded <code>ChunkGraphView</code>) and a narrated, citation-backed answer — the kind of "reasoning over a corpus's evolution" that reads as senior.</div>
+  </div>
+</section>
+
+<!-- ════════ 06 — EVAL ════════ -->
+<section id="eval">
+  <div class="sec-head"><span class="n">06</span><h2>Proving it works — the RAGAS head-to-head matrix</h2></div>
+  <p class="lede">The deliverable is a <b>comparison matrix</b>: every engine answers the <i>same</i> golden questions, every answer is scored the same way (RAGAS + IR metrics), and the run is committed so "GraphRAG wins global questions" is a number in <code>evals/runs/</code>, not a demo. All of this extends machinery you already shipped — the setup registry, the judge, the golden set, the Experiments tab.</p>
+
+  <h3 style="margin-top:16px">The matrix — engines × question types</h3>
+  <p class="lede">Rows come from extending <code>SETUP_SPECS</code> in <code>src/chat/setups.py</code> with a <code>graph_rag</code> key — every surface that iterates the registry (side-by-side chat, <code>src/evals/evaluation.py</code>) picks the new engine up automatically. Cells below are the <b>hypotheses the run confirms or refutes</b>, not results:</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Engine</th><th>Local / factual</th><th>Global / thematic</th><th>Temporal / trend</th><th>Entity-centric</th></tr></thead>
+    <tbody>
+      <tr><td class="t">rag_llm (single-hop)<span class="file">existing · baseline</span></td><td><span class="chip good">STRONG</span></td><td><span class="chip bad">BLIND</span></td><td><span class="chip bad">BLIND</span></td><td><span class="chip warn">PARTIAL — top-k caps coverage</span></td></tr>
+      <tr><td class="t">rag_llm (recursive)<span class="file">existing · multi-hop</span></td><td><span class="chip good">STRONG</span></td><td><span class="chip warn">PARTIAL — fan-out ≠ whole corpus</span></td><td><span class="chip bad">WEAK</span></td><td><span class="chip warn">PARTIAL</span></td></tr>
+      <tr><td class="t">rag_agent (LangGraph ReAct)<span class="file">existing · agentic</span></td><td><span class="chip good">STRONG</span> <span class="chip warn">SLOW</span></td><td><span class="chip warn">PARTIAL</span></td><td><span class="chip warn">WEAK</span></td><td><span class="chip warn">PARTIAL</span></td></tr>
+      <tr><td class="t">graph_rag<span class="file">P4 · new registry key</span></td><td><span class="chip warn">TIE, PRICIER</span></td><td><span class="chip acc">EXPECTED WIN</span></td><td><span class="chip acc">EXPECTED WIN</span></td><td><span class="chip good">STRONG — subgraph coverage</span></td></tr>
+      <tr><td class="t">graph_hybrid (routed)<span class="file">P4 optional · graph + vector</span></td><td><span class="chip good">STRONG — routes to vector</span></td><td><span class="chip acc">EXPECTED WIN</span></td><td><span class="chip acc">EXPECTED WIN</span></td><td><span class="chip good">STRONG</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 style="margin-top:18px">How one matrix run works</h3>
+  <div class="ladder">
+    <div class="rung acc">
+      <h3>1 · Same questions</h3>
+      <ul>
+        <li>Extend <code>golden_dataset.json</code> (9 entries today, <code>property</code>/<code>ai-coding</code>) with ~6–8 <code>global</code>/<code>temporal</code> entries, each with a <code>reference_answer</code>.</li>
+        <li>Global entries set <code>expected_chunk_ids: null</code> — no single chunk holds the answer; that's the point.</li>
+      </ul>
+    </div>
+    <div class="rung">
+      <h3>2 · Same scoring</h3>
+      <ul>
+        <li>Every engine's answer goes through the <i>same</i> <code>judge.py</code> RAGAS pass, per question.</li>
+        <li>Cost + latency logged per cell — a strength/weakness axis in its own right.</li>
+      </ul>
+    </div>
+    <div class="rung">
+      <h3>3 · Commit + render</h3>
+      <ul>
+        <li>One <code>matrix-&lt;date&gt;.json</code> in <code>evals/runs/</code>; CI committed-runs gate replays it deterministically.</li>
+        <li>Experiments tab renders engines × question-types as a heatmap, with per-question drill-down to the five answers side by side.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-top:18px">Which metric catches which weakness</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Metric</th><th>Layer</th><th>Applies to</th><th>What it surfaces</th></tr></thead>
+    <tbody>
+      <tr><td class="t">recall@10 · NDCG<span class="file">src/evals/ir_metrics.py · deterministic, no LLM</span></td><td>retrieval</td><td>local + entity (needs <code>expected_chunk_ids</code>)</td><td>whether an engine even finds the evidence; GraphRAG's claims map back to <code>source_chunk_id</code>, so graph retrieval is scoreable on the same scale.</td></tr>
+      <tr><td class="t">faithfulness<span class="file">src/evals/judge.py · RAGAS</span></td><td>answer</td><td>all questions</td><td>hallucination. <b>Key nuance:</b> for <code>graph_rag</code>, pass the retrieved <i>claims + community summaries</i> as the RAGAS contexts — faithfulness is then measured against what the graph actually retrieved, catching extraction corruption.</td></tr>
+      <tr><td class="t">answer_relevancy<span class="file">judge.py · RAGAS</span></td><td>answer</td><td>all questions</td><td>engines that retrieve fine but answer sideways (the agentic failure mode).</td></tr>
+      <tr><td class="t">context_precision<span class="file">judge.py · RAGAS</span></td><td>retrieval</td><td>local + entity</td><td>padding — top-k stuffed with irrelevant chunks vs a tight subgraph.</td></tr>
+      <tr><td class="t">answer_correctness vs <code>reference_answer</code><span class="file">RAGAS · add to METRIC_NAMES</span></td><td>answer</td><td><b>global + temporal — the primary metric</b></td><td>the head-to-head verdict where chunk-level metrics can't apply: did the engine actually recover the corpus-wide theme / the dated stance shift the reference describes?</td></tr>
+      <tr><td class="t">cost + latency per answer<span class="file">logged per cell</span></td><td>ops</td><td>all questions</td><td>GraphRAG's expected weakness — makes "graph loses on local" a number too, which justifies the router.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <b>Judge runs are deliberate, one-off, and committed — CI never waits on RAGAS.</b>
+    <p>The RAGAS judge is slow and stalls on long answers (known from P1), so the matrix runs in two modes: the full judged pass is an explicit offline run (<code>--judge</code>, ~75 answers at 5 engines × ~15 questions — cheap in dollars, slow in wall-clock; cap answer length for judging) whose scored output is committed once; day-to-day CI and re-runs replay committed runs <code>--no-judge</code>, exactly the discipline the repo already follows.</p>
+  </div>
+
+  <div class="callout good">
+    <b>Also eval the extraction itself.</b>
+    <p>GraphRAG has a failure mode vector RAG doesn't: bad entity/claim extraction silently corrupts every graph answer. Add a small extraction-quality check (precision/recall of extracted claims against a hand-labelled sample) so a graph regression is visible, the same way <code>context_recall</code> makes a retrieval regression visible. Faithfulness-over-claims (above) is the runtime symptom; this is the root-cause check.</p>
+  </div>
+</section>
+
+<!-- ════════ 07 — PROMPTS TAB ════════ -->
+<section id="prompts">
+  <div class="sec-head"><span class="n">07</span><h2>The Prompts tab — show how it's all built</h2></div>
+  <p class="lede">A new app tab surfacing every LLM system prompt, <b>split by system</b>, so a reviewer can read exactly how each engine is instructed. Design principle: the tab renders the <b>live constants the agents actually import</b> — <code>GET /api/prompts</code> serves them straight out of the modules, so the surface can never drift from the code. It also sets up the prompt-optimization goal ("keep prompts versioned or easy to compare").</p>
+
+  <div class="stat-strip">
+    <div class="stat"><b>12 prompts today</b><span>11 in <code>src/agents/prompts.py</code> + 1 in <code>src/rag/summaries.py</code></span></div>
+    <div class="stat"><b>5 systems now</b><span>chat · vector RAG · recursive · agentic · summary-filter</span></div>
+    <div class="stat"><b>+~4 at P4.1</b><span>extraction · community summary · router · temporal narrative</span></div>
+    <div class="stat"><b>0 drift</b><span>API reads the same constants the engines run — no copies</span></div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>System (tab grouping)</th><th>Prompt constants</th><th>Lives in</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Chat — direct transcript</td><td><code>SYSTEM_PROMPT</code> · <code>SUMMARY_USER_PROMPT</code> · <code>QUESTION_USER_PROMPT</code> · <code>TRANSCRIPT_CONTEXT_PROMPT</code></td><td><code>src/agents/prompts.py</code></td></tr>
+      <tr><td class="t">Vector RAG — single-hop</td><td><code>RAG_SYSTEM_PROMPT</code> · <code>RAG_QUESTION_USER_PROMPT</code> · <code>HISTORY_PROMPT</code> · <code>REWRITE_PROMPT</code></td><td><code>src/agents/prompts.py</code></td></tr>
+      <tr><td class="t">Recursive RAG</td><td><code>RECURSIVE_SYNTHESIS_SYSTEM_PROMPT</code> · <code>RECURSIVE_SYNTHESIS_USER_PROMPT</code></td><td><code>src/agents/prompts.py</code></td></tr>
+      <tr><td class="t">Agentic RAG — LangGraph ReAct</td><td><code>AGENTIC_RAG_SYSTEM_PROMPT</code></td><td><code>src/agents/prompts.py</code></td></tr>
+      <tr><td class="t">Summary filter</td><td><code>SUMMARY_SYSTEM_PROMPT</code></td><td><code>src/rag/summaries.py</code></td></tr>
+      <tr><td class="t">GraphRAG <span class="chip acc">P4</span></td><td>extraction contract · community summary · local/global/temporal router · temporal narrative</td><td><code>graph_extract.py</code> · <code>communities.py</code> · <code>graph_agent.py</code> (proposed)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="ladder">
+    <div class="rung acc">
+      <h3>1 · Registry</h3>
+      <ul>
+        <li>A small <code>PROMPT_REGISTRY</code> in <code>src/agents/prompts.py</code>: one entry per prompt — <code>{name, system, role, template_vars, text}</code>.</li>
+        <li>New prompts register where they're defined; GraphRAG's join automatically at P4.1.</li>
+      </ul>
+    </div>
+    <div class="rung">
+      <h3>2 · API</h3>
+      <ul>
+        <li><code>src/api/prompts.py</code> → <code>GET /api/prompts</code>, grouped by system. No storage, no duplication — it imports the constants.</li>
+      </ul>
+    </div>
+    <div class="rung">
+      <h3>3 · UI</h3>
+      <ul>
+        <li><code>frontend/src/prompts/PromptsView.tsx</code>, wired into the tab bar in <code>App.tsx</code> beside Chat / Pipeline / Scoreboard / Experiments.</li>
+        <li>Accordion per system; monospace prompt text with template vars highlighted (<code>{question}</code>, <code>{transcript}</code>…); <span class="chip">SYSTEM</span> / <span class="chip">USER TEMPLATE</span> role chips; copy button.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout acc">
+    <b>Why this surface earns its place.</b>
+    <p>It shows literally what runs — reviewers can compare how the agentic loop is instructed vs the single-hop answerer, and when P4 lands, how <i>extraction</i> is instructed vs <i>answering</i>. One honest boundary: RAGAS judge prompts live inside the <code>ragas</code> library, not this repo — the tab links out rather than duplicating them.</p>
+  </div>
+</section>
+
+<!-- ════════ 08 — PLAN ════════ -->
+<section id="plan">
+  <div class="sec-head"><span class="n">08</span><h2>A phased build</h2></div>
+  <p class="lede">Sequenced so each phase produces a reviewable artifact and de-risks the next. Rough sizing assumes focused evenings; the honest gate is the benchmark in P4.4.</p>
+
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">PT</span><h3>Prompts tab — independent, can ship first</h3><span class="dur">~1–2 days</span></div>
+    <ul>
+      <li><code>PROMPT_REGISTRY</code> + <code>/api/prompts</code> + <code>PromptsView</code> in the existing tab bar (§07).</li>
+      <li>No P4 dependency — the 12 chat / vector / recursive / agentic / filter prompts exist today; graph prompts appear automatically at P4.1.</li>
+    </ul>
+    <div class="out"><b>Artifact:</b> the "how it's built" transparency surface, live over the real constants.</div>
+  </div>
+
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">4.0</span><h3>Prerequisite — graph store setup</h3><span class="dur">decided · ~half a day</span></div>
+    <p class="goal"><b>Decided in review: Neo4j</b> (§09) — chosen for JD-aligned graph/Cypher experience. Setup: a <code>neo4j</code> service in docker-compose, the official Python driver behind <code>graph_store.py</code>, and a smoke test. This decouples P4 from P2 entirely — no waiting, no migration later.</p>
+  </div>
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">4.1</span><h3>Extraction + graph store + extraction eval</h3><span class="dur">~1 week</span></div>
+    <ul>
+      <li><code>graph_extract.py</code>: per-chunk entity/claim extraction with a validated JSON contract; <code>graph_store.py</code> to persist and query.</li>
+      <li>Extraction-quality check against a small hand-labelled sample.</li>
+    </ul>
+    <div class="out"><b>Artifact:</b> a built graph over the corpus + a precision/recall number for extraction.</div>
+  </div>
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">4.2</span><h3>Communities + global-question answering</h3><span class="dur">~1 week</span></div>
+    <ul>
+      <li>Leiden communities + (lazy) summaries; the map-reduce global path.</li>
+      <li>The router: classify local vs global; local still goes to vector RAG.</li>
+    </ul>
+    <div class="out"><b>Artifact:</b> a working answer to a global question no vector setup can answer.</div>
+  </div>
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">4.3</span><h3>Temporal layer + UI</h3><span class="dur">~1 week</span></div>
+    <ul>
+      <li>Claim timelines keyed on <code>upload_date</code>; upgrade <code>ChunkGraphView</code> into the graph-retrieval + trend explorer.</li>
+    </ul>
+    <div class="out"><b>Artifact:</b> the trend-timeline demo in the workbench.</div>
+  </div>
+  <div class="proj">
+    <div class="proj-head"><span class="proj-num">4.4</span><h3>Benchmark + report — run the matrix</h3><span class="dur">~2–3 days</span></div>
+    <ul>
+      <li>Register <code>graph_rag</code> in <code>SETUP_SPECS</code>; extend the golden set with <code>global</code>/<code>temporal</code> entries; run all 5 engines × all questions through the §06 RAGAS matrix.</li>
+      <li>Commit <code>matrix-&lt;date&gt;.json</code>; render the engines × question-types heatmap in the Experiments tab; write the "where graphs win, where they don't" report from the numbers.</li>
+    </ul>
+    <div class="out"><b>Artifact:</b> a committed, honest side-by-side — the senior signal.</div>
+  </div>
+</section>
+
+<!-- ════════ 09 — RISKS + DECISIONS ════════ -->
+<section id="risks">
+  <div class="sec-head"><span class="n">09</span><h2>Risks &amp; open questions</h2></div>
+
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Risk / failure mode</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Indexing cost — LLM extraction per chunk is the real bill</td><td>Measured at ≈6¢ for a full backfill (§02) — a non-issue at this scale, so Full GraphRAG is affordable; batch extraction for wall-clock; cache by chunk hash so re-index only re-extracts changed chunks.</td></tr>
+      <tr><td class="t">Extraction quality — hallucinated or duplicate entities corrupt answers</td><td>Entity resolution/canonicalization; the P4.1 extraction eval; keep the source-chunk citation so every claim is checkable.</td></tr>
+      <tr><td class="t">Graph staleness on re-index — chunk ids renumber</td><td>Incremental update keyed on chunk hash; treat the graph as derived and rebuildable, like the committed IR runs.</td></tr>
+      <tr><td class="t">Over-use — graph is slower/pricier and loses on local questions</td><td>The router defaults to vector RAG; GraphRAG only on global/temporal intents. Measure the cost-per-answer, as P2 does.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="lede" style="margin-top:18px"><b>Decisions taken in review (26 Jul 2026)</b> — all four are now folded into the sections above:</p>
+  <div class="decide">
+    <div class="card">
+      <h4>1 · Where does the graph live? <span class="chip good">DECIDED · NEO4J</span></h4>
+      <p>Storage backend for entities/relations/claims.</p>
+      <div class="opts">
+        <div class="opt rec"><b>Neo4j</b> — chosen: named in the JD corpus (Culture Amp), and Cypher + graph-modelling experience is itself the portfolio signal. Run as a docker-compose service (community image) + the official Python driver; the graph stays derived and rebuildable, so the heavier dependency is low-risk.</div>
+        <div class="opt"><b>networkx in-memory</b> — demoted: fine for a spike, but produces no JD-visible experience.</div>
+        <div class="opt"><b>Postgres (P2 pgvector)</b> — not needed for the graph; P2 still owns vectors later. Bonus: Neo4j fully decouples P4 from P2.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>2 · Full or Lazy GraphRAG? <span class="chip good">DECIDED · FULL</span></h4>
+      <p>When to pay for community summaries.</p>
+      <div class="opts">
+        <div class="opt rec"><b>Full GraphRAG</b> — chosen: the §02 backfill math prices the <i>entire</i> full build at ≈6¢ today, ≈60¢ at a 100-video corpus — comfortably under $3 with any slack. Pre-summarized communities make global answers fast and demoable.</div>
+        <div class="opt"><b>LazyGraphRAG</b> — revisit only if the corpus grows ~100× or re-index churn gets high; chunk-hash caching already blunts re-index cost.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>3 · Sequence vs P2/P3 <span class="chip good">DECIDED · START P4 NOW</span></h4>
+      <p>Time difference: s04 sizes P2 at ~2–3 wk and P3 at ~2 wk — waiting costs <b>~4–5 weeks</b> of evenings before any graph work starts.</p>
+      <div class="opts">
+        <div class="opt rec"><b>Start P4 now</b> — chosen: graph demo lands ~4–5 weeks sooner, and with Neo4j the early start has ~zero rework — the graph store never migrates to Postgres.</div>
+        <div class="opt"><b>P2 → P3 → P4</b> — the original spine; its one advantage (a single shared store) is removed by the Neo4j decision.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>4 · Scope <span class="chip good">DECIDED · WHOLE CORPUS, QUERY-TIME FILTER</span></h4>
+      <p>Where the graph is built vs where a question looks.</p>
+      <div class="opts">
+        <div class="opt rec"><b>Whole corpus, scoped per question at query time</b> — chosen: index everything; each question picks its own slice in the background — the router classifies intent, entity resolution anchors the subgraph, timelines filter by entity + date. Same philosophy as the existing summary-filter (query-time video filtering for vector RAG); no assumptions baked into the index.</div>
+        <div class="opt"><b>Property-domain pre-filter</b> — rejected: pre-filtering hardcodes today's question mix into the index.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="page">
+  <p><b>Provenance.</b> Grounded in the codebase on <code>main</code> @ <code>0c5b7da</code> (P0+P1 merged): <code>src/rag/graph.py</code> (similarity viz), <code>src/rag/models.py</code> (<code>upload_date</code> on chunks), <code>src/agents/rag_agent.py</code> (LangGraph ReAct), <code>src/evals</code> (golden set, IR metrics, ablation, committed runs), <code>frontend/src/pipeline/ChunkGraphView.tsx</code>. Roadmap lineage: successor to <code>.lavish/s04_rag-portfolio-review-roadmap.html</code> (P4 · GraphRAG Trend Engine). External: <a href="https://www.microsoft.com/en-us/research/project/graphrag/">Microsoft GraphRAG</a> · <a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">LazyGraphRAG</a>. Overview only — module names are proposed, not yet built.</p>
+</footer>
+
+</main>
+
+<script>
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var root = document.documentElement;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('tlab.review.theme', next); } catch (e) {}
+  });
+</script>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0] * fa + bg[0] * ba * (1 - fa)) / a,
+      (fg[1] * fa + bg[1] * ba * (1 - fa)) / a,
+      (fg[2] * fa + bg[2] * ba * (1 - fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBackground = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBackground = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0, 0, 0, 0];
+    const [r, g, b, a] = compositeRgba(bodyBackground, rootBackground);
+    if (a > 0) return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (!rendering) void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (e) { console.error("Mermaid render failed:", e); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  darkQuery.addEventListener("change", queueRender);
+</script>
+
+</body>
+</html>

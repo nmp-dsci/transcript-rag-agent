@@ -85,4 +85,4 @@ def test_malformed_snapshot_is_skipped_not_fatal(tmp_path: Path) -> None:
 def test_missing_directory_returns_empty(tmp_path: Path) -> None:
     result = load_experiments(tmp_path / "does-not-exist")
 
-    assert result == {"ablations": [], "golden_runs": []}
+    assert result == {"ablations": [], "golden_runs": [], "matrix_runs": []}

@@ -80,9 +80,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     bulk = subparsers.add_parser("bulk-index", help="Discover and index many videos")
     bulk_subparsers = bulk.add_subparsers(dest="bulk_mode", required=True)
-    bulk_channel = bulk_subparsers.add_parser(
-        "channel", help="Index videos from a channel"
-    )
+    bulk_channel = bulk_subparsers.add_parser("channel", help="Index videos from a channel")
     bulk_channel.add_argument("--channel", required=True)
     channel_window = bulk_channel.add_mutually_exclusive_group()
     channel_window.add_argument("--latest", type=int)
@@ -91,9 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     bulk_channel.add_argument("--max-results", type=int, default=50)
     _add_bulk_common_args(bulk_channel)
 
-    bulk_search = bulk_subparsers.add_parser(
-        "search", help="Index YouTube search results"
-    )
+    bulk_search = bulk_subparsers.add_parser("search", help="Index YouTube search results")
     bulk_search.add_argument("--query", required=True)
     bulk_search.add_argument("--top-n", type=int, default=10)
     _add_bulk_common_args(bulk_search)
@@ -103,9 +99,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Interactive menu: ask questions across RAG setups or fetch new URLs",
     )
 
-    serve = subparsers.add_parser(
-        "serve", help="Run the live web chat app (FastAPI + uvicorn)"
-    )
+    serve = subparsers.add_parser("serve", help="Run the live web chat app (FastAPI + uvicorn)")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
 
@@ -116,7 +110,7 @@ def build_parser() -> argparse.ArgumentParser:
     golden.add_argument(
         "--setup",
         default="rag_llm",
-        choices=["rag_llm", "rag_llm_recursive", "rag_agent"],
+        choices=["rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"],
         help="Which RAG setup answers the golden questions",
     )
     golden.add_argument(
@@ -153,6 +147,78 @@ def build_parser() -> argparse.ArgumentParser:
         help="Final chunk count each configuration retrieves (default: YT_AGENT_RAG_TOP_K)",
     )
 
+    matrix = subparsers.add_parser(
+        "eval-matrix",
+        help=(
+            "Head-to-head: every RAG setup answers the same golden questions, "
+            "scored by the same RAGAS + reference metrics (s05 §06)"
+        ),
+    )
+    matrix.add_argument(
+        "--setups",
+        default=None,
+        help="Comma-separated setup keys (default: rag_llm,rag_llm_recursive,rag_agent,graph_rag)",
+    )
+    matrix.add_argument("--top-k", type=int, default=None)
+    matrix.add_argument(
+        "--no-judge",
+        action="store_true",
+        help="Skip the RAGAS judge (faithfulness/relevancy/precision); much faster",
+    )
+    matrix.add_argument(
+        "--no-reference-metrics",
+        action="store_true",
+        help=(
+            "Skip answer_correctness/answer_similarity/llm_context_recall. On by "
+            "default for the matrix: answer_correctness is the primary verdict "
+            "on global/temporal questions"
+        ),
+    )
+    matrix.add_argument(
+        "--refresh",
+        action="store_true",
+        help=(
+            "Bypass the per-cell cache and rescore every cell, even ones already "
+            "scored under an unchanged configuration. Off by default: a cell is "
+            "cached by a fingerprint of the question plus the exact answering/"
+            "judging config, so adding one new --setups entry only scores that "
+            "one, and edited questions or reconfigured engines invalidate "
+            "automatically"
+        ),
+    )
+
+    index_graph = subparsers.add_parser(
+        "index-graph",
+        help=(
+            "Build the GraphRAG knowledge graph: extract entities/claims per "
+            "chunk (cached by chunk hash), then Leiden communities + summaries"
+        ),
+    )
+    index_graph.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Wipe the graph before rebuilding (extraction cache still applies)",
+    )
+    index_graph.add_argument(
+        "--skip-communities",
+        action="store_true",
+        help="Extraction only; skip community detection and summaries",
+    )
+    index_graph.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help="Only process the first N chunks (smoke-testing)",
+    )
+
+    subparsers.add_parser(
+        "eval-graph-extraction",
+        help=(
+            "Score cached graph extractions against the hand-labelled sample "
+            "(entity/claim recall; no LLM calls)"
+        ),
+    )
+
     summarize = subparsers.add_parser("summarize", help="Summarize a transcript")
     summarize.add_argument("url")
 
@@ -162,16 +228,12 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("--context", choices=["raw", "rag"], default="raw")
     ask.add_argument("--top-k", type=int, default=None)
 
-    compare = subparsers.add_parser(
-        "compare-context", help="Compare raw and RAG answers"
-    )
+    compare = subparsers.add_parser("compare-context", help="Compare raw and RAG answers")
     compare.add_argument("url")
     compare.add_argument("question")
     compare.add_argument("--top-k", type=int, default=None)
 
-    rag_ask = subparsers.add_parser(
-        "rag-ask", help="Ask across all indexed transcript chunks"
-    )
+    rag_ask = subparsers.add_parser("rag-ask", help="Ask across all indexed transcript chunks")
     rag_ask.add_argument("question")
     rag_ask.add_argument("--url")
     rag_ask.add_argument("--top-k", type=int, default=None)
@@ -220,6 +282,16 @@ def build_parser() -> argparse.ArgumentParser:
             "neither --rag_llm nor --rag_agent is passed."
         ),
     )
+    agent_group.add_argument(
+        "--graph_rag",
+        dest="graph_rag",
+        action="store_true",
+        default=False,
+        help=(
+            "Use the GraphRAG agent (graph_rag): routes local/global/temporal "
+            "and answers over the knowledge graph. Requires index-graph."
+        ),
+    )
     rag_ask.add_argument(
         "--max-iterations",
         type=int,
@@ -235,12 +307,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _add_bulk_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument(
-        "--skip-existing", dest="skip_existing", action="store_true", default=True
-    )
-    parser.add_argument(
-        "--no-skip-existing", dest="skip_existing", action="store_false"
-    )
+    parser.add_argument("--skip-existing", dest="skip_existing", action="store_true", default=True)
+    parser.add_argument("--no-skip-existing", dest="skip_existing", action="store_false")
     parser.add_argument("--refresh-summary", action="store_true")
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--label")
@@ -283,8 +351,7 @@ def _run_eval_golden(args, settings) -> int:
             print("\nquestions that moved:")
             for entry in diff["entries"]:
                 metrics = ", ".join(
-                    f"{name} {change['delta']:+.2f}"
-                    for name, change in entry["changes"].items()
+                    f"{name} {change['delta']:+.2f}" for name, change in entry["changes"].items()
                 )
                 print(f"  {entry['id']}: {metrics}")
         print(
@@ -318,6 +385,137 @@ def _run_eval_golden(args, settings) -> int:
         print(f"  {summary['failed']} question(s) failed and were excluded")
     print(f"\nsaved {path}")
     print("compare against the previous run with: eval-golden --diff")
+    return 0
+
+
+def _run_eval_matrix(args, settings) -> int:
+    """Every setup × the same golden questions, one committed comparison run."""
+    from src.chat.setups import RagSetupRunner, SETUP_KEYS
+    from src.evals.golden import answer_correctness_fns
+    from src.evals.judge import RagasJudge
+    from src.evals.matrix import (
+        DEFAULT_MATRIX_SETUPS,
+        format_matrix_table,
+        run_matrix,
+    )
+    from src.evals.regression import save_run
+
+    setups = (
+        [token.strip() for token in args.setups.split(",") if token.strip()]
+        if args.setups
+        else list(DEFAULT_MATRIX_SETUPS)
+    )
+    unknown = [setup for setup in setups if setup not in SETUP_KEYS]
+    if unknown:
+        print(f"Unknown setups: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+
+    runner = RagSetupRunner.from_settings(settings)
+    judge = None if args.no_judge else RagasJudge.from_settings(settings)
+    reference_fns = None if args.no_reference_metrics else answer_correctness_fns(settings)
+    result = run_matrix(
+        runner,
+        settings,
+        setups=setups,
+        judge=judge,
+        reference_fns=reference_fns,
+        top_k=args.top_k,
+        on_progress=print,
+        refresh=args.refresh,
+    )
+    path = save_run(result)
+    print(f"\n{result['run_id']} — {result['entry_count']} questions × {len(setups)} setups")
+    print(f"question types: {result['question_types']}\n")
+    print(format_matrix_table(result))
+    print(f"\nsaved {path}")
+    return 0
+
+
+def _run_index_graph(args, settings) -> int:
+    """Build the knowledge graph: extraction (cached) → Leiden → summaries."""
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.graph_pipeline import build_graph
+    from src.rag.storage import TranscriptChunkStore
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    chunk_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    )
+    chunks = chunk_store.all_chunks()
+    if args.max_chunks is not None:
+        chunks = chunks[: args.max_chunks]
+    if not chunks:
+        print("No chunks indexed. Run index-rag / bulk-index first.", file=sys.stderr)
+        return 1
+
+    stats = build_graph(
+        settings,
+        chunks,
+        refresh=args.refresh,
+        skip_communities=args.skip_communities,
+        on_progress=print,
+    )
+    counts = stats["counts"]
+    print("\nGraph built")
+    print(f"  Entities:    {counts.get('entities', 0)}")
+    print(f"  Relations:   {counts.get('relations', 0)}")
+    print(f"  Claims:      {counts.get('claims', 0)}")
+    print(
+        f"  Communities: {counts.get('communities', 0)} ({stats['communities_summarized']} summarized)"
+    )
+    print(f"  Chunks:      {len(chunks)} ({stats['failed']} extraction failures)")
+    print(f"  Neo4j:       {settings.neo4j_uri}")
+    if stats["failed_details"]:
+        print("\nFailed chunks:")
+        for chunk_id, error in stats["failed_details"]:
+            print(f"  {chunk_id}: {error}")
+    return 0
+
+
+def _run_eval_graph_extraction(settings) -> int:
+    """Score cached extractions against the hand-labelled sample. Cache-only."""
+    from src.evals.graph_extraction import load_labelled, score_all
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.graph_extract import GraphExtractor
+    from src.rag.storage import TranscriptChunkStore
+
+    class _CacheOnly:
+        """Fails extraction for any chunk the cache does not already cover."""
+
+        def invoke(self, messages: list) -> object:
+            raise ValueError("not in extraction cache; run index-graph first")
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    chunk_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    )
+    labelled = load_labelled()
+    wanted = {label.chunk_id for label in labelled}
+    extractor = GraphExtractor(_CacheOnly(), cache_dir=settings.graph_cache_dir)
+    extractions = {
+        chunk.chunk_id: extractor.extract(chunk)
+        for chunk in chunk_store.all_chunks()
+        if chunk.chunk_id in wanted
+    }
+    report = score_all(extractions, labelled)
+    print(
+        f"graph extraction eval — {report['labelled_chunks']} labelled chunks\n"
+        f"  entity_recall  {report['entity_recall']}\n"
+        f"  claim_recall   {report['claim_recall']}"
+    )
+    for result in report["results"]:
+        line = f"  {result['chunk_id']}: entities {result['entity_recall']}"
+        if result["claim_recall"] is not None:
+            line += f", claims {result['claim_recall']}"
+        if result["missed_entities"]:
+            line += f" — missed {result['missed_entities']}"
+        if result["error"]:
+            line += f" — ERROR: {result['error']}"
+        print(line)
     return 0
 
 
@@ -359,6 +557,12 @@ def main(argv: list[str] | None = None) -> int:
             return _run_eval_golden(args, settings)
         if args.command == "eval-ablation":
             return _run_eval_ablation(args, settings)
+        if args.command == "eval-matrix":
+            return _run_eval_matrix(args, settings)
+        if args.command == "index-graph":
+            return _run_index_graph(args, settings)
+        if args.command == "eval-graph-extraction":
+            return _run_eval_graph_extraction(settings)
         source_url = getattr(args, "url", None)
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):
@@ -395,9 +599,7 @@ def main(argv: list[str] | None = None) -> int:
                     chunk_store=chunk_store,
                     target_chars=settings.chunk_target_chars,
                     overlap_chars=settings.chunk_overlap_chars,
-                    summary_store=_build_summary_store(
-                        settings, embedding_model, raw_store
-                    ),
+                    summary_store=_build_summary_store(settings, embedding_model, raw_store),
                     summary_generator=_build_summary_generator(settings),
                 )
                 result = indexer.index(
@@ -432,9 +634,7 @@ def main(argv: list[str] | None = None) -> int:
                     chunk_store=chunk_store,
                     target_chars=settings.chunk_target_chars,
                     overlap_chars=settings.chunk_overlap_chars,
-                    summary_store=_build_summary_store(
-                        settings, embedding_model, raw_store
-                    ),
+                    summary_store=_build_summary_store(settings, embedding_model, raw_store),
                     summary_generator=_build_summary_generator(settings),
                 )
                 output = _run_bulk_index(
@@ -451,9 +651,7 @@ def main(argv: list[str] | None = None) -> int:
 
             if args.command == "summarize":
                 agent = TranscriptAgent.from_settings(settings, raw_provider)
-                summary = agent.summarize(
-                    SummaryRequest(video_id=video_id, source_url=args.url)
-                )
+                summary = agent.summarize(SummaryRequest(video_id=video_id, source_url=args.url))
                 _log_last_context(agent, settings)
                 log_summary(summary)
                 print(_format_summary(summary.summary, summary.top_findings))
@@ -464,9 +662,7 @@ def main(argv: list[str] | None = None) -> int:
                 top_k = args.top_k or settings.rag_top_k
                 context_provider = raw_provider
                 if context_mode == "rag":
-                    embedding_model = HuggingFaceEmbeddingModel(
-                        settings.embedding_model
-                    )
+                    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
                     chunk_store = TranscriptChunkStore(
                         settings.chroma_path,
                         embedding_model=embedding_model,
@@ -586,33 +782,27 @@ def main(argv: list[str] | None = None) -> int:
                     raw_store=raw_store,
                     chunk_store=chunk_store,
                     indexer=indexer,
-                    summary_store=_build_summary_store(
-                        settings, embedding_model, raw_store
-                    ),
+                    summary_store=_build_summary_store(settings, embedding_model, raw_store),
                 )
                 if args.rag_agent:
                     return _run_rag_agent(args, settings, context_provider, top_k)
+                if args.graph_rag:
+                    return _run_graph_rag_ask(args, settings, context_provider, top_k)
                 agent = RagTranscriptAgent.from_settings(settings, context_provider)
-                filter_top_k = (
-                    args.transcript_filter_top_k or settings.transcript_filter_top_k
-                )
+                filter_top_k = args.transcript_filter_top_k or settings.transcript_filter_top_k
                 filter_min_score = (
                     args.transcript_filter_min_score
                     if args.transcript_filter_min_score is not None
                     else settings.transcript_filter_min_score
                 )
                 recursive = (
-                    settings.rag_recursive_default
-                    if args.recursive is None
-                    else args.recursive
+                    settings.rag_recursive_default if args.recursive is None else args.recursive
                 )
                 recursion_options = None
                 if recursive:
                     recursion_options = RecursionOptions(
                         max_depth=(
-                            args.max_depth
-                            if args.max_depth is not None
-                            else settings.rag_max_depth
+                            args.max_depth if args.max_depth is not None else settings.rag_max_depth
                         ),
                         max_followups=(
                             args.max_followups
@@ -640,9 +830,7 @@ def main(argv: list[str] | None = None) -> int:
                         question=args.question,
                         source_url=args.url,
                         top_k=top_k,
-                        filter_transcripts=(
-                            args.filter_transcripts and args.url is None
-                        ),
+                        filter_transcripts=(args.filter_transcripts and args.url is None),
                         transcript_filter_top_k=filter_top_k,
                         transcript_filter_min_score=filter_min_score,
                         recursive=recursive,
@@ -699,6 +887,31 @@ _ITERATION_COLORS = (
 _ANSI_RESET = "\033[0m"
 
 
+def _run_graph_rag_ask(args, settings, context_provider, top_k: int) -> int:
+    """Answer one question with the GraphRAG agent and print route + citations."""
+    from src.agents.graph_agent import GraphRagAgent
+
+    agent = GraphRagAgent.from_settings(settings, context_provider)
+    answer = agent.answer(
+        RagQuestionRequest(
+            question=args.question,
+            source_url=args.url,
+            top_k=top_k,
+        )
+    )
+    if agent.last_context is not None:
+        log_context_details(
+            context_mode=agent.last_context.context_mode,
+            top_k=agent.last_context.top_k,
+            retrieved_chunks=agent.last_context.retrieved_chunks,
+            rag_prompt_tokens_estimate=estimate_tokens(agent.last_context.context_text or ""),
+        )
+    print(f"Route: {agent.last_route}")
+    print("")
+    print(_format_rag_answer(answer))
+    return 0
+
+
 def _run_rag_agent(args, settings, context_provider, top_k: int) -> int:
     max_iterations = (
         args.max_iterations
@@ -731,9 +944,7 @@ def _run_rag_agent(args, settings, context_provider, top_k: int) -> int:
             context_mode=agent.last_context.context_mode,
             top_k=agent.last_context.top_k,
             retrieved_chunks=agent.last_context.retrieved_chunks,
-            rag_prompt_tokens_estimate=estimate_tokens(
-                agent.last_context.context_text or ""
-            ),
+            rag_prompt_tokens_estimate=estimate_tokens(agent.last_context.context_text or ""),
         )
     # The Answer / References body is only available from the streaming return
     # value (the parsed RagTranscriptAnswer); the on_event callback already
@@ -796,15 +1007,9 @@ def _format_rag_agent_answer(answer) -> str:
         lines.extend(["", "References"])
         for reference in answer.references:
             start = (
-                "unknown"
-                if reference.start_seconds is None
-                else str(int(reference.start_seconds))
+                "unknown" if reference.start_seconds is None else str(int(reference.start_seconds))
             )
-            end = (
-                "unknown"
-                if reference.end_seconds is None
-                else str(int(reference.end_seconds))
-            )
+            end = "unknown" if reference.end_seconds is None else str(int(reference.end_seconds))
             lines.append(
                 f"{reference.label} {reference.timestamp_url} "
                 f"{start}-{end}s video={reference.video_id}"
@@ -888,8 +1093,7 @@ def _format_rag_answer(
         for index, transcript in enumerate(selected_transcripts, 1):
             score = "unknown" if transcript.score is None else f"{transcript.score:.3f}"
             lines.append(
-                f"{index}. score={score} video={transcript.video_id} "
-                f"url={transcript.source_url}"
+                f"{index}. score={score} video={transcript.video_id} url={transcript.source_url}"
             )
         lines.append("")
         lines.append("Answer")
@@ -898,15 +1102,9 @@ def _format_rag_answer(
         lines.extend(["", "References"])
         for reference in answer.references:
             start = (
-                "unknown"
-                if reference.start_seconds is None
-                else str(int(reference.start_seconds))
+                "unknown" if reference.start_seconds is None else str(int(reference.start_seconds))
             )
-            end = (
-                "unknown"
-                if reference.end_seconds is None
-                else str(int(reference.end_seconds))
-            )
+            end = "unknown" if reference.end_seconds is None else str(int(reference.end_seconds))
             lines.append(
                 f"{reference.label} {reference.timestamp_url} "
                 f"{start}-{end}s video={reference.video_id}"
@@ -914,9 +1112,7 @@ def _format_rag_answer(
     if show_followups and answer.subtopics:
         lines.extend(["", "Proposed follow-ups"])
         for index, subtopic in enumerate(answer.subtopics, 1):
-            lines.append(
-                f"{index}. {subtopic.topic} (confidence {subtopic.confidence:.2f})"
-            )
+            lines.append(f"{index}. {subtopic.topic} (confidence {subtopic.confidence:.2f})")
             lines.append(f'   query: "{subtopic.followup_query}"')
     if answer.recursion is not None:
         trace = answer.recursion
@@ -929,9 +1125,7 @@ def _format_rag_answer(
         lines.append(f"Terminated: {trace.terminated_reason}")
         lines.append(f"Follow-ups proposed: {trace.total_followups_proposed}")
         lines.append(f"Follow-ups executed: {trace.total_followups_executed}")
-        lines.append(
-            f"Total LLM calls: {sum(stage.llm_calls for stage in trace.stages)}"
-        )
+        lines.append(f"Total LLM calls: {sum(stage.llm_calls for stage in trace.stages)}")
         if print_trace and trace.subtopic_evidence:
             lines.append("")
             lines.append("Trace chunks")
@@ -944,8 +1138,7 @@ def _format_rag_answer(
                 for chunk in item.chunks:
                     preview = (chunk.text or "").replace("\n", " ")[:120]
                     lines.append(
-                        f"   - video={chunk.video_id} chunk={chunk.chunk_index}: "
-                        f"{preview}"
+                        f"   - video={chunk.video_id} chunk={chunk.chunk_index}: {preview}"
                     )
     return "\n".join(lines)
 
@@ -972,9 +1165,7 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
             use_cache=not args.no_discovery_cache,
         )
         if mode == "channel":
-            if args.latest is not None and (
-                args.since is not None or args.until is not None
-            ):
+            if args.latest is not None and (args.since is not None or args.until is not None):
                 raise ValueError("--latest cannot be combined with --since or --until")
             if args.latest is None and args.since is None and args.until is None:
                 raise ValueError("channel mode requires --latest, --since, or --until")
@@ -1034,12 +1225,8 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
                 )
                 record.chunk_count = len(result.chunks)
                 record.title = result.raw_document.title or record.title
-                record.channel_name = (
-                    result.raw_document.channel_name or record.channel_name
-                )
-                record.published_at = (
-                    result.raw_document.upload_date or record.published_at
-                )
+                record.channel_name = result.raw_document.channel_name or record.channel_name
+                record.published_at = result.raw_document.upload_date or record.published_at
         except Exception as exc:  # per-candidate failure should not abort the run
             record.outcome = "failed"
             record.error = str(exc)

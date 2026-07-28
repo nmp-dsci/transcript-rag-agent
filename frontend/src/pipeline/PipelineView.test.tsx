@@ -10,6 +10,7 @@ const health = vi.fn();
 const chunks = vi.fn();
 const chunkGraph = vi.fn();
 const rank = vi.fn();
+const chunkEnrichment = vi.fn();
 
 vi.mock('../api/client', () => ({
   api: {
@@ -17,7 +18,9 @@ vi.mock('../api/client', () => ({
     chunks: (...args: never[]) => chunks(...args),
     chunkGraph: (...args: never[]) => chunkGraph(...args),
     rank: (...args: never[]) => rank(...args),
+    chunkEnrichment: (...args: never[]) => chunkEnrichment(...args),
     indexStream: () => new Promise<void>(() => undefined),
+    subscribeIndexQueue: () => new Promise<void>(() => undefined),
   },
 }));
 
@@ -58,6 +61,7 @@ describe('PipelineView', () => {
   beforeEach(() => {
     health.mockResolvedValue({ embedding_model: 'from-health' });
     chunks.mockResolvedValue({ video_id: 'a', chunks: [], total: 0 });
+    chunkEnrichment.mockResolvedValue({ chunks: {} });
     chunkGraph.mockResolvedValue({
       nodes: [],
       edges: [],

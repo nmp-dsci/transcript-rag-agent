@@ -60,6 +60,7 @@ class EntryResult:
     id: str
     question: str
     domain: str
+    question_type: str = "local"
     answer: str = ""
     error: str | None = None
     scores: dict[str, float | None] = field(default_factory=dict)
@@ -72,6 +73,7 @@ class EntryResult:
             "id": self.id,
             "question": self.question,
             "domain": self.domain,
+            "question_type": self.question_type,
             "answer": self.answer,
             "error": self.error,
             "scores": self.scores,
@@ -106,7 +108,12 @@ def run_golden_eval(
     for index, entry in enumerate(entries, start=1):
         if on_progress is not None:
             on_progress(f"[{index}/{len(entries)}] {entry.id}: {entry.question[:60]}")
-        result = EntryResult(id=entry.id, question=entry.question, domain=entry.domain)
+        result = EntryResult(
+            id=entry.id,
+            question=entry.question,
+            domain=entry.domain,
+            question_type=getattr(entry, "question_type", "local"),
+        )
         try:
             answered = runner.run(setup, entry.question, top_k=top_k, scope=scope)
             if answered.error:
@@ -145,8 +152,7 @@ def run_golden_eval(
         "config": {
             "answer_model": settings.deepseek_model,
             "embedding_model": settings.embedding_model,
-            "retrieval_mode": getattr(scope, "retrieval_mode", None)
-            or settings.retrieval_mode,
+            "retrieval_mode": getattr(scope, "retrieval_mode", None) or settings.retrieval_mode,
             "rerank_enabled": settings.rerank_enabled,
             "neighbor_span": settings.neighbor_span,
             "top_k": top_k or settings.rag_top_k,
@@ -164,9 +170,7 @@ def summarize(results: list[EntryResult]) -> dict[str, Any]:
     averages: dict[str, float] = {}
     for metric in QUALITY_METRICS + ["composite"]:
         values = [
-            value
-            for r in scored
-            if isinstance((value := r.scores.get(metric)), (int, float))
+            value for r in scored if isinstance((value := r.scores.get(metric)), (int, float))
         ]
         if values:
             averages[metric] = round(sum(values) / len(values), 4)
@@ -176,14 +180,10 @@ def summarize(results: list[EntryResult]) -> dict[str, Any]:
         "failed": len(results) - len(scored),
         "averages": averages,
         "avg_elapsed_seconds": (
-            round(sum(r.elapsed_seconds for r in scored) / len(scored), 2)
-            if scored
-            else None
+            round(sum(r.elapsed_seconds for r in scored) / len(scored), 2) if scored else None
         ),
         "avg_token_estimate": (
-            round(sum(r.token_estimate for r in scored) / len(scored))
-            if scored
-            else None
+            round(sum(r.token_estimate for r in scored) / len(scored)) if scored else None
         ),
     }
 
@@ -233,9 +233,7 @@ def diff_runs(
         if old is None or new is None:
             continue
         delta = round(new - old, 4)
-        metric_threshold = (
-            deterministic_threshold if metric in DETERMINISTIC_METRICS else threshold
-        )
+        metric_threshold = deterministic_threshold if metric in DETERMINISTIC_METRICS else threshold
         metric_moves.append(
             {
                 "metric": metric,

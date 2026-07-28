@@ -5,7 +5,14 @@
  * wire types have a single place to be satisfied when the API contract grows.
  */
 
-import type { Corpus, CorpusInsight, GraphNode, IndexResult, Video } from '../api/types';
+import type {
+  Corpus,
+  CorpusInsight,
+  GraphNode,
+  IndexResult,
+  IngestionJob,
+  Video,
+} from '../api/types';
 
 const EMPTY_VIDEO: Omit<Video, 'video_id'> = {
   title: null,
@@ -93,6 +100,24 @@ export function indexResult(overrides: Partial<IndexResult> = {}): IndexResult {
     totals: { videos: 1, chunks: 10, channels: 1 },
     insights: [],
     channels: [],
+    ...overrides,
+  };
+}
+
+let jobCounter = 0;
+
+export function ingestionJob(overrides: Partial<IngestionJob> = {}): IngestionJob {
+  jobCounter += 1;
+  return {
+    id: `job-${jobCounter}`,
+    mode: 'video',
+    target: 'https://youtu.be/new',
+    latest: null,
+    status: 'queued',
+    stage: null,
+    message: null,
+    result: null,
+    error: null,
     ...overrides,
   };
 }

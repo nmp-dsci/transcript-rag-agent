@@ -13,6 +13,16 @@ const CSS = `
 .exp-empty { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px 16px; }
 
+.mrun { margin-bottom: 18px; }
+.mrun-head { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.mrun-head > div { flex: 1; min-width: 260px; }
+.mrun-head > button { flex: 0 0 auto; }
+.mrun-job { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.mrun-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mrun-setups { font: 11px var(--mono); color: var(--muted); }
+.mrun-bar { width: 100%; height: 8px; margin-top: 10px; }
+.mrun-message { margin: 8px 0 0; }
+
 .exp-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
   padding: 14px 16px; margin-bottom: 16px; }
 .exp-cardhead { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;

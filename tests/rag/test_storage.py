@@ -214,6 +214,59 @@ def test_chunk_store_query_by_video_ids_restricts_results(tmp_path) -> None:
     assert {chunk.video_id for chunk in retrieved} == {"bbbbbbbbbbb"}
 
 
+def test_chunks_for_videos_scopes_to_the_requested_videos(tmp_path) -> None:
+    store = TranscriptChunkStore(tmp_path / "chroma", FakeEmbeddingModel())
+    store.upsert_chunks(
+        [
+            TranscriptChunk(
+                transcript_id="raw_transcript:aaaaaaaaaaa",
+                video_id="aaaaaaaaaaa",
+                source_url="https://www.youtube.com/watch?v=aaaaaaaaaaa",
+                chunk_index=1,
+                text="agent systems",
+                segment_count=1,
+            ),
+            TranscriptChunk(
+                transcript_id="raw_transcript:aaaaaaaaaaa",
+                video_id="aaaaaaaaaaa",
+                source_url="https://www.youtube.com/watch?v=aaaaaaaaaaa",
+                chunk_index=0,
+                text="agent systems intro",
+                segment_count=1,
+            ),
+            TranscriptChunk(
+                transcript_id="raw_transcript:bbbbbbbbbbb",
+                video_id="bbbbbbbbbbb",
+                source_url="https://www.youtube.com/watch?v=bbbbbbbbbbb",
+                chunk_index=0,
+                text="capital gains tax",
+                segment_count=1,
+            ),
+            TranscriptChunk(
+                transcript_id="raw_transcript:ccccccccccc",
+                video_id="ccccccccccc",
+                source_url="https://www.youtube.com/watch?v=ccccccccccc",
+                chunk_index=0,
+                text="unrelated video",
+                segment_count=1,
+            ),
+        ]
+    )
+
+    fetched = store.chunks_for_videos(["aaaaaaaaaaa", "bbbbbbbbbbb"])
+
+    assert [(chunk.video_id, chunk.chunk_index) for chunk in fetched] == [
+        ("aaaaaaaaaaa", 0),
+        ("aaaaaaaaaaa", 1),
+        ("bbbbbbbbbbb", 0),
+    ]
+
+
+def test_chunks_for_videos_returns_empty_for_no_ids(tmp_path) -> None:
+    store = TranscriptChunkStore(tmp_path / "chroma", FakeEmbeddingModel())
+    assert store.chunks_for_videos([]) == []
+
+
 def test_summary_store_upserts_and_queries_relevant_transcripts(tmp_path) -> None:
     store = TranscriptSummaryStore(
         tmp_path / "chroma",

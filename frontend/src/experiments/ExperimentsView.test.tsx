@@ -2,11 +2,24 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AblationRun, Experiments, GoldenRunSummary } from '../api/types';
+import type {
+  AblationRun,
+  Experiments,
+  GoldenRunSummary,
+  MatrixRunSummary,
+} from '../api/types';
 import { ExperimentsView } from './ExperimentsView';
 
 const experiments = vi.fn();
-vi.mock('../api/client', () => ({ api: { experiments: () => experiments() } }));
+vi.mock('../api/client', () => ({
+  api: {
+    experiments: () => experiments(),
+    // The run panel opens a persistent stream that never resolves, exactly as
+    // the real endpoint behaves; the view must render without waiting on it.
+    subscribeMatrixRun: () => new Promise<void>(() => undefined),
+    startMatrixRun: () => Promise.resolve(null),
+  },
+}));
 
 function ablation(overrides: Partial<AblationRun> = {}): AblationRun {
   return {
@@ -59,7 +72,12 @@ function goldenRun(overrides: Partial<GoldenRunSummary> = {}): GoldenRunSummary 
 }
 
 function data(overrides: Partial<Experiments> = {}): Experiments {
-  return { ablations: [ablation()], golden_runs: [goldenRun()], ...overrides };
+  return {
+    ablations: [ablation()],
+    golden_runs: [goldenRun()],
+    matrix_runs: [],
+    ...overrides,
+  };
 }
 
 describe('ExperimentsView', () => {
@@ -118,8 +136,41 @@ describe('ExperimentsView', () => {
     expect(screen.getByText('0.820')).toBeInTheDocument(); // faithfulness
   });
 
+  it('renders the head-to-head matrix with a question-type switcher', async () => {
+    const matrix: MatrixRunSummary = {
+      run_id: 'matrix-20260726-210000',
+      created_at: '2026-07-26T21:00:00+00:00',
+      setups: ['rag_llm', 'graph_rag'],
+      entry_count: 14,
+      judged: true,
+      reference_scored: true,
+      question_types: { local: 9, global: 3, temporal: 2 },
+      comparison: {
+        overall: { answer_correctness: { rag_llm: 0.61, graph_rag: 0.72 } },
+        by_question_type: {
+          global: { answer_correctness: { rag_llm: 0.41, graph_rag: 0.88 } },
+        },
+        ops: {
+          rag_llm: { avg_elapsed_seconds: 21.5, avg_token_estimate: 3100, answered: 14, failed: 0 },
+          graph_rag: { avg_elapsed_seconds: 33.1, avg_token_estimate: 2100, answered: 14, failed: 0 },
+        },
+      },
+    };
+    experiments.mockResolvedValue(data({ matrix_runs: [matrix] }));
+    render(<ExperimentsView />);
+
+    expect(
+      await screen.findByText('Head-to-head matrix — engines × question types'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('0.720')).toBeInTheDocument(); // overall graph_rag
+
+    await userEvent.click(screen.getByRole('tab', { name: 'global' }));
+    expect(screen.getByText('0.880')).toBeInTheDocument();
+    expect(screen.queryByText('0.720')).not.toBeInTheDocument();
+  });
+
   it('shows an empty state when nothing is committed', async () => {
-    experiments.mockResolvedValue({ ablations: [], golden_runs: [] });
+    experiments.mockResolvedValue({ ablations: [], golden_runs: [], matrix_runs: [] });
     render(<ExperimentsView />);
 
     expect(await screen.findByText(/No committed experiment runs yet/i)).toBeInTheDocument();

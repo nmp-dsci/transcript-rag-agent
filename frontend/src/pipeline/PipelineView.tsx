@@ -1,21 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-import { api } from '../api/client';
-import type { Chunk, Corpus } from '../api/types';
-import { ChunkGraphView } from './ChunkGraphView';
-import { CorpusSummary } from './CorpusSummary';
-import { CorpusTree, type SortKey } from './CorpusTree';
-import { IndexPanel } from './IndexPanel';
-import { RetrievalLab } from './RetrievalLab';
-import { VideoDetail } from './VideoDetail';
-import { type TreeFilter, applyFilter } from './insights';
-import { PIPELINE_STYLES } from './styles';
+import { api } from "../api/client";
+import type { Chunk, Corpus } from "../api/types";
+import { ChunkGraphView } from "./ChunkGraphView";
+import { CorpusSummary } from "./CorpusSummary";
+import { CorpusTree, type SortKey } from "./CorpusTree";
+import { IndexPanel } from "./IndexPanel";
+import { KnowledgeGraphView } from "./KnowledgeGraphView";
+import { RetrievalLab } from "./RetrievalLab";
+import { VideoDetail } from "./VideoDetail";
+import { type TreeFilter, applyFilter } from "./insights";
+import { PIPELINE_STYLES } from "./styles";
 
-type SubTab = 'corpus' | 'graph';
+type SubTab = "corpus" | "graph" | "knowledge";
 
 const SUBTABS: { id: SubTab; label: string }[] = [
-  { id: 'corpus', label: 'Corpus & retrieval' },
-  { id: 'graph', label: 'Chunk graph' },
+  { id: "corpus", label: "Corpus & retrieval" },
+  { id: "graph", label: "Chunk graph" },
+  { id: "knowledge", label: "Knowledge graph" },
 ];
 
 interface Props {
@@ -29,12 +31,18 @@ interface Props {
   embeddingModel?: string | null;
 }
 
-export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingModel }: Props) {
-  const [sub, setSub] = useState<SubTab>('corpus');
+export function PipelineView({
+  corpus,
+  onCorpusChange,
+  onAskAbout,
+  embeddingModel,
+}: Props) {
+  const [sub, setSub] = useState<SubTab>("corpus");
   // The graph fetches on mount, so once opened it stays mounted and is merely
   // hidden — switching sub-tabs must not rebuild a 281-node projection.
   const [graphMounted, setGraphMounted] = useState(false);
-  const [sort, setSort] = useState<SortKey>('views');
+  const [knowledgeMounted, setKnowledgeMounted] = useState(false);
+  const [sort, setSort] = useState<SortKey>("views");
   const [filter, setFilter] = useState<TreeFilter | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [selectedChunk, setSelectedChunk] = useState<number | null>(null);
@@ -87,27 +95,29 @@ export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingMode
   /** An insight chip narrows the tree, and jumps to the first video it names. */
   const changeFilter = (next: TreeFilter | null) => {
     setFilter(next);
-    setSub('corpus');
+    setSub("corpus");
     const first = applyFilter(allVideos, next)[0];
     if (next && first) selectVideo(first.video_id);
   };
 
   const viewIndexedVideo = (videoId: string) => {
     setFilter(null);
-    setSub('corpus');
+    setSub("corpus");
     selectVideo(videoId);
   };
 
   const showSub = (next: SubTab) => {
-    if (next === 'graph') setGraphMounted(true);
+    if (next === "graph") setGraphMounted(true);
+    if (next === "knowledge") setKnowledgeMounted(true);
     setSub(next);
   };
 
   const videos = applyFilter(allVideos, filter);
-  const video = allVideos.find((item) => item.video_id === selectedVideo) ?? null;
+  const video =
+    allVideos.find((item) => item.video_id === selectedVideo) ?? null;
 
   return (
-    <section className="view" style={{ flexDirection: 'column' }}>
+    <section className="view" style={{ flexDirection: "column" }}>
       <style>{PIPELINE_STYLES}</style>
 
       <CorpusSummary
@@ -121,8 +131,8 @@ export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingMode
             <button
               key={option.id}
               type="button"
-              className={sub === option.id ? 'on' : ''}
-              aria-current={sub === option.id ? 'page' : undefined}
+              className={sub === option.id ? "on" : ""}
+              aria-current={sub === option.id ? "page" : undefined}
               onClick={() => showSub(option.id)}
             >
               {option.label}
@@ -133,10 +143,14 @@ export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingMode
 
       <IndexPanel onIndexed={onCorpusChange} onViewVideo={viewIndexedVideo} />
 
-      <div className="pipe-pane" hidden={sub !== 'corpus'}>
+      <div className="pipe-pane" hidden={sub !== "corpus"}>
         <RetrievalLab
           scopeVideoId={selectedVideo}
-          scopeLabel={video ? (video.title || video.video_id).slice(0, 34) : 'Whole corpus'}
+          scopeLabel={
+            video
+              ? (video.title || video.video_id).slice(0, 34)
+              : "Whole corpus"
+          }
           selectedChunk={
             selectedVideo != null && selectedChunk != null
               ? `${selectedVideo}:${selectedChunk}`
@@ -150,15 +164,25 @@ export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingMode
             <div className="detail">
               <div className="empty">
                 <h2>The library is empty</h2>
-                <p>Index a video or a channel above, then explore its chunks here.</p>
+                <p>
+                  Index a video or a channel above, then explore its chunks
+                  here.
+                </p>
               </div>
             </div>
           ) : videos.length === 0 ? (
             <div className="detail">
               <div className="empty">
                 <h2>No videos match this filter</h2>
-                <p>The insight you selected names videos that are no longer in the corpus.</p>
-                <button type="button" className="btn" onClick={() => changeFilter(null)}>
+                <p>
+                  The insight you selected names videos that are no longer in
+                  the corpus.
+                </p>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => changeFilter(null)}
+                >
                   Clear filter
                 </button>
               </div>
@@ -188,8 +212,14 @@ export function PipelineView({ corpus, onCorpusChange, onAskAbout, embeddingMode
       </div>
 
       {graphMounted ? (
-        <div className="pipe-pane" hidden={sub !== 'graph'}>
+        <div className="pipe-pane" hidden={sub !== "graph"}>
           <ChunkGraphView />
+        </div>
+      ) : null}
+
+      {knowledgeMounted ? (
+        <div className="pipe-pane" hidden={sub !== "knowledge"}>
+          <KnowledgeGraphView />
         </div>
       ) : null}
     </section>

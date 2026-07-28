@@ -3,10 +3,11 @@
 [![CI](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/nmp-dsci/transcript-rag-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A YouTube-transcript RAG system built to be **measured, not asserted**. Three
+A YouTube-transcript RAG system built to be **measured, not asserted**. Four
 comparable answer paths run over one shared retrieval stack (hybrid BM25 + dense
-fusion, cross-encoder reranking, multi-hop and agentic loops), and every claim
-about retrieval quality is backed by a committed, reproducible eval run.
+fusion, cross-encoder reranking, multi-hop and agentic loops, plus a Neo4j
+entity/claim graph), and every claim about retrieval quality is backed by a
+committed, reproducible eval run.
 
 > **Licence:** MIT (`LICENSE`). **CI:** lint · type-check · tests · a deterministic
 > eval-regression gate — see `.github/workflows/ci.yml`. Copy `.env.example` to
@@ -28,6 +29,8 @@ flowchart LR
   subgraph ING["Ingestion"]
     U["YouTube URL / channel / search"] --> CH["segment-aware chunking<br/>+ context headers"]
     CH --> EMB["MiniLM local embeddings"] --> TC[("transcript_chunks")]
+    TC --> GEX["LLM entity/claim extraction<br/>(index-graph)"] --> GS[("Neo4j knowledge graph")]
+    GS --> COM["Leiden communities<br/>+ summaries"]
   end
   subgraph QRY["Query path"]
     Q["question"] --> SEM["semantic top-30"]
@@ -35,22 +38,26 @@ flowchart LR
     SEM --> RRF["RRF fusion"]
     BM --> RRF
     RRF --> RER["cross-encoder rerank → top-k"]
-    RER --> A{"3 answer paths"}
+    RER --> A{"4 answer paths"}
     A --> A1["single-hop"]
     A --> A2["recursive multi-hop"]
     A --> A3["agentic ReAct"]
-    A1 & A2 & A3 --> ANS["answer + timestamped citations"]
+    A --> A4["GraphRAG router<br/>local / global / temporal"]
+    A1 & A2 & A3 & A4 --> ANS["answer + timestamped citations"]
   end
   TC -.-> SEM
   TC -.-> BM
+  GS -.-> A4
+  COM -.-> A4
   ANS --> J["RAGAS judge + golden-set IR metrics"]
 ```
 
 ## Results: does hybrid retrieval help?
 
 `eval-ablation` sweeps three retrieval configurations over the golden set and
-reports rank-aware IR metrics. On the committed run (9 questions, 6 videos;
-`evals/runs/ablation-*.json`, reproducible with `uv run python -m src.cli
+reports rank-aware IR metrics. On the committed run (9 questions, 6 videos —
+the golden set as it stood when that snapshot was taken, since grown to 20
+entries; `evals/runs/ablation-*.json`, re-run with `uv run python -m src.cli
 eval-ablation`):
 
 | config | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
@@ -81,7 +88,7 @@ Then measure retrieval and validate everything:
 
 ```bash
 uv run python -m src.cli eval-ablation           # retrieval science (free, deterministic)
-uv run pytest -q                                 # 470+ Python tests
+uv run pytest -q                                 # 500+ Python tests
 cd frontend && npm test                          # frontend tests
 ```
 
@@ -91,11 +98,18 @@ cd frontend && npm test                          # frontend tests
   RRF hybrid fusion that *widens* recall, cross-encoder reranking, contextual
   headers, neighbour expansion, channel/video scoping.
 - **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
-  RAG, and a LangGraph ReAct agent — all comparable side by side.
+  RAG, a LangGraph ReAct agent, and a GraphRAG agent over a Neo4j entity/claim
+  knowledge graph — all comparable side by side.
+- **GraphRAG (P4):** per-chunk LLM entity/claim extraction (cached by chunk
+  hash), Leiden communities with up-front summaries, and a router that answers
+  local questions with subgraph + vector evidence, global questions over
+  community summaries, and temporal questions as dated claim timelines.
 - **Evaluation:** a RAGAS judge that derives each score from its own persisted
-  intermediates, a golden set with chunk-level labels, deterministic IR metrics
-  (`recall@k`, `MRR`, `NDCG`), an ablation harness, independent (non-DeepSeek)
-  judging, and committed run snapshots gated in CI.
+  intermediates, a golden set with chunk-level labels plus global/temporal
+  question types, deterministic IR metrics (`recall@k`, `MRR`, `NDCG`), an
+  ablation harness, a head-to-head engine matrix (`eval-matrix`), an
+  extraction-quality check, independent (non-DeepSeek) judging, and committed
+  run snapshots gated in CI.
 
 ---
 
@@ -148,6 +162,10 @@ YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS=
 YT_AGENT_RAG_AGENT_MAX_ITERATIONS=10
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=yt-agent-graph
+YT_AGENT_GRAPH_CACHE_PATH=.yt-agent/graph_cache
 YT_AGENT_RETRIEVAL_MODE=semantic
 YT_AGENT_RETRIEVAL_CANDIDATES=30
 YT_AGENT_RERANK_ENABLED=true
@@ -246,9 +264,10 @@ The ask flow has three prompts:
 
    ```text
    RAG setups:
-     [1] rag_llm (single-hop) — One retrieval across all indexed transcripts, then a single LLM answer.
-     [2] rag_llm (recursive)  — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
-     [3] rag_agent (agentic)  — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
+     [1] rag_llm (single-hop)        — One retrieval across all indexed transcripts, then a single LLM answer.
+     [2] rag_llm (recursive)         — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
+     [3] rag_agent (agentic)         — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
+     [4] graph_rag (knowledge graph) — Routes local/global/temporal, answers over the Neo4j entity/claim graph. Requires index-graph.
      [a] all (compare every setup)
    Choose setup(s) (e.g. 1,3 or a; blank to cancel):
    ```
@@ -332,8 +351,8 @@ before `serve` shows the React UI. Without a build, `/` falls back to the
 legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
-Four views (the tab formerly called **Library** is now **RAG Pipeline**; old
-`#library` links still resolve):
+Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
+`#library` and `#prompts` links still resolve):
 
 - **Chat** — the landing tab. Type a question and it is answered in a
   conversation thread with citations back to source timestamps. The default
@@ -365,35 +384,107 @@ Four views (the tab formerly called **Library** is now **RAG Pipeline**; old
   below. The tree itself (all videos → channel → video → chunks) has a sort
   control for "top" ordering by views, recency, chunk count, or title.
   Expanding a video lazily loads its chunks; selecting one shows its full
-  text, timestamp range, segment span, and a deep link into the video at that
-  moment. The **Retrieval Lab** at the top ranks the corpus for any query with
-  **BM25, semantic, or both side by side** — aligned rows show each chunk's
-  rank in the other mode (`↑2`, `↓1`, `only here`) plus an overlap count,
-  which is the fastest way to see where keyword and embedding retrieval
-  disagree. Indexing (single video or latest-N channel) lives in a panel here
-  and streams live per-stage progress (discover → fetch → chunk → embed →
-  summarize) instead of reporting only at the end. **Chunk graph** renders a
+  text, timestamp range, segment span, a deep link into the video at that
+  moment, and — beside the chunk — the entities and dated claims GraphRAG
+  extracted from it, so a reviewer can see what the graph made of a chunk
+  next to the chunk itself. The **Retrieval Lab** at the top ranks the corpus
+  for any query with **semantic, BM25, and/or graph side by side**; aligned
+  rows show each chunk's rank in the other modes (`↑2`, `↓1`, `only here`)
+  plus an overlap count, which is the fastest way to see where keyword,
+  embedding, and graph retrieval disagree — a mode that cannot run (e.g. Neo4j
+  unreachable) reports "unavailable" instead of failing the whole comparison.
+  Indexing lives in a panel here as a **queue**: adding a video or
+  channel never locks the form, so several can be queued back to back — each
+  job runs to completion in submission order (one worker, so a channel run
+  never contends with itself), and every job's live stage is visible in the
+  queue list at once, across every open browser tab, via
+  `GET /api/index/queue/stream`. A job's graph extraction stage runs
+  automatically after its vector index succeeds, keeping the knowledge graph's
+  entities and claims current for newly indexed videos without a manual
+  `index-graph` pass; community detection and summaries are *not* rebuilt per
+  job (that re-summarizes the whole graph via the LLM), so run `index-graph`
+  after a batch of ingests to refresh them. Extraction failure is
+  enrichment-only and is reported in that job's result without failing the
+  (already-successful) vector index. **Chunk graph** renders a
   kNN similarity graph of every chunk embedding as an SVG force-style layout,
   colour-coded by channel; typing a query highlights its retrieval
   neighbourhood in place, which is the fastest way to see whether the corpus
-  actually clusters around what a question is asking.
-- **Scoreboard** — per-setup aggregates across everything judged, groupable by
+  actually clusters around what a question is asking. **Knowledge graph**
+  gives GraphRAG's Neo4j entity/claim graph the same treatment — the graph
+  `graph_rag` actually reasons over is otherwise invisible from this tab, the
+  same way the raw chunk-similarity plot would be without Chunk graph. Nodes
+  are entities, laid out by Fruchterman-Reingold over the same weighted graph
+  (RELATES + co-mention) Leiden clusters — colour-coded by community, sized
+  by mention count. Clicking an entity opens its community's LLM summary,
+  aliases, and every dated claim extracted about it, each linking straight to
+  the source video at that timestamp — served by `GET /api/graph/knowledge`
+  and `GET /api/graph/knowledge/entities/{id}`. Only up to 400 of the ~2,000
+  entities render at once (by mention count), so the view supports
+  wheel-to-zoom toward the cursor, drag-to-pan, double-click-to-zoom, and
+  +/−/reset buttons for reaching a dense cluster or a touch/no-wheel input —
+  panning past a small pixel threshold suppresses the click that would
+  otherwise select the node under the pointer on release.
+- **Scoreboard** — the leaderboard for one **committed matrix run**: every setup
+  answering the *same* golden questions under one recorded config, graded by one
+  judge. A run picker selects which committed `matrix-*.json` to rank (newest by
+  default), so an older run stays available for comparison. Rows are groupable by
   **setup × answering model** so scores from different model versions are never
-  silently averaged. Each row shows average score per RAGAS metric, composite,
+  silently averaged, and each shows average score per RAGAS metric, composite,
   win rate, latency, and token estimate. An **efficiency panel** ranks setups
   by composite score per 1k tokens, so a setup spending more to score lower is
   visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
   ragas version, embedding model, metric definitions, and last-judged time.
-  Answers captured before model identity was recorded appear as
-  `— pre-provenance` and are excluded from cross-model comparison.
-- **Experiments** — the committed retrieval science. Renders the
-  `eval-ablation` sweeps from `evals/runs/` as a comparison table (semantic vs
-  hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value
-  per metric highlighted, deltas versus the semantic baseline, and a per-domain
-  toggle. Below it, the end-to-end golden runs with their retrieval config, judge
-  model, and headline scores. Everything shown is reproducible from a snapshot in
-  the repo — served by `GET /api/experiments`.
+  Underneath, a collapsed **Questions** panel opens the averages back up: one
+  row per golden question in the selected run — its text, domain, and question
+  type — with every setup's composite *on that question*, so a leading average
+  is traceable to the questions that produced it rather than taken on trust. A
+  cell the judge never scored reads `unjudged` (a run committed with
+  `--no-judge` has questions but no scores) and one whose engine failed reads
+  `error` with the message on hover, so a blank is never mistaken for a zero.
+
+  This tab reads the **eval** set, not the live one. Chat and its history stay
+  exploratory — ask anything, judge it, keep it — but they no longer decide the
+  ranking, because whichever questions happened to be asked would otherwise
+  determine which engine "won", and a newly added engine stayed invisible until
+  someone manually re-asked every question through it.
+- **Experiments** — the committed retrieval science, and where you start a run.
+  **Run eval matrix** kicks off a judged head-to-head in the background with live
+  per-cell progress (`POST /api/eval/matrix` + an SSE feed), committing a new
+  `matrix-*.json` the Scoreboard can then rank; cells already scored under the
+  same configuration are reused, so re-running after adding one question only
+  pays for what changed. The **head-to-head matrix** table renders first: every
+  RAG engine — including `graph_rag` — against the same golden questions, scored
+  by the same RAGAS + reference metrics, with a question-type switcher
+  (overall / local / global / temporal) and per-engine latency and context-token
+  columns, so "GraphRAG wins temporal, ties local, costs more" is a number
+  instead of a claim. Below it, the `eval-ablation` sweeps (semantic vs hybrid
+  vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value per
+  metric highlighted, deltas versus the semantic baseline, and a per-domain
+  toggle; then the end-to-end golden runs with their retrieval config, judge
+  model, and headline scores. Everything shown is reproducible from a snapshot
+  in the repo — served by `GET /api/experiments`.
+- **System Design** — how the app is actually built, as a click-through graph
+  rather than a document that drifts from the code. Left column: every answer
+  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`), the
+  summary-filter stage, the shared models (DeepSeek, the embedding model, the
+  reranker), and the stores each depends on (the three Chroma collections,
+  Neo4j) laid out as a node graph. Click any node to open its detail panel:
+  the exact system prompts it runs (highlighted `{template_vars}`, one-click
+  copy) and its live configuration — `top_k`, retrieval mode, Neo4j URI,
+  chunking parameters, whatever applies to that node — read straight off the
+  running `Settings` instance via `GET /api/system-design`, so the view can
+  never show a prompt or a setting the server isn't actually using. Every
+  answer path also carries **how a question flows through this path**: the
+  ordered, numbered steps it actually runs, with the live values interpolated
+  the same way the config table is — retrieval breadth and `top_k`, the rerank
+  model, the follow-up and novelty caps, the ReAct iteration cap, the graph
+  evidence caps — so a step can never describe behaviour the settings have
+  since changed. `graph_rag`'s flow is grouped by route, which is where the
+  three answer differently: the **local** route retrieves entity claims *and*
+  the same vector chunks `vector_rag` would, **global** reads the pre-built
+  community summaries instead, **temporal** reads the dated claim timeline,
+  and all three converge on one answer call.
 
 #### Frontend development
 
@@ -432,18 +523,28 @@ Endpoints (JSON unless noted):
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
-| `/api/setups` | GET | The three RAG setup descriptors |
-| `/api/experiments` | GET | Committed ablation + golden-run snapshots for the Experiments tab |
-| `/api/history` | GET | All captured conversations (with evaluations) |
+| `/api/setups` | GET | The four RAG setup descriptors |
+| `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
+| `/api/prompts` | GET | The live prompt registry, grouped by system |
+| `/api/system-design` | GET | The System Design graph: nodes, edges, and each node's prompts, live config, and (for answer paths) its `flow` steps |
+| `/api/history` | GET | All captured conversations (with evaluations) — the live set |
 | `/api/corpus` | GET | Indexed videos with metadata, chunk counts, and derived corpus insights |
 | `/api/corpus/{video_id}/chunks` | GET | Stored chunks for one video, ordered by index |
-| `/api/scoreboard` | GET | RAGAS aggregates; `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/scoreboard` | GET | Leaderboard for one committed matrix run — aggregated `setups` rows plus the run's per-question rows (`questions`, each setup's composite on each golden question); `run_id` picks the run, `group_by=setup\|setup_model`, `judge_model` filter |
+| `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any; 422 on an unknown setup) |
+| `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
 | `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
-| `/api/rank` | POST | Rank the corpus for a query by `semantic` and/or `bm25` |
+| `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` (a mode that cannot run is reported in `errors` and left out of `overlap`, rather than failing the request) |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
 | `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
+| `/api/index/queue` | POST | Queue an index job and return immediately; jobs run one at a time in submission order |
+| `/api/index/queue` | GET | Snapshot of every queued, running and finished job |
+| `/api/index/queue/stream` | GET | Live progress for every job at once (SSE, seeded with the current queue) |
 | `/api/chunk-graph` | POST | kNN similarity graph over chunk embeddings; `query` highlights its retrieval neighbourhood |
+| `/api/graph/knowledge` | GET | The GraphRAG entity graph: laid-out entity nodes, relation/co-mention edges, community summaries (503 if Neo4j is unreachable) |
+| `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
+| `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
 
 `/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
 per `rag_agent` retrieval iteration, carrying its query and chunk count),
@@ -501,10 +602,13 @@ reference-free RAGAS metrics cannot measure: what retrieval **missed**
 ```bash
 uv run python -m src.cli eval-golden --setup rag_llm
 uv run python -m src.cli eval-golden --setup rag_llm --retrieval hybrid
+uv run python -m src.cli eval-golden --setup graph_rag    # score the GraphRAG agent (needs index-graph)
 uv run python -m src.cli eval-golden --no-judge          # recall + IR metrics only, fast
 uv run python -m src.cli eval-golden --reference-metrics # + LLM reference metrics
 uv run python -m src.cli eval-golden --diff              # compare the last two runs
 ```
+
+`--setup` accepts `rag_llm`, `rag_llm_recursive`, `rag_agent`, or `graph_rag`.
 
 Grade with an **independent judge** instead of self-grading: point
 `YT_AGENT_JUDGE_MODEL` / `YT_AGENT_JUDGE_API_KEY` / `YT_AGENT_JUDGE_BASE_URL` at
@@ -534,7 +638,7 @@ uv run python -m src.cli eval-ablation
 `--top-k N` overrides the final chunk count each configuration retrieves
 (default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
 **Experiments** tab. To grow the
-golden set past its curated 9, see `docs/golden-set-curation.md` and the
+golden set past its curated 20, see `docs/golden-set-curation.md` and the
 `scripts/generate_golden_candidates.py` drafting scaffold.
 
 Dependencies: `ragas` (the eval metrics) and `uvicorn` (the server), both
@@ -744,10 +848,11 @@ uv run python -m src.cli rag-ask "$question" --rag_agent --max-iterations 8
 
 The agent inherits `--url`, `--filter-transcripts`, and `--top-k` for every retrieval call; only the query string changes per iteration.
 
-Agentic RAG flags (`--rag_llm` and `--rag_agent` are mutually exclusive):
+Agentic RAG flags (`--rag_llm`, `--rag_agent`, and `--graph_rag` are mutually exclusive):
 
 - `--rag_agent` — use the agentic LangGraph RAG agent (`rag_agent`) instead of the pipeline agent (`rag_llm`).
 - `--rag_llm` — use the pipeline RAG agent (`rag_llm`) explicitly. This is also the default when neither flag is passed.
+- `--graph_rag` — use the GraphRAG agent (`graph_rag`) instead; see §4b.
 - `--max-iterations N` — hard cap on ReAct loop iterations; only used with `--rag_agent`. Defaults to `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (or `10`). Ignored without `--rag_agent`.
 
 With `--rag_agent`, output streams live to the terminal: a `Researching...` header, then one `[N] Retrieving: "<query>"  →  K chunks` line per retrieval iteration (color-cycled on a TTY, plain text when piped), followed by the standard `Answer` / `References` blocks and an `Agent: N iterations (rag_agent)` footer. The `Answer` body uses a `## Key Findings` summary followed by one `## Finding N: <title>` section per insight, each with inline citations.
@@ -770,6 +875,130 @@ Summarize one transcript:
 
 ```bash
 uv run python -m src.cli summarize "$url"
+```
+
+#### 4b. GraphRAG — the knowledge-graph answer path
+
+GraphRAG (roadmap P4) builds an entity/claim knowledge graph over the indexed
+chunks and answers over it. It needs Neo4j (a docker-compose service) and one
+graph build:
+
+```bash
+docker compose up -d neo4j                       # bolt://localhost:7687, browser UI on :7474
+uv run python -m src.cli index-graph             # extract entities/claims per chunk + Leiden communities + summaries
+uv run python -m src.cli index-graph --refresh   # wipe and rebuild (extraction cache still applies)
+uv run python -m src.cli index-graph --skip-communities   # extraction only, no Leiden/summaries
+uv run python -m src.cli index-graph --max-chunks 20       # smoke-test on the first N chunks
+```
+
+Extraction is one DeepSeek call per chunk against a validated JSON contract,
+cached under `.yt-agent/graph_cache/` keyed on chunk id + text hash, so
+re-indexing only re-extracts changed chunks. A chunk whose extraction failed is
+never cached, so it retries on the next run rather than pinning the failure —
+the same rule the matrix cell cache follows. Every claim carries its source
+chunk id, video, timestamps and `upload_date` — graph answers keep the same
+deep-linkable citations as vector answers, and the temporal layer is just a
+sort on `upload_date`. Communities are detected with Leiden (igraph) and
+summarized up-front (Full GraphRAG — the whole-corpus bill is cents). Python
+deps: `neo4j` (the Bolt driver) and `python-igraph` (Leiden), both installed
+by `uv sync`.
+
+Ask through the graph:
+
+```bash
+uv run python -m src.cli rag-ask "$question" --graph_rag
+```
+
+A router call classifies each question and picks the evidence:
+
+| Route | Evidence | Answers |
+|---|---|---|
+| `local` | entity-anchored subgraph claims + the normal vector retrieval | specific facts ("do I keep negative gearing…") |
+| `global` | community summaries + representative dated claims | corpus-wide themes ("what arguments recur…") |
+| `temporal` | the entities' claim timeline ordered by `upload_date` | trend questions ("how did the stance evolve…") |
+
+Configuration: `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD` (defaults match
+`docker-compose.yml`) and `YT_AGENT_GRAPH_CACHE_PATH`. The graph is derived
+state — rebuildable from the corpus at any time.
+
+Check extraction quality against the hand-labelled sample (no LLM calls):
+
+```bash
+uv run python -m src.cli eval-graph-extraction
+```
+
+#### 4c. The head-to-head matrix
+
+Every answer engine — `rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`
+— answers the *same* golden questions and is scored by the *same* pipeline:
+deterministic id/IR metrics where the entry declares expected chunks, the
+RAGAS judge (faithfulness, answer relevancy, context precision) over each
+engine's own retrieved contexts, and reference-based metrics
+(`answer_correctness` against the hand-written reference — the primary verdict
+for `global`/`temporal` questions, which have no expected chunk list).
+
+**Every cell is cached by default.** Judging is the expensive part — several
+RAGAS sub-calls per metric, per engine, per question — so re-running
+`eval-matrix` after adding one new `--setups` entry does not re-score the
+engines that were already there. Each `(engine, question)` cell is cached
+under a fingerprint of the question plus the exact answering/judging
+configuration (`src/evals/matrix_cache.py`): the answer model, embedding
+model, retrieval mode, `top_k`, rerank config, and the judge model + RAGAS
+version — plus the settings the answering engine itself reads, scoped to the
+engines that read them (the recursion budget for `rag_llm_recursive`, the
+iteration cap for `rag_agent`, retrieval breadth for all of them), so tuning
+one engine's loop does not discard every other engine's cells. Change any of
+those — swap models, edit a golden question, upgrade the judge — and only the
+affected cells recompute; everything else is reused, at zero cost. A cell that errored is never cached, so it always
+retries on the next run rather than pinning the failure.
+
+```bash
+uv run python -m src.cli eval-matrix                                    # scores only uncached cells
+uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag,new_variant  # only new_variant is fresh
+uv run python -m src.cli eval-matrix --refresh                          # bypass cache, rescore everything
+uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics  # deterministic only, fast
+```
+
+A fully judged run over every engine can still take well over an hour the
+*first* time — judging is the bottleneck, not the cache. `scripts/run_matrix_chunked.py`
+is a driver for that: it reads and writes the exact same cache as `eval-matrix`
+(a run started with one can be finished with the other), adds one worker
+thread per engine so judging overlaps instead of running back to back, and
+supports a time budget so a bounded shell call is guaranteed to exit cleanly
+instead of being killed mid-cell.
+
+```bash
+uv run python scripts/run_matrix_chunked.py
+uv run python scripts/run_matrix_chunked.py --setups rag_llm,graph_rag
+uv run python scripts/run_matrix_chunked.py --max-seconds 300   # bounded pass, exit 3 to resume later
+```
+
+One run writes a committed `matrix-<timestamp>.json` under `evals/runs/` with
+the per-setup runs plus a comparison pivot (overall and per question type,
+with per-engine latency and context-token columns). The Experiments tab
+renders the newest matrix as an engines × metrics table with a question-type
+switcher, and the **Scoreboard** aggregates the same file into its leaderboard
+and win-rate table — one run, two views.
+
+You do not have to leave the app to produce one: **Run eval matrix** in the
+Experiments tab starts the same sweep as a background job with live per-cell
+progress, and commits the run when it finishes. The server runs at most one
+matrix sweep at a time (`src/api/matrix_runner.py`) — a second `POST
+/api/eval/matrix` while one is in flight returns that same run rather than
+starting a competing one, since two concurrent sweeps would contend on the
+one cell cache and stand up a second agent/judge stack against one Chroma
+path.
+
+`scripts/run_matrix_chunked.py` used to resume from a bespoke JSONL
+checkpoint (`.yt-agent/matrix_checkpoint.jsonl`) before the cell cache
+existed. `scripts/migrate_matrix_checkpoint.py` is the one-time, re-runnable
+migration that back-fills any rows still sitting in that legacy checkpoint
+into the cache (refusing a row whose recorded `config` no longer matches
+current settings), so switching over cost nothing already paid for:
+
+```bash
+uv run python scripts/migrate_matrix_checkpoint.py            # migrate legacy checkpoint rows into the cache
+uv run python scripts/migrate_matrix_checkpoint.py --dry-run  # report only
 ```
 
 #### 5. Compare and evaluate
@@ -817,26 +1046,40 @@ The report shows:
 src/
   transcripts/   # YouTube URL parsing, Supadata fetching, transcript models/storage
   rag/           # Raw segment storage, chunking, embeddings, retrieval, references, BM25,
-                 #   RRF fusion, cross-encoder reranking, chunk similarity graph
-  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic)
-                 #   with follow-up query rewriting for conversational history
+                 #   RRF fusion, cross-encoder reranking, chunk similarity graph, and the
+                 #   GraphRAG store/extraction/build (graph_store, graph_extract,
+                 #   graph_pipeline, communities, graph_models) plus the read-side views
+                 #   the workbench and graph ranking share (graph_view)
+  agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic,
+                 #   GraphRAG) with follow-up query rewriting for conversational history;
+                 #   prompts.py is the live prompt registry the System Design tab reads
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
-                 #   scoreboard, chunk graph, committed experiments
+                 #   scoreboard, chunk graph, knowledge graph, committed experiments,
+                 #   prompt registry, the System Design graph (system_design.py), the
+                 #   one-worker ingestion queue (ingestion_queue.py), and the in-app
+                 #   matrix sweep (matrix_runner.py, matrix_runs.py)
   chat/          # Setup registry + runner, shared chat history, static chat.html viewer
   evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
-                 #   ablation harness, regression runs
+                 #   ablation harness, regression runs, the head-to-head matrix (matrix.py),
+                 #   graph-extraction quality check (graph_extraction.py)
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
-evals/runs/      # Committed eval snapshots (ablation + golden runs), gated in CI
+evals/runs/      # Committed eval snapshots (ablation + golden + matrix runs); ablation
+                 #   and golden runs are gated in CI, matrix runs are not
 docs/            # Process docs, e.g. growing the golden set
-scripts/         # One-off maintenance (chunk-metadata backfill) and the
-                 #   golden-candidate drafting scaffold
+scripts/         # One-off maintenance (chunk-metadata backfill, legacy matrix-checkpoint
+                 #   migration), the golden-candidate drafting scaffold, and the
+                 #   cache-resumable matrix driver (run_matrix_chunked.py)
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
-  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score breakdowns
-  src/experiments/ # Experiments tab: ablation tables + golden-run summaries
-  src/pipeline/  # Corpus tree, chunk detail, Retrieval Lab, indexing panel, chunk graph
-  src/scoreboard/# Grouped aggregates, provenance bar, efficiency panel
+  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score strip
+  src/design/    # System Design tab: click-through node graph of prompts, live config,
+                 #   and each answer path's step-by-step flow
+  src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
+  src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries + the Run eval matrix trigger
+  src/pipeline/  # Corpus tree, chunk detail (+ per-chunk graph enrichment), Retrieval Lab, knowledge graph, indexing panel, chunk graph
+  src/scoreboard/# Run picker, grouped aggregates, provenance bar, efficiency panel,
+                 #   per-question breakdown of the selected run (QuestionsPanel)
 tests/
 ```
 
@@ -865,16 +1108,24 @@ There are two agent paths:
 
 A third path, the agentic RAG agent (`RagAgent`), is available via `rag-ask --rag_agent`.
 
-#### rag_llm vs rag_agent
+A fourth path, the GraphRAG agent (`GraphRagAgent`, see §4b), is available via
+`rag-ask --graph_rag`. It routes each question to `local`/`global`/`temporal`
+and answers over the Neo4j entity/claim graph instead of a single vector
+retrieval — but returns the same `RagTranscriptAnswer` shape as the other
+three, so it slots into the same chat setups, scoreboard, and eval-matrix
+comparisons.
 
-Two labels are used in the CLI, specs, and eval reports to distinguish the two `rag-ask` agent paths:
+#### rag_llm vs rag_agent vs graph_rag
+
+Three labels are used in the CLI, specs, and eval reports to distinguish the three `rag-ask` agent paths:
 
 | Label | Class | File | Selected by | Behavior |
 |---|---|---|---|---|
 | `rag_llm` | `RagTranscriptAgent` | `src/agents/rag_transcript_agent.py` | `--rag_llm`, or no flag (default) | Single-shot pipeline: one retrieval (or bounded recursive fan-out), then an LLM answer. |
 | `rag_agent` | `RagAgent` | `src/agents/rag_agent.py` | `rag-ask --rag_agent` | Agentic LangGraph ReAct loop: the LLM iteratively retrieves across sub-topics, accumulating evidence, until it decides it has enough, then writes a cited answer. |
+| `graph_rag` | `GraphRagAgent` | `src/agents/graph_agent.py` | `rag-ask --graph_rag` | Router classifies the question `local`/`global`/`temporal`, then answers from subgraph claims, community summaries, or a dated claim timeline (see §4b). |
 
-`rag_llm` is a documentation and CLI label only — no class, file, or import path was renamed. It refers to the existing `RagTranscriptAgent` exactly as it is. `--rag_agent` selects `rag_agent` (`RagAgent`); `--rag_llm` (or no flag) keeps `rag-ask` on `rag_llm`. The two flags are mutually exclusive. Both agents accept the same question and return the same `RagTranscriptAnswer` shape, so the two approaches can be compared side-by-side.
+`rag_llm` is a documentation and CLI label only — no class, file, or import path was renamed. It refers to the existing `RagTranscriptAgent` exactly as it is. `--rag_agent` selects `rag_agent` (`RagAgent`), `--graph_rag` selects `graph_rag` (`GraphRagAgent`); `--rag_llm` (or no flag) keeps `rag-ask` on `rag_llm`. The three flags are mutually exclusive. All three agents accept the same question and return the same `RagTranscriptAnswer` shape, so the approaches can be compared side-by-side.
 
 Indexing flow:
 

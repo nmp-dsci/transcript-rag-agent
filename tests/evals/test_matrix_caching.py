@@ -1,0 +1,179 @@
+"""run_matrix's default-on caching: reuse across runs, invalidate on change."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from src.chat.setups import SetupResult
+from src.evals.golden import GoldenEntry
+from src.evals.matrix import run_matrix
+
+
+def entries() -> list[GoldenEntry]:
+    return [
+        GoldenEntry.model_validate(
+            {
+                "id": "g001",
+                "question": "What changed in the budget?",
+                "reference_answer": "Negative gearing was grandfathered.",
+                "expected_video_ids": ["v1"],
+                "expected_chunk_ids": ["chunk:v1:0"],
+                "domain": "property",
+            }
+        )
+    ]
+
+
+@dataclass
+class FakeSettings:
+    deepseek_model: str = "deepseek-v4-flash"
+    embedding_model: str = "all-MiniLM-L6-v2"
+    retrieval_mode: str = "hybrid"
+    rag_top_k: int = 10
+    rerank_enabled: bool = True
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    neighbor_span: int = 0
+    neo4j_uri: str = "bolt://localhost:7687"
+    judge_model: str | None = None
+    judge_samples: int = 1
+
+
+class CountingRunner:
+    """A fake RagSetupRunner: records every call, answers deterministically."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+
+    def run(self, key: str, question: str, *, top_k=None, scope=None) -> SetupResult:
+        self.calls.append((key, question))
+        return SetupResult(
+            key=key,
+            title=key,
+            command=f"fake {key}",
+            answer=f"Answer from {key}",
+            token_estimate=10,
+            chunk_count=1,
+            elapsed_seconds=0.01,
+            contexts=["some context"],
+            retrieved_chunk_ids=["chunk:v1:0"],
+            model="deepseek-v4-flash",
+            embedding_model="all-MiniLM-L6-v2",
+            top_k=top_k or 10,
+        )
+
+
+def test_a_second_run_with_identical_config_reuses_every_cell(tmp_path) -> None:
+    runner = CountingRunner()
+    settings = FakeSettings()
+
+    first = run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert first["cache_misses"] == 1
+    assert first["cache_hits"] == 0
+    assert len(runner.calls) == 1
+
+    second = run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert second["cache_hits"] == 1
+    assert second["cache_misses"] == 0
+    assert len(runner.calls) == 1  # no new answer call — the cell was reused
+
+
+def test_adding_a_new_setup_only_scores_the_new_one(tmp_path) -> None:
+    runner = CountingRunner()
+    settings = FakeSettings()
+
+    run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert runner.calls == [("rag_llm", "What changed in the budget?")]
+
+    result = run_matrix(
+        runner, settings, setups=["rag_llm", "graph_rag"], entries=entries(), cache_dir=tmp_path
+    )
+    assert result["cache_hits"] == 1  # rag_llm reused
+    assert result["cache_misses"] == 1  # graph_rag freshly scored
+    assert runner.calls == [
+        ("rag_llm", "What changed in the budget?"),
+        ("graph_rag", "What changed in the budget?"),
+    ]
+    assert set(result["runs"].keys()) == {"rag_llm", "graph_rag"}
+
+
+def test_changing_the_answer_model_invalidates_the_cache(tmp_path) -> None:
+    runner = CountingRunner()
+    settings = FakeSettings()
+
+    run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    settings.deepseek_model = "deepseek-v5"
+
+    result = run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert result["cache_misses"] == 1
+    assert result["cache_hits"] == 0
+    assert len(runner.calls) == 2  # rescored under the new model
+
+
+def test_editing_the_golden_question_invalidates_the_cache(tmp_path) -> None:
+    runner = CountingRunner()
+    settings = FakeSettings()
+
+    run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+
+    edited = entries()
+    edited[0].question = "What changed in the budget this year?"
+    result = run_matrix(runner, settings, setups=["rag_llm"], entries=edited, cache_dir=tmp_path)
+    assert result["cache_misses"] == 1
+    assert len(runner.calls) == 2
+
+
+def test_refresh_bypasses_the_cache_even_when_nothing_changed(tmp_path) -> None:
+    runner = CountingRunner()
+    settings = FakeSettings()
+
+    run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    result = run_matrix(
+        runner,
+        settings,
+        setups=["rag_llm"],
+        entries=entries(),
+        cache_dir=tmp_path,
+        refresh=True,
+    )
+    assert result["cache_misses"] == 1
+    assert result["cache_hits"] == 0
+    assert len(runner.calls) == 2
+
+
+def test_a_failed_cell_is_not_cached_and_retries_next_run(tmp_path) -> None:
+    class FlakyRunner:
+        """Fails the first call, succeeds every call after — no shared
+        ``calls`` bookkeeping with CountingRunner, so each attempt counts once."""
+
+        def __init__(self) -> None:
+            self.attempts = 0
+
+        def run(self, key, question, *, top_k=None, scope=None):
+            self.attempts += 1
+            if self.attempts == 1:
+                return SetupResult(key=key, title=key, command="x", answer="", error="boom")
+            return SetupResult(
+                key=key,
+                title=key,
+                command=f"fake {key}",
+                answer=f"Answer from {key}",
+                token_estimate=10,
+                chunk_count=1,
+                elapsed_seconds=0.01,
+                contexts=["some context"],
+                retrieved_chunk_ids=["chunk:v1:0"],
+                model="deepseek-v4-flash",
+                embedding_model="all-MiniLM-L6-v2",
+                top_k=top_k or 10,
+            )
+
+    runner = FlakyRunner()
+    settings = FakeSettings()
+
+    first = run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert first["runs"]["rag_llm"]["entries"][0]["error"] == "boom"
+
+    second = run_matrix(runner, settings, setups=["rag_llm"], entries=entries(), cache_dir=tmp_path)
+    assert second["cache_misses"] == 1  # the errored cell was retried, not reused
+    assert second["runs"]["rag_llm"]["entries"][0]["error"] is None
+    assert runner.attempts == 2

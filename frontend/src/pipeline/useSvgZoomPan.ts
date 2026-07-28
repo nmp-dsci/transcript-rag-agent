@@ -1,0 +1,192 @@
+/**
+ * Wheel-to-zoom (toward the cursor), drag-to-pan, and +/-/reset controls for
+ * an SVG diagram.
+ *
+ * Applies as a `transform` on a <g> wrapping the diagram content; the outer
+ * <svg viewBox> is never touched, so the responsive scaling it already
+ * provides is untouched by panning or zooming.
+ */
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+export interface ZoomPanTransform {
+  x: number;
+  y: number;
+  k: number;
+}
+
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 8;
+const WHEEL_SENSITIVITY = 0.0015;
+const BUTTON_STEP = 1.4;
+/** Screen-pixel drag distance below which a pointer-up still counts as a
+ * click on whatever's underneath, rather than a pan. */
+const DRAG_THRESHOLD = 3;
+
+function clampScale(k: number): number {
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, k));
+}
+
+/** Pointer position in the <svg>'s own viewBox coordinate space — independent
+ * of CSS/responsive scaling and of the content group's own transform.
+ *
+ * `getScreenCTM`/`createSVGPoint` are unimplemented in jsdom (it throws
+ * rather than returning null), so a test environment falls back to the raw
+ * client coordinates instead of crashing the interaction.
+ */
+function svgPoint(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+  try {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: clientX, y: clientY };
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    const transformed = point.matrixTransform(ctm.inverse());
+    return { x: transformed.x, y: transformed.y };
+  } catch {
+    return { x: clientX, y: clientY };
+  }
+}
+
+export function useSvgZoomPan(svgRef: React.RefObject<SVGSVGElement | null>) {
+  const [transform, setTransform] = useState<ZoomPanTransform>({ x: 0, y: 0, k: 1 });
+  const dragOrigin = useRef<{ x: number; y: number } | null>(null);
+  const dragged = useRef(false);
+  const dragClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const zoomAt = useCallback(
+    (clientX: number, clientY: number, factor: number) => {
+      const svg = svgRef.current;
+      if (!svg) return;
+      const pointer = svgPoint(svg, clientX, clientY);
+      setTransform((current) => {
+        const nextK = clampScale(current.k * factor);
+        if (nextK === current.k) return current;
+        // Keep the world point under the pointer fixed on screen while k changes.
+        const worldX = (pointer.x - current.x) / current.k;
+        const worldY = (pointer.y - current.y) / current.k;
+        return { k: nextK, x: pointer.x - nextK * worldX, y: pointer.y - nextK * worldY };
+      });
+    },
+    [svgRef],
+  );
+
+  const zoomAtCenter = useCallback(
+    (factor: number) => {
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
+    },
+    [svgRef, zoomAt],
+  );
+
+  const onWheel = useCallback(
+    (event: WheelEvent) => {
+      event.preventDefault();
+      zoomAt(event.clientX, event.clientY, Math.exp(-event.deltaY * WHEEL_SENSITIVITY));
+    },
+    [zoomAt],
+  );
+
+  // React registers `wheel` on its root container as a *passive* listener, so
+  // preventDefault() from an onWheel prop is ignored and the page scrolls
+  // behind the diagram while it zooms. The listener has to be native, and
+  // explicitly non-passive, for the scroll to actually be suppressed. No
+  // dependency array: the <svg> mounts only once its data has loaded, and a
+  // ref's change doesn't re-run an effect, so rebinding per render is what
+  // guarantees the handler is attached to whatever element is current.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  });
+
+  const onPointerDown = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    if (event.button !== 0) return;
+    dragOrigin.current = { x: event.clientX, y: event.clientY };
+    dragged.current = false;
+    // Not implemented in every environment (jsdom included) — pan still
+    // works without capture, it just won't survive the pointer leaving the
+    // element mid-drag.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback(
+    (event: React.PointerEvent<SVGSVGElement>) => {
+      if (!dragOrigin.current) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const dx = event.clientX - dragOrigin.current.x;
+      const dy = event.clientY - dragOrigin.current.y;
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) dragged.current = true;
+      // A pure delta needs only the CTM's uniform scale, not its translation.
+      let scale = 1;
+      try {
+        scale = svg.getScreenCTM()?.a || 1;
+      } catch {
+        // Unimplemented in some test environments (jsdom) — fall back to 1:1.
+      }
+      dragOrigin.current = { x: event.clientX, y: event.clientY };
+      setTransform((current) => ({ ...current, x: current.x + dx / scale, y: current.y + dy / scale }));
+    },
+    [svgRef],
+  );
+
+  const endDrag = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    dragOrigin.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    // The terminating click (if any) fires synchronously right after this
+    // pointerup, so defer clearing `dragged` past it — onClickCapture still
+    // needs to see it when the drag ends inside the svg. But if the drag
+    // ends elsewhere (e.g. over the zoom-control buttons, which sit outside
+    // the svg subtree), no click ever reaches onClickCapture to clear it, so
+    // clear it here on a timer to avoid swallowing the next unrelated click.
+    if (dragClearTimer.current !== null) clearTimeout(dragClearTimer.current);
+    dragClearTimer.current = setTimeout(() => {
+      dragged.current = false;
+      dragClearTimer.current = null;
+    }, 0);
+  }, []);
+
+  // A capture-phase listener runs before the event reaches the node it was
+  // dispatched on, so stopping it here suppresses the node's own onClick
+  // instead of racing it — the drag that just ended must not also select
+  // whatever was under the pointer when it lifted.
+  const onClickCapture = useCallback((event: React.MouseEvent<SVGSVGElement>) => {
+    if (dragClearTimer.current !== null) {
+      clearTimeout(dragClearTimer.current);
+      dragClearTimer.current = null;
+    }
+    if (dragged.current) {
+      event.stopPropagation();
+      dragged.current = false;
+    }
+  }, []);
+
+  const onDoubleClick = useCallback(
+    (event: React.MouseEvent<SVGSVGElement>) => zoomAt(event.clientX, event.clientY, BUTTON_STEP),
+    [zoomAt],
+  );
+
+  const zoomIn = useCallback(() => zoomAtCenter(BUTTON_STEP), [zoomAtCenter]);
+  const zoomOut = useCallback(() => zoomAtCenter(1 / BUTTON_STEP), [zoomAtCenter]);
+  const reset = useCallback(() => setTransform({ x: 0, y: 0, k: 1 }), []);
+
+  return {
+    transform,
+    svgProps: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: endDrag,
+      onPointerLeave: endDrag,
+      onClickCapture,
+      onDoubleClick,
+    },
+    zoomIn,
+    zoomOut,
+    reset,
+    isZoomed: transform.k !== 1 || transform.x !== 0 || transform.y !== 0,
+  };
+}
