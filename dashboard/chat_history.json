@@ -91,7 +91,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -166,7 +167,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -233,7 +235,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -336,7 +339,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -431,7 +435,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -553,7 +558,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -675,7 +681,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -797,7 +804,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -892,7 +900,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -975,7 +984,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -1078,7 +1088,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -1227,7 +1238,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -1373,7 +1385,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -1614,7 +1627,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -1783,7 +1797,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -1902,7 +1917,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -2079,7 +2095,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -2231,7 +2248,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -2359,7 +2377,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -2609,7 +2628,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -2775,7 +2795,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -2912,7 +2933,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -3097,7 +3119,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -3244,7 +3267,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -3318,7 +3342,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -3472,7 +3497,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -3561,7 +3587,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -3644,7 +3671,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -3879,7 +3907,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -4041,7 +4070,8 @@
           "top_k": null,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -4139,7 +4169,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -4237,7 +4268,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -4362,7 +4394,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": null,
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -4598,7 +4631,8 @@
           "top_k": 6,
           "channel_id": "UCbqOFQ5u-ZiT6kgwo9viP2Q",
           "retrieval_mode": "hybrid",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -5957,7 +5991,8 @@
           "top_k": 10,
           "channel_id": "UCb69t9ZkE5z1KvCmfJoaifA",
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -6248,7 +6283,8 @@
               "followup_query": "Minimum 30% capital gains tax rate for property investors: how does it override the CGT discount and marginal tax rates?",
               "confidence": 0.75
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -6763,7 +6799,8 @@
               "followup_query": "Does the proposed minimum 30% capital gains tax rate replace the 50% CGT discount for property investors, or does it apply after the discount?",
               "confidence": 0.7
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -7469,7 +7506,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "graph_rag",
@@ -8085,7 +8123,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -8367,7 +8406,8 @@
               "followup_query": "What specific measures in the Australian federal budget affect owner-occupiers?",
               "confidence": 0.85
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -9372,7 +9412,8 @@
               "followup_query": "What are the plug-and-play resume professional summary templates as shown in the video, including the fill-in-the-blank structure?",
               "confidence": 0.8
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -10498,7 +10539,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "graph_rag",
@@ -11121,7 +11163,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -11337,7 +11380,8 @@
               "followup_query": "What were the differing opinions on the 2026 Australian federal budget among major property investment YouTube channels?",
               "confidence": 0.0
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -11655,7 +11699,8 @@
               "followup_query": "property investor commentator reactions to the Australian federal budget tax changes during Senate inquiry June 2026",
               "confidence": 0.6
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -12698,7 +12743,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "graph_rag",
@@ -13610,7 +13656,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -13941,7 +13988,8 @@
               "followup_query": "What specific responsibilities and implementation details define the 'first mate' agent that manages overhead? How does it interact with the human 'captain'?",
               "confidence": 0.95
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_llm_recursive",
@@ -15041,7 +15089,8 @@
               "followup_query": "How does the adversarial review in the no\u2011mistakes pipeline work, including the self\u2011correction and escalation process?",
               "confidence": 0.8
             }
-          ]
+          ],
+          "trace": []
         },
         {
           "key": "rag_agent",
@@ -16544,7 +16593,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         },
         {
           "key": "graph_rag",
@@ -17058,7 +17108,8 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
         }
       ]
     },
@@ -17764,7 +17815,182 @@
           "top_k": 10,
           "channel_id": null,
           "retrieval_mode": "semantic",
-          "followups": []
+          "followups": [],
+          "trace": []
+        }
+      ]
+    },
+    {
+      "id": "q-20260728-062217-0ee8",
+      "question": "What is negative gearing?",
+      "url": null,
+      "asked_at": "2026-07-28T06:22:17.708023+00:00",
+      "answers": [
+        {
+          "key": "rag_llm",
+          "title": "rag_llm (single-hop)",
+          "command": "uv run python -m src.cli rag-ask \"$question\" --rag_llm",
+          "answer": "The provided transcript chunks do not give an explicit definition of negative gearing, but they describe it as a tax arrangement where the costs of owning an investment property (e.g., interest, maintenance) exceed rental income, resulting in a net loss that can be offset against other income to reduce tax. The chunks explain that negative gearing benefits can be 'claimed' [1], that it is 'utilized for servicing' debt [3], and that after recent budget changes, losses that are not offset in a given year may be 'deferred' or 'quarantined' and carried forward to offset future gains [5][9]. However, a clear, standalone definition is not present in the retrieved material.",
+          "references": [
+            {
+              "label": "[1]",
+              "source_url": "https://www.youtube.com/watch?v=gXf7fRvuaXA",
+              "timestamp_url": "https://www.youtube.com/watch?v=gXf7fRvuaXA&t=278s",
+              "start_seconds": 278.0,
+              "end_seconds": 340.0,
+              "chunk_index": 1,
+              "video_id": "gXf7fRvuaXA"
+            },
+            {
+              "label": "[3]",
+              "source_url": "https://www.youtube.com/watch?v=7m27Go3K1d0",
+              "timestamp_url": "https://www.youtube.com/watch?v=7m27Go3K1d0&t=523s",
+              "start_seconds": 523.0,
+              "end_seconds": 572.0,
+              "chunk_index": 3,
+              "video_id": "7m27Go3K1d0"
+            },
+            {
+              "label": "[5]",
+              "source_url": "https://www.youtube.com/watch?v=ZiEGOgTC56Y",
+              "timestamp_url": "https://www.youtube.com/watch?v=ZiEGOgTC56Y&t=246s",
+              "start_seconds": 246.0,
+              "end_seconds": 310.0,
+              "chunk_index": 5,
+              "video_id": "ZiEGOgTC56Y"
+            },
+            {
+              "label": "[9]",
+              "source_url": "https://www.youtube.com/watch?v=gXf7fRvuaXA",
+              "timestamp_url": "https://www.youtube.com/watch?v=gXf7fRvuaXA&t=1215s",
+              "start_seconds": 1215.0,
+              "end_seconds": 1281.0,
+              "chunk_index": 9,
+              "video_id": "gXf7fRvuaXA"
+            }
+          ],
+          "token_estimate": 3220,
+          "chunk_count": 10,
+          "llm_calls": 1,
+          "iterations": null,
+          "terminated_reason": null,
+          "elapsed_seconds": 30.61,
+          "error": null,
+          "contexts": [
+            "eventually. So that was something that came out of the budget that wasn't spoken a lot about because the four things that they did implement, one being negative gearing, two being indexation and capital gains tax change, three being the changes to the way trusts and corporate beneficiaries, or colloquially known as a bucket company, and the fourth was the WATTO, the working Australian's tax offset, which is an interesting name that they've given it. But if we go back to the first one, negative gearing, we know that anyone who's held a property pre the 12th of May, which is the budget night, 7:30 p.m., they still get to keep their negative gearing benefits on their existing property portfolio, whether that's old or new. And moving forward from budget night onwards, negative gearing will only be applicable up until 1 July 2027 for all properties, and then only for new properties thereafter. So the white flag went up from the government. They're saying we're just not building enough property and we're now going to disincentivize as much as we can existing property to force people down the channel of buying new property. Um, and they've done that along with the",
+            "they've got liquidity because sometimes they may need to sell assets to meet their pension withdrawal, and you know, it's come from those early stages of buying good quality assets in their super with some leverage attached to it. >> That's the idea, right? So, you can have options later in life, what whatever it may be. Maybe what we'll do as well was But you touched on commercial there with us just a little bit. Has the budget affected commercial at all? And you know, how do you how do you see >> Yeah, it hasn't changed. Negative gearing you can still get You can still claim negative gearing on commercial property from how we read the budget, although not that you're buying commercial property for the purpose of negative gearing. You're trying ultimately trying to You're ultimately trying to buy the property to get and gain passive cash flow or passive income straight away. But there will be a a look-in, you know, a lot of people start to look at commercial lot earlier. Maybe to balance their portfolio. If you've got properties which are not necessarily giving you any negative gearing benefits anymore or tax refunds, people will look to balance that out",
+            "actual supply issues that are going to come from the changes in the budget, they haven't even come through yet because all um negative gearing to anyone that had bought to that point was already grandfathered. Right? So people who are putting up rents right now are people who um are able to because of supply and demand, such as angry investors doing it. if they didn't have the ability to do it cuz the market wasn't paying it, they wouldn't be able to get it, right? So, the market has to be willing to pay it. We're seeing interest rates go up. Um, now we're seeing things like negative gearing removed. So, people won't actually be able to for one service the debt um because negative gearing is utilized for for servicing. And then also, um, man, people just aren't going to they're not going to want to do it because if they can't actually write it off, like it's one thing to be able to service it, but then if they can't actually write it off either, they're disincentivizing people to buy existing residential. that is going to take investors out of the marketplace, stop people buying and increase rents. Like it's it's 100% going to happen and play out.",
+            "you know, what the portfolio playbook looks like for them. Um, and to kick us off, Arj, you know, I'd like to get some insights. Are there any misconceptions that people have about the budget? >> Is there any misinformation that you're seeing out there? >> Yeah, it's a really good question. So firstly, there is major misconceptions and people are just making wrong assumptions on how to interpret this. >> I'll give you one. Negative gearing is gone. No, it isn't. >> Firstly, I want to tell people when they'll feel the difference and if they'll feel it. Number one is if you bought a property in June, right now in 2026. Firstly, it's very uncommon. Not some people do, but not all people actually set up their gearing to come in monthly or anything like that. They get it to come in at the end of the financial year when they run their tax returns. >> So, anyone who owns properties pre-budget, firstly, those properties remain as is. And then if you bought a property in June 2026, your July 2027 tax returns would be the exact same. >> You would still get negative guarant form. So when you produce a tax return in July 2027, because even if it was purchased after the budget, the change",
+            "can also change. >> Government could also change. >> Mhm. >> Lots can change. But let's not go into the hypotheticals. The first part is that's the first misconception. People think it's changed now. No. 2027 tax returns the same. 2028 tax return is when the difference shows on whether when you bought the property. >> Yep. The second part is deferred versus gone. People don't understand that difference. When it's deferred, when you sell in the future, your negative gearing piles up like it does in a family trust today >> and like it did in a family trust pre-budget. The negative gearing just piles up and then one day it's positive. It chews up against that negative gearing. Yep. >> And then one day you sell it, it chews up against negative gearing to date that is piled up and still, you know, put together. And then on top of that, any tax discounts and all that stuff, which by the way, again, that's another misconception that you don't get CGT discounts. You do. >> Inflation indexation is just a new method to calculate it. So, I think if the budget's done a good job on anything, it's done a good job on confusing the crap out of people on what actually is and what actually isn't.",
+            "won't sell any of our properties which are grandfathered. So, that means that as we buy more properties in the future, we know that we can't claim any negative gearing benefits on it. We're going to redirect as much of our hard savings or our capital into paying down those debts first. So, any properties that are going to be under the grandfathered negative geared provision, we'll try to maintain and leave the debt as long and as much as we can. And we'll work towards paying down debt on any new assets we buy. So, again, I always mentioned in a number of podcasts now that I've done since the budget, we need to be calculative and deliberate. And that's the strategy that now needs to be implemented for all all assets that we buy. In this particular cases I mentioned, we're going to focus on working towards paying down properties or assets where there is debt post budget night, debt that we can't claim as a negative gearing benefit either against our own income or or potentially structure. Work towards paying them down first and maintain any existing properties that we may have owned in our own name, helping offset the tax that we pay. So, that's things that investors",
+            "because the negative gearing uh or the negative cash on some of those areas are so so so weak, you know, or bad in a lot of those areas, too. So, man, I think there's going to be a big shift. I'm calling 100 bucks a week by by January next year from when budget was called today, which is a 14-month window. I'd even call it 12-month window from from then to, you know, May 12th to to May 12th next year. But as absolute minimum, I'm saying till from to July 1 next year from budget night, I'd say 100 bucks a week plus. >> Well, you're on you're on the record. So, we'll check in next year. And I I do want to um I I do want to correct the record because I did say earlier that listings are up 22%. But I I don't necessarily I was just thinking about this today, Sam. Um >> I was just thinking about this today. So, you know, have at disagree with me if you will, but >> the the supply demand here, right? People incorrectly assume that because of tax or incorrectly I don't know I'll open up to the floor. People assume that because of the tax changes um investors are now selling. People have cold feet they're selling. Um I I don't buy it. I don't buy it. Look I think that the",
+            ">> Something needs to change for it to make more sense. And just because now you're retaining the previous benefits of negative gearing and CGT, doesn't make it better. You know, you haven't kept the um you haven't made it more attractive, you just made established less attractive. >> Yeah, well I manage a large cohort of some of some of Australia's best property investors and I'm very blessed and lucky that I I get paid to learn every day. I get to see thousands upon thousands of properties purchased all over the all over Australia and all over the world. Um so that's the the benefit. I get to see so many different things happen, but speaking with as many and you know, my clients know that I've slept in the office a couple of nights and worked incredibly hard post budget just to get a grasp of everything, but just chatting with them, you know, what's your your thoughts? What would your plans be? And every single one of them said, \"Jeremy, we're not going to sell. We're not going to sell and if we see rents increase around us because there's a lot of topic around rents increasing and I think that might be again something that will happen because if",
+            "30 to 47, subject to the legislation and obviously subject to a next government if a liberal One Nation get in. So, they're things that we need to be considering. But for early investors, game doesn't change. Buying in your own name. More sophisticated investors, you probably now need to look at companies as part of the structure. >> Maybe we can also share without negative gearing now like what what does that mean for a first-time investor? You know, let's say it's it's costing him 20 grand a year in the first few years to hold. Uh well, what happens to that? >> Yeah, generally speaking, if someone was at a 30% tax rate, they'd be getting back $6,000 as cash in their refund, which was good. That means that you had a property 20 grand negatively geared, you're getting back $6,000. It only cost you about 14 out of your pocket, couple hundred bucks a week. Now, you'll no longer get that moving forward. It's only for new properties. So, anyone buying existing, you you've got to foot the bill of 20 grand. It carries forward, so doesn't not lost into the ether. It is you know, quarantined within side the personal tax return. I'm sure they'll create some section in",
+            "buying that 5% cheaper than they were able to buy it >> two months ago, 2 3 months ago. Well, they've got an opportunity now to buy something at say 25k discount, okay, in in that example. >> Now, if at the same time they weren't able to write those rents off, you know, and depre um yeah, we'll write it off over that period of time and claim that negative gearing back, which let's say on the average property u was say 20 to 30 grand a year, that's 7 to $10,000 that they're previously able to write off that they're not able to write off now. But if they just got a 20 to $25,000 discount buying that property, well, that kind of covers that shortfall they would have had for say 3 or 4 years. But in that in that meantime as well, well, if rents go up by $100 or $200 a week over the next 12 to 24 months on that asset, you're literally going to bridge the gap with genuine cash flow, not just a cash back from the ATO and a negative gearing offset, but by genuine increasing cash flow and rents. So, so for sophisticated investors, I think they're understanding that these are the times of we're in a lull in the market right now. And that's why, like you asked me before we jumped"
+          ],
+          "retrieved_chunk_ids": [
+            "chunk:gXf7fRvuaXA:5",
+            "chunk:gXf7fRvuaXA:46",
+            "chunk:7m27Go3K1d0:10",
+            "chunk:ZiEGOgTC56Y:2",
+            "chunk:ZiEGOgTC56Y:4",
+            "chunk:gXf7fRvuaXA:11",
+            "chunk:7m27Go3K1d0:19",
+            "chunk:gXf7fRvuaXA:33",
+            "chunk:gXf7fRvuaXA:22",
+            "chunk:7m27Go3K1d0:12"
+          ],
+          "evaluation": null,
+          "model": "deepseek-v4-flash",
+          "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "top_k": 10,
+          "channel_id": null,
+          "retrieval_mode": "semantic",
+          "followups": [
+            {
+              "topic": "Definition and basic mechanics of negative gearing",
+              "rationale": "The retrieved chunks only describe the effects and changes to negative gearing, but lack a clear, standalone definition of the concept itself. A follow-up retrieval would provide the fundamental explanation of what negative gearing is and how it works as a tax strategy for investment properties.",
+              "followup_query": "what is negative gearing definition for investment property tax deduction australia",
+              "confidence": 0.9
+            },
+            {
+              "topic": "Carry-forward and deferred treatment of negative gearing losses",
+              "rationale": "Multiple chunks mention that negative gearing losses are 'deferred' or 'quarantined' and can pile up to be offset against future income or capital gains [5][9]. The exact mechanics of this carry-forward rule (e.g., how it interacts with CGT, time limits) are not fully explained, creating a gap that a focused query could fill.",
+              "followup_query": "how does negative gearing carry forward work australia deferred losses",
+              "confidence": 0.8
+            }
+          ],
+          "trace": [
+            {
+              "phase": "retrieve",
+              "label": "Retrieve candidates",
+              "detail": "semantic search over the whole corpus \u2014 30 candidates (asked for 30)",
+              "chunk_ids": [
+                "chunk:gXf7fRvuaXA:5",
+                "chunk:gXf7fRvuaXA:46",
+                "chunk:gXf7fRvuaXA:11",
+                "chunk:7m27Go3K1d0:10",
+                "chunk:gXf7fRvuaXA:22",
+                "chunk:ZiEGOgTC56Y:2",
+                "chunk:ZiEGOgTC56Y:4",
+                "chunk:7m27Go3K1d0:12",
+                "chunk:gXf7fRvuaXA:14",
+                "chunk:5N-okeDdIuI:28",
+                "chunk:5N-okeDdIuI:24",
+                "chunk:gXf7fRvuaXA:10",
+                "chunk:ZiEGOgTC56Y:26",
+                "chunk:ZiEGOgTC56Y:11",
+                "chunk:7m27Go3K1d0:23",
+                "chunk:7m27Go3K1d0:33",
+                "chunk:iQyg-KypKAA:6",
+                "chunk:5N-okeDdIuI:25",
+                "chunk:gXf7fRvuaXA:0",
+                "chunk:MGjXraYMbhQ:2",
+                "chunk:ozwmlFencJI:8",
+                "chunk:5N-okeDdIuI:23",
+                "chunk:5N-okeDdIuI:21",
+                "chunk:gXf7fRvuaXA:33",
+                "chunk:gXf7fRvuaXA:24",
+                "chunk:7m27Go3K1d0:1",
+                "chunk:ZiEGOgTC56Y:16",
+                "chunk:7m27Go3K1d0:19",
+                "chunk:ozwmlFencJI:9",
+                "chunk:7m27Go3K1d0:41"
+              ],
+              "model": null,
+              "elapsed_ms": 7682,
+              "iteration": null
+            },
+            {
+              "phase": "rerank",
+              "label": "Cross-encoder rerank",
+              "detail": "reordered 30 candidates, kept top 10",
+              "chunk_ids": [
+                "chunk:gXf7fRvuaXA:5",
+                "chunk:gXf7fRvuaXA:46",
+                "chunk:7m27Go3K1d0:10",
+                "chunk:ZiEGOgTC56Y:2",
+                "chunk:ZiEGOgTC56Y:4",
+                "chunk:gXf7fRvuaXA:11",
+                "chunk:7m27Go3K1d0:19",
+                "chunk:gXf7fRvuaXA:33",
+                "chunk:gXf7fRvuaXA:22",
+                "chunk:7m27Go3K1d0:12"
+              ],
+              "model": null,
+              "elapsed_ms": 8874,
+              "iteration": null
+            },
+            {
+              "phase": "llm",
+              "label": "Answer",
+              "detail": "one answer call over the retrieved chunks, citing chunk ids",
+              "chunk_ids": [],
+              "model": "deepseek-v4-flash",
+              "elapsed_ms": null,
+              "iteration": null
+            }
+          ]
         }
       ]
     }
