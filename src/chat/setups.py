@@ -129,7 +129,7 @@ def setup_spec(key: str) -> SetupSpec:
 
 @dataclass
 class AskScope:
-    """Everything that narrows or shapes retrieval for one question.
+    """Everything that shapes one question beyond the question itself.
 
     Grouped into one object because it has to travel unchanged through the
     runner, both agents, and the recursive follow-up loop — passing five loose
@@ -141,6 +141,10 @@ class AskScope:
     filter_transcripts: bool = False
     # Condensed prior turns for follow-up questions.
     history: list[str] = field(default_factory=list)
+    # A document the user shared, already fetched and formatted for review.
+    # Unlike the fields above it does not narrow retrieval — it changes what
+    # the answer is *about*, which is why only the single-hop path accepts it.
+    document_context: str | None = None
 
 
 @dataclass
@@ -532,6 +536,7 @@ class RagSetupRunner:
             transcript_filter_top_k=self._settings.transcript_filter_top_k,
             transcript_filter_min_score=self._settings.transcript_filter_min_score,
             history=list(scope.history),
+            document_context=scope.document_context,
             **extra,
         )
 

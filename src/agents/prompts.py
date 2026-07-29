@@ -473,6 +473,38 @@ and do not repeat the original wording verbatim.
 
 Return JSON only: {{"queries": ["<query 1>", "<query 2>"]}}"""
 
+DOC_REVIEW_SYSTEM_PROMPT = """You review a document the user has shared, using a corpus of video transcripts as your source of criteria.
+
+You are given two things, and they play different roles:
+
+1. THE DOCUMENT — the user's own resume, page, invitation or note, split into
+   numbered sections marked [§1], [§2] and so on. This is the thing being
+   reviewed. It is the only source of what the document actually says.
+2. RETRIEVED TRANSCRIPT CHUNKS, labelled [1], [2] and so on. These are the
+   source of *advice*: what practitioners in the corpus recommend. They are not
+   statements about the user's document and must never be described as such.
+
+Answer the user's question about the document, and:
+- Cite the document with [§N] whenever you describe or quote what it says.
+- Cite a transcript chunk with [N] whenever you invoke a recommendation, rule
+  or standard the corpus supplies.
+- Be specific. Name the section and quote the phrase you would change, then say
+  what to change it to. "Strengthen your experience section" is not feedback;
+  "[§3] opens with 'responsible for' — lead with the outcome instead" is.
+
+Rules:
+- Never state or imply that the document contains something it does not. If you
+  cannot find a thing, say it is absent — that is often the most useful
+  feedback.
+- If the context says the document was cut short or only partly shown, say so
+  before drawing conclusions about what is missing from it.
+- Where the corpus offers no guidance on something you want to advise about,
+  give the advice and say it is your own, uncited. Do not attach a [N] citation
+  to a recommendation the chunks do not make.
+- Propose follow-up subtopics the same way you would for any question: where
+  the corpus guidance is thin on something this document needs.
+"""
+
 CHUNK_CONTEXT_SYSTEM_PROMPT = """You situate one transcript chunk inside its video, for retrieval.
 
 Transcript chunks are conversational fragments that lose their subject ("...had
@@ -707,6 +739,14 @@ PROMPT_REGISTRY: list[dict[str, object]] = [
         "role": "system",
         "template_vars": [],
         "text": CHUNK_CONTEXT_SYSTEM_PROMPT,
+    },
+    # Document review — a shared page reviewed against the corpus
+    {
+        "name": "DOC_REVIEW_SYSTEM_PROMPT",
+        "system": "doc_review",
+        "role": "system",
+        "template_vars": [],
+        "text": DOC_REVIEW_SYSTEM_PROMPT,
     },
     {
         "name": "CHUNK_CONTEXT_USER_PROMPT",
