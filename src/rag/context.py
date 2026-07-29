@@ -306,7 +306,22 @@ class MultiTranscriptRagContextProvider:
                     )
                 )
         else:
+            before_trim = len(retrieved)
             retrieved = retrieved[:top_k]
+            if trace is not None and before_trim > len(retrieved):
+                # Without this the preceding stage's step is the last word on
+                # what the answer call saw, and it would overstate the count.
+                trace.append(
+                    TraceStep(
+                        phase="merge",
+                        label="Trim to top_k",
+                        detail=(
+                            f"no reranker; kept the first {len(retrieved)} of "
+                            f"{before_trim} in ranking order"
+                        ),
+                        chunk_ids=chunk_ids_for(retrieved),
+                    )
+                )
         if self.neighbor_span > 0:
             expand_started = time.monotonic()
             before_expand = len(retrieved)

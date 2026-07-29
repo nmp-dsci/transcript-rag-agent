@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field, ValidationError
 from src.agents.context import TranscriptContext
 from src.agents.models import (
     FollowupSubtopic,
+    QueryRewrite,
     RagAnswerReference,
     RagQuestionRequest,
     RagTranscriptAnswer,
@@ -85,6 +87,10 @@ class RagTranscriptAgent:
         self.context_provider = context_provider
         self.max_context_chars = max_context_chars
         self.last_context: TranscriptContext | None = None
+        # The most recent answer's query rewrite, or None when no rewrite call
+        # was made. Both are per-answer state: reset by ``answer`` so a failed
+        # run can never report the previous question's retrieval as its own.
+        self.last_rewrite: QueryRewrite | None = None
 
     @classmethod
     def from_settings(
@@ -130,6 +136,8 @@ class RagTranscriptAgent:
         return cls(ChatOpenAI(**kwargs), context_provider)
 
     def answer(self, request: RagQuestionRequest) -> RagTranscriptAnswer:
+        self.last_context = None
+        self.last_rewrite = None
         if request.recursive:
             return self._answer_recursive(request)
         return self._answer_single_hop(request)
@@ -144,17 +152,24 @@ class RagTranscriptAgent:
         """
         if not request.history:
             return request.question
+        started = time.monotonic()
         try:
             content = self._invoke_plain(
                 build_rewrite_prompt(request.question, request.history)
             )
             rewritten = str(_json_object(content).get("query", "")).strip()
-            return rewritten or request.question
         except Exception:
             # A failed rewrite must degrade to the raw question, never block
             # the answer.
             logger.warning("Query rewrite failed; retrieving on the raw question")
-            return request.question
+            rewritten = ""
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        self.last_rewrite = QueryRewrite(
+            query=rewritten or request.question,
+            degraded=not rewritten,
+            elapsed_ms=elapsed_ms,
+        )
+        return self.last_rewrite.query
 
     def _invoke_plain(self, user_prompt: str) -> str:
         response = self.llm.invoke([HumanMessage(content=user_prompt)])

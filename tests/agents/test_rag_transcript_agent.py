@@ -97,6 +97,33 @@ def test_rag_transcript_agent_answers_and_backfills_references() -> None:
     assert "retrieved transcript chunks" in llm.messages[0].content
 
 
+def test_answer_clears_the_previous_questions_retrieval_state() -> None:
+    """Agents are reused across questions, so a failed run must not inherit one.
+
+    ``last_context``/``last_rewrite`` are what the chat runner persists as the
+    trace; leaving the prior answer's values in place would attribute that
+    retrieval to a question that never got that far.
+    """
+
+    class FailingProvider(FakeProvider):
+        def get_context(self, *args, **kwargs):
+            raise RuntimeError("chroma is down")
+
+    llm = FakeLlm('{"question": "q", "answer": "first [1]"}')
+    agent = RagTranscriptAgent(llm, FakeProvider())
+    agent.answer(RagQuestionRequest(question="first", top_k=3))
+    assert agent.last_context is not None
+
+    agent.context_provider = FailingProvider()
+    try:
+        agent.answer(RagQuestionRequest(question="second", top_k=3))
+    except RuntimeError:
+        pass
+
+    assert agent.last_context is None
+    assert agent.last_rewrite is None
+
+
 def test_single_hop_surfaces_followups_without_extra_retrieval() -> None:
     llm = FakeLlm(
         """

@@ -567,6 +567,42 @@ def test_get_context_trace_includes_filter_and_rerank_stages() -> None:
     assert context.trace[2].chunk_ids == ["chunk:bbbbbbbbbbb:0"]
 
 
+class FakeWideChunkStore(FakeMultiChunkStore):
+    """Returns more candidates than top_k, so the final trim actually cuts."""
+
+    def query_all(self, query: str, top_k: int):
+        self.calls.append(("all", query, top_k))
+        return [_multi_chunk("aaaaaaaaaaa"), _multi_chunk("bbbbbbbbbbb")]
+
+
+def test_get_context_trace_records_the_trim_to_top_k() -> None:
+    """Without this the retrieve step would overstate what the LLM saw."""
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeWideChunkStore(),
+    )
+
+    context = provider.get_context("capital gains", top_k=1)
+
+    assert [step.phase for step in context.trace] == ["retrieve", "merge"]
+    trim = context.trace[1]
+    assert trim.label == "Trim to top_k"
+    assert "kept the first 1 of 2" in trim.detail
+    assert trim.chunk_ids == ["chunk:aaaaaaaaaaa:0"]
+    assert len(context.retrieved_chunks) == 1
+
+
+def test_get_context_trace_omits_the_trim_step_when_nothing_was_cut() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeWideChunkStore(),
+    )
+
+    context = provider.get_context("capital gains", top_k=10)
+
+    assert [step.phase for step in context.trace] == ["retrieve"]
+
+
 def test_get_context_trace_records_neighbor_expansion() -> None:
     provider = MultiTranscriptRagContextProvider(
         raw_store=FakeMultiRawStore(),

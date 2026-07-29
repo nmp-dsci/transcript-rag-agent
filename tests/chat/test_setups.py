@@ -131,6 +131,8 @@ def test_run_captures_setup_error(settings) -> None:
 
     assert result.error == "boom"
     assert result.answer == ""
+    # Nothing was recorded before the failure, so an empty trace is the honest one.
+    assert result.trace == []
 
 
 def test_run_many_reports_progress(settings) -> None:
@@ -201,6 +203,87 @@ def test_single_hop_trace_combines_context_stages_and_llm_step(settings) -> None
     assert [step["phase"] for step in result.trace] == ["retrieve", "llm"]
     assert result.trace[0]["chunk_ids"] == ["chunk:vid00000001:0", "chunk:vid00000001:1"]
     assert result.trace[1]["model"] == settings.deepseek_model
+
+
+def test_single_hop_trace_records_the_history_driven_rewrite(settings) -> None:
+    """A follow-up costs an extra LLM call; the trace must not under-report it."""
+    from src.agents.models import QueryRewrite
+    from src.chat.setups import AskScope
+
+    fake = FakeRagLlm()
+    fake.last_context = TracingContext()
+    fake.last_rewrite = QueryRewrite(query="capital gains discount changes", elapsed_ms=90)
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run(
+        "rag_llm", "what about the second one?", scope=AskScope(history=["earlier turn"])
+    )
+
+    assert [step["phase"] for step in result.trace] == ["llm", "retrieve", "llm"]
+    rewrite_step = result.trace[0]
+    assert rewrite_step["label"] == "Rewrite query"
+    assert "capital gains discount changes" in rewrite_step["detail"]
+    assert rewrite_step["elapsed_ms"] == 90
+
+
+def test_trace_marks_a_degraded_rewrite_as_degraded(settings) -> None:
+    from src.agents.models import QueryRewrite
+
+    fake = FakeRagLlm()
+    fake.last_context = TracingContext()
+    fake.last_rewrite = QueryRewrite(query="what about it?", degraded=True)
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm", "what about it?")
+
+    assert "rewrite failed" in result.trace[0]["detail"]
+
+
+def test_recursive_trace_names_what_the_first_retrieval_embedded(settings) -> None:
+    from src.agents.models import QueryRewrite, RecursionStage, RecursionTrace
+
+    recursion = RecursionTrace(
+        stages=[RecursionStage(name="first_pass", llm_calls=1, retrievals=1)],
+        terminated_reason="no_followups_requested",
+    )
+
+    class RecursiveFake(FakeRagLlm):
+        def answer(self, request):
+            return RagTranscriptAnswer(
+                question=request.question, answer="first", recursion=recursion
+            )
+
+    fake = RecursiveFake()
+    fake.last_rewrite = QueryRewrite(query="negative gearing cap timing")
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm_recursive", "and when does it start?")
+
+    labels = [step["label"] for step in result.trace]
+    assert labels[:2] == ["Rewrite query", "First retrieval"]
+    assert "negative gearing cap timing" in result.trace[1]["detail"]
+    assert "as asked" not in result.trace[1]["detail"]
+
+
+def test_recursive_trace_without_history_says_the_question_was_used(settings) -> None:
+    from src.agents.models import RecursionStage, RecursionTrace
+
+    recursion = RecursionTrace(
+        stages=[RecursionStage(name="first_pass", llm_calls=1, retrievals=1)],
+        terminated_reason="no_followups_requested",
+    )
+
+    class RecursiveFake(FakeRagLlm):
+        def answer(self, request):
+            return RagTranscriptAnswer(
+                question=request.question, answer="first", recursion=recursion
+            )
+
+    runner = _runner(settings, rag_llm=RecursiveFake())
+    result = runner.run("rag_llm_recursive", "q")
+
+    assert result.trace[0]["label"] == "First retrieval"
+    assert result.trace[0]["detail"] == "initial retrieval for the question as asked"
 
 
 def test_recursive_trace_flattens_the_recursion_trace(settings) -> None:
@@ -310,6 +393,88 @@ def test_agent_trace_summarizes_when_events_were_not_streamed(settings) -> None:
 
     assert len(result.trace) == 1
     assert "4 retrieval iterations" in result.trace[0]["detail"]
+
+
+def test_failed_answer_keeps_the_retrieval_steps_already_recorded(settings) -> None:
+    """Retrieval succeeded and the answer call blew up — that is the diagnostic."""
+
+    class FailsAfterRetrieval(FakeRagLlm):
+        def __init__(self) -> None:
+            super().__init__()
+            self.last_context = TracingContext()
+
+        def answer(self, request):
+            raise RuntimeError("deepseek 503")
+
+    runner = _runner(settings, rag_llm=FailsAfterRetrieval())
+    result = runner.run("rag_llm", "what about X?")
+
+    assert result.error == "deepseek 503"
+    assert [step["label"] for step in result.trace] == ["Retrieve candidates"]
+    assert result.trace[0]["chunk_ids"] == ["chunk:vid00000001:0", "chunk:vid00000001:1"]
+    # The answer call never returned, so no answer step may appear.
+    assert all(step["phase"] != "llm" for step in result.trace)
+
+
+def test_failed_graph_answer_keeps_the_route_and_evidence_steps(settings) -> None:
+    from src.agents.models import TraceStep
+
+    class FailingGraphAgent:
+        def __init__(self) -> None:
+            self.last_context = None
+            self.last_trace = [
+                TraceStep(phase="route", label="Route → global", detail="no entities"),
+                TraceStep(phase="retrieve", label="Community summaries", detail="12 summaries"),
+            ]
+
+        def answer(self, request):
+            raise RuntimeError("neo4j unavailable")
+
+    runner = _runner(settings)
+    runner._graph_rag_agent = FailingGraphAgent()
+    result = runner.run("graph_rag", "q")
+
+    assert result.error == "neo4j unavailable"
+    assert [step["label"] for step in result.trace] == [
+        "Route → global",
+        "Community summaries",
+    ]
+
+
+def test_failed_agentic_answer_keeps_the_events_already_streamed(settings) -> None:
+    from src.agents.models import AgentProgressEvent
+
+    class FailsMidStream(FakeRagAgent):
+        def answer_streaming(self, request, on_event):
+            on_event(
+                AgentProgressEvent(
+                    iteration=1,
+                    event_type="retrieval_complete",
+                    query="sub-question one",
+                    chunk_count=5,
+                )
+            )
+            raise RuntimeError("tool loop crashed")
+
+    runner = _runner(settings, rag_agent=FailsMidStream())
+    result = runner.run("rag_agent", "q", on_agent_event=lambda event: None)
+
+    assert result.error == "tool loop crashed"
+    assert [step["label"] for step in result.trace] == ["Retrieve (iteration 1)"]
+
+
+def test_failed_agentic_answer_without_events_reports_no_steps(settings) -> None:
+    """A half-run iteration count would summarise a loop that never finished."""
+
+    class FailsBeforeStreaming(FakeRagAgent):
+        def answer(self, request):
+            raise RuntimeError("boom")
+
+    runner = _runner(settings, rag_agent=FailsBeforeStreaming())
+    result = runner.run("rag_agent", "q")
+
+    assert result.error == "boom"
+    assert result.trace == []
 
 
 def test_graph_trace_passes_through_the_agents_recorded_steps(settings) -> None:

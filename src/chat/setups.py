@@ -15,6 +15,7 @@ from typing import Any, Callable
 
 from src.agents.models import (
     AgentProgressEvent,
+    QueryRewrite,
     RagQuestionRequest,
     RecursionOptions,
     RecursionTrace,
@@ -302,37 +303,38 @@ class RagSetupRunner:
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
         scope = scope or AskScope()
+        model = self._settings.deepseek_model
         started = time.monotonic()
+        # Bound before the call that can raise, so the failure path can persist
+        # whatever the run had already recorded instead of an empty trace.
+        agent: Any = None
+        events: list[AgentProgressEvent] = []
         try:
             if key == "rag_agent":
-                events: list[AgentProgressEvent] = []
+                agent = self._agentic()
+                # Only the streaming path has per-iteration events to collect;
+                # passing None is what makes the CLI/eval path call answer().
+                collect: AgentEventFn | None = None
+                if on_agent_event is not None:
+                    stream = on_agent_event
 
-                def collecting(event: AgentProgressEvent) -> None:
-                    events.append(event)
-                    if on_agent_event is not None:
-                        on_agent_event(event)
+                    def collect_event(event: AgentProgressEvent) -> None:
+                        events.append(event)
+                        stream(event)
 
-                answer, agent = self._run_rag_agent(
-                    question,
-                    url,
-                    effective_top_k,
-                    collecting if on_agent_event is not None else None,
-                    scope,
-                )
-                context = agent.last_context
+                    collect = collect_event
+                answer = self._run_rag_agent(agent, question, url, effective_top_k, collect, scope)
                 return self._build_result(
                     spec,
                     url,
                     answer,
-                    context,
+                    agent.last_context,
                     top_k=effective_top_k,
                     iterations=agent.last_iteration_count,
                     terminated_reason=agent.last_terminated_reason,
                     elapsed=time.monotonic() - started,
                     scope=scope,
-                    trace=_agent_event_steps(
-                        events, agent.last_iteration_count, self._settings.deepseek_model
-                    ),
+                    trace=_agent_event_steps(events, agent.last_iteration_count, model),
                 )
             if key == "graph_rag":
                 agent = self._graph()
@@ -349,17 +351,20 @@ class RagSetupRunner:
                     scope=scope,
                     trace=list(getattr(agent, "last_trace", None) or []),
                 )
-            answer, agent, llm_calls = self._run_rag_llm(key, question, url, effective_top_k, scope)
+            agent = self._rag_llm()
+            answer, llm_calls = self._run_rag_llm(agent, key, question, url, effective_top_k, scope)
+            rewrite = getattr(agent, "last_rewrite", None)
             if answer.recursion is not None:
-                trace = _recursion_steps(answer.recursion, self._settings.deepseek_model)
+                trace = _recursion_steps(answer.recursion, model, rewrite)
             else:
                 trace = [
+                    *_rewrite_steps(rewrite, model),
                     *(getattr(agent.last_context, "trace", None) or []),
                     TraceStep(
                         phase="llm",
                         label="Answer",
                         detail="one answer call over the retrieved chunks, citing chunk ids",
-                        model=self._settings.deepseek_model,
+                        model=model,
                     ),
                 ]
             return self._build_result(
@@ -377,6 +382,7 @@ class RagSetupRunner:
                 trace=trace,
             )
         except Exception as exc:  # one failing setup must not abort the comparison
+            partial = _partial_trace(key, agent, events, model)
             return SetupResult(
                 key=spec.key,
                 title=spec.title,
@@ -389,6 +395,7 @@ class RagSetupRunner:
                 top_k=effective_top_k,
                 channel_id=scope.channel_id,
                 retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
+                trace=[step.model_dump(mode="json") for step in partial],
             )
 
     def _request(self, question, url, top_k, scope: "AskScope", **extra):
@@ -405,8 +412,7 @@ class RagSetupRunner:
             **extra,
         )
 
-    def _run_rag_llm(self, key, question, url, top_k, scope: "AskScope"):
-        agent = self._rag_llm()
+    def _run_rag_llm(self, agent, key, question, url, top_k, scope: "AskScope"):
         if key == "rag_llm_recursive":
             request = self._request(
                 question,
@@ -425,15 +431,14 @@ class RagSetupRunner:
             answer = agent.answer(request)
             recursion = answer.recursion
             llm_calls = sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
-            return answer, agent, llm_calls
-        return agent.answer(self._request(question, url, top_k, scope)), agent, 1
+            return answer, llm_calls
+        return agent.answer(self._request(question, url, top_k, scope)), 1
 
-    def _run_rag_agent(self, question, url, top_k, on_agent_event=None, scope=None):
-        agent = self._agentic()
+    def _run_rag_agent(self, agent, question, url, top_k, on_agent_event=None, scope=None):
         request = self._request(question, url, top_k, scope or AskScope())
         if on_agent_event is None:
-            return agent.answer(request), agent
-        return agent.answer_streaming(request, on_agent_event), agent
+            return agent.answer(request)
+        return agent.answer_streaming(request, on_agent_event)
 
     def _build_result(
         self,
@@ -485,6 +490,53 @@ class RagSetupRunner:
         )
 
 
+def _partial_trace(
+    key: str, agent: Any, events: list[AgentProgressEvent], model: str
+) -> list[TraceStep]:
+    """What a failed run had already recorded, and nothing beyond it.
+
+    Retrieval often succeeds and the answer call is what fails, so the steps
+    collected up to that point are exactly the diagnostic the error entry
+    needs. Nothing is reconstructed: agents reset this state per answer, so an
+    absent record means the stage never ran on this question and no step for it
+    is emitted.
+    """
+    if key == "graph_rag":
+        return list(getattr(agent, "last_trace", None) or [])
+    if key == "rag_agent":
+        # Iterations are deliberately not passed: a count read off a half-run
+        # agent would summarise a loop that never finished.
+        return _agent_event_steps(events, None, model)
+    steps = _rewrite_steps(getattr(agent, "last_rewrite", None), model)
+    steps.extend(getattr(getattr(agent, "last_context", None), "trace", None) or [])
+    return steps
+
+
+def _rewrite_steps(rewrite: QueryRewrite | None, model: str) -> list[TraceStep]:
+    """The history-aware query rewrite, when one was actually attempted.
+
+    ``retrieval_query`` only calls the LLM when the request carries prior
+    turns, so no record means no call was made and no step belongs in the
+    trace. A rewrite that fell back to the raw question reads as the failure it
+    was rather than as a successful rewrite.
+    """
+    if rewrite is None:
+        return []
+    return [
+        TraceStep(
+            phase="llm",
+            label="Rewrite query",
+            detail=(
+                f'rewrite failed; retrieval ran on the question as asked: "{rewrite.query}"'
+                if rewrite.degraded
+                else f'follow-up rewritten to stand alone: "{rewrite.query}"'
+            ),
+            model=model,
+            elapsed_ms=rewrite.elapsed_ms,
+        )
+    ]
+
+
 def _agent_event_steps(
     events: list[AgentProgressEvent], iterations: int | None, model: str
 ) -> list[TraceStep]:
@@ -531,18 +583,23 @@ def _agent_event_steps(
     return steps
 
 
-def _recursion_steps(recursion: RecursionTrace, model: str) -> list[TraceStep]:
+def _recursion_steps(
+    recursion: RecursionTrace, model: str, rewrite: QueryRewrite | None = None
+) -> list[TraceStep]:
     """A recursive answer's own RecursionTrace, flattened into TraceSteps.
 
     Converts rather than re-records: every fact here (subtopic queries, the
     chunks each follow-up retrieved, merge/skip outcomes, whether synthesis
-    ran) is read off the trace the agent already built while answering.
+    ran) is read off the trace the agent already built while answering. The
+    rewrite is the one thing the RecursionTrace does not carry, so it is passed
+    in — the first retrieval embedded the rewritten query, not the question.
     """
     steps: list[TraceStep] = [
+        *_rewrite_steps(rewrite, model),
         TraceStep(
             phase="retrieve",
             label="First retrieval",
-            detail="initial retrieval for the question as asked",
+            detail=_first_retrieval_detail(rewrite),
         ),
         TraceStep(
             phase="llm",
@@ -593,6 +650,15 @@ def _recursion_steps(recursion: RecursionTrace, model: str) -> list[TraceStep]:
             )
         )
     return steps
+
+
+def _first_retrieval_detail(rewrite: QueryRewrite | None) -> str:
+    """What the first retrieval actually embedded."""
+    if rewrite is None:
+        return "initial retrieval for the question as asked"
+    if rewrite.degraded:
+        return "rewrite failed; initial retrieval for the question as asked"
+    return f'initial retrieval on the rewritten query "{rewrite.query}"'
 
 
 def _followups_to_dicts(subtopics: list[Any]) -> list[dict[str, Any]]:

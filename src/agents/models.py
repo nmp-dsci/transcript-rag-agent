@@ -115,6 +115,19 @@ class RagTranscriptAnswer(BaseModel):
     recursion: RecursionTrace | None = None
 
 
+class QueryRewrite(BaseModel):
+    """What a history-aware query rewrite actually produced for one answer.
+
+    Recorded only when the rewrite call was made, so its absence means no call
+    happened. ``degraded`` marks a rewrite that fell back to the raw question —
+    the trace must never read a failed rewrite as a successful one.
+    """
+
+    query: str
+    degraded: bool = False
+    elapsed_ms: int | None = None
+
+
 class TraceStep(BaseModel):
     """One step of an answer path's execution, persisted with the answer.
 

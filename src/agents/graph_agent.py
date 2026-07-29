@@ -111,6 +111,10 @@ class GraphRagAgent:
         self.max_communities = max_communities
         self.last_context: GraphContext | None = None
         self.last_route: str | None = None
+        # Why the most recent route is what it is: a router exception degrades
+        # to "local", and the trace has to say so rather than read like a
+        # genuine local classification.
+        self.last_route_error: str | None = None
         self.last_llm_calls: int = 0
         # Ordered TraceSteps for the most recent answer() call, so the runner
         # can persist how the route decision and evidence assembly actually went.
@@ -142,6 +146,7 @@ class GraphRagAgent:
     def route(self, question: str) -> tuple[str, list[str]]:
         """Classify the question and name its entities; degrade to local."""
         self.last_llm_calls += 1
+        self.last_route_error = None
         try:
             response = self.llm.invoke(
                 [_system(GRAPH_ROUTER_SYSTEM_PROMPT), _human(build_graph_router_prompt(question))]
@@ -156,6 +161,7 @@ class GraphRagAgent:
             return route, entities
         except Exception as exc:
             logger.warning("Graph router failed (%s); defaulting to local", exc)
+            self.last_route_error = str(exc)
             return "local", []
 
     # ── answering ─────────────────────────────────────────────────────────
@@ -166,12 +172,16 @@ class GraphRagAgent:
         route_started = time.monotonic()
         route, entity_terms = self.route(request.question)
         self.last_route = route
+        route_error = self.last_route_error
         self.last_trace.append(
             TraceStep(
                 phase="route",
-                label=f"Route → {route}",
+                label=f"Route → {route}" + (" (router failed)" if route_error else ""),
                 detail=(
-                    f"router named entities: {', '.join(entity_terms)}"
+                    f"router call failed ({route_error}); defaulted to local with no "
+                    "named entities — content words will anchor the graph"
+                    if route_error
+                    else f"router named entities: {', '.join(entity_terms)}"
                     if entity_terms
                     else "router named no entities; content words will anchor the graph"
                 ),

@@ -202,6 +202,38 @@ def test_global_route_trace_counts_communities() -> None:
     assert "1 community summaries" in reduce_step.detail
 
 
+def test_router_failure_is_distinguishable_from_a_local_classification() -> None:
+    """A degraded route must not read like a genuine "local" answer."""
+
+    class FailingRouterLLM(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                raise RuntimeError("router timed out")
+            return type("R", (), {"content": "Answer [g1]."})()
+
+    agent = GraphRagAgent(FailingRouterLLM("local", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what did they say about gearing?"))
+
+    route_step = agent.last_trace[0]
+    assert route_step.label == "Route → local (router failed)"
+    assert "router timed out" in route_step.detail
+
+    genuine = GraphRagAgent(RoutedLLM("local", "Answer [g1]."), FakeStore())
+    genuine.answer(RagQuestionRequest(question="what did they say about gearing?"))
+    assert genuine.last_trace[0].label == "Route → local"
+    assert "failed" not in genuine.last_trace[0].detail
+
+
+def test_route_error_clears_on_the_next_successful_route() -> None:
+    agent = GraphRagAgent(RoutedLLM("temporal", "Timeline [g1]."), FakeStore())
+    agent.last_route_error = "stale failure"
+    agent.answer(RagQuestionRequest(question="how did views change?"))
+
+    assert agent.last_route_error is None
+    assert agent.last_trace[0].label == "Route → temporal"
+
+
 def test_trace_resets_between_answers() -> None:
     agent = GraphRagAgent(RoutedLLM("temporal", "Timeline [g1]."), FakeStore())
     agent.answer(RagQuestionRequest(question="first?"))
