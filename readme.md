@@ -129,6 +129,10 @@ cd frontend && npm test                                   # frontend tests
 - **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
   RAG, a LangGraph ReAct agent, and a GraphRAG agent over a Neo4j entity/claim
   knowledge graph — all comparable side by side.
+- **Document review in the chat:** a URL in a message is fetched behind SSRF
+  guards, extracted into sections, and reviewed against the corpus — your
+  document supplies what is critiqued, the transcripts supply the criteria, and
+  the two are cited separately.
 - **GraphRAG (P4):** per-chunk LLM entity/claim extraction (cached by chunk
   hash), Leiden communities with up-front summaries, and a router that answers
   local questions with subgraph + vector evidence, global questions over
@@ -315,6 +319,53 @@ Both variants are also registered as setups — `rag_llm_hyde` and
 `rag_llm_contextual` — which answer identically to `rag_llm` and differ only in
 the retrieval they read. That is what lets `eval-matrix` and the Scoreboard
 attribute a score gap to retrieval alone.
+
+### Reviewing a document you share
+
+Paste a URL into a chat message and the answer becomes a review of that page.
+There is no mode to switch and no second tab — a message without a URL behaves
+exactly as it always has, and a YouTube link keeps its existing meaning (it
+scopes retrieval to that video).
+
+```text
+any feedback on https://example.com/my-cv ?
+```
+
+The page is fetched, extracted into sections, rendered as a card above the
+answer, and answered over **both** the document and the transcript corpus. The
+two are cited differently on purpose: `[§3]` points at a section of *your*
+document, `[7]` at a transcript chunk that supplies the recommendation. So the
+answer can say "your §3 opens with 'responsible for' — [7] argues for leading
+with the outcome" and both halves are checkable.
+
+What the design commits to, and why:
+
+- **Extracted text, not the live page.** An iframe is refused by most real
+  sites via `X-Frame-Options`/CSP and a screenshot needs a headless browser —
+  but the deciding reason is that extracted text is what the model actually
+  reads, so it is what you should be able to inspect.
+- **Only the single-hop path answers a review.** The agentic and graph paths
+  build their own requests and would ignore the document, producing a corpus
+  answer dressed as a review.
+- **Follow-ups reuse the document.** Asking "now check the experience section"
+  in the same thread re-reads the stored text rather than re-fetching, so a
+  conversation about one document cannot quietly become about two.
+- **The fetched text never enters `chat_history.json`.** That file is
+  committed; the document lives under gitignored `.yt-agent/documents/` and the
+  history holds only its id. Clearing the store loses the cards, not the
+  conversation.
+- **Partial reads are labelled.** A page over the fetch cap, or a document too
+  long for the context budget, says so in the card *and* in the model's own
+  context — a review of 6 of 40 sections must not read as a review of the
+  document.
+
+Fetching a user-supplied URL is a server-side request forgery primitive, so
+`src/documents/fetch.py` bounds it on five axes: `http(s)` only, every resolved
+address must be globally routable, redirects are followed manually with the
+same address check on each hop, the body is streamed under a byte cap, and only
+text content types are accepted. The one gap that remains — DNS rebinding
+between validation and connection — is documented in that module rather than
+papered over.
 
 ### Interactive Chat
 
