@@ -12,6 +12,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from pydantic import ValidationError
 
+from src.agents.llm import chat_model_kwargs
 from src.agents.context import TranscriptContext
 from src.agents.models import (
     AgentProgressEvent,
@@ -70,12 +71,7 @@ class RagAgent:
         settings: Settings,
         context_provider: MultiTranscriptRagContextProvider | None = None,
     ) -> "RagAgent":
-        kwargs: dict[str, object] = {
-            "api_key": settings.deepseek_api_key,
-            "model": settings.deepseek_model,
-        }
-        if settings.deepseek_base_url:
-            kwargs["base_url"] = settings.deepseek_base_url
+        kwargs = chat_model_kwargs(settings)
         if context_provider is None:
             fetcher = SuperdataTranscriptFetcher(
                 settings.superdata_api_key,
@@ -123,9 +119,7 @@ class RagAgent:
         inputs = self._initial_state(request)
         messages: list = list(inputs["messages"])
         try:
-            for state in graph.stream(
-                inputs, config=self._run_config(), stream_mode="values"
-            ):
+            for state in graph.stream(inputs, config=self._run_config(), stream_mode="values"):
                 if state.get("messages"):
                     messages = state["messages"]
             self.last_terminated_reason = "completed"
@@ -154,9 +148,7 @@ class RagAgent:
         iteration = 0
         pending_query: str | None = None
         try:
-            for update in graph.stream(
-                inputs, config=self._run_config(), stream_mode="updates"
-            ):
+            for update in graph.stream(inputs, config=self._run_config(), stream_mode="updates"):
                 for node_name, node_output in update.items():
                     node_messages = (node_output or {}).get("messages", [])
                     if node_name == "generate_query_or_respond":
@@ -167,9 +159,7 @@ class RagAgent:
                         if pending_query is not None:
                             iteration += 1
                     elif node_name == "retrieve":
-                        self._emit_retrieve_event(
-                            node_messages, iteration, pending_query, on_event
-                        )
+                        self._emit_retrieve_event(node_messages, iteration, pending_query, on_event)
                         pending_query = None
             self.last_terminated_reason = "completed"
         except GraphRecursionError:
@@ -354,9 +344,7 @@ class RagAgent:
     @staticmethod
     def _last_ai_content(messages: list) -> str:
         for message in reversed(messages):
-            is_ai = (
-                isinstance(message, AIMessage) or getattr(message, "type", None) == "ai"
-            )
+            is_ai = isinstance(message, AIMessage) or getattr(message, "type", None) == "ai"
             if not is_ai:
                 continue
             if getattr(message, "tool_calls", None):

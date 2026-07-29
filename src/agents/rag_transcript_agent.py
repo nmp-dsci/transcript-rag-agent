@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field, ValidationError
 
+from src.agents.llm import chat_model_kwargs
 from src.agents.context import TranscriptContext
 from src.agents.models import (
     FollowupSubtopic,
@@ -50,8 +51,7 @@ class RagContextTooLongError(RuntimeError):
 
 
 class ChatModel(Protocol):
-    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object:
-        ...
+    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object: ...
 
 
 class _FirstPassResult(BaseModel):
@@ -105,12 +105,7 @@ class RagTranscriptAgent:
         settings: Settings,
         context_provider: MultiTranscriptRagContextProvider | None = None,
     ) -> "RagTranscriptAgent":
-        kwargs: dict[str, object] = {
-            "api_key": settings.deepseek_api_key,
-            "model": settings.deepseek_model,
-        }
-        if settings.deepseek_base_url:
-            kwargs["base_url"] = settings.deepseek_base_url
+        kwargs = chat_model_kwargs(settings)
         if context_provider is None:
             fetcher = SuperdataTranscriptFetcher(
                 settings.superdata_api_key,
@@ -162,9 +157,7 @@ class RagTranscriptAgent:
             return request.question
         started = time.monotonic()
         try:
-            content = self._invoke_plain(
-                build_rewrite_prompt(request.question, request.history)
-            )
+            content = self._invoke_plain(build_rewrite_prompt(request.question, request.history))
             rewritten = str(_json_object(content).get("query", "")).strip()
         except Exception:
             # A failed rewrite must degrade to the raw question, never block
@@ -195,12 +188,8 @@ class RagTranscriptAgent:
             retrieval_mode=request.retrieval_mode,
             pass_label="retrieval",
         )
-        first = self._invoke_first_pass(
-            request.question, retrieval.context_text, request.history
-        )
-        references = first.references or _fallback_references(
-            first.answer, retrieval.context
-        )
+        first = self._invoke_first_pass(request.question, retrieval.context_text, request.history)
+        references = first.references or _fallback_references(first.answer, retrieval.context)
         return RagTranscriptAnswer(
             question=request.question,
             answer=first.answer,
@@ -235,12 +224,8 @@ class RagTranscriptAgent:
             retrieval_mode=request.retrieval_mode,
             pass_label="first retrieval",
         )
-        first = self._invoke_first_pass(
-            request.question, retrieval.context_text, request.history
-        )
-        first_references = first.references or _fallback_references(
-            first.answer, retrieval.context
-        )
+        first = self._invoke_first_pass(request.question, retrieval.context_text, request.history)
+        first_references = first.references or _fallback_references(first.answer, retrieval.context)
         proposed_count = len(first.subtopics)
         if (
             max_depth == 0
@@ -293,9 +278,7 @@ class RagTranscriptAgent:
                 executed_count=0,
             )
 
-        seen_chunk_keys = {
-            _chunk_key(chunk) for chunk in retrieval.context.retrieved_chunks
-        }
+        seen_chunk_keys = {_chunk_key(chunk) for chunk in retrieval.context.retrieved_chunks}
         evidence: list[SubtopicEvidence] = [*duplicate_evidence]
         merged_contexts = [retrieval.context]
         followup_top_k = options.followup_top_k or request.top_k
@@ -351,9 +334,7 @@ class RagTranscriptAgent:
         ]
         if not executed:
             reason = (
-                "max_total_followups_reached"
-                if max_total_followups == 0
-                else "no_new_evidence"
+                "max_total_followups_reached" if max_total_followups == 0 else "no_new_evidence"
             )
             return self._first_pass_answer_with_trace(
                 request=request,
@@ -383,9 +364,7 @@ class RagTranscriptAgent:
                 proposed_count=proposed_count,
                 executed_count=executed_count,
             )
-        stages.append(
-            RecursionStage(name="final_synthesis", llm_calls=1, retrievals=0)
-        )
+        stages.append(RecursionStage(name="final_synthesis", llm_calls=1, retrievals=0))
         references = _sort_references(
             [
                 *synthesis.preserved_references,
@@ -541,23 +520,15 @@ class RagTranscriptAgent:
         if context_text:
             messages.append(SystemMessage(content=build_transcript_context_prompt(context_text)))
         messages.append(HumanMessage(content=user_prompt))
-        response = self.llm.invoke(
-            messages
-        )
+        response = self.llm.invoke(messages)
         content = getattr(response, "content", response)
         if isinstance(content, list):
             return "\n".join(str(item) for item in content)
         return str(content)
 
 
-def _fallback_references(
-    answer_text: str, context: TranscriptContext
-) -> list[RagAnswerReference]:
-    cited = {
-        int(match)
-        for match in re.findall(r"\[(\d+)\]", answer_text)
-        if match.isdigit()
-    }
+def _fallback_references(answer_text: str, context: TranscriptContext) -> list[RagAnswerReference]:
+    cited = {int(match) for match in re.findall(r"\[(\d+)\]", answer_text) if match.isdigit()}
     chunks = context.retrieved_chunks or []
     if not cited:
         cited = set(range(1, len(chunks) + 1))
@@ -571,9 +542,7 @@ def _fallback_references(
             RagAnswerReference(
                 label=f"[{label_index}]",
                 source_url=chunk.source_url,
-                timestamp_url=youtube_timestamp_url(
-                    str(chunk.source_url), chunk.start_seconds
-                ),
+                timestamp_url=youtube_timestamp_url(str(chunk.source_url), chunk.start_seconds),
                 start_seconds=chunk.start_seconds,
                 end_seconds=chunk.end_seconds,
                 chunk_index=chunk.chunk_index,
@@ -726,8 +695,7 @@ def _synthesis_references_valid(
     allowed_subtopic_labels: dict[int, set[str]] = {}
     for item in evidence:
         allowed_subtopic_labels[item.subtopic_index] = {
-            f"[s{item.subtopic_index}.{index}]"
-            for index, _chunk in enumerate(item.chunks, 1)
+            f"[s{item.subtopic_index}.{index}]" for index, _chunk in enumerate(item.chunks, 1)
         }
     for answer in result.subtopic_answers:
         allowed = allowed_subtopic_labels.get(answer.subtopic_index, set())

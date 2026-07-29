@@ -6,7 +6,12 @@ from typing import Protocol
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
-from src.agents.context import RawTranscriptContextProvider, TranscriptContext, TranscriptContextProvider
+from src.agents.llm import chat_model_kwargs
+from src.agents.context import (
+    RawTranscriptContextProvider,
+    TranscriptContext,
+    TranscriptContextProvider,
+)
 from src.agents.models import (
     QuestionRequest,
     SummaryRequest,
@@ -29,8 +34,7 @@ class TranscriptTooLongError(RuntimeError):
 
 
 class ChatModel(Protocol):
-    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object:
-        ...
+    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object: ...
 
 
 class TranscriptAgent:
@@ -51,12 +55,7 @@ class TranscriptAgent:
         settings: Settings,
         context_provider: TranscriptContextProvider | None = None,
     ) -> "TranscriptAgent":
-        kwargs: dict[str, object] = {
-            "api_key": settings.deepseek_api_key,
-            "model": settings.deepseek_model,
-        }
-        if settings.deepseek_base_url:
-            kwargs["base_url"] = settings.deepseek_base_url
+        kwargs = chat_model_kwargs(settings)
         if context_provider is None:
             fetcher = SuperdataTranscriptFetcher(
                 settings.superdata_api_key,
@@ -84,9 +83,7 @@ class TranscriptAgent:
         return TranscriptSummary.model_validate(data)
 
     def answer(self, request: QuestionRequest) -> TranscriptAnswer:
-        context = self._get_context(
-            request.video_id, request.source_url, query=request.question
-        )
+        context = self._get_context(request.video_id, request.source_url, query=request.question)
         self._ensure_context_size(context.context_text or "")
         content = self._invoke(
             context_text=context.context_text or "",

@@ -52,28 +52,50 @@ flowchart LR
   ANS --> J["RAGAS judge + golden-set IR metrics"]
 ```
 
-## Results: does hybrid retrieval help?
+## Results: which retrieval actually wins?
 
-`eval-ablation` sweeps three retrieval configurations over the golden set and
-reports rank-aware IR metrics. On the committed run (9 questions, 6 videos —
-the golden set as it stood when that snapshot was taken, since grown to 20
-entries; `evals/runs/ablation-*.json`, re-run with `uv run python -m src.cli
-eval-ablation`):
+`eval-ablation --sweep extended` sweeps seven retrieval configurations over the
+same 20 labelled golden questions and reports rank-aware IR metrics. No answer
+is generated and no judge runs, so every number here is deterministic id
+arithmetic (`evals/runs/ablation-*.json`; it renders live in the workbench
+**Experiments** tab):
 
-| config | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
-|--------|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
-| semantic | 0.263 | 0.397 | **0.628** | 0.639 | 0.526 | 1.000 |
-| **hybrid** | **0.390** | **0.467** | 0.612 | **0.667** | **0.554** | 1.000 |
-| hybrid+rerank | 0.336 | 0.422 | 0.573 | 0.660 | 0.532 | 1.000 |
+| config | recall@1 | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
+|--------|:-------:|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
+| semantic (baseline) | 0.101 | 0.312 | 0.452 | 0.618 | 0.661 | 0.535 | 0.941 |
+| **hybrid** | 0.134 | 0.359 | 0.468 | **0.667** | **0.741** | **0.585** | 0.941 |
+| hybrid+rerank | 0.110 | **0.371** | **0.486** | 0.607 | 0.662 | 0.545 | 0.941 |
+| HyDE | **0.149** | 0.320 | 0.423 | 0.591 | 0.669 | 0.525 | 0.917 |
+| multi-query | 0.107 | 0.291 | 0.404 | 0.635 | 0.601 | 0.515 | 0.941 |
+| contextual | 0.143 | 0.315 | 0.389 | 0.545 | 0.707 | 0.516 | 0.941 |
+| contextual+hybrid+rerank | 0.110 | **0.371** | **0.486** | 0.625 | 0.663 | 0.555 | **0.964** |
 
-The honest finding: **hybrid fusion improves early-rank retrieval** — recall@3
-+0.13, recall@5 +0.07, MRR +0.03, NDCG +0.03 over plain semantic — putting
-relevant chunks higher, which is what the answer model actually reads. Reranking
-sharpens recall@1 but trades a little deep recall on a set this small. And
-`video_recall` is a perfect 1.0 everywhere: the corpus always contains the right
-source video, so the open problem is chunk-level *ranking*, not finding the
-source. This is exactly the kind of segment-level, defensible conclusion the eval
-harness exists to produce; it renders live in the workbench **Experiments** tab.
+The honest finding: **plain hybrid fusion still wins overall**, and none of the
+three fashionable variants beats it on this corpus. What each one actually
+bought, stated as the tradeoff it is:
+
+- **Hybrid** improves everything at once — recall@10 +0.05, MRR +0.08, NDCG
+  +0.05 over plain semantic — by recovering the exact terms (figures, scheme
+  names, dates) that embeddings blur.
+- **HyDE has the best recall@1 of any config (+0.048)** and the worst
+  `video_recall` (0.917 vs 0.941). Both come from the same mechanism: a written
+  probe matches the register of a transcript sharply, and when the model invents
+  the wrong specifics it retrieves confidently from the wrong video. It is a
+  precision instrument with a hallucination failure mode, which is exactly what
+  the theory predicts and worth being able to show.
+- **Contextual retrieval** buys top-of-ranking quality (MRR +0.046, recall@1
+  +0.042) and pays for it in depth (recall@10 −0.073). Situating a chunk makes
+  its own topic unmistakable and makes it a worse match for questions it only
+  partly covers. Stacked with hybrid+rerank it is the only config to improve
+  `video_recall` at all (0.964), i.e. the only one that found a source video the
+  others missed entirely.
+- **Multi-query** widens slightly (recall@10 +0.017) and blurs the ranking
+  (MRR −0.059) — more phrasings mean more ways to be roughly right.
+
+`video_recall` near 1.0 everywhere says the corpus almost always contains the
+right source video, so the open problem is chunk-level *ranking*, not finding
+the source. That is the segment-level, defensible conclusion the eval harness
+exists to produce — including the conclusion that a technique did not help.
 
 ## Quickstart
 
@@ -87,9 +109,11 @@ uv run python -m src.cli serve                   # http://127.0.0.1:8000
 Then measure retrieval and validate everything:
 
 ```bash
-uv run python -m src.cli eval-ablation           # retrieval science (free, deterministic)
-uv run pytest -q                                 # 500+ Python tests
-cd frontend && npm test                          # frontend tests
+uv run python -m src.cli eval-ablation                    # retrieval science (free, deterministic)
+uv run python -m src.cli index-contextual                 # build the Contextual Retrieval index
+uv run python -m src.cli eval-ablation --sweep extended   # + HyDE / multi-query / contextual columns
+uv run pytest -q                                          # 700+ Python tests
+cd frontend && npm test                                   # frontend tests
 ```
 
 ## What's inside
@@ -535,18 +559,21 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   by the same RAGAS + reference metrics, with a question-type switcher
   (overall / local / global / temporal) and per-engine latency and context-token
   columns, so "GraphRAG wins temporal, ties local, costs more" is a number
-  instead of a claim. Below it, the `eval-ablation` sweeps (semantic vs hybrid
-  vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value per
-  metric highlighted, deltas versus the semantic baseline, and a per-domain
-  toggle; then the end-to-end golden runs with their retrieval config, judge
-  model, and headline scores. Everything shown is reproducible from a snapshot
+  instead of a claim. Below it, the `eval-ablation` sweeps across `recall@k`,
+  `MRR` and `NDCG` — semantic vs hybrid vs hybrid+rerank, plus the HyDE,
+  multi-query and contextual-retrieval columns when the run was an extended
+  sweep (each run is labelled with the sweep that produced it) — with the best
+  value per metric highlighted, deltas versus the semantic baseline, and a
+  per-domain toggle; then the end-to-end golden runs with their retrieval
+  config, judge model, and headline scores. Everything shown is reproducible from a snapshot
   in the repo — served by `GET /api/experiments`.
 - **System Design** — how the app is actually built, as a click-through graph
   rather than a document that drifts from the code. Left column: every answer
-  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`), the
-  summary-filter stage, the shared models (DeepSeek, the embedding model, the
-  reranker), and the stores each depends on (the three Chroma collections,
-  Neo4j) laid out as a node graph. Click any node to open its detail panel:
+  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`, plus
+  the `hyde_rag` and `contextual_rag` retrieval variants), the summary-filter
+  stage, the shared models (DeepSeek, the embedding model, the reranker), and
+  the stores each depends on (the four Chroma collections, Neo4j) laid out as a
+  node graph. Click any node to open its detail panel:
   the exact system prompts it runs (highlighted `{template_vars}`, one-click
   copy) and its live configuration — `top_k`, retrieval mode, Neo4j URI,
   chunking parameters, whatever applies to that node — read straight off the
