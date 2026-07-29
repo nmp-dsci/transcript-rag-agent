@@ -21,6 +21,7 @@ from src.agents.models import (
     RecursionOptions,
     RecursionStage,
     RecursionTrace,
+    RetrievalPass,
     SubtopicAnswer,
     SubtopicEvidence,
 )
@@ -33,7 +34,7 @@ from src.agents.prompts import (
     build_transcript_context_prompt,
 )
 from src.config import Settings
-from src.rag.context import MultiTranscriptRagContextProvider
+from src.rag.context import MultiTranscriptRagContextProvider, RetrievalError
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.indexing import RagIndexer
 from src.rag.references import youtube_timestamp_url
@@ -88,9 +89,15 @@ class RagTranscriptAgent:
         self.max_context_chars = max_context_chars
         self.last_context: TranscriptContext | None = None
         # The most recent answer's query rewrite, or None when no rewrite call
-        # was made. Both are per-answer state: reset by ``answer`` so a failed
-        # run can never report the previous question's retrieval as its own.
+        # was made. All three are per-answer state: reset by ``answer`` so a
+        # failed run can never report the previous question's retrieval as its
+        # own.
         self.last_rewrite: QueryRewrite | None = None
+        # Every retrieval this answer ran, in order. ``last_context`` holds only
+        # the newest one, so a recursive answer that fails mid-fan-out would
+        # otherwise have a follow-up's stages standing in for its first
+        # retrieval; this keeps each pass attributable to what it retrieved for.
+        self.last_retrievals: list[RetrievalPass] = []
 
     @classmethod
     def from_settings(
@@ -138,6 +145,7 @@ class RagTranscriptAgent:
     def answer(self, request: RagQuestionRequest) -> RagTranscriptAnswer:
         self.last_context = None
         self.last_rewrite = None
+        self.last_retrievals = []
         if request.recursive:
             return self._answer_recursive(request)
         return self._answer_single_hop(request)
@@ -185,6 +193,7 @@ class RagTranscriptAgent:
             transcript_filter_min_score=request.transcript_filter_min_score,
             channel_id=request.channel_id,
             retrieval_mode=request.retrieval_mode,
+            pass_label="retrieval",
         )
         first = self._invoke_first_pass(
             request.question, retrieval.context_text, request.history
@@ -224,6 +233,7 @@ class RagTranscriptAgent:
             transcript_filter_min_score=request.transcript_filter_min_score,
             channel_id=request.channel_id,
             retrieval_mode=request.retrieval_mode,
+            pass_label="first retrieval",
         )
         first = self._invoke_first_pass(
             request.question, retrieval.context_text, request.history
@@ -304,6 +314,7 @@ class RagTranscriptAgent:
                 transcript_filter_min_score=request.transcript_filter_min_score,
                 channel_id=request.channel_id,
                 retrieval_mode=request.retrieval_mode,
+                pass_label=f'follow-up {subtopic_index} "{subtopic.followup_query}"',
             )
             novel_chunks = [
                 chunk
@@ -415,16 +426,27 @@ class RagTranscriptAgent:
         transcript_filter_min_score: float,
         channel_id: str | None = None,
         retrieval_mode: str | None = None,
+        pass_label: str = "retrieval",
     ) -> _RetrievalResult:
-        context = self.context_provider.get_context(
-            question=question,
-            source_url=source_url,
-            top_k=top_k,
-            filter_transcripts=filter_transcripts,
-            transcript_filter_top_k=transcript_filter_top_k,
-            transcript_filter_min_score=transcript_filter_min_score,
-            channel_id=channel_id,
-            retrieval_mode=retrieval_mode,
+        try:
+            context = self.context_provider.get_context(
+                question=question,
+                source_url=source_url,
+                top_k=top_k,
+                filter_transcripts=filter_transcripts,
+                transcript_filter_top_k=transcript_filter_top_k,
+                transcript_filter_min_score=transcript_filter_min_score,
+                channel_id=channel_id,
+                retrieval_mode=retrieval_mode,
+            )
+        except RetrievalError as exc:
+            # A retrieval that failed part-way still measured the stages that
+            # explain the failure, and they belong to this pass rather than to
+            # whichever one ran before it.
+            self.last_retrievals.append(RetrievalPass(label=pass_label, steps=list(exc.trace)))
+            raise
+        self.last_retrievals.append(
+            RetrievalPass(label=pass_label, steps=list(context.trace or []))
         )
         self.last_context = context
         context_text = context.context_text or ""

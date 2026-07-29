@@ -146,6 +146,21 @@ class TraceStep(BaseModel):
     iteration: int | None = None
 
 
+class RetrievalPass(BaseModel):
+    """One retrieval an answer ran, with the stages the provider measured for it.
+
+    A recursive answer retrieves several times — a first pass plus one query per
+    follow-up subtopic — and each one overwrites the agent's ``last_context``.
+    Keeping the passes in order, each tagged with what it retrieved for, is what
+    lets a persisted trace attribute measured stages to the retrieval that
+    produced them instead of reading a follow-up's stages as the first retrieval.
+    """
+
+    #: What this retrieval was for, e.g. ``first retrieval``/``follow-up 2 ...``.
+    label: str
+    steps: list[TraceStep] = Field(default_factory=list)
+
+
 def chunk_id(chunk: object) -> str | None:
     """The canonical ``chunk:<video_id>:<index>`` id, or None if unidentifiable."""
     video_id = getattr(chunk, "video_id", None)

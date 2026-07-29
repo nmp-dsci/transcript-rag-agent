@@ -596,6 +596,220 @@ def test_a_failed_retrieval_keeps_the_stages_it_measured(settings) -> None:
     assert result.trace[0]["elapsed_ms"] == 31
 
 
+class RecordingRagLlm(FakeRagLlm):
+    """A stand-in that keeps the per-retrieval record a real agent keeps.
+
+    ``RagTranscriptAgent`` appends one ``RetrievalPass`` per retrieval, so a
+    recursive answer's fan-out is on the agent even though ``last_context``
+    holds only the newest one.
+    """
+
+    def __init__(self, passes) -> None:
+        super().__init__()
+        self.passes = passes
+        self.last_retrievals: list = []
+
+    def _publish(self) -> None:
+        super()._publish()
+        self.last_retrievals = list(self.passes)
+        # ``_retrieve`` overwrites last_context per retrieval, so what it holds
+        # after a fan-out is whichever pass ran last — never the whole answer.
+        self.last_context.trace = list(self.passes[-1].steps) if self.passes else []
+
+
+def _pass(label: str, *steps):
+    from src.agents.models import RetrievalPass
+
+    return RetrievalPass(label=label, steps=list(steps))
+
+
+def _retrieve_step(detail: str, **fields):
+    from src.agents.models import TraceStep
+
+    return TraceStep(phase="retrieve", label="Retrieve candidates", detail=detail, **fields)
+
+
+def test_a_failed_fan_out_attributes_every_retrieval_to_its_pass(settings) -> None:
+    """A follow-up's stages must never read as the answer's first retrieval."""
+
+    class FailsMidFanOut(RecordingRagLlm):
+        def answer(self, request):
+            self._publish()
+            raise RuntimeError("deepseek 503")
+
+    fake = FailsMidFanOut(
+        [
+            _pass("first retrieval", _retrieve_step("30 candidates", chunk_ids=["chunk:v1:0"])),
+            _pass(
+                'follow-up 1 "how does the CGT discount change?"', _retrieve_step("12 candidates")
+            ),
+            _pass('follow-up 2 "when does it start?"', _retrieve_step("0 candidates")),
+        ]
+    )
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm_recursive", "what about X?")
+
+    assert result.error == "deepseek 503"
+    assert [step["detail"] for step in result.trace] == [
+        "first retrieval — 30 candidates",
+        'follow-up 1 "how does the CGT discount change?" — 12 candidates',
+        'follow-up 2 "when does it start?" — 0 candidates',
+    ]
+    assert result.trace[0]["chunk_ids"] == ["chunk:v1:0"]
+
+
+def test_a_single_retrieval_is_reported_exactly_as_the_provider_measured_it(
+    settings,
+) -> None:
+    """One pass has nothing to disambiguate, so nothing is added to its wording."""
+
+    class FailsAfterRetrieval(RecordingRagLlm):
+        def answer(self, request):
+            self._publish()
+            raise RuntimeError("deepseek 503")
+
+    fake = FailsAfterRetrieval([_pass("retrieval", _retrieve_step("30 candidates"))])
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm", "q")
+
+    assert [step["detail"] for step in result.trace] == ["30 candidates"]
+
+
+def test_recursive_trace_prefers_the_first_retrievals_measured_stages(settings) -> None:
+    """Measured chunk ids and timings beat a prose description of the same pass."""
+    from src.agents.models import RecursionStage, RecursionTrace
+
+    recursion = RecursionTrace(
+        stages=[RecursionStage(name="first_pass", llm_calls=1, retrievals=1)],
+        terminated_reason="no_followups_requested",
+    )
+
+    class RecursiveFake(RecordingRagLlm):
+        def answer(self, request):
+            self._publish()
+            return RagTranscriptAnswer(
+                question=request.question, answer="first", recursion=recursion
+            )
+
+    fake = RecursiveFake(
+        [
+            _pass(
+                "first retrieval",
+                _retrieve_step(
+                    "semantic search over the whole corpus — 30 candidates",
+                    chunk_ids=["chunk:vid00000001:0"],
+                    elapsed_ms=770,
+                ),
+            )
+        ]
+    )
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run("rag_llm_recursive", "what about X?")
+
+    assert result.trace[0]["label"] == "Retrieve candidates"
+    assert result.trace[0]["chunk_ids"] == ["chunk:vid00000001:0"]
+    assert result.trace[0]["elapsed_ms"] == 770
+    assert all(step["label"] != "First retrieval" for step in result.trace)
+    assert [step["label"] for step in result.trace[1:]] == [
+        "First-pass answer",
+        "First-pass answer kept",
+    ]
+
+
+def test_a_real_fan_out_failure_persists_every_retrieval_in_order(settings) -> None:
+    """The same case end to end, across the seam the trace is assembled over.
+
+    The follow-up here returns one chunk against a novelty floor of two, so it
+    never reaches the merged context — its retrieval still ran, and the trace of
+    the failed answer has to say so.
+    """
+    from datetime import datetime, timezone
+
+    from langchain_core.messages import AIMessage
+
+    from src.agents.context import TranscriptContext
+    from src.agents.models import TraceStep
+    from src.agents.rag_transcript_agent import RagTranscriptAgent
+    from src.rag.context import RetrievalError
+    from src.transcripts.models import Transcript
+
+    subtopics = """
+    {
+      "question": "q",
+      "answer": "first answer [1]",
+      "followups_requested": true,
+      "subtopics": [
+        {"topic": "a", "rationale": "thin", "followup_query": "first detail", "confidence": 0.9},
+        {"topic": "b", "rationale": "thin", "followup_query": "second detail", "confidence": 0.8}
+      ]
+    }
+    """
+
+    class Llm:
+        def invoke(self, messages):
+            return AIMessage(content=subtopics)
+
+    class FanOutProvider:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def get_context(self, question, **kwargs):
+            self.calls += 1
+            step = TraceStep(
+                phase="retrieve",
+                label="Retrieve candidates",
+                detail=f"{self.calls} candidates",
+            )
+            if self.calls == 3:
+                raise RetrievalError("No indexed chunks found for that channel.", [step])
+            return TranscriptContext(
+                transcript=Transcript(
+                    video_id="all",
+                    url="https://www.youtube.com/watch?v=vid00000001",
+                    provider="rag",
+                    raw_text="text",
+                    fetched_at=datetime.now(timezone.utc),
+                ),
+                cache_status="hit",
+                context_text=f"[1] chunk {self.calls}",
+                context_mode="rag",
+                retrieved_chunks=[_chunk("vid00000001", self.calls)],
+                trace=[step],
+            )
+
+    runner = _runner(settings, rag_llm=RagTranscriptAgent(Llm(), FanOutProvider()))
+
+    result = runner.run("rag_llm_recursive", "q")
+
+    assert result.error == "No indexed chunks found for that channel."
+    assert [step["detail"] for step in result.trace] == [
+        "first retrieval — 1 candidates",
+        'follow-up 1 "first detail" — 2 candidates',
+        'follow-up 2 "second detail" — 3 candidates',
+    ]
+
+
+def test_an_unrelated_error_carrying_a_trace_attribute_is_not_spliced(settings) -> None:
+    """Only RetrievalError promises TraceSteps; anything else must not be trusted."""
+
+    class Exploded(RuntimeError):
+        trace = "a stack trace, not a list of steps"
+
+    class Raises(FakeRagLlm):
+        def answer(self, request):
+            raise Exploded("neo4j driver blew up")
+
+    runner = _runner(settings, rag_llm=Raises())
+
+    result = runner.run("rag_llm", "q")
+
+    assert result.error == "neo4j driver blew up"
+    assert result.trace == []
+
+
 def test_graph_trace_passes_through_the_agents_recorded_steps(settings) -> None:
     from src.agents.models import TraceStep
 

@@ -202,6 +202,40 @@ def test_global_route_trace_counts_communities() -> None:
     assert "1 community summaries" in reduce_step.detail
 
 
+def test_global_route_detail_does_not_claim_entity_anchoring() -> None:
+    """``_global_evidence`` takes no terms, so nothing may anchor the graph."""
+
+    class NoEntityRouter(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                return type("R", (), {"content": json.dumps({"route": "global", "entities": []})})()
+            return type("R", (), {"content": "Themes [c1]."})()
+
+    agent = GraphRagAgent(NoEntityRouter("global", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what are the main themes?"))
+
+    route_step = agent.last_trace[0]
+    assert route_step.label == "Route → global"
+    assert "content words" not in route_step.detail
+    assert "community summaries" in route_step.detail
+    assert agent.last_trace[1].label == "Community summaries"
+
+
+def test_local_route_detail_still_names_the_anchoring_fallback() -> None:
+    class NoEntityRouter(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                return type("R", (), {"content": json.dumps({"route": "local", "entities": []})})()
+            return type("R", (), {"content": "Answer [g1]."})()
+
+    agent = GraphRagAgent(NoEntityRouter("local", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what did they say about gearing?"))
+
+    assert "content words will anchor the graph" in agent.last_trace[0].detail
+
+
 def test_router_failure_is_distinguishable_from_a_local_classification() -> None:
     """A degraded route must not read like a genuine "local" answer."""
 

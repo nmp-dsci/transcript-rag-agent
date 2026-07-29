@@ -177,14 +177,7 @@ class GraphRagAgent:
             TraceStep(
                 phase="route",
                 label=f"Route → {route}" + (" (router failed)" if route_error else ""),
-                detail=(
-                    f"router call failed ({route_error}); defaulted to local with no "
-                    "named entities — content words will anchor the graph"
-                    if route_error
-                    else f"router named entities: {', '.join(entity_terms)}"
-                    if entity_terms
-                    else "router named no entities; content words will anchor the graph"
-                ),
+                detail=_route_detail(route, entity_terms, route_error),
                 model=getattr(self.llm, "model_name", None),
                 elapsed_ms=int((time.monotonic() - route_started) * 1000),
             )
@@ -363,6 +356,31 @@ class GraphRagAgent:
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+
+def _route_detail(route: str, entity_terms: list[str], route_error: str | None) -> str:
+    """What the route decision means for the evidence step that follows it.
+
+    Only ``local`` and ``temporal`` anchor on terms — they pass the router's
+    entities into ``_resolve``, which falls back to the question's content
+    words. ``_global_evidence`` takes no terms at all, so the trace must not
+    describe an anchoring mechanism that route never runs.
+    """
+    if route_error:
+        return (
+            f"router call failed ({route_error}); defaulted to local with no "
+            "named entities — content words will anchor the graph"
+        )
+    named = (
+        f"router named entities: {', '.join(entity_terms)}"
+        if entity_terms
+        else "router named no entities"
+    )
+    if route == "global":
+        return f"{named}; the global route reduces over community summaries instead"
+    if entity_terms:
+        return named
+    return f"{named}; content words will anchor the graph"
 
 
 def question_terms(question: str) -> list[str]:
