@@ -52,6 +52,14 @@ SYSTEMS: list[dict[str, str]] = [
         "description": "Entity/claim extraction, community summaries, the "
         "local/global/temporal router, and the graph answer paths.",
     },
+    {
+        "key": "retrieval_variants",
+        "title": "Retrieval variants — HyDE, multi-query, contextual",
+        "description": "The prompts that change what gets embedded rather than "
+        "how the answer is written: HyDE's hypothetical passage, multi-query's "
+        "paraphrases, and the per-chunk situating sentence behind "
+        "index-contextual.",
+    },
 ]
 
 _EXTRA_PROMPTS: list[dict[str, Any]] = [

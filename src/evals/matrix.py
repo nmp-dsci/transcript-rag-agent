@@ -31,7 +31,18 @@ from src.evals.golden import GoldenEntry, load_golden
 from src.evals.matrix_cache import DEFAULT_CACHE_DIR, cell_fingerprint, load_cell, save_cell
 from src.evals.regression import run_golden_eval
 
-DEFAULT_MATRIX_SETUPS = ["rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"]
+#: Every comparable setup, because the Scoreboard ranks the *newest* committed
+#: run: a default that left the retrieval variants out would drop them off the
+#: leaderboard again the next time anyone ran a sweep. The per-cell cache is
+#: what makes that affordable — an unchanged setup costs nothing to re-include.
+DEFAULT_MATRIX_SETUPS = [
+    "rag_llm",
+    "rag_llm_recursive",
+    "rag_agent",
+    "graph_rag",
+    "rag_llm_hyde",
+    "rag_llm_contextual",
+]
 
 #: The pivot rows. A subset of QUALITY_METRICS plus the ops columns — the
 #: matrix is a comparison surface, so it shows the metrics that differ by

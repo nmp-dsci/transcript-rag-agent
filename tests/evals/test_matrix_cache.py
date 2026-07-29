@@ -206,3 +206,48 @@ def test_load_returns_none_for_a_corrupt_cache_file(tmp_path) -> None:
     path = tmp_path / "bad.json"
     path.write_text("{not valid json", encoding="utf-8")
     assert load_cell("bad", cache_dir=tmp_path) is None
+
+
+# ── retrieval variants ────────────────────────────────────────────────────────
+
+
+class VariantSettings(FakeSettings):
+    contextual_chunk_collection = _SETTINGS_DEFAULTS["contextual_chunk_collection"]
+
+
+def test_the_retrieval_variants_are_separate_cells_from_the_baseline() -> None:
+    """rag_llm_hyde answers the same question a different way; reusing rag_llm's
+    cached cell for it would report the baseline's score as the variant's."""
+    settings = VariantSettings()
+    e = entry()
+
+    fingerprints = {
+        cell_fingerprint(setup, e, settings)
+        for setup in ("rag_llm", "rag_llm_hyde", "rag_llm_contextual")
+    }
+
+    assert len(fingerprints) == 3
+
+
+def test_repointing_the_contextual_index_invalidates_only_that_variant() -> None:
+    e = entry()
+    settings = VariantSettings()
+    moved = VariantSettings()
+    moved.contextual_chunk_collection = "some_other_collection"
+
+    assert cell_fingerprint("rag_llm_contextual", e, settings) != cell_fingerprint(
+        "rag_llm_contextual", e, moved
+    )
+    # No other engine reads that collection, so their cells stay valid.
+    for setup in ("rag_llm", "rag_llm_hyde", "graph_rag"):
+        assert cell_fingerprint(setup, e, settings) == cell_fingerprint(setup, e, moved)
+
+
+def test_retrieval_breadth_still_reaches_the_new_vector_variants() -> None:
+    e = entry()
+    settings = VariantSettings()
+    wider = VariantSettings()
+    wider.retrieval_candidates = settings.retrieval_candidates + 10
+
+    for setup in ("rag_llm_hyde", "rag_llm_contextual"):
+        assert cell_fingerprint(setup, e, settings) != cell_fingerprint(setup, e, wider)

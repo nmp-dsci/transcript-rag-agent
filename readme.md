@@ -97,6 +97,11 @@ cd frontend && npm test                          # frontend tests
 - **Retrieval:** segment-aware chunking, local dense embeddings (Chroma), BM25,
   RRF hybrid fusion that *widens* recall, cross-encoder reranking, contextual
   headers, neighbour expansion, channel/video scoping.
+- **Retrieval variants:** HyDE and multi-query fan-out on the query side (both
+  cached per question, so a sweep is reproducible and free to repeat), and
+  Anthropic-style Contextual Retrieval on the index side — a parallel collection
+  whose chunks are embedded with an LLM-written situating sentence. Each is a
+  column in the ablation and a row in the head-to-head matrix.
 - **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
   RAG, a LangGraph ReAct agent, and a GraphRAG agent over a Neo4j entity/claim
   knowledge graph — all comparable side by side.
@@ -171,6 +176,12 @@ YT_AGENT_RETRIEVAL_CANDIDATES=30
 YT_AGENT_RERANK_ENABLED=true
 YT_AGENT_RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
 YT_AGENT_NEIGHBOR_SPAN=0
+YT_AGENT_QUERY_TRANSFORM=none
+YT_AGENT_MULTI_QUERY_VARIANTS=3
+YT_AGENT_QUERY_CACHE_PATH=.yt-agent/query_cache
+YT_AGENT_CONTEXTUAL_CHUNK_COLLECTION=transcript_chunks_contextual
+YT_AGENT_CONTEXT_CACHE_PATH=.yt-agent/context_cache
+YT_AGENT_LLM_TIMEOUT_SECONDS=120
 YT_AGENT_JUDGE_SAMPLES=1
 YT_AGENT_DISCOVERY_CACHE_TTL_HOURS=24
 SUPADATA_TIMEOUT_SECONDS=120
@@ -227,6 +238,60 @@ Recursion env vars are used only when recursive mode is effectively on via `--re
 
 `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (default `10`) is read only when the agentic RAG agent is used via `rag-ask --rag_agent`. It is the hard cap on the LangGraph ReAct loop and can be overridden per-run with `--max-iterations`. It has no effect on any other path.
 
+### Retrieval variants: HyDE, multi-query, contextual retrieval
+
+Three further techniques change *what gets matched* rather than how the answer
+is written. Each is measurable on its own, which is the point of having them:
+they are columns in `eval-ablation --sweep extended` and rows in the Scoreboard,
+not options you have to take on faith.
+
+**Query-side — `--query-transform`.** The user's question and the passage that
+answers it are written in different registers, and one embedding of the question
+has to bridge that on its own.
+
+- `hyde` — the model writes the passage that *would* answer the question, and
+  retrieval embeds that instead. The passage may be factually wrong; it is never
+  shown to anyone and never enters the answer, but it is written in the
+  vocabulary of the corpus, which is what the vector search matches on.
+- `multi_query` — the model paraphrases the question
+  `YT_AGENT_MULTI_QUERY_VARIANTS` ways (default 3), each phrasing retrieves
+  independently, and the rankings are RRF-fused. The original question is always
+  the first query, so this can only add to what the plain search already found.
+
+Both cache their expansion per question under `.yt-agent/query_cache`, so
+re-running a sweep costs nothing and returns the identical retrieval. A failed
+expansion degrades to the question as asked and says so in the answer trace.
+They affect the vector search only — BM25 fusion keeps matching the question the
+user typed, since keyword-matching a hypothetical passage searches for words
+nobody wrote.
+
+**Index-side — `index-contextual`.** Anthropic's Contextual Retrieval: one LLM
+call per chunk writes the sentence that says what the chunk is about within its
+video, using the surrounding transcript as evidence. That sentence joins the
+deterministic header (`[channel — title @ mm:ss-mm:ss]`) the chunker already
+writes — the two answer different questions, *which video* versus *what about
+it*.
+
+```bash
+uv run python -m src.cli index-contextual        # ~1 LLM call per chunk, cached by chunk hash
+uv run python -m src.cli rag-ask "..." --rag_llm --contextual
+```
+
+Three boundaries make this a measurement rather than a rewrite:
+
+- It writes a **parallel collection** (`transcript_chunks_contextual`), so the
+  baseline index survives to be compared against.
+- **Only the embedding changes.** The situating sentence is embedded and stored
+  as metadata; the answering LLM still receives the spoken text alone, so a win
+  is a retrieval win with generation held fixed.
+- **Cached by chunk hash**, like graph extraction, so a re-run only pays for
+  chunks whose text changed, and a failed chunk retries rather than being pinned.
+
+Both variants are also registered as setups — `rag_llm_hyde` and
+`rag_llm_contextual` — which answer identically to `rag_llm` and differ only in
+the retrieval they read. That is what lets `eval-matrix` and the Scoreboard
+attribute a score gap to retrieval alone.
+
 ### Interactive Chat
 
 The recommended entry point is the menu-driven chat. It wraps the same agents
@@ -268,6 +333,8 @@ The ask flow has three prompts:
      [2] rag_llm (recursive)         — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
      [3] rag_agent (agentic)         — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
      [4] graph_rag (knowledge graph) — Routes local/global/temporal, answers over the Neo4j entity/claim graph. Requires index-graph.
+     [5] rag_llm (HyDE)              — Single-hop, but retrieval embeds an LLM-written hypothetical answer instead of the question.
+     [6] rag_llm (contextual)        — Single-hop over the Contextual Retrieval index. Requires index-contextual.
      [a] all (compare every setup)
    Choose setup(s) (e.g. 1,3 or a; blank to cancel):
    ```
@@ -648,14 +715,21 @@ metrics; the deterministic id-based metrics (recall/IR) use a zero threshold, so
 any movement there is real. A question that errors is recorded with its error and
 excluded from the averages rather than scored zero.
 
-**Retrieval ablation.** `eval-ablation` sweeps semantic vs hybrid vs
-hybrid+rerank over the golden set and reports `recall@k`, `MRR` and `NDCG` per
-configuration and per domain. It is retrieval-only and deterministic — no answer
-is generated and no judge runs — so it needs no API key and is cheap to re-run:
+**Retrieval ablation.** `eval-ablation` sweeps retrieval configurations over the
+golden set and reports `recall@k`, `MRR` and `NDCG` per configuration and per
+domain. It is retrieval-only — no answer is generated and no judge runs:
 
 ```bash
-uv run python -m src.cli eval-ablation
+uv run python -m src.cli eval-ablation                    # semantic / hybrid / hybrid+rerank
+uv run python -m src.cli eval-ablation --sweep extended   # + hyde, multi-query, contextual
 ```
+
+The default sweep is fully deterministic and needs no API key, so it is cheap to
+re-run anywhere. `--sweep extended` adds the retrieval variants: the query-side
+columns call an LLM once per question (cached per question, so a repeat is free
+and returns the identical retrieval), and the contextual columns read the index
+`index-contextual` built. Both sweeps lead with the same `semantic` baseline, so
+their deltas can be read side by side.
 
 `--top-k N` overrides the final chunk count each configuration retrieves
 (default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
@@ -924,6 +998,22 @@ sort on `upload_date`. Communities are detected with Leiden (igraph) and
 summarized up-front (Full GraphRAG — the whole-corpus bill is cents). Python
 deps: `neo4j` (the Bolt driver) and `python-igraph` (Leiden), both installed
 by `uv sync`.
+
+**Contextual Retrieval index.**
+
+```bash
+uv run python -m src.cli index-contextual                  # situate every chunk
+uv run python -m src.cli index-contextual --max-chunks 20  # smoke-test on the first N
+uv run python -m src.cli index-contextual --max-workers 4  # fewer concurrent calls
+```
+
+The same shape as `index-graph`: one DeepSeek call per chunk, cached under
+`.yt-agent/context_cache/` keyed on chunk id + text hash, retried once, and
+never cached on failure. Chunks are processed video by video, because the
+excerpt each call reads is built from the chunk's own neighbours. A chunk whose
+situating call failed twice is still indexed, with the deterministic header it
+already had — a missing chunk would depress recall and read as a retrieval
+result rather than an indexing gap.
 
 Ask through the graph:
 

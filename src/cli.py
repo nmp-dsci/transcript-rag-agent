@@ -138,13 +138,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     ablation = subparsers.add_parser(
         "eval-ablation",
-        help="Sweep retrieval configs (semantic/hybrid/hybrid+rerank) over the golden set",
+        help=(
+            "Sweep retrieval configs over the golden set — semantic/hybrid/"
+            "hybrid+rerank, or --sweep extended for the HyDE, multi-query and "
+            "contextual-retrieval variants too"
+        ),
     )
     ablation.add_argument(
         "--top-k",
         type=int,
         default=None,
         help="Final chunk count each configuration retrieves (default: YT_AGENT_RAG_TOP_K)",
+    )
+    ablation.add_argument(
+        "--sweep",
+        choices=["default", "extended"],
+        default="default",
+        help=(
+            "Which configurations to measure. 'default' is semantic/hybrid/"
+            "hybrid+rerank — deterministic and offline. 'extended' adds the HyDE, "
+            "multi-query and contextual-retrieval columns, which need "
+            "DEEPSEEK_API_KEY (query expansions are cached per question) and, for "
+            "the contextual ones, a prior index-contextual"
+        ),
     )
 
     matrix = subparsers.add_parser(
@@ -157,7 +173,11 @@ def build_parser() -> argparse.ArgumentParser:
     matrix.add_argument(
         "--setups",
         default=None,
-        help="Comma-separated setup keys (default: rag_llm,rag_llm_recursive,rag_agent,graph_rag)",
+        help=(
+            "Comma-separated setup keys. Defaults to every comparable setup, "
+            "since the Scoreboard ranks the newest committed run; unchanged "
+            "cells come from the cache, so a narrower list saves little"
+        ),
     )
     matrix.add_argument("--top-k", type=int, default=None)
     matrix.add_argument(
@@ -211,6 +231,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only process the first N chunks (smoke-testing)",
     )
 
+    index_contextual = subparsers.add_parser(
+        "index-contextual",
+        help=(
+            "Build the Contextual Retrieval index: one LLM-written situating "
+            "sentence per chunk (cached by chunk hash), embedded into a parallel "
+            "collection so it can be compared against the baseline index"
+        ),
+    )
+    index_contextual.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help="Only situate the first N chunks (smoke-testing)",
+    )
+    index_contextual.add_argument(
+        "--max-workers",
+        type=int,
+        default=8,
+        help="Concurrent situating calls (default: 8)",
+    )
+
     subparsers.add_parser(
         "eval-graph-extraction",
         help=(
@@ -261,6 +302,24 @@ def build_parser() -> argparse.ArgumentParser:
     rag_ask.add_argument("--max-total-followups", type=int, default=None)
     rag_ask.add_argument("--show-followups", action="store_true")
     rag_ask.add_argument("--print-trace", action="store_true")
+    rag_ask.add_argument(
+        "--query-transform",
+        choices=["hyde", "multi_query"],
+        default=None,
+        help=(
+            "Rewrite the question before embedding it: 'hyde' retrieves on a "
+            "hypothetical answer passage, 'multi_query' retrieves on several "
+            "paraphrases and RRF-fuses them (default: YT_AGENT_QUERY_TRANSFORM)"
+        ),
+    )
+    rag_ask.add_argument(
+        "--contextual",
+        action="store_true",
+        help=(
+            "Retrieve against the Contextual Retrieval index — chunks embedded "
+            "with an LLM-written situating sentence. Requires index-contextual"
+        ),
+    )
     agent_group = rag_ask.add_mutually_exclusive_group()
     agent_group.add_argument(
         "--rag_agent",
@@ -519,16 +578,65 @@ def _run_eval_graph_extraction(settings) -> int:
     return 0
 
 
+def _run_index_contextual(args, settings) -> int:
+    """Situate every chunk with an LLM sentence and index the result separately."""
+    from langchain_openai import ChatOpenAI
+
+    from src.rag.contextualize import ChunkContextualizer, build_contextual_index
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.storage import TranscriptChunkStore
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    chunk_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    )
+    if not chunk_store.has_any_chunks():
+        print("No chunks indexed. Run index-rag / bulk-index first.", file=sys.stderr)
+        return 1
+    contextual_store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.contextual_chunk_collection,
+    )
+
+    kwargs: dict[str, object] = {
+        "api_key": settings.deepseek_api_key,
+        "model": settings.deepseek_model,
+        "timeout": settings.llm_timeout_seconds,
+    }
+    if settings.deepseek_base_url:
+        kwargs["base_url"] = settings.deepseek_base_url
+    contextualizer = ChunkContextualizer(ChatOpenAI(**kwargs), cache_dir=settings.context_cache_dir)
+
+    result = build_contextual_index(
+        chunk_store,
+        contextual_store,
+        contextualizer,
+        on_progress=print,
+        max_chunks=args.max_chunks,
+        max_workers=args.max_workers,
+    )
+    print("\nContextual index built")
+    print(f"  {result.summary()}")
+    print(f"  Collection: {settings.contextual_chunk_collection}")
+    return 0
+
+
 def _run_eval_ablation(args, settings) -> int:
     """Sweep retrieval configurations over the golden set and snapshot the table.
 
-    Retrieval-only and deterministic: no answer is generated and no judge runs, so
-    this needs no API key — only the local embedding, BM25 and cross-encoder models.
+    Retrieval-only: no answer is generated and no judge runs. The default sweep
+    is fully deterministic and needs no API key — only the local embedding, BM25
+    and cross-encoder models. ``--sweep extended`` adds the query-side transforms,
+    which do call an LLM once per question (cached), and the contextual columns,
+    which read the index ``index-contextual`` builds.
     """
     from src.evals.ablation import format_table, run_default_ablation
     from src.evals.regression import save_run
 
-    result = run_default_ablation(settings, top_k=args.top_k, on_progress=print)
+    result = run_default_ablation(settings, top_k=args.top_k, sweep=args.sweep, on_progress=print)
     path = save_run(result)
     print(f"\n{result['run_id']} — {result['entries']} golden questions\n")
     print(format_table(result))
@@ -561,6 +669,8 @@ def main(argv: list[str] | None = None) -> int:
             return _run_eval_matrix(args, settings)
         if args.command == "index-graph":
             return _run_index_graph(args, settings)
+        if args.command == "index-contextual":
+            return _run_index_contextual(args, settings)
         if args.command == "eval-graph-extraction":
             return _run_eval_graph_extraction(settings)
         source_url = getattr(args, "url", None)
@@ -765,16 +875,34 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
 
             if args.command == "rag-ask":
+                from src.rag.query_transform import build_query_transform
+
                 top_k = args.top_k or settings.rag_top_k
                 embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
                 chunk_store = TranscriptChunkStore(
                     settings.chroma_path,
                     embedding_model=embedding_model,
-                    collection_name=settings.chunk_collection,
+                    collection_name=(
+                        settings.contextual_chunk_collection
+                        if args.contextual
+                        else settings.chunk_collection
+                    ),
                 )
                 indexer = RagIndexer(
                     raw_store=raw_store,
-                    chunk_store=chunk_store,
+                    # The contextual collection is derived from the baseline one
+                    # by index-contextual, so auto-indexing must never write into
+                    # it — a chunk added here would carry no situating sentence
+                    # and quietly weaken the index it is measured against.
+                    chunk_store=(
+                        TranscriptChunkStore(
+                            settings.chroma_path,
+                            embedding_model=embedding_model,
+                            collection_name=settings.chunk_collection,
+                        )
+                        if args.contextual
+                        else chunk_store
+                    ),
                     target_chars=settings.chunk_target_chars,
                     overlap_chars=settings.chunk_overlap_chars,
                 )
@@ -783,6 +911,9 @@ def main(argv: list[str] | None = None) -> int:
                     chunk_store=chunk_store,
                     indexer=indexer,
                     summary_store=_build_summary_store(settings, embedding_model, raw_store),
+                    query_transform=build_query_transform(
+                        args.query_transform or settings.query_transform, settings
+                    ),
                 )
                 if args.rag_agent:
                     return _run_rag_agent(args, settings, context_provider, top_k)

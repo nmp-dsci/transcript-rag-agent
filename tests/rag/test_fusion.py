@@ -251,3 +251,52 @@ def test_fuse_chunks_matches_the_chunks_from_fuse_chunks_with_scores():
     semantic, bm25 = [chunk(0), chunk(1)], [record(1)]
     scored = fuse_chunks_with_scores(semantic, bm25, top_k=2)
     assert fuse_chunks(semantic, bm25, top_k=2) == [item[0] for item in scored]
+
+
+# ── N-way fusion over several queries ─────────────────────────────────────────
+
+
+def _rc(index: int, score: float | None = 0.5):
+    from src.rag.models import RetrievedChunk
+
+    return RetrievedChunk(
+        transcript_id="raw_transcript:video",
+        video_id="video",
+        source_url="https://www.youtube.com/watch?v=video",
+        chunk_index=index,
+        text=f"chunk {index}",
+        segment_count=1,
+        score=score,
+    )
+
+
+def test_fuse_rankings_ranks_a_chunk_several_queries_agree_on_first() -> None:
+    from src.rag.fusion import fuse_rankings
+
+    fused = fuse_rankings([[_rc(1), _rc(2)], [_rc(3), _rc(2)]], top_k=5)
+
+    assert [chunk.chunk_index for chunk in fused][0] == 2
+    assert {chunk.chunk_index for chunk in fused} == {1, 2, 3}
+
+
+def test_fuse_rankings_keeps_the_earliest_ranking_s_object() -> None:
+    from src.rag.fusion import fuse_rankings
+
+    fused = fuse_rankings([[_rc(1, score=0.9)], [_rc(1, score=0.1)]], top_k=5)
+
+    assert fused[0].score == 0.9
+
+
+def test_fuse_rankings_honours_top_k() -> None:
+    from src.rag.fusion import fuse_rankings
+
+    assert len(fuse_rankings([[_rc(i) for i in range(5)]], top_k=2)) == 2
+    assert fuse_rankings([[_rc(0)]], top_k=0) == []
+
+
+def test_fuse_rankings_of_one_ranking_preserves_its_order() -> None:
+    from src.rag.fusion import fuse_rankings
+
+    fused = fuse_rankings([[_rc(4), _rc(1), _rc(7)]], top_k=5)
+
+    assert [chunk.chunk_index for chunk in fused] == [4, 1, 7]

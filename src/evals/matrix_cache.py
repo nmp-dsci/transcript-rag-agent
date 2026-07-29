@@ -47,16 +47,29 @@ DEFAULT_CACHE_DIR = Path(".yt-agent/eval_cache")
 #: through the request by the three vector engines (``graph_rag`` calls
 #: ``get_context`` without it). Retrieval breadth is read by every engine that
 #: retrieves through the shared context provider.
+_VECTOR_SETUPS = (
+    "rag_llm",
+    "rag_llm_recursive",
+    "rag_agent",
+    "rag_llm_hyde",
+    "rag_llm_contextual",
+)
+
 _ENGINE_SETTINGS: dict[str, tuple[str, ...]] = {
-    "retrieval_candidates": ("rag_llm", "rag_llm_recursive", "rag_agent", "graph_rag"),
-    "transcript_filter_top_k": ("rag_llm", "rag_llm_recursive", "rag_agent"),
-    "transcript_filter_min_score": ("rag_llm", "rag_llm_recursive", "rag_agent"),
+    "retrieval_candidates": (*_VECTOR_SETUPS, "graph_rag"),
+    "transcript_filter_top_k": _VECTOR_SETUPS,
+    "transcript_filter_min_score": _VECTOR_SETUPS,
     "rag_max_depth": ("rag_llm_recursive",),
     "rag_max_followups": ("rag_llm_recursive",),
     "rag_followup_top_k": ("rag_llm_recursive",),
     "rag_novelty_min_chunks": ("rag_llm_recursive",),
     "rag_max_total_followups": ("rag_llm_recursive",),
     "rag_agent_max_iterations": ("rag_agent",),
+    # Which parallel index the contextual variant reads. Note the boundary this
+    # shares with graph_rag's ``neo4j_uri``: it identifies the *store*, not its
+    # contents, so re-running index-contextual with a changed situating prompt
+    # needs ``eval-matrix --refresh`` to be rescored.
+    "contextual_chunk_collection": ("rag_llm_contextual",),
 }
 
 _SETTINGS_DEFAULTS: dict[str, Any] = {

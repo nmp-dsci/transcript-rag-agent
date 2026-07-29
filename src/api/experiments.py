@@ -55,6 +55,10 @@ def _ablation_summary(data: dict[str, Any]) -> dict[str, Any]:
         "entries": data.get("entries"),
         "metrics": data.get("metrics", []),
         "baseline": data.get("baseline"),
+        # Which config set was measured. Absent on runs committed before the
+        # extended sweep existed — those are all default sweeps, but the tab
+        # says nothing rather than backfilling a label onto them.
+        "sweep": data.get("sweep"),
         "cells": [
             {
                 "label": cell.get("label"),

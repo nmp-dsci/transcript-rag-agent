@@ -117,3 +117,72 @@ class TestFormatTable:
         assert "hybrid+rerank" in table
         assert "deltas vs semantic" in table
         assert "recall@10" in table
+
+
+# ── the extended sweep ────────────────────────────────────────────────────────
+
+
+def test_the_extended_sweep_keeps_the_same_baseline_as_the_default_one() -> None:
+    """Otherwise deltas from the two sweeps could not be read side by side."""
+    from src.evals.ablation import extended_configs
+
+    assert extended_configs()[0].label == default_configs()[0].label == "semantic"
+
+
+def test_the_extended_sweep_adds_the_query_side_and_index_side_variants() -> None:
+    from src.evals.ablation import extended_configs
+
+    labels = [config.label for config in extended_configs()]
+
+    assert labels[: len(default_configs())] == [c.label for c in default_configs()]
+    assert "hyde" in labels and "multi-query" in labels
+    assert "contextual" in labels and "contextual+hybrid+rerank" in labels
+
+
+def test_only_the_query_side_variants_cost_llm_calls_at_query_time() -> None:
+    """Contextual retrieval's bill was paid by index-contextual, not the sweep."""
+    from src.evals.ablation import extended_configs
+
+    by_label = {config.label: config for config in extended_configs()}
+
+    assert by_label["hyde"].needs_llm is True
+    assert by_label["multi-query"].needs_llm is True
+    assert by_label["contextual"].needs_llm is False
+    assert by_label["semantic"].needs_llm is False
+
+
+def test_a_config_records_its_variant_axes_in_the_snapshot() -> None:
+    """The committed run has to say which configuration produced each row."""
+    config = AblationConfig(label="hyde", query_transform="hyde", contextual=True)
+
+    assert config.to_dict()["query_transform"] == "hyde"
+    assert config.to_dict()["contextual"] is True
+
+
+def test_an_unknown_sweep_name_is_rejected() -> None:
+    from src.evals.ablation import run_default_ablation
+
+    with pytest.raises(ValueError, match="Unknown sweep"):
+        run_default_ablation(object(), sweep="nope")
+
+
+def test_a_run_records_which_sweep_produced_it(monkeypatch) -> None:
+    """A committed snapshot has to say which set of configs it measured."""
+    import src.evals.ablation as ablation_module
+
+    monkeypatch.setattr(ablation_module, "load_golden", lambda: ENTRIES)
+    monkeypatch.setattr(
+        ablation_module,
+        "build_retrieve",
+        lambda settings: lambda question, config: ["chunk:v1:0"],
+    )
+
+    class _Settings:
+        rag_top_k = 10
+
+    result = ablation_module.run_default_ablation(_Settings(), sweep="extended")
+
+    assert result["sweep"] == "extended"
+    assert [cell["label"] for cell in result["cells"]] == [
+        config.label for config in ablation_module.extended_configs()
+    ]

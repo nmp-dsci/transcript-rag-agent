@@ -23,6 +23,10 @@ class Settings:
     log_transcript_artifacts: bool
     raw_transcript_collection: str = "raw_transcripts"
     chunk_collection: str = "transcript_chunks"
+    # Contextual Retrieval's parallel index: the same chunks, embedded with an
+    # LLM-written situating sentence. A separate collection on purpose — the
+    # two are compared against each other, so neither may overwrite the other.
+    contextual_chunk_collection: str = "transcript_chunks_contextual"
     transcript_summary_collection: str = "transcript_summaries"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     rag_top_k: int = 10
@@ -51,6 +55,16 @@ class Settings:
     # Adjacent chunks pasted around each hit so answers stop cutting off
     # mid-thought. 0 disables neighbour expansion.
     neighbor_span: int = 0
+    # Query-side retrieval transform applied before embedding: "hyde",
+    # "multi_query", or None to retrieve on the question as asked.
+    query_transform: str | None = None
+    # Paraphrases multi-query asks for. The original question is always
+    # retrieved too, so the fan-out is one more search than this.
+    multi_query_variants: int = 3
+    # Read timeout (seconds) on LLM calls. Without one an OpenAI-compatible
+    # endpoint that accepts the request and never answers hangs the process
+    # forever, which is how a judged matrix run sails past its own time budget.
+    llm_timeout_seconds: float = 120.0
     # Independent judge samples per metric; >1 reports mean plus spread.
     judge_samples: int = 1
     supadata_timeout_seconds: float = 120.0
@@ -68,6 +82,11 @@ class Settings:
     neo4j_user: str = "neo4j"
     neo4j_password: str = "yt-agent-graph"
     graph_cache_dir: Path | None = None
+    # Disk caches for the LLM passes the retrieval variants make: one expansion
+    # per question, one situating sentence per chunk. Both are derived state —
+    # deleting either only costs the calls to regenerate it.
+    query_cache_dir: Path | None = None
+    context_cache_dir: Path | None = None
 
 
 def _project_root() -> Path:
@@ -118,6 +137,7 @@ def _float_env(name: str, default: float) -> float:
 
 
 RETRIEVAL_MODES = ("semantic", "hybrid")
+QUERY_TRANSFORMS = ("hyde", "multi_query")
 
 
 def _retrieval_mode_env(name: str, default: str) -> str:
@@ -126,6 +146,21 @@ def _retrieval_mode_env(name: str, default: str) -> str:
         return default
     if value not in RETRIEVAL_MODES:
         raise ConfigError(f"{name} must be one of: {', '.join(RETRIEVAL_MODES)}")
+    return value
+
+
+def _query_transform_env(name: str) -> str | None:
+    """The configured query transform, or ``None`` for no transform.
+
+    Both an unset variable and an explicit ``none`` mean "retrieve on the
+    question as asked" — the historical behaviour — so the setting can be
+    turned off in an env file without deleting the line.
+    """
+    value = (os.environ.get(name) or "").strip().lower()
+    if not value or value == "none":
+        return None
+    if value not in QUERY_TRANSFORMS:
+        raise ConfigError(f"{name} must be one of: {', '.join(QUERY_TRANSFORMS)}, or none")
     return value
 
 
@@ -170,6 +205,9 @@ def load_settings(require_keys: bool = True) -> Settings:
             "YT_AGENT_RAW_TRANSCRIPT_COLLECTION", "raw_transcripts"
         ),
         chunk_collection=os.environ.get("YT_AGENT_CHUNK_COLLECTION", "transcript_chunks"),
+        contextual_chunk_collection=os.environ.get(
+            "YT_AGENT_CONTEXTUAL_CHUNK_COLLECTION", "transcript_chunks_contextual"
+        ),
         transcript_summary_collection=os.environ.get(
             "YT_AGENT_TRANSCRIPT_SUMMARY_COLLECTION", "transcript_summaries"
         ),
@@ -197,6 +235,9 @@ def load_settings(require_keys: bool = True) -> Settings:
             "YT_AGENT_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
         ),
         neighbor_span=_int_env("YT_AGENT_NEIGHBOR_SPAN", 0),
+        query_transform=_query_transform_env("YT_AGENT_QUERY_TRANSFORM"),
+        multi_query_variants=_int_env("YT_AGENT_MULTI_QUERY_VARIANTS", 3),
+        llm_timeout_seconds=_float_env("YT_AGENT_LLM_TIMEOUT_SECONDS", 120.0),
         judge_samples=_int_env("YT_AGENT_JUDGE_SAMPLES", 1),
         supadata_timeout_seconds=_float_env("SUPADATA_TIMEOUT_SECONDS", 120.0),
         supadata_poll_interval_seconds=_float_env("SUPADATA_POLL_INTERVAL_SECONDS", 2.0),
@@ -210,5 +251,11 @@ def load_settings(require_keys: bool = True) -> Settings:
         neo4j_password=os.environ.get("NEO4J_PASSWORD", "yt-agent-graph"),
         graph_cache_dir=_resolve_project_path(
             os.environ.get("YT_AGENT_GRAPH_CACHE_PATH", ".yt-agent/graph_cache")
+        ),
+        query_cache_dir=_resolve_project_path(
+            os.environ.get("YT_AGENT_QUERY_CACHE_PATH", ".yt-agent/query_cache")
+        ),
+        context_cache_dir=_resolve_project_path(
+            os.environ.get("YT_AGENT_CONTEXT_CACHE_PATH", ".yt-agent/context_cache")
         ),
     )

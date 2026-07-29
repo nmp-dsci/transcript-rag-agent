@@ -120,9 +120,7 @@ def test_cli_routes_summarize_with_cache_miss(monkeypatch, tmp_path, capsys) -> 
     _patch_cli(monkeypatch, tmp_path)
     FakeFetcher.calls = 0
 
-    result = cli.main(
-        ["summarize", "https://www.youtube.com/watch?v=3hk7nO_q0a8"]
-    )
+    result = cli.main(["summarize", "https://www.youtube.com/watch?v=3hk7nO_q0a8"])
 
     assert result == 0
     assert FakeFetcher.calls == 1
@@ -145,9 +143,7 @@ def test_fetch_no_refresh_uses_cached_transcript(monkeypatch, tmp_path, capsys) 
     _patch_cli(monkeypatch, tmp_path, store_cls=CachedStore)
     FakeFetcher.calls = 0
 
-    result = cli.main(
-        ["fetch", "https://www.youtube.com/watch?v=3hk7nO_q0a8", "--no-refresh"]
-    )
+    result = cli.main(["fetch", "https://www.youtube.com/watch?v=3hk7nO_q0a8", "--no-refresh"])
 
     assert result == 0
     assert FakeFetcher.calls == 0
@@ -170,9 +166,7 @@ def test_summarize_uses_cached_transcript_without_fetch(monkeypatch, tmp_path, c
     _patch_cli(monkeypatch, tmp_path, store_cls=CachedStore)
     FakeFetcher.calls = 0
 
-    result = cli.main(
-        ["summarize", "https://www.youtube.com/watch?v=3hk7nO_q0a8"]
-    )
+    result = cli.main(["summarize", "https://www.youtube.com/watch?v=3hk7nO_q0a8"])
 
     assert result == 0
     assert FakeFetcher.calls == 0
@@ -266,9 +260,7 @@ def test_rag_ask_passes_recursive_flags(monkeypatch, tmp_path, capsys) -> None:
     assert "rag answer" in capsys.readouterr().out
 
 
-def test_rag_ask_uses_recursive_env_default_and_opt_out(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_rag_ask_uses_recursive_env_default_and_opt_out(monkeypatch, tmp_path, capsys) -> None:
     settings = Settings(
         superdata_api_key="super",
         deepseek_api_key="deep",
@@ -462,7 +454,7 @@ def test_eval_ablation_does_not_require_api_keys(monkeypatch, tmp_path, capsys) 
     monkeypatch.setattr(
         ablation,
         "run_default_ablation",
-        lambda settings, top_k=None, on_progress=None: result,
+        lambda settings, top_k=None, sweep="default", on_progress=None: result,
     )
     monkeypatch.setattr(ablation, "format_table", lambda run: "table")
     monkeypatch.setattr(regression, "save_run", lambda run: tmp_path / "run.json")
@@ -470,3 +462,82 @@ def test_eval_ablation_does_not_require_api_keys(monkeypatch, tmp_path, capsys) 
     assert cli.main(["eval-ablation"]) == 0
     assert seen["require_keys"] is False
     capsys.readouterr()
+
+
+# ── retrieval variants ────────────────────────────────────────────────────────
+
+
+def _patch_rag_ask(monkeypatch, tmp_path) -> list:
+    """Patch rag-ask's stack, capturing every provider it builds."""
+    built: list = []
+
+    class CapturingProvider:
+        def __init__(self, *args, **kwargs) -> None:
+            built.append(kwargs)
+
+    _patch_cli(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "RagTranscriptAgent", FakeRagAgent)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+    monkeypatch.setattr(cli, "RagIndexer", FakeIndexer)
+    monkeypatch.setattr(cli, "MultiTranscriptRagContextProvider", CapturingProvider)
+    return built
+
+
+def test_rag_ask_wires_the_requested_query_transform(monkeypatch, tmp_path) -> None:
+    import src.rag.query_transform as query_transform
+
+    built = _patch_rag_ask(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", FakeChunkStore)
+    asked: list = []
+    monkeypatch.setattr(
+        query_transform,
+        "build_query_transform",
+        lambda name, settings: asked.append(name) or object(),
+    )
+
+    assert cli.main(["rag-ask", "question", "--query-transform", "hyde"]) == 0
+    assert asked == ["hyde"]
+    assert built[0]["query_transform"] is not None
+
+
+def test_rag_ask_without_a_transform_retrieves_on_the_question(monkeypatch, tmp_path) -> None:
+    built = _patch_rag_ask(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "TranscriptChunkStore", FakeChunkStore)
+
+    assert cli.main(["rag-ask", "question"]) == 0
+    assert built[0]["query_transform"] is None
+
+
+def test_rag_ask_contextual_reads_the_contextual_collection(monkeypatch, tmp_path) -> None:
+    built = _patch_rag_ask(monkeypatch, tmp_path)
+    opened: list[str] = []
+
+    class RecordingChunkStore(FakeChunkStore):
+        def __init__(self, path, embedding_model=None, collection_name=None) -> None:
+            super().__init__()
+            opened.append(collection_name)
+
+    monkeypatch.setattr(cli, "TranscriptChunkStore", RecordingChunkStore)
+
+    assert cli.main(["rag-ask", "question", "--contextual"]) == 0
+    assert built[0]["query_transform"] is None
+    # Retrieval reads the contextual collection; the indexer keeps writing to
+    # the baseline one, since index-contextual owns the derived index.
+    assert opened == ["transcript_chunks_contextual", "transcript_chunks"]
+
+
+def test_index_contextual_refuses_an_empty_corpus(monkeypatch, tmp_path, capsys) -> None:
+    _patch_cli(monkeypatch, tmp_path)
+    monkeypatch.setattr(cli, "HuggingFaceEmbeddingModel", FakeEmbeddingModel)
+
+    class EmptyChunkStore(FakeChunkStore):
+        def __init__(self, *args, **kwargs) -> None:
+            super().__init__()
+
+        def has_any_chunks(self) -> bool:
+            return False
+
+    monkeypatch.setattr(cli, "TranscriptChunkStore", EmptyChunkStore)
+
+    assert cli.main(["index-contextual"]) == 1
+    assert "index-rag" in capsys.readouterr().err

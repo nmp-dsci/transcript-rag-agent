@@ -116,6 +116,31 @@ def _vector_rag_flow(settings: Settings) -> list[dict[str, Any]]:
     return steps
 
 
+def _hyde_rag_flow(settings: Settings) -> list[dict[str, Any]]:
+    """vector_rag with one step in front of it: write the probe, then retrieve."""
+    return [
+        _step(
+            "Write hypothetical passage",
+            "One LLM call writes the passage that would answer the question, in "
+            "the register of a transcript. Cached per question, so a repeat "
+            "costs nothing and retrieves identically.",
+        ),
+        *_vector_rag_flow(settings)[1:],
+    ]
+
+
+def _contextual_rag_flow(settings: Settings) -> list[dict[str, Any]]:
+    """vector_rag pointed at the situated index — same steps, different vectors."""
+    steps = _vector_rag_flow(settings)[1:]
+    steps[0] = _step(
+        "Retrieve (contextual index)",
+        f"The same search as vector_rag, against {settings.contextual_chunk_collection}: "
+        "chunk vectors that include an LLM-written situating sentence. Only the "
+        "embedding differs — the answer call still receives the spoken text alone.",
+    )
+    return steps
+
+
 def _recursive_rag_flow(settings: Settings) -> list[dict[str, Any]]:
     steps = [
         _step(
@@ -314,6 +339,46 @@ def build_system_design(settings: Settings) -> dict[str, Any]:
             },
         },
         {
+            "id": "hyde_rag",
+            "label": "HyDE RAG",
+            "kind": "agent",
+            "x": 120,
+            "y": 220,
+            "description": (
+                "vector_rag, but retrieval embeds an LLM-written hypothetical "
+                "answer passage instead of the question."
+            ),
+            "prompts": prompts_by_system.get("retrieval_variants", []),
+            "flow": _hyde_rag_flow(settings),
+            "config": {
+                "model": settings.deepseek_model,
+                "query_transform": "hyde",
+                "query_cache_dir": str(settings.query_cache_dir)
+                if settings.query_cache_dir
+                else None,
+            },
+        },
+        {
+            "id": "contextual_rag",
+            "label": "Contextual RAG",
+            "kind": "agent",
+            "x": 340,
+            "y": 220,
+            "description": (
+                "vector_rag over the Contextual Retrieval index: the same "
+                "chunks, embedded with an LLM-written situating sentence."
+            ),
+            "prompts": prompts_by_system.get("retrieval_variants", []),
+            "flow": _contextual_rag_flow(settings),
+            "config": {
+                "model": settings.deepseek_model,
+                "collection": settings.contextual_chunk_collection,
+                "context_cache_dir": str(settings.context_cache_dir)
+                if settings.context_cache_dir
+                else None,
+            },
+        },
+        {
             "id": "summary_filter",
             "label": "Summary filter",
             "kind": "stage",
@@ -399,6 +464,24 @@ def build_system_design(settings: Settings) -> dict[str, Any]:
             },
         },
         {
+            "id": "chroma_contextual",
+            "label": "Chroma · transcript_chunks_contextual",
+            "kind": "store",
+            "x": 780,
+            "y": 520,
+            "description": (
+                "The same chunks as transcript_chunks, embedded with an "
+                "LLM-written situating sentence. Derived state, rebuilt by "
+                "index-contextual; kept separate so the two can be compared."
+            ),
+            "prompts": [],
+            "flow": [],
+            "config": {
+                "collection": settings.contextual_chunk_collection,
+                "path": str(settings.chroma_path),
+            },
+        },
+        {
             "id": "chroma_summaries",
             "label": "Chroma · transcript_summaries",
             "kind": "store",
@@ -444,6 +527,12 @@ def build_system_design(settings: Settings) -> dict[str, Any]:
         {"source": "graph_rag", "target": "deepseek"},
         {"source": "graph_rag", "target": "neo4j"},
         {"source": "graph_rag", "target": "chroma_chunks"},
+        {"source": "hyde_rag", "target": "deepseek"},
+        {"source": "hyde_rag", "target": "embeddings"},
+        {"source": "hyde_rag", "target": "chroma_chunks"},
+        {"source": "contextual_rag", "target": "deepseek"},
+        {"source": "contextual_rag", "target": "embeddings"},
+        {"source": "contextual_rag", "target": "chroma_contextual"},
         {"source": "summary_filter", "target": "chroma_summaries"},
         {"source": "summary_filter", "target": "deepseek"},
     ]

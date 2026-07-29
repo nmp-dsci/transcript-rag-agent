@@ -4,6 +4,10 @@ export interface SetupSpec {
   key: string;
   title: string;
   description: string;
+  /** Query rewritten before embedding ("hyde"/"multi_query"), or null for none. */
+  query_transform?: string | null;
+  /** Answers over the Contextual Retrieval index rather than the baseline one. */
+  contextual?: boolean;
 }
 
 export interface Reference {
@@ -436,6 +440,10 @@ export interface AblationConfig {
   rerank: boolean;
   neighbor_span: number;
   top_k: number;
+  /** Query rewritten before embedding ("hyde"/"multi_query"), or null for none. */
+  query_transform?: string | null;
+  /** Retrieved from the Contextual Retrieval index rather than the baseline one. */
+  contextual?: boolean;
 }
 
 export interface AblationCell {
@@ -456,6 +464,8 @@ export interface AblationRun {
   entries: number;
   metrics: string[];
   baseline: string;
+  /** Which config set was swept. Absent on runs predating the extended sweep. */
+  sweep?: string | null;
   cells: AblationCell[];
   deltas: AblationDelta[];
 }
