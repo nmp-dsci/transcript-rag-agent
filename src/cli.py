@@ -179,6 +179,17 @@ def build_parser() -> argparse.ArgumentParser:
             "cells come from the cache, so a narrower list saves little"
         ),
     )
+    matrix.add_argument(
+        "--questions",
+        default=None,
+        help=(
+            "Comma-separated golden question ids to score (default: the whole "
+            "golden set). A judged cell is the expensive unit of a matrix run, "
+            "so naming a sample is how you trade coverage for turnaround — the "
+            "ids are recorded in the run, and the sample must cover every "
+            "question type for the by-type pivot to mean anything"
+        ),
+    )
     matrix.add_argument("--top-k", type=int, default=None)
     matrix.add_argument(
         "--no-judge",
@@ -450,7 +461,7 @@ def _run_eval_golden(args, settings) -> int:
 def _run_eval_matrix(args, settings) -> int:
     """Every setup × the same golden questions, one committed comparison run."""
     from src.chat.setups import RagSetupRunner, SETUP_KEYS
-    from src.evals.golden import answer_correctness_fns
+    from src.evals.golden import answer_correctness_fns, load_golden
     from src.evals.judge import RagasJudge
     from src.evals.matrix import (
         DEFAULT_MATRIX_SETUPS,
@@ -469,6 +480,19 @@ def _run_eval_matrix(args, settings) -> int:
         print(f"Unknown setups: {', '.join(unknown)}", file=sys.stderr)
         return 2
 
+    entries = None
+    if args.questions:
+        wanted = [token.strip() for token in args.questions.split(",") if token.strip()]
+        by_id = {entry.id: entry for entry in load_golden()}
+        missing = [question_id for question_id in wanted if question_id not in by_id]
+        if missing:
+            print(f"Unknown golden question ids: {', '.join(missing)}", file=sys.stderr)
+            return 2
+        # Ordered by the request, de-duplicated: the ids are what the run is
+        # scoped to, so scoring one twice would double its weight in the
+        # averages without that being visible anywhere in the snapshot.
+        entries = [by_id[question_id] for question_id in dict.fromkeys(wanted)]
+
     runner = RagSetupRunner.from_settings(settings)
     judge = None if args.no_judge else RagasJudge.from_settings(settings)
     reference_fns = None if args.no_reference_metrics else answer_correctness_fns(settings)
@@ -478,6 +502,7 @@ def _run_eval_matrix(args, settings) -> int:
         setups=setups,
         judge=judge,
         reference_fns=reference_fns,
+        entries=entries,
         top_k=args.top_k,
         on_progress=print,
         refresh=args.refresh,

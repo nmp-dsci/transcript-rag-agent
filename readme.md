@@ -1094,9 +1094,20 @@ retries on the next run rather than pinning the failure.
 ```bash
 uv run python -m src.cli eval-matrix                                    # scores only uncached cells
 uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag,new_variant  # only new_variant is fresh
+uv run python -m src.cli eval-matrix --questions g001,g007,g010,g013,g015    # scope to a sample
 uv run python -m src.cli eval-matrix --refresh                          # bypass cache, rescore everything
 uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics  # deterministic only, fast
 ```
+
+A **cell** is one `(setup, question)` pair, and it is the expensive unit: every
+cell costs an answer call plus the judge's several sub-calls, so six setups over
+twenty questions is 120 cells and roughly 16 LLM calls each. `--questions`
+trades coverage for turnaround by naming the sample to score; the ids land in
+the run's `question_ids`, because a sampled run is a *different measurement*
+from a whole-set one and comparing the two without knowing the sample is how
+"the score went up" turns out to mean "the hard questions weren't asked". Keep
+at least one question of each type in a sample or the by-question-type pivot
+has empty columns.
 
 A fully judged run over every engine can still take well over an hour the
 *first* time — judging is the bottleneck, not the cache. `scripts/run_matrix_chunked.py`
