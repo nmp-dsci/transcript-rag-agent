@@ -23,24 +23,42 @@ class FakeContext:
 
 
 class FakeRagLlm:
+    """A stand-in that publishes per-answer state where a real agent does.
+
+    ``RagTranscriptAgent`` only records ``last_context``/``last_rewrite`` while
+    ``answer`` runs, and the runner clears both before every run, so a fake that
+    set them in ``__init__`` would model state no real agent can hold.
+    ``context``/``rewrite`` are what this fake will publish when asked.
+    """
+
     def __init__(self) -> None:
-        self.last_context = FakeContext(chunks=3)
+        self.context = FakeContext(chunks=3)
+        self.rewrite = None
+        self.last_context = None
+        self.last_rewrite = None
         self.requests: list = []
+
+    def _publish(self) -> None:
+        self.last_context = self.context
+        self.last_rewrite = self.rewrite
 
     def answer(self, request):
         self.requests.append(request)
+        self._publish()
         return RagTranscriptAnswer(question=request.question, answer="llm answer")
 
 
 class FakeRagAgent:
     def __init__(self) -> None:
-        self.last_context = FakeContext(chunks=5)
+        self.context = FakeContext(chunks=5)
+        self.last_context = None
         self.last_iteration_count = 4
         self.last_terminated_reason = "completed"
         self.requests: list = []
 
     def answer(self, request):
         self.requests.append(request)
+        self.last_context = self.context
         return RagTranscriptAnswer(question=request.question, answer="agent answer")
 
 
@@ -195,7 +213,7 @@ class TracingContext(FakeContext):
 
 def test_single_hop_trace_combines_context_stages_and_llm_step(settings) -> None:
     fake = FakeRagLlm()
-    fake.last_context = TracingContext()
+    fake.context = TracingContext()
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run("rag_llm", "what about X?")
@@ -211,8 +229,8 @@ def test_single_hop_trace_records_the_history_driven_rewrite(settings) -> None:
     from src.chat.setups import AskScope
 
     fake = FakeRagLlm()
-    fake.last_context = TracingContext()
-    fake.last_rewrite = QueryRewrite(query="capital gains discount changes", elapsed_ms=90)
+    fake.context = TracingContext()
+    fake.rewrite = QueryRewrite(query="capital gains discount changes", elapsed_ms=90)
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run(
@@ -232,8 +250,8 @@ def test_llm_calls_count_the_rewrite_the_follow_up_actually_made(settings) -> No
     from src.chat.setups import AskScope
 
     fake = FakeRagLlm()
-    fake.last_context = TracingContext()
-    fake.last_rewrite = QueryRewrite(query="capital gains discount changes")
+    fake.context = TracingContext()
+    fake.rewrite = QueryRewrite(query="capital gains discount changes")
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run(
@@ -258,12 +276,13 @@ def test_recursive_llm_calls_count_the_rewrite_on_top_of_the_stages(settings) ->
 
     class RecursiveFake(FakeRagLlm):
         def answer(self, request):
+            self._publish()
             return RagTranscriptAnswer(
                 question=request.question, answer="synth", recursion=recursion
             )
 
     fake = RecursiveFake()
-    fake.last_rewrite = QueryRewrite(query="negative gearing cap timing")
+    fake.rewrite = QueryRewrite(query="negative gearing cap timing")
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run(
@@ -277,8 +296,8 @@ def test_trace_marks_a_degraded_rewrite_as_degraded(settings) -> None:
     from src.agents.models import QueryRewrite
 
     fake = FakeRagLlm()
-    fake.last_context = TracingContext()
-    fake.last_rewrite = QueryRewrite(query="what about it?", degraded=True)
+    fake.context = TracingContext()
+    fake.rewrite = QueryRewrite(query="what about it?", degraded=True)
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run("rag_llm", "what about it?")
@@ -296,12 +315,13 @@ def test_recursive_trace_names_what_the_first_retrieval_embedded(settings) -> No
 
     class RecursiveFake(FakeRagLlm):
         def answer(self, request):
+            self._publish()
             return RagTranscriptAnswer(
                 question=request.question, answer="first", recursion=recursion
             )
 
     fake = RecursiveFake()
-    fake.last_rewrite = QueryRewrite(query="negative gearing cap timing")
+    fake.rewrite = QueryRewrite(query="negative gearing cap timing")
     runner = _runner(settings, rag_llm=fake)
 
     result = runner.run("rag_llm_recursive", "and when does it start?")
@@ -322,6 +342,7 @@ def test_recursive_trace_without_history_says_the_question_was_used(settings) ->
 
     class RecursiveFake(FakeRagLlm):
         def answer(self, request):
+            self._publish()
             return RagTranscriptAnswer(
                 question=request.question, answer="first", recursion=recursion
             )
@@ -365,6 +386,7 @@ def test_recursive_trace_flattens_the_recursion_trace(settings) -> None:
     class RecursiveFake(FakeRagLlm):
         def answer(self, request):
             self.requests.append(request)
+            self._publish()
             return RagTranscriptAnswer(
                 question=request.question, answer="synth", recursion=recursion
             )
@@ -397,6 +419,7 @@ def test_recursive_trace_records_a_kept_first_answer(settings) -> None:
 
     class RecursiveFake(FakeRagLlm):
         def answer(self, request):
+            self._publish()
             return RagTranscriptAnswer(
                 question=request.question, answer="first", recursion=recursion
             )
@@ -448,9 +471,10 @@ def test_failed_answer_keeps_the_retrieval_steps_already_recorded(settings) -> N
     class FailsAfterRetrieval(FakeRagLlm):
         def __init__(self) -> None:
             super().__init__()
-            self.last_context = TracingContext()
+            self.context = TracingContext()
 
         def answer(self, request):
+            self._publish()
             raise RuntimeError("deepseek 503")
 
     runner = _runner(settings, rag_llm=FailsAfterRetrieval())
@@ -469,12 +493,15 @@ def test_failed_graph_answer_keeps_the_route_and_evidence_steps(settings) -> Non
     class FailingGraphAgent:
         def __init__(self) -> None:
             self.last_context = None
+            self.last_trace = []
+
+        def answer(self, request):
+            # A real agent records the route and its evidence before the
+            # answer call, so the failure leaves those steps behind.
             self.last_trace = [
                 TraceStep(phase="route", label="Route → global", detail="no entities"),
                 TraceStep(phase="retrieve", label="Community summaries", detail="12 summaries"),
             ]
-
-        def answer(self, request):
             raise RuntimeError("neo4j unavailable")
 
     runner = _runner(settings)
@@ -524,21 +551,68 @@ def test_failed_agentic_answer_without_events_reports_no_steps(settings) -> None
     assert result.trace == []
 
 
+def test_a_failure_before_the_answer_never_persists_the_previous_questions_trace(
+    settings,
+) -> None:
+    """Agents are cached; a neighbouring question's steps are worse than none."""
+    fake = FakeRagLlm()
+    fake.context = TracingContext()
+    runner = _runner(settings, rag_llm=fake)
+
+    runner.run("rag_llm", "what about X?")
+    assert fake.last_context is not None
+
+    # A malformed url is rejected while the request is built, before answer()
+    # runs — and therefore before the agent clears its own record.
+    result = runner.run("rag_llm", "an unrelated question", url="not-a-url")
+
+    assert result.error is not None
+    assert result.trace == []
+
+
+def test_a_failed_retrieval_keeps_the_stages_it_measured(settings) -> None:
+    """The steps that explain the failure ride out on the error itself."""
+    from src.agents.models import TraceStep
+    from src.rag.context import RetrievalError
+
+    class FailingRetrieval(FakeRagLlm):
+        def answer(self, request):
+            raise RetrievalError(
+                "No transcript summaries matched the question.",
+                [
+                    TraceStep(
+                        phase="filter",
+                        label="Summary filter",
+                        detail="0 videos matched by per-video summary",
+                        elapsed_ms=31,
+                    )
+                ],
+            )
+
+    runner = _runner(settings, rag_llm=FailingRetrieval())
+    result = runner.run("rag_llm", "q")
+
+    assert [step["label"] for step in result.trace] == ["Summary filter"]
+    assert result.trace[0]["elapsed_ms"] == 31
+
+
 def test_graph_trace_passes_through_the_agents_recorded_steps(settings) -> None:
     from src.agents.models import TraceStep
 
     class FakeGraphAgent:
         def __init__(self) -> None:
-            self.last_context = FakeContext(chunks=1)
+            self.last_context = None
             self.last_llm_calls = 2
             self.last_route = "temporal"
+            self.last_trace = []
+
+        def answer(self, request):
+            self.last_context = FakeContext(chunks=1)
             self.last_trace = [
                 TraceStep(phase="route", label="Route → temporal", detail="entities: x"),
                 TraceStep(phase="retrieve", label="Claim timeline", detail="12 dated claims"),
                 TraceStep(phase="llm", label="Answer", detail="one narration call"),
             ]
-
-        def answer(self, request):
             return RagTranscriptAnswer(question=request.question, answer="graph answer")
 
     runner = _runner(settings)

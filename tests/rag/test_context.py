@@ -603,6 +603,43 @@ def test_get_context_trace_omits_the_trim_step_when_nothing_was_cut() -> None:
     assert [step.phase for step in context.trace] == ["retrieve"]
 
 
+def test_failed_summary_filter_carries_the_stage_it_measured() -> None:
+    """The filter ran and found nothing; that step is the whole diagnostic."""
+    from src.rag.context import RetrievalError
+
+    class EmptySummaryStore:
+        def query_relevant_transcripts(self, question, top_k, min_score):
+            return []
+
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+        summary_store=EmptySummaryStore(),
+    )
+
+    with pytest.raises(RetrievalError) as excinfo:
+        provider.get_context("capital gains", filter_transcripts=True)
+
+    assert [step.label for step in excinfo.value.trace] == ["Summary filter"]
+    assert "0 videos matched" in excinfo.value.trace[0].detail
+    assert isinstance(excinfo.value.trace[0].elapsed_ms, int)
+
+
+def test_a_retrieval_failure_before_any_stage_carries_an_empty_trace() -> None:
+    """Nothing was measured, so an empty trace is the honest record."""
+    from src.rag.context import RetrievalError
+
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(has_any=False),
+    )
+
+    with pytest.raises(RetrievalError) as excinfo:
+        provider.get_context("capital gains")
+
+    assert excinfo.value.trace == []
+
+
 def test_get_context_trace_records_neighbor_expansion() -> None:
     provider = MultiTranscriptRagContextProvider(
         raw_store=FakeMultiRawStore(),

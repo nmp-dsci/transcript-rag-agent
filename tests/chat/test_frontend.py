@@ -55,6 +55,23 @@ def test_render_ships_readability_renderer() -> None:
         assert marker in html, marker
 
 
+def test_render_omits_the_trace_this_page_cannot_show() -> None:
+    """Only the React Chat tab renders traces; embedding them here is dead weight."""
+    result = SetupResult(
+        key="rag_llm",
+        title="rag_llm (single-hop)",
+        command="uv run python -m src.cli rag-ask ... --rag_llm",
+        answer="An answer.",
+        trace=[{"phase": "retrieve", "label": "Retrieve candidates", "detail": "30 candidates"}],
+    )
+    html = render_chat_html([build_entry("q", [result])])
+
+    assert "Retrieve candidates" not in html
+    assert '"trace"' not in html
+    # The rest of the answer payload is untouched.
+    assert "rag_llm (single-hop)" in html
+
+
 def test_write_chat_html_creates_file(tmp_path) -> None:
     path = tmp_path / "out" / "chat.html"
     written = write_chat_html([_entry()], path)

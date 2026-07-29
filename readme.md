@@ -366,7 +366,9 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   answer as a collapsed `trace — N steps` block. It is saved with the history
   entry rather than held in session state, so it survives a full reload; a run
   that errors keeps whatever it had already recorded, and steps only report
-  what the code actually measured. Composer selects scope the question to a
+  what the code actually measured. This tab is the only place a trace renders —
+  the standalone `dashboard/chat.html` viewer has no renderer for one, so the
+  steps are left out of that export. Composer selects scope the question to a
   **channel** and/or a single **video** with linked dropdowns — picking a
   channel narrows the video list to it, picking a video adopts its channel,
   and a pinned video is sent alone since it is already the narrower scope.

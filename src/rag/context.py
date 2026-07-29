@@ -12,6 +12,22 @@ from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript
 from src.rag.summaries import TranscriptSummaryStore
 
 
+class RetrievalError(ValueError):
+    """A retrieval failure carrying the stages measured before it.
+
+    Several of ``get_context``'s failure modes only surface after real work has
+    run and been timed — a summary filter that matched nothing, a channel query
+    that came back empty. Raising a bare error would drop exactly the steps that
+    explain the failure, so they travel on the exception and the caller can
+    persist what actually ran. Subclasses ``ValueError`` because that is what
+    ``get_context`` has always raised.
+    """
+
+    def __init__(self, message: str, trace: list[TraceStep] | None = None) -> None:
+        super().__init__(message)
+        self.trace: list[TraceStep] = list(trace or [])
+
+
 class _Reranker(Protocol):
     """The shape ``_refine`` needs from a reranker — see :mod:`src.rag.rerank`."""
 
@@ -123,13 +139,14 @@ class MultiTranscriptRagContextProvider:
         )
         if source_url is None:
             if not self.chunk_store.has_any_chunks():
-                raise ValueError(
+                raise RetrievalError(
                     "No indexed transcript chunks found. Run index-rag for one or more "
-                    "YouTube URLs first."
+                    "YouTube URLs first.",
+                    trace,
                 )
             if filter_transcripts:
                 if self.summary_store is None:
-                    raise ValueError("Transcript filtering requires a summary store")
+                    raise RetrievalError("Transcript filtering requires a summary store", trace)
                 filter_started = time.monotonic()
                 selected_transcripts = self.summary_store.query_relevant_transcripts(
                     question,
@@ -149,10 +166,11 @@ class MultiTranscriptRagContextProvider:
                     )
                 )
                 if not selected_transcripts:
-                    raise ValueError(
+                    raise RetrievalError(
                         "No transcript summaries matched the question. Try lowering "
                         "--transcript-filter-min-score or run without "
-                        "--filter-transcripts."
+                        "--filter-transcripts.",
+                        trace,
                     )
                 filtered_video_ids = [summary.video_id for summary in selected_transcripts]
                 if channel_id:
@@ -161,11 +179,12 @@ class MultiTranscriptRagContextProvider:
                         vid for vid in filtered_video_ids if vid in channel_video_ids
                     ]
                     if not filtered_video_ids:
-                        raise ValueError(
+                        raise RetrievalError(
                             "No transcript summaries matched the question within "
                             f"channel {channel_id!r}. Try lowering "
                             "--transcript-filter-min-score, running without "
-                            "--filter-transcripts, or checking the channel_id."
+                            "--filter-transcripts, or checking the channel_id.",
+                            trace,
                         )
                 retrieve_started = time.monotonic()
                 retrieved = self.chunk_store.query_by_video_ids(
@@ -179,10 +198,17 @@ class MultiTranscriptRagContextProvider:
                 retrieved = self.chunk_store.query_by_channel(channel_id, question, candidates)
                 scope_desc = f"channel {channel_id}"
                 if not retrieved:
-                    raise ValueError(
+                    # The query ran and was timed, so record it before failing:
+                    # "the channel returned nothing" is the diagnostic, and it
+                    # would otherwise have to be inferred from the error text.
+                    self._record_retrieve(
+                        trace, retrieved, mode, scope_desc, candidates, retrieve_started
+                    )
+                    raise RetrievalError(
                         f"No indexed chunks found for channel {channel_id!r}. The "
                         "channel may not be indexed, or its chunks predate the "
-                        "channel metadata backfill."
+                        "channel metadata backfill.",
+                        trace,
                     )
             else:
                 retrieve_started = time.monotonic()
@@ -195,7 +221,9 @@ class MultiTranscriptRagContextProvider:
             video_id = _extract_video_id(source_url)
             if not self.chunk_store.has_chunks(video_id):
                 if self.indexer is None:
-                    raise ValueError(f"No RAG chunks found for {source_url}. Run index-rag first.")
+                    raise RetrievalError(
+                        f"No RAG chunks found for {source_url}. Run index-rag first.", trace
+                    )
                 result = self.indexer.index(source_url, refresh=False)
                 cache_status = result.cache_status
             raw_document, raw_cache_status = self.raw_store.ensure_raw_document(

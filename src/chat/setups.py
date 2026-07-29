@@ -268,6 +268,14 @@ class RagSetupRunner:
             self._graph_rag_agent = GraphRagAgent.from_settings(self._settings, self._provider)
         return self._graph_rag_agent
 
+    def _agent_for(self, key: str) -> Any:
+        """The (cached) agent one setup answers with."""
+        if key == "rag_agent":
+            return self._agentic()
+        if key == "graph_rag":
+            return self._graph()
+        return self._rag_llm()
+
     def run_many(
         self,
         keys: list[str],
@@ -310,8 +318,14 @@ class RagSetupRunner:
         agent: Any = None
         events: list[AgentProgressEvent] = []
         try:
+            agent = self._agent_for(key)
+            # Agents are cached across questions and clear their own per-answer
+            # record only once ``answer`` runs. Clearing it here, ahead of
+            # everything that can fail, is what stops a failure before that
+            # point — a malformed URL rejected while the request is built — from
+            # persisting the previous question's steps as this answer's trace.
+            _clear_per_answer_state(agent)
             if key == "rag_agent":
-                agent = self._agentic()
                 # Only the streaming path has per-iteration events to collect;
                 # passing None is what makes the CLI/eval path call answer().
                 collect: AgentEventFn | None = None
@@ -337,7 +351,6 @@ class RagSetupRunner:
                     trace=_agent_event_steps(events, agent.last_iteration_count, model),
                 )
             if key == "graph_rag":
-                agent = self._graph()
                 answer = agent.answer(self._request(question, url, effective_top_k, scope))
                 return self._build_result(
                     spec,
@@ -351,7 +364,6 @@ class RagSetupRunner:
                     scope=scope,
                     trace=list(getattr(agent, "last_trace", None) or []),
                 )
-            agent = self._rag_llm()
             answer, llm_calls = self._run_rag_llm(agent, key, question, url, effective_top_k, scope)
             rewrite = getattr(agent, "last_rewrite", None)
             if answer.recursion is not None:
@@ -382,7 +394,7 @@ class RagSetupRunner:
                 trace=trace,
             )
         except Exception as exc:  # one failing setup must not abort the comparison
-            partial = _partial_trace(key, agent, events, model)
+            partial = _partial_trace(key, agent, events, model, exc)
             return SetupResult(
                 key=spec.key,
                 title=spec.title,
@@ -491,25 +503,48 @@ class RagSetupRunner:
         )
 
 
+def _clear_per_answer_state(agent: Any) -> None:
+    """Discard the previous answer's record from a cached agent.
+
+    Exactly the fields ``_partial_trace`` reads back, so a persisted trace can
+    only ever contain steps this answer recorded. Attributes an agent does not
+    have are left alone — the agentic setup keeps its events in the runner.
+    """
+    if hasattr(agent, "last_context"):
+        agent.last_context = None
+    if hasattr(agent, "last_rewrite"):
+        agent.last_rewrite = None
+    if hasattr(agent, "last_trace"):
+        agent.last_trace = []
+
+
 def _partial_trace(
-    key: str, agent: Any, events: list[AgentProgressEvent], model: str
+    key: str,
+    agent: Any,
+    events: list[AgentProgressEvent],
+    model: str,
+    error: BaseException,
 ) -> list[TraceStep]:
     """What a failed run had already recorded, and nothing beyond it.
 
     Retrieval often succeeds and the answer call is what fails, so the steps
     collected up to that point are exactly the diagnostic the error entry
-    needs. Nothing is reconstructed: agents reset this state per answer, so an
-    absent record means the stage never ran on this question and no step for it
-    is emitted.
+    needs. Nothing is reconstructed and nothing is inherited: the runner cleared
+    this state before the run started, so an absent record means the stage never
+    ran on this question and no step for it is emitted.
     """
     if key == "graph_rag":
-        return list(getattr(agent, "last_trace", None) or [])
-    if key == "rag_agent":
+        steps = list(getattr(agent, "last_trace", None) or [])
+    elif key == "rag_agent":
         # Iterations are deliberately not passed: a count read off a half-run
         # agent would summarise a loop that never finished.
-        return _agent_event_steps(events, None, model)
-    steps = _rewrite_steps(getattr(agent, "last_rewrite", None), model)
-    steps.extend(getattr(getattr(agent, "last_context", None), "trace", None) or [])
+        steps = _agent_event_steps(events, None, model)
+    else:
+        steps = _rewrite_steps(getattr(agent, "last_rewrite", None), model)
+        steps.extend(getattr(getattr(agent, "last_context", None), "trace", None) or [])
+    # A retrieval that failed part-way carries its measured stages on the error
+    # itself (``RetrievalError``); they are the last thing that ran.
+    steps.extend(getattr(error, "trace", None) or [])
     return steps
 
 
