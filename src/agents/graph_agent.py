@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 
 import time
 
+from src.agents.llm import chat_model_kwargs
 from src.agents.models import (
     RagAnswerReference,
     RagQuestionRequest,
@@ -129,12 +130,7 @@ class GraphRagAgent:
     ) -> "GraphRagAgent":
         from langchain_openai import ChatOpenAI
 
-        kwargs: dict[str, object] = {
-            "api_key": settings.deepseek_api_key,
-            "model": settings.deepseek_model,
-        }
-        if settings.deepseek_base_url:
-            kwargs["base_url"] = settings.deepseek_base_url
+        kwargs = chat_model_kwargs(settings)
         return cls(
             ChatOpenAI(**kwargs),
             store or GraphStore.from_settings(settings),
