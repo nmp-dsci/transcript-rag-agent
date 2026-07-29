@@ -70,9 +70,9 @@ arithmetic (`evals/runs/ablation-*.json`; it renders live in the workbench
 | contextual | 0.143 | 0.315 | 0.389 | 0.545 | 0.707 | 0.516 | 0.941 |
 | contextual+hybrid+rerank | 0.110 | **0.371** | **0.486** | 0.625 | 0.663 | 0.555 | **0.964** |
 
-The honest finding: **plain hybrid fusion still wins overall**, and none of the
-three fashionable variants beats it on this corpus. What each one actually
-bought, stated as the tradeoff it is:
+The honest finding: **plain hybrid fusion still wins on the headline ranking
+metrics** — no variant beats it on recall@10, MRR or NDCG. Each of the three
+bought something narrower, and paid for it somewhere else:
 
 - **Hybrid** improves everything at once — recall@10 +0.05, MRR +0.08, NDCG
   +0.05 over plain semantic — by recovering the exact terms (figures, scheme
