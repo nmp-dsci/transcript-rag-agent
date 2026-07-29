@@ -131,6 +131,36 @@ export interface Entry {
   url: string | null;
   asked_at: string;
   answers: Answer[];
+  /**
+   * The document this question reviewed, by id. The text is not here on
+   * purpose — this file is committed, so the document lives server-side and is
+   * fetched with `api.document(id)`.
+   */
+  document_id?: string | null;
+}
+
+export interface DocumentSection {
+  index: number;
+  heading: string | null;
+  text: string;
+}
+
+/** A page fetched from a URL in a chat message, extracted for review. */
+export interface ReviewedDocument {
+  id: string;
+  url: string;
+  requested_url: string;
+  title: string | null;
+  sections: DocumentSection[];
+  /** The page exceeded the fetch cap and is missing its end. */
+  truncated: boolean;
+  fetched_at: string;
+  /** Read from the store rather than fetched again — only on the SSE event. */
+  reused?: boolean;
+  /** Only some sections were sent to the model, chosen for this question. */
+  narrowed?: boolean;
+  sections_selected?: number[];
+  detail?: string;
 }
 
 export interface Health {

@@ -8,6 +8,7 @@ import type {
   Corpus,
   Entry,
   RetrievalMode,
+  ReviewedDocument,
   SetupSpec,
 } from '../api/types';
 import {
@@ -18,6 +19,7 @@ import {
   scopePayload,
 } from './Composer';
 import { HistoryRail } from './HistoryRail';
+import { DocumentCard } from './DocumentCard';
 import { MessageBubble, type RunningSetup } from './MessageBubble';
 
 /** Agentic answers are the best but slowest; D2 makes them the default. */
@@ -28,6 +30,8 @@ interface LiveRun {
   entryId: string | null;
   running: RunningSetup[];
   answers: Answer[];
+  /** The page a URL in the message pointed at, once it has been fetched. */
+  document?: ReviewedDocument | null;
 }
 
 interface Props {
@@ -72,6 +76,9 @@ export function ChatView({
   // entry id -> setup key -> research steps, kept so a finished agentic answer
   // can still show its (collapsed) trace for the rest of the session.
   const [traces, setTraces] = useState<Record<string, Record<string, AgentStep[]>>>({});
+  // Reviewed documents by id, so a card survives the live run and can be
+  // re-rendered for any history entry that references one.
+  const [documents, setDocuments] = useState<Record<string, ReviewedDocument>>({});
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scope, setScope] = useState<ChatScope>(WHOLE_CORPUS);
@@ -109,6 +116,35 @@ export function ChatView({
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [thread, live]);
+
+  // A reloaded conversation carries only document ids — the text lives
+  // server-side, out of the committed history — so fetch what the thread
+  // references and has not already got. A document that has been cleared from
+  // the store simply has no card; the conversation still reads.
+  useEffect(() => {
+    const missing = thread
+      .map((entry) => entry.document_id)
+      .filter((id): id is string => Boolean(id) && !(id! in documents));
+    if (!missing.length) return;
+    let live = true;
+    void Promise.all(
+      Array.from(new Set(missing)).map((id) =>
+        api.document(id).then(
+          (found) => [id, found] as const,
+          () => null,
+        ),
+      ),
+    ).then((loaded) => {
+      const found = loaded.filter((item): item is readonly [string, ReviewedDocument] =>
+        item !== null,
+      );
+      if (!live || !found.length) return;
+      setDocuments((current) => ({ ...current, ...Object.fromEntries(found) }));
+    });
+    return () => {
+      live = false;
+    };
+  }, [thread, documents]);
 
   const upsertHistory = useCallback(
     (entry: Entry) => {
@@ -202,6 +238,21 @@ export function ChatView({
           request,
           {
             progress: (data) => setStatus(data.message),
+            document: (reviewed: ReviewedDocument) => {
+              // Arrives before the answer, so the card renders while the
+              // review is still being written. A review answers with the
+              // single-hop path only, so the other tabs stop waiting.
+              setDocuments((current) => ({ ...current, [reviewed.id]: reviewed }));
+              setLive((current) =>
+                current
+                  ? {
+                      ...current,
+                      document: reviewed,
+                      running: current.running.filter((setup) => setup.key === 'rag_llm'),
+                    }
+                  : current,
+              );
+            },
             agent_step: (step: AgentStep) => {
               collected[step.key] = [...(collected[step.key] ?? []), step];
               setLive((current) =>
@@ -376,6 +427,9 @@ export function ChatView({
             {thread.map((entry) => (
               <div key={entry.id} style={{ display: 'contents' }}>
                 <div className="msg-user">{entry.question}</div>
+                {entry.document_id && documents[entry.document_id] ? (
+                  <DocumentCard document={documents[entry.document_id]!} />
+                ) : null}
                 <MessageBubble
                   question={entry.question}
                   answers={entry.answers}
@@ -398,6 +452,7 @@ export function ChatView({
             {live ? (
               <>
                 {live.entryId ? null : <div className="msg-user">{live.question}</div>}
+                {live.document ? <DocumentCard document={live.document} /> : null}
                 <MessageBubble
                   question={live.question}
                   answers={live.answers}
