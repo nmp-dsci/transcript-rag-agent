@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timezone
 
+import pytest
 from langchain_core.messages import AIMessage
 
 from src.agents.context import TranscriptContext
-from src.agents.models import RagQuestionRequest
+from src.agents.models import RagQuestionRequest, TraceStep
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.rag.models import RetrievedChunk
 from src.transcripts.models import Transcript
@@ -255,3 +256,70 @@ def test_recursive_retrieves_followups_and_synthesizes_answer() -> None:
     assert answer.recursion.total_followups_executed == 1
     assert provider.calls[1][0] == "specific detail query"
     assert len(llm.calls) == 2
+
+
+def test_merged_context_keeps_every_retrievals_trace_when_synthesis_fails() -> None:
+    """A synthesis that blows up must not erase the retrievals that already ran.
+
+    ``last_context`` becomes the merged context before the synthesis call, and
+    that is what the chat runner persists as the trace of a failed answer.
+    """
+
+    class TracingProvider(FakeProvider):
+        def get_context(self, *args, **kwargs):
+            context = super().get_context(*args, **kwargs)
+            call_index = len(self.calls)
+            if call_index > 1:
+                chunk = context.retrieved_chunks[0].model_copy(
+                    update={"chunk_index": 5, "text": "follow-up detail"}
+                )
+                context = replace(context, retrieved_chunks=[chunk])
+            return replace(
+                context,
+                trace=[
+                    TraceStep(
+                        phase="retrieve",
+                        label=f"Retrieve candidates ({call_index})",
+                        detail="semantic search over the whole corpus",
+                    )
+                ],
+            )
+
+    class ExplodingLlm(FakeLlm):
+        def invoke(self, messages):
+            if self.calls:
+                raise RuntimeError("deepseek 503")
+            return super().invoke(messages)
+
+    llm = ExplodingLlm(
+        """
+        {
+          "question": "q",
+          "answer": "first answer [1]",
+          "followups_requested": true,
+          "subtopics": [
+            {
+              "topic": "detail",
+              "rationale": "thin evidence",
+              "followup_query": "specific detail query",
+              "confidence": 0.8
+            }
+          ]
+        }
+        """
+    )
+    agent = RagTranscriptAgent(llm, TracingProvider())
+
+    with pytest.raises(RuntimeError):
+        agent.answer(
+            RagQuestionRequest(
+                question="q",
+                recursive=True,
+                recursion_options={"novelty_min_chunks": 1},
+            )
+        )
+
+    assert [step.label for step in agent.last_context.trace] == [
+        "Retrieve candidates (1)",
+        "Retrieve candidates (2)",
+    ]

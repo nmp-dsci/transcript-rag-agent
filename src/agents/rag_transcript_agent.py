@@ -651,6 +651,10 @@ def _merge_contexts(contexts: list[TranscriptContext]) -> TranscriptContext:
         retrieved_chunks=chunks,
         selected_transcripts=selected_transcripts,
         top_k=base.top_k,
+        # The merged context is what ``last_context`` reports for the rest of
+        # the run, so it has to carry every retrieval that fed it — otherwise a
+        # failure after the merge persists a trace missing the work that ran.
+        trace=[step for context in contexts for step in (context.trace or [])],
     )
 
 

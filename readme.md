@@ -359,23 +359,31 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   agent is `rag_agent` (agentic), whose retrieval loop streams into the bubble
   live — one line per iteration showing the query it chose and how many chunks
   came back — so a ~30s research run reads as progress rather than a stall.
-  Composer selects scope the question to a **channel** and/or a single
-  **video** with linked dropdowns — picking a channel narrows the video list
-  to it, picking a video adopts its channel, and a pinned video is sent alone
-  since it is already the narrower scope. **⚙ advanced** exposes `top_k`, the
-  auto-judge toggle, the smart transcript filter, a semantic/hybrid retrieval
-  toggle, and additional setups to run alongside the default. Every answer
-  proposes follow-up questions as clickable chips; asking one carries the
-  prior question and answer as history so retrieval runs against a standalone
-  rewritten query, while the answering prompt marks that history as context
-  only — every claim must still come from retrieved chunks, never from an
-  earlier turn. When several setups answer the same question they share
-  **one bubble with tabs**, each carrying its own answer, citations, and
-  RAGAS score (flagged `self-graded` when the judge and answering model
-  match), with the best composite badged TOP and a compare grid underneath.
-  "Compare N more setups" runs the remaining ones into the *same* history
-  entry so the scoreboard sees them as competing answers. Esc cancels a
-  running ask.
+  Every setup — not only the agentic one — also *persists* what it did: each
+  answer stores an ordered execution trace (the graph route decision, each
+  retrieval/rerank/fusion stage with the chunk ids it kept, the recursive
+  fan-out's per-subtopic outcomes, and every LLM call) that renders under the
+  answer as a collapsed `trace — N steps` block. It is saved with the history
+  entry rather than held in session state, so it survives a full reload; a run
+  that errors keeps whatever it had already recorded, and steps only report
+  what the code actually measured. Composer selects scope the question to a
+  **channel** and/or a single **video** with linked dropdowns — picking a
+  channel narrows the video list to it, picking a video adopts its channel,
+  and a pinned video is sent alone since it is already the narrower scope.
+  **⚙ advanced** exposes `top_k`, the auto-judge toggle, the smart transcript
+  filter, a semantic/hybrid retrieval toggle, and additional setups to run
+  alongside the default. Every answer proposes follow-up questions as
+  clickable chips; asking one carries the prior question and answer as history
+  so retrieval runs against a standalone rewritten query — an extra LLM call
+  the trace and the bubble's LLM-call count both include — while the answering
+  prompt marks that history as context only: every claim must still come from
+  retrieved chunks, never from an earlier turn. When several setups answer the
+  same question they share **one bubble with tabs**, each carrying its own
+  answer, citations, and RAGAS score (flagged `self-graded` when the judge and
+  answering model match), with the best composite badged TOP and a compare
+  grid underneath. "Compare N more setups" runs the remaining ones into the
+  *same* history entry so the scoreboard sees them as competing answers. Esc
+  cancels a running ask.
 - **RAG Pipeline** (formerly **Library**) — two sub-tabs. **Corpus &
   retrieval** opens on a summary strip of derived insights — e.g. one channel
   holding over half the corpus's chunks (skews whole-corpus retrieval toward

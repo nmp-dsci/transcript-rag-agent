@@ -431,8 +431,9 @@ class RagSetupRunner:
             answer = agent.answer(request)
             recursion = answer.recursion
             llm_calls = sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
-            return answer, llm_calls
-        return agent.answer(self._request(question, url, top_k, scope)), 1
+            return answer, llm_calls + _rewrite_calls(agent)
+        answer = agent.answer(self._request(question, url, top_k, scope))
+        return answer, 1 + _rewrite_calls(agent)
 
     def _run_rag_agent(self, agent, question, url, top_k, on_agent_event=None, scope=None):
         request = self._request(question, url, top_k, scope or AskScope())
@@ -510,6 +511,16 @@ def _partial_trace(
     steps = _rewrite_steps(getattr(agent, "last_rewrite", None), model)
     steps.extend(getattr(getattr(agent, "last_context", None), "trace", None) or [])
     return steps
+
+
+def _rewrite_calls(agent: Any) -> int:
+    """The LLM calls the history-aware query rewrite cost this answer.
+
+    ``retrieval_query`` only reaches the model when the request carries prior
+    turns, and records the result on ``last_rewrite``; no record means no call,
+    so a question asked without history counts exactly what it did before.
+    """
+    return 1 if getattr(agent, "last_rewrite", None) is not None else 0
 
 
 def _rewrite_steps(rewrite: QueryRewrite | None, model: str) -> list[TraceStep]:

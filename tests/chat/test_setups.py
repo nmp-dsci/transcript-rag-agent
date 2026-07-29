@@ -226,6 +226,53 @@ def test_single_hop_trace_records_the_history_driven_rewrite(settings) -> None:
     assert rewrite_step["elapsed_ms"] == 90
 
 
+def test_llm_calls_count_the_rewrite_the_follow_up_actually_made(settings) -> None:
+    """The LLM-call chip must agree with the trace printed beneath it."""
+    from src.agents.models import QueryRewrite
+    from src.chat.setups import AskScope
+
+    fake = FakeRagLlm()
+    fake.last_context = TracingContext()
+    fake.last_rewrite = QueryRewrite(query="capital gains discount changes")
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run(
+        "rag_llm", "what about the second one?", scope=AskScope(history=["earlier turn"])
+    )
+
+    assert result.llm_calls == 2
+    assert sum(1 for step in result.trace if step["phase"] == "llm") == 2
+
+
+def test_recursive_llm_calls_count_the_rewrite_on_top_of_the_stages(settings) -> None:
+    from src.agents.models import QueryRewrite, RecursionStage, RecursionTrace
+    from src.chat.setups import AskScope
+
+    recursion = RecursionTrace(
+        stages=[
+            RecursionStage(name="first_pass", llm_calls=1, retrievals=1),
+            RecursionStage(name="final_synthesis", llm_calls=1, retrievals=0),
+        ],
+        terminated_reason="completed",
+    )
+
+    class RecursiveFake(FakeRagLlm):
+        def answer(self, request):
+            return RagTranscriptAnswer(
+                question=request.question, answer="synth", recursion=recursion
+            )
+
+    fake = RecursiveFake()
+    fake.last_rewrite = QueryRewrite(query="negative gearing cap timing")
+    runner = _runner(settings, rag_llm=fake)
+
+    result = runner.run(
+        "rag_llm_recursive", "and when does it start?", scope=AskScope(history=["earlier turn"])
+    )
+
+    assert result.llm_calls == 3
+
+
 def test_trace_marks_a_degraded_rewrite_as_degraded(settings) -> None:
     from src.agents.models import QueryRewrite
 

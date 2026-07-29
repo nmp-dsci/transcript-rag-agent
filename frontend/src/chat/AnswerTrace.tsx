@@ -25,11 +25,12 @@ export function AnswerTrace({ steps }: { steps: TraceStep[] }) {
               {step.detail}
             </span>
             <span className="c">
-              {step.chunk_ids.length > 0
-                ? `${step.chunk_ids.length} chunks`
-                : ''}
-              {step.chunk_ids.length > 0 && step.elapsed_ms != null ? ' · ' : ''}
-              {step.elapsed_ms != null ? `${step.elapsed_ms}ms` : ''}
+              {[
+                step.chunk_ids.length ? `${step.chunk_ids.length} chunks` : '',
+                step.elapsed_ms != null ? `${step.elapsed_ms}ms` : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           </div>
         ))}
