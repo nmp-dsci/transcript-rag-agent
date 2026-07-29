@@ -306,7 +306,11 @@ class RagSetupRunner:
 
         ``on_agent_event`` receives per-iteration research events and only ever
         fires for ``rag_agent`` — the other setups make a single retrieval pass
-        and have no intermediate steps to report.
+        and have no intermediate steps to report. Passing it also selects the
+        streaming agent call, so it is what decides whether ``rag_agent``'s
+        persisted trace carries a step per iteration or one summary step: a
+        caller that does not stream (CLI, evals) observes no per-iteration
+        events, and the trace never claims steps it did not observe.
         """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k

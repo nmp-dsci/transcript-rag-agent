@@ -24,7 +24,9 @@ interface Props {
   remainingSetups: number;
   /**
    * Research steps for finished answers, by setup key. Held in session state
-   * rather than the history file, so the trace survives until reload only.
+   * rather than the history file, so these survive until reload only — which is
+   * why an answer's own persisted `trace` is preferred over them when it has
+   * one, and these are the fallback for answers recorded before tracing.
    */
   traces?: Record<string, AgentStep[]>;
   /**

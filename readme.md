@@ -527,6 +527,18 @@ Each answer also records the stack that produced it — `model`,
 scoreboard reports those rows as `— pre-provenance` rather than attributing
 them to a model.
 
+Every answer also carries `trace`: the ordered steps its path actually ran,
+each with a `phase` (`route`, `filter`, `retrieve`, `rerank`, `merge`, `llm`),
+a `label`, a `detail`, the `chunk_ids` that step kept, and — where the code
+measured them — `model`, `elapsed_ms`, and `iteration`. It is written by the
+setup runner, so CLI-captured answers are traced too; an empty `chunk_ids` or a
+null `elapsed_ms` means that step was not measured rather than measured as
+zero. The one gap is `rag_agent`'s per-iteration steps, which come from the
+streamed `agent_step` events and so exist only for browser asks — the CLI and
+eval paths record a single summary step with the iteration count instead.
+`trace` defaults to `[]`, so entries written before tracing load unchanged and
+simply render no trace block.
+
 Endpoints (JSON unless noted):
 
 | Endpoint | Method | Purpose |
@@ -1068,7 +1080,8 @@ src/
                  #   prompt registry, the System Design graph (system_design.py), the
                  #   one-worker ingestion queue (ingestion_queue.py), and the in-app
                  #   matrix sweep (matrix_runner.py, matrix_runs.py)
-  chat/          # Setup registry + runner, shared chat history, static chat.html viewer
+  chat/          # Setup registry + runner (which also assembles each answer's persisted
+                 #   execution trace), shared chat history, static chat.html viewer
   evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
                  #   ablation harness, regression runs, the head-to-head matrix (matrix.py),
                  #   graph-extraction quality check (graph_extraction.py)
@@ -1082,7 +1095,8 @@ scripts/         # One-off maintenance (chunk-metadata backfill, legacy matrix-c
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
-  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score strip
+  src/chat/      # Chat thread, grouped multi-agent bubbles, composer, score strip, the
+                 #   live agent trace and the persisted answer trace (AnswerTrace)
   src/design/    # System Design tab: click-through node graph of prompts, live config,
                  #   and each answer path's step-by-step flow
   src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
@@ -1253,7 +1267,8 @@ dashboard/
   evaluation.html
   evaluation.json
   chat.html             # WhatsApp-style view of interactive chat Q&A
-  chat_history.json     # captured interactive chat questions and per-setup answers
+  chat_history.json     # captured interactive chat questions and per-setup answers,
+                        #   each with its execution trace
   rag_pipeline.html
   chunk_space/
     projection.json     # PCA projection (chunk coords, components, mean) — committed
@@ -1261,7 +1276,10 @@ dashboard/
 ```
 
 `chat.html` and `chat_history.json` are produced by `src.cli chat` and capture
-interactive questions and their per-setup answers.
+interactive questions and their per-setup answers. Each answer's `trace` is
+stored in the JSON but dropped from `chat.html`, which has no renderer for the
+steps and would otherwise carry megabytes of them; traces render in the
+workbench **Chat** tab.
 
 `evaluation.html` compares answers for a question. `rag_pipeline.html` is a tabbed dashboard that reviews indexed transcripts, summaries, summary encodings, chunk inventory, ingestion history when run records exist, and the chunk-embedding scatter plot. The `chunk_space/` artifacts are committed so a fresh clone renders the Chunk Space tab without re-running ingestion.
 
@@ -1274,6 +1292,12 @@ MLflow local tracking is written to:
 ```
 
 Each CLI command creates a run with command metadata, cache status, transcript metadata, and answer artifacts. Full transcript artifacts are disabled by default unless `YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=true`.
+
+MLflow instruments the CLI only — the server never opens a run. What a browser
+ask leaves behind instead is its per-answer execution trace, persisted with the
+history entry (`trace`, see *Evaluation Workbench*) and rendered in the Chat
+tab, so how an answer was produced survives the request rather than only the
+session.
 
 ### Tests
 
