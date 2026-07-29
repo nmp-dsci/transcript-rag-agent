@@ -93,9 +93,7 @@ def test_rag_transcript_agent_answers_and_backfills_references() -> None:
 
     assert answer.answer == "answer from chunk [1]"
     assert answer.references[0].timestamp_url.unicode_string().endswith("t=593s")
-    assert provider.calls == [
-        ("q", "https://www.youtube.com/watch?v=abc", 3, False, 5, 0.25)
-    ]
+    assert provider.calls == [("q", "https://www.youtube.com/watch?v=abc", 3, False, 5, 0.25)]
     assert "retrieved transcript chunks" in llm.messages[0].content
 
 
@@ -405,3 +403,84 @@ def test_merged_context_keeps_every_retrievals_trace_when_synthesis_fails() -> N
         "Retrieve candidates (1)",
         "Retrieve candidates (2)",
     ]
+
+
+# ── reviewing a shared document ───────────────────────────────────────────────
+
+
+DOC_CONTEXT = "DOCUMENT: A resume\nURL: https://example.com/cv\n\n[§1] Experience\nLed a team."
+
+
+def _answer_json(answer: str = "Feedback on [§1], per [1].") -> str:
+    import json
+
+    return json.dumps(
+        {
+            "answer": answer,
+            "references": [],
+            "answer_confidence": 0.8,
+            "followups_requested": False,
+            "subtopics": [],
+        }
+    )
+
+
+def test_a_document_changes_the_system_prompt_to_the_review_one() -> None:
+    """The corpus stops being the subject and becomes the criteria, so the
+    model is told that rather than left to infer it from an extra block."""
+    from src.agents.prompts import DOC_REVIEW_SYSTEM_PROMPT
+
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(RagQuestionRequest(question="any feedback?", document_context=DOC_CONTEXT))
+
+    assert llm.messages[0].content == DOC_REVIEW_SYSTEM_PROMPT
+
+
+def test_no_document_keeps_the_ordinary_rag_prompt() -> None:
+    from src.agents.prompts import RAG_SYSTEM_PROMPT
+
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(RagQuestionRequest(question="what changed?"))
+
+    assert llm.messages[0].content == RAG_SYSTEM_PROMPT
+
+
+def test_the_document_reaches_the_model_ahead_of_the_transcript_chunks() -> None:
+    """The subject before the standards it is judged against."""
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(RagQuestionRequest(question="any feedback?", document_context=DOC_CONTEXT))
+
+    contents = [str(message.content) for message in llm.messages]
+    document_at = next(i for i, text in enumerate(contents) if "[§1]" in text)
+    chunks_at = next(i for i, text in enumerate(contents) if "Transcript context" in text)
+    assert document_at < chunks_at
+
+
+def test_the_corpus_is_still_retrieved_for_a_document_question() -> None:
+    """The document supplies what is reviewed; the corpus supplies the advice."""
+    provider = FakeProvider()
+    agent = RagTranscriptAgent(FakeLlm(_answer_json()), provider)
+
+    agent.answer(
+        RagQuestionRequest(question="is my resume ATS-friendly?", document_context=DOC_CONTEXT)
+    )
+
+    assert provider.calls, "a document review still retrieves guidance from the corpus"
+    assert provider.calls[0][0] == "is my resume ATS-friendly?"
+
+
+def test_the_document_answer_comes_back_through_the_normal_contract() -> None:
+    agent = RagTranscriptAgent(FakeLlm(_answer_json("Rewrite [§1].")), FakeProvider())
+
+    answer = agent.answer(
+        RagQuestionRequest(question="any feedback?", document_context=DOC_CONTEXT)
+    )
+
+    assert answer.answer == "Rewrite [§1]."
+    assert answer.question == "any feedback?"

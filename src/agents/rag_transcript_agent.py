@@ -27,6 +27,7 @@ from src.agents.models import (
     SubtopicEvidence,
 )
 from src.agents.prompts import (
+    DOC_REVIEW_SYSTEM_PROMPT,
     RECURSIVE_SYNTHESIS_SYSTEM_PROMPT,
     RAG_SYSTEM_PROMPT,
     build_rag_question_prompt,
@@ -188,7 +189,12 @@ class RagTranscriptAgent:
             retrieval_mode=request.retrieval_mode,
             pass_label="retrieval",
         )
-        first = self._invoke_first_pass(request.question, retrieval.context_text, request.history)
+        first = self._invoke_first_pass(
+            request.question,
+            retrieval.context_text,
+            request.history,
+            document_context=request.document_context,
+        )
         references = first.references or _fallback_references(first.answer, retrieval.context)
         return RagTranscriptAnswer(
             question=request.question,
@@ -434,12 +440,24 @@ class RagTranscriptAgent:
         return _RetrievalResult(context=context, context_text=context_text)
 
     def _invoke_first_pass(
-        self, question: str, context_text: str, history: list[str] | None = None
+        self,
+        question: str,
+        context_text: str,
+        history: list[str] | None = None,
+        document_context: str | None = None,
     ) -> _FirstPassResult:
+        """One answer call, over the corpus alone or over a document too.
+
+        A document changes what the call *is*: the corpus stops being the
+        subject and becomes the source of criteria, so the system prompt
+        changes with it rather than leaving the model to infer the shift from
+        an extra block of text.
+        """
         content = self._invoke(
-            system_prompt=RAG_SYSTEM_PROMPT,
+            system_prompt=DOC_REVIEW_SYSTEM_PROMPT if document_context else RAG_SYSTEM_PROMPT,
             context_text=context_text,
             user_prompt=build_rag_question_prompt(question, history),
+            document_context=document_context,
         )
         try:
             data = _json_object(content)
@@ -513,10 +531,21 @@ class RagTranscriptAgent:
             ),
         )
 
-    def _invoke(self, system_prompt: str, context_text: str, user_prompt: str) -> str:
+    def _invoke(
+        self,
+        system_prompt: str,
+        context_text: str,
+        user_prompt: str,
+        document_context: str | None = None,
+    ) -> str:
         messages: list[SystemMessage | HumanMessage] = [
             SystemMessage(content=system_prompt),
         ]
+        if document_context:
+            # Ahead of the transcript chunks on purpose: the document is what is
+            # being reviewed and the chunks are the criteria, so the model meets
+            # the subject before the standards it is judged against.
+            messages.append(SystemMessage(content=document_context))
         if context_text:
             messages.append(SystemMessage(content=build_transcript_context_prompt(context_text)))
         messages.append(HumanMessage(content=user_prompt))

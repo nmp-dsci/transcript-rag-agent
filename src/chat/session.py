@@ -109,10 +109,7 @@ def _ask_flow(
     if not question:
         output("No question entered; back to menu.")
         return
-    url = (
-        input_fn("Restrict to a single video URL (optional, blank for all): ").strip()
-        or None
-    )
+    url = input_fn("Restrict to a single video URL (optional, blank for all): ").strip() or None
 
     output("")
     output("RAG setups:")
@@ -181,9 +178,7 @@ def _fetch_flow(
             output(f"Invalid number: {latest_raw!r}; back to menu.")
             return
         output(f"Bulk indexing latest {latest_raw} from {channel} ...")
-        code = index_fn(
-            ["bulk-index", "channel", "--channel", channel, "--latest", latest_raw]
-        )
+        code = index_fn(["bulk-index", "channel", "--channel", channel, "--latest", latest_raw])
         output("Done." if code == 0 else f"bulk-index exited with code {code}.")
     else:
         output(f"Unknown choice: {mode!r}")

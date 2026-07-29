@@ -53,6 +53,13 @@ SYSTEMS: list[dict[str, str]] = [
         "local/global/temporal router, and the graph answer paths.",
     },
     {
+        "key": "doc_review",
+        "title": "Document review — a shared page against the corpus",
+        "description": "The prompt behind a chat message that contains a URL: "
+        "the document supplies what is being reviewed, the corpus supplies the "
+        "criteria, and the two are cited differently.",
+    },
+    {
         "key": "retrieval_variants",
         "title": "Retrieval variants — HyDE, multi-query, contextual",
         "description": "The prompts that change what gets embedded rather than "

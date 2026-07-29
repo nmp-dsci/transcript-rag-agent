@@ -355,9 +355,7 @@ def _viewer_payload(entries: list[ChatEntry]) -> dict[str, object]:
     return {"conversations": conversations}
 
 
-def render_chat_html(
-    entries: list[ChatEntry], generated_at: datetime | None = None
-) -> str:
+def render_chat_html(entries: list[ChatEntry], generated_at: datetime | None = None) -> str:
     moment = generated_at or datetime.now(timezone.utc)
     payload = _viewer_payload(entries)
     # Embed safely inside the inline <script> tag.
@@ -395,9 +393,7 @@ def render_chat_html(
     )
 
 
-def write_chat_html(
-    entries: list[ChatEntry], path: Path = DEFAULT_CHAT_HTML_PATH
-) -> Path:
+def write_chat_html(entries: list[ChatEntry], path: Path = DEFAULT_CHAT_HTML_PATH) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_chat_html(entries), encoding="utf-8")
     return path

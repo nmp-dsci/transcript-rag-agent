@@ -98,6 +98,10 @@ class ChatEntry:
     url: str | None
     asked_at: str
     answers: list[ChatAnswer] = field(default_factory=list)
+    # The document this question reviewed, by id only. The text itself lives in
+    # the gitignored document store: this file is committed, and someone
+    # reviewing their own resume should not have it land in a tracked file.
+    document_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -112,6 +116,7 @@ class ChatEntry:
             answers=[
                 ChatAnswer(**_known_answer_fields(answer)) for answer in data.get("answers", [])
             ],
+            document_id=data.get("document_id"),
         )
 
 
@@ -140,6 +145,7 @@ def build_entry(
     *,
     url: str | None = None,
     now: datetime | None = None,
+    document_id: str | None = None,
 ) -> ChatEntry:
     moment = now or datetime.now(timezone.utc)
     return ChatEntry(
@@ -148,6 +154,7 @@ def build_entry(
         url=url,
         asked_at=moment.isoformat(),
         answers=[ChatAnswer.from_result(result) for result in results],
+        document_id=document_id,
     )
 
 
