@@ -71,7 +71,10 @@ class BrokenAgent:
 
 def _runner(settings, *, rag_llm=None, rag_agent=None) -> RagSetupRunner:
     runner = RagSetupRunner(settings, provider=None)
-    runner._rag_llm_agent = rag_llm
+    # Pre-seeded under the baseline retrieval variant, which is what every
+    # rag_llm setup except the HyDE/contextual ones resolves to.
+    if rag_llm is not None:
+        runner._rag_llm_agents["baseline"] = rag_llm
     runner._rag_agent = rag_agent
     return runner
 
@@ -839,3 +842,129 @@ def test_graph_trace_passes_through_the_agents_recorded_steps(settings) -> None:
         "Answer",
     ]
     assert result.terminated_reason == "temporal"
+
+
+# ── retrieval variants ────────────────────────────────────────────────────────
+
+
+class FakeStore:
+    def __init__(self, has_chunks: bool = True) -> None:
+        self.embedding_model = object()
+        self._has_chunks = has_chunks
+
+    def has_any_chunks(self) -> bool:
+        return self._has_chunks
+
+
+class FakeProvider:
+    def __init__(self) -> None:
+        self.raw_store = object()
+        self.chunk_store = FakeStore()
+        self.indexer = object()
+        self.summary_store = object()
+        self.retrieval_mode = "hybrid"
+        self.retrieval_candidates = 42
+        self.reranker = object()
+        self.neighbor_span = 2
+        self.query_transform = None
+
+
+def test_setups_that_retrieve_the_same_way_share_one_provider(settings) -> None:
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    assert runner.provider_for("rag_llm") is runner.provider_for("rag_llm_recursive")
+    assert runner.provider_for("rag_agent") is runner.provider_for("rag_llm")
+
+
+def test_a_variant_provider_differs_from_the_baseline_on_one_axis_only(
+    settings, monkeypatch
+) -> None:
+    """Any other difference would be scored as if it were the technique."""
+    import src.rag.query_transform as query_transform
+
+    transform = object()
+    monkeypatch.setattr(query_transform, "build_query_transform", lambda name, s: transform)
+    base = FakeProvider()
+    runner = RagSetupRunner(settings, provider=base)
+
+    variant = runner.provider_for("rag_llm_hyde")
+
+    assert variant is not base
+    assert variant.query_transform is transform
+    assert variant.chunk_store is base.chunk_store
+    assert variant.raw_store is base.raw_store
+    assert variant.summary_store is base.summary_store
+    assert variant.indexer is base.indexer
+    assert variant.reranker is base.reranker
+    assert variant.retrieval_mode == base.retrieval_mode
+    assert variant.retrieval_candidates == base.retrieval_candidates
+    assert variant.neighbor_span == base.neighbor_span
+
+
+def test_a_variant_provider_is_built_once_and_reused(settings, monkeypatch) -> None:
+    import src.rag.query_transform as query_transform
+
+    calls = []
+    monkeypatch.setattr(
+        query_transform,
+        "build_query_transform",
+        lambda name, s: calls.append(name) or object(),
+    )
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    assert runner.provider_for("rag_llm_hyde") is runner.provider_for("rag_llm_hyde")
+    assert calls == ["hyde"]
+
+
+def test_the_contextual_variant_reads_the_contextual_collection(settings, monkeypatch) -> None:
+    import src.chat.setups as setups_module
+
+    opened: list[str] = []
+
+    def fake_store(path, embedding_model, collection_name):
+        opened.append(collection_name)
+        return FakeStore()
+
+    monkeypatch.setattr(setups_module, "TranscriptChunkStore", fake_store)
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    variant = runner.provider_for("rag_llm_contextual")
+
+    assert opened == [settings.contextual_chunk_collection]
+    assert variant.query_transform is None
+    # index-contextual owns that collection, so nothing else may write into it.
+    assert variant.indexer is None
+
+
+def test_an_empty_contextual_index_says_which_command_builds_it(settings, monkeypatch) -> None:
+    import src.chat.setups as setups_module
+
+    monkeypatch.setattr(
+        setups_module,
+        "TranscriptChunkStore",
+        lambda path, embedding_model, collection_name: FakeStore(has_chunks=False),
+    )
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    with pytest.raises(ValueError, match="index-contextual"):
+        runner.provider_for("rag_llm_contextual")
+
+
+def test_a_baseline_only_session_never_builds_a_variant(settings) -> None:
+    """No query-transform client, no second collection opened, no API key needed."""
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    runner.provider_for("rag_llm")
+
+    assert set(runner._providers) == {"baseline"}
+
+
+@pytest.mark.parametrize(
+    "key,expected",
+    [
+        ("rag_llm_hyde", "--query-transform hyde"),
+        ("rag_llm_contextual", "--contextual"),
+    ],
+)
+def test_a_variant_reports_the_flag_that_reproduces_it(key, expected) -> None:
+    assert expected in command_for(key)

@@ -224,6 +224,9 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .tab .sw, .ccol .sw { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; background: #8b949e; }
 [data-key='rag_llm_recursive'] .sw { background: #d29922; }
 [data-key='rag_agent'] .sw { background: #2f81f7; }
+[data-key='graph_rag'] .sw { background: #a371f7; }
+[data-key='rag_llm_hyde'] .sw { background: #3fb950; }
+[data-key='rag_llm_contextual'] .sw { background: #db61a2; }
 .tab .win { color: var(--good); }
 
 /* agent research trace */

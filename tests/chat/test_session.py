@@ -4,7 +4,7 @@ from src import cli
 from src.chat import session as session_module
 from src.chat.history import load_history
 from src.chat.session import run_session
-from src.chat.setups import SetupResult
+from src.chat.setups import SETUP_KEYS, SetupResult
 
 
 class ScriptedInput:
@@ -93,12 +93,9 @@ def test_ask_flow_invalid_then_valid_setup(settings, tmp_path) -> None:
         index_fn=lambda argv: 0,
     )
 
-    assert runner.calls[0][0] == [
-        "rag_llm",
-        "rag_llm_recursive",
-        "rag_agent",
-        "graph_rag",
-    ]
+    # "a" means every registered setup, so this tracks the registry rather
+    # than a copy of it that goes stale the next time one is added.
+    assert runner.calls[0][0] == SETUP_KEYS
 
 
 def test_fetch_single_url_invokes_index(settings, tmp_path) -> None:

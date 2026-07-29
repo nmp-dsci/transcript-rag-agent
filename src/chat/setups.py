@@ -36,11 +36,34 @@ from src.transcripts.fetcher import SuperdataTranscriptFetcher
 
 @dataclass(frozen=True)
 class SetupSpec:
-    """Static metadata for one comparable RAG setup."""
+    """Static metadata for one comparable RAG setup.
+
+    ``retrieval`` names the retrieval variant the setup answers over. It is what
+    makes a setup like ``rag_llm_hyde`` a *comparable* configuration rather than
+    a separate engine: the answering path is byte-for-byte the single-hop one,
+    and only the retrieval it reads differs — so the score gap between the two
+    is attributable to retrieval alone.
+    """
 
     key: str
     title: str
     description: str
+    #: Query-side transform applied before embedding (see
+    #: :mod:`src.rag.query_transform`), or None to embed the question as asked.
+    query_transform: str | None = None
+    #: Retrieve from the Contextual Retrieval index instead of the baseline one.
+    contextual: bool = False
+
+    @property
+    def retrieval(self) -> str:
+        """Identity of the retrieval stack this setup needs, for provider reuse.
+
+        Setups that retrieve the same way share one provider — and therefore one
+        set of loaded models — no matter how differently they answer.
+        """
+        if self.contextual:
+            return "contextual"
+        return self.query_transform or "baseline"
 
 
 # Order defines the 1-based menu numbering used by ``select_setups``.
@@ -73,6 +96,26 @@ SETUP_SPECS: list[SetupSpec] = [
             "Neo4j entity/claim graph — plus vector retrieval on local "
             "questions. Requires index-graph."
         ),
+    ),
+    SetupSpec(
+        key="rag_llm_hyde",
+        title="rag_llm (HyDE)",
+        description=(
+            "Single-hop, but retrieval embeds an LLM-written hypothetical "
+            "answer instead of the question — the query-side half of the "
+            "retrieval lab."
+        ),
+        query_transform="hyde",
+    ),
+    SetupSpec(
+        key="rag_llm_contextual",
+        title="rag_llm (contextual)",
+        description=(
+            "Single-hop over the Contextual Retrieval index: the same chunks, "
+            "embedded with an LLM-written situating sentence. Requires "
+            "index-contextual."
+        ),
+        contextual=True,
     ),
 ]
 
@@ -175,6 +218,8 @@ def command_for(key: str, url: str | None = None) -> str:
         "rag_llm_recursive": "--rag_llm --recursive",
         "rag_agent": "--rag_agent",
         "graph_rag": "--graph_rag",
+        "rag_llm_hyde": "--rag_llm --query-transform hyde",
+        "rag_llm_contextual": "--rag_llm --contextual",
     }[key]
     return f'uv run python -m src.cli rag-ask "$question" {flags}{url_flag}'
 
@@ -184,7 +229,13 @@ AgentEventFn = Callable[[AgentProgressEvent], None]
 
 
 class RagSetupRunner:
-    """Answer a question with one or more setups using a shared retrieval stack."""
+    """Answer a question with one or more setups using a shared retrieval stack.
+
+    Setups that retrieve the same way share one provider and one agent; the
+    retrieval *variants* (HyDE, contextual) get their own, built on first use so
+    a session that never selects them pays nothing — no query-transform client,
+    no second Chroma collection opened.
+    """
 
     def __init__(
         self,
@@ -193,14 +244,65 @@ class RagSetupRunner:
     ) -> None:
         self._settings = settings
         self._provider = provider
-        self._rag_llm_agent: RagTranscriptAgent | None = None
+        # Keyed by SetupSpec.retrieval, so the two setups that answer the same
+        # way over the same index resolve to the same objects.
+        self._providers: dict[str, MultiTranscriptRagContextProvider] = {"baseline": provider}
+        self._rag_llm_agents: dict[str, RagTranscriptAgent] = {}
         self._rag_agent: RagAgent | None = None
         self._graph_rag_agent = None  # GraphRagAgent, built lazily (needs Neo4j)
 
     @property
     def provider(self) -> MultiTranscriptRagContextProvider:
-        """The shared retrieval provider, reused by the ranking endpoint."""
+        """The baseline retrieval provider, reused by the ranking endpoint."""
         return self._provider
+
+    def provider_for(self, key: str) -> MultiTranscriptRagContextProvider:
+        """The retrieval provider one setup answers over.
+
+        A variant provider reuses the baseline's stores, indexer, summary store,
+        reranker and every retrieval setting — only the one axis the variant is
+        about differs. That is what makes the comparison a controlled one: any
+        other difference would show up in the score as if it were the technique.
+        """
+        spec = setup_spec(key)
+        variant = spec.retrieval
+        if variant in self._providers:
+            return self._providers[variant]
+
+        base = self._provider
+        chunk_store = base.chunk_store
+        if spec.contextual:
+            chunk_store = TranscriptChunkStore(
+                self._settings.chroma_path,
+                embedding_model=base.chunk_store.embedding_model,
+                collection_name=self._settings.contextual_chunk_collection,
+            )
+            if not chunk_store.has_any_chunks():
+                raise ValueError(
+                    f"The contextual index is empty, so {key} has nothing to "
+                    "retrieve. Run `uv run python -m src.cli index-contextual` first."
+                )
+        transform = None
+        if spec.query_transform:
+            from src.rag.query_transform import build_query_transform
+
+            transform = build_query_transform(spec.query_transform, self._settings)
+        provider = MultiTranscriptRagContextProvider(
+            raw_store=base.raw_store,
+            chunk_store=chunk_store,
+            # The contextual collection is derived state that index-contextual
+            # owns; auto-indexing into it would add chunks with no situating
+            # sentence, so the variant retrieves without an indexer instead.
+            indexer=None if spec.contextual else base.indexer,
+            summary_store=base.summary_store,
+            retrieval_mode=base.retrieval_mode,
+            retrieval_candidates=base.retrieval_candidates,
+            reranker=base.reranker,
+            neighbor_span=base.neighbor_span,
+            query_transform=transform,
+        )
+        self._providers[variant] = provider
+        return provider
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "RagSetupRunner":
@@ -251,10 +353,13 @@ class RagSetupRunner:
         )
         return cls(settings, provider)
 
-    def _rag_llm(self) -> RagTranscriptAgent:
-        if self._rag_llm_agent is None:
-            self._rag_llm_agent = RagTranscriptAgent.from_settings(self._settings, self._provider)
-        return self._rag_llm_agent
+    def _rag_llm(self, key: str = "rag_llm") -> RagTranscriptAgent:
+        variant = setup_spec(key).retrieval
+        if variant not in self._rag_llm_agents:
+            self._rag_llm_agents[variant] = RagTranscriptAgent.from_settings(
+                self._settings, self.provider_for(key)
+            )
+        return self._rag_llm_agents[variant]
 
     def _agentic(self) -> RagAgent:
         if self._rag_agent is None:
@@ -274,7 +379,7 @@ class RagSetupRunner:
             return self._agentic()
         if key == "graph_rag":
             return self._graph()
-        return self._rag_llm()
+        return self._rag_llm(key)
 
     def run_many(
         self,

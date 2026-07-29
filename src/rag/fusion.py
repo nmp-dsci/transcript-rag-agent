@@ -130,6 +130,51 @@ def fuse_chunks(
     return [chunk for chunk, _score in scored]
 
 
+def fuse_rankings(
+    rankings: Sequence[Sequence[Any]],
+    top_k: int,
+    k: int = DEFAULT_K,
+    weights: list[float] | None = None,
+) -> list["RetrievedChunk"]:
+    """Fuse N ranked chunk lists — one per query — into one ranking.
+
+    Where :func:`fuse_chunks` merges two *retrievers* over one query, this
+    merges one retriever over several *queries*: the paraphrases a multi-query
+    expansion fanned out to. Every list holds real chunk objects, so unlike the
+    BM25 case nothing has to be reconstructed and no key is dropped.
+
+    A chunk found by more than one phrasing appears once, carrying the object
+    from the earliest list that found it — for multi-query that is the original
+    question, so a chunk keeps the score of the search a reader would expect it
+    to have. Chunks are compared by identity (video id and chunk index), not by
+    score: the per-query scores come from different embeddings and are not
+    comparable, which is exactly why the fusion is over ranks.
+    """
+    if top_k <= 0:
+        return []
+    resolvable: dict[str, Any] = {}
+    # Later assignments win, so walking the lists backwards leaves the earliest
+    # list's object in place for any chunk that several queries found.
+    for ranking in reversed(list(rankings)):
+        for chunk in ranking:
+            resolvable[key_of(chunk)] = chunk
+
+    fused = reciprocal_rank_fusion(
+        [[key_of(chunk) for chunk in ranking] for ranking in rankings],
+        k=k,
+        weights=weights,
+    )
+    results: list[Any] = []
+    for key, _score in fused:
+        chunk = resolvable.get(key)
+        if chunk is None:
+            continue
+        results.append(chunk)
+        if len(results) >= top_k:
+            break
+    return results
+
+
 def fuse_chunks_with_scores(
     semantic: Sequence[Any],
     bm25: Sequence[Any],

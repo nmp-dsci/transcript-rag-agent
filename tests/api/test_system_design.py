@@ -279,3 +279,47 @@ def test_graph_rag_flow_evidence_caps_match_the_agent_defaults() -> None:
     assert str(DEFAULT_MAX_CLAIMS) in detail
     assert str(DEFAULT_MAX_COMMUNITIES) in detail
     assert str(DEFAULT_TIMELINE_CLAIMS) in detail
+
+
+# ── retrieval variants ────────────────────────────────────────────────────────
+
+
+def test_the_retrieval_variants_appear_as_their_own_agent_nodes() -> None:
+    """Two more answer paths exist in the Chat tab; the map must show them."""
+    design = build_system_design(_settings())
+    ids = {node["id"] for node in design["nodes"]}
+
+    assert {"hyde_rag", "contextual_rag"} <= ids
+
+
+def test_the_contextual_variant_reads_the_contextual_store_and_not_the_baseline() -> None:
+    design = build_system_design(_settings())
+    targets = {edge["target"] for edge in design["edges"] if edge["source"] == "contextual_rag"}
+
+    assert "chroma_contextual" in targets
+    assert "chroma_chunks" not in targets
+
+
+def test_hyde_reads_the_baseline_store_since_only_the_query_changes() -> None:
+    design = build_system_design(_settings())
+    targets = {edge["target"] for edge in design["edges"] if edge["source"] == "hyde_rag"}
+
+    assert "chroma_chunks" in targets
+    assert "chroma_contextual" not in targets
+
+
+def test_the_hyde_flow_leads_with_writing_the_probe() -> None:
+    design = build_system_design(_settings())
+    by_id = {node["id"]: node for node in design["nodes"]}
+
+    assert by_id["hyde_rag"]["flow"][0]["label"] == "Write hypothetical passage"
+
+
+def test_the_contextual_flow_names_the_collection_it_searches() -> None:
+    settings = _settings()
+    by_id = {node["id"]: node for node in build_system_design(settings)["nodes"]}
+
+    assert settings.contextual_chunk_collection in by_id["contextual_rag"]["flow"][0]["detail"]
+    assert by_id["chroma_contextual"]["config"]["collection"] == (
+        settings.contextual_chunk_collection
+    )
