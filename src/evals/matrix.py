@@ -211,6 +211,11 @@ def run_matrix(
         "judged": judge is not None,
         "reference_scored": reference_fns is not None,
         "entry_count": len(entries),
+        # Which questions, not just how many. A run scoped to a sample is a
+        # different measurement from a whole-set run, and comparing the two
+        # without knowing the sample is how a "score went up" turns out to mean
+        # "the hard questions were not asked this time".
+        "question_ids": [entry.id for entry in entries],
         "question_types": _type_counts(entries),
         "cache_hits": cache_hits,
         "cache_misses": cache_misses,

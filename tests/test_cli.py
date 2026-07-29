@@ -541,3 +541,52 @@ def test_index_contextual_refuses_an_empty_corpus(monkeypatch, tmp_path, capsys)
 
     assert cli.main(["index-contextual"]) == 1
     assert "index-rag" in capsys.readouterr().err
+
+
+def test_eval_matrix_can_be_scoped_to_named_questions(monkeypatch, tmp_path) -> None:
+    """Naming a sample is how coverage is traded for turnaround, so the run has
+    to receive exactly those entries and nothing else."""
+    import src.evals.matrix as matrix_module
+    import src.evals.regression as regression
+
+    _patch_cli(monkeypatch, tmp_path)
+    seen: dict = {}
+
+    def fake_run_matrix(runner, settings, **kwargs):
+        seen["ids"] = [entry.id for entry in kwargs["entries"]]
+        return {
+            "run_id": "matrix-test",
+            "setups": [],
+            "comparison": {},
+            "entry_count": len(seen["ids"]),
+            "question_ids": list(seen["ids"]),
+            "question_types": {"local": len(seen["ids"])},
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "runs": {},
+        }
+
+    monkeypatch.setattr(matrix_module, "run_matrix", fake_run_matrix)
+    monkeypatch.setattr(matrix_module, "format_matrix_table", lambda run: "table")
+    monkeypatch.setattr(regression, "save_run", lambda run: tmp_path / "run.json")
+    monkeypatch.setattr(cli, "RagTranscriptAgent", FakeRagAgent)
+
+    from src.chat.setups import RagSetupRunner
+
+    monkeypatch.setattr(RagSetupRunner, "from_settings", classmethod(lambda cls, s: object()))
+
+    exit_code = cli.main(
+        ["eval-matrix", "--questions", "g010,g001,g001", "--no-judge", "--no-reference-metrics"]
+    )
+
+    assert exit_code == 0
+    # Ordered by the request and de-duplicated, so one question cannot be
+    # weighted twice in the averages.
+    assert seen["ids"] == ["g010", "g001"]
+
+
+def test_eval_matrix_rejects_an_unknown_question_id(monkeypatch, tmp_path, capsys) -> None:
+    _patch_cli(monkeypatch, tmp_path)
+
+    assert cli.main(["eval-matrix", "--questions", "g001,nope"]) == 2
+    assert "nope" in capsys.readouterr().err
