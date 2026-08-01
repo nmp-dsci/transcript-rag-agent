@@ -335,11 +335,31 @@ init();
 """
 
 
+#: Answer fields the static viewer has no renderer for, dropped from the
+#: embedded DATA blob. ``trace`` is rendered only by the React Chat tab, and
+#: every answer's steps would add megabytes to this committed artifact for
+#: nothing.
+_UNRENDERED_ANSWER_FIELDS = ("trace",)
+
+
+def _viewer_payload(entries: list[ChatEntry]) -> dict[str, object]:
+    """The conversations to embed, minus fields this page cannot show."""
+    conversations = []
+    for entry in entries:
+        # ``to_dict`` deep-copies, so pruning here cannot touch the history.
+        data = entry.to_dict()
+        for answer in data.get("answers", []):
+            for name in _UNRENDERED_ANSWER_FIELDS:
+                answer.pop(name, None)
+        conversations.append(data)
+    return {"conversations": conversations}
+
+
 def render_chat_html(
     entries: list[ChatEntry], generated_at: datetime | None = None
 ) -> str:
     moment = generated_at or datetime.now(timezone.utc)
-    payload = {"conversations": [entry.to_dict() for entry in entries]}
+    payload = _viewer_payload(entries)
     # Embed safely inside the inline <script> tag.
     data_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
     script = ANSWER_RENDER_JS + _VIEWER_SCRIPT.replace("__DATA__", data_json)

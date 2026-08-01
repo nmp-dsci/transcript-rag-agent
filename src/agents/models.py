@@ -115,12 +115,67 @@ class RagTranscriptAnswer(BaseModel):
     recursion: RecursionTrace | None = None
 
 
+class QueryRewrite(BaseModel):
+    """What a history-aware query rewrite actually produced for one answer.
+
+    Recorded only when the rewrite call was made, so its absence means no call
+    happened. ``degraded`` marks a rewrite that fell back to the raw question —
+    the trace must never read a failed rewrite as a successful one.
+    """
+
+    query: str
+    degraded: bool = False
+    elapsed_ms: int | None = None
+
+
+class TraceStep(BaseModel):
+    """One step of an answer path's execution, persisted with the answer.
+
+    Built only from data the executing code actually recorded — a step never
+    describes what *should* have happened, so an empty ``chunk_ids`` or a
+    ``None`` ``elapsed_ms`` means "not measured", never a guess.
+    """
+
+    phase: Literal["route", "filter", "retrieve", "rerank", "merge", "llm"]
+    label: str
+    detail: str = ""
+    #: Chunk identities this step produced/kept, in order ("chunk:<video>:<i>").
+    chunk_ids: list[str] = Field(default_factory=list)
+    model: str | None = None
+    elapsed_ms: int | None = None
+    iteration: int | None = None
+
+
+class RetrievalPass(BaseModel):
+    """One retrieval an answer ran, with the stages the provider measured for it.
+
+    A recursive answer retrieves several times — a first pass plus one query per
+    follow-up subtopic — and each one overwrites the agent's ``last_context``.
+    Keeping the passes in order, each tagged with what it retrieved for, is what
+    lets a persisted trace attribute measured stages to the retrieval that
+    produced them instead of reading a follow-up's stages as the first retrieval.
+    """
+
+    #: What this retrieval was for, e.g. ``first retrieval``/``follow-up 2 ...``.
+    label: str
+    steps: list[TraceStep] = Field(default_factory=list)
+
+
+def chunk_id(chunk: object) -> str | None:
+    """The canonical ``chunk:<video_id>:<index>`` id, or None if unidentifiable."""
+    video_id = getattr(chunk, "video_id", None)
+    index = getattr(chunk, "chunk_index", None)
+    if video_id is None or index is None:
+        return None
+    return f"chunk:{video_id}:{index}"
+
+
+def chunk_ids_for(chunks: list | None) -> list[str]:
+    return [cid for chunk in (chunks or []) if (cid := chunk_id(chunk)) is not None]
+
+
 class AgentProgressEvent(BaseModel):
     iteration: int = Field(description="1-based retrieval counter.")
     event_type: Literal["retrieval_start", "retrieval_complete", "answer_start"]
-    query: str | None = Field(
-        default=None, description="The retrieval query for this iteration."
-    )
-    chunk_count: int | None = Field(
-        default=None, description="Populated on retrieval_complete."
-    )
+    query: str | None = Field(default=None, description="The retrieval query for this iteration.")
+    chunk_count: int | None = Field(default=None, description="Populated on retrieval_complete.")

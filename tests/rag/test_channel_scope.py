@@ -101,6 +101,19 @@ def test_unknown_channel_reports_it_rather_than_answering_from_everything():
         provider(store).get_context("q", channel_id="UC_missing")
 
 
+def test_an_empty_channel_query_is_recorded_before_it_raises():
+    """The query ran and returned nothing — the trace has to be able to say so."""
+    from src.rag.context import RetrievalError
+
+    store = FakeChunkStore(by_channel={"UC1": [chunk("v1", 0)]})
+    with pytest.raises(RetrievalError) as excinfo:
+        provider(store).get_context("q", channel_id="UC_missing")
+
+    assert [step.label for step in excinfo.value.trace] == ["Retrieve candidates"]
+    assert "channel UC_missing" in excinfo.value.trace[0].detail
+    assert "0 candidates" in excinfo.value.trace[0].detail
+
+
 def test_neighbour_expansion_widens_hits_without_duplicating_them():
     neighbor = TranscriptChunk(
         transcript_id="raw_transcript:v1",

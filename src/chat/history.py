@@ -58,6 +58,9 @@ class ChatAnswer:
     retrieval_mode: str | None = None
     # Follow-up questions the LLM proposed, offered to the user as next asks.
     followups: list[dict[str, Any]] = field(default_factory=list)
+    # Ordered execution steps (serialized TraceSteps) for this answer. Empty on
+    # entries written before tracing existed; the UI only renders it when set.
+    trace: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -82,6 +85,7 @@ class ChatAnswer:
             channel_id=result.channel_id,
             retrieval_mode=result.retrieval_mode,
             followups=list(result.followups),
+            trace=list(result.trace),
         )
 
 
@@ -106,8 +110,7 @@ class ChatEntry:
             url=data.get("url"),
             asked_at=data["asked_at"],
             answers=[
-                ChatAnswer(**_known_answer_fields(answer))
-                for answer in data.get("answers", [])
+                ChatAnswer(**_known_answer_fields(answer)) for answer in data.get("answers", [])
             ],
         )
 
@@ -162,9 +165,7 @@ def save_history(entries: list[ChatEntry], path: Path = DEFAULT_HISTORY_PATH) ->
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
-def append_entry(
-    entry: ChatEntry, path: Path = DEFAULT_HISTORY_PATH
-) -> list[ChatEntry]:
+def append_entry(entry: ChatEntry, path: Path = DEFAULT_HISTORY_PATH) -> list[ChatEntry]:
     with _LOCK:
         entries = load_history(path)
         entries.append(entry)

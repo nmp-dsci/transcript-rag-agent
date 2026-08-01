@@ -182,9 +182,7 @@ def test_multi_transcript_context_queries_all_when_url_is_missing() -> None:
     context = provider.get_context("capital gains", top_k=10)
 
     assert chunk_store.calls == [("all", "capital gains", 10)]
-    assert "url=https://www.youtube.com/watch?v=aaaaaaaaaaa&t=10s" in (
-        context.context_text or ""
-    )
+    assert "url=https://www.youtube.com/watch?v=aaaaaaaaaaa&t=10s" in (context.context_text or "")
 
 
 def test_multi_transcript_context_filters_by_summary_before_chunks() -> None:
@@ -203,9 +201,7 @@ def test_multi_transcript_context_filters_by_summary_before_chunks() -> None:
         transcript_filter_min_score=0.25,
     )
 
-    assert chunk_store.calls == [
-        ("video_ids", ["bbbbbbbbbbb"], "capital gains", 5)
-    ]
+    assert chunk_store.calls == [("video_ids", ["bbbbbbbbbbb"], "capital gains", 5)]
     assert context.selected_transcripts
     assert context.selected_transcripts[0].video_id == "bbbbbbbbbbb"
 
@@ -265,13 +261,14 @@ def test_multi_transcript_context_filter_transcripts_and_channel_id_compose() ->
 
     assert ("video_ids", ["bbbbbbbbbbb"], "capital gains", 5) in chunk_store.calls
     assert not any(
-        call[0] == "video_ids" and "ccccccccccc" in call[1]
-        for call in chunk_store.calls
+        call[0] == "video_ids" and "ccccccccccc" in call[1] for call in chunk_store.calls
     )
     assert context.retrieved_chunks
 
 
-def test_multi_transcript_context_filter_transcripts_and_channel_id_empty_intersection_raises() -> None:
+def test_multi_transcript_context_filter_transcripts_and_channel_id_empty_intersection_raises() -> (
+    None
+):
     """No summary-matched transcript belongs to the channel: fail loudly."""
     chunk_store = FakeMultiChunkStore(channel_videos={"UC_other": ["zzzzzzzzzzz"]})
     provider = MultiTranscriptRagContextProvider(
@@ -477,9 +474,7 @@ def test_chunk_from_record_refuses_to_invent_missing_identity() -> None:
 
     # No source_url and no transcript_id, respectively → dropped, never fabricated.
     assert (
-        _chunk_from_record(
-            {"transcript_id": "t", "video_id": "v", "chunk_index": 1, "text": "x"}
-        )
+        _chunk_from_record({"transcript_id": "t", "video_id": "v", "chunk_index": 1, "text": "x"})
         is None
     )
     assert (
@@ -520,3 +515,139 @@ def test_chunk_from_record_drops_malformed_metadata_instead_of_raising() -> None
         )
         is None
     )
+
+
+# ── retrieval trace ──────────────────────────────────────────────────────────
+
+
+class FakeTraceReranker:
+    def rerank(self, query: str, chunks: list, top_k: int) -> list:
+        return list(reversed(chunks))[:top_k]
+
+
+class FakeNeighborChunkStore(FakeMultiChunkStore):
+    def neighbors(self, video_id: str, chunk_index: int, span: int) -> list:
+        return []
+
+
+def test_get_context_records_a_retrieve_trace_step() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+    )
+
+    context = provider.get_context("capital gains", top_k=10)
+
+    assert [step.phase for step in context.trace] == ["retrieve"]
+    step = context.trace[0]
+    assert "whole corpus" in step.detail
+    assert step.chunk_ids == ["chunk:aaaaaaaaaaa:0"]
+    assert isinstance(step.elapsed_ms, int)
+
+
+def test_get_context_trace_includes_filter_and_rerank_stages() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+        summary_store=FakeSummaryStore(),
+        reranker=FakeTraceReranker(),
+    )
+
+    context = provider.get_context(
+        "capital gains",
+        top_k=5,
+        filter_transcripts=True,
+        transcript_filter_top_k=3,
+        transcript_filter_min_score=0.25,
+    )
+
+    assert [step.phase for step in context.trace] == ["filter", "retrieve", "rerank"]
+    assert "1 videos matched" in context.trace[0].detail
+    # The rerank step records what it kept, which is what the answer call sees.
+    assert context.trace[2].chunk_ids == ["chunk:bbbbbbbbbbb:0"]
+
+
+class FakeWideChunkStore(FakeMultiChunkStore):
+    """Returns more candidates than top_k, so the final trim actually cuts."""
+
+    def query_all(self, query: str, top_k: int):
+        self.calls.append(("all", query, top_k))
+        return [_multi_chunk("aaaaaaaaaaa"), _multi_chunk("bbbbbbbbbbb")]
+
+
+def test_get_context_trace_records_the_trim_to_top_k() -> None:
+    """Without this the retrieve step would overstate what the LLM saw."""
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeWideChunkStore(),
+    )
+
+    context = provider.get_context("capital gains", top_k=1)
+
+    assert [step.phase for step in context.trace] == ["retrieve", "merge"]
+    trim = context.trace[1]
+    assert trim.label == "Trim to top_k"
+    assert "kept the first 1 of 2" in trim.detail
+    assert trim.chunk_ids == ["chunk:aaaaaaaaaaa:0"]
+    assert len(context.retrieved_chunks) == 1
+
+
+def test_get_context_trace_omits_the_trim_step_when_nothing_was_cut() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeWideChunkStore(),
+    )
+
+    context = provider.get_context("capital gains", top_k=10)
+
+    assert [step.phase for step in context.trace] == ["retrieve"]
+
+
+def test_failed_summary_filter_carries_the_stage_it_measured() -> None:
+    """The filter ran and found nothing; that step is the whole diagnostic."""
+    from src.rag.context import RetrievalError
+
+    class EmptySummaryStore:
+        def query_relevant_transcripts(self, question, top_k, min_score):
+            return []
+
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+        summary_store=EmptySummaryStore(),
+    )
+
+    with pytest.raises(RetrievalError) as excinfo:
+        provider.get_context("capital gains", filter_transcripts=True)
+
+    assert [step.label for step in excinfo.value.trace] == ["Summary filter"]
+    assert "0 videos matched" in excinfo.value.trace[0].detail
+    assert isinstance(excinfo.value.trace[0].elapsed_ms, int)
+
+
+def test_a_retrieval_failure_before_any_stage_carries_an_empty_trace() -> None:
+    """Nothing was measured, so an empty trace is the honest record."""
+    from src.rag.context import RetrievalError
+
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(has_any=False),
+    )
+
+    with pytest.raises(RetrievalError) as excinfo:
+        provider.get_context("capital gains")
+
+    assert excinfo.value.trace == []
+
+
+def test_get_context_trace_records_neighbor_expansion() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeNeighborChunkStore(),
+        neighbor_span=1,
+    )
+
+    context = provider.get_context("capital gains", top_k=10)
+
+    assert [step.phase for step in context.trace] == ["retrieve", "merge"]
+    assert "±1 adjacent" in context.trace[1].detail

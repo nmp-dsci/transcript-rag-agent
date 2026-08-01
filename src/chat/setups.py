@@ -15,13 +15,17 @@ from typing import Any, Callable
 
 from src.agents.models import (
     AgentProgressEvent,
+    QueryRewrite,
     RagQuestionRequest,
     RecursionOptions,
+    RecursionTrace,
+    TraceStep,
+    chunk_ids_for,
 )
 from src.agents.rag_agent import RagAgent
 from src.agents.rag_transcript_agent import RagTranscriptAgent
 from src.config import Settings
-from src.rag.context import MultiTranscriptRagContextProvider
+from src.rag.context import MultiTranscriptRagContextProvider, RetrievalError
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.eval import estimate_tokens
 from src.rag.indexing import RagIndexer
@@ -130,6 +134,10 @@ class SetupResult:
     # Follow-up subtopics the answering LLM proposed. The agent contract always
     # returns these; surfacing them lets the UI offer them as next questions.
     followups: list[dict[str, Any]] = field(default_factory=list)
+    # Ordered execution steps (serialized TraceSteps): what this answer's path
+    # actually did — route decisions, retrievals with chunk ids, rerank passes,
+    # LLM calls — persisted so the trace survives beyond the live SSE stream.
+    trace: list[dict[str, Any]] = field(default_factory=list)
 
 
 def select_setups(raw: str) -> list[str]:
@@ -260,6 +268,14 @@ class RagSetupRunner:
             self._graph_rag_agent = GraphRagAgent.from_settings(self._settings, self._provider)
         return self._graph_rag_agent
 
+    def _agent_for(self, key: str) -> Any:
+        """The (cached) agent one setup answers with."""
+        if key == "rag_agent":
+            return self._agentic()
+        if key == "graph_rag":
+            return self._graph()
+        return self._rag_llm()
+
     def run_many(
         self,
         keys: list[str],
@@ -290,31 +306,55 @@ class RagSetupRunner:
 
         ``on_agent_event`` receives per-iteration research events and only ever
         fires for ``rag_agent`` — the other setups make a single retrieval pass
-        and have no intermediate steps to report.
+        and have no intermediate steps to report. Passing it also selects the
+        streaming agent call, so it is what decides whether ``rag_agent``'s
+        persisted trace carries a step per iteration or one summary step: a
+        caller that does not stream (CLI, evals) observes no per-iteration
+        events, and the trace never claims steps it did not observe.
         """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
         scope = scope or AskScope()
+        model = self._settings.deepseek_model
         started = time.monotonic()
+        # Bound before the call that can raise, so the failure path can persist
+        # whatever the run had already recorded instead of an empty trace.
+        agent: Any = None
+        events: list[AgentProgressEvent] = []
         try:
+            agent = self._agent_for(key)
+            # Agents are cached across questions and clear their own per-answer
+            # record only once ``answer`` runs. Clearing it here, ahead of
+            # everything that can fail, is what stops a failure before that
+            # point — a malformed URL rejected while the request is built — from
+            # persisting the previous question's steps as this answer's trace.
+            _clear_per_answer_state(agent)
             if key == "rag_agent":
-                answer, agent = self._run_rag_agent(
-                    question, url, effective_top_k, on_agent_event, scope
-                )
-                context = agent.last_context
+                # Only the streaming path has per-iteration events to collect;
+                # passing None is what makes the CLI/eval path call answer().
+                collect: AgentEventFn | None = None
+                if on_agent_event is not None:
+                    stream = on_agent_event
+
+                    def collect_event(event: AgentProgressEvent) -> None:
+                        events.append(event)
+                        stream(event)
+
+                    collect = collect_event
+                answer = self._run_rag_agent(agent, question, url, effective_top_k, collect, scope)
                 return self._build_result(
                     spec,
                     url,
                     answer,
-                    context,
+                    agent.last_context,
                     top_k=effective_top_k,
                     iterations=agent.last_iteration_count,
                     terminated_reason=agent.last_terminated_reason,
                     elapsed=time.monotonic() - started,
                     scope=scope,
+                    trace=_agent_event_steps(events, agent.last_iteration_count, model),
                 )
             if key == "graph_rag":
-                agent = self._graph()
                 answer = agent.answer(self._request(question, url, effective_top_k, scope))
                 return self._build_result(
                     spec,
@@ -326,8 +366,25 @@ class RagSetupRunner:
                     terminated_reason=agent.last_route,
                     elapsed=time.monotonic() - started,
                     scope=scope,
+                    trace=list(getattr(agent, "last_trace", None) or []),
                 )
-            answer, agent, llm_calls = self._run_rag_llm(key, question, url, effective_top_k, scope)
+            answer, llm_calls = self._run_rag_llm(agent, key, question, url, effective_top_k, scope)
+            rewrite = getattr(agent, "last_rewrite", None)
+            if answer.recursion is not None:
+                trace = _recursion_steps(
+                    answer.recursion, model, rewrite, _first_retrieval_steps(agent)
+                )
+            else:
+                trace = [
+                    *_rewrite_steps(rewrite, model),
+                    *_retrieval_steps(agent),
+                    TraceStep(
+                        phase="llm",
+                        label="Answer",
+                        detail="one answer call over the retrieved chunks, citing chunk ids",
+                        model=model,
+                    ),
+                ]
             return self._build_result(
                 spec,
                 url,
@@ -340,8 +397,10 @@ class RagSetupRunner:
                 ),
                 elapsed=time.monotonic() - started,
                 scope=scope,
+                trace=trace,
             )
         except Exception as exc:  # one failing setup must not abort the comparison
+            partial = _partial_trace(key, agent, events, model, exc)
             return SetupResult(
                 key=spec.key,
                 title=spec.title,
@@ -354,6 +413,7 @@ class RagSetupRunner:
                 top_k=effective_top_k,
                 channel_id=scope.channel_id,
                 retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
+                trace=[step.model_dump(mode="json") for step in partial],
             )
 
     def _request(self, question, url, top_k, scope: "AskScope", **extra):
@@ -370,8 +430,7 @@ class RagSetupRunner:
             **extra,
         )
 
-    def _run_rag_llm(self, key, question, url, top_k, scope: "AskScope"):
-        agent = self._rag_llm()
+    def _run_rag_llm(self, agent, key, question, url, top_k, scope: "AskScope"):
         if key == "rag_llm_recursive":
             request = self._request(
                 question,
@@ -390,15 +449,15 @@ class RagSetupRunner:
             answer = agent.answer(request)
             recursion = answer.recursion
             llm_calls = sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
-            return answer, agent, llm_calls
-        return agent.answer(self._request(question, url, top_k, scope)), agent, 1
+            return answer, llm_calls + _rewrite_calls(agent)
+        answer = agent.answer(self._request(question, url, top_k, scope))
+        return answer, 1 + _rewrite_calls(agent)
 
-    def _run_rag_agent(self, question, url, top_k, on_agent_event=None, scope=None):
-        agent = self._agentic()
+    def _run_rag_agent(self, agent, question, url, top_k, on_agent_event=None, scope=None):
         request = self._request(question, url, top_k, scope or AskScope())
         if on_agent_event is None:
-            return agent.answer(request), agent
-        return agent.answer_streaming(request, on_agent_event), agent
+            return agent.answer(request)
+        return agent.answer_streaming(request, on_agent_event)
 
     def _build_result(
         self,
@@ -413,6 +472,7 @@ class RagSetupRunner:
         terminated_reason: str | None = None,
         elapsed: float = 0.0,
         scope: "AskScope | None" = None,
+        trace: list[TraceStep] | None = None,
     ) -> SetupResult:
         scope = scope or AskScope()
         context_text = context.context_text if context is not None else ""
@@ -445,7 +505,269 @@ class RagSetupRunner:
             channel_id=scope.channel_id,
             retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
             followups=_followups_to_dicts(getattr(answer, "subtopics", [])),
+            trace=[step.model_dump(mode="json") for step in (trace or [])],
         )
+
+
+def _clear_per_answer_state(agent: Any) -> None:
+    """Discard the previous answer's record from a cached agent.
+
+    Exactly the fields ``_partial_trace`` reads back, so a persisted trace can
+    only ever contain steps this answer recorded. Attributes an agent does not
+    have are left alone — the agentic setup keeps its events in the runner.
+    """
+    if hasattr(agent, "last_context"):
+        agent.last_context = None
+    if hasattr(agent, "last_rewrite"):
+        agent.last_rewrite = None
+    if hasattr(agent, "last_retrievals"):
+        agent.last_retrievals = []
+    if hasattr(agent, "last_trace"):
+        agent.last_trace = []
+
+
+def _partial_trace(
+    key: str,
+    agent: Any,
+    events: list[AgentProgressEvent],
+    model: str,
+    error: BaseException,
+) -> list[TraceStep]:
+    """What a failed run had already recorded, and nothing beyond it.
+
+    Retrieval often succeeds and the answer call is what fails, so the steps
+    collected up to that point are exactly the diagnostic the error entry
+    needs. Nothing is reconstructed and nothing is inherited: the runner cleared
+    this state before the run started, so an absent record means the stage never
+    ran on this question and no step for it is emitted.
+    """
+    if key == "graph_rag":
+        return [*(getattr(agent, "last_trace", None) or []), *_error_steps(error)]
+    if key == "rag_agent":
+        # Iterations are deliberately not passed: a count read off a half-run
+        # agent would summarise a loop that never finished.
+        return [*_agent_event_steps(events, None, model), *_error_steps(error)]
+    steps = _rewrite_steps(getattr(agent, "last_rewrite", None), model)
+    steps.extend(_retrieval_steps(agent))
+    if getattr(agent, "last_retrievals", None) is None:
+        # An agent that keeps no per-retrieval record only has the failed
+        # retrieval's stages on the error itself. One that does already recorded
+        # them under the pass they belong to, and the error's copy of the same
+        # stages would report that retrieval twice.
+        steps.extend(_error_steps(error))
+    return steps
+
+
+def _error_steps(error: BaseException) -> list[TraceStep]:
+    """The stages a failed retrieval measured before raising, if it carries any.
+
+    Only ``RetrievalError`` promises this, and only ``TraceStep``s are taken
+    from it: anything else spliced in here would blow up on serialisation and
+    replace the error the setup is actually reporting.
+    """
+    if not isinstance(error, RetrievalError):
+        return []
+    return [step for step in error.trace if isinstance(step, TraceStep)]
+
+
+def _retrieval_steps(agent: Any) -> list[TraceStep]:
+    """Every retrieval this answer ran, in order, attributed to its own pass.
+
+    A recursive answer retrieves more than once, and every pass records the same
+    stage labels, so without the pass label a follow-up's stages read as the
+    answer's first retrieval. One pass has nothing to disambiguate, so its
+    stages pass through exactly as the provider measured them.
+    """
+    passes = getattr(agent, "last_retrievals", None)
+    if passes is None:
+        return list(getattr(getattr(agent, "last_context", None), "trace", None) or [])
+    if len(passes) == 1:
+        return list(passes[0].steps)
+    return [
+        step.model_copy(update={"detail": _attributed(retrieval.label, step.detail)})
+        for retrieval in passes
+        for step in retrieval.steps
+    ]
+
+
+def _attributed(pass_label: str, detail: str) -> str:
+    return f"{pass_label} — {detail}" if detail else pass_label
+
+
+def _first_retrieval_steps(agent: Any) -> list[TraceStep]:
+    """The stages the first retrieval measured, or none if it recorded none."""
+    passes = getattr(agent, "last_retrievals", None) or []
+    return list(passes[0].steps) if passes else []
+
+
+def _rewrite_calls(agent: Any) -> int:
+    """The LLM calls the history-aware query rewrite cost this answer.
+
+    ``retrieval_query`` only reaches the model when the request carries prior
+    turns, and records the result on ``last_rewrite``; no record means no call,
+    so a question asked without history counts exactly what it did before.
+    """
+    return 1 if getattr(agent, "last_rewrite", None) is not None else 0
+
+
+def _rewrite_steps(rewrite: QueryRewrite | None, model: str) -> list[TraceStep]:
+    """The history-aware query rewrite, when one was actually attempted.
+
+    ``retrieval_query`` only calls the LLM when the request carries prior
+    turns, so no record means no call was made and no step belongs in the
+    trace. A rewrite that fell back to the raw question reads as the failure it
+    was rather than as a successful rewrite.
+    """
+    if rewrite is None:
+        return []
+    return [
+        TraceStep(
+            phase="llm",
+            label="Rewrite query",
+            detail=(
+                f'rewrite failed; retrieval ran on the question as asked: "{rewrite.query}"'
+                if rewrite.degraded
+                else f'follow-up rewritten to stand alone: "{rewrite.query}"'
+            ),
+            model=model,
+            elapsed_ms=rewrite.elapsed_ms,
+        )
+    ]
+
+
+def _agent_event_steps(
+    events: list[AgentProgressEvent], iterations: int | None, model: str
+) -> list[TraceStep]:
+    """The agentic setup's streamed research events, as persistable TraceSteps.
+
+    Events only flow on the streaming path; when none were collected (CLI and
+    eval runs call ``answer()`` directly), a single summary step records the
+    iteration count so the trace never claims steps it did not observe.
+    """
+    steps: list[TraceStep] = []
+    for event in events:
+        if event.event_type == "retrieval_complete":
+            found = f"{event.chunk_count} chunks" if event.chunk_count is not None else "chunks"
+            steps.append(
+                TraceStep(
+                    phase="retrieve",
+                    label=f"Retrieve (iteration {event.iteration})",
+                    detail=(f'"{event.query}" — {found}' if event.query else found),
+                    iteration=event.iteration,
+                )
+            )
+        elif event.event_type == "answer_start":
+            steps.append(
+                TraceStep(
+                    phase="llm",
+                    label="Answer",
+                    detail="the model judged it had enough evidence",
+                    model=model,
+                    iteration=event.iteration,
+                )
+            )
+    if not steps and iterations:
+        steps.append(
+            TraceStep(
+                phase="retrieve",
+                label="ReAct retrievals",
+                detail=(
+                    f"{iterations} retrieval iteration"
+                    f"{'s' if iterations != 1 else ''} (per-step events not "
+                    "streamed on this path)"
+                ),
+            )
+        )
+    return steps
+
+
+def _recursion_steps(
+    recursion: RecursionTrace,
+    model: str,
+    rewrite: QueryRewrite | None = None,
+    first_retrieval: list[TraceStep] | None = None,
+) -> list[TraceStep]:
+    """A recursive answer's own RecursionTrace, flattened into TraceSteps.
+
+    Converts rather than re-records: every fact here (subtopic queries, the
+    chunks each follow-up retrieved, merge/skip outcomes, whether synthesis
+    ran) is read off the trace the agent already built while answering. Two
+    things the RecursionTrace does not carry are passed in: the rewrite, and
+    the stages the provider measured for the first retrieval — those stand in
+    for a description of it wherever they exist, so a recursive answer reports
+    the same measurements a single-hop one does for the identical retrieval.
+    """
+    steps: list[TraceStep] = [
+        *_rewrite_steps(rewrite, model),
+        *(
+            list(first_retrieval)
+            if first_retrieval
+            else [
+                TraceStep(
+                    phase="retrieve",
+                    label="First retrieval",
+                    detail=_first_retrieval_detail(rewrite),
+                )
+            ]
+        ),
+        TraceStep(
+            phase="llm",
+            label="First-pass answer",
+            detail=(
+                f"answered and proposed {recursion.total_followups_proposed} follow-up subtopics"
+            ),
+            model=model,
+        ),
+    ]
+    for evidence in recursion.subtopic_evidence:
+        steps.append(
+            TraceStep(
+                phase="retrieve",
+                label=f"Follow-up: {evidence.subtopic.topic}"[:80],
+                detail=f'"{evidence.subtopic.followup_query}" — {evidence.outcome}',
+                chunk_ids=chunk_ids_for(evidence.chunks),
+                iteration=evidence.subtopic_index,
+            )
+        )
+    ran_synthesis = any(stage.name == "final_synthesis" for stage in recursion.stages)
+    if ran_synthesis:
+        steps.append(
+            TraceStep(
+                phase="merge",
+                label="Merge evidence",
+                detail=(
+                    f"{recursion.total_followups_executed} of "
+                    f"{recursion.total_followups_proposed} follow-ups executed; "
+                    "contexts deduplicated"
+                ),
+            )
+        )
+        steps.append(
+            TraceStep(
+                phase="llm",
+                label="Synthesize",
+                detail=f"final synthesis over the merged context ({recursion.terminated_reason})",
+                model=model,
+            )
+        )
+    else:
+        steps.append(
+            TraceStep(
+                phase="merge",
+                label="First-pass answer kept",
+                detail=f"no synthesis ran ({recursion.terminated_reason})",
+            )
+        )
+    return steps
+
+
+def _first_retrieval_detail(rewrite: QueryRewrite | None) -> str:
+    """What the first retrieval actually embedded."""
+    if rewrite is None:
+        return "initial retrieval for the question as asked"
+    if rewrite.degraded:
+        return "rewrite failed; initial retrieval for the question as asked"
+    return f'initial retrieval on the rewritten query "{rewrite.query}"'
 
 
 def _followups_to_dicts(subtopics: list[Any]) -> list[dict[str, Any]]:

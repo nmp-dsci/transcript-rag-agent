@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { Answer, AgentStep, Followup } from '../api/types';
 import { AgentTrace } from './AgentTrace';
+import { AnswerTrace } from './AnswerTrace';
 import { AnswerBody } from './AnswerBody';
 import { ScoreStrip, fmtScore } from './ScoreStrip';
 
@@ -23,7 +24,9 @@ interface Props {
   remainingSetups: number;
   /**
    * Research steps for finished answers, by setup key. Held in session state
-   * rather than the history file, so the trace survives until reload only.
+   * rather than the history file, so these survive until reload only — which is
+   * why an answer's own persisted `trace` is preferred over them when it has
+   * one, and these are the fallback for answers recorded before tracing.
    */
   traces?: Record<string, AgentStep[]>;
   /**
@@ -143,7 +146,9 @@ export function MessageBubble({
               ) : null}
             </div>
           ) : null}
-          {traces?.[active.key]?.length ? (
+          {active.trace?.length ? (
+            <AnswerTrace steps={active.trace} />
+          ) : traces?.[active.key]?.length ? (
             <AgentTrace steps={traces[active.key]!} running={false} />
           ) : null}
           <AnswerBody answer={active} />

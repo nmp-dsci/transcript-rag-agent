@@ -3,11 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timezone
 
+import pytest
 from langchain_core.messages import AIMessage
 
 from src.agents.context import TranscriptContext
-from src.agents.models import RagQuestionRequest
+from src.agents.models import RagQuestionRequest, TraceStep
 from src.agents.rag_transcript_agent import RagTranscriptAgent
+from src.rag.context import RetrievalError
 from src.rag.models import RetrievedChunk
 from src.transcripts.models import Transcript
 
@@ -95,6 +97,34 @@ def test_rag_transcript_agent_answers_and_backfills_references() -> None:
         ("q", "https://www.youtube.com/watch?v=abc", 3, False, 5, 0.25)
     ]
     assert "retrieved transcript chunks" in llm.messages[0].content
+
+
+def test_answer_clears_the_previous_questions_retrieval_state() -> None:
+    """Agents are reused across questions, so a failed run must not inherit one.
+
+    ``last_context``/``last_rewrite`` are what the chat runner persists as the
+    trace; leaving the prior answer's values in place would attribute that
+    retrieval to a question that never got that far.
+    """
+
+    class FailingProvider(FakeProvider):
+        def get_context(self, *args, **kwargs):
+            raise RuntimeError("chroma is down")
+
+    llm = FakeLlm('{"question": "q", "answer": "first [1]"}')
+    agent = RagTranscriptAgent(llm, FakeProvider())
+    agent.answer(RagQuestionRequest(question="first", top_k=3))
+    assert agent.last_context is not None
+
+    agent.context_provider = FailingProvider()
+    try:
+        agent.answer(RagQuestionRequest(question="second", top_k=3))
+    except RuntimeError:
+        pass
+
+    assert agent.last_context is None
+    assert agent.last_rewrite is None
+    assert agent.last_retrievals == []
 
 
 def test_single_hop_surfaces_followups_without_extra_retrieval() -> None:
@@ -228,3 +258,150 @@ def test_recursive_retrieves_followups_and_synthesizes_answer() -> None:
     assert answer.recursion.total_followups_executed == 1
     assert provider.calls[1][0] == "specific detail query"
     assert len(llm.calls) == 2
+
+
+TWO_SUBTOPIC_RESPONSE = """
+{
+  "question": "q",
+  "answer": "first answer [1]",
+  "followups_requested": true,
+  "subtopics": [
+    {
+      "topic": "first detail",
+      "rationale": "thin evidence",
+      "followup_query": "first detail query",
+      "confidence": 0.9
+    },
+    {
+      "topic": "second detail",
+      "rationale": "thin evidence",
+      "followup_query": "second detail query",
+      "confidence": 0.8
+    }
+  ]
+}
+"""
+
+
+def test_every_retrieval_is_recorded_under_the_pass_it_ran_for() -> None:
+    """A fan-out failure must not let a follow-up stand in for the first retrieval.
+
+    ``last_context`` holds only the newest retrieval, so the record the chat
+    runner persists has to come from the per-pass list instead.
+    """
+
+    class FanOutProvider(FakeProvider):
+        def get_context(self, *args, **kwargs):
+            call = len(self.calls) + 1
+            if call == 3:
+                raise RetrievalError(
+                    "No indexed chunks found for that channel.",
+                    [
+                        TraceStep(
+                            phase="retrieve",
+                            label="Retrieve candidates",
+                            detail="0 candidates",
+                        )
+                    ],
+                )
+            context = super().get_context(*args, **kwargs)
+            if call > 1:
+                chunk = context.retrieved_chunks[0].model_copy(
+                    update={"chunk_index": 4 + call, "text": "follow-up detail"}
+                )
+                context = replace(context, retrieved_chunks=[chunk])
+            return replace(
+                context,
+                trace=[
+                    TraceStep(phase="retrieve", label="Retrieve candidates", detail=f"call {call}")
+                ],
+            )
+
+    agent = RagTranscriptAgent(FakeLlm(TWO_SUBTOPIC_RESPONSE), FanOutProvider())
+
+    with pytest.raises(RetrievalError):
+        agent.answer(
+            RagQuestionRequest(
+                question="q",
+                recursive=True,
+                recursion_options={"novelty_min_chunks": 1},
+            )
+        )
+
+    assert [retrieval.label for retrieval in agent.last_retrievals] == [
+        "first retrieval",
+        'follow-up 1 "first detail query"',
+        'follow-up 2 "second detail query"',
+    ]
+    assert [step.detail for retrieval in agent.last_retrievals for step in retrieval.steps] == [
+        "call 1",
+        "call 2",
+        "0 candidates",
+    ]
+
+
+def test_merged_context_keeps_every_retrievals_trace_when_synthesis_fails() -> None:
+    """A synthesis that blows up must not erase the retrievals that already ran.
+
+    ``last_context`` becomes the merged context before the synthesis call, and
+    that is what the chat runner persists as the trace of a failed answer.
+    """
+
+    class TracingProvider(FakeProvider):
+        def get_context(self, *args, **kwargs):
+            context = super().get_context(*args, **kwargs)
+            call_index = len(self.calls)
+            if call_index > 1:
+                chunk = context.retrieved_chunks[0].model_copy(
+                    update={"chunk_index": 5, "text": "follow-up detail"}
+                )
+                context = replace(context, retrieved_chunks=[chunk])
+            return replace(
+                context,
+                trace=[
+                    TraceStep(
+                        phase="retrieve",
+                        label=f"Retrieve candidates ({call_index})",
+                        detail="semantic search over the whole corpus",
+                    )
+                ],
+            )
+
+    class ExplodingLlm(FakeLlm):
+        def invoke(self, messages):
+            if self.calls:
+                raise RuntimeError("deepseek 503")
+            return super().invoke(messages)
+
+    llm = ExplodingLlm(
+        """
+        {
+          "question": "q",
+          "answer": "first answer [1]",
+          "followups_requested": true,
+          "subtopics": [
+            {
+              "topic": "detail",
+              "rationale": "thin evidence",
+              "followup_query": "specific detail query",
+              "confidence": 0.8
+            }
+          ]
+        }
+        """
+    )
+    agent = RagTranscriptAgent(llm, TracingProvider())
+
+    with pytest.raises(RuntimeError):
+        agent.answer(
+            RagQuestionRequest(
+                question="q",
+                recursive=True,
+                recursion_options={"novelty_min_chunks": 1},
+            )
+        )
+
+    assert [step.label for step in agent.last_context.trace] == [
+        "Retrieve candidates (1)",
+        "Retrieve candidates (2)",
+    ]

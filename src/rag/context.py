@@ -1,13 +1,31 @@
 from __future__ import annotations
 
+import time
 from typing import Protocol
 
 from src.agents.context import TranscriptContext
+from src.agents.models import TraceStep, chunk_ids_for
 from src.rag.chunking import format_timestamp
 from src.rag.indexing import RagIndexer
 from src.rag.references import format_chunk_reference
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript_from_raw_document
 from src.rag.summaries import TranscriptSummaryStore
+
+
+class RetrievalError(ValueError):
+    """A retrieval failure carrying the stages measured before it.
+
+    Several of ``get_context``'s failure modes only surface after real work has
+    run and been timed — a summary filter that matched nothing, a channel query
+    that came back empty. Raising a bare error would drop exactly the steps that
+    explain the failure, so they travel on the exception and the caller can
+    persist what actually ran. Subclasses ``ValueError`` because that is what
+    ``get_context`` has always raised.
+    """
+
+    def __init__(self, message: str, trace: list[TraceStep] | None = None) -> None:
+        super().__init__(message)
+        self.trace: list[TraceStep] = list(trace or [])
 
 
 class _Reranker(Protocol):
@@ -110,6 +128,7 @@ class MultiTranscriptRagContextProvider:
     ) -> TranscriptContext:
         cache_status = "hit"
         selected_transcripts = []
+        trace: list[TraceStep] = []
         mode = retrieval_mode or self.retrieval_mode
         # Retrieve wide, then let fusion/reranking narrow to top_k. With neither
         # enabled this collapses to the original single top_k query.
@@ -120,66 +139,90 @@ class MultiTranscriptRagContextProvider:
         )
         if source_url is None:
             if not self.chunk_store.has_any_chunks():
-                raise ValueError(
+                raise RetrievalError(
                     "No indexed transcript chunks found. Run index-rag for one or more "
-                    "YouTube URLs first."
+                    "YouTube URLs first.",
+                    trace,
                 )
             if filter_transcripts:
                 if self.summary_store is None:
-                    raise ValueError("Transcript filtering requires a summary store")
+                    raise RetrievalError("Transcript filtering requires a summary store", trace)
+                filter_started = time.monotonic()
                 selected_transcripts = self.summary_store.query_relevant_transcripts(
                     question,
                     top_k=transcript_filter_top_k,
                     min_score=transcript_filter_min_score,
                 )
+                trace.append(
+                    TraceStep(
+                        phase="filter",
+                        label="Summary filter",
+                        detail=(
+                            f"{len(selected_transcripts)} videos matched by per-video "
+                            f"summary (top {transcript_filter_top_k}, min score "
+                            f"{transcript_filter_min_score})"
+                        ),
+                        elapsed_ms=int((time.monotonic() - filter_started) * 1000),
+                    )
+                )
                 if not selected_transcripts:
-                    raise ValueError(
+                    raise RetrievalError(
                         "No transcript summaries matched the question. Try lowering "
                         "--transcript-filter-min-score or run without "
-                        "--filter-transcripts."
+                        "--filter-transcripts.",
+                        trace,
                     )
-                filtered_video_ids = [
-                    summary.video_id for summary in selected_transcripts
-                ]
+                filtered_video_ids = [summary.video_id for summary in selected_transcripts]
                 if channel_id:
-                    channel_video_ids = set(
-                        self.chunk_store.channel_video_ids(channel_id)
-                    )
+                    channel_video_ids = set(self.chunk_store.channel_video_ids(channel_id))
                     filtered_video_ids = [
                         vid for vid in filtered_video_ids if vid in channel_video_ids
                     ]
                     if not filtered_video_ids:
-                        raise ValueError(
+                        raise RetrievalError(
                             "No transcript summaries matched the question within "
                             f"channel {channel_id!r}. Try lowering "
                             "--transcript-filter-min-score, running without "
-                            "--filter-transcripts, or checking the channel_id."
+                            "--filter-transcripts, or checking the channel_id.",
+                            trace,
                         )
+                retrieve_started = time.monotonic()
                 retrieved = self.chunk_store.query_by_video_ids(
                     filtered_video_ids,
                     question,
                     candidates,
                 )
+                scope_desc = f"{len(filtered_video_ids)} filtered videos"
             elif channel_id:
-                retrieved = self.chunk_store.query_by_channel(
-                    channel_id, question, candidates
-                )
+                retrieve_started = time.monotonic()
+                retrieved = self.chunk_store.query_by_channel(channel_id, question, candidates)
+                scope_desc = f"channel {channel_id}"
                 if not retrieved:
-                    raise ValueError(
+                    # The query ran and was timed, so record it before failing:
+                    # "the channel returned nothing" is the diagnostic, and it
+                    # would otherwise have to be inferred from the error text.
+                    self._record_retrieve(
+                        trace, retrieved, mode, scope_desc, candidates, retrieve_started
+                    )
+                    raise RetrievalError(
                         f"No indexed chunks found for channel {channel_id!r}. The "
                         "channel may not be indexed, or its chunks predate the "
-                        "channel metadata backfill."
+                        "channel metadata backfill.",
+                        trace,
                     )
             else:
+                retrieve_started = time.monotonic()
                 retrieved = self.chunk_store.query_all(question, candidates)
-            retrieved = self._refine(question, retrieved, top_k, mode, channel_id)
+                scope_desc = "the whole corpus"
+            self._record_retrieve(trace, retrieved, mode, scope_desc, candidates, retrieve_started)
+            retrieved = self._refine(question, retrieved, top_k, mode, channel_id, trace=trace)
             transcript = _context_transcript_from_chunks(retrieved)
         else:
             video_id = _extract_video_id(source_url)
             if not self.chunk_store.has_chunks(video_id):
                 if self.indexer is None:
-                    raise ValueError(
-                        f"No RAG chunks found for {source_url}. Run index-rag first."
+                    raise RetrievalError(
+                        f"No RAG chunks found for {source_url}. Run index-rag first.", trace
                     )
                 result = self.indexer.index(source_url, refresh=False)
                 cache_status = result.cache_status
@@ -188,8 +231,12 @@ class MultiTranscriptRagContextProvider:
             )
             if cache_status == "hit":
                 cache_status = raw_cache_status
+            retrieve_started = time.monotonic()
             retrieved = self.chunk_store.query_by_url(source_url, question, candidates)
-            retrieved = self._refine(question, retrieved, top_k, mode, None, video_id)
+            self._record_retrieve(
+                trace, retrieved, mode, f"video {video_id}", candidates, retrieve_started
+            )
+            retrieved = self._refine(question, retrieved, top_k, mode, None, video_id, trace=trace)
             transcript = transcript_from_raw_document(raw_document)
 
         return TranscriptContext(
@@ -200,6 +247,29 @@ class MultiTranscriptRagContextProvider:
             retrieved_chunks=retrieved,
             selected_transcripts=selected_transcripts,
             top_k=top_k,
+            trace=trace,
+        )
+
+    @staticmethod
+    def _record_retrieve(
+        trace: list[TraceStep],
+        retrieved: list,
+        mode: str,
+        scope_desc: str,
+        candidates: int,
+        started: float,
+    ) -> None:
+        trace.append(
+            TraceStep(
+                phase="retrieve",
+                label="Retrieve candidates",
+                detail=(
+                    f"{mode} search over {scope_desc} — "
+                    f"{len(retrieved)} candidates (asked for {candidates})"
+                ),
+                chunk_ids=chunk_ids_for(retrieved),
+                elapsed_ms=int((time.monotonic() - started) * 1000),
+            )
         )
 
     def _refine(
@@ -210,28 +280,93 @@ class MultiTranscriptRagContextProvider:
         mode: str,
         channel_id: str | None,
         video_id: str | None = None,
+        trace: list[TraceStep] | None = None,
     ) -> list:
-        """Fuse, rerank, and widen a candidate set down to the final top_k."""
+        """Fuse, rerank, and widen a candidate set down to the final top_k.
+
+        When ``trace`` is given, each stage that actually ran appends a
+        :class:`TraceStep` describing what it did to the candidate set.
+        """
         if mode == "hybrid":
             fuse_width = (
-                max(top_k, self.retrieval_candidates)
-                if self.reranker is not None
-                else top_k
+                max(top_k, self.retrieval_candidates) if self.reranker is not None else top_k
             )
-            retrieved = self._fuse_with_bm25(
-                question, retrieved, fuse_width, channel_id, video_id
-            )
+            fuse_started = time.monotonic()
+            before_fuse = len(retrieved)
+            retrieved = self._fuse_with_bm25(question, retrieved, fuse_width, channel_id, video_id)
+            if trace is not None:
+                trace.append(
+                    TraceStep(
+                        phase="merge",
+                        label="BM25 fusion",
+                        detail=(
+                            f"RRF-fused {before_fuse} semantic candidates with keyword "
+                            f"hits — {len(retrieved)} kept"
+                        ),
+                        chunk_ids=chunk_ids_for(retrieved),
+                        elapsed_ms=int((time.monotonic() - fuse_started) * 1000),
+                    )
+                )
         if self.reranker is not None and retrieved:
+            rerank_started = time.monotonic()
+            before_rerank = len(retrieved)
+            degraded = False
             try:
                 retrieved = self.reranker.rerank(question, retrieved, top_k)
             except Exception:
                 # A reranker failure must degrade to the underlying ranking
                 # rather than lose the answer entirely.
                 retrieved = retrieved[:top_k]
+                degraded = True
+            if trace is not None:
+                trace.append(
+                    TraceStep(
+                        phase="rerank",
+                        label="Cross-encoder rerank",
+                        detail=(
+                            f"reranker failed; kept the top {len(retrieved)} of "
+                            f"{before_rerank} by prior ranking"
+                            if degraded
+                            else f"reordered {before_rerank} candidates, kept top {len(retrieved)}"
+                        ),
+                        chunk_ids=chunk_ids_for(retrieved),
+                        elapsed_ms=int((time.monotonic() - rerank_started) * 1000),
+                    )
+                )
         else:
+            before_trim = len(retrieved)
             retrieved = retrieved[:top_k]
+            if trace is not None and before_trim > len(retrieved):
+                # Without this the preceding stage's step is the last word on
+                # what the answer call saw, and it would overstate the count.
+                trace.append(
+                    TraceStep(
+                        phase="merge",
+                        label="Trim to top_k",
+                        detail=(
+                            f"no reranker; kept the first {len(retrieved)} of "
+                            f"{before_trim} in ranking order"
+                        ),
+                        chunk_ids=chunk_ids_for(retrieved),
+                    )
+                )
         if self.neighbor_span > 0:
+            expand_started = time.monotonic()
+            before_expand = len(retrieved)
             retrieved = self._expand_neighbors(retrieved)
+            if trace is not None:
+                trace.append(
+                    TraceStep(
+                        phase="merge",
+                        label="Neighbor expansion",
+                        detail=(
+                            f"±{self.neighbor_span} adjacent chunks pasted around "
+                            f"{before_expand} hits — {len(retrieved)} total"
+                        ),
+                        chunk_ids=chunk_ids_for(retrieved),
+                        elapsed_ms=int((time.monotonic() - expand_started) * 1000),
+                    )
+                )
         return retrieved
 
     def _fuse_with_bm25(
@@ -258,13 +393,9 @@ class MultiTranscriptRagContextProvider:
         # RetrievedChunk for any keyword hit the semantic pass missed, so fusion
         # can surface a BM25-only chunk instead of dropping it. Records that lack
         # the identity a citation needs are skipped, never fabricated.
-        return fuse_chunks(
-            semantic, keyword, top_k=fuse_width, resolver=_record_resolver(records)
-        )
+        return fuse_chunks(semantic, keyword, top_k=fuse_width, resolver=_record_resolver(records))
 
-    def _bm25_records(
-        self, channel_id: str | None, video_id: str | None
-    ) -> list[dict]:
+    def _bm25_records(self, channel_id: str | None, video_id: str | None) -> list[dict]:
         where: dict[str, str] | None = None
         if video_id:
             where = {"video_id": video_id}

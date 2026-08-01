@@ -179,3 +179,101 @@ def test_resolution_falls_back_to_content_words() -> None:
     llm.invoke = routed_invoke
     answer = agent.answer(RagQuestionRequest(question="How did gearing evolve?"))
     assert answer.references, "fallback resolution should surface timeline claims"
+
+
+def test_answer_records_a_route_and_llm_trace() -> None:
+    agent = GraphRagAgent(RoutedLLM("temporal", "Timeline [g1]."), FakeStore())
+    agent.answer(RagQuestionRequest(question="how did views change over time?"))
+
+    phases = [step.phase for step in agent.last_trace]
+    assert phases == ["route", "retrieve", "llm"]
+    assert agent.last_trace[0].label == "Route → temporal"
+    assert "negative gearing" in agent.last_trace[0].detail
+    assert "dated claims" in agent.last_trace[1].detail
+    assert all(isinstance(step.elapsed_ms, int) for step in agent.last_trace)
+
+
+def test_global_route_trace_counts_communities() -> None:
+    agent = GraphRagAgent(RoutedLLM("global", "Themes [c1]."), FakeStore())
+    agent.answer(RagQuestionRequest(question="what are the main themes?"))
+
+    reduce_step = agent.last_trace[1]
+    assert reduce_step.label == "Community summaries"
+    assert "1 community summaries" in reduce_step.detail
+
+
+def test_global_route_detail_does_not_claim_entity_anchoring() -> None:
+    """``_global_evidence`` takes no terms, so nothing may anchor the graph."""
+
+    class NoEntityRouter(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                return type("R", (), {"content": json.dumps({"route": "global", "entities": []})})()
+            return type("R", (), {"content": "Themes [c1]."})()
+
+    agent = GraphRagAgent(NoEntityRouter("global", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what are the main themes?"))
+
+    route_step = agent.last_trace[0]
+    assert route_step.label == "Route → global"
+    assert "content words" not in route_step.detail
+    assert "community summaries" in route_step.detail
+    assert agent.last_trace[1].label == "Community summaries"
+
+
+def test_local_route_detail_still_names_the_anchoring_fallback() -> None:
+    class NoEntityRouter(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                return type("R", (), {"content": json.dumps({"route": "local", "entities": []})})()
+            return type("R", (), {"content": "Answer [g1]."})()
+
+    agent = GraphRagAgent(NoEntityRouter("local", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what did they say about gearing?"))
+
+    assert "content words will anchor the graph" in agent.last_trace[0].detail
+
+
+def test_router_failure_is_distinguishable_from_a_local_classification() -> None:
+    """A degraded route must not read like a genuine "local" answer."""
+
+    class FailingRouterLLM(RoutedLLM):
+        def invoke(self, messages):
+            self.prompts.append("router" if not self.prompts else "answer")
+            if len(self.prompts) == 1:
+                raise RuntimeError("router timed out")
+            return type("R", (), {"content": "Answer [g1]."})()
+
+    agent = GraphRagAgent(FailingRouterLLM("local", "unused"), FakeStore())
+    agent.answer(RagQuestionRequest(question="what did they say about gearing?"))
+
+    route_step = agent.last_trace[0]
+    assert route_step.label == "Route → local (router failed)"
+    assert "router timed out" in route_step.detail
+
+    genuine = GraphRagAgent(RoutedLLM("local", "Answer [g1]."), FakeStore())
+    genuine.answer(RagQuestionRequest(question="what did they say about gearing?"))
+    assert genuine.last_trace[0].label == "Route → local"
+    assert "failed" not in genuine.last_trace[0].detail
+
+
+def test_route_error_clears_on_the_next_successful_route() -> None:
+    agent = GraphRagAgent(RoutedLLM("temporal", "Timeline [g1]."), FakeStore())
+    agent.last_route_error = "stale failure"
+    agent.answer(RagQuestionRequest(question="how did views change?"))
+
+    assert agent.last_route_error is None
+    assert agent.last_trace[0].label == "Route → temporal"
+
+
+def test_trace_resets_between_answers() -> None:
+    agent = GraphRagAgent(RoutedLLM("temporal", "Timeline [g1]."), FakeStore())
+    agent.answer(RagQuestionRequest(question="first?"))
+    first_len = len(agent.last_trace)
+
+    agent.llm = RoutedLLM("temporal", "Timeline [g1].")
+    agent.answer(RagQuestionRequest(question="second?"))
+
+    assert len(agent.last_trace) == first_len

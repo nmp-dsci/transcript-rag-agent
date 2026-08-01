@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s07 — After GraphRAG: next moves, ranked</title>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #0e1116; --panel: #12161d; --panel2: #1c2330; --panel3: #161b22;
+    --border: #252b35; --border2: #2b3442;
+    --text: #e6edf3; --text2: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --accent: #2f81f7; --accent2: #79b8ff; --accent-dim: #132339; --accent-border: #1f4a7a;
+    --good: #3fb950; --good-dim: #173a2b; --good-border: #1f5937;
+    --warn: #d29922; --warn-dim: #3a2e12; --warn-border: #5c451a;
+    --bad: #f85149; --bad-dim: #3d1d1f; --bad-border: #6b2a2c;
+    --on-accent: #0b1220; --btn-hover: #232b38; --accent-hover: #4b93f8;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eaeef2; --panel3: #f6f8fa;
+    --border: #d1d9e0; --border2: #bcc4cc;
+    --text: #1f2328; --text2: #424a53; --muted: #59636e; --dim: #818b98;
+    --accent: #0969da; --accent2: #0550ae; --accent-dim: #ddf4ff; --accent-border: #b6e3ff;
+    --good: #1a7f37; --good-dim: #dafbe1; --good-border: #aceebb;
+    --warn: #9a6700; --warn-dim: #fff8c5; --warn-border: #d4a72c;
+    --bad: #cf222e; --bad-dim: #ffebe9; --bad-border: #ffcecb;
+    --on-accent: #ffffff; --btn-hover: #eef2f6; --accent-hover: #0860ca;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.6 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 40px 24px 120px;
+  }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 48px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14px; margin: 0 0 8px; color: var(--text); }
+  p { color: var(--text2); }
+  .lede { color: var(--muted); font-size: 15px; max-width: 820px; }
+  .mono { font-family: var(--mono); }
+  code { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; }
+  a { color: var(--accent2); }
+
+  .badge { display: inline-flex; align-items: center; border-radius: 4px; padding: 2px 7px; font: 600 10.5px var(--mono); white-space: nowrap; }
+  .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
+  .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+  .badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
+  .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  @media (max-width: 860px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .grid2 > .panel, .grid3 > .panel { min-width: 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+  .tablewrap table { min-width: 700px; }
+  td.file { font-family: var(--mono); font-size: 11px; color: var(--dim); white-space: nowrap; }
+  td.rank { font: 700 15px var(--mono); color: var(--accent2); text-align: center; width: 36px; }
+
+  /* TL;DR strip */
+  .tldr { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; }
+  .tldr .chip { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text2); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .tldr .chip b { color: var(--accent2); font-family: var(--mono); font-size: 13px; }
+
+  /* linear pipeline strip (short + genuinely linear, so no auto-routing needed) */
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; margin: 12px 0 4px; }
+  .steps .st { background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; padding: 7px 11px; min-width: 0; }
+  .steps .st b { display: block; font: 600 11.5px var(--mono); color: var(--text); }
+  .steps .st span { font-size: 11px; color: var(--muted); }
+  .steps .arr { align-self: center; color: var(--dim); font-family: var(--mono); }
+  .steps .st.dead { border-style: dashed; opacity: .75; }
+  .steps .st.dead b { color: var(--bad); }
+
+  .callout { border-left: 3px solid var(--warn); background: var(--warn-dim); border-radius: 6px; padding: 10px 14px; margin: 14px 0; font-size: 13px; color: var(--text2); }
+  .callout.bad { border-left-color: var(--bad); background: var(--bad-dim); }
+  .callout.good { border-left-color: var(--good); background: var(--good-dim); }
+  .callout b { color: var(--text); }
+
+  pre.schema { background: var(--panel3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font: 11.5px/1.6 var(--mono); color: var(--text2); }
+  pre.schema .k { color: var(--accent2); }
+
+  /* option cards */
+  .opt { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .opt .opt-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .opt .opt-head h3 { margin: 0; }
+  .opt ul { margin: 4px 0 0; padding-left: 18px; color: var(--text2); font-size: 12.5px; }
+  .opt li { margin: 3px 0; }
+  .opt .cost { margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11.5px; color: var(--muted); }
+
+  /* decision forms */
+  .decision { border: 1px solid var(--accent-border); background: var(--panel); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .decision h3 { display: flex; gap: 8px; align-items: center; }
+  .decision .dnum { font: 700 11px var(--mono); color: var(--on-accent); background: var(--accent); border-radius: 5px; padding: 1px 7px; }
+  .decision label { display: flex; gap: 9px; align-items: flex-start; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin: 6px 0; cursor: pointer; font-size: 13px; color: var(--text2); }
+  .decision label:hover { background: var(--btn-hover); }
+  .decision label input { margin-top: 3px; flex: none; }
+  .decision label b { color: var(--text); }
+  .decision label .why { display: block; font-size: 11.5px; color: var(--muted); }
+  .decision .rec { font: 600 9.5px var(--mono); color: var(--good); border: 1px solid var(--good-border); background: var(--good-dim); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+  .decision button[type=submit] { margin-top: 8px; background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 7px 16px; font: 600 12.5px inherit; cursor: pointer; }
+  .decision button[type=submit]:hover { background: var(--accent-hover); }
+  .decision .queued { display: none; margin-left: 10px; font: 600 11px var(--mono); color: var(--good); }
+  .decision.is-queued .queued { display: inline; }
+
+  .seq { counter-reset: seq; display: flex; flex-direction: column; gap: 10px; }
+  .seq .n { display: flex; gap: 14px; align-items: baseline; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+  .seq .n::before { counter-increment: seq; content: counter(seq); font: 700 14px var(--mono); color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 7px; padding: 2px 9px; flex: none; }
+  .seq .n b { color: var(--text); }
+  .seq .n .why { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>After GraphRAG — next moves, ranked</h1>
+<p class="lede">
+  You now have five answer paths (full-transcript chat, single-hop vector, recursive, agentic, GraphRAG with
+  local/global/temporal routes), a Neo4j knowledge graph over 23 videos / 488 chunks, a 20-question golden set,
+  two committed judged matrix runs, and a CI eval-regression gate. This plan answers your five questions against
+  what's actually in the code, and ends with decisions you can queue back to me.
+</p>
+
+<div class="tldr">
+  <div class="chip"><b>✓</b> Next build: <b>persisted tracing</b> — decided</div>
+  <div class="chip"><b>✓</b> Approved: contextual retrieval + HyDE/multi-query ablations</div>
+  <div class="chip"><b>–</b> Eval upgrades: deferred (self-judging fix stays top of the backlog)</div>
+  <div class="chip"><b>✓</b> Doc review lives in <b>Chat</b> — a URL in the message triggers fetch + review; default stays text</div>
+  <div class="chip"><b>→</b> Still recommended: finish the 20q matrix, then the case study</div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Q1 · "Does the agent have tracing I can view for every step of every answer?"</h2>
+
+<p><b>Short answer: partially, and it evaporates.</b> Step-level data is generated in three places today, and all three fail to reach anything you can open later:</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>What exists</th><th>Where</th><th>Where it dies</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Live agent steps</b> — the agentic setup streams <code>retrieval_start / retrieval_complete / answer_start</code> events over SSE; the Chat tab renders them as a live "research trace"</td>
+      <td class="file">rag_agent.py:178 → main.py:706 → AgentTrace.tsx</td>
+      <td>Held in React session state only — <span class="badge bad">lost on reload</span>. The SSE generator has no accumulator; steps never reach <code>ChatAnswer</code>. Only <code>rag_agent</code> emits at all.</td>
+    </tr>
+    <tr>
+      <td><b>RecursionTrace</b> — recursive RAG internally records every stage, subtopic, per-subtopic evidence and merge/skip outcome</td>
+      <td class="file">models.py:98, rag_transcript_agent.py:373</td>
+      <td>Collapsed to <code>sum(stage.llm_calls)</code> + one reason string before persistence (<span class="mono">setups.py:391</span>). The full trace is <span class="badge bad">discarded</span> on the web path.</td>
+    </tr>
+    <tr>
+      <td><b>MLflow runs</b> — params, metrics, and a full <code>rag_recursion_trace.json</code> artifact per command</td>
+      <td class="file">observability.py:23, cli.py:568</td>
+      <td><span class="badge warn">CLI-only</span>. Zero mlflow imports in <code>src/api/</code> or <code>src/chat/</code> — a question asked through the UI produces no MLflow run at all.</td>
+    </tr>
+    <tr>
+      <td><b>GraphRAG route</b> — which of local/global/temporal ran</td>
+      <td class="file">setups.py:326</td>
+      <td>Smuggled into <code>terminated_reason</code> (a field meant for termination cause). The router's resolved entities and the evidence branch's inputs are <span class="badge bad">discarded</span>.</td>
+    </tr>
+    <tr>
+      <td><b>Flat aggregates</b> — <code>llm_calls</code>, <code>iterations</code>, merged <code>contexts</code> / <code>retrieved_chunk_ids</code>, elapsed, tokens</td>
+      <td class="file">history.py:29 (ChatAnswer)</td>
+      <td>These <span class="badge good">do persist</span> — but chunk→iteration attribution is already lost by the time they're written (<span class="mono">setups.py:433</span>).</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 style="margin-top:22px">Proposal: a persisted <code>trace</code> on every answer <span class="badge good">decided — next build</span></h3>
+<p>Add an ordered step list to <code>ChatAnswer</code>, emitted uniformly by all five setups, and rehydrate the existing <code>AgentTrace</code> component from history instead of session state:</p>
+
+<div class="steps">
+  <div class="st"><b>question</b><span>/api/ask</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>each setup appends TraceSteps</b><span>route · filter · retrieve · rerank · llm · merge</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>ChatAnswer.trace</b><span>persisted with the answer</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>Trace drawer</b><span>AgentTrace, rehydrated after reload</span></div>
+</div>
+
+<pre class="schema"><span class="k">TraceStep</span> = {
+  <span class="k">phase</span>: "route" | "filter" | "retrieve" | "rerank" | "llm" | "merge",
+  <span class="k">label</span>: str,            # "Retrieve (follow-up 2/3)", "Route → temporal"
+  <span class="k">detail</span>: str,           # query text, route rationale, subtopic name
+  <span class="k">chunk_ids</span>: list[str],  # ids only — texts already live in contexts
+  <span class="k">model</span>: str | None,     # which LLM, when phase == "llm"
+  <span class="k">tokens</span>: int | None,
+  <span class="k">elapsed_ms</span>: int,
+  <span class="k">iteration</span>: int | None
+}</pre>
+
+<ul style="color:var(--text2); font-size:13px">
+  <li><b>Backend</b>: a <code>TraceStep</code> pydantic model in <code>agents/models.py</code>; each setup runner appends steps (the recursive agent just converts its existing <code>RecursionTrace</code>; the graph agent records route + resolved entities properly instead of overloading <code>terminated_reason</code>).</li>
+  <li><b>Persistence</b>: <code>trace: list</code> field on <code>ChatAnswer</code> — chunk <em>ids</em> and scores only, no chunk texts, so the history file doesn't balloon (it is already ~13k lines).</li>
+  <li><b>Frontend</b>: extend <code>AgentTrace</code> to render phase-tagged steps for every setup and read from the persisted entry; the live SSE path keeps working as-is during streaming.</li>
+  <li><b>Later, optional</b>: mirror traces to MLflow from the web path — but the drawer alone answers your question, so MLflow stays out of scope for v1.</li>
+</ul>
+<p><span class="badge acc">impact: high</span> <span class="badge plain">effort: ~1 day + gate</span> — it upgrades debugging, the demo story, and future eval attribution all at once.</p>
+
+<!-- ============================================================ -->
+<h2>Q2 · "Is it worth adding more techniques — LazyGraphRAG, others?"</h2>
+
+<p><b>Recommendation: depth over breadth.</b> You already ship five answer paths — more paths now dilute the story. What differentiates a portfolio is a <em>measured delta</em>: "I implemented X and here is what it did to recall@10 and faithfulness on my labeled set." Add the one or two techniques that produce that sentence.</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Technique</th><th>What it is</th><th>Fit here</th><th>Effort</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Contextual Retrieval</b></td>
+      <td>Prepend an LLM-written situating sentence to each chunk before embedding + BM25 (Anthropic's approach)</td>
+      <td>Directly attacks your weakest metric — context precision (0.14–0.47 across setups on the last run). Fully measurable against the 14 chunk-labeled questions.</td>
+      <td>Medium — one indexing pass + re-embed 488 chunks</td>
+      <td><span class="badge good">approved ✓</span></td>
+    </tr>
+    <tr>
+      <td><b>HyDE + multi-query</b></td>
+      <td>Query-side: embed a hypothetical answer; fan out paraphrases and RRF-fuse them</td>
+      <td>Cheap ablation columns for the retrieval lab — slots straight into the existing eval-ablation harness</td>
+      <td>Small — query-side only, no re-index</td>
+      <td><span class="badge good">approved ✓</span></td>
+    </tr>
+    <tr>
+      <td><b>LazyGraphRAG</b></td>
+      <td>Defer community summarization to query time instead of index time</td>
+      <td>You chose Full deliberately, and its win is <em>index-time cost</em> — irrelevant at 488 chunks. It's a cost story, not a quality story, on this corpus.</td>
+      <td>Medium</td>
+      <td><span class="badge warn">skip for now</span></td>
+    </tr>
+    <tr>
+      <td><b>RAPTOR</b></td>
+      <td>Hierarchical summary tree, retrieve at multiple levels</td>
+      <td>Overlaps heavily with the per-video summaries + Leiden community summaries you already have</td>
+      <td>Medium–large</td>
+      <td><span class="badge warn">later</span></td>
+    </tr>
+    <tr>
+      <td><b>Self-RAG / CRAG</b></td>
+      <td>Grade retrieval quality mid-flight; re-retrieve or abstain when it's poor</td>
+      <td>Interesting, and pairs well with a future negative-control eval set — but it's a sixth path</td>
+      <td>Medium</td>
+      <td><span class="badge warn">later</span></td>
+    </tr>
+    <tr>
+      <td><b>ColBERT / late interaction</b></td>
+      <td>Token-level interaction scoring instead of single-vector similarity</td>
+      <td>Heavy dependency for a corpus this size; the cross-encoder reranker already covers the quality niche</td>
+      <td>Large</td>
+      <td><span class="badge bad">skip</span></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2>Q3 · Productivity — decided: <b>chat-native doc/URL review</b> <span class="badge good">shape settled</span></h2>
+
+<p>Your call: no separate feature or tab — <em>"just call it chat, and it should render if the user adds
+something like a URL; default is text."</em> So the Chat input stays exactly what it is today, and gains one
+behavior: when a message contains a URL, the server fetches and extracts the page, renders it as a document
+card in the conversation, and answers the question with retrieval over <b>both</b> the document and the
+transcript corpus. A plain-text message behaves exactly as it does now.</p>
+
+<div class="steps">
+  <div class="st"><b>chat message</b><span>may contain a URL — plain text is unchanged</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>detect + fetch</b><span>URL found → SSRF-guarded fetch, readability extraction</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>document card</b><span>renders in the thread as collapsible sections</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>answer</b><span>doc sections + corpus guidance retrieved together</span></div>
+  <div class="arr">→</div>
+  <div class="st"><b>cited feedback</b><span>[§2 of the doc] + [video @ 12:34]</span></div>
+</div>
+
+<h3 style="margin-top:20px">How it renders — a document card in the thread, no new tab</h3>
+<ul style="color:var(--text2); font-size:13px">
+  <li><b>The card</b> — the extracted document appears above the answer as a collapsible, sectioned card. Feedback points anchor to sections; clicking an anchor expands and highlights the section it critiques. Corpus citations keep their existing watch-at links.</li>
+  <li><b>The conversation keeps the doc in scope</b> — follow-up questions in the same entry re-use the fetched document (pinned by id), so "now check the experience section" just works without re-fetching.</li>
+  <li><b>Render extracted text, not the live page</b> — iframes break on X-Frame-Options/CSP for most real sites and screenshots need a headless browser; readability-extracted text works everywhere and is what retrieval uses anyway. A screenshot thumbnail can come later if visual critique becomes a real use case.</li>
+  <li><b>Pasted documents</b> — a long paste (a resume, an invite) can be offered the same treatment with a "treat as document?" affordance, but the decided trigger is a URL; plain text stays the default path.</li>
+</ul>
+
+<div class="callout">
+  <b>Two guardrails, both now v1-required since URL fetch is the trigger:</b> the fetcher ships with SSRF
+  guards from day one (http/https only, private-range IPs blocked, short timeout, size cap) · fetched
+  document text lives in a gitignored store referenced by id from the history entry — never inlined into
+  <code>dashboard/chat_history.json</code>, which is committed to git.
+</div>
+
+<p style="font-size:12.5px; color:var(--muted)">Still on the shelf, unblocked by this: the
+<b>Trends dashboard</b> (dated Neo4j claims → entity timelines — the graph's unique payoff) and
+<b>prompt templates</b> (&lt; 1 session, ships alongside anything).</p>
+
+<!-- ============================================================ -->
+<h2>Q4 · "Show I'm an expert in RAG — ideas, ordered by impact"</h2>
+
+<p>The uncomfortable truth: most of the proof already exists in <code>evals/runs/</code> — it's just invisible. The highest-impact items are the ones that surface work you've already done.</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th></th><th>Move</th><th>Why it ranks here</th><th>Proof it produces</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td class="rank">1</td>
+      <td><b>Case-study write-up</b> (README rework or blog post)</td>
+      <td>Recruiters and hiring managers read narratives, not repos. You have real ablation + matrix numbers, a science-lab UI, and a genuinely interesting finding (single-hop beat agentic on composite <em>and</em> was 8× cheaper per token).</td>
+      <td>A link you can put on a CV. Charts + methodology + honest negative results.</td>
+      <td>1–2 sessions</td></tr>
+    <tr><td class="rank">2</td>
+      <td><b>Finish the full 20q × 4 judged matrix</b> (80 cells)</td>
+      <td>The write-up needs the headline table. The cell cache makes it cheap — only new cells pay. Blocked on a DeepSeek top-up, then <code>scripts/run_matrix_chunked.py</code> resumes.</td>
+      <td>One committed run where every setup answers every question, incl. the career domain.</td>
+      <td>~1 hr + top-up</td></tr>
+    <tr><td class="rank">3</td>
+      <td><b>Persisted tracing</b> (Q1)</td>
+      <td>"Every answer is fully traceable" is a production-credibility line few portfolio RAG projects can say, and it demos beautifully.</td>
+      <td>Trace drawer on any historical answer.</td>
+      <td>~1 day</td></tr>
+    <tr><td class="rank">4</td>
+      <td><b>Judge rigor pack</b> (Q5)</td>
+      <td>Independent judge + calibration against your own labels is the kind of eval maturity interviewers probe for.</td>
+      <td>A provenance bar that says "judge ≠ answerer, κ = 0.7 vs human".</td>
+      <td>1–2 sessions</td></tr>
+    <tr><td class="rank">5</td>
+      <td><b>Contextual-retrieval ablation</b> (Q2)</td>
+      <td>Implementing a current, named technique <em>and measuring it</em> beats naming ten techniques.</td>
+      <td>A before/after row in the ablation table.</td>
+      <td>1 session</td></tr>
+    <tr><td class="rank">6</td>
+      <td><b>Resume Lab</b> (Q3-A)</td>
+      <td>Product sense + grounding on user documents; the most demoable feature.</td>
+      <td>A 60-second demo clip.</td>
+      <td>2–3 sessions</td></tr>
+    <tr><td class="rank">7</td>
+      <td><b>Hosted demo / 3-min video</b></td>
+      <td>Last because it multiplies whatever exists — do it after 1–3 land.</td>
+      <td>Public artifact.</td>
+      <td>1 session</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2>Q5 · "Evals — can I do better than LLM-as-judge?"</h2>
+
+<p>First, credit where due — you are <em>not</em> only using LLM-as-judge today:</p>
+<div class="steps">
+  <div class="st"><b>RAGAS judge</b><span>faithfulness · relevancy · precision, with sample spread</span></div>
+  <div class="st"><b>Deterministic IR</b><span>recall@k · MRR · nDCG vs 14 labeled questions</span></div>
+  <div class="st"><b>Reference-based</b><span>answer correctness / similarity vs golden answers</span></div>
+  <div class="st"><b>Win-rates</b><span>same-judge contests only</span></div>
+  <div class="st"><b>CI gate</b><span>eval-regression check on every PR</span></div>
+  <div class="st"><b>Cell cache</b><span>config-fingerprinted, cheap re-runs</span></div>
+</div>
+
+<div class="callout bad">
+  <b>The one real hole: the judge is grading its own homework.</b> Answers come from
+  <code>deepseek-v4-flash</code> and are judged by <code>deepseek-v4-flash</code>. Self-preference bias is
+  well-documented, and it's the first question anyone rigorous will ask about your scoreboard. The fix is
+  already built: <code>YT_AGENT_JUDGE_MODEL</code> exists in config and is simply unset. Point it at a
+  different provider and re-run the matrix (cache scopes judging config, so only judged cells re-pay).
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th></th><th>Upgrade</th><th>What it buys</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td class="rank">1</td><td><b>Independent judge model</b></td><td>Kills the self-grading critique. Config-only + one matrix re-run.</td><td>Tiny</td></tr>
+    <tr><td class="rank">2</td><td><b>Position-swapped pairwise judging</b></td><td>Win-rates from real A/B comparisons (judged both orders to cancel position bias) instead of ranking absolute composites — much more reliable for "which setup is better".</td><td>Small–medium</td></tr>
+    <tr><td class="rank">3</td><td><b>Human calibration pass</b></td><td>Hand-label ~30 (question, answer) pairs yourself; report judge–human agreement (Cohen's κ) in the provenance bar. Turns "LLM-as-judge" into "calibrated LLM-as-judge".</td><td>Small (mostly your time)</td></tr>
+    <tr><td class="rank">4</td><td><b>Negative controls</b></td><td>Add unanswerable / out-of-corpus questions to the golden set and score abstention. Catches the failure mode judges are blindest to: confident answers from nothing.</td><td>Small</td></tr>
+    <tr><td class="rank">5</td><td><b>Bootstrap CIs on the scoreboard</b></td><td>Error bars on composites — at n=5 the rows already carry a "thin" badge; CIs make the uncertainty honest at any n.</td><td>Small</td></tr>
+    <tr><td class="rank">6</td><td><b>NLI groundedness cross-check</b></td><td>A small local entailment model verifying answer sentences against contexts — a cheap, deterministic second opinion on faithfulness (RAGAS judging is slow on long answers today).</td><td>Medium</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout" style="border-left-color: var(--dim); background: var(--panel2)">
+  <b>Your call: deferred for now.</b> None of these are green-lit yet — the table stays as the backlog.
+  When you do pick this up, start with #1: it's one env var (<code>YT_AGENT_JUDGE_MODEL</code>) plus a
+  cached matrix re-run, and it's the finding a reviewer will hit first.
+</div>
+
+<!-- ============================================================ -->
+<h2>Sequence — updated with your decisions</h2>
+<div class="seq">
+  <div class="n"><div><b>Persisted tracing + trace drawer</b> <span class="badge good">decided</span> — the Q1 proposal, through the no-mistakes gate. <span class="why">Next build.</span></div></div>
+  <div class="n"><div><b>Unblock &amp; finish the 20q matrix</b> — top up DeepSeek, resume via <code>run_matrix_chunked.py</code>, commit the 80-cell run. <span class="why">Everything downstream cites it; ~1 hr of compute once unblocked.</span></div></div>
+  <div class="n"><div><b>Contextual retrieval + HyDE/multi-query ablations</b> <span class="badge good">approved</span> — implement, measure, add the before/after rows. <span class="why">Named-technique proof.</span></div></div>
+  <div class="n"><div><b>Chat doc/URL review</b> <span class="badge good">shape settled</span> — URL in a chat message → fetch, render as a document card, answer grounded in doc + corpus; plain text unchanged. <span class="why">Product wow, demoable.</span></div></div>
+  <div class="n"><div><b>Case-study write-up</b> — harvest the numbers into a narrative with charts. <span class="why">The highest-leverage portfolio artifact.</span></div></div>
+</div>
+<p style="font-size:12.5px; color:var(--muted)">Eval upgrades (Q5) sit outside the sequence as a deferred backlog, headed by the one-env-var independent-judge fix.</p>
+
+<div class="callout">
+  <b>Risks &amp; constraints:</b> DeepSeek credit blocks the full matrix (user action needed) ·
+  RAGAS judging stalls on long answers, so pairwise judging should reuse the cache and batch carefully ·
+  <code>dashboard/chat_history.json</code> is git-tracked — both tracing (file growth) and Resume Lab (PII)
+  argue for moving per-answer payloads out of the committed file · five answer paths is already a
+  maintenance surface — resist a sixth until one is measurably justified.
+</div>
+
+<!-- ============================================================ -->
+<h2>Decisions — all settled</h2>
+<div class="panel">
+  <ul style="color:var(--text2); font-size:13px; margin:0; padding-left:18px">
+    <li><b>D1 · Next build</b> — persisted tracing (trace field on every answer + rehydrating trace drawer).</li>
+    <li><b>D2 · Eval upgrades</b> — deferred; the table above stays as the backlog, independent-judge fix first when picked up.</li>
+    <li><b>D3 · Techniques</b> — contextual retrieval + the HyDE/multi-query cheap pack, each as a measured ablation.</li>
+    <li><b>D4 · Doc review</b> — lives in Chat: a URL in the message triggers fetch + document-card render + doc-and-corpus-grounded answering; plain text stays the default, unchanged.</li>
+  </ul>
+</div>
+<p style="font-size:12.5px; color:var(--muted)">Annotate anything above to reopen a decision — otherwise the sequence panel is the plan of record.</p>
+
+<script>
+  function queueAnswer(form, prompt, data) {
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt(prompt, {
+        tag: 'decision',
+        text: data.question + ': ' + data.answer,
+        element: form,
+        queueKey: data.question,
+        data: data
+      });
+      form.classList.add('is-queued');
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+</script>
+
+</body>
+</html>
