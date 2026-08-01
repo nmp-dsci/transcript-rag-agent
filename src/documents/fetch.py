@@ -79,14 +79,21 @@ def _strip_parameters(content_type: str) -> str:
     return content_type.split(";")[0].strip().lower()
 
 
+#: RFC 6052 well-known prefix: on a NAT64 network the OS translates any
+#: address under this prefix to the embedded IPv4 address, so it is the same
+#: bypass class as ``::ffff:0:0/96`` and must be unwrapped the same way.
+_NAT64_WELL_KNOWN_PREFIX = ipaddress.IPv6Network("64:ff9b::/96")
+
+
 def is_public_address(address: str) -> bool:
     """Whether an IP is globally routable, and therefore fetchable.
 
     Every non-global category is a rejection, not just the private ranges:
     loopback reaches the server's own services, link-local reaches cloud
     instance metadata, and reserved/multicast have no business being fetched at
-    all. IPv4-mapped IPv6 addresses (``::ffff:127.0.0.1``) are unwrapped first,
-    since the mapped form would otherwise pass an IPv6-only check.
+    all. IPv4-mapped IPv6 addresses (``::ffff:127.0.0.1``) and addresses under
+    the NAT64 well-known prefix (``64:ff9b::/96``) are unwrapped first, since
+    either mapped form would otherwise pass an IPv6-only check.
     """
     try:
         parsed = ipaddress.ip_address(address)
@@ -94,6 +101,8 @@ def is_public_address(address: str) -> bool:
         return False
     if isinstance(parsed, ipaddress.IPv6Address) and parsed.ipv4_mapped is not None:
         parsed = parsed.ipv4_mapped
+    elif isinstance(parsed, ipaddress.IPv6Address) and parsed in _NAT64_WELL_KNOWN_PREFIX:
+        parsed = ipaddress.IPv4Address(int(parsed) & 0xFFFFFFFF)
     if (
         parsed.is_private
         or parsed.is_loopback

@@ -20,13 +20,9 @@ from src.rag.storage import TranscriptChunk
 def build_llm(settings: Settings) -> object:
     from langchain_openai import ChatOpenAI
 
-    kwargs: dict[str, object] = {
-        "api_key": settings.deepseek_api_key,
-        "model": settings.deepseek_model,
-    }
-    if settings.deepseek_base_url:
-        kwargs["base_url"] = settings.deepseek_base_url
-    return ChatOpenAI(**kwargs)
+    from src.agents.llm import chat_model_kwargs
+
+    return ChatOpenAI(**chat_model_kwargs(settings))
 
 
 def build_graph(

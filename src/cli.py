@@ -8,6 +8,7 @@ from pathlib import Path
 from langchain_openai import ChatOpenAI
 
 from src.agents.context import RawTranscriptContextProvider
+from src.agents.llm import chat_model_kwargs
 from src.agents.models import (
     AgentProgressEvent,
     QuestionRequest,
@@ -492,6 +493,22 @@ def _run_eval_matrix(args, settings) -> int:
         # scoped to, so scoring one twice would double its weight in the
         # averages without that being visible anywhere in the snapshot.
         entries = [by_id[question_id] for question_id in dict.fromkeys(wanted)]
+
+    if "rag_llm_contextual" in setups:
+        contextual_store = TranscriptChunkStore(
+            settings.chroma_path,
+            embedding_model=HuggingFaceEmbeddingModel(settings.embedding_model),
+            collection_name=settings.contextual_chunk_collection,
+        )
+        if not contextual_store.has_any_chunks():
+            print(
+                "The contextual index is empty. Run "
+                "`uv run python -m src.cli index-contextual` before running "
+                "eval-matrix with rag_llm_contextual (or pass --setups to "
+                "exclude it).",
+                file=sys.stderr,
+            )
+            return 1
 
     runner = RagSetupRunner.from_settings(settings)
     judge = None if args.no_judge else RagasJudge.from_settings(settings)
@@ -1430,14 +1447,8 @@ def _build_summary_store(settings, embedding_model, raw_store):
 
 
 def _build_summary_generator(settings):
-    kwargs: dict[str, object] = {
-        "api_key": settings.deepseek_api_key,
-        "model": settings.deepseek_model,
-    }
-    if settings.deepseek_base_url:
-        kwargs["base_url"] = settings.deepseek_base_url
     return TranscriptSummaryGenerator(
-        ChatOpenAI(**kwargs),
+        ChatOpenAI(**chat_model_kwargs(settings)),
         model_name=settings.deepseek_model,
     )
 

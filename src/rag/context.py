@@ -318,7 +318,17 @@ class MultiTranscriptRagContextProvider:
         )
         queries = plan.queries or [question]
         started = time.monotonic()
-        rankings = [search(query, candidates) for query in queries]
+        rankings = []
+        for query in queries:
+            try:
+                rankings.append(search(query, candidates))
+            except Exception:  # noqa: BLE001 - one bad variant must not sink retrieval
+                continue
+        if not rankings:
+            # Every expanded variant failed independently of the LLM
+            # expansion step itself; falling back to the raw question keeps
+            # this failure mode as degrade-gracefully as query expansion's.
+            rankings = [search(question, candidates)]
         # Report the candidate *pool* the searches found between them, before
         # fusion reorders it — a chunk two phrasings both found is one
         # candidate, not two.
@@ -329,7 +339,7 @@ class MultiTranscriptRagContextProvider:
             scope_desc,
             candidates,
             started,
-            len(queries),
+            len(rankings),
         )
         if len(rankings) == 1:
             return rankings[0]

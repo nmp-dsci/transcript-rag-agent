@@ -456,6 +456,9 @@ export interface AskRequest {
   url?: string | null;
   top_k?: number | null;
   entry_id?: string | null;
+  /** A follow-up's source entry, to reuse its pinned document without
+   * requiring the follow-up's (different) question to match that entry. */
+  document_entry_id?: string | null;
   /** Ignored by the server when `url` pins a single video. */
   channel_id?: string | null;
   retrieval_mode?: RetrievalMode | null;

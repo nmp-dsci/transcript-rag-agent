@@ -197,6 +197,7 @@ export function ChatView({
       /** Prior turns, so a follow-up can be rewritten to stand alone. */
       history?: string[];
       entryId?: string;
+      documentEntryId?: string;
     }) => {
       const titleOf = (key: string) =>
         setups.find((setup) => setup.key === key)?.title ?? key;
@@ -231,6 +232,7 @@ export function ChatView({
         filter_transcripts: options.filterTranscripts,
         ...(options.history?.length ? { history: options.history } : {}),
         ...(options.entryId ? { entry_id: options.entryId } : {}),
+        ...(options.documentEntryId ? { document_entry_id: options.documentEntryId } : {}),
       };
 
       try {
@@ -330,6 +332,10 @@ export function ChatView({
   /** Re-run the setups that have not answered yet, under the original scope. */
   const compare = (entry: Entry) => {
     if (busy) return;
+    // A document-grounded entry only ever answers with rag_llm (the only
+    // setup that threads document_context into its answer call), so other
+    // setups can never be filled in and must not be offered.
+    if (entry.document_id) return;
     const missing = setups
       .map((setup) => setup.key)
       .filter((key) => !entry.answers.some((answer) => answer.key === key));
@@ -373,6 +379,7 @@ export function ChatView({
       retrievalMode: prior?.retrieval_mode === 'hybrid' ? 'hybrid' : 'semantic',
       filterTranscripts: prefs.filterTranscripts,
       history: source ? [source.question, ...source.answers.map((a) => a.answer)] : [],
+      documentEntryId: source?.id,
     });
   };
 
@@ -441,9 +448,11 @@ export function ChatView({
                   onCompare={() => compare(entry)}
                   traces={traces[entry.id]}
                   remainingSetups={
-                    setups.filter(
-                      (setup) => !entry.answers.some((answer) => answer.key === setup.key),
-                    ).length
+                    entry.document_id
+                      ? 0
+                      : setups.filter(
+                          (setup) => !entry.answers.some((answer) => answer.key === setup.key),
+                        ).length
                   }
                 />
               </div>

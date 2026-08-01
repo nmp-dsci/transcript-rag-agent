@@ -576,7 +576,15 @@ def test_eval_matrix_can_be_scoped_to_named_questions(monkeypatch, tmp_path) -> 
     monkeypatch.setattr(RagSetupRunner, "from_settings", classmethod(lambda cls, s: object()))
 
     exit_code = cli.main(
-        ["eval-matrix", "--questions", "g010,g001,g001", "--no-judge", "--no-reference-metrics"]
+        [
+            "eval-matrix",
+            "--setups",
+            "rag_llm",
+            "--questions",
+            "g010,g001,g001",
+            "--no-judge",
+            "--no-reference-metrics",
+        ]
     )
 
     assert exit_code == 0

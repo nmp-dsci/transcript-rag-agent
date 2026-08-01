@@ -104,6 +104,11 @@ class AskRequest(BaseModel):
     # setups on a question already asked has to land in the same entry, or the
     # scoreboard would never see them as competing answers.
     entry_id: str | None = None
+    # A conversational follow-up (a different question) that should still
+    # read whatever document the named entry pinned. Kept separate from
+    # ``entry_id``, which means "append onto this exact question" and 422s on
+    # a mismatched question — a follow-up is a new entry, not an append.
+    document_entry_id: str | None = None
     # Scope retrieval to one channel. Ignored when ``url`` pins a single video,
     # which is already narrower.
     channel_id: str | None = None
@@ -712,22 +717,30 @@ def create_app(
                     status_code=422,
                     detail=f"Question/url does not match entry {payload.entry_id}",
                 )
+        if payload.document_entry_id:
+            if not any(
+                entry.id == payload.document_entry_id for entry in load_history(history_path)
+            ):
+                raise HTTPException(
+                    status_code=404, detail=f"Unknown entry: {payload.document_entry_id}"
+                )
 
         def stream() -> Iterator[str]:
             # One failing setup is already captured as SetupResult.error by the
             # runner; this guard is for everything else (stack build, storage),
             # which must surface as an event rather than a dead stream.
             try:
+                pin_source_id = payload.entry_id or payload.document_entry_id
                 pinned = (
                     next(
                         (
                             entry.document_id
                             for entry in load_history(history_path)
-                            if entry.id == payload.entry_id
+                            if entry.id == pin_source_id
                         ),
                         None,
                     )
-                    if payload.entry_id
+                    if pin_source_id
                     else None
                 )
                 try:
@@ -746,10 +759,21 @@ def create_app(
                 answer_keys = list(keys)
                 if document is not None:
                     yield _sse("document", _document_event(document))
+                    dropped = [key for key in answer_keys if key != "rag_llm"]
                     # Only the single-hop path threads the document into its
                     # answer call; the others would silently ignore it and
                     # produce a corpus answer dressed as a review.
                     answer_keys = ["rag_llm"]
+                    if dropped:
+                        yield _sse(
+                            "progress",
+                            {
+                                "message": (
+                                    "Reviewing a document only runs rag_llm; skipping "
+                                    f"{', '.join(dropped)}."
+                                )
+                            },
+                        )
 
                 if not loaded("runner"):
                     yield _sse(
