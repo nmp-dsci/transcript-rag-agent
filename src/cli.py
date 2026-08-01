@@ -140,8 +140,8 @@ def build_parser() -> argparse.ArgumentParser:
     ablation = subparsers.add_parser(
         "eval-ablation",
         help=(
-            "Sweep retrieval configs over the golden set — semantic/hybrid/"
-            "hybrid+rerank, or --sweep extended for the HyDE, multi-query and "
+            "Sweep retrieval configs over the golden set — semantic/semantic+rerank/"
+            "hybrid/hybrid+rerank, or --sweep extended for the HyDE, multi-query and "
             "contextual-retrieval variants too"
         ),
     )
@@ -156,9 +156,9 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["default", "extended"],
         default="default",
         help=(
-            "Which configurations to measure. 'default' is semantic/hybrid/"
-            "hybrid+rerank — deterministic and offline. 'extended' adds the HyDE, "
-            "multi-query and contextual-retrieval columns, which need "
+            "Which configurations to measure. 'default' is semantic/semantic+rerank/"
+            "hybrid/hybrid+rerank — deterministic and offline. 'extended' adds the "
+            "HyDE, multi-query and contextual-retrieval columns, which need "
             "DEEPSEEK_API_KEY (query expansions are cached per question) and, for "
             "the contextual ones, a prior index-contextual"
         ),

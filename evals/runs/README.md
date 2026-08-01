@@ -9,9 +9,9 @@ Three kinds of run land here:
 
 | Prefix | Produced by | What it measures |
 |--------|-------------|------------------|
-| `ablation-*.json` | `uv run python -m src.cli eval-ablation` | Retrieval only — semantic vs hybrid vs hybrid+rerank across `recall@k`, `MRR`, `NDCG` over the golden set. Deterministic, no LLM, no API key. |
+| `ablation-*.json` | `uv run python -m src.cli eval-ablation` | Retrieval only — semantic vs semantic+rerank vs hybrid vs hybrid+rerank (plus HyDE, multi-query, and contextual columns with `--sweep extended`) across `recall@k`, `MRR`, `NDCG` over the golden set. Deterministic, no LLM, no API key. |
 | `eval-*.json` | `uv run python -m src.cli eval-golden …` | End-to-end for **one** setup — answers generated and (optionally) RAGAS-judged, alongside the deterministic recall/IR metrics. |
-| `matrix-*.json` | `uv run python -m src.cli eval-matrix`, `scripts/run_matrix_chunked.py`, or the Experiments tab's **Run eval matrix** button | Head-to-head — every answer engine (`rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`) answers the same golden questions under one config and one judge; a comparison pivot by metric × setup, overall and per `question_type`. |
+| `matrix-*.json` | `uv run python -m src.cli eval-matrix`, `scripts/run_matrix_chunked.py`, or the Experiments tab's **Run eval matrix** button | Head-to-head — every answer engine (`rag_llm`, `rag_llm_recursive`, `rag_agent`, `graph_rag`, `rag_llm_hyde`, `rag_llm_contextual`) answers the same golden questions (or a `--questions`-scoped sample) under one config and one judge; a comparison pivot by metric × setup, overall and per `question_type`. |
 
 ### Why `matrix-*.json` is the important one
 
@@ -82,6 +82,9 @@ uv run python -m src.cli eval-golden --diff
 # Head-to-head across every setup (what the Scoreboard ranks). Cached by cell,
 # so re-running after adding a question only pays for the new cells.
 uv run python -m src.cli eval-matrix
+
+# Scope a judged run to a named sample of golden questions instead of the full set
+uv run python -m src.cli eval-matrix --questions g001,g007,g010,g013,g015
 
 # The same matrix, parallel across engines and resumable: every cell is cached
 # as it completes, so a killed or time-budgeted process loses nothing

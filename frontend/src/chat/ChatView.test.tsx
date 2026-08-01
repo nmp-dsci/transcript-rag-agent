@@ -10,11 +10,13 @@ Element.prototype.scrollIntoView = vi.fn();
 
 const ask = vi.fn();
 const judge = vi.fn();
+const document = vi.fn();
 
 vi.mock('../api/client', () => ({
   api: {
     ask: (...args: unknown[]) => ask(...args),
     judge: (...args: unknown[]) => judge(...args),
+    document: (...args: unknown[]) => document(...args),
   },
 }));
 
@@ -100,6 +102,8 @@ beforeEach(() => {
   localStorage.setItem('tlab.autojudge', '0');
   ask.mockReset();
   judge.mockReset();
+  document.mockReset();
+  document.mockRejectedValue(new Error('not found'));
   ask.mockImplementation(
     async (_request: AskRequest, handlers: { done?: (entry: Entry) => void }) => {
       handlers.done?.(ENTRY);
@@ -150,6 +154,54 @@ describe('ChatView request payload', () => {
     const request = await send('what are the themes?');
     expect(request.retrieval_mode).toBe('semantic');
     expect(request.filter_transcripts).toBe(false);
+  });
+});
+
+describe('ChatView document follow-up', () => {
+  it('pins the reviewed document on a follow-up, keyed by entry id not question', async () => {
+    const documentEntry: Entry = {
+      id: 'doc-e1',
+      question: 'review this article',
+      url: null,
+      asked_at: '2026-07-21T00:00:00+00:00',
+      document_id: 'doc1',
+      answers: [
+        {
+          key: 'rag_llm',
+          title: 'rag_llm',
+          command: 'rag_llm',
+          answer: 'summary of the article',
+          references: [],
+          token_estimate: 10,
+          chunk_count: 1,
+          llm_calls: 1,
+          iterations: null,
+          terminated_reason: null,
+          elapsed_seconds: 1,
+          error: null,
+          contexts: [],
+          evaluation: null,
+          model: null,
+          embedding_model: null,
+          top_k: null,
+          followups: [
+            {
+              topic: 'related',
+              rationale: 'digs deeper',
+              followup_query: 'what does the article say about risk?',
+              confidence: 0.9,
+            },
+          ],
+        },
+      ],
+    };
+    view({ history: [documentEntry] });
+    await userEvent.click(screen.getByText('review this article').closest('button')!);
+    await userEvent.click(screen.getByRole('button', { name: 'related' }));
+    await waitFor(() => expect(ask).toHaveBeenCalled());
+    const request = ask.mock.calls[0]![0] as AskRequest;
+    expect(request.document_entry_id).toBe('doc-e1');
+    expect(request.entry_id).toBeUndefined();
   });
 });
 

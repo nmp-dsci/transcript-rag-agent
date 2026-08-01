@@ -51,6 +51,8 @@ def _html(text: str = "<html><body><p>hello</p></body></html>") -> httpx.Respons
         "fd00::1",  # IPv6 unique-local
         "fe80::1",  # IPv6 link-local
         "::ffff:127.0.0.1",  # IPv4-mapped loopback
+        "64:ff9b::7f00:1",  # NAT64 well-known prefix wrapping loopback
+        "64:ff9b::a9fe:a9fe",  # NAT64 well-known prefix wrapping link-local metadata
         "224.0.0.1",  # multicast
         "not-an-ip",
     ],
@@ -59,7 +61,10 @@ def test_non_public_addresses_are_rejected(address: str) -> None:
     assert is_public_address(address) is False
 
 
-@pytest.mark.parametrize("address", ["93.184.216.34", "1.1.1.1", "2606:4700::1111"])
+@pytest.mark.parametrize(
+    "address",
+    ["93.184.216.34", "1.1.1.1", "2606:4700::1111", "64:ff9b::101:101"],
+)
 def test_publicly_routable_addresses_are_allowed(address: str) -> None:
     assert is_public_address(address) is True
 

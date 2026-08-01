@@ -54,7 +54,7 @@ flowchart LR
 
 ## Results: which retrieval actually wins?
 
-`eval-ablation --sweep extended` sweeps seven retrieval configurations over the
+`eval-ablation --sweep extended` sweeps eight retrieval configurations over the
 same 20 labelled golden questions and reports rank-aware IR metrics. No answer
 is generated and no judge runs, so every number here is deterministic id
 arithmetic (`evals/runs/ablation-*.json`; it renders live in the workbench
@@ -723,7 +723,8 @@ Endpoints (JSON unless noted):
 | `/api/scoreboard` | GET | Leaderboard for one committed matrix run — aggregated `setups` rows plus the run's per-question rows (`questions`, each setup's composite on each golden question); `run_id` picks the run, `group_by=setup\|setup_model`, `judge_model` filter |
 | `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any; 422 on an unknown setup) |
 | `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
-| `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
+| `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry, `document_entry_id` re-reads a prior entry's pinned document for a follow-up) |
+| `/api/documents/{document_id}` | GET | One reviewed document, read from the gitignored document store (404 if cleared) — how a document card re-renders after a reload |
 | `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` (a mode that cannot run is reported in `errors` and left out of `overlap`, rather than failing the request) |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
@@ -736,9 +737,11 @@ Endpoints (JSON unless noted):
 | `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
 | `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
 
-`/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
-per `rag_agent` retrieval iteration, carrying its query and chunk count),
-`answer` (a finished setup), `done` (the saved entry), and `error`.
+`/api/ask` emits these SSE events: `document` (a resolved document, emitted
+once before the answer setups run when the question carries or pins a URL),
+`progress` (per setup), `agent_step` (one per `rag_agent` retrieval iteration,
+carrying its query and chunk count), `answer` (a finished setup), `done` (the
+saved entry), and `error`.
 
 Keyword ranking uses `rank-bm25`, a small pure-Python Okapi BM25 implementation
 installed by `uv sync`. The index is built in memory from stored chunk texts
@@ -821,7 +824,7 @@ golden set and reports `recall@k`, `MRR` and `NDCG` per configuration and per
 domain. It is retrieval-only — no answer is generated and no judge runs:
 
 ```bash
-uv run python -m src.cli eval-ablation                    # semantic / hybrid / hybrid+rerank
+uv run python -m src.cli eval-ablation                    # semantic / semantic+rerank / hybrid / hybrid+rerank
 uv run python -m src.cli eval-ablation --sweep extended   # + hyde, multi-query, contextual
 ```
 
