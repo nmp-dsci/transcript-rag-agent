@@ -82,9 +82,23 @@ class AblationConfig:
 #: The default sweep: isolate the two axes P1 cares about — lexical fusion and
 #: cross-encoder reranking — against the plain-semantic baseline. ``semantic`` is
 #: first, so it is the baseline every delta is measured from.
+#:
+#: Ordered as two adjacent pairs, ``semantic``/``semantic+rerank`` and
+#: ``hybrid``/``hybrid+rerank``, because that is what isolates the cross-encoder:
+#: within a pair the only difference is whether a bi-encoder ranking (the query
+#: and the chunk embedded apart) is reordered by a model that scores the pair
+#: jointly. Reading one pair answers "what does the cross-encoder buy"; reading
+#: both answers "does that depend on having BM25 underneath it".
+#:
+#: ``semantic+rerank`` is also the configuration the app ships with
+#: (``retrieval_mode=semantic``, ``rerank_enabled=true``), so the default sweep
+#: measures the default stack rather than only its neighbours.
 def default_configs(top_k: int = 10) -> list[AblationConfig]:
     return [
         AblationConfig(label="semantic", retrieval_mode="semantic", rerank=False, top_k=top_k),
+        AblationConfig(
+            label="semantic+rerank", retrieval_mode="semantic", rerank=True, top_k=top_k
+        ),
         AblationConfig(label="hybrid", retrieval_mode="hybrid", rerank=False, top_k=top_k),
         AblationConfig(label="hybrid+rerank", retrieval_mode="hybrid", rerank=True, top_k=top_k),
     ]

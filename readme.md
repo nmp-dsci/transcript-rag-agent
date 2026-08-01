@@ -63,20 +63,39 @@ arithmetic (`evals/runs/ablation-*.json`; it renders live in the workbench
 | config | recall@1 | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
 |--------|:-------:|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
 | semantic (baseline) | 0.101 | 0.312 | 0.452 | 0.618 | 0.661 | 0.535 | 0.941 |
+| semantic+rerank *(shipped default)* | 0.128 | **0.371** | **0.503** | 0.626 | 0.713 | 0.571 | 0.941 |
 | **hybrid** | 0.134 | 0.359 | 0.468 | **0.667** | **0.741** | **0.585** | 0.941 |
-| hybrid+rerank | 0.110 | **0.371** | **0.486** | 0.607 | 0.662 | 0.545 | 0.941 |
+| hybrid+rerank | 0.110 | **0.371** | 0.486 | 0.607 | 0.662 | 0.545 | 0.941 |
 | HyDE | **0.149** | 0.320 | 0.423 | 0.591 | 0.669 | 0.525 | 0.917 |
 | multi-query | 0.107 | 0.291 | 0.404 | 0.635 | 0.601 | 0.515 | 0.941 |
 | contextual | 0.143 | 0.315 | 0.389 | 0.545 | 0.707 | 0.516 | 0.941 |
-| contextual+hybrid+rerank | 0.110 | **0.371** | **0.486** | 0.625 | 0.663 | 0.555 | **0.964** |
+| contextual+hybrid+rerank | 0.110 | **0.371** | 0.486 | 0.625 | 0.663 | 0.555 | **0.964** |
 
 The honest finding: **plain hybrid fusion still wins on the headline ranking
-metrics** — no variant beats it on recall@10, MRR or NDCG. Each of the three
+metrics** — no variant beats it on recall@10, MRR or NDCG. Each of the others
 bought something narrower, and paid for it somewhere else:
 
 - **Hybrid** improves everything at once — recall@10 +0.05, MRR +0.08, NDCG
   +0.05 over plain semantic — by recovering the exact terms (figures, scheme
   names, dates) that embeddings blur.
+- **The cross-encoder helps a bi-encoder ranking and hurts a fused one.** The
+  sweep is ordered as two pairs that differ *only* by reranking, and they
+  disagree:
+
+  | | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 |
+  |---|:---:|:---:|:---:|:---:|:---:|
+  | semantic → +rerank | **+0.058** | **+0.052** | +0.008 | **+0.052** | **+0.036** |
+  | hybrid → +rerank | +0.012 | +0.018 | **−0.061** | **−0.079** | **−0.040** |
+
+  Reranking a bi-encoder ranking improves every metric, which is the textbook
+  result: the bi-encoder never sees query and chunk together, so a model that
+  scores the pair jointly has real signal to add. Reranking an RRF-fused
+  ranking makes things worse, because fusion has *already* done that reordering
+  using a second retriever's opinion, and the cross-encoder discards it —
+  substituting its own judgement for an ensemble's. On this corpus the ensemble
+  wins. That also makes `semantic+rerank` — what the app actually ships —
+  the best config in the sweep at recall@3 and recall@5, while hybrid keeps
+  deep recall and the ranking metrics.
 - **HyDE has the best recall@1 of any config (+0.048)** and the worst
   `video_recall` (0.917 vs 0.941). Both come from the same mechanism: a written
   probe matches the register of a transcript sharply, and when the model invents
@@ -236,8 +255,12 @@ Both modes pull `YT_AGENT_RETRIEVAL_CANDIDATES` chunks before narrowing to
 candidates with a local cross-encoder (`YT_AGENT_RERANK_MODEL`) is **on by
 default**; it loads lazily on first use and adds no API calls. Set
 `YT_AGENT_RERANK_ENABLED=false` to retrieve without it — the `eval-ablation`
-harness (below) quantifies its effect, which on this small set is a tradeoff:
-it sharpens recall@1 but slightly reduces deeper recall versus plain hybrid.
+harness (below) quantifies its effect, and the effect depends on what it is
+reranking. On the default semantic mode it improves every metric (recall@3
++0.058, recall@5 +0.052, MRR +0.052), which is why it ships on. On top of
+hybrid fusion it is a net loss (recall@10 −0.061, MRR −0.079), because RRF has
+already reordered using a second retriever and the cross-encoder replaces that
+ensemble judgement with its own.
 `YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each hit into the
 context, which stops answers being cut off mid-sentence at a chunk boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
 setup can be compared under both modes with the same judge.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from src.evals.ablation import (
@@ -102,7 +104,7 @@ class TestRunAblation:
 class TestDefaultConfigs:
     def test_sweeps_semantic_hybrid_and_hybrid_rerank(self) -> None:
         labels = [c.label for c in default_configs()]
-        assert labels == ["semantic", "hybrid", "hybrid+rerank"]
+        assert labels == ["semantic", "semantic+rerank", "hybrid", "hybrid+rerank"]
         assert default_configs()[0].retrieval_mode == "semantic"
         assert default_configs()[-1].rerank is True
 
@@ -186,3 +188,36 @@ def test_a_run_records_which_sweep_produced_it(monkeypatch) -> None:
     assert [cell["label"] for cell in result["cells"]] == [
         config.label for config in ablation_module.extended_configs()
     ]
+
+
+# ── isolating the cross-encoder ───────────────────────────────────────────────
+
+
+def test_each_rerank_pair_differs_only_by_the_cross_encoder() -> None:
+    """A pair whose configs differ on a second axis measures two things at once
+    and isolates neither."""
+    by_label = {config.label: config for config in default_configs()}
+
+    for plain, reranked in (("semantic", "semantic+rerank"), ("hybrid", "hybrid+rerank")):
+        before, after = by_label[plain], by_label[reranked]
+        assert before.rerank is False and after.rerank is True
+        assert before.retrieval_mode == after.retrieval_mode
+        assert before.top_k == after.top_k
+        assert before.query_transform == after.query_transform
+        assert before.contextual == after.contextual
+
+
+def test_the_sweep_measures_the_configuration_the_app_ships_with() -> None:
+    """Otherwise every number describes a stack nobody is running: the shipped
+    defaults are semantic retrieval with the cross-encoder enabled."""
+    from src.config import Settings
+
+    defaults = {field.name: field.default for field in dataclasses.fields(Settings)}
+    shipped = next(
+        config
+        for config in default_configs()
+        if config.retrieval_mode == defaults["retrieval_mode"]
+        and config.rerank == defaults["rerank_enabled"]
+    )
+
+    assert shipped.label == "semantic+rerank"
