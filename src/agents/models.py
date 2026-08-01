@@ -65,6 +65,11 @@ class RagQuestionRequest(BaseModel):
     retrieval_mode: Literal["semantic", "hybrid"] | None = None
     # Prior turns, condensed, for follow-up questions that depend on context.
     history: list[str] = Field(default_factory=list)
+    # A document the user shared, already fetched, extracted and formatted with
+    # [§N] section markers (see :mod:`src.documents.review`). Its presence is
+    # what turns an answer into a review: the corpus stops being the subject and
+    # becomes the source of criteria, and the answering prompt changes to match.
+    document_context: str | None = None
 
 
 class FollowupSubtopic(BaseModel):

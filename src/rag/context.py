@@ -1,15 +1,24 @@
 from __future__ import annotations
 
 import time
-from typing import Protocol
+from typing import TYPE_CHECKING, Callable, Protocol
 
 from src.agents.context import TranscriptContext
-from src.agents.models import TraceStep, chunk_ids_for
+from src.agents.models import TraceStep, chunk_id, chunk_ids_for
 from src.rag.chunking import format_timestamp
 from src.rag.indexing import RagIndexer
 from src.rag.references import format_chunk_reference
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript_from_raw_document
 from src.rag.summaries import TranscriptSummaryStore
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from src.rag.query_transform import QueryTransform
+
+#: A scoped store search: ``(query, n) -> chunks``. Each branch of
+#: ``get_context`` binds its own scope into one of these so the query-transform
+#: fan-out can re-run *that* search per expanded query without knowing whether
+#: it is corpus-wide, channel-scoped or restricted to one video.
+SearchFn = Callable[[str, int], list]
 
 
 class RetrievalError(ValueError):
@@ -93,6 +102,12 @@ class MultiTranscriptRagContextProvider:
     Within the chosen scope, retrieval can run semantically or as a hybrid of
     semantic and BM25 rankings, optionally reranked and widened to neighbouring
     chunks before the answer call sees it.
+
+    An optional ``query_transform`` sits in front of all of that, rewriting
+    *what* is embedded (see :mod:`src.rag.query_transform`) before any of the
+    scoping applies. It only ever changes the vector search: BM25 fusion below
+    keeps matching the question as the user asked it, because keyword-matching
+    a hypothetical passage would search for words nobody typed.
     """
 
     def __init__(
@@ -105,6 +120,7 @@ class MultiTranscriptRagContextProvider:
         retrieval_candidates: int = 30,
         reranker: _Reranker | None = None,
         neighbor_span: int = 0,
+        query_transform: "QueryTransform | None" = None,
     ) -> None:
         self.raw_store = raw_store
         self.chunk_store = chunk_store
@@ -114,6 +130,7 @@ class MultiTranscriptRagContextProvider:
         self.retrieval_candidates = retrieval_candidates
         self.reranker = reranker
         self.neighbor_span = neighbor_span
+        self.query_transform = query_transform
 
     def get_context(
         self,
@@ -186,24 +203,32 @@ class MultiTranscriptRagContextProvider:
                             "--filter-transcripts, or checking the channel_id.",
                             trace,
                         )
-                retrieve_started = time.monotonic()
-                retrieved = self.chunk_store.query_by_video_ids(
-                    filtered_video_ids,
+                retrieved = self._search(
+                    lambda query, count: self.chunk_store.query_by_video_ids(
+                        filtered_video_ids, query, count
+                    ),
                     question,
                     candidates,
+                    mode,
+                    f"{len(filtered_video_ids)} filtered videos",
+                    trace,
                 )
-                scope_desc = f"{len(filtered_video_ids)} filtered videos"
             elif channel_id:
-                retrieve_started = time.monotonic()
-                retrieved = self.chunk_store.query_by_channel(channel_id, question, candidates)
-                scope_desc = f"channel {channel_id}"
+                # The searches run and are timed inside ``_search``, which
+                # records them before returning: "the channel returned nothing"
+                # is the diagnostic, and it would otherwise have to be inferred
+                # from the error text.
+                retrieved = self._search(
+                    lambda query, count: self.chunk_store.query_by_channel(
+                        channel_id, query, count
+                    ),
+                    question,
+                    candidates,
+                    mode,
+                    f"channel {channel_id}",
+                    trace,
+                )
                 if not retrieved:
-                    # The query ran and was timed, so record it before failing:
-                    # "the channel returned nothing" is the diagnostic, and it
-                    # would otherwise have to be inferred from the error text.
-                    self._record_retrieve(
-                        trace, retrieved, mode, scope_desc, candidates, retrieve_started
-                    )
                     raise RetrievalError(
                         f"No indexed chunks found for channel {channel_id!r}. The "
                         "channel may not be indexed, or its chunks predate the "
@@ -211,10 +236,14 @@ class MultiTranscriptRagContextProvider:
                         trace,
                     )
             else:
-                retrieve_started = time.monotonic()
-                retrieved = self.chunk_store.query_all(question, candidates)
-                scope_desc = "the whole corpus"
-            self._record_retrieve(trace, retrieved, mode, scope_desc, candidates, retrieve_started)
+                retrieved = self._search(
+                    self.chunk_store.query_all,
+                    question,
+                    candidates,
+                    mode,
+                    "the whole corpus",
+                    trace,
+                )
             retrieved = self._refine(question, retrieved, top_k, mode, channel_id, trace=trace)
             transcript = _context_transcript_from_chunks(retrieved)
         else:
@@ -231,10 +260,13 @@ class MultiTranscriptRagContextProvider:
             )
             if cache_status == "hit":
                 cache_status = raw_cache_status
-            retrieve_started = time.monotonic()
-            retrieved = self.chunk_store.query_by_url(source_url, question, candidates)
-            self._record_retrieve(
-                trace, retrieved, mode, f"video {video_id}", candidates, retrieve_started
+            retrieved = self._search(
+                lambda query, count: self.chunk_store.query_by_url(source_url, query, count),
+                question,
+                candidates,
+                mode,
+                f"video {video_id}",
+                trace,
             )
             retrieved = self._refine(question, retrieved, top_k, mode, None, video_id, trace=trace)
             transcript = transcript_from_raw_document(raw_document)
@@ -250,6 +282,86 @@ class MultiTranscriptRagContextProvider:
             trace=trace,
         )
 
+    def _search(
+        self,
+        search: SearchFn,
+        question: str,
+        candidates: int,
+        mode: str,
+        scope_desc: str,
+        trace: list[TraceStep],
+    ) -> list:
+        """Retrieve candidates for one question within one scope, and record it.
+
+        With no ``query_transform`` this is a single scoped search on the
+        question as asked. With one, the question is first expanded (a step of
+        its own, so the trace shows what was actually embedded), each expanded
+        query searches the same scope independently, and the rankings are
+        RRF-fused — which is a second step, because the fused order is not any
+        one search's order.
+        """
+        if self.query_transform is None:
+            started = time.monotonic()
+            retrieved = search(question, candidates)
+            self._record_retrieve(trace, retrieved, mode, scope_desc, candidates, started, 1)
+            return retrieved
+
+        plan = self.query_transform.expand(question)
+        trace.append(
+            TraceStep(
+                phase="llm",
+                label=plan.label,
+                detail=plan.detail(),
+                model=getattr(self.query_transform, "model", None),
+                elapsed_ms=plan.elapsed_ms,
+            )
+        )
+        queries = plan.queries or [question]
+        started = time.monotonic()
+        rankings = []
+        for query in queries:
+            try:
+                rankings.append(search(query, candidates))
+            except Exception:  # noqa: BLE001 - one bad variant must not sink retrieval
+                continue
+        if not rankings:
+            # Every expanded variant failed independently of the LLM
+            # expansion step itself; falling back to the raw question keeps
+            # this failure mode as degrade-gracefully as query expansion's.
+            rankings = [search(question, candidates)]
+        # Report the candidate *pool* the searches found between them, before
+        # fusion reorders it — a chunk two phrasings both found is one
+        # candidate, not two.
+        self._record_retrieve(
+            trace,
+            _unique_chunks(rankings),
+            mode,
+            scope_desc,
+            candidates,
+            started,
+            len(rankings),
+        )
+        if len(rankings) == 1:
+            return rankings[0]
+
+        from src.rag.fusion import fuse_rankings
+
+        fuse_started = time.monotonic()
+        fused = fuse_rankings(rankings, top_k=candidates)
+        trace.append(
+            TraceStep(
+                phase="merge",
+                label="Fuse query variants",
+                detail=(
+                    f"RRF-fused {len(rankings)} per-query rankings — {len(fused)} kept "
+                    f"(asked for {candidates})"
+                ),
+                chunk_ids=chunk_ids_for(fused),
+                elapsed_ms=int((time.monotonic() - fuse_started) * 1000),
+            )
+        )
+        return fused
+
     @staticmethod
     def _record_retrieve(
         trace: list[TraceStep],
@@ -258,14 +370,23 @@ class MultiTranscriptRagContextProvider:
         scope_desc: str,
         candidates: int,
         started: float,
+        searches: int = 1,
     ) -> None:
+        """One step for the scoped search (or searches) that just ran.
+
+        ``searches`` is the number of queries that searched this scope — more
+        than one when a query transform fanned the question out — and
+        ``retrieved`` is the deduplicated pool they found between them.
+        """
+        scope = scope_desc if searches == 1 else f"{scope_desc} × {searches} queries"
+        asked = "asked for" if searches == 1 else "each asked for"
         trace.append(
             TraceStep(
                 phase="retrieve",
                 label="Retrieve candidates",
                 detail=(
-                    f"{mode} search over {scope_desc} — "
-                    f"{len(retrieved)} candidates (asked for {candidates})"
+                    f"{mode} search over {scope} — "
+                    f"{len(retrieved)} candidates ({asked} {candidates})"
                 ),
                 chunk_ids=chunk_ids_for(retrieved),
                 elapsed_ms=int((time.monotonic() - started) * 1000),
@@ -452,6 +573,25 @@ class MultiTranscriptRagContextProvider:
                 widened.append(_as_retrieved(neighbor))
             widened.append(chunk)
         return widened
+
+
+def _unique_chunks(rankings: list[list]) -> list:
+    """One list of the chunks several rankings found, first occurrence kept.
+
+    Only for reporting: the fused *order* comes from RRF, not from this
+    concatenation, so this exists purely so a trace step counts and lists each
+    candidate once no matter how many phrasings retrieved it.
+    """
+    seen: set[str] = set()
+    unique: list = []
+    for ranking in rankings:
+        for chunk in ranking:
+            key = chunk_id(chunk)
+            if key is None or key in seen:
+                continue
+            seen.add(key)
+            unique.append(chunk)
+    return unique
 
 
 def _meta_str(value: object) -> str:

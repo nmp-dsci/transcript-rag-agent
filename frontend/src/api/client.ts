@@ -21,6 +21,7 @@ import type {
   Prompts,
   RankMode,
   Rankings,
+  ReviewedDocument,
   Scoreboard,
   SetupSpec,
   SystemDesign,
@@ -214,12 +215,20 @@ export const api = {
     handlers: {
       progress?: (data: { key?: string; message: string }) => void;
       agent_step?: (data: AgentStep) => void;
+      /** The page a message's URL pointed at — arrives before the answer. */
+      document?: (data: ReviewedDocument) => void;
       answer?: (data: Answer) => void;
       done?: (data: Entry) => void;
       error?: (data: { message: string }) => void;
     },
     signal?: AbortSignal,
   ) => postStream("/api/ask", request, handlers, signal),
+
+  /** One reviewed document, for rendering its card after a reload. */
+  document: (documentId: string) =>
+    getJson<ReviewedDocument>(
+      `/api/documents/${encodeURIComponent(documentId)}`,
+    ),
 
   judge: (
     entryId: string,

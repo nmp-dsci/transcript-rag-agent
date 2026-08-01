@@ -74,6 +74,8 @@ from src.chat.setups import (
     setup_spec,
 )
 from src.config import Settings, load_settings
+from src.documents.resolve import ResolvedDocument, describe_failure, resolve_document
+from src.documents.store import DocumentStore
 from src.evals.judge import RagasJudge, unjudgeable
 from src.evals.matrix import DEFAULT_MATRIX_SETUPS
 
@@ -102,6 +104,11 @@ class AskRequest(BaseModel):
     # setups on a question already asked has to land in the same entry, or the
     # scoreboard would never see them as competing answers.
     entry_id: str | None = None
+    # A conversational follow-up (a different question) that should still
+    # read whatever document the named entry pinned. Kept separate from
+    # ``entry_id``, which means "append onto this exact question" and 422s on
+    # a mismatched question — a follow-up is a new entry, not an append.
+    document_entry_id: str | None = None
     # Scope retrieval to one channel. Ignored when ``url`` pins a single video,
     # which is already narrower.
     channel_id: str | None = None
@@ -231,6 +238,23 @@ def _append_answers(
     return updated, entries
 
 
+def _document_event(resolved: "ResolvedDocument") -> dict[str, Any]:
+    """The document card's payload: the text, plus how it was arrived at.
+
+    The sections travel with the event rather than only through
+    ``GET /api/documents/{id}`` so the card can render the moment the fetch
+    lands, before the answer it belongs to has been written.
+    """
+    document = resolved.document
+    return {
+        **document.model_dump(mode="json"),
+        "reused": resolved.reused,
+        "narrowed": resolved.selection.narrowed,
+        "sections_selected": [section.index for section in resolved.selection.sections],
+        "detail": resolved.detail(),
+    }
+
+
 def _run_setup_streaming(
     runner: Any,
     key: str,
@@ -329,10 +353,13 @@ def create_app(
     frontend_dist: Path = FRONTEND_DIST,
     runs_dir: Path | None = None,
     matrix_run_fn: RunFn | None = None,
+    document_store: "DocumentStore | None" = None,
+    document_fetch_fn: Callable[[str], Any] | None = None,
 ) -> FastAPI:
     resolved = settings or load_settings(require_keys=True)
     runner_factory = runner_factory or (lambda: RagSetupRunner.from_settings(resolved))
     judge_factory = judge_factory or (lambda: RagasJudge.from_settings(resolved))
+    documents = document_store or DocumentStore()
 
     def _default_graph_store() -> Any:
         from src.rag.graph_store import GraphStore
@@ -505,6 +532,20 @@ def create_app(
     def setups() -> dict:
         return {"setups": [asdict(spec) for spec in SETUP_SPECS]}
 
+    @app.get("/api/documents/{document_id}")
+    def document(document_id: str) -> dict:
+        """One reviewed document, for a card rendered after a reload.
+
+        Reads the gitignored document store rather than the chat history: the
+        history holds only the id, so this is the only way the text comes back.
+        A cleared store is a 404 — the card is simply absent, and the
+        conversation still reads.
+        """
+        found = documents.get(document_id)
+        if found is None:
+            raise HTTPException(status_code=404, detail=f"Unknown document: {document_id}")
+        return found.model_dump(mode="json")
+
     @app.get("/api/experiments")
     def experiments() -> dict:
         from src.api.experiments import load_experiments
@@ -676,12 +717,64 @@ def create_app(
                     status_code=422,
                     detail=f"Question/url does not match entry {payload.entry_id}",
                 )
+        if payload.document_entry_id:
+            if not any(
+                entry.id == payload.document_entry_id for entry in load_history(history_path)
+            ):
+                raise HTTPException(
+                    status_code=404, detail=f"Unknown entry: {payload.document_entry_id}"
+                )
 
         def stream() -> Iterator[str]:
             # One failing setup is already captured as SetupResult.error by the
             # runner; this guard is for everything else (stack build, storage),
             # which must surface as an event rather than a dead stream.
             try:
+                pin_source_id = payload.entry_id or payload.document_entry_id
+                pinned = (
+                    next(
+                        (
+                            entry.document_id
+                            for entry in load_history(history_path)
+                            if entry.id == pin_source_id
+                        ),
+                        None,
+                    )
+                    if pin_source_id
+                    else None
+                )
+                try:
+                    document = resolve_document(
+                        question,
+                        store=documents,
+                        pinned_document_id=pinned,
+                        fetch=document_fetch_fn,
+                    )
+                except Exception as exc:  # noqa: BLE001 - reported, never silent
+                    # Answering from the corpus alone would read as a review of
+                    # a page nobody actually read.
+                    yield _sse("error", {"message": describe_failure(exc)})
+                    return
+
+                answer_keys = list(keys)
+                if document is not None:
+                    yield _sse("document", _document_event(document))
+                    dropped = [key for key in answer_keys if key != "rag_llm"]
+                    # Only the single-hop path threads the document into its
+                    # answer call; the others would silently ignore it and
+                    # produce a corpus answer dressed as a review.
+                    answer_keys = ["rag_llm"]
+                    if dropped:
+                        yield _sse(
+                            "progress",
+                            {
+                                "message": (
+                                    "Reviewing a document only runs rag_llm; skipping "
+                                    f"{', '.join(dropped)}."
+                                )
+                            },
+                        )
+
                 if not loaded("runner"):
                     yield _sse(
                         "progress",
@@ -696,8 +789,9 @@ def create_app(
                     retrieval_mode=payload.retrieval_mode,
                     filter_transcripts=payload.filter_transcripts,
                     history=list(payload.history),
+                    document_context=document.context if document else None,
                 )
-                for key in keys:
+                for key in answer_keys:
                     yield _sse(
                         "progress",
                         {"key": key, "message": f"Running {setup_spec(key).title} ..."},
@@ -719,7 +813,12 @@ def create_app(
                 if payload.entry_id:
                     entry, entries = _append_answers(payload.entry_id, results, history_path)
                 else:
-                    entry = build_entry(question, results, url=url)
+                    entry = build_entry(
+                        question,
+                        results,
+                        url=url,
+                        document_id=document.document.id if document else None,
+                    )
                     entries = append_entry(entry, history_path)
                 write_chat_html(entries, chat_html_path)
                 yield _sse("done", entry.to_dict())

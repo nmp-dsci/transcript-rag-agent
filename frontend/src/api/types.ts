@@ -4,6 +4,10 @@ export interface SetupSpec {
   key: string;
   title: string;
   description: string;
+  /** Query rewritten before embedding ("hyde"/"multi_query"), or null for none. */
+  query_transform?: string | null;
+  /** Answers over the Contextual Retrieval index rather than the baseline one. */
+  contextual?: boolean;
 }
 
 export interface Reference {
@@ -127,6 +131,36 @@ export interface Entry {
   url: string | null;
   asked_at: string;
   answers: Answer[];
+  /**
+   * The document this question reviewed, by id. The text is not here on
+   * purpose — this file is committed, so the document lives server-side and is
+   * fetched with `api.document(id)`.
+   */
+  document_id?: string | null;
+}
+
+export interface DocumentSection {
+  index: number;
+  heading: string | null;
+  text: string;
+}
+
+/** A page fetched from a URL in a chat message, extracted for review. */
+export interface ReviewedDocument {
+  id: string;
+  url: string;
+  requested_url: string;
+  title: string | null;
+  sections: DocumentSection[];
+  /** The page exceeded the fetch cap and is missing its end. */
+  truncated: boolean;
+  fetched_at: string;
+  /** Read from the store rather than fetched again — only on the SSE event. */
+  reused?: boolean;
+  /** Only some sections were sent to the model, chosen for this question. */
+  narrowed?: boolean;
+  sections_selected?: number[];
+  detail?: string;
 }
 
 export interface Health {
@@ -422,6 +456,9 @@ export interface AskRequest {
   url?: string | null;
   top_k?: number | null;
   entry_id?: string | null;
+  /** A follow-up's source entry, to reuse its pinned document without
+   * requiring the follow-up's (different) question to match that entry. */
+  document_entry_id?: string | null;
   /** Ignored by the server when `url` pins a single video. */
   channel_id?: string | null;
   retrieval_mode?: RetrievalMode | null;
@@ -436,6 +473,10 @@ export interface AblationConfig {
   rerank: boolean;
   neighbor_span: number;
   top_k: number;
+  /** Query rewritten before embedding ("hyde"/"multi_query"), or null for none. */
+  query_transform?: string | null;
+  /** Retrieved from the Contextual Retrieval index rather than the baseline one. */
+  contextual?: boolean;
 }
 
 export interface AblationCell {
@@ -456,6 +497,8 @@ export interface AblationRun {
   entries: number;
   metrics: string[];
   baseline: string;
+  /** Which config set was swept. Absent on runs predating the extended sweep. */
+  sweep?: string | null;
   cells: AblationCell[];
   deltas: AblationDelta[];
 }

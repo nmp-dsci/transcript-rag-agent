@@ -177,3 +177,41 @@ def test_a_failed_cell_is_not_cached_and_retries_next_run(tmp_path) -> None:
     assert second["cache_misses"] == 1  # the errored cell was retried, not reused
     assert second["runs"]["rag_llm"]["entries"][0]["error"] is None
     assert runner.attempts == 2
+
+
+# ── scoping a run to a sample of questions ───────────────────────────────────
+
+
+def _two_entries() -> list[GoldenEntry]:
+    first = entries()[0]
+    second = first.model_copy(update={"id": "g007", "question": "What about tooling?"})
+    return [first, second]
+
+
+def test_a_run_records_which_questions_it_scored_not_just_how_many(tmp_path) -> None:
+    """A sampled run is a different measurement from a whole-set one, and
+    comparing them without the sample hides which questions were skipped."""
+    result = run_matrix(
+        CountingRunner(),
+        FakeSettings(),
+        setups=["rag_llm"],
+        entries=_two_entries(),
+        cache_dir=tmp_path,
+    )
+
+    assert result["entry_count"] == 2
+    assert result["question_ids"] == ["g001", "g007"]
+
+
+def test_scoping_to_a_sample_only_answers_that_sample(tmp_path) -> None:
+    runner = CountingRunner()
+
+    run_matrix(
+        runner,
+        FakeSettings(),
+        setups=["rag_llm"],
+        entries=_two_entries()[:1],
+        cache_dir=tmp_path,
+    )
+
+    assert [question for _key, question in runner.calls] == ["What changed in the budget?"]

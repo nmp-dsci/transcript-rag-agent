@@ -26,9 +26,7 @@ DETERMINISTIC_METRICS = ["context_recall", "video_recall", *IR_METRIC_NAMES]
 
 
 def _load(pattern: str) -> list[dict]:
-    return [
-        json.loads(path.read_text(encoding="utf-8")) for path in sorted(RUNS_DIR.glob(pattern))
-    ]
+    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(RUNS_DIR.glob(pattern))]
 
 
 def _golden_by_id() -> dict:
@@ -50,7 +48,9 @@ def _assert_reproducible(entry: dict, golden: dict) -> None:
 
 class TestAblationRuns:
     def test_at_least_one_ablation_is_committed(self) -> None:
-        assert _load("ablation-*.json"), "commit an ablation run: uv run python -m src.cli eval-ablation"
+        assert _load("ablation-*.json"), (
+            "commit an ablation run: uv run python -m src.cli eval-ablation"
+        )
 
     def test_ablation_scores_reproduce_from_retrieved_ids(self) -> None:
         golden = _golden_by_id()
@@ -65,9 +65,12 @@ class TestAblationRuns:
         cells = {cell["label"]: cell["averages"] for cell in latest["cells"]}
 
         assert latest["baseline"] == "semantic"
-        # The corpus always contains the right source video for every question.
+        # Retrieval almost always surfaces the right source video, so the open
+        # problem is chunk-level ranking rather than finding the source. This
+        # was an exact 1.0 on the 9-question set; at 20 it is high but no longer
+        # perfect, which is the claim the README now makes.
         for label, averages in cells.items():
-            assert averages["video_recall"] == pytest.approx(1.0), f"{label} video_recall"
+            assert averages["video_recall"] >= 0.9, f"{label} video_recall"
         # Sanity floors: no configuration collapses.
         for label, averages in cells.items():
             assert averages["context_recall"] >= 0.45, f"{label} context_recall"
@@ -76,6 +79,26 @@ class TestAblationRuns:
         # plain semantic. If this stops being true, the claim in the README is stale.
         assert "hybrid" in cells and "semantic" in cells
         assert cells["hybrid"]["recall@3"] > cells["semantic"]["recall@3"]
+
+    def test_an_extended_sweep_records_the_variant_axes_it_measured(self) -> None:
+        """A row labelled "hyde" has to be traceable to the config that produced
+        it — otherwise the committed snapshot is a name, not a measurement."""
+        extended = [run for run in _load("ablation-*.json") if run.get("sweep") == "extended"]
+        if not extended:
+            pytest.skip("no extended sweep committed yet")
+        for run in extended:
+            configs = {cell["label"]: cell["config"] for cell in run["cells"]}
+            assert configs["hyde"]["query_transform"] == "hyde"
+            assert configs["multi-query"]["query_transform"] == "multi_query"
+            assert configs["contextual"]["contextual"] is True
+            assert configs["semantic"]["query_transform"] is None
+            assert configs["semantic"]["contextual"] is False
+
+    def test_the_extended_sweep_shares_the_default_sweeps_baseline(self) -> None:
+        """Deltas from the two sweeps are read side by side in the README, which
+        only holds while both measure against the same first configuration."""
+        for run in _load("ablation-*.json"):
+            assert run["cells"][0]["label"] == run["baseline"] == "semantic"
 
 
 class TestGoldenRuns:
@@ -87,8 +110,16 @@ class TestGoldenRuns:
     def test_golden_runs_carry_full_provenance(self) -> None:
         for run in _load("eval-*.json"):
             config = run["config"]
-            for field in ("answer_model", "embedding_model", "retrieval_mode", "top_k", "judge_model"):
-                assert config.get(field) not in (None, ""), f"{run['run_id']} missing config.{field}"
+            for field in (
+                "answer_model",
+                "embedding_model",
+                "retrieval_mode",
+                "top_k",
+                "judge_model",
+            ):
+                assert config.get(field) not in (None, ""), (
+                    f"{run['run_id']} missing config.{field}"
+                )
             assert run["summary"]["scored"] >= 1
 
     def test_golden_deterministic_scores_reproduce_from_retrieved_ids(self) -> None:

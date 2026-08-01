@@ -59,6 +59,7 @@ function AblationTable({ run }: { run: AblationRun }) {
           <span className="exp-sub">
             {run.run_id} · {run.entries} golden questions · baseline{' '}
             <code>{run.baseline}</code>
+            {run.sweep ? <> · {run.sweep} sweep</> : null}
           </span>
         </div>
         {domains.length > 1 && (

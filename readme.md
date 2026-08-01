@@ -52,28 +52,69 @@ flowchart LR
   ANS --> J["RAGAS judge + golden-set IR metrics"]
 ```
 
-## Results: does hybrid retrieval help?
+## Results: which retrieval actually wins?
 
-`eval-ablation` sweeps three retrieval configurations over the golden set and
-reports rank-aware IR metrics. On the committed run (9 questions, 6 videos —
-the golden set as it stood when that snapshot was taken, since grown to 20
-entries; `evals/runs/ablation-*.json`, re-run with `uv run python -m src.cli
-eval-ablation`):
+`eval-ablation --sweep extended` sweeps eight retrieval configurations over the
+same 20 labelled golden questions and reports rank-aware IR metrics. No answer
+is generated and no judge runs, so every number here is deterministic id
+arithmetic (`evals/runs/ablation-*.json`; it renders live in the workbench
+**Experiments** tab):
 
-| config | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
-|--------|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
-| semantic | 0.263 | 0.397 | **0.628** | 0.639 | 0.526 | 1.000 |
-| **hybrid** | **0.390** | **0.467** | 0.612 | **0.667** | **0.554** | 1.000 |
-| hybrid+rerank | 0.336 | 0.422 | 0.573 | 0.660 | 0.532 | 1.000 |
+| config | recall@1 | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 | video_recall |
+|--------|:-------:|:-------:|:-------:|:--------:|:---:|:------:|:-----------:|
+| semantic (baseline) | 0.101 | 0.312 | 0.452 | 0.618 | 0.661 | 0.535 | 0.941 |
+| semantic+rerank *(shipped default)* | 0.128 | **0.371** | **0.503** | 0.626 | 0.713 | 0.571 | 0.941 |
+| **hybrid** | 0.134 | 0.359 | 0.468 | **0.667** | **0.741** | **0.585** | 0.941 |
+| hybrid+rerank | 0.110 | **0.371** | 0.486 | 0.607 | 0.662 | 0.545 | 0.941 |
+| HyDE | **0.149** | 0.320 | 0.423 | 0.591 | 0.669 | 0.525 | 0.917 |
+| multi-query | 0.107 | 0.291 | 0.404 | 0.635 | 0.601 | 0.515 | 0.941 |
+| contextual | 0.143 | 0.315 | 0.389 | 0.545 | 0.707 | 0.516 | 0.941 |
+| contextual+hybrid+rerank | 0.110 | **0.371** | 0.486 | 0.625 | 0.663 | 0.555 | **0.964** |
 
-The honest finding: **hybrid fusion improves early-rank retrieval** — recall@3
-+0.13, recall@5 +0.07, MRR +0.03, NDCG +0.03 over plain semantic — putting
-relevant chunks higher, which is what the answer model actually reads. Reranking
-sharpens recall@1 but trades a little deep recall on a set this small. And
-`video_recall` is a perfect 1.0 everywhere: the corpus always contains the right
-source video, so the open problem is chunk-level *ranking*, not finding the
-source. This is exactly the kind of segment-level, defensible conclusion the eval
-harness exists to produce; it renders live in the workbench **Experiments** tab.
+The honest finding: **plain hybrid fusion still wins on the headline ranking
+metrics** — no variant beats it on recall@10, MRR or NDCG. Each of the others
+bought something narrower, and paid for it somewhere else:
+
+- **Hybrid** improves everything at once — recall@10 +0.05, MRR +0.08, NDCG
+  +0.05 over plain semantic — by recovering the exact terms (figures, scheme
+  names, dates) that embeddings blur.
+- **The cross-encoder helps a bi-encoder ranking and hurts a fused one.** The
+  sweep is ordered as two pairs that differ *only* by reranking, and they
+  disagree:
+
+  | | recall@3 | recall@5 | recall@10 | MRR | NDCG@10 |
+  |---|:---:|:---:|:---:|:---:|:---:|
+  | semantic → +rerank | **+0.058** | **+0.052** | +0.008 | **+0.052** | **+0.036** |
+  | hybrid → +rerank | +0.012 | +0.018 | **−0.061** | **−0.079** | **−0.040** |
+
+  Reranking a bi-encoder ranking improves every metric, which is the textbook
+  result: the bi-encoder never sees query and chunk together, so a model that
+  scores the pair jointly has real signal to add. Reranking an RRF-fused
+  ranking makes things worse, because fusion has *already* done that reordering
+  using a second retriever's opinion, and the cross-encoder discards it —
+  substituting its own judgement for an ensemble's. On this corpus the ensemble
+  wins. That also makes `semantic+rerank` — what the app actually ships —
+  the best config in the sweep at recall@3 and recall@5, while hybrid keeps
+  deep recall and the ranking metrics.
+- **HyDE has the best recall@1 of any config (+0.048)** and the worst
+  `video_recall` (0.917 vs 0.941). Both come from the same mechanism: a written
+  probe matches the register of a transcript sharply, and when the model invents
+  the wrong specifics it retrieves confidently from the wrong video. It is a
+  precision instrument with a hallucination failure mode, which is exactly what
+  the theory predicts and worth being able to show.
+- **Contextual retrieval** buys top-of-ranking quality (MRR +0.046, recall@1
+  +0.042) and pays for it in depth (recall@10 −0.073). Situating a chunk makes
+  its own topic unmistakable and makes it a worse match for questions it only
+  partly covers. Stacked with hybrid+rerank it is the only config to improve
+  `video_recall` at all (0.964), i.e. the only one that found a source video the
+  others missed entirely.
+- **Multi-query** widens slightly (recall@10 +0.017) and blurs the ranking
+  (MRR −0.059) — more phrasings mean more ways to be roughly right.
+
+`video_recall` near 1.0 everywhere says the corpus almost always contains the
+right source video, so the open problem is chunk-level *ranking*, not finding
+the source. That is the segment-level, defensible conclusion the eval harness
+exists to produce — including the conclusion that a technique did not help.
 
 ## Quickstart
 
@@ -87,9 +128,11 @@ uv run python -m src.cli serve                   # http://127.0.0.1:8000
 Then measure retrieval and validate everything:
 
 ```bash
-uv run python -m src.cli eval-ablation           # retrieval science (free, deterministic)
-uv run pytest -q                                 # 500+ Python tests
-cd frontend && npm test                          # frontend tests
+uv run python -m src.cli eval-ablation                    # retrieval science (free, deterministic)
+uv run python -m src.cli index-contextual                 # build the Contextual Retrieval index
+uv run python -m src.cli eval-ablation --sweep extended   # + HyDE / multi-query / contextual columns
+uv run pytest -q                                          # 700+ Python tests
+cd frontend && npm test                                   # frontend tests
 ```
 
 ## What's inside
@@ -97,9 +140,18 @@ cd frontend && npm test                          # frontend tests
 - **Retrieval:** segment-aware chunking, local dense embeddings (Chroma), BM25,
   RRF hybrid fusion that *widens* recall, cross-encoder reranking, contextual
   headers, neighbour expansion, channel/video scoping.
+- **Retrieval variants:** HyDE and multi-query fan-out on the query side (both
+  cached per question, so a sweep is reproducible and free to repeat), and
+  Anthropic-style Contextual Retrieval on the index side — a parallel collection
+  whose chunks are embedded with an LLM-written situating sentence. Each is a
+  column in the ablation and a row in the head-to-head matrix.
 - **Answer paths:** full-transcript baseline, single-hop RAG, recursive multi-hop
   RAG, a LangGraph ReAct agent, and a GraphRAG agent over a Neo4j entity/claim
   knowledge graph — all comparable side by side.
+- **Document review in the chat:** a URL in a message is fetched behind SSRF
+  guards, extracted into sections, and reviewed against the corpus — your
+  document supplies what is critiqued, the transcripts supply the criteria, and
+  the two are cited separately.
 - **GraphRAG (P4):** per-chunk LLM entity/claim extraction (cached by chunk
   hash), Leiden communities with up-front summaries, and a router that answers
   local questions with subgraph + vector evidence, global questions over
@@ -171,6 +223,12 @@ YT_AGENT_RETRIEVAL_CANDIDATES=30
 YT_AGENT_RERANK_ENABLED=true
 YT_AGENT_RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
 YT_AGENT_NEIGHBOR_SPAN=0
+YT_AGENT_QUERY_TRANSFORM=none
+YT_AGENT_MULTI_QUERY_VARIANTS=3
+YT_AGENT_QUERY_CACHE_PATH=.yt-agent/query_cache
+YT_AGENT_CONTEXTUAL_CHUNK_COLLECTION=transcript_chunks_contextual
+YT_AGENT_CONTEXT_CACHE_PATH=.yt-agent/context_cache
+YT_AGENT_LLM_TIMEOUT_SECONDS=120
 YT_AGENT_JUDGE_SAMPLES=1
 YT_AGENT_DISCOVERY_CACHE_TTL_HOURS=24
 SUPADATA_TIMEOUT_SECONDS=120
@@ -197,8 +255,12 @@ Both modes pull `YT_AGENT_RETRIEVAL_CANDIDATES` chunks before narrowing to
 candidates with a local cross-encoder (`YT_AGENT_RERANK_MODEL`) is **on by
 default**; it loads lazily on first use and adds no API calls. Set
 `YT_AGENT_RERANK_ENABLED=false` to retrieve without it — the `eval-ablation`
-harness (below) quantifies its effect, which on this small set is a tradeoff:
-it sharpens recall@1 but slightly reduces deeper recall versus plain hybrid.
+harness (below) quantifies its effect, and the effect depends on what it is
+reranking. On the default semantic mode it improves every metric (recall@3
++0.058, recall@5 +0.052, MRR +0.052), which is why it ships on. On top of
+hybrid fusion it is a net loss (recall@10 −0.061, MRR −0.079), because RRF has
+already reordered using a second retriever and the cross-encoder replaces that
+ensemble judgement with its own.
 `YT_AGENT_NEIGHBOR_SPAN=1` pastes the chunks either side of each hit into the
 context, which stops answers being cut off mid-sentence at a chunk boundary. Per-request overrides come from the workbench's ⚙ advanced panel, so a
 setup can be compared under both modes with the same judge.
@@ -226,6 +288,107 @@ Supadata can return async jobs for longer videos. `SUPADATA_MAX_POLL_SECONDS=600
 Recursion env vars are used only when recursive mode is effectively on via `--recursive` or `YT_AGENT_RAG_RECURSIVE_DEFAULT=true`. Empty `YT_AGENT_RAG_FOLLOWUP_TOP_K` defaults follow-up retrieval to `YT_AGENT_RAG_TOP_K`; empty `YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS` defaults to `max_depth * max_followups`.
 
 `YT_AGENT_RAG_AGENT_MAX_ITERATIONS` (default `10`) is read only when the agentic RAG agent is used via `rag-ask --rag_agent`. It is the hard cap on the LangGraph ReAct loop and can be overridden per-run with `--max-iterations`. It has no effect on any other path.
+
+### Retrieval variants: HyDE, multi-query, contextual retrieval
+
+Three further techniques change *what gets matched* rather than how the answer
+is written. Each is measurable on its own, which is the point of having them:
+they are columns in `eval-ablation --sweep extended` and rows in the Scoreboard,
+not options you have to take on faith.
+
+**Query-side — `--query-transform`.** The user's question and the passage that
+answers it are written in different registers, and one embedding of the question
+has to bridge that on its own.
+
+- `hyde` — the model writes the passage that *would* answer the question, and
+  retrieval embeds that instead. The passage may be factually wrong; it is never
+  shown to anyone and never enters the answer, but it is written in the
+  vocabulary of the corpus, which is what the vector search matches on.
+- `multi_query` — the model paraphrases the question
+  `YT_AGENT_MULTI_QUERY_VARIANTS` ways (default 3), each phrasing retrieves
+  independently, and the rankings are RRF-fused. The original question is always
+  the first query, so this can only add to what the plain search already found.
+
+Both cache their expansion per question under `.yt-agent/query_cache`, so
+re-running a sweep costs nothing and returns the identical retrieval. A failed
+expansion degrades to the question as asked and says so in the answer trace.
+They affect the vector search only — BM25 fusion keeps matching the question the
+user typed, since keyword-matching a hypothetical passage searches for words
+nobody wrote.
+
+**Index-side — `index-contextual`.** Anthropic's Contextual Retrieval: one LLM
+call per chunk writes the sentence that says what the chunk is about within its
+video, using the surrounding transcript as evidence. That sentence joins the
+deterministic header (`[channel — title @ mm:ss-mm:ss]`) the chunker already
+writes — the two answer different questions, *which video* versus *what about
+it*.
+
+```bash
+uv run python -m src.cli index-contextual        # ~1 LLM call per chunk, cached by chunk hash
+uv run python -m src.cli rag-ask "..." --rag_llm --contextual
+```
+
+Three boundaries make this a measurement rather than a rewrite:
+
+- It writes a **parallel collection** (`transcript_chunks_contextual`), so the
+  baseline index survives to be compared against.
+- **Only the embedding changes.** The situating sentence is embedded and stored
+  as metadata; the answering LLM still receives the spoken text alone, so a win
+  is a retrieval win with generation held fixed.
+- **Cached by chunk hash**, like graph extraction, so a re-run only pays for
+  chunks whose text changed, and a failed chunk retries rather than being pinned.
+
+Both variants are also registered as setups — `rag_llm_hyde` and
+`rag_llm_contextual` — which answer identically to `rag_llm` and differ only in
+the retrieval they read. That is what lets `eval-matrix` and the Scoreboard
+attribute a score gap to retrieval alone.
+
+### Reviewing a document you share
+
+Paste a URL into a chat message and the answer becomes a review of that page.
+There is no mode to switch and no second tab — a message without a URL behaves
+exactly as it always has, and a YouTube link keeps its existing meaning (it
+scopes retrieval to that video).
+
+```text
+any feedback on https://example.com/my-cv ?
+```
+
+The page is fetched, extracted into sections, rendered as a card above the
+answer, and answered over **both** the document and the transcript corpus. The
+two are cited differently on purpose: `[§3]` points at a section of *your*
+document, `[7]` at a transcript chunk that supplies the recommendation. So the
+answer can say "your §3 opens with 'responsible for' — [7] argues for leading
+with the outcome" and both halves are checkable.
+
+What the design commits to, and why:
+
+- **Extracted text, not the live page.** An iframe is refused by most real
+  sites via `X-Frame-Options`/CSP and a screenshot needs a headless browser —
+  but the deciding reason is that extracted text is what the model actually
+  reads, so it is what you should be able to inspect.
+- **Only the single-hop path answers a review.** The agentic and graph paths
+  build their own requests and would ignore the document, producing a corpus
+  answer dressed as a review.
+- **Follow-ups reuse the document.** Asking "now check the experience section"
+  in the same thread re-reads the stored text rather than re-fetching, so a
+  conversation about one document cannot quietly become about two.
+- **The fetched text never enters `chat_history.json`.** That file is
+  committed; the document lives under gitignored `.yt-agent/documents/` and the
+  history holds only its id. Clearing the store loses the cards, not the
+  conversation.
+- **Partial reads are labelled.** A page over the fetch cap, or a document too
+  long for the context budget, says so in the card *and* in the model's own
+  context — a review of 6 of 40 sections must not read as a review of the
+  document.
+
+Fetching a user-supplied URL is a server-side request forgery primitive, so
+`src/documents/fetch.py` bounds it on five axes: `http(s)` only, every resolved
+address must be globally routable, redirects are followed manually with the
+same address check on each hop, the body is streamed under a byte cap, and only
+text content types are accepted. The one gap that remains — DNS rebinding
+between validation and connection — is documented in that module rather than
+papered over.
 
 ### Interactive Chat
 
@@ -268,6 +431,8 @@ The ask flow has three prompts:
      [2] rag_llm (recursive)         — Multi-hop retrieval: follow-up queries fan out, then a final synthesis call.
      [3] rag_agent (agentic)         — LangGraph ReAct loop that retrieves across sub-topics until it has enough evidence.
      [4] graph_rag (knowledge graph) — Routes local/global/temporal, answers over the Neo4j entity/claim graph. Requires index-graph.
+     [5] rag_llm (HyDE)              — Single-hop, but retrieval embeds an LLM-written hypothetical answer instead of the question.
+     [6] rag_llm (contextual)        — Single-hop over the Contextual Retrieval index. Requires index-contextual.
      [a] all (compare every setup)
    Choose setup(s) (e.g. 1,3 or a; blank to cancel):
    ```
@@ -468,18 +633,21 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   by the same RAGAS + reference metrics, with a question-type switcher
   (overall / local / global / temporal) and per-engine latency and context-token
   columns, so "GraphRAG wins temporal, ties local, costs more" is a number
-  instead of a claim. Below it, the `eval-ablation` sweeps (semantic vs hybrid
-  vs hybrid+rerank across `recall@k`, `MRR`, `NDCG`), with the best value per
-  metric highlighted, deltas versus the semantic baseline, and a per-domain
-  toggle; then the end-to-end golden runs with their retrieval config, judge
-  model, and headline scores. Everything shown is reproducible from a snapshot
+  instead of a claim. Below it, the `eval-ablation` sweeps across `recall@k`,
+  `MRR` and `NDCG` — semantic vs hybrid vs hybrid+rerank, plus the HyDE,
+  multi-query and contextual-retrieval columns when the run was an extended
+  sweep (each run is labelled with the sweep that produced it) — with the best
+  value per metric highlighted, deltas versus the semantic baseline, and a
+  per-domain toggle; then the end-to-end golden runs with their retrieval
+  config, judge model, and headline scores. Everything shown is reproducible from a snapshot
   in the repo — served by `GET /api/experiments`.
 - **System Design** — how the app is actually built, as a click-through graph
   rather than a document that drifts from the code. Left column: every answer
-  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`), the
-  summary-filter stage, the shared models (DeepSeek, the embedding model, the
-  reranker), and the stores each depends on (the three Chroma collections,
-  Neo4j) laid out as a node graph. Click any node to open its detail panel:
+  path (`chat`, `vector_rag`, `recursive_rag`, `agentic_rag`, `graph_rag`, plus
+  the `hyde_rag` and `contextual_rag` retrieval variants), the summary-filter
+  stage, the shared models (DeepSeek, the embedding model, the reranker), and
+  the stores each depends on (the four Chroma collections, Neo4j) laid out as a
+  node graph. Click any node to open its detail panel:
   the exact system prompts it runs (highlighted `{template_vars}`, one-click
   copy) and its live configuration — `top_k`, retrieval mode, Neo4j URI,
   chunking parameters, whatever applies to that node — read straight off the
@@ -555,7 +723,8 @@ Endpoints (JSON unless noted):
 | `/api/scoreboard` | GET | Leaderboard for one committed matrix run — aggregated `setups` rows plus the run's per-question rows (`questions`, each setup's composite on each golden question); `run_id` picks the run, `group_by=setup\|setup_model`, `judge_model` filter |
 | `/api/eval/matrix` | GET/POST | The current matrix run; POST starts one (returns the run already in flight, if any; 422 on an unknown setup) |
 | `/api/eval/matrix/stream` | GET | Live per-cell progress for the running matrix (SSE, seeded with current state) |
-| `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry) |
+| `/api/ask` | POST | Answer a question (streams SSE; `entry_id` appends to an existing entry, `document_entry_id` re-reads a prior entry's pinned document for a follow-up) |
+| `/api/documents/{document_id}` | GET | One reviewed document, read from the gitignored document store (404 if cleared) — how a document card re-renders after a reload |
 | `/api/rank` | POST | Rank the corpus for a query by `semantic`, `bm25` and/or `graph` (a mode that cannot run is reported in `errors` and left out of `overlap`, rather than failing the request) |
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
@@ -568,9 +737,11 @@ Endpoints (JSON unless noted):
 | `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
 | `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
 
-`/api/ask` emits these SSE events: `progress` (per setup), `agent_step` (one
-per `rag_agent` retrieval iteration, carrying its query and chunk count),
-`answer` (a finished setup), `done` (the saved entry), and `error`.
+`/api/ask` emits these SSE events: `document` (a resolved document, emitted
+once before the answer setups run when the question carries or pins a URL),
+`progress` (per setup), `agent_step` (one per `rag_agent` retrieval iteration,
+carrying its query and chunk count), `answer` (a finished setup), `done` (the
+saved entry), and `error`.
 
 Keyword ranking uses `rank-bm25`, a small pure-Python Okapi BM25 implementation
 installed by `uv sync`. The index is built in memory from stored chunk texts
@@ -648,14 +819,21 @@ metrics; the deterministic id-based metrics (recall/IR) use a zero threshold, so
 any movement there is real. A question that errors is recorded with its error and
 excluded from the averages rather than scored zero.
 
-**Retrieval ablation.** `eval-ablation` sweeps semantic vs hybrid vs
-hybrid+rerank over the golden set and reports `recall@k`, `MRR` and `NDCG` per
-configuration and per domain. It is retrieval-only and deterministic — no answer
-is generated and no judge runs — so it needs no API key and is cheap to re-run:
+**Retrieval ablation.** `eval-ablation` sweeps retrieval configurations over the
+golden set and reports `recall@k`, `MRR` and `NDCG` per configuration and per
+domain. It is retrieval-only — no answer is generated and no judge runs:
 
 ```bash
-uv run python -m src.cli eval-ablation
+uv run python -m src.cli eval-ablation                    # semantic / semantic+rerank / hybrid / hybrid+rerank
+uv run python -m src.cli eval-ablation --sweep extended   # + hyde, multi-query, contextual
 ```
+
+The default sweep is fully deterministic and needs no API key, so it is cheap to
+re-run anywhere. `--sweep extended` adds the retrieval variants: the query-side
+columns call an LLM once per question (cached per question, so a repeat is free
+and returns the identical retrieval), and the contextual columns read the index
+`index-contextual` built. Both sweeps lead with the same `semantic` baseline, so
+their deltas can be read side by side.
 
 `--top-k N` overrides the final chunk count each configuration retrieves
 (default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
@@ -925,6 +1103,22 @@ summarized up-front (Full GraphRAG — the whole-corpus bill is cents). Python
 deps: `neo4j` (the Bolt driver) and `python-igraph` (Leiden), both installed
 by `uv sync`.
 
+**Contextual Retrieval index.**
+
+```bash
+uv run python -m src.cli index-contextual                  # situate every chunk
+uv run python -m src.cli index-contextual --max-chunks 20  # smoke-test on the first N
+uv run python -m src.cli index-contextual --max-workers 4  # fewer concurrent calls
+```
+
+The same shape as `index-graph`: one DeepSeek call per chunk, cached under
+`.yt-agent/context_cache/` keyed on chunk id + text hash, retried once, and
+never cached on failure. Chunks are processed video by video, because the
+excerpt each call reads is built from the chunk's own neighbours. A chunk whose
+situating call failed twice is still indexed, with the deterministic header it
+already had — a missing chunk would depress recall and read as a retrieval
+result rather than an indexing gap.
+
 Ask through the graph:
 
 ```bash
@@ -977,9 +1171,20 @@ retries on the next run rather than pinning the failure.
 ```bash
 uv run python -m src.cli eval-matrix                                    # scores only uncached cells
 uv run python -m src.cli eval-matrix --setups rag_llm,graph_rag,new_variant  # only new_variant is fresh
+uv run python -m src.cli eval-matrix --questions g001,g007,g010,g013,g015    # scope to a sample
 uv run python -m src.cli eval-matrix --refresh                          # bypass cache, rescore everything
 uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics  # deterministic only, fast
 ```
+
+A **cell** is one `(setup, question)` pair, and it is the expensive unit: every
+cell costs an answer call plus the judge's several sub-calls, so six setups over
+twenty questions is 120 cells and roughly 16 LLM calls each. `--questions`
+trades coverage for turnaround by naming the sample to score; the ids land in
+the run's `question_ids`, because a sampled run is a *different measurement*
+from a whole-set one and comparing the two without knowing the sample is how
+"the score went up" turns out to mean "the hard questions weren't asked". Keep
+at least one question of each type in a sample or the by-question-type pivot
+has empty columns.
 
 A fully judged run over every engine can still take well over an hour the
 *first* time — judging is the bottleneck, not the cache. `scripts/run_matrix_chunked.py`

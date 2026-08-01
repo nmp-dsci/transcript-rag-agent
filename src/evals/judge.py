@@ -94,8 +94,7 @@ def average_precision(verdicts: Sequence[int]) -> float:
     verdict_list = [1 if verdict else 0 for verdict in verdicts]
     denominator = sum(verdict_list) + 1e-10
     numerator = sum(
-        (sum(verdict_list[: i + 1]) / (i + 1)) * verdict_list[i]
-        for i in range(len(verdict_list))
+        (sum(verdict_list[: i + 1]) / (i + 1)) * verdict_list[i] for i in range(len(verdict_list))
     )
     return numerator / denominator
 
@@ -124,9 +123,7 @@ def _build_breakdown_fns(
         StatementGeneratorInput,
     )
 
-    def faithfulness_breakdown(
-        question: str, answer: str, contexts: list[str]
-    ) -> MetricBreakdown:
+    def faithfulness_breakdown(question: str, answer: str, contexts: list[str]) -> MetricBreakdown:
         async def _generate() -> Any:
             statements = await faithfulness.statement_generator_prompt.generate(
                 llm=llm,
@@ -161,9 +158,7 @@ def _build_breakdown_fns(
             details={"claims": claims, "supported": supported, "total": total},
         )
 
-    def relevancy_breakdown(
-        question: str, answer: str, contexts: list[str]
-    ) -> MetricBreakdown:
+    def relevancy_breakdown(question: str, answer: str, contexts: list[str]) -> MetricBreakdown:
         responses = run(
             lambda: relevancy.question_generation.generate_multiple(
                 llm=llm,
@@ -189,9 +184,7 @@ def _build_breakdown_fns(
             },
         )
 
-    def precision_breakdown(
-        question: str, answer: str, contexts: list[str]
-    ) -> MetricBreakdown:
+    def precision_breakdown(question: str, answer: str, contexts: list[str]) -> MetricBreakdown:
         async def _verify() -> list[Any]:
             results = []
             for context in contexts:
@@ -280,6 +273,14 @@ class RagasJudge:
                 api_key=settings.judge_api_key or settings.deepseek_api_key,  # type: ignore[arg-type]
                 base_url=settings.judge_base_url or settings.deepseek_base_url,
                 temperature=0.0,
+                # Without a read timeout a socket that is accepted and then never
+                # answered blocks forever inside the request. That is not
+                # theoretical here: it is what made a judged matrix run sail past
+                # its own --max-seconds budget and have to be killed. A judge call
+                # that has produced nothing in this long is not going to, so fail
+                # it and let the cell be retried rather than hang the run.
+                timeout=settings.llm_timeout_seconds,
+                max_retries=2,
             )
         )
         embeddings = LangchainEmbeddingsWrapper(
@@ -303,12 +304,8 @@ class RagasJudge:
         # Kept as the fallback path: if driving the prompts directly ever
         # fails, ragas' own scoring still produces a number (without details).
         score_fns: dict[str, ScoreFn] = {
-            "faithfulness": lambda q, a, c: float(
-                faithfulness.single_turn_score(sample(q, a, c))
-            ),
-            "answer_relevancy": lambda q, a, c: float(
-                relevancy.single_turn_score(sample(q, a, c))
-            ),
+            "faithfulness": lambda q, a, c: float(faithfulness.single_turn_score(sample(q, a, c))),
+            "answer_relevancy": lambda q, a, c: float(relevancy.single_turn_score(sample(q, a, c))),
             "context_precision": lambda q, a, c: float(
                 precision.single_turn_score(sample(q, a, c))
             ),
@@ -317,9 +314,7 @@ class RagasJudge:
             score_fns=score_fns,
             judge_model=model,
             embedding_model=settings.embedding_model,
-            breakdown_fns=_build_breakdown_fns(
-                llm, faithfulness, relevancy, precision
-            ),
+            breakdown_fns=_build_breakdown_fns(llm, faithfulness, relevancy, precision),
             answer_model=settings.deepseek_model,
             samples=max(1, settings.judge_samples),
         )

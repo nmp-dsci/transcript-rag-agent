@@ -52,6 +52,21 @@ SYSTEMS: list[dict[str, str]] = [
         "description": "Entity/claim extraction, community summaries, the "
         "local/global/temporal router, and the graph answer paths.",
     },
+    {
+        "key": "doc_review",
+        "title": "Document review — a shared page against the corpus",
+        "description": "The prompt behind a chat message that contains a URL: "
+        "the document supplies what is being reviewed, the corpus supplies the "
+        "criteria, and the two are cited differently.",
+    },
+    {
+        "key": "retrieval_variants",
+        "title": "Retrieval variants — HyDE, multi-query, contextual",
+        "description": "The prompts that change what gets embedded rather than "
+        "how the answer is written: HyDE's hypothetical passage, multi-query's "
+        "paraphrases, and the per-chunk situating sentence behind "
+        "index-contextual.",
+    },
 ]
 
 _EXTRA_PROMPTS: list[dict[str, Any]] = [

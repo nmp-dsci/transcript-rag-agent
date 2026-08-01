@@ -439,6 +439,127 @@ def build_community_summary_prompt(entity_names: list[str], claims_block: str) -
     )
 
 
+# ─── Retrieval variants (HyDE / multi-query / contextual retrieval) ───────────
+
+HYDE_SYSTEM_PROMPT = """You write the passage a question is looking for, so it can be embedded.
+
+You are given a question asked over a corpus of YouTube video transcripts
+(property investing, AI coding tools, job search and careers). Write the short
+passage that would answer it — as a speaker in one of those videos would say
+it, in plain spoken English.
+
+Rules:
+- 60-100 words, one paragraph, no preamble and no bullet points.
+- Use the concrete vocabulary a speaker would use: scheme names, tool names,
+  numbers, dates. Specific wording is the whole point — it is what the
+  embedding matches against.
+- Never say you are unsure or that you lack context. This passage is a search
+  probe, not an answer shown to anyone: a plausible invented one retrieves
+  better than a hedge.
+
+Return the passage only, with no quotes or labels."""
+
+HYDE_USER_PROMPT = """Question: {question}"""
+
+MULTI_QUERY_PROMPT = """Rewrite one search query as {variants} alternative phrasings.
+
+Query: "{question}"
+
+The queries run against a corpus of YouTube transcripts about property
+investing, AI coding tools, and job search. Each rewrite should look for the
+same answer from a different angle — different vocabulary, a narrower or wider
+framing, the synonym a speaker would actually use. Do not answer the question
+and do not repeat the original wording verbatim.
+
+Return JSON only: {{"queries": ["<query 1>", "<query 2>"]}}"""
+
+DOC_REVIEW_SYSTEM_PROMPT = """You review a document the user has shared, using a corpus of video transcripts as your source of criteria.
+
+You are given two things, and they play different roles:
+
+1. THE DOCUMENT — the user's own resume, page, invitation or note, split into
+   numbered sections marked [§1], [§2] and so on. This is the thing being
+   reviewed. It is the only source of what the document actually says.
+2. RETRIEVED TRANSCRIPT CHUNKS, labelled [1], [2] and so on. These are the
+   source of *advice*: what practitioners in the corpus recommend. They are not
+   statements about the user's document and must never be described as such.
+
+Answer the user's question about the document, and:
+- Cite the document with [§N] whenever you describe or quote what it says.
+- Cite a transcript chunk with [N] whenever you invoke a recommendation, rule
+  or standard the corpus supplies.
+- Be specific. Name the section and quote the phrase you would change, then say
+  what to change it to. "Strengthen your experience section" is not feedback;
+  "[§3] opens with 'responsible for' — lead with the outcome instead" is.
+
+Rules:
+- Never state or imply that the document contains something it does not. If you
+  cannot find a thing, say it is absent — that is often the most useful
+  feedback.
+- If the context says the document was cut short or only partly shown, say so
+  before drawing conclusions about what is missing from it.
+- Where the corpus offers no guidance on something you want to advise about,
+  give the advice and say it is your own, uncited. Do not attach a [N] citation
+  to a recommendation the chunks do not make.
+- Propose follow-up subtopics the same way you would for any question: where
+  the corpus guidance is thin on something this document needs.
+"""
+
+CHUNK_CONTEXT_SYSTEM_PROMPT = """You situate one transcript chunk inside its video, for retrieval.
+
+Transcript chunks are conversational fragments that lose their subject ("...had
+to. So I'm just going to copy that"). You are given the video's metadata, an
+excerpt of the surrounding transcript, and one chunk from it. Write the short
+sentence that says what this chunk is about within that video.
+
+Rules:
+- One or two sentences, at most 50 words.
+- Name the specific things the chunk leaves implicit: who is speaking, which
+  topic, tool, scheme or step of the video this passage belongs to.
+- Describe only what the excerpt actually shows. Never add outside knowledge
+  and never guess a topic the transcript does not mention.
+- Do not summarize the whole video and do not quote the chunk back.
+
+Return the sentence only, with no quotes or labels."""
+
+CHUNK_CONTEXT_USER_PROMPT = """Video: {video_title}
+Channel: {channel_name}
+Upload date: {upload_date}
+
+Surrounding transcript:
+{document_excerpt}
+
+The chunk to situate:
+{chunk_text}"""
+
+
+def build_hyde_prompt(question: str) -> str:
+    return HYDE_USER_PROMPT.format(question=question)
+
+
+def build_multi_query_prompt(question: str, variants: int) -> str:
+    return MULTI_QUERY_PROMPT.format(
+        question=question.replace('"', '\\"'),
+        variants=variants,
+    )
+
+
+def build_chunk_context_prompt(
+    chunk_text: str,
+    document_excerpt: str,
+    video_title: str | None,
+    channel_name: str | None,
+    upload_date: str | None,
+) -> str:
+    return CHUNK_CONTEXT_USER_PROMPT.format(
+        video_title=video_title or "unknown",
+        channel_name=channel_name or "unknown",
+        upload_date=upload_date or "unknown",
+        document_excerpt=document_excerpt,
+        chunk_text=chunk_text,
+    )
+
+
 # ─── Prompt registry (Prompts tab) ────────────────────────────────────────────
 
 #: Every prompt above, with the metadata the Prompts tab renders. The registry
@@ -589,5 +710,55 @@ PROMPT_REGISTRY: list[dict[str, object]] = [
         "role": "system",
         "template_vars": [],
         "text": GRAPH_TEMPORAL_SYSTEM_PROMPT,
+    },
+    # Retrieval variants — the query-side and index-side experiments
+    {
+        "name": "HYDE_SYSTEM_PROMPT",
+        "system": "retrieval_variants",
+        "role": "system",
+        "template_vars": [],
+        "text": HYDE_SYSTEM_PROMPT,
+    },
+    {
+        "name": "HYDE_USER_PROMPT",
+        "system": "retrieval_variants",
+        "role": "user_template",
+        "template_vars": ["question"],
+        "text": HYDE_USER_PROMPT,
+    },
+    {
+        "name": "MULTI_QUERY_PROMPT",
+        "system": "retrieval_variants",
+        "role": "user_template",
+        "template_vars": ["question", "variants"],
+        "text": MULTI_QUERY_PROMPT,
+    },
+    {
+        "name": "CHUNK_CONTEXT_SYSTEM_PROMPT",
+        "system": "retrieval_variants",
+        "role": "system",
+        "template_vars": [],
+        "text": CHUNK_CONTEXT_SYSTEM_PROMPT,
+    },
+    # Document review — a shared page reviewed against the corpus
+    {
+        "name": "DOC_REVIEW_SYSTEM_PROMPT",
+        "system": "doc_review",
+        "role": "system",
+        "template_vars": [],
+        "text": DOC_REVIEW_SYSTEM_PROMPT,
+    },
+    {
+        "name": "CHUNK_CONTEXT_USER_PROMPT",
+        "system": "retrieval_variants",
+        "role": "user_template",
+        "template_vars": [
+            "video_title",
+            "channel_name",
+            "upload_date",
+            "document_excerpt",
+            "chunk_text",
+        ],
+        "text": CHUNK_CONTEXT_USER_PROMPT,
     },
 ]

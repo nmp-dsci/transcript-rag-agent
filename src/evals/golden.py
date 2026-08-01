@@ -293,6 +293,10 @@ def answer_correctness_fns(settings: Settings) -> dict[str, ReferenceScoreFn]:
             api_key=settings.judge_api_key or settings.deepseek_api_key,  # type: ignore[arg-type]
             base_url=settings.judge_base_url or settings.deepseek_base_url,
             temperature=0.0,
+            # See RagasJudge.from_settings: without a read timeout a stalled
+            # provider response hangs the judged run forever.
+            timeout=settings.llm_timeout_seconds,
+            max_retries=2,
         )
     )
     embeddings = LangchainEmbeddingsWrapper(

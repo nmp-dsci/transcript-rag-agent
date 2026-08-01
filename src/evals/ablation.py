@@ -8,8 +8,17 @@ does hybrid+rerank beat plain semantic on recall@10 and NDCG, and by how much.
 
 It measures **retrieval only**. No answer is generated and no judge runs, so every
 metric here is the deterministic, id-based arithmetic of :mod:`src.evals.ir_metrics`
-and :mod:`src.evals.golden`: free, fast, and reproducible without an API key. That
-is what makes sweeping several configurations over the whole golden set cheap.
+and :mod:`src.evals.golden`. That is what makes sweeping several configurations
+over the whole golden set cheap.
+
+Two sweeps are defined. :func:`default_configs` isolates lexical fusion and
+cross-encoder reranking; it is free, offline and needs no API key.
+:func:`extended_configs` adds the retrieval variants — HyDE, multi-query and
+Contextual Retrieval — which do involve a model: the query-side ones call an LLM
+once per question (cached per question, so a re-run is free and returns the
+identical retrieval), and the contextual ones read the index ``index-contextual``
+built. Both sweeps lead with the same ``semantic`` baseline, so their deltas are
+comparable with each other.
 
 The heavy wiring (embeddings, Chroma, the cross-encoder) lives behind a ``retrieve``
 callable so the aggregation logic can be unit-tested with a fake retriever; the CLI
@@ -42,6 +51,12 @@ class AblationConfig:
     rerank: bool = False
     neighbor_span: int = 0
     top_k: int = 10
+    #: Query-side transform applied before embedding: "hyde", "multi_query",
+    #: or None to embed the question as asked.
+    query_transform: str | None = None
+    #: Retrieve against the Contextual Retrieval index (chunks embedded with an
+    #: LLM-written situating sentence) instead of the baseline collection.
+    contextual: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -50,18 +65,84 @@ class AblationConfig:
             "rerank": self.rerank,
             "neighbor_span": self.neighbor_span,
             "top_k": self.top_k,
+            "query_transform": self.query_transform,
+            "contextual": self.contextual,
         }
+
+    @property
+    def needs_llm(self) -> bool:
+        """Whether measuring this config costs LLM calls at *query* time.
+
+        Contextual retrieval does not: its LLM bill was paid by
+        ``index-contextual``, and the sweep only reads the index it produced.
+        """
+        return self.query_transform is not None
 
 
 #: The default sweep: isolate the two axes P1 cares about — lexical fusion and
 #: cross-encoder reranking — against the plain-semantic baseline. ``semantic`` is
 #: first, so it is the baseline every delta is measured from.
+#:
+#: Ordered as two adjacent pairs, ``semantic``/``semantic+rerank`` and
+#: ``hybrid``/``hybrid+rerank``, because that is what isolates the cross-encoder:
+#: within a pair the only difference is whether a bi-encoder ranking (the query
+#: and the chunk embedded apart) is reordered by a model that scores the pair
+#: jointly. Reading one pair answers "what does the cross-encoder buy"; reading
+#: both answers "does that depend on having BM25 underneath it".
+#:
+#: ``semantic+rerank`` is also the configuration the app ships with
+#: (``retrieval_mode=semantic``, ``rerank_enabled=true``), so the default sweep
+#: measures the default stack rather than only its neighbours.
 def default_configs(top_k: int = 10) -> list[AblationConfig]:
     return [
         AblationConfig(label="semantic", retrieval_mode="semantic", rerank=False, top_k=top_k),
+        AblationConfig(
+            label="semantic+rerank", retrieval_mode="semantic", rerank=True, top_k=top_k
+        ),
         AblationConfig(label="hybrid", retrieval_mode="hybrid", rerank=False, top_k=top_k),
         AblationConfig(label="hybrid+rerank", retrieval_mode="hybrid", rerank=True, top_k=top_k),
     ]
+
+
+def extended_configs(top_k: int = 10) -> list[AblationConfig]:
+    """The default sweep plus the query-side and index-side variants.
+
+    Kept separate from :func:`default_configs` because it is a different kind
+    of run: the HyDE and multi-query columns call an LLM once per question the
+    first time they are measured (cached thereafter), and the contextual
+    columns read an index ``index-contextual`` has to have built. The default
+    sweep stays free and offline so it can run anywhere.
+
+    The same ``semantic`` baseline leads, so every delta in an extended run is
+    comparable with the deltas in a default one.
+    """
+    return [
+        *default_configs(top_k=top_k),
+        AblationConfig(
+            label="hyde", retrieval_mode="semantic", query_transform="hyde", top_k=top_k
+        ),
+        AblationConfig(
+            label="multi-query",
+            retrieval_mode="semantic",
+            query_transform="multi_query",
+            top_k=top_k,
+        ),
+        AblationConfig(label="contextual", retrieval_mode="semantic", contextual=True, top_k=top_k),
+        AblationConfig(
+            label="contextual+hybrid+rerank",
+            retrieval_mode="hybrid",
+            rerank=True,
+            contextual=True,
+            top_k=top_k,
+        ),
+    ]
+
+
+#: Sweeps selectable from the CLI, by ``--sweep`` name.
+SWEEPS: dict[str, Callable[[int], list[AblationConfig]]] = {
+    "default": default_configs,
+    "extended": extended_configs,
+}
 
 
 @dataclass
@@ -161,10 +242,15 @@ def _delta(baseline: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
 def build_retrieve(settings: Any) -> RetrieveFn:
     """A ``retrieve`` over the real stack: one provider per configuration.
 
-    Stores, the embedding model and the cross-encoder are built once and shared
-    across configurations; only the lightweight provider wrapper varies per config,
-    so a sweep loads each model at most once. Retrieval runs corpus-wide with no
-    indexer, so the ablation measures the corpus exactly as it stands.
+    Stores, the embedding model, the cross-encoder and each query transform are
+    built once and shared across configurations; only the lightweight provider
+    wrapper varies per config, so a sweep loads each model at most once.
+    Retrieval runs corpus-wide with no indexer, so the ablation measures the
+    corpus exactly as it stands.
+
+    Everything a configuration does not ask for stays unbuilt: a default sweep
+    never constructs a query transform (so it needs no API key) and never opens
+    the contextual collection (so it does not require ``index-contextual``).
     """
     from src.rag.context import MultiTranscriptRagContextProvider
     from src.rag.embeddings import HuggingFaceEmbeddingModel
@@ -181,6 +267,8 @@ def build_retrieve(settings: Any) -> RetrieveFn:
     )
 
     reranker = None
+    contextual_store: Any = None
+    transforms: dict[str, Any] = {}
 
     def _reranker() -> Any:
         nonlocal reranker
@@ -190,17 +278,43 @@ def build_retrieve(settings: Any) -> RetrieveFn:
             reranker = CrossEncoderReranker.from_model_name(settings.rerank_model)
         return reranker
 
+    def _contextual_store() -> Any:
+        nonlocal contextual_store
+        if contextual_store is None:
+            contextual_store = TranscriptChunkStore(
+                settings.chroma_path,
+                embedding_model=embedding_model,
+                collection_name=settings.contextual_chunk_collection,
+            )
+            if not contextual_store.has_any_chunks():
+                raise ValueError(
+                    "The contextual index is empty. Run "
+                    "`uv run python -m src.cli index-contextual` before sweeping "
+                    "a contextual configuration."
+                )
+        return contextual_store
+
+    def _transform(name: str) -> Any:
+        if name not in transforms:
+            from src.rag.query_transform import build_query_transform
+
+            transforms[name] = build_query_transform(name, settings)
+        return transforms[name]
+
     providers: dict[str, MultiTranscriptRagContextProvider] = {}
 
     def provider_for(config: AblationConfig) -> MultiTranscriptRagContextProvider:
         if config.label not in providers:
             providers[config.label] = MultiTranscriptRagContextProvider(
                 raw_store=raw_store,
-                chunk_store=chunk_store,
+                chunk_store=_contextual_store() if config.contextual else chunk_store,
                 retrieval_mode=config.retrieval_mode,
                 retrieval_candidates=settings.retrieval_candidates,
                 reranker=_reranker() if config.rerank else None,
                 neighbor_span=config.neighbor_span,
+                query_transform=(
+                    _transform(config.query_transform) if config.query_transform else None
+                ),
             )
         return providers[config.label]
 
@@ -221,12 +335,17 @@ def run_default_ablation(
     settings: Any,
     *,
     top_k: int | None = None,
+    sweep: str = "default",
     on_progress: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    """Load the golden set and sweep :func:`default_configs` over the real stack."""
+    """Load the golden set and sweep one named config set over the real stack."""
+    if sweep not in SWEEPS:
+        raise ValueError(f"Unknown sweep: {sweep}. Choose one of: {', '.join(SWEEPS)}")
     entries = load_golden()
-    configs = default_configs(top_k=top_k or settings.rag_top_k)
-    return run_ablation(entries, configs, build_retrieve(settings), on_progress=on_progress)
+    configs = SWEEPS[sweep](top_k or settings.rag_top_k)
+    result = run_ablation(entries, configs, build_retrieve(settings), on_progress=on_progress)
+    result["sweep"] = sweep
+    return result
 
 
 def format_table(result: dict[str, Any]) -> str:
