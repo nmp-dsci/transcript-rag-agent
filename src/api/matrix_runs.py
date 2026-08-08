@@ -225,10 +225,17 @@ def matrix_questions(data: dict[str, Any]) -> list[dict[str, Any]]:
     keeps the per-question rows those averages are built from, so a reader can
     see exactly which golden questions were judged and how each setup scored
     on each one, not just the aggregate.
+
+    Each cell also carries the **answer that was actually graded**, plus the
+    model and cost facts for it. A score with no way to read the text behind it
+    cannot be sanity-checked — "hybrid scored 0.71 here" only means something
+    once you can see what it said — so the run's own answer text travels with
+    its score rather than staying locked in the committed JSON.
     """
     by_question: dict[str, dict[str, Any]] = {}
     for setup, run in (data.get("runs") or {}).items():
         title = _title_for(setup)
+        config = run.get("config") or data.get("config") or {}
         for cell in run.get("entries") or []:
             question_id = str(cell.get("id") or "")
             row = by_question.get(question_id)
@@ -249,6 +256,11 @@ def matrix_questions(data: dict[str, Any]) -> list[dict[str, Any]]:
                 "composite": composite if isinstance(composite, (int, float)) else None,
                 "judged": isinstance(composite, (int, float)),
                 "error": cell.get("error"),
+                "answer": str(cell.get("answer") or ""),
+                "model": config.get("answer_model"),
+                "elapsed_seconds": cell.get("elapsed_seconds"),
+                "token_estimate": cell.get("token_estimate"),
+                "chunk_count": len(cell.get("retrieved_chunk_ids") or []),
             }
 
     questions = list(by_question.values())

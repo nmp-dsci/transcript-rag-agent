@@ -6,6 +6,7 @@ import { METRICS, fmtScore } from '../chat/ScoreStrip';
 import { LOW_N } from '../eval/breakdown';
 import { MetricExplainers } from '../eval/MetricExplainer';
 import { useEvalStyles } from '../eval/styles';
+import { AnswersPanel } from './AnswersPanel';
 import { EfficiencyPanel } from './EfficiencyPanel';
 import { ProvenanceBar } from './ProvenanceBar';
 import { QuestionsPanel } from './QuestionsPanel';
@@ -229,6 +230,8 @@ export function ScoreboardView() {
         <EfficiencyPanel rows={rows} />
 
         <QuestionsPanel questions={board?.questions ?? []} />
+
+        <AnswersPanel questions={board?.questions ?? []} />
 
         <div className="panel">
           <h2>What the metrics mean</h2>

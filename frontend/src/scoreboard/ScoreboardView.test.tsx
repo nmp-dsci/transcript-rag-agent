@@ -2,7 +2,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Scoreboard, ScoreboardQuestion, ScoreboardRow } from '../api/types';
+import type {
+  Scoreboard,
+  ScoreboardQuestion,
+  ScoreboardQuestionSetup,
+  ScoreboardRow,
+} from '../api/types';
 import { ScoreboardView } from './ScoreboardView';
 
 const scoreboard = vi.fn();
@@ -57,6 +62,22 @@ function board(setups: ScoreboardRow[], overrides: Partial<Scoreboard> = {}): Sc
   };
 }
 
+function qsetup(overrides: Partial<ScoreboardQuestionSetup> = {}): ScoreboardQuestionSetup {
+  return {
+    key: 'rag_llm',
+    title: 'rag_llm (single-hop)',
+    composite: 0.71,
+    judged: true,
+    error: null,
+    answer: 'answer for g001',
+    model: 'deepseek-v4',
+    elapsed_seconds: 10,
+    token_estimate: 100,
+    chunk_count: 1,
+    ...overrides,
+  };
+}
+
 function question(overrides: Partial<ScoreboardQuestion> = {}): ScoreboardQuestion {
   return {
     id: 'g001',
@@ -64,11 +85,21 @@ function question(overrides: Partial<ScoreboardQuestion> = {}): ScoreboardQuesti
     domain: 'property',
     question_type: 'local',
     setups: [
-      { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: 0.71, judged: true, error: null },
-      { key: 'rag_agent', title: 'rag_agent (agentic)', composite: 0.84, judged: true, error: null },
+      qsetup(),
+      qsetup({ key: 'rag_agent', title: 'rag_agent (agentic)', composite: 0.84 }),
     ],
     ...overrides,
   };
+}
+
+/** The Questions panel alone. The Answers panel below it shows the same
+ * questions and the same unjudged/error badges, so an unscoped query would
+ * match both — these assertions are about the per-question score breakdown. */
+function questionsPanel(): HTMLElement {
+  const heading = screen.getByText(/^Questions \(/);
+  const panel = heading.closest('details');
+  if (!panel) throw new Error('Questions panel not found');
+  return panel as HTMLElement;
 }
 
 describe('ScoreboardView', () => {
@@ -202,13 +233,14 @@ describe('ScoreboardView', () => {
     );
     render(<ScoreboardView />);
     expect(await screen.findByText('Questions (1, 1 judged)')).toBeInTheDocument();
+    const panel = within(questionsPanel());
     expect(
-      screen.getByText('What are the key tax changes affecting property investors right now?'),
+      panel.getByText('What are the key tax changes affecting property investors right now?'),
     ).toBeInTheDocument();
-    expect(screen.getByText('property')).toBeInTheDocument();
-    expect(screen.getByText('local')).toBeInTheDocument();
-    expect(screen.getByText('0.71')).toBeInTheDocument();
-    expect(screen.getByText('0.84')).toBeInTheDocument();
+    expect(panel.getByText('property')).toBeInTheDocument();
+    expect(panel.getByText('local')).toBeInTheDocument();
+    expect(panel.getByText('0.71')).toBeInTheDocument();
+    expect(panel.getByText('0.84')).toBeInTheDocument();
   });
 
   it('marks an unjudged or errored setup for a question instead of showing a score', async () => {
@@ -217,14 +249,14 @@ describe('ScoreboardView', () => {
         questions: [
           question({
             setups: [
-              { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: null, judged: false, error: null },
-              {
+              qsetup({ composite: null, judged: false }),
+              qsetup({
                 key: 'rag_agent',
                 title: 'rag_agent (agentic)',
                 composite: null,
                 judged: false,
                 error: 'timeout',
-              },
+              }),
             ],
           }),
         ],
@@ -234,8 +266,9 @@ describe('ScoreboardView', () => {
     // A run committed with --no-judge has questions but no judged cell, so the
     // header must not claim it judged them.
     await screen.findByText('Questions (1, 0 judged)');
-    expect(screen.getByText('unjudged')).toBeInTheDocument();
-    expect(screen.getByText('error')).toBeInTheDocument();
+    const panel = within(questionsPanel());
+    expect(panel.getByText('unjudged')).toBeInTheDocument();
+    expect(panel.getByText('error')).toBeInTheDocument();
   });
 
   it('counts a question as judged when any one of its setups was', async () => {
@@ -244,8 +277,13 @@ describe('ScoreboardView', () => {
         questions: [
           question({
             setups: [
-              { key: 'rag_llm', title: 'rag_llm (single-hop)', composite: 0.71, judged: true, error: null },
-              { key: 'rag_agent', title: 'rag_agent (agentic)', composite: null, judged: false, error: null },
+              qsetup(),
+              qsetup({
+                key: 'rag_agent',
+                title: 'rag_agent (agentic)',
+                composite: null,
+                judged: false,
+              }),
             ],
           }),
           question({ id: 'g002', setups: [] }),

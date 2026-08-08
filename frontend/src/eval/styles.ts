@@ -99,6 +99,13 @@ const CSS = `
 }
 .bd-pk.off { color: var(--dim); }
 
+/* an expanded answer in the Answers panel: wraps and scrolls rather than
+   stretching the table to the width of the longest answer in the run */
+.ans-full {
+  display: block; max-width: 62ch; max-height: 22em; overflow-y: auto;
+  white-space: pre-wrap; font-size: 12.5px; line-height: 1.55; color: var(--text2);
+}
+
 /* metric explainer cards */
 .explainers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .explainers > * { min-width: 0; }

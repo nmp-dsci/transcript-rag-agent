@@ -413,6 +413,13 @@ export interface ScoreboardQuestionSetup {
   composite: number | null;
   judged: boolean;
   error: string | null;
+  /** The answer this setup produced for this question — the text the judge graded. */
+  answer: string;
+  /** Answering model recorded for the setup's run, not the judge's. */
+  model: string | null;
+  elapsed_seconds: number | null;
+  token_estimate: number | null;
+  chunk_count: number;
 }
 
 /** One golden question judged in the selected matrix run, with every setup's score on it. */
