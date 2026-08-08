@@ -1,0 +1,13 @@
+# The .mp4 and .srt are the deliverables and get committed. Everything else here
+# is a regenerable intermediate: the .webm is Playwright's raw capture that the
+# .mp4 is transcoded from, and vo/*.mp3 is Deepgram output keyed on the script.
+# The sibling project commits all three; at ~6.5 MB per raw capture that is not
+# worth carrying in git when `record_walkthrough.py` rebuilds them.
+*.webm
+vo/
+_*_silent.mp4
+frames_*/
+take_*.mp4
+take_*.srt
+# Smoke-test output from validating the recorder itself, not a deliverable.
+test_take.*
