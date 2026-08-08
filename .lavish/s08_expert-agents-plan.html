@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s08 — Distilled expert agents: plan</title>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #0e1116; --panel: #12161d; --panel2: #1c2330; --panel3: #161b22;
+    --border: #252b35; --border2: #2b3442;
+    --text: #e6edf3; --text2: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --accent: #2f81f7; --accent2: #79b8ff; --accent-dim: #132339; --accent-border: #1f4a7a;
+    --good: #3fb950; --good-dim: #173a2b; --good-border: #1f5937;
+    --warn: #d29922; --warn-dim: #3a2e12; --warn-border: #5c451a;
+    --bad: #f85149; --bad-dim: #3d1d1f; --bad-border: #6b2a2c;
+    --purple: #a371f7; --purple-dim: #271947; --purple-border: #3d2a63;
+    --on-accent: #0b1220; --btn-hover: #232b38; --accent-hover: #4b93f8;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eaeef2; --panel3: #f6f8fa;
+    --border: #d1d9e0; --border2: #bcc4cc;
+    --text: #1f2328; --text2: #424a53; --muted: #59636e; --dim: #818b98;
+    --accent: #0969da; --accent2: #0550ae; --accent-dim: #ddf4ff; --accent-border: #b6e3ff;
+    --good: #1a7f37; --good-dim: #dafbe1; --good-border: #aceebb;
+    --warn: #9a6700; --warn-dim: #fff8c5; --warn-border: #d4a72c;
+    --bad: #cf222e; --bad-dim: #ffebe9; --bad-border: #ffcecb;
+    --purple: #8250df; --purple-dim: #fbefff; --purple-border: #e3c6ff;
+    --on-accent: #ffffff; --btn-hover: #eef2f6; --accent-hover: #0860ca;
+  }
+  * { box-sizing: border-box; }
+  *, *::before, *::after { min-width: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.6 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 40px 24px 140px;
+  }
+  h1 { font-size: 27px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 52px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14.5px; margin: 0 0 8px; color: var(--text); }
+  h4 { font-size: 12.5px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  p { color: var(--text2); }
+  .lede { color: var(--muted); font-size: 15px; max-width: 860px; }
+  .mono { font-family: var(--mono); }
+  code { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; overflow-wrap: anywhere; }
+  a { color: var(--accent2); }
+  ul, ol { padding-left: 20px; }
+  li { color: var(--text2); margin: 3px 0; }
+  ::selection { background: var(--accent-dim); }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 2px 7px; font: 600 10.5px var(--mono); white-space: nowrap; }
+  .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
+  .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+  .badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
+  .badge.purple { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+  .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
+  @media (max-width: 980px) { .grid3, .grid4 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 640px) { .grid2, .grid3, .grid4 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .tablewrap table { min-width: 640px; }
+
+  .stat { text-align: center; padding: 14px 10px; }
+  .stat .v { font: 700 22px var(--mono); color: var(--text); }
+  .stat .l { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: var(--text2); margin: 14px 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout.risk { border-left-color: var(--bad); background: var(--bad-dim); }
+  .callout b { color: var(--text); }
+
+  .seq { display: flex; flex-direction: column; gap: 0; margin: 6px 0 0; }
+  .seq .n { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .seq .n:first-child { border-top: none; }
+  .seq .n .idx { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font: 700 11px var(--mono); color: var(--muted); }
+  .seq .n .why { color: var(--dim); font-size: 12px; }
+
+  .mermaid-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; overflow-x: auto; }
+  .mermaid { display: flex; justify-content: center; min-width: 560px; }
+
+  /* variant option cards */
+  .voptions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; margin: 10px 0; }
+  @media (max-width: 760px) { .voptions { grid-template-columns: 1fr; } }
+  .vcard { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px 17px; position: relative; }
+  .vcard.rec { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-dim), var(--panel) 40%); }
+  .vcard .vh { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .vcard .vh b { font-size: 13.5px; }
+  .vcard p { font-size: 12.5px; margin: 6px 0; }
+  .vcard .vmeta { display: flex; gap: 10px; font-size: 11px; color: var(--dim); margin-top: 10px; flex-wrap: wrap; }
+
+  /* input playbook: decision forms */
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .decision .q { font-size: 13.5px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  .decision .qsub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .decision label.opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border2); border-radius: 8px; margin-bottom: 7px; cursor: pointer; background: var(--panel2); transition: border-color .12s; }
+  .decision label.opt:hover { border-color: var(--accent-border); }
+  .decision label.opt input { margin-top: 3px; flex: 0 0 auto; }
+  .decision label.opt .otext b { font-size: 12.5px; color: var(--text); }
+  .decision label.opt .otext span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .decision .queuebar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .decision button.q-submit { background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 7px 14px; font: 600 12px var(--mono); cursor: pointer; }
+  .decision button.q-submit:hover { background: var(--accent-hover); }
+  .decision.is-queued { border-color: var(--good-border); }
+  .decision.is-queued .queue-note { color: var(--good); }
+  .queue-note { font-size: 11.5px; color: var(--dim); }
+
+  .fileref { font-family: var(--mono); font-size: 11.5px; color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 4px; padding: 1px 6px; }
+  .phase-hdr { display: flex; align-items: baseline; gap: 10px; margin: 30px 0 10px; }
+  .phase-hdr .pnum { font: 700 20px var(--mono); color: var(--dim); }
+  .phase-hdr h3 { margin: 0; font-size: 16px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .toc a { font-size: 11.5px; font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 14px; padding: 4px 11px; color: var(--text2); text-decoration: none; }
+  .toc a:hover { border-color: var(--accent-border); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<h1>Distilled expert agents</h1>
+<p class="lede">
+  A plan for turning clusters of transcripts into standing <b>experts</b> — persistent, citable knowledge
+  distilled offline from communal chunks — so a matching question is answered from compiled expertise
+  instead of a fresh retrieval pass every time. Grounded in what already exists in
+  <code>transcript-rag-agent</code>: the community-summarization machinery from GraphRAG, the
+  multi-transcript retrieval scoping, and the ablation/matrix eval harness that already knows how to
+  compare RAG variants head to head.
+</p>
+<div class="toc">
+  <a href="#state">Current state</a>
+  <a href="#concept">Concept</a>
+  <a href="#pipeline">Build pipeline</a>
+  <a href="#variants">Variants to test</a>
+  <a href="#router">Expert router</a>
+  <a href="#eval">Evaluation</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#risks">Risks</a>
+  <a href="#decisions">Decisions</a>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="state">Current state — what already exists to build on</h2>
+<p>
+  Nothing here is theoretical. Four pieces of existing infrastructure are 80% of an expert pipeline
+  already, they just aren't wired together as one:
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h4>Corpus already clusters by domain</h4>
+    <p style="font-size:12.5px">
+      26 videos across 17 channels split cleanly into three domains the golden set already labels —
+      <code>property</code>, <code>ai-coding</code>, <code>career</code> — because that's how the videos
+      were actually sourced. The <b>career</b> domain (resume, LinkedIn, interviews — 8 channels,
+      6+ videos) is exactly the "resume expert" example.
+    </p>
+    <div class="tablewrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th>domain</th><th>golden Qs</th><th>example channels</th></tr></thead>
+        <tbody>
+          <tr><td><code>property</code></td><td>7</td><td>Smart Property Investment, Suburb Data, The Follio…</td></tr>
+          <tr><td><code>ai-coding</code></td><td>6</td><td>Kun Chen, Anthony D. Mays, Jean Lee</td></tr>
+          <tr><td><code>career</code></td><td>6</td><td>Farah Sharghi, Kevin Stratvert, Headless Headhunter…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <h4>Community distillation already ships (GraphRAG P4)</h4>
+    <p style="font-size:12.5px">
+      <span class="fileref">src/rag/communities.py</span> already does <i>cluster → LLM-summarize → store</i>:
+      Leiden over the entity graph, one summary per community, built up front so global questions read
+      pre-built summaries instead of paying per query. Every claim it summarizes from carries
+      <code>chunk_id</code>/<code>video_id</code>/<code>upload_date</code> provenance
+      (<span class="fileref">GraphClaim</span>) — the citation discipline an expert's knowledge card needs
+      is already the house style, not a new invention.
+    </p>
+  </div>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="panel">
+    <h4>Scoped retrieval already exists</h4>
+    <p style="font-size:12.5px">
+      <span class="fileref">MultiTranscriptRagContextProvider</span> already narrows retrieval to a
+      channel via <code>channel_id</code>, and the per-video summary store
+      (<span class="fileref">src/rag/summaries.py</span>) already picks relevant videos by embedding
+      similarity. A "retrieval-only expert" — corpus scoped to one domain's channels — needs
+      <b>zero new indexing code</b>, only a cluster→channel mapping.
+    </p>
+  </div>
+  <div class="panel">
+    <h4>The eval harness already compares variants</h4>
+    <p style="font-size:12.5px">
+      <span class="fileref">eval-ablation</span> / <span class="fileref">eval-matrix</span> already sweep
+      named configurations over the same golden questions and report IR metrics, RAGAS scores, latency and
+      token cost side by side — exactly "test different variants," just not yet crossed with an
+      <i>expert scope</i> axis. Extending the cache-key/config-snapshot logic in
+      <span class="fileref">src/evals/matrix_cache.py</span> is the whole plumbing change.
+    </p>
+  </div>
+</div>
+
+<div class="callout">
+  <b>What's genuinely new:</b> (1) a job that turns a cluster's chunks into a standing, versioned
+  <i>expert profile</i> — not just a summary but something an answer call reads instead of retrieving live;
+  (2) a router that picks an expert for a question instead of the user picking a setup; (3) an eval axis
+  that asks "does the distilled expert answer as well as live RAG, cheaper, and does it get better as the
+  cluster grows."
+</div>
+
+<!-- ============================================================ -->
+<h2 id="concept">The concept, in one picture</h2>
+<div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart TB
+  subgraph OFFLINE["Offline build job"]
+    direction TB
+    C["corpus chunks"] --> CL["1. Cluster"]
+    CL --> DI["2. Distill, recency-weighted"]
+    DI --> ST["3. Store"]
+  end
+  subgraph LIVE["Live chat, one question"]
+    direction TB
+    Q["user question"] --> RT{"Expert router match?"}
+    RT -->|yes| EA["Answer from the expert card, cited chunks"]
+    RT -->|no| GA["Fall through to live corpus RAG"]
+  end
+  ST -.-> RT
+</pre>
+</div>
+<p style="font-size:12.5px; color:var(--muted); margin-top:8px">
+  The offline job runs on a schedule or on demand (mirrors <code>index-graph</code> /
+  <code>index-contextual</code> today). The live path adds exactly one branch to
+  <code>POST /api/ask</code> — the same shape as the document-review URL-detect branch already shipped
+  (<span class="fileref">src/documents/detect.py</span> → <span class="fileref">resolve.py</span>): detect
+  a signal, short-circuit into a different answer path, fall through to normal behavior otherwise.
+</p>
+
+<div class="callout warn">
+  <b>Scoping note — "learning" here means curated re-compilation, not model training.</b> This stack calls
+  DeepSeek over an API; there's no path to fine-tune weights. "Improves over time" has to mean: the
+  distilled knowledge card gets <i>re-synthesized</i> as its source cluster grows (more videos → a richer,
+  re-run distillation pass), and — as a later phase — judged Q&amp;A history feeds back into what the next
+  distillation pass emphasizes. It's in-context knowledge curation, and the plan should never imply
+  otherwise to a reader.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pipeline">The build pipeline, stage by stage</h2>
+
+<div class="phase-hdr"><span class="pnum">1</span><h3>Cluster — assign chunks to experts</h3></div>
+<div class="panel">
+  <p style="font-size:13px">
+    Three methods, increasing in cost and decreasing in how much they need labelled data. All three are
+    testable against each other using the existing golden-set domains as ground truth for "did this
+    clustering recover the grouping a human would draw."
+  </p>
+  <div class="tablewrap" style="margin-top:10px">
+    <table>
+      <thead><tr><th>method</th><th>how</th><th>needs</th><th>fit here</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Domain heuristic</b></td>
+          <td>Reuse the golden set's existing <code>domain</code> field, mapped to channel_id. One expert
+            per domain.</td>
+          <td>Nothing new — the mapping already exists implicitly in the corpus.</td>
+          <td><span class="badge good">MVP</span> Free, immediately testable, and matches the "resume
+            expert" example exactly.</td>
+        </tr>
+        <tr>
+          <td><b>Embedding clustering</b></td>
+          <td>K-means or HDBSCAN over per-video summary embeddings (already computed and stored in
+            <span class="fileref">TranscriptSummaryStore</span>).</td>
+          <td>A cluster count or density parameter; no LLM calls.</td>
+          <td>Discovers experts the heuristic wouldn't think to draw (e.g. a "negotiation" expert that
+            spans career <i>and</i> property channels). Good ablation partner to the heuristic.</td>
+        </tr>
+        <tr>
+          <td><b>Graph community reuse</b></td>
+          <td>Read <code>index-graph</code>'s already-computed Leiden communities and roll them up to
+            video/channel level.</td>
+          <td>Requires <code>index-graph</code> to have run; entity-level, may be finer-grained than a
+            useful "expert."</td>
+          <td>Cheapest to try (zero new compute) but communities are topic-clusters within a domain, not
+            across it — needs a rollup rule, not a 1:1 mapping.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="phase-hdr"><span class="pnum">2</span><h3>Distill — synthesize a cluster into a knowledge card</h3></div>
+<div class="panel">
+  <p style="font-size:13px">
+    The knowledge card is the artifact this whole feature is actually about — the thing that lets an
+    expert answer without a live retrieval pass. It has to satisfy one hard constraint the rest of this
+    stack already lives by: <b>every claim traces to a source chunk.</b> A card that can't cite back to
+    <code>chunk_id</code>/<code>video_id</code> is a hallucination risk dressed up as an artifact, not a
+    distillation.
+  </p>
+  <h4 style="margin-top:14px">Proposed schema — <code>ExpertKnowledgeCard</code></h4>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>field</th><th>shape</th><th>modeled on</th></tr></thead>
+      <tbody>
+        <tr><td><code>expert_id</code></td><td>str</td><td>—</td></tr>
+        <tr><td><code>principles</code></td><td>list[{text, supporting_claim_ids, recency_weight}]</td><td><span class="fileref">GraphClaim</span> provenance pattern, plus recency (below)</td></tr>
+        <tr><td><code>playbook_sections</code></td><td>list[{heading, text, citations}]</td><td><span class="fileref">DocumentSection</span> from the doc-review feature — same "headed, citable chunk of synthesized text" shape</td></tr>
+        <tr><td><code>source_chunk_ids</code></td><td>list[str]</td><td>audit trail — the exact chunks the card was built from</td></tr>
+        <tr><td><code>source_video_count</code>, <code>source_chunk_count</code></td><td>int</td><td>the "how much material backs this" signal shown in the UI and used as an eval covariate</td></tr>
+        <tr><td><code>distilled_at</code>, <code>distilled_from_hash</code></td><td>str</td><td>versioning — same cache-invalidation idea as <span class="fileref">graph_extract.py</span>'s chunk-hash cache</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:12.5px; margin-top:10px">
+    Built the same way as community summaries: an LLM call per expert (not per chunk) over the cluster's
+    top claims/chunks, capped and de-duplicated the way <code>claims_per_summary</code> already caps
+    community summarization. Cached by a hash of the cluster's chunk-id set, so an unchanged cluster costs
+    nothing to re-run — the same rule <span class="fileref">graph_extract.py</span> and
+    <span class="fileref">matrix_cache.py</span> both already follow.
+  </p>
+
+  <h4 style="margin-top:18px">Recency-weighted salience</h4>
+  <p style="font-size:12.5px">
+    A claim's importance to the card isn't fixed at extraction time — it decays. Your own example is the
+    clearest case: a property-tax rule change is the single most important thing the expert can say the
+    month it airs, and unremarkable background context a year later, once every property channel has
+    covered it and the market has priced it in. A claim about interview-answer structure, by contrast,
+    barely decays at all. One decay rate for every claim would either bury the urgent update or keep a
+    stale one prominent indefinitely — both wrong.
+  </p>
+  <p style="font-size:12.5px">
+    This isn't new machinery to invent: every claim already carries <code>upload_date</code>
+    provenance (the same field the <code>temporal</code> GraphRAG route already reads to build a dated
+    claim timeline), so recency weighting is that same "date-as-signal" idea moved from the answer side
+    to the <i>distillation-ranking</i> side. Concretely, claim selection for a card becomes a function of
+    topical salience (today's rule: co-mention count within the cluster) <i>and</i> a recency decay term —
+    with the decay half-life set per <b>claim category</b>, not per expert: a "rule/rate/policy" claim
+    decays fast (weeks-to-months), a "principle/how-to" claim decays slowly or not at all. The category
+    label is a cheap addition to the existing extraction prompt, not a new pipeline stage.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>claim category</th><th>example</th><th>decay behavior</th></tr></thead>
+      <tbody>
+        <tr><td><code>rule_or_rate</code></td><td>"CGT discount changes from July 2027"</td><td>fast decay — high salience near <code>upload_date</code>, fades toward background once superseded or ~12 months out, whichever is sooner</td></tr>
+        <tr><td><code>principle</code></td><td>"lead your resume bullet with the outcome, not the task"</td><td>slow/no decay — recency contributes little; topical salience alone decides inclusion</td></tr>
+        <tr><td><code>market_observation</code></td><td>"listings in this suburb are moving fast right now"</td><td>fast decay, similar to <code>rule_or_rate</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:12.5px; margin-top:10px">
+    A superseded rule doesn't just fade quietly — a claim whose decay has pushed it out of the card is a
+    candidate for an explicit <i>correction</i> entry ("as of &lt;date&gt;, this changed from X to Y") when
+    a newer claim on the same entity contradicts it, so the card can say a rule changed instead of just
+    forgetting the old one ever existed.
+  </p>
+</div>
+
+<div class="phase-hdr"><span class="pnum">3</span><h3>Store — the expert profile</h3></div>
+<div class="panel">
+  <p style="font-size:13px">
+    A new <code>expert_profiles</code> collection (metadata store, not vector search) holding the card
+    above per expert, plus a new <code>expert_knowledge</code> Chroma collection embedding the card's
+    <code>playbook_sections</code> so a large card can still be retrieved from selectively — the same
+    "whole thing if it fits, ranked selection if it doesn't" rule
+    <span class="fileref">src/documents/review.py</span> already implements for reviewed documents. Reused
+    directly, not reinvented.
+  </p>
+
+  <h4 style="margin-top:18px">Visualizing one expert — a bounded two-tier star, not a raw chunk fan-out</h4>
+  <p style="font-size:12.5px">
+    An expert's provenance is exactly graphable — expert at the center, edges out to what built it — but
+    a direct expert→chunk star with hundreds of spokes (a career expert alone draws on 100+ chunks) would
+    render as an unreadable hairball at any node size. The card's own structure already gives the graph
+    its middle tier for free: <b>expert → <code>playbook_sections</code>/<code>principles</code> →
+    <code>source_chunk_ids</code></b>. Bounded fan-out at each level — an expert has a handful of sections,
+    each section cites a handful of chunks — collapsed by default and expanded on click, the same
+    disclosure pattern <span class="fileref">src/documents/review.py</span> already uses for document
+    sections.
+  </p>
+  <p style="font-size:12.5px">
+    Layout-wise, follow <span class="fileref">frontend/src/pipeline/ChunkGraphView.tsx</span>'s existing
+    precedent rather than reaching for a new dependency: a deterministic layout with no physics
+    simulation, so the same expert always draws the same picture (a fixed radial placement — sections
+    evenly spaced around the expert, each section's cited chunks arranged near it — computed the same way
+    the chunk scatter's PCA-to-viewBox affine map is today, just polar instead of cartesian). One more
+    admin-surface view alongside the existing chunk-space and knowledge-graph ones, not a new visualization
+    stack.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="variants">Variants to test — how an expert actually answers</h2>
+<p>
+  Four ways to answer <i>from</i> an expert, each a real RAG-technique tradeoff, each cheap to add as one
+  more setup-like config to the existing eval harness rather than a new engine:
+</p>
+<div class="voptions">
+  <div class="vcard">
+    <div class="vh"><b>A · Scoped retrieval</b><span class="badge plain">baseline</span></div>
+    <p>Today's <code>rag_llm</code>, retrieval narrowed to the expert's channel/video set. No distillation
+      at all — the expert is a <i>scope</i>, not a compiled artifact.</p>
+    <div class="vmeta"><span>new code: none</span><span>cost: same as today</span></div>
+  </div>
+  <div class="vcard">
+    <div class="vh"><b>B · Community-summary expert</b></div>
+    <p>Answer from the cluster's existing Leiden community summaries (the <code>global</code> GraphRAG
+      route, scoped to the expert's communities) instead of raw chunks.</p>
+    <div class="vmeta"><span>new code: rollup mapping only</span><span>cost: lower (fewer, denser tokens)</span></div>
+  </div>
+  <div class="vcard rec">
+    <div class="vh"><b>C · Distilled-card-first</b><span class="badge good">flagship</span></div>
+    <p>The knowledge card's <code>playbook_sections</code> are the primary context; raw chunk retrieval
+      only fires as a citation-grounding fallback for specific facts the card doesn't cover.</p>
+    <div class="vmeta"><span>new code: the distillation job</span><span>cost: lowest per-query</span></div>
+  </div>
+  <div class="vcard">
+    <div class="vh"><b>D · Card-in-system-prompt</b></div>
+    <p>The card's <code>principles</code> compiled directly into the persona's system prompt — no
+      retrieval call at all for a matched question. Fastest, but least grounded; a good "does removing
+      retrieval hurt more than distillation helps" control.</p>
+    <div class="vmeta"><span>new code: prompt assembly only</span><span>cost: near-zero retrieval latency</span></div>
+  </div>
+</div>
+<p style="font-size:12.5px; color:var(--muted)">
+  These compose with the existing retrieval-technique axis too — nothing stops variant A from also being
+  measured under hybrid+rerank vs semantic, exactly like <code>eval-ablation --sweep extended</code> does
+  today. Expert scope and retrieval technique are orthogonal axes in the same harness.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="router">The expert router</h2>
+<p>
+  The part that actually changes the product: today every question does the same live RAG. The target
+  behavior is <b>auto-routing with a manual override</b> — the app looks for a matching expert first, and
+  a persona picker stays available for when the user wants to force one (or force the general assistant).
+</p>
+<div class="mermaid-wrap">
+<pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant API as POST /api/ask
+  participant R as Expert router
+  participant E as Expert (card + fallback retrieval)
+  participant G as General corpus RAG (today's rag_llm/agent/graph)
+  U->>API: question (+ optional persona override)
+  alt persona explicitly selected
+    API->>E: answer as that expert
+  else no override — auto-route
+    API->>R: classify(question)
+    R-->>API: expert_id + confidence
+    alt confidence >= threshold
+      API->>E: answer as matched expert
+    else low confidence
+      API->>G: fall through — today's behavior, unchanged
+    end
+  end
+  E-->>U: answer, cited [P#] to the card + [#] to source chunks
+  G-->>U: answer, cited [#] as today
+</pre>
+</div>
+<p style="font-size:12.5px; color:var(--muted); margin-top:8px">
+  The classifier itself is not a new pattern: <code>GRAPH_ROUTER_SYSTEM_PROMPT</code> /
+  <span class="fileref">graph_agent.py</span> already does exactly this shape of call — classify one
+  question into a small closed set of routes before answering. Swap "local/global/temporal" for the
+  registered expert ids plus a <code>none</code> route, and the plumbing already exists as a template.
+</p>
+<div class="callout risk">
+  <b>Failure mode to design for, not discover in production:</b> a wrong-but-confident route is worse than
+  a fallback to general RAG, because it answers a career question with property expertise instead of just
+  answering less precisely. The confidence threshold is a real tuning knob, not a formality — it needs its
+  own eval (false-route rate on the golden set), not just "does routing work when it's obviously right."
+</div>
+
+<!-- ============================================================ -->
+<h2 id="eval">Evaluation — reusing the harness that already exists</h2>
+<p>
+  This is the part with the least new work relative to value: the golden set already has three labelled
+  domains that map 1:1 onto the first three experts. No new question authoring is needed to get a first
+  measurement.
+</p>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>question</th><th>metric</th><th>how (existing machinery)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Does scoping to an expert improve retrieval over whole-corpus?</td>
+        <td><code>recall@k</code>, <code>NDCG</code>, <code>context_recall</code></td>
+        <td><code>eval-ablation</code>'s deterministic IR metrics, run per-domain — the by-domain
+          breakdown already exists in <span class="fileref">src/evals/ablation.py</span>.</td>
+      </tr>
+      <tr>
+        <td>Does a distilled card answer as well as live multi-hop RAG?</td>
+        <td>RAGAS composite, <code>answer_correctness</code> vs the same reference answers</td>
+        <td><code>eval-matrix</code> with variants A–D from above as new setup-like rows, scored by the
+          same judge already wired.</td>
+      </tr>
+      <tr>
+        <td>What does distillation cost vs save?</td>
+        <td><code>avg_elapsed_seconds</code>, <code>avg_token_estimate</code></td>
+        <td>Already columns in the matrix comparison — the upfront distillation LLM bill vs the reduced
+          per-query bill is a real before/after, not a new metric to invent.</td>
+      </tr>
+      <tr>
+        <td>Does the expert get better as its cluster grows?</td>
+        <td>composite score at increasing <code>source_video_count</code></td>
+        <td><b>New</b>: re-run distillation on held-out-then-added video subsets of one domain (e.g.
+          career at 3, 6, 9 videos) and plot the same golden questions' scores — a genuine learning curve,
+          the strongest evidence for the "improves over time" claim.</td>
+      </tr>
+      <tr>
+        <td>Does the router send questions to the right expert?</td>
+        <td>routing accuracy, false-route rate</td>
+        <td><b>New, small</b>: label each existing golden question with its correct route (already implied
+          by its <code>domain</code> field) and score the classifier against it — near-zero extra
+          authoring.</td>
+      </tr>
+      <tr>
+        <td>Does recency-weighting stop a stale claim from outranking a superseded one?</td>
+        <td>answer_correctness on time-sensitive questions specifically</td>
+        <td><b>New</b>: the golden set already has a live test case —
+          <code>g013</code> ("how did property channels' stance on the budget's tax changes evolve"),
+          a temporal question over exactly the kind of claim that should decay. Score the card with and
+          without recency weighting on that question and its neighbors; a real regression test, not a
+          hypothetical.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div class="callout">
+  <b>Net new eval work is small.</b> One dimension (<code>scope</code>) added to the existing
+  setup × question matrix, one new golden-question field (route label, derivable from the domain that
+  already exists), and one new experiment shape (score-vs-cluster-size) that's a rerun of existing tooling
+  on subsets, not new tooling.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="roadmap">Phased roadmap</h2>
+<div class="seq">
+  <div class="n"><div class="idx">1</div><div>
+    <b>Retrieval-scoped experts (variant A) + domain-heuristic clustering</b>
+    <span class="badge good">zero new indexing</span><br>
+    <span class="why">Scope <code>MultiTranscriptRagContextProvider</code> to a channel set per domain;
+    add <code>eval-ablation</code>/<code>eval-matrix</code>'s new <code>scope</code> dimension; get the
+    first real number on "does scoping help" before building anything that costs an LLM call.</span>
+  </div></div>
+  <div class="n"><div class="idx">2</div><div>
+    <b>Distillation job (variants B–D)</b><br>
+    <span class="why"><code>src/experts/</code> package: <code>cluster.py</code>, <code>distill.py</code>,
+    <code>models.py</code>, <code>store.py</code> — mirrors the shape of <code>src/documents/</code>. New
+    <code>index-experts</code> CLI command, mirrors <code>index-graph</code>/<code>index-contextual</code>.
+    Run the full variant matrix from above.</span>
+  </div></div>
+  <div class="n"><div class="idx">3</div><div>
+    <b>Expert router</b><br>
+    <span class="why">Classifier call modeled on <code>GRAPH_ROUTER_SYSTEM_PROMPT</code>; wire into
+    <code>POST /api/ask</code> as a detect-and-branch step, same shape as the document-review URL
+    detection. Confidence threshold tuned against the routing-accuracy eval.</span>
+  </div></div>
+  <div class="n"><div class="idx">4</div><div>
+    <b>Full evaluation pass + cluster-size learning curve</b><br>
+    <span class="why">Run every variant × domain × question in the matrix; produce the score-vs-corpus-size
+    experiment. This is the artifact that proves (or disproves) the whole premise before it ships to the
+    chat UI.</span>
+  </div></div>
+  <div class="n"><div class="idx">5</div><div>
+    <b>Chat UI + productionization</b><br>
+    <span class="why">Persona selector (explicit override) + auto-routing (default), an admin surface to
+    trigger/inspect <code>index-experts</code> runs and view a card's provenance, staleness signal when a
+    domain's source corpus has grown since the last distillation. Deferred to this phase, not before:
+    feeding judged Q&amp;A history back into distillation.</span>
+  </div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="risks">Risks &amp; open questions</h2>
+<div class="grid2">
+  <div class="panel">
+    <h4>Small clusters</h4>
+    <p style="font-size:12.5px">The <code>career</code> domain has ~6 source videos today. A distilled
+      card built from that little material risks reading more authoritative than it is. A minimum
+      <code>source_video_count</code> gate before an expert is enabled — refusing to stand up an expert
+      that thin — should be a hard rule, not a suggestion.</p>
+  </div>
+  <div class="panel">
+    <h4>Multi-domain channels</h4>
+    <p style="font-size:12.5px">Some channels could plausibly serve two experts (a career channel that
+      also covers freelance-rate negotiation, say). Domain-heuristic clustering assumes one channel → one
+      expert; embedding clustering (or explicit multi-membership) needs a decision before it's a real
+      problem, not after.</p>
+  </div>
+</div>
+<div class="grid2" style="margin-top:16px">
+  <div class="panel">
+    <h4>Card staleness</h4>
+    <p style="font-size:12.5px">A card built once and never refreshed is a worse version of live RAG — it
+      goes stale exactly when the corpus grows, which is when it should be improving. The re-distillation
+      trigger (manual CLI at first, scheduled/threshold-based later) needs to be a real answer, not a
+      "later." Recency weighting (above) only ranks claims correctly <i>within</i> a build — it doesn't
+      substitute for actually re-running the build when new source video lands.</p>
+  </div>
+  <div class="panel">
+    <h4>Faithfulness of a second-hop summary</h4>
+    <p style="font-size:12.5px">A card is a summary of summaries in the worst case (variant D especially).
+      Every principle and playbook section must carry citation ids back to source chunks — enforced at
+      generation time (the prompt requires it, like the graph extraction prompt already does) and checked
+      at eval time (a citation that doesn't resolve to a real chunk id is a build failure, not a warning).</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="decisions">Decisions — queue your answers back</h2>
+<p style="font-size:12.5px; color:var(--muted)">
+  Four calls this plan needs before implementation starts. Pick an option and hit queue — nothing is sent
+  until you do.
+</p>
+
+<div class="decision" id="d1">
+  <div class="q">1 · Which clustering method should Phase 1 ship with?</div>
+  <div class="qsub">All three are testable later; this only decides which one gets the first real number.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'clustering', {
+    heuristic: 'the domain-heuristic mapping (zero new code, matches the golden set exactly)',
+    embedding: 'embedding clustering (K-means/HDBSCAN over per-video summaries) run first, heuristic used only to validate it',
+    both: 'both in parallel from day one, compared directly in the Phase-1 eval'
+  })">
+    <label class="opt"><input type="radio" name="clustering" value="heuristic" checked>
+      <span class="otext"><b>Domain heuristic first (recommended)</b><span>Free, ships immediately, and is the direct analog of the resume-expert example you gave.</span></span></label>
+    <label class="opt"><input type="radio" name="clustering" value="embedding">
+      <span class="otext"><b>Embedding clustering first</b><span>More interesting research question, but no ground truth to validate against on day one.</span></span></label>
+    <label class="opt"><input type="radio" name="clustering" value="both">
+      <span class="otext"><b>Both in parallel</b><span>More upfront work; buys an immediate "does automatic clustering recover the human grouping" result.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d2">
+  <div class="q">2 · Which distillation variant is the flagship to build first?</div>
+  <div class="qsub">Determines what Phase 2 actually produces before the full matrix comparison in Phase 4.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'flagship-variant', {
+    c: 'variant C, distilled-card-first with citation-grounding fallback',
+    b: 'variant B, community-summary expert (cheapest — reuses index-graph output directly)',
+    d: 'variant D, card compiled into the system prompt with no retrieval'
+  })">
+    <label class="opt"><input type="radio" name="flagship-variant" value="c" checked>
+      <span class="otext"><b>Variant C — distilled-card-first (recommended)</b><span>Best balance of grounding and cost; the one this plan calls the flagship.</span></span></label>
+    <label class="opt"><input type="radio" name="flagship-variant" value="b">
+      <span class="otext"><b>Variant B — community-summary expert</b><span>Cheapest to build (reuses index-graph output as-is) but least "distilled" — closest to what already exists.</span></span></label>
+    <label class="opt"><input type="radio" name="flagship-variant" value="d">
+      <span class="otext"><b>Variant D — card in the system prompt</b><span>Fastest at query time, weakest grounding; good as a comparison point but a risky default.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d3">
+  <div class="q">3 · Router UX: auto-route by default, or persona-picker by default?</div>
+  <div class="qsub">Your framing favored auto-routing ("better") — confirming before it becomes the default behavior of every chat message.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'router-ux', {
+    auto: 'auto-route by default, with an explicit persona override always available',
+    manual: 'persona picker is the default; auto-routing is an opt-in toggle',
+    'auto-only-mvp': 'ship persona-picker only for Phase 5 MVP, add auto-routing after the router-accuracy eval clears a bar'
+  })">
+    <label class="opt"><input type="radio" name="router-ux" value="auto" checked>
+      <span class="otext"><b>Auto-route by default (recommended, matches your framing)</b><span>Every question tries an expert first; override stays one click away.</span></span></label>
+    <label class="opt"><input type="radio" name="router-ux" value="manual">
+      <span class="otext"><b>Persona picker by default</b><span>Safer while the router is new — no answer changes behavior until the user opts in.</span></span></label>
+    <label class="opt"><input type="radio" name="router-ux" value="auto-only-mvp">
+      <span class="otext"><b>Picker first, auto-route once the eval clears a bar</b><span>Ship the safer thing, promote auto-routing to default only after Phase 4's routing-accuracy number is good.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d4">
+  <div class="q">4 · Should Phase 1 start now, or do you want changes to this plan first?</div>
+  <div class="qsub">Answering the three questions above is enough to start; flag anything you'd rather restructure before code.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'start', {
+    start: 'start Phase 1 now — clustering + scoped-retrieval expert + the new eval scope dimension',
+    revise: 'hold — I want to revise part of this plan first (annotate the section)'
+  })">
+    <label class="opt"><input type="radio" name="start" value="start" checked>
+      <span class="otext"><b>Start Phase 1 now</b><span>Zero-new-indexing scoped experts + the eval scope dimension.</span></span></label>
+    <label class="opt"><input type="radio" name="start" value="revise">
+      <span class="otext"><b>Hold — I want changes first</b><span>Select or annotate the section that needs to change before implementation starts.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0]*fa + bg[0]*ba*(1-fa)) / a,
+      (fg[1]*fa + bg[1]*ba*(1-fa)) / a,
+      (fg[2]*fa + bg[2]*ba*(1-fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBg = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBg = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0,0,0,0];
+    const [r,g,b,a] = compositeRgba(bodyBg, rootBg);
+    if (a > 0) return (0.2126*r + 0.7152*g + 0.0722*b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (!rendering) void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (e) { console.error("Mermaid render failed:", e); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener("transitionend", ({ propertyName }) => { if (propertyName === "background-color") queueRender(); }, true);
+  darkQuery.addEventListener("change", queueRender);
+</script>
+
+<script>
+  function submitDecision(form, question, labels) {
+    const data = new FormData(form);
+    const answer = data.get(question);
+    const prompt = 'Decision — ' + question + ': ' + labels[answer];
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt(prompt, {
+        tag: 'decision',
+        text: question + ': ' + answer,
+        element: form,
+        queueKey: question,
+        data: { question, answer }
+      });
+      form.closest('.decision').classList.add('is-queued');
+      const note = form.querySelector('.queue-note');
+      if (note) note.textContent = 'queued — will send with the rest';
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+</script>
+
+</body>
+</html>
