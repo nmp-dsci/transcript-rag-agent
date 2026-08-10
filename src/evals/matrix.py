@@ -28,7 +28,14 @@ from typing import Any, Callable
 
 from src.config import Settings
 from src.evals.golden import GoldenEntry, load_golden
-from src.evals.matrix_cache import DEFAULT_CACHE_DIR, cell_fingerprint, load_cell, save_cell
+from src.evals.judge import DEPTH_METRIC_NAMES
+from src.evals.matrix_cache import (
+    DEFAULT_CACHE_DIR,
+    cell_fingerprint,
+    corpus_digest_for,
+    load_cell,
+    save_cell,
+)
 from src.evals.regression import run_golden_eval
 
 #: Every comparable setup, because the Scoreboard ranks the *newest* committed
@@ -42,15 +49,20 @@ DEFAULT_MATRIX_SETUPS = [
     "graph_rag",
     "rag_llm_hyde",
     "rag_llm_contextual",
+    "rag_llm_filtered",
 ]
 
 #: The pivot rows. A subset of QUALITY_METRICS plus the ops columns — the
 #: matrix is a comparison surface, so it shows the metrics that differ by
 #: engine, not every raw number (the per-setup runs keep those).
+#: The depth metrics only exist on a run rejudged under ``depth-v2``; on every
+#: other run they are simply absent and drop out of the pivot, so listing them
+#: here costs a ragas-v1 run nothing.
 MATRIX_METRICS = [
     "faithfulness",
     "answer_relevancy",
     "context_precision",
+    *DEPTH_METRIC_NAMES,
     "answer_correctness",
     "answer_similarity",
     "llm_context_recall",
@@ -138,7 +150,13 @@ def run_matrix(
     cache_misses = 0
     cells_done = 0
     cells_total = len(setups) * len(entries)
+    # Once per run, not once per cell: it is one bulk metadata read, and every
+    # cell in this run retrieves from the same corpus by definition.
+    corpus = corpus_digest_for(runner.provider.chunk_store)
     config = config_snapshot(settings, top_k=top_k, judge=judge, ragas_version=ragas_version_str)
+    # Recorded, not merely hashed: a reader comparing two committed runs needs to
+    # see that the corpus moved, and a digest in the config is what says so.
+    config["corpus"] = corpus
 
     def report_cell(setup: str, entry_id: str, cached: bool) -> None:
         if on_cell is not None:
@@ -166,6 +184,7 @@ def run_matrix(
                 judge_samples=judge_samples,
                 ragas_version=ragas_version_str,
                 reference_scored=reference_fns is not None,
+                corpus=corpus,
             )
             cached = None if refresh else load_cell(fingerprint, cache_dir)
             if cached is not None:
@@ -199,7 +218,7 @@ def run_matrix(
             "setup": setup,
             "config": config,
             "entries": entry_results,
-            "summary": _summarize_dicts(entry_results),
+            "summary": summarize_cells(entry_results),
         }
 
     return {
@@ -224,7 +243,7 @@ def run_matrix(
     }
 
 
-def _summarize_dicts(entry_dicts: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_cells(entry_dicts: list[dict[str, Any]]) -> dict[str, Any]:
     """:func:`~src.evals.regression.summarize`, from the plain dicts a cached
     or freshly-scored cell is stored as, rather than ``EntryResult`` objects."""
     from src.evals.regression import EntryResult, summarize
