@@ -87,6 +87,15 @@ class Settings:
     # deleting either only costs the calls to regenerate it.
     query_cache_dir: Path | None = None
     context_cache_dir: Path | None = None
+    # RAPTOR level 2: the cross-video theme layer, written by `index-themes`.
+    # A single derived JSON artifact — deleting it only costs the clustering
+    # (free) plus one LLM call per theme to rebuild.
+    theme_path: Path = Path(".yt-agent/themes.json")
+    # The disagreement layer, written by `index-conflicts`. Also derived, but
+    # unlike the theme artifact it is rebuilt from the *cached* GraphRAG claim
+    # extractions plus one adjudication call per candidate pair — deleting it
+    # costs those calls and nothing else.
+    conflict_path: Path = Path(".yt-agent/conflicts.json")
 
 
 def _project_root() -> Path:
@@ -257,5 +266,11 @@ def load_settings(require_keys: bool = True) -> Settings:
         ),
         context_cache_dir=_resolve_project_path(
             os.environ.get("YT_AGENT_CONTEXT_CACHE_PATH", ".yt-agent/context_cache")
+        ),
+        theme_path=_resolve_project_path(
+            os.environ.get("YT_AGENT_THEME_PATH", ".yt-agent/themes.json")
+        ),
+        conflict_path=_resolve_project_path(
+            os.environ.get("YT_AGENT_CONFLICT_PATH", ".yt-agent/conflicts.json")
         ),
     )

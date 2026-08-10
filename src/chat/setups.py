@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 
 from src.agents.models import (
@@ -53,6 +53,13 @@ class SetupSpec:
     query_transform: str | None = None
     #: Retrieve from the Contextual Retrieval index instead of the baseline one.
     contextual: bool = False
+    #: Route the question to whole videos by per-video summary before any chunk
+    #: is searched (see :meth:`TranscriptSummaryStore.query_relevant_transcripts`).
+    #: Unlike the two axes above this is a *request* setting, not a different
+    #: stack — which is why it does not appear in ``retrieval`` below: the
+    #: filtered setup shares the baseline's provider, models and index, and
+    #: differs only in the videos that provider is allowed to search.
+    filter_transcripts: bool = False
 
     @property
     def retrieval(self) -> str:
@@ -117,6 +124,16 @@ SETUP_SPECS: list[SetupSpec] = [
         ),
         contextual=True,
     ),
+    SetupSpec(
+        key="rag_llm_filtered",
+        title="rag_llm (summary-filtered)",
+        description=(
+            "Single-hop, but the question is routed to whole videos by their "
+            "per-video summary first and only those videos' chunks are "
+            "searched — the corpus-side half of the retrieval lab."
+        ),
+        filter_transcripts=True,
+    ),
 ]
 
 SETUP_KEYS: list[str] = [spec.key for spec in SETUP_SPECS]
@@ -145,6 +162,15 @@ class AskScope:
     # Unlike the fields above it does not narrow retrieval — it changes what
     # the answer is *about*, which is why only the single-hop path accepts it.
     document_context: str | None = None
+    # Overrides what the corpus is searched with, leaving the answering prompt
+    # on the user's own wording. Set alongside ``document_context`` so the URL
+    # in "review https://... for me" is not what gets embedded.
+    retrieval_query: str | None = None
+    # Set when the corpus may hold no criteria for what is being reviewed. It
+    # becomes the first step of the trace, because retrieval will return its ten
+    # best chunks either way and nothing else in the trace distinguishes "these
+    # are the criteria" from "these are the closest thing the corpus has".
+    coverage_warning: str | None = None
 
 
 @dataclass
@@ -224,6 +250,7 @@ def command_for(key: str, url: str | None = None) -> str:
         "graph_rag": "--graph_rag",
         "rag_llm_hyde": "--rag_llm --query-transform hyde",
         "rag_llm_contextual": "--rag_llm --contextual",
+        "rag_llm_filtered": "--rag_llm --filter-transcripts",
     }[key]
     return f'uv run python -m src.cli rag-ask "$question" {flags}{url_flag}'
 
@@ -423,7 +450,7 @@ class RagSetupRunner:
         """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
-        scope = scope or AskScope()
+        scope = _scope_for(spec, scope)
         model = self._settings.deepseek_model
         started = time.monotonic()
         # Bound before the call that can raise, so the failure path can persist
@@ -537,6 +564,7 @@ class RagSetupRunner:
             transcript_filter_min_score=self._settings.transcript_filter_min_score,
             history=list(scope.history),
             document_context=scope.document_context,
+            retrieval_query=scope.retrieval_query,
             **extra,
         )
 
@@ -615,8 +643,49 @@ class RagSetupRunner:
             channel_id=scope.channel_id,
             retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
             followups=_followups_to_dicts(getattr(answer, "subtopics", [])),
-            trace=[step.model_dump(mode="json") for step in (trace or [])],
+            trace=[step.model_dump(mode="json") for step in _with_coverage(trace, scope)],
         )
+
+
+def _scope_for(spec: SetupSpec, scope: "AskScope | None") -> "AskScope":
+    """The scope one setup answers under: the caller's, plus what the setup *is*.
+
+    A setup declares its retrieval configuration and the runner is what applies
+    it — otherwise ``filter_transcripts`` is a capability that exists on every
+    layer of the request path and is switched on by nothing, which is what it
+    was until this setup existed. The caller's own scope is never overridden
+    downwards: asking for the filter and running a setup that is defined by it
+    are the same request.
+    """
+    scope = scope or AskScope()
+    if spec.filter_transcripts and not scope.filter_transcripts:
+        return replace(scope, filter_transcripts=True)
+    return scope
+
+
+def _with_coverage(trace: list | None, scope: "AskScope") -> list:
+    """The trace, led by a coverage warning when the scope carries one.
+
+    First rather than last: it qualifies every retrieval step below it, and a
+    caveat printed after the evidence has already been read is not a caveat.
+
+    The warning itself goes in ``note``, not ``detail``: the trace row clips at
+    roughly a quarter of it, and the quarter that survives is the half that
+    says there is a problem rather than the half that says what to do about it.
+    ``detail`` keeps a summary short enough to survive the clipping.
+    """
+    steps = list(trace or [])
+    if not scope.coverage_warning:
+        return steps
+    return [
+        TraceStep(
+            phase="route",
+            label="Corpus coverage",
+            detail="the corpus may hold no criteria for this document",
+            note=scope.coverage_warning,
+        ),
+        *steps,
+    ]
 
 
 def _clear_per_answer_state(agent: Any) -> None:

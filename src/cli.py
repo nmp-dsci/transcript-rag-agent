@@ -50,6 +50,7 @@ from src.rag.ingestion import (
     start_ingestion_run,
     write_ingestion_run,
 )
+from src.rag.packs import PACK_ARMS
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
 from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
 from src.transcripts.discovery import (
@@ -164,6 +165,46 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    critique = subparsers.add_parser(
+        "eval-critique",
+        help=(
+            "Held-out critique eval: hold one expert's video out of every retrieval "
+            "path, review a document with the rest of the corpus, and score how many "
+            "of that expert's criteria the system reached without having seen them"
+        ),
+    )
+    critique.add_argument(
+        "--setups",
+        default=None,
+        help=(
+            "Comma-separated setup keys to measure, baseline first "
+            "(default: rag_llm_filtered, the summary-filtered chunk dump)"
+        ),
+    )
+    critique.add_argument(
+        "--rescore",
+        default=None,
+        metavar="RUN_ID",
+        help=(
+            "Re-score a committed run's stored findings under the current scorer "
+            "instead of retrieving and critiquing again. Use when the scoring rule "
+            "changed and the old number is no longer comparable — re-running the "
+            "whole thing would change the findings too, so the two effects could "
+            "not be told apart"
+        ),
+    )
+    critique.add_argument(
+        "--repeats",
+        type=int,
+        default=None,
+        help=(
+            "Matcher repeats resolved by per-criterion majority vote. The matcher "
+            "does not agree with itself run to run, so the score is a vote and the "
+            "run reports the spread (default: 5). Pairings are cached, so a re-run "
+            "over an unchanged matrix is free and returns the identical number"
+        ),
+    )
+
     matrix = subparsers.add_parser(
         "eval-matrix",
         help=(
@@ -219,6 +260,42 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    rejudge = subparsers.add_parser(
+        "rejudge",
+        help=(
+            "Re-score a committed matrix run under a different rubric, reusing "
+            "its stored answers and grounding scores (only the new metrics are "
+            "judged), and commit the result as a second run"
+        ),
+    )
+    rejudge.add_argument(
+        "--run",
+        required=True,
+        help="Run id (or path) of the committed matrix-*.json to re-score",
+    )
+    rejudge.add_argument(
+        "--rubric",
+        default="depth-v2",
+        choices=["depth-v2"],
+        help=(
+            "Rubric to score under. depth-v2 keeps grounding at 40%% of the "
+            "composite and adds five LLM-judged depth metrics at 60%%, capped "
+            "at 0.5 when faithfulness < 0.6"
+        ),
+    )
+    rejudge.add_argument(
+        "--max-workers",
+        type=int,
+        default=4,
+        help=(
+            "Concurrent depth-judge calls (default: 4). One call per answer. "
+            "Measured, not guessed: 4 workers cleared 80 cells cleanly, while "
+            "6-8 way concurrency against this endpoint collapsed to no "
+            "completions at all for ~15 minutes. Raise it only if you have "
+            "measured your own provider"
+        ),
+    )
+
     index_graph = subparsers.add_parser(
         "index-graph",
         help=(
@@ -262,6 +339,85 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=8,
         help="Concurrent situating calls (default: 8)",
+    )
+
+    index_themes = subparsers.add_parser(
+        "index-themes",
+        help=(
+            "Build the cross-video theme layer (RAPTOR level 2): cluster the "
+            "stored chunk embeddings across every video, then one LLM call per "
+            "cluster. Reads the corpus; writes only the theme artifact"
+        ),
+    )
+    index_themes.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Cluster and report the numbers only — no LLM calls, nothing written",
+    )
+    index_themes.add_argument(
+        "--excerpts",
+        type=int,
+        default=12,
+        help="Excerpts per theme handed to the summarizer (default: 12)",
+    )
+
+    index_conflicts = subparsers.add_parser(
+        "index-conflicts",
+        help=(
+            "Build the disagreement layer: pair claims from different creators "
+            "about the same thing, ask of each pair whether one person could "
+            "hold both views, and keep only those where they could not. Reads "
+            "the corpus and the cached graph extractions; writes only the "
+            "conflict artifact"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Generate and report candidate pairs only — no adjudication calls, "
+            "nothing written. Candidate generation is deterministic, so this "
+            "settles the search half of the layer for free"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--probes-only",
+        action="store_true",
+        help=(
+            "Run the calibration probes against the live adjudicator and stop. "
+            "Five pairs, two planted contradictions and three complementary, so "
+            "an adjudicator that calls everything a conflict is caught before "
+            "the corpus sweep is paid for"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--probe-repeats",
+        type=int,
+        default=1,
+        help=(
+            "Times each probe is put to the adjudicator. The adjudicator does "
+            "not have to agree with itself, so >1 turns a tick into a rate "
+            "(default: 1)"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--max-candidates",
+        type=int,
+        default=None,
+        help=(
+            "Adjudication budget, highest-similarity pairs first. Raising it "
+            "cannot raise conflict_precision — that is conflicts over pairs "
+            "adjudicated (default: 240)"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--allow-within-creator",
+        action="store_true",
+        help=(
+            "Also adjudicate pairs of videos by the same creator. Off by "
+            "default: one person qualifying themselves is not a corpus "
+            "disagreement"
+        ),
     )
 
     subparsers.add_parser(
@@ -371,6 +527,73 @@ def build_parser() -> argparse.ArgumentParser:
             "Max ReAct loop iterations for --rag_agent mode "
             "(default: YT_AGENT_RAG_AGENT_MAX_ITERATIONS or 10)."
         ),
+    )
+
+    build_packs = subparsers.add_parser(
+        "build-packs",
+        help=(
+            "Build the declared rubric packs (experts/packs.json) three ways — "
+            "raptor-only, communities-only and merged — routing each pack's "
+            "membership through the summary index. Reads the corpus; writes "
+            "only under experts/"
+        ),
+    )
+    build_packs.add_argument(
+        "--topic",
+        action="append",
+        default=None,
+        help="Only this pack (repeatable). Default: every declared pack.",
+    )
+    build_packs.add_argument(
+        "--arm",
+        action="append",
+        choices=list(PACK_ARMS),
+        default=None,
+        help="Only this arm (repeatable). Default: all three.",
+    )
+    build_packs.add_argument(
+        "--units",
+        type=int,
+        default=8,
+        help=(
+            "Source units per arm, capped to the smaller pool so every arm "
+            "spends the same number of LLM calls (default: 8)"
+        ),
+    )
+    build_packs.add_argument(
+        "--ship",
+        default="merged",
+        help=(
+            "Which arm to copy to experts/<topic>/pack.json, the one the app "
+            "renders (default: merged)"
+        ),
+    )
+    build_packs.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Route and assemble units only — no LLM calls, nothing written",
+    )
+
+    score_packs = subparsers.add_parser(
+        "score-packs",
+        help=(
+            "D2: score a pack's three arms on the held-out critique harness and "
+            "write experts/ablation.json"
+        ),
+    )
+    score_packs.add_argument(
+        "--topic",
+        default="resume-design",
+        help=(
+            "Pack to score. Only a pack whose artifact the held-out expert "
+            "reviews can be scored (default: resume-design)"
+        ),
+    )
+    score_packs.add_argument(
+        "--repeats",
+        type=int,
+        default=5,
+        help="Matcher repeats resolved by per-criterion vote (default: 5)",
     )
 
     return parser
@@ -510,6 +733,22 @@ def _run_eval_matrix(args, settings) -> int:
             )
             return 1
 
+    if "rag_llm_filtered" in setups:
+        # The filter routes on per-video summaries; with none stored every
+        # question raises "no transcript summaries matched" and the whole
+        # column comes back as errors rather than as a comparison.
+        summary_store = _build_summary_store(
+            settings, HuggingFaceEmbeddingModel(settings.embedding_model), raw_store=None
+        )
+        if summary_store.collection.count() == 0:
+            print(
+                "No transcript summaries are stored, so rag_llm_filtered has "
+                "nothing to route on. Run `uv run python -m src.cli index-rag` "
+                "over the corpus first (or pass --setups to exclude it).",
+                file=sys.stderr,
+            )
+            return 1
+
     runner = RagSetupRunner.from_settings(settings)
     judge = None if args.no_judge else RagasJudge.from_settings(settings)
     reference_fns = None if args.no_reference_metrics else answer_correctness_fns(settings)
@@ -527,6 +766,44 @@ def _run_eval_matrix(args, settings) -> int:
     path = save_run(result)
     print(f"\n{result['run_id']} — {result['entry_count']} questions × {len(setups)} setups")
     print(f"question types: {result['question_types']}\n")
+    print(format_matrix_table(result))
+    print(f"\nsaved {path}")
+    return 0
+
+
+def _run_rejudge(args, settings) -> int:
+    """Re-score one committed matrix run under a second rubric."""
+    from src.evals.judge import RUBRICS, DepthJudge
+    from src.evals.matrix import format_matrix_table
+    from src.evals.regression import save_run
+    from src.evals.rejudge import chunk_context_lookup, find_run, rejudge_run
+
+    rubric = RUBRICS[args.rubric]
+    try:
+        source = find_run(args.run)
+    except (FileNotFoundError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    judge = DepthJudge.from_settings(settings)
+    result = rejudge_run(
+        source,
+        depth_fn=judge.score,
+        contexts_fn=chunk_context_lookup(settings),
+        rubric=rubric,
+        judge_model=judge.judge_model,
+        on_progress=print,
+        max_workers=args.max_workers,
+    )
+    path = save_run(result)
+    capped = sum(
+        1 for run in result["runs"].values() for cell in run["entries"] if cell.get("cap_applied")
+    )
+    print(
+        f"\n{result['run_id']} — {rubric.version} over {result['entry_count']} "
+        f"questions × {len(result['setups'])} setups "
+        f"(rejudged from {result['rejudged_from']}, {capped} cell(s) capped)\n"
+    )
     print(format_matrix_table(result))
     print(f"\nsaved {path}")
     return 0
@@ -572,6 +849,290 @@ def _run_index_graph(args, settings) -> int:
         print("\nFailed chunks:")
         for chunk_id, error in stats["failed_details"]:
             print(f"  {chunk_id}: {error}")
+    return 0
+
+
+def _run_index_themes(args, settings) -> int:
+    """Build RAPTOR level 2: cluster chunk embeddings, then summarize each cluster.
+
+    Clustering reads the vectors already in Chroma, so it costs nothing and can
+    be checked with ``--dry-run`` before any LLM call is made — the gate
+    numbers (how many themes span more than one video) are settled by the
+    clustering alone.
+    """
+    from langchain_openai import ChatOpenAI
+
+    from src.agents.llm import chat_model_kwargs
+    from src.api.corpus import load_chunk_embeddings
+    from src.rag.themes import ThemeStore, ThemeSummarizer, build_themes
+
+    records = load_chunk_embeddings(settings.chroma_path, settings.chunk_collection)
+    if not records:
+        print("No chunk embeddings found. Run index-rag / bulk-index first.", file=sys.stderr)
+        return 1
+
+    summarizer = (
+        None
+        if args.dry_run
+        else ThemeSummarizer(
+            ChatOpenAI(**chat_model_kwargs(settings)),
+            model_name=settings.deepseek_model,
+        )
+    )
+    index = build_themes(
+        records,
+        summarizer,
+        embedding_model=settings.embedding_model,
+        chunk_collection=settings.chunk_collection,
+        excerpts_per_theme=args.excerpts,
+        on_progress=print,
+    )
+
+    stats = index.stats
+    print("\nTheme layer built")
+    print(f"  Themes:        {stats['themes']}")
+    print(f"  Cross-video:   {stats['cross_video_themes']} (spanning 2+ videos)")
+    print(f"  Single-video:  {stats['single_video_themes']}")
+    print(f"  Videos:        {stats['videos_covered']} covered, {stats['chunks_clustered']} chunks")
+    print(f"  Videos/theme:  {stats['video_count_distribution']}")
+    print(
+        "  Purity:        max property share in a job-search theme "
+        f"{stats['max_property_share_in_job_search_theme']:.0%}"
+    )
+    if args.dry_run:
+        print("\nDry run — nothing written.")
+        return 0
+    path = ThemeStore(settings.theme_path).save(index)
+    print(f"  Written:       {path}")
+    return 0
+
+
+def _run_index_conflicts(args, settings) -> int:
+    """Build the disagreement layer: candidates from claims, then one call each.
+
+    Claims come from the **cached** GraphRAG extractions rather than from Neo4j,
+    for two reasons. The cache is keyed on chunk id plus a hash of the chunk
+    text, so it is exactly as current as the graph and cannot silently serve a
+    claim for transcript that has since been re-chunked; and it needs no
+    container, so this layer rebuilds on a machine where the graph is down. A
+    chunk with no cached extraction contributes no claims and is reported, not
+    guessed at.
+    """
+    from src.rag.conflicts import (
+        ConflictConfig,
+        ConflictStore,
+        LlmAdjudicator,
+        build_conflicts,
+        candidate_pairs,
+        claims_from_chunks,
+        probes_passed,
+        run_probes,
+    )
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.graph_extract import extraction_cache_key
+    from src.rag.graph_models import ChunkExtraction
+    from src.rag.storage import TranscriptChunkStore
+
+    embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+    adjudicator = LlmAdjudicator(
+        ChatOpenAI(**chat_model_kwargs(settings)),
+        model_name=settings.deepseek_model,
+    )
+
+    if args.probes_only:
+        results = run_probes(adjudicator, repeats=max(1, args.probe_repeats))
+        for row in results:
+            mark = "pass" if row["passed"] else "FAIL"
+            print(f"  [{mark}] {row['probe_id']}: expected {row['expect']}, got {row['verdicts']}")
+            if row["axis"]:
+                print(f"         axis: {row['axis']}")
+        print(f"\nProbes: {sum(1 for r in results if r['passed'])}/{len(results)} passed")
+        return 0 if probes_passed(results) else 1
+
+    cache_dir = settings.graph_cache_dir
+    if cache_dir is None or not cache_dir.is_dir():
+        print(
+            "No graph extraction cache found. Run index-graph first.",
+            file=sys.stderr,
+        )
+        return 1
+
+    chunks = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embedding_model,
+        collection_name=settings.chunk_collection,
+    ).all_chunks()
+    if not chunks:
+        print("No chunks found. Run index-rag / bulk-index first.", file=sys.stderr)
+        return 1
+
+    missing = 0
+
+    def claim_texts(chunk) -> list[str]:
+        nonlocal missing
+        path = cache_dir / f"{extraction_cache_key(chunk)}.json"
+        if not path.exists():
+            missing += 1
+            return []
+        try:
+            extraction = ChunkExtraction.model_validate_json(path.read_text(encoding="utf-8"))
+        except ValueError:
+            missing += 1
+            return []
+        return [claim.text for claim in extraction.claims]
+
+    claims = claims_from_chunks(chunks, claim_texts)
+    print(
+        f"{len(chunks)} chunks, {len(claims)} claims ({missing} chunks with no cached extraction)"
+    )
+
+    config = ConflictConfig(
+        cross_creator_only=not args.allow_within_creator,
+        **({"max_candidates": args.max_candidates} if args.max_candidates else {}),
+    )
+
+    if args.dry_run:
+        pairs = candidate_pairs(claims, embedding_model.embed_documents, config)
+        print(f"\n{len(pairs)} candidate chunk pairs (deterministic; no calls made)")
+        for pair in pairs[:20]:
+            print(
+                f"  {pair.similarity:.3f}  {pair.left.channel_name} vs {pair.right.channel_name}\n"
+                f"         A: {pair.left.text[:110]}\n"
+                f"         B: {pair.right.text[:110]}"
+            )
+        print("\nDry run — nothing written.")
+        return 0
+
+    index = build_conflicts(
+        claims,
+        embedding_model.embed_documents,
+        adjudicator,
+        config=config,
+        embedding_model=settings.embedding_model,
+        adjudicator_model=settings.deepseek_model,
+        chunk_collection=settings.chunk_collection,
+        probe_repeats=max(1, args.probe_repeats),
+        on_progress=print,
+    )
+
+    stats = index.stats
+    print("\nDisagreement layer built")
+    print(
+        f"  Conflicts:     {stats['conflicts']} ({stats['cross_creator_conflicts']} cross-creator)"
+    )
+    print(f"  Adjudicated:   {stats['candidates_adjudicated']} candidate pairs")
+    print(f"  Precision:     {stats['conflict_precision']} (conflicts / pairs adjudicated)")
+    print(f"  Creators:      {stats['creators_involved']} across {stats['videos_involved']} videos")
+    print(f"  Rejected:      {stats['rejected']}")
+    print(f"  Probes passed: {stats['probes_passed']}")
+    if not stats["probes_passed"]:
+        print(
+            "\n  The adjudicator failed its own calibration. The conflicts above "
+            "are not trustworthy — see the probes in the artifact.",
+            file=sys.stderr,
+        )
+    path = ConflictStore(settings.conflict_path).save(index)
+    print(f"  Written:       {path}")
+    return 0
+
+
+def _run_build_packs(args, settings) -> int:
+    """Build every declared rubric pack, three ways, from one shared workspace.
+
+    A dry run stops after routing and unit assembly: membership, the two unit
+    pools and the shared budget are all deterministic and cost nothing, so they
+    are worth reading before any LLM call is paid for — and a pack whose
+    membership is wrong is a pack whose rubrics cannot be right.
+    """
+    from src.rag.pack_build import build_all, open_workspace, route_members, shared_budget
+    from src.rag.packs import (
+        PackStore,
+        community_units,
+        included_video_ids,
+        raptor_units,
+    )
+
+    store = PackStore("experts")
+    catalog = store.catalog()
+    print(f"Blocked from every pack: {', '.join(catalog.blocked())}")
+
+    if args.dry_run:
+        workspace = open_workspace(settings, catalog, with_model=False)
+        provenance = workspace.provenance()
+        print(
+            f"corpus {provenance.corpus_digest} — {provenance.chunk_count} chunks, "
+            f"{provenance.video_count} videos, {provenance.theme_count} themes, "
+            f"{provenance.graph_extractions} extractions"
+        )
+        for declaration in catalog.packs:
+            if args.topic and declaration.topic not in args.topic:
+                continue
+            members = route_members(workspace, declaration, store.overrides(declaration.topic))
+            videos = included_video_ids(members)
+            raptor = raptor_units(workspace.themes, videos)
+            communities = community_units(workspace.extractions, videos)
+            print(
+                f"\n{declaration.topic}: {len(videos)} videos · "
+                f"raptor {len(raptor)} units · communities {len(communities)} units · "
+                f"budget {shared_budget(args.units, raptor, communities)}"
+            )
+            for member in members:
+                mark = "+" if member.included else "-"
+                print(
+                    f"  {mark} {member.score:.3f} {member.video_id:<13} "
+                    f"{(member.channel_name or '?')[:28]:<30} {(member.title or '')[:52]}"
+                )
+        return 0
+
+    built = build_all(
+        settings,
+        topics=args.topic,
+        arms=args.arm or PACK_ARMS,
+        budget=args.units,
+        on_progress=print,
+    )
+    print("\nPacks built")
+    for topic, arms in built.items():
+        for arm, pack in arms.items():
+            stats = pack.stats
+            print(
+                f"  {topic:<18} {arm:<12} {stats['rubrics']:>3} rubrics · "
+                f"{stats['citations']:>3} citations · "
+                f"{stats['multi_creator_share']:.0%} multi-creator · "
+                f"{stats['gaps']} gaps · "
+                f"{stats['excluded_video_citations']} excluded-video citations"
+            )
+        shipped = arms.get(args.ship) or next(iter(arms.values()))
+        path = store.save_pack(shipped, shipped=True)
+        print(f"  {topic:<18} shipped {shipped.arm} → {path}")
+    return 0
+
+
+def _run_score_packs(args, settings) -> int:
+    """D2: score one pack's three arms on the held-out critique harness."""
+    from src.api.corpus import load_chunk_embeddings
+    from src.evals.critique import format_table
+    from src.evals.pack_ablation import run_pack_ablation
+    from src.rag.packs import PackStore
+
+    records = load_chunk_embeddings(settings.chroma_path, settings.chunk_collection)
+    run = run_pack_ablation(
+        settings,
+        topic=args.topic,
+        repeats=args.repeats,
+        records=records,
+        on_progress=print,
+    )
+    print()
+    print(format_table(run))
+    for metric, verdict in run["verdicts"].items():
+        print(
+            f"  {metric}: {verdict.get('leader')} leads "
+            f"({'decisive' if verdict.get('decisive') else 'inside the scorer noise'}) "
+            f"— {verdict.get('reason')}"
+        )
+    path = PackStore("experts").save_ablation(run)
+    print(f"\nsaved {path}")
     return 0
 
 
@@ -686,6 +1247,62 @@ def _run_eval_ablation(args, settings) -> int:
     return 0
 
 
+def _run_eval_critique(args, settings) -> int:
+    """Measure whether the corpus reaches a held-out expert's criteria.
+
+    Costs two LLM calls per setup plus the matcher's repeats — no RAGAS judge
+    runs, because three of the four metrics are string and id arithmetic and the
+    fourth is a cached vote. That is what makes it cheap enough for a later slice
+    to re-run rather than cite this one's number.
+    """
+    from src.evals.critique import DEFAULT_MATCH_REPEATS, format_table
+    from src.evals.critique_run import run_default_critique_eval
+    from src.evals.regression import save_run
+
+    repeats = args.repeats or DEFAULT_MATCH_REPEATS
+    if args.rescore:
+        import json
+
+        from src.evals.critique import load_critique_dataset
+        from src.evals.critique_run import (
+            cached_matcher,
+            chunk_text_lookup,
+            llm_matcher,
+            repeated_matcher,
+            rescore_committed_run,
+        )
+        from src.evals.regression import DEFAULT_RUNS_DIR
+
+        source = json.loads((DEFAULT_RUNS_DIR / f"{args.rescore}.json").read_text(encoding="utf-8"))
+        result = rescore_committed_run(
+            source,
+            load_critique_dataset(),
+            cached_matcher(
+                repeated_matcher(llm_matcher(settings), repeats=repeats), repeats=repeats
+            ),
+            chunk_text_lookup(settings),
+            config={"match_repeats": repeats},
+        )
+        path = save_run(result)
+        print(f"\n{result['run_id']} — rescored from {args.rescore}\n")
+        print(format_table(result))
+        print(f"\nsaved {path}")
+        return 0
+
+    setups = [s.strip() for s in (args.setups or "").split(",") if s.strip()] or None
+    result = run_default_critique_eval(
+        settings,
+        setups=setups,
+        repeats=repeats,
+        on_progress=print,
+    )
+    path = save_run(result)
+    print(f"\n{result['run_id']} — held out {result['held_out_video_id']}\n")
+    print(format_table(result))
+    print(f"\nsaved {path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -709,10 +1326,22 @@ def main(argv: list[str] | None = None) -> int:
             return _run_eval_ablation(args, settings)
         if args.command == "eval-matrix":
             return _run_eval_matrix(args, settings)
+        if args.command == "eval-critique":
+            return _run_eval_critique(args, settings)
+        if args.command == "rejudge":
+            return _run_rejudge(args, settings)
         if args.command == "index-graph":
             return _run_index_graph(args, settings)
         if args.command == "index-contextual":
             return _run_index_contextual(args, settings)
+        if args.command == "index-themes":
+            return _run_index_themes(args, settings)
+        if args.command == "index-conflicts":
+            return _run_index_conflicts(args, settings)
+        if args.command == "build-packs":
+            return _run_build_packs(args, settings)
+        if args.command == "score-packs":
+            return _run_score_packs(args, settings)
         if args.command == "eval-graph-extraction":
             return _run_eval_graph_extraction(settings)
         source_url = getattr(args, "url", None)

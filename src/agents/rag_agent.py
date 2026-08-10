@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Callable, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -24,6 +25,7 @@ from src.agents.prompts import AGENTIC_RAG_SYSTEM_PROMPT
 from src.agents.rag_transcript_agent import (
     _fallback_references,
     _json_object,
+    _reference_for_chunk,
 )
 from src.config import Settings
 from src.rag.context import MultiTranscriptRagContextProvider
@@ -325,7 +327,9 @@ class RagAgent:
             data = _json_object(content)
             data.setdefault("question", request.question)
             answer_text = str(data.get("answer", content)).strip()
-            references = _parse_references(data.get("references"))
+            references = reconcile_agent_references(
+                _parse_references(data.get("references")), context.retrieved_chunks or []
+            )
             if not references:
                 references = _fallback_references(answer_text, context)
             return RagTranscriptAnswer(
@@ -374,6 +378,76 @@ def _parse_references(raw) -> list[RagAnswerReference]:
         except ValidationError:
             continue
     return references
+
+
+#: How far a model-reported start time may sit from a chunk's real one and still
+#: be the same chunk. The model never sees ``start_seconds``: it sees
+#: ``time=09:53-11:05`` in the chunk header, so a faithful echo is the truncated
+#: whole second, at most one second below the real value. Two seconds is that
+#: with margin, and far tighter than the ~70s a chunk spans — so it can never
+#: reach the neighbouring chunk.
+MAX_START_DRIFT_SECONDS = 2.0
+
+_TIMESTAMP_PARAM = re.compile(r"[?&]t=(\d+)s?")
+
+
+def _claimed_start(reference: RagAnswerReference) -> float | None:
+    """When the model says this citation starts, by whichever route it wrote it.
+
+    ``timestamp_url`` is preferred over ``start_seconds`` because it is the
+    field the model can *copy*: the chunk header hands it a whole URL ending
+    ``&t=593s``, whereas ``start_seconds`` has to be derived from the mm:ss it
+    was shown, and a derived number is a guessed number.
+    """
+    match = _TIMESTAMP_PARAM.search(str(reference.timestamp_url or ""))
+    if match:
+        return float(match.group(1))
+    return reference.start_seconds
+
+
+def reconcile_agent_references(
+    references: list[RagAnswerReference],
+    chunks: list,
+) -> list[RagAnswerReference]:
+    """Resolve the agent's citations to real chunks by identity, not by position.
+
+    The single-hop path can reconcile on the label alone, because its context is
+    one numbered list and ``[3]`` is its third entry. This path cannot. The agent
+    retrieves several times, and every tool call formats its own results from
+    ``[1]`` again — so a bare ``[1]`` in the model's reference list may be the
+    first chunk of any of them. Resolving it positionally would be a coin toss
+    dressed as provenance.
+
+    What *is* unambiguous is what the chunk header shows: ``video=<id>`` and a
+    timestamp URL. Those identify one chunk in the merged context, so that is
+    what a reference is matched on, and every field is then re-derived from the
+    chunk that matched. ``chunk_index`` in particular appears nowhere the model
+    can see it, which is exactly why it was the field the model got wrong.
+
+    A citation that matches nothing retrieved is dropped. The model cited
+    something that was never in front of it, and attaching that label to the
+    nearest plausible chunk would turn a visible error into an invisible one.
+    """
+    by_video: dict[str, list] = {}
+    for chunk in chunks:
+        by_video.setdefault(str(chunk.video_id), []).append(chunk)
+
+    resolved: list[RagAnswerReference] = []
+    seen: set[str] = set()
+    for reference in references:
+        candidates = by_video.get(str(reference.video_id or ""), [])
+        start = _claimed_start(reference)
+        if not candidates or start is None:
+            continue
+        best = min(candidates, key=lambda chunk: abs(chunk.start_seconds - start))
+        if abs(best.start_seconds - start) > MAX_START_DRIFT_SECONDS:
+            continue
+        label = reference.label
+        if label in seen:
+            continue
+        seen.add(label)
+        resolved.append(_reference_for_chunk(label, best))
+    return resolved
 
 
 def _chunk_key(chunk) -> tuple[str, int]:

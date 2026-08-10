@@ -1,0 +1,180 @@
+{
+  "topic": "resume-design",
+  "name": "Resume design",
+  "routing_text": "How should a software engineer or data scientist write their resume? Bullet points, professional summary, page length, formatting and layout, ATS keyword matching, quantified impact and metrics, tailoring a CV to one job description, and what a recruiter looks for in the seconds they spend skimming it.",
+  "updated_at": "2026-08-10T00:56:56.010619+00:00",
+  "overrides": {},
+  "provenance": {
+    "corpus_digest": "c773ab89fc2b0f51",
+    "chunk_count": 1329,
+    "video_count": 53,
+    "theme_generated_at": "2026-08-10T00:22:21.813165+00:00",
+    "theme_count": 30,
+    "graph_cache_digest": "b3edae8f87405fcb",
+    "graph_extractions": 1329,
+    "excluded_video_ids": [
+      "7m27Go3K1d0",
+      "AdRL6tKu3Gk",
+      "Bw58mV015z4",
+      "ZiEGOgTC56Y",
+      "gXf7fRvuaXA"
+    ],
+    "held_out_video_ids": [
+      "15rTnqKBlO8"
+    ],
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "rubric_model": "deepseek-v4-flash",
+    "units_budget": 8,
+    "excerpts_per_unit": 12,
+    "max_rubrics_per_unit": 3,
+    "routing_top_k": 14,
+    "routing_min_score": 0.25,
+    "community_min_entities": 5,
+    "notes": []
+  },
+  "members": [
+    {
+      "video_id": "5gLVxMKeSGM",
+      "title": "How to Write a Winning Tech Resume | Resume Tips from a Software Engineer & Career Coach",
+      "channel_name": "Anthony D. Mays",
+      "score": 0.7331,
+      "routed": true,
+      "override": null,
+      "chunk_count": 27
+    },
+    {
+      "video_id": "fD0E57QYSPk",
+      "title": "How to make a Dev resume that actually gets you hired",
+      "channel_name": "Anthony Sistilli",
+      "score": 0.7013,
+      "routed": true,
+      "override": null,
+      "chunk_count": 22
+    },
+    {
+      "video_id": "QPUmFKboiqY",
+      "title": "Write the Perfect Professional Summary\u00a0for Your Resume!",
+      "channel_name": "Greg Langstaff",
+      "score": 0.5833,
+      "routed": true,
+      "override": null,
+      "chunk_count": 5
+    },
+    {
+      "video_id": "owIP4Qr39BY",
+      "title": "Write a Better Resume - Step-by-Step Resume Upgrade (by a Professional Resume Writer)",
+      "channel_name": "Greg Langstaff",
+      "score": 0.5758,
+      "routed": true,
+      "override": null,
+      "chunk_count": 14
+    },
+    {
+      "video_id": "012UjJeZY2k",
+      "title": "FREE ATS-Friendly Resume Template (and instructions on how to use it)",
+      "channel_name": "Greg Langstaff",
+      "score": 0.5727,
+      "routed": true,
+      "override": null,
+      "chunk_count": 4
+    },
+    {
+      "video_id": "_MT4SgfQ8QY",
+      "title": "Engineering Resume Hack (from Big Tech Hiring Manager)",
+      "channel_name": "Jean Lee",
+      "score": 0.5695,
+      "routed": true,
+      "override": null,
+      "chunk_count": 9
+    },
+    {
+      "video_id": "3pFRqPqzBCM",
+      "title": "I Reviewed 100 Data Resumes. Here's What Gets You Hired!",
+      "channel_name": "Jash Radia",
+      "score": 0.5586,
+      "routed": true,
+      "override": null,
+      "chunk_count": 14
+    },
+    {
+      "video_id": "by8wrrXW3So",
+      "title": "What AI Engineer JOBS Need on a Resume | Recruiter Reviews Resume",
+      "channel_name": "Headless Headhunter",
+      "score": 0.5436,
+      "routed": true,
+      "override": null,
+      "chunk_count": 25
+    },
+    {
+      "video_id": "KuXPeGH_Vag",
+      "title": "How to Get a Job in 2026",
+      "channel_name": "Greg Langstaff",
+      "score": 0.5306,
+      "routed": true,
+      "override": null,
+      "chunk_count": 14
+    },
+    {
+      "video_id": "ZqqzBCg6IGU",
+      "title": "Straight From Industry Insiders-AI/ML Resume Tips Nobody Shares",
+      "channel_name": "Concepts of AI (Akash Gupta)",
+      "score": 0.4877,
+      "routed": true,
+      "override": null,
+      "chunk_count": 6
+    },
+    {
+      "video_id": "FpW8aiJPvts",
+      "title": "This Simple RESUME got me 5 Machine Learning Interviews",
+      "channel_name": "Boris Meinardus",
+      "score": 0.4438,
+      "routed": true,
+      "override": null,
+      "chunk_count": 10
+    },
+    {
+      "video_id": "dQ6RNltrXro",
+      "title": "How I Optimized my LinkedIn Profile and Got 20+ Interview Calls",
+      "channel_name": "Ashish Pratap Singh",
+      "score": 0.4319,
+      "routed": true,
+      "override": null,
+      "chunk_count": 10
+    },
+    {
+      "video_id": "eGmZZFJ-8PY",
+      "title": "Ex-Google Recruiter Explains: 6 R\u00e9sum\u00e9 Secrets That Get You Hired",
+      "channel_name": "Farah Sharghi",
+      "score": 0.4066,
+      "routed": true,
+      "override": null,
+      "chunk_count": 10
+    },
+    {
+      "video_id": "ozwmlFencJI",
+      "title": "Copy This Linkedin Strategy, It'll Blow Up Your Inbox With Recruiters",
+      "channel_name": "Stefan Masnikovic",
+      "score": 0.3873,
+      "routed": true,
+      "override": null,
+      "chunk_count": 12
+    }
+  ],
+  "arms": {
+    "raptor": {
+      "rubrics": 18,
+      "gaps": 12,
+      "multi_creator_share": 0.8889
+    },
+    "communities": {
+      "rubrics": 18,
+      "gaps": 12,
+      "multi_creator_share": 0.5556
+    },
+    "merged": {
+      "rubrics": 17,
+      "gaps": 12,
+      "multi_creator_share": 0.7647
+    }
+  }
+}

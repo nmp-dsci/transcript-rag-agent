@@ -34,9 +34,7 @@ def list_corpus(
     total_chunks = 0
     try:
         chunk_metas = (
-            client.get_collection(chunk_collection)
-            .get(include=["metadatas"])
-            .get("metadatas")
+            client.get_collection(chunk_collection).get(include=["metadatas"]).get("metadatas")
             or []
         )
         for meta in chunk_metas:
@@ -199,9 +197,7 @@ def list_chunks(
     try:
         client = chromadb.PersistentClient(path=str(chroma_path))
         collection = client.get_collection(chunk_collection)
-        result = collection.get(
-            where={"video_id": video_id}, include=["documents", "metadatas"]
-        )
+        result = collection.get(where={"video_id": video_id}, include=["documents", "metadatas"])
     except Exception:
         return {"video_id": video_id, "chunks": [], "total": 0}
 
@@ -274,6 +270,109 @@ def load_chunk_embeddings(
             }
         )
     return records
+
+
+def list_themes(theme_path: Path) -> dict[str, Any]:
+    """The cross-video theme layer, without member lists.
+
+    Members are the bulk of the artifact and the list view only needs counts,
+    so they are dropped here and hydrated per theme by :func:`theme_detail`.
+    A missing artifact is not an error — the theme layer is optional derived
+    state — so this returns an empty list plus the command that builds it.
+    """
+    from src.rag.themes import ThemeStore
+
+    index = ThemeStore(theme_path).load()
+    if index is None:
+        return {
+            "themes": [],
+            "stats": {},
+            "generated_at": None,
+            "summary_model": None,
+            "embedding_model": None,
+            "build_command": "uv run python -m src.cli index-themes",
+        }
+    return {
+        "themes": [{**theme.model_dump(mode="json"), "members": []} for theme in index.themes],
+        "stats": index.stats,
+        "generated_at": index.generated_at,
+        "summary_model": index.summary_model,
+        "embedding_model": index.embedding_model,
+        "build_command": "uv run python -m src.cli index-themes",
+    }
+
+
+def theme_detail(
+    theme_path: Path,
+    chroma_path: Path,
+    theme_id: str,
+    chunk_collection: str = "transcript_chunks",
+) -> dict[str, Any] | None:
+    """One theme with its members grouped by video, text and timestamps included.
+
+    The artifact stores chunk ids only, so the transcript text comes from the
+    chunk collection at read time — a re-chunked corpus can never leave stale
+    quotes behind in the theme file. Returns ``None`` when the theme id is
+    unknown, so the route can answer 404 rather than an empty group list.
+    """
+    import chromadb
+
+    from src.rag.themes import ThemeStore
+
+    index = ThemeStore(theme_path).load()
+    if index is None:
+        return None
+    theme = next((item for item in index.themes if item.theme_id == theme_id), None)
+    if theme is None:
+        return None
+
+    wanted = {member.chunk_id: member for member in theme.members}
+    documents: dict[str, str] = {}
+    metadatas: dict[str, dict[str, Any]] = {}
+    try:
+        client = chromadb.PersistentClient(path=str(chroma_path))
+        collection = client.get_collection(chunk_collection)
+        # chromadb's Where is a nested TypedDict a plain dict never satisfies.
+        where: Any = {"video_id": {"$in": [video.video_id for video in theme.videos]}}
+        result = collection.get(where=where, include=["documents", "metadatas"])
+        for position, meta in enumerate(result.get("metadatas") or []):
+            meta = meta or {}
+            chunk_id = f"chunk:{meta.get('video_id', '')}:{meta.get('chunk_index', position)}"
+            if chunk_id not in wanted:
+                continue
+            metadatas[chunk_id] = dict(meta)
+            texts = result.get("documents") or []
+            documents[chunk_id] = texts[position] if position < len(texts) else ""
+    except Exception:
+        pass
+
+    groups: list[dict[str, Any]] = []
+    for video in theme.videos:
+        chunks: list[dict[str, Any]] = []
+        for member in theme.members:
+            if member.video_id != video.video_id:
+                continue
+            meta = metadatas.get(member.chunk_id, {})
+            chunks.append(
+                {
+                    "chunk_id": member.chunk_id,
+                    "chunk_index": member.chunk_index,
+                    "probability": member.probability,
+                    "text": documents.get(member.chunk_id, ""),
+                    "start_seconds": meta.get("start_seconds"),
+                    "end_seconds": meta.get("end_seconds"),
+                    "source_url": meta.get("source_url") or None,
+                }
+            )
+        # Chunk order inside a video is the transcript's, not the cluster's:
+        # a reader following a theme into one video reads that video forwards.
+        chunks.sort(key=lambda chunk: int(chunk["chunk_index"]))
+        groups.append({**video.model_dump(mode="json"), "chunks": chunks})
+
+    return {
+        "theme": {**theme.model_dump(mode="json"), "members": []},
+        "videos": groups,
+    }
 
 
 def load_chunk_corpus(

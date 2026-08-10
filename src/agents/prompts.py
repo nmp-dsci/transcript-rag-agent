@@ -249,6 +249,20 @@ def build_rag_question_prompt(question: str, history: list[str] | None = None) -
     return f"{build_history_prompt(history)}\n\n{prompt}"
 
 
+def build_doc_review_prompt(question: str, history: list[str] | None = None) -> str:
+    """The answering prompt for a question that came with a document.
+
+    A separate template rather than a flag on the RAG one, because the two say
+    opposite things: ``RAG_QUESTION_USER_PROMPT`` instructs the model to answer
+    "using only the retrieved transcript chunks", which is exactly the wrong
+    instruction when the subject of the answer is the user's own document.
+    """
+    prompt = DOC_REVIEW_USER_PROMPT.format(question=question.replace('"', '\\"'))
+    if not history:
+        return prompt
+    return f"{build_history_prompt(history)}\n\n{prompt}"
+
+
 # Kept small on purpose: prior turns are context for resolving references like
 # "that" or "the second one", not extra evidence. Only retrieved chunks are
 # evidence, and blurring that line is how ungrounded answers get cited.
@@ -496,13 +510,75 @@ Rules:
 - Never state or imply that the document contains something it does not. If you
   cannot find a thing, say it is absent — that is often the most useful
   feedback.
+- Scope every absence to what you actually inspected, and say which scope that
+  is. You were given the text of specific sections of one page: you can say "no
+  Skills section appears on this page" or "none of the project cards [§3]-[§8]
+  links to code", but not "there is no Skills section" or "there are no code
+  links" — a nav bar, a footer, or a linked page you were not given may hold the
+  thing you are calling missing. Name the linked page when one is plausibly
+  where it lives ("an About page is linked in [§1] and was not fetched").
 - If the context says the document was cut short or only partly shown, say so
   before drawing conclusions about what is missing from it.
+- If the context warns that the corpus may hold no criteria for this kind of
+  document, open by saying so plainly, and for each point say whether the chunk
+  you are citing is really about this kind of document or is the nearest thing
+  the corpus had. Advice written for a resume does not become advice about a
+  wedding invitation by being the closest match to one.
 - Where the corpus offers no guidance on something you want to advise about,
   give the advice and say it is your own, uncited. Do not attach a [N] citation
   to a recommendation the chunks do not make.
 - Propose follow-up subtopics the same way you would for any question: where
   the corpus guidance is thin on something this document needs.
+"""
+
+DOC_REVIEW_USER_PROMPT = """Review the document above, answering the user's request about it.
+
+Ground every point twice:
+- in the DOCUMENT, with a [§N] marker naming the section you are talking about,
+  and a short quoted phrase from it where you are proposing a change;
+- in the RETRIEVED TRANSCRIPT CHUNKS, with a [N] citation for the recommendation
+  or standard that makes it a change worth making.
+
+Cite sections one at a time — [§2] [§4], never "[§2]-[§8]". A point that names no
+section is advice about documents in general, not a review of this one; drop it
+or attach it to the section it applies to.
+
+Where the corpus says nothing about a point you still want to make, make it and
+say the advice is your own. Do not attach a [N] to a chunk that does not
+recommend it.
+
+Return JSON with this exact shape:
+{{
+  "question": "{question}",
+  "answer": "the review, citing [§N] for the document and [N] for the corpus",
+  "references": [
+    {{
+      "label": "[1]",
+      "source_url": "https://www.youtube.com/watch?v=...",
+      "timestamp_url": "https://www.youtube.com/watch?v=...&t=593s",
+      "start_seconds": 593.36,
+      "end_seconds": 665.44,
+      "chunk_index": 10,
+      "video_id": "..."
+    }}
+  ],
+  "answer_confidence": 0.0,
+  "followups_requested": false,
+  "subtopics": [
+    {{
+      "topic": "short subtopic name",
+      "rationale": "what this document needs that the corpus chunks are thin on",
+      "followup_query": "focused retrieval query, not a paraphrase of the original question",
+      "confidence": 0.0
+    }}
+  ]
+}}
+
+``references`` describes transcript chunks only — one entry per [N] you cited.
+Document sections are cited inline as [§N] and never appear in ``references``.
+
+The user's request:
+{question}
 """
 
 CHUNK_CONTEXT_SYSTEM_PROMPT = """You situate one transcript chunk inside its video, for retrieval.
@@ -747,6 +823,13 @@ PROMPT_REGISTRY: list[dict[str, object]] = [
         "role": "system",
         "template_vars": [],
         "text": DOC_REVIEW_SYSTEM_PROMPT,
+    },
+    {
+        "name": "DOC_REVIEW_USER_PROMPT",
+        "system": "doc_review",
+        "role": "user_template",
+        "template_vars": ["question"],
+        "text": DOC_REVIEW_USER_PROMPT,
     },
     {
         "name": "CHUNK_CONTEXT_USER_PROMPT",

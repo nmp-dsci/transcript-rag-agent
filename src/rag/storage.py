@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Sequence
 
 import chromadb
 from pydantic import HttpUrl, ValidationError
@@ -123,6 +124,7 @@ class TranscriptChunkStore:
         path: Path | str,
         embedding_model: EmbeddingModel,
         collection_name: str | None = None,
+        exclude_video_ids: Sequence[str] | None = None,
     ) -> None:
         self.path = Path(path)
         self.path.mkdir(parents=True, exist_ok=True)
@@ -130,6 +132,40 @@ class TranscriptChunkStore:
         self.collection_name = collection_name or self.collection_name
         self.client = chromadb.PersistentClient(path=str(self.path))
         self.collection = self.client.get_or_create_collection(self.collection_name)
+        #: Videos this store must behave as if it had never indexed. Set for a
+        #: held-out evaluation (see :mod:`src.evals.critique`), where the whole
+        #: claim being measured is that the system reached an expert's
+        #: conclusions *without* having seen that expert. Empty by default, so
+        #: an ordinary store is byte-for-byte the store it always was.
+        #:
+        #: It lives on the store rather than on each call because exclusion has
+        #: to hold on *every* read path — corpus-wide, channel-scoped,
+        #: video-scoped and the BM25 pass that fetches documents directly — and
+        #: a per-call argument is exactly the kind of thing one path forgets.
+        self.exclude_video_ids: list[str] = sorted(dict.fromkeys(exclude_video_ids or []))
+
+    @property
+    def exclusion_key(self) -> str:
+        """A stable suffix identifying this store's exclusion, for cache keys.
+
+        Empty when nothing is excluded, so caches keyed with it are unchanged
+        for every ordinary store.
+        """
+        return "" if not self.exclude_video_ids else "|-" + ",".join(self.exclude_video_ids)
+
+    def scoped_where(self, where: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        """``where`` with this store's held-out videos filtered out.
+
+        Combined with ``$and`` rather than by merging keys, because the caller's
+        filter is often about ``video_id`` too (``{"video_id": {"$in": [...]}}``)
+        and one dict cannot carry two conditions on the same field.
+        """
+        if not self.exclude_video_ids:
+            return where
+        excluded: dict[str, Any] = {"video_id": {"$nin": list(self.exclude_video_ids)}}
+        if where is None:
+            return excluded
+        return {"$and": [where, excluded]}
 
     def upsert_chunks(self, chunks: list[TranscriptChunk]) -> None:
         if not chunks:
@@ -209,7 +245,7 @@ class TranscriptChunkStore:
             video_id = str((meta or {}).get("video_id", ""))
             if video_id:
                 seen.setdefault(video_id, None)
-        return list(seen)
+        return [video_id for video_id in seen if video_id not in self.exclude_video_ids]
 
     def neighbors(self, video_id: str, chunk_index: int, span: int = 1) -> list[TranscriptChunk]:
         """Chunks immediately before and after one chunk, in index order.
@@ -217,7 +253,7 @@ class TranscriptChunkStore:
         Used to widen precise retrieval hits back out to readable context so
         answers stop getting cut off mid-thought.
         """
-        if span <= 0:
+        if span <= 0 or video_id in self.exclude_video_ids:
             return []
         wanted = [
             index
@@ -246,7 +282,10 @@ class TranscriptChunkStore:
         The GraphRAG extraction pass iterates the whole corpus; deterministic
         order keeps its progress output and cache behaviour reproducible.
         """
-        result = self.collection.get(include=["documents", "metadatas"])
+        result = self.collection.get(
+            where=self.scoped_where(),  # type: ignore[arg-type]  # chromadb's Where is a nested TypedDict
+            include=["documents", "metadatas"],
+        )
         documents = result.get("documents") or []
         metadatas = result.get("metadatas") or []
         chunks = [
@@ -266,7 +305,8 @@ class TranscriptChunkStore:
         if not video_ids:
             return []
         result = self.collection.get(
-            where={"video_id": {"$in": video_ids}}, include=["documents", "metadatas"]
+            where=self.scoped_where({"video_id": {"$in": video_ids}}),  # type: ignore[arg-type]
+            include=["documents", "metadatas"],
         )
         documents = result.get("documents") or []
         metadatas = result.get("metadatas") or []
@@ -278,7 +318,10 @@ class TranscriptChunkStore:
 
     def all_embeddings(self) -> list[dict[str, object]]:
         """Every chunk with its embedding, for similarity-graph construction."""
-        result = self.collection.get(include=["embeddings", "documents", "metadatas"])
+        result = self.collection.get(
+            where=self.scoped_where(),  # type: ignore[arg-type]
+            include=["embeddings", "documents", "metadatas"],
+        )
         embeddings = result.get("embeddings")
         embeddings = [] if embeddings is None else list(embeddings)
         documents = result.get("documents") or []
@@ -309,7 +352,7 @@ class TranscriptChunkStore:
         self,
         query: str,
         top_k: int,
-        where: dict[str, str] | None,
+        where: dict[str, Any] | None,
     ) -> list[RetrievedChunk]:
         embedding = self.embedding_model.embed_query(query)
         kwargs: dict[str, object] = {
@@ -317,6 +360,10 @@ class TranscriptChunkStore:
             "n_results": top_k,
             "include": ["documents", "metadatas", "distances"],
         }
+        # Held-out videos are removed *inside* Chroma, before ``n_results``
+        # applies. Dropping them from the returned rows instead would silently
+        # shrink every result set by however many of the top hits were held out.
+        where = self.scoped_where(where)
         if where is not None:
             kwargs["where"] = where
         result = self.collection.query(**kwargs)

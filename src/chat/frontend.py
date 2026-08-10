@@ -50,6 +50,9 @@ padding:1px 4px;margin:0 1px;text-decoration:none}
 a.cite:hover{background:#155f53;color:#d9fdd3}
 .cite-missing{display:inline-block;font-size:10px;line-height:1;vertical-align:super;
 background:#2a3942;color:#8696a0;border-radius:4px;padding:1px 4px;margin:0 1px}
+.cite-doc{display:inline-block;font-size:10px;line-height:1;vertical-align:super;
+background:#3a2e12;color:#f0d68a;border:1px solid #5c4a1d;border-radius:4px;
+padding:1px 4px;margin:0 1px}
 .body.clamp{max-height:340px;overflow:hidden;
 -webkit-mask-image:linear-gradient(180deg,#000 72%,transparent);
 mask-image:linear-gradient(180deg,#000 72%,transparent)}
@@ -178,6 +181,12 @@ function buildRefMap(refs){
 // Inline formatting: escape, bold, and turn [n] citations into linked chips.
 function inline(s, refMap){
   let out = escapeHtml(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  // Document-section markers, before the corpus ones: [§3] points at the
+  // reviewed document, not at a transcript, and carries no link because the
+  // section it names is already on the page.
+  out = out.replace(/\[§\s*(\d+)\]/g, (m,n)=>{
+    return '<span class="cite-doc" title="Section '+n+' of the reviewed document">§'+n+'</span>';
+  });
   out = out.replace(/\[(\d+)\]/g, (m,n)=>{
     const ref = refMap[n];
     if(ref){

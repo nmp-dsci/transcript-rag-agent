@@ -24,7 +24,7 @@ timelines — as single statements.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Sequence
 
 from src.config import Settings
 from src.rag.graph_models import (
@@ -50,17 +50,60 @@ class GraphStore:
     (tests, the extraction contract) never pay for or require the driver.
     """
 
-    def __init__(self, uri: str, user: str, password: str) -> None:
+    def __init__(
+        self,
+        uri: str,
+        user: str,
+        password: str,
+        exclude_video_ids: Sequence[str] | None = None,
+    ) -> None:
         try:
             from neo4j import GraphDatabase
         except ImportError as exc:  # pragma: no cover - dependency is in pyproject
             raise GraphStoreError("The neo4j driver is not installed (uv sync)") from exc
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
         self.uri = uri
+        #: Videos whose claims must not be returned — the graph-side half of
+        #: :attr:`~src.rag.storage.TranscriptChunkStore.exclude_video_ids`.
+        #: Applied inside Cypher, never by filtering returned rows, because
+        #: every claim query is ``LIMIT``-ed: the limit would be spent on the
+        #: held-out video's claims first and the filter would then throw them
+        #: away, so a held-out run would silently retrieve less than an
+        #: ordinary one rather than the same amount from other videos.
+        self.exclude_video_ids: list[str] = sorted(dict.fromkeys(exclude_video_ids or []))
 
     @classmethod
-    def from_settings(cls, settings: Settings) -> "GraphStore":
-        return cls(settings.neo4j_uri, settings.neo4j_user, settings.neo4j_password)
+    def from_settings(
+        cls, settings: Settings, exclude_video_ids: Sequence[str] | None = None
+    ) -> "GraphStore":
+        return cls(
+            settings.neo4j_uri,
+            settings.neo4j_user,
+            settings.neo4j_password,
+            exclude_video_ids=exclude_video_ids,
+        )
+
+    @property
+    def community_summaries_safe(self) -> bool:
+        """Whether this store's community summaries can be trusted held-out.
+
+        A community summary is LLM-written text synthesised across every video
+        whose entities landed in that community, and it is stored on the node —
+        so excluding a video's *claims* does not remove that video's content
+        from a summary written before the exclusion existed. There is no
+        query-time filter that fixes this; the graph has to be rebuilt without
+        the held-out video. False whenever anything is excluded, so a caller
+        that depends on the global (community) layer can refuse rather than
+        report a leak-free run it cannot prove.
+        """
+        return not self.exclude_video_ids
+
+    def _exclusion_clause(self, alias: str = "c") -> str:
+        """``AND NOT <alias>.video_id IN $exclude_video_ids``, or nothing."""
+        return f" AND NOT {alias}.video_id IN $exclude_video_ids" if self.exclude_video_ids else ""
+
+    def _exclusion_params(self) -> dict[str, Any]:
+        return {"exclude_video_ids": self.exclude_video_ids} if self.exclude_video_ids else {}
 
     def close(self) -> None:
         self._driver.close()
@@ -286,6 +329,7 @@ class GraphStore:
         if not entity_ids:
             return []
         scope = " AND c.video_id = $video_id" if video_id is not None else ""
+        scope += self._exclusion_clause()
         anchor = f"MATCH (c:Claim)-[:ABOUT]->(e:Entity) WHERE e.id IN $ids{scope}"
         if hops >= 1:
             anchor = (
@@ -297,7 +341,7 @@ class GraphStore:
                 "MATCH (c:Claim)-[:ABOUT]->(e:Entity) "
                 f"WHERE e.id IN scope_ids{scope}"
             )
-        params: dict[str, Any] = {"ids": entity_ids, "limit": limit}
+        params: dict[str, Any] = {"ids": entity_ids, "limit": limit, **self._exclusion_params()}
         if video_id is not None:
             params["video_id"] = video_id
         rows = self._run(
@@ -326,6 +370,8 @@ class GraphStore:
         view — it needs everything a chunk yielded, not just what a question
         anchors to.
         """
+        if video_id in self.exclude_video_ids:
+            return []
         rows = self._run(
             """
             MATCH (c:Claim {video_id: $video_id})
@@ -418,8 +464,9 @@ class GraphStore:
 
     def top_claims_for_community(self, community_id: int, limit: int = 12) -> list[GraphClaim]:
         rows = self._run(
-            """
-            MATCH (c:Claim)-[:ABOUT]->(e:Entity)-[:IN_COMMUNITY]->(m:Community {id: $id})
+            f"""
+            MATCH (c:Claim)-[:ABOUT]->(e:Entity)-[:IN_COMMUNITY]->(m:Community {{id: $id}})
+            WHERE true{self._exclusion_clause()}
             WITH DISTINCT c, count(e) AS anchored
             OPTIONAL MATCH (c)-[:ABOUT]->(about:Entity)
             WITH c, anchored, collect(about.name) AS entity_names
@@ -433,5 +480,6 @@ class GraphStore:
             """,
             id=community_id,
             limit=limit,
+            **self._exclusion_params(),
         )
         return [GraphClaim.model_validate(row) for row in rows]

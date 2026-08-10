@@ -37,8 +37,10 @@ from pydantic import BaseModel, Field
 from src.api.corpus import (
     list_chunks,
     list_corpus,
+    list_themes,
     load_chunk_corpus,
     load_chunk_embeddings,
+    theme_detail,
 )
 from src.api.ingestion_queue import IngestionQueue
 from src.api.matrix_runner import MatrixRunner, RunFn
@@ -344,6 +346,8 @@ def create_app(
     corpus_fn: Callable[[], dict[str, Any]] | None = None,
     chunks_fn: Callable[[str], dict[str, Any]] | None = None,
     chunk_records_fn: Callable[[str | None], list[dict[str, Any]]] | None = None,
+    themes_fn: Callable[[], dict[str, Any]] | None = None,
+    theme_detail_fn: Callable[[str], dict[str, Any] | None] | None = None,
     graph_records_fn: Callable[[], list[dict[str, Any]]] | None = None,
     graph_store_factory: Callable[[], Any] | None = None,
     graph_extract_fn: Callable[[list[str]], dict[str, Any]] | None = None,
@@ -384,6 +388,12 @@ def create_app(
     )
     graph_records_fn = graph_records_fn or (
         lambda: load_chunk_embeddings(resolved.chroma_path, resolved.chunk_collection)
+    )
+    themes_fn = themes_fn or (lambda: list_themes(resolved.theme_path))
+    theme_detail_fn = theme_detail_fn or (
+        lambda theme_id: theme_detail(
+            resolved.theme_path, resolved.chroma_path, theme_id, resolved.chunk_collection
+        )
     )
     judge_model_name = resolved.judge_model or resolved.deepseek_model
 
@@ -552,6 +562,21 @@ def create_app(
 
         return load_experiments(runs_dir)
 
+    @app.get("/api/experiments/critique/{run_id}")
+    def critique_run(run_id: str) -> dict:
+        """One held-out critique run in full — the matched/unmatched criteria.
+
+        Separate from ``/api/experiments`` because that endpoint re-parses every
+        committed run on every request, and the per-criterion detail is the bulk
+        of a critique file. A row nobody expanded costs nothing here.
+        """
+        from src.api.experiments import select_critique_run
+
+        found = select_critique_run(run_id, runs_dir)
+        if found is None:
+            raise HTTPException(status_code=404, detail=f"Unknown critique run: {run_id}")
+        return found
+
     @app.get("/api/prompts")
     def prompts() -> dict:
         from src.api.prompts import load_prompts
@@ -575,6 +600,27 @@ def create_app(
     @app.get("/api/corpus/{video_id}/chunks")
     def corpus_chunks(video_id: str) -> dict:
         return chunks_fn(video_id)
+
+    @app.get("/api/themes")
+    def themes() -> dict:
+        """RAPTOR level 2: themes clustered across video boundaries.
+
+        Member lists are omitted; the list view needs counts, and the members
+        of all thirty themes together are most of the corpus.
+        """
+        return themes_fn()
+
+    @app.get("/api/themes/{theme_id:path}")
+    def theme(theme_id: str) -> dict:
+        """One theme's members, grouped by the video each came from.
+
+        ``:path`` because theme ids contain a colon (``theme:0``) and are the
+        whole trailing segment.
+        """
+        result = theme_detail_fn(theme_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unknown theme: {theme_id}")
+        return result
 
     @app.get("/api/scoreboard")
     def scoreboard(
@@ -607,6 +653,11 @@ def create_app(
             "judge_model"
         ) or judge_model_name
         board["run_id"] = (run or {}).get("run_id")
+        # The selected run's own descriptor, not just its id: rubric coverage
+        # (how many cells the rubric could actually score) belongs next to the
+        # averages it shapes, and the picker list is keyed by id rather than
+        # ordered to be indexed into.
+        board["run"] = describe_matrix_run(run) if run is not None else None
         board["runs"] = [describe_matrix_run(data) for data in runs]
         board["questions"] = matrix_questions(run) if run is not None else []
         return board
@@ -790,6 +841,8 @@ def create_app(
                     filter_transcripts=payload.filter_transcripts,
                     history=list(payload.history),
                     document_context=document.context if document else None,
+                    retrieval_query=(document.retrieval_query(question) if document else None),
+                    coverage_warning=(document.coverage_warning if document else None),
                 )
                 for key in answer_keys:
                     yield _sse(
@@ -818,6 +871,12 @@ def create_app(
                         results,
                         url=url,
                         document_id=document.document.id if document else None,
+                        document_detail=document.detail() if document else None,
+                        document_sections_selected=(
+                            [section.index for section in document.selection.sections]
+                            if document
+                            else None
+                        ),
                     )
                     entries = append_entry(entry, history_path)
                 write_chat_html(entries, chat_html_path)

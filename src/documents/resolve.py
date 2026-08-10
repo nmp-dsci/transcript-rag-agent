@@ -22,6 +22,8 @@ from src.documents.fetch import DocumentFetchError, UnsafeUrlError, fetch_docume
 from src.documents.models import Document
 from src.documents.review import (
     SectionSelection,
+    build_review_retrieval_query,
+    corpus_coverage_warning,
     format_document_context,
     select_sections,
 )
@@ -45,6 +47,19 @@ class ResolvedDocument:
     @property
     def context(self) -> str:
         return format_document_context(self.document, self.selection)
+
+    def retrieval_query(self, question: str) -> str:
+        """What the corpus is searched with for this review.
+
+        Deliberately not the raw question: see
+        :func:`~src.documents.review.build_review_retrieval_query`.
+        """
+        return build_review_retrieval_query(question, self.document)
+
+    @property
+    def coverage_warning(self) -> str | None:
+        """Set when the corpus may hold no criteria for this kind of document."""
+        return corpus_coverage_warning(self.document)
 
     def detail(self) -> str:
         source = "reused from this thread" if self.reused else "fetched"

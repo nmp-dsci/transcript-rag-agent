@@ -70,6 +70,13 @@ class RagQuestionRequest(BaseModel):
     # what turns an answer into a review: the corpus stops being the subject and
     # becomes the source of criteria, and the answering prompt changes to match.
     document_context: str | None = None
+    # What the corpus is searched with, when that is not the question itself.
+    # Set for document reviews, where the question carries a URL that matches no
+    # transcript and dilutes the words that would (see
+    # :func:`src.documents.review.build_review_retrieval_query`). ``None`` keeps
+    # the existing behaviour: retrieve on the question, rewritten if there is
+    # conversation history.
+    retrieval_query: str | None = None
 
 
 class FollowupSubtopic(BaseModel):
@@ -144,6 +151,24 @@ class TraceStep(BaseModel):
     phase: Literal["route", "filter", "retrieve", "rerank", "merge", "llm"]
     label: str
     detail: str = ""
+    #: What was actually embedded/searched, when this step searched. Separate
+    #: from ``detail`` because it is the one part of a retrieval step a reader
+    #: has to be able to read in full: it is not always the user's question — a
+    #: follow-up is rewritten, and a document review searches for the criteria
+    #: the document should be judged against — and a trace that hides it cannot
+    #: show you that the corpus was searched for the wrong thing. ``None`` on
+    #: steps that did not search, and on traces written before this existed.
+    query: str | None = None
+    #: Long-form text this step has to show *in full*, on its own wrapping line.
+    #:
+    #: ``detail`` renders on the single-line trace row, which ellipsises at
+    #: whatever width is left over — around 66 characters in practice. That is
+    #: fine for a measurement ("10 candidates, asked for 30") and useless for
+    #: anything a reader has to read: a coverage caveat whose operative clause
+    #: is in its second sentence, or the list of videos a filter routed to.
+    #: Content of that shape goes here instead, exactly like ``query``, and
+    #: ``detail`` keeps the one-line summary that survives being clipped.
+    note: str | None = None
     #: Chunk identities this step produced/kept, in order ("chunk:<video>:<i>").
     chunk_ids: list[str] = Field(default_factory=list)
     model: str | None = None

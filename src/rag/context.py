@@ -179,6 +179,12 @@ class MultiTranscriptRagContextProvider:
                             f"summary (top {transcript_filter_top_k}, min score "
                             f"{transcript_filter_min_score})"
                         ),
+                        # The count is the measurement; *which* videos is the
+                        # check. A filter that kept five videos tells you
+                        # nothing — a filter that kept five career videos and no
+                        # property ones is the whole claim, so the list goes on
+                        # a line that wraps instead of into the clipped detail.
+                        note=_matched_videos_note(selected_transcripts),
                         elapsed_ms=int((time.monotonic() - filter_started) * 1000),
                     )
                 )
@@ -303,7 +309,9 @@ class MultiTranscriptRagContextProvider:
         if self.query_transform is None:
             started = time.monotonic()
             retrieved = search(question, candidates)
-            self._record_retrieve(trace, retrieved, mode, scope_desc, candidates, started, 1)
+            self._record_retrieve(
+                trace, retrieved, mode, scope_desc, candidates, started, 1, query=question
+            )
             return retrieved
 
         plan = self.query_transform.expand(question)
@@ -340,6 +348,9 @@ class MultiTranscriptRagContextProvider:
             candidates,
             started,
             len(rankings),
+            # The expansion step above lists the variants; this one names the
+            # query they were all expanded from.
+            query=question,
         )
         if len(rankings) == 1:
             return rankings[0]
@@ -371,12 +382,21 @@ class MultiTranscriptRagContextProvider:
         candidates: int,
         started: float,
         searches: int = 1,
+        query: str | None = None,
     ) -> None:
         """One step for the scoped search (or searches) that just ran.
 
         ``searches`` is the number of queries that searched this scope — more
         than one when a query transform fanned the question out — and
         ``retrieved`` is the deduplicated pool they found between them.
+
+        ``query`` is what was actually embedded, and it is in the detail because
+        it is not always the user's question: a follow-up is rewritten to stand
+        alone, and a document review searches for the criteria the document
+        should be judged against rather than for the words the user typed. A
+        trace that reports only "semantic search over the whole corpus" cannot
+        show you that the corpus was searched for the wrong thing — which is
+        exactly the failure most worth catching here.
         """
         scope = scope_desc if searches == 1 else f"{scope_desc} × {searches} queries"
         asked = "asked for" if searches == 1 else "each asked for"
@@ -388,6 +408,7 @@ class MultiTranscriptRagContextProvider:
                     f"{mode} search over {scope} — "
                     f"{len(retrieved)} candidates ({asked} {candidates})"
                 ),
+                query=_shorten(query) if query else None,
                 chunk_ids=chunk_ids_for(retrieved),
                 elapsed_ms=int((time.monotonic() - started) * 1000),
             )
@@ -508,7 +529,12 @@ class MultiTranscriptRagContextProvider:
             records,
             question,
             max(fuse_width, self.retrieval_candidates),
-            cache_key=f"hybrid:{video_id or channel_id or 'all'}",
+            # The exclusion belongs in the key, not just in the records. The
+            # index cache is keyed by (key, record count), and two different
+            # held-out videos with the same chunk count produce record lists of
+            # identical length — the second would silently reuse the first's
+            # index and search a corpus it was supposed to have never seen.
+            cache_key=(f"hybrid:{video_id or channel_id or 'all'}{self.chunk_store.exclusion_key}"),
         )
         # Widen recall, don't merely re-rank: a resolver rebuilds a real
         # RetrievedChunk for any keyword hit the semantic pass missed, so fusion
@@ -517,13 +543,16 @@ class MultiTranscriptRagContextProvider:
         return fuse_chunks(semantic, keyword, top_k=fuse_width, resolver=_record_resolver(records))
 
     def _bm25_records(self, channel_id: str | None, video_id: str | None) -> list[dict]:
-        where: dict[str, str] | None = None
+        where: dict[str, object] | None = None
         if video_id:
             where = {"video_id": video_id}
         elif channel_id:
             where = {"channel_id": channel_id}
         result = self.chunk_store.collection.get(
-            where=where,  # type: ignore[arg-type]  # chromadb's Where is a nested TypedDict
+            # The lexical half builds its own scope, so it needs the store's
+            # held-out filter applied here too — the vector path's ``$nin`` does
+            # nothing for a ``collection.get`` issued from this module.
+            where=self.chunk_store.scoped_where(where),
             include=["documents", "metadatas"],
         )
         documents = result.get("documents") or []
@@ -573,6 +602,43 @@ class MultiTranscriptRagContextProvider:
                 widened.append(_as_retrieved(neighbor))
             widened.append(chunk)
         return widened
+
+
+#: How much of the embedded query a trace step shows. Set above the longest
+#: query this system generates — the ``portfolio`` review-criteria query is 259
+#: characters — because clipping the query is exactly the failure this field
+#: exists to prevent. A truncated query looks like a query, so a reader would
+#: not know the part that mattered was the part cut off.
+MAX_TRACE_QUERY_CHARS = 400
+
+
+def _shorten(text: str) -> str:
+    collapsed = " ".join(text.split())
+    if len(collapsed) <= MAX_TRACE_QUERY_CHARS:
+        return collapsed
+    return collapsed[: MAX_TRACE_QUERY_CHARS - 1].rstrip() + "…"
+
+
+def _matched_videos_note(summaries: list) -> str | None:
+    """The videos a summary filter routed to, as one readable line.
+
+    Titled rather than id-only: ``chunk:5kxPMauR4fs`` does not tell a reader
+    that an interview question routed to *Job Interview Simulation* and not to
+    *Sharding in System Design Interviews*, which is the only thing this step
+    is here to let them check. The id follows the title because it is what the
+    chunk ids below are keyed on, and the score follows both because a match
+    scraping the threshold is a different claim from a confident one.
+    """
+    if not summaries:
+        return None
+    parts: list[str] = []
+    for summary in summaries:
+        title = (getattr(summary, "title", None) or "").strip()
+        video_id = getattr(summary, "video_id", "")
+        score = getattr(summary, "score", None)
+        label = f"{title} ({video_id})" if title else str(video_id)
+        parts.append(f"{label} {score:.2f}" if isinstance(score, (int, float)) else label)
+    return " · ".join(parts)
 
 
 def _unique_chunks(rankings: list[list]) -> list:

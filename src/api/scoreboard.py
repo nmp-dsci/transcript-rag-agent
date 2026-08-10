@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.chat.history import ChatAnswer, ChatEntry
+from src.evals.judge import RUBRIC_VERSION, rubric_for
 
 GroupBy = str
 LEGACY_MODEL = "unknown"
@@ -43,9 +44,7 @@ def _winners_by_judge(answers: list[ChatAnswer]) -> dict[str, str | None]:
         by_judge.setdefault(_judge_of(answer), []).append(answer)
     return {
         judge: (
-            max(group, key=lambda a: a.evaluation["composite"]).key
-            if len(group) >= 2
-            else None
+            max(group, key=lambda a: a.evaluation["composite"]).key if len(group) >= 2 else None
         )
         for judge, group in by_judge.items()
     }
@@ -60,8 +59,11 @@ def build_scoreboard(
     accumulators: dict[tuple[str, ...], dict[str, Any]] = {}
     entries_judged = 0
     judge_models: set[str] = set()
+    depth_judge_models: set[str] = set()
     ragas_versions: set[str] = set()
     embedding_models: set[str] = set()
+    rubric_versions: set[str] = set()
+    self_graded_answers = 0
     last_judged: str | None = None
 
     for entry in entries:
@@ -74,9 +76,7 @@ def build_scoreboard(
 
         for answer in entry.answers:
             evaluation = answer.evaluation or {}
-            judge_excluded = bool(
-                judge_model and evaluation and _judge_of(answer) != judge_model
-            )
+            judge_excluded = bool(judge_model and evaluation and _judge_of(answer) != judge_model)
             key = _group_key(answer, group_by)
             acc = accumulators.setdefault(
                 key,
@@ -92,6 +92,8 @@ def build_scoreboard(
                     "metric_sums": {},
                     "metric_counts": {},
                     "composite_sum": 0.0,
+                    "capped": 0,
+                    "ungrounded": 0,
                     "latency_sum": 0.0,
                     "token_sum": 0,
                 },
@@ -103,13 +105,18 @@ def build_scoreboard(
                 acc["judged"] += 1
                 acc["composite_sum"] += evaluation["composite"]
                 for metric, value in (evaluation.get("scores") or {}).items():
-                    acc["metric_sums"][metric] = (
-                        acc["metric_sums"].get(metric, 0.0) + value
-                    )
-                    acc["metric_counts"][metric] = (
-                        acc["metric_counts"].get(metric, 0) + 1
-                    )
+                    acc["metric_sums"][metric] = acc["metric_sums"].get(metric, 0.0) + value
+                    acc["metric_counts"][metric] = acc["metric_counts"].get(metric, 0) + 1
+                if evaluation.get("cap_applied"):
+                    acc["capped"] += 1
+                if evaluation.get("grounding_floor_breached"):
+                    acc["ungrounded"] += 1
+                if evaluation.get("self_graded"):
+                    self_graded_answers += 1
                 judge_models.add(_judge_of(answer))
+                if evaluation.get("depth_judge_model"):
+                    depth_judge_models.add(str(evaluation["depth_judge_model"]))
+                rubric_versions.add(str(evaluation.get("rubric_version") or RUBRIC_VERSION))
                 if evaluation.get("ragas_version"):
                     ragas_versions.add(str(evaluation["ragas_version"]))
                 if evaluation.get("embedding_model"):
@@ -141,19 +148,20 @@ def build_scoreboard(
                     if count
                 },
                 "avg_composite": (
-                    round(acc["composite_sum"] / judged_count, 4)
-                    if judged_count
-                    else None
+                    round(acc["composite_sum"] / judged_count, 4) if judged_count else None
                 ),
                 "wins": acc["wins"],
                 "contests": acc["contests"],
-                "win_rate": (
-                    round(acc["wins"] / acc["contests"], 4) if acc["contests"] else None
-                ),
+                # How many of this row's judged answers hit the rubric's cap.
+                # Always 0 under a rubric with no cap.
+                "capped": acc["capped"],
+                # How many breached the grounding floor at all — a superset of
+                # ``capped``, since an answer can be ungrounded *and* have
+                # scored below the cap on its own merits.
+                "ungrounded": acc["ungrounded"],
+                "win_rate": (round(acc["wins"] / acc["contests"], 4) if acc["contests"] else None),
                 "avg_latency_seconds": (
-                    round(acc["latency_sum"] / answer_count, 2)
-                    if answer_count
-                    else None
+                    round(acc["latency_sum"] / answer_count, 2) if answer_count else None
                 ),
                 "avg_token_estimate": (
                     int(acc["token_sum"] / answer_count) if answer_count else None
@@ -167,6 +175,11 @@ def build_scoreboard(
             row["model"] or "",
         )
     )
+    # The rubric these rows were composited under decides which metric columns
+    # exist and what the composite means, so it is read off the records rather
+    # than assumed. Mixed rubrics fall back to the original one: the columns it
+    # names are the ones every record definitely has.
+    rubric = rubric_for(next(iter(rubric_versions)) if len(rubric_versions) == 1 else None)
     return {
         "setups": rows,
         "entries_total": len(entries),
@@ -174,10 +187,29 @@ def build_scoreboard(
         "group_by": group_by,
         "provenance": {
             "judge_models": sorted(judge_models),
+            "depth_judge_models": sorted(depth_judge_models),
             "ragas_versions": sorted(ragas_versions),
             "embedding_models": sorted(embedding_models),
             "last_judged": last_judged,
-            "metrics": ["faithfulness", "answer_relevancy", "context_precision"],
-            "composite": "mean of the metric scores",
+            # The answering model also graded these answers. Stated rather than
+            # left to be noticed: a leaderboard a model produced and then
+            # scored is self-assessment, and reading it as an independent
+            # verdict is the mistake this field exists to prevent.
+            "self_graded": self_graded_answers > 0,
+            "self_graded_answers": self_graded_answers,
+            "rubric_version": rubric.version,
+            "rubric_versions": sorted(rubric_versions),
+            "metrics": list(rubric.metrics),
+            "metric_weights": dict(rubric.weights),
+            "metric_groups": [
+                {
+                    "key": group.key,
+                    "label": group.label,
+                    "weight": group.weight,
+                    "metrics": list(group.metrics),
+                }
+                for group in rubric.groups
+            ],
+            "composite": rubric.composite_description,
         },
     }
