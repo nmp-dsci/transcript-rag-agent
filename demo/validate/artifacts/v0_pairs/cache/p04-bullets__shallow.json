@@ -1,0 +1,25 @@
+{
+  "key": "p04-bullets:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.7185,
+    "context_precision": 1.0,
+    "insight_depth": 0.2,
+    "specificity": 0.8,
+    "coverage": 0.2,
+    "evidence_breadth": 0.1,
+    "calibration": 0.9
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9062
+  },
+  "depth_v2": {
+    "composite": 0.6069,
+    "uncapped": 0.6069,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 5
+}

@@ -359,6 +359,15 @@ class FakeHybridChunkStore:
     rather than drop it — the recall-widening behaviour the resolver enables.
     """
 
+    exclude_video_ids: list[str] = []
+
+    @property
+    def exclusion_key(self) -> str:
+        return ""
+
+    def scoped_where(self, where=None):
+        return where
+
     def __init__(self, records_metadata: list[dict] | None = None) -> None:
         self._semantic = RetrievedChunk(
             transcript_id="raw_transcript:vidsem",
@@ -567,6 +576,65 @@ def test_get_context_trace_includes_filter_and_rerank_stages() -> None:
     assert context.trace[2].chunk_ids == ["chunk:bbbbbbbbbbb:0"]
 
 
+class FakeTitledSummaryStore(FakeSummaryStore):
+    """Two matches with titles, so the note has a list to render."""
+
+    def query_relevant_transcripts(self, question: str, top_k: int, min_score: float):
+        return [
+            _summary("bbbbbbbbbbb", "Job Interview Simulation", 0.325),
+            _summary("ccccccccccc", "How to Get a Job in 2026", 0.2749),
+        ]
+
+
+def _summary(video_id: str, title: str | None, score: float) -> RetrievedTranscriptSummary:
+    return RetrievedTranscriptSummary(
+        transcript_id=f"raw_transcript:{video_id}",
+        video_id=video_id,
+        source_url=f"https://www.youtube.com/watch?v={video_id}",
+        summary="summary text",
+        summary_model="deepseek-test",
+        summary_generated_at="2026-05-16T00:00:00+00:00",
+        summary_embedding=[1.0, 0.0, 1.0],
+        summary_embedding_model="fake",
+        summary_embedded_at="2026-05-16T00:01:00+00:00",
+        title=title,
+        score=score,
+    )
+
+
+def test_the_filter_step_names_every_video_it_routed_to() -> None:
+    """The count is the measurement; which videos is the check on it."""
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+        summary_store=FakeTitledSummaryStore(),
+    )
+
+    context = provider.get_context("behavioural interviews", filter_transcripts=True)
+
+    note = context.trace[0].note
+    assert note is not None
+    assert "Job Interview Simulation (bbbbbbbbbbb) 0.33" in note
+    assert "How to Get a Job in 2026 (ccccccccccc) 0.27" in note
+
+
+class FakeUntitledSummaryStore(FakeSummaryStore):
+    def query_relevant_transcripts(self, question: str, top_k: int, min_score: float):
+        return [_summary("bbbbbbbbbbb", None, 0.4)]
+
+
+def test_the_filter_step_falls_back_to_the_video_id_when_a_title_is_missing() -> None:
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+        summary_store=FakeUntitledSummaryStore(),
+    )
+
+    context = provider.get_context("behavioural interviews", filter_transcripts=True)
+
+    assert context.trace[0].note == "bbbbbbbbbbb 0.40"
+
+
 class FakeWideChunkStore(FakeMultiChunkStore):
     """Returns more candidates than top_k, so the final trim actually cuts."""
 
@@ -651,3 +719,32 @@ def test_get_context_trace_records_neighbor_expansion() -> None:
 
     assert [step.phase for step in context.trace] == ["retrieve", "merge"]
     assert "±1 adjacent" in context.trace[1].detail
+
+
+def test_the_retrieve_step_records_what_was_actually_searched_for() -> None:
+    """A trace that hides the query cannot show you the corpus was searched for
+    the wrong thing — the failure most worth catching here."""
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+    )
+
+    context = provider.get_context("what recruiters look for in a portfolio", top_k=10)
+
+    assert context.trace[0].query == "what recruiters look for in a portfolio"
+
+
+def test_a_very_long_query_is_shortened_rather_than_dropped() -> None:
+    from src.rag.context import MAX_TRACE_QUERY_CHARS
+
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=FakeMultiChunkStore(),
+    )
+
+    context = provider.get_context("capital gains " * 100, top_k=10)
+
+    query = context.trace[0].query
+    assert query is not None
+    assert len(query) <= MAX_TRACE_QUERY_CHARS
+    assert query.endswith("…")

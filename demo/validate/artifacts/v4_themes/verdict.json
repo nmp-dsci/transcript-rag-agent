@@ -1,0 +1,160 @@
+{
+  "slice_id": "v4_themes",
+  "passed": false,
+  "started_at": "2026-08-10T00:52:20.511946+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "RAG Pipeline offers a Themes sub-tab",
+      "passed": true,
+      "detail": "1 button labelled 'Themes' in the sub-tab strip; nav is Chat / RAG Pipeline / Scoreboard / Experiments / System Design",
+      "shot": null
+    },
+    {
+      "name": "the Themes tab lists themes",
+      "passed": true,
+      "detail": "30 button.th-row rendered",
+      "shot": null
+    },
+    {
+      "name": "every theme row states its chunk count",
+      "passed": true,
+      "detail": "30/30 rows show 'N chunks'",
+      "shot": null
+    },
+    {
+      "name": "cross-video rows state videos AND creators",
+      "passed": true,
+      "detail": "24 rows carry a 'N videos \u00b7 N creators' chip",
+      "shot": null
+    },
+    {
+      "name": "single-video themes are labelled, not hidden",
+      "passed": true,
+      "detail": "6 rows labelled '1 video only'; 24 + 6 == 30 rows, so no row is unlabelled",
+      "shot": null
+    },
+    {
+      "name": "the list header states how many themes span 2+ videos",
+      "passed": true,
+      "detail": "'24 of 30 span 2+ videos \u00b7 widest 17 videos \u00b7 1329 chunks \u00b7 53 videos'",
+      "shot": null
+    },
+    {
+      "name": "the opened theme shows a one-line summary",
+      "passed": true,
+      "detail": "theme:4 summary is 702 chars, opens 'The creators agree that strong tech resumes must be tailored...'",
+      "shot": null
+    },
+    {
+      "name": "members are grouped by the video they came from",
+      "passed": true,
+      "detail": "12 .th-group blocks in 'Tailor resumes for ATS with quantified impact'",
+      "shot": null
+    },
+    {
+      "name": "the groups are distinct videos, not the same video twice",
+      "passed": true,
+      "detail": "12 distinct video titles",
+      "shot": null
+    },
+    {
+      "name": "the groups name at least two different creators",
+      "passed": true,
+      "detail": "11 distinct creators (Greg Langstaff appears twice with two different videos)",
+      "shot": null
+    },
+    {
+      "name": "each group states how many chunks it contributed",
+      "passed": true,
+      "detail": "12/12 group headers show 'N chunk(s)': 22,21,12,7,3,3,3,2,2,2,1,1",
+      "shot": null
+    },
+    {
+      "name": "clicking a chunk reveals its transcript text",
+      "passed": true,
+      "detail": "group 0 chunk #c0 opens to 1164 chars; group 11 #c1 to 1195; group 3 #c2 to 1162",
+      "shot": null
+    },
+    {
+      "name": "the chunk carries a timestamp link into the source video",
+      "passed": true,
+      "detail": "every opened chunk renders 'open at m:ss' as an <a href> with v=<id> and t=<n>s",
+      "shot": null
+    },
+    {
+      "name": "the link's video id belongs to the group it sits under",
+      "passed": true,
+      "detail": "group 0 -> v=5gLVxMKeSGM, group 3 -> v=_MT4SgfQ8QY, group 11 -> v=by8wrrXW3So, each matching that group's video",
+      "shot": null
+    },
+    {
+      "name": "the link's offset matches the clock the row displays",
+      "passed": false,
+      "detail": "FAILS for videos whose stored source_url already carries a t= parameter. Group 11 (by8wrrXW3So, 'What AI Engineer JOBS Need on a Resume') displays 1:13-2:27 and labels the link 'open at 1:13', but the href ends up with TWO t params and URLSearchParams.get('t') returns '51s' - YouTube honours the first, so the link opens at 0:51, 22s early. ThemesView.tsx:19 appends '&t=<n>s' to source_url without stripping an existing t. 8 of 53 corpus videos are affected. Groups 0 and 3 (no pre-existing t) are exact.",
+      "shot": null
+    },
+    {
+      "name": "a single-video theme opens and admits it adds nothing",
+      "passed": true,
+      "detail": "'Coupling is not bad; balance strength, volatility, distance' -> '1 video \u00b7 1 creator \u00b7 33 member chunks' plus the note 'Every member of this theme came from one video...'",
+      "shot": null
+    },
+    {
+      "name": "the single-video theme still lists its member chunks",
+      "passed": true,
+      "detail": "1 group, 33 chunk rows",
+      "shot": null
+    },
+    {
+      "name": "every theme row title renders in full",
+      "passed": true,
+      "detail": "30 nodes, 0 clipped at layout widths 1440 / 1000 / 820px",
+      "shot": null
+    },
+    {
+      "name": "every row chip renders in full",
+      "passed": true,
+      "detail": "90 nodes, 0 clipped at 1440 / 1000 / 820px",
+      "shot": null
+    },
+    {
+      "name": "the theme title renders in full",
+      "passed": true,
+      "detail": "0 clipped",
+      "shot": null
+    },
+    {
+      "name": "the theme summary renders in full",
+      "passed": true,
+      "detail": "0 clipped at all three widths",
+      "shot": null
+    },
+    {
+      "name": "every video group heading renders in full",
+      "passed": true,
+      "detail": "17 .th-groupname + 17 .th-groupmeta on the 17-video theme, 0 clipped",
+      "shot": null
+    },
+    {
+      "name": "the expanded chunk text renders in full",
+      "passed": true,
+      "detail": "0 clipped; .th-chunkbody p carries overflow-wrap: anywhere",
+      "shot": null
+    },
+    {
+      "name": "the Themes tab does not push the page sideways",
+      "passed": true,
+      "detail": "document.scrollWidth 1723px == window.innerWidth 1723px",
+      "shot": null
+    }
+  ],
+  "notes": [
+    "ENVIRONMENT: chromium.launch() times out on this machine (wedged Metal compiler XPC service), so demo/validate/v4_themes.py could not be executed through Playwright. Every assertion in that file was executed instead as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, and the results are what this verdict records. Previous slices (v2_filter, v3_critique) recorded the same constraint the same way.",
+    "Layout width was varied by constraining .app rather than by resizing the window (the extension's resize did not change innerWidth, which stayed at 1723px). Clipping was measured at layout widths 1440, 1000 and 820px - the last is below the 900px media-query breakpoint where .th-layout collapses to one column.",
+    "'.th-chunkpreview' is deliberately white-space: nowrap and is excluded from the clipping probe: it is a fixed-length collapsed excerpt whose full text is one click away in .th-chunkbody. That is the only nowrap field in the theme CSS and the comment at styles.ts:135 says so explicitly.",
+    "The timestamp defect is not new to V4: frontend/src/pipeline/VideoDetail.tsx:18, KnowledgeGraphView.tsx:22 and pipeline/graph.ts:123 build the URL the same way. src/rag/packs.py:574 builds it correctly from video_id and start_seconds.",
+    "The frontend gate is the only one of the four gate items this file covers. Cluster spread, property purity, the intruder probe and determinism were checked against the artifact and the stored embeddings, not through the UI."
+  ]
+}

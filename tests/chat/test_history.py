@@ -214,3 +214,95 @@ def test_trace_defaults_to_empty_for_older_answers():
 
     answer = ChatAnswer.from_result(SetupResult(key="rag_llm", title="t", command="c", answer="a"))
     assert answer.trace == []
+
+
+def test_a_document_review_records_how_much_of_it_was_read(tmp_path):
+    """The card must say "all 9 sections" after a reload, not guess it."""
+    from src.chat.history import build_entry, load_history, save_history
+
+    entry = build_entry(
+        "review https://example.com/cv",
+        [],
+        document_id="doc:abc",
+        document_detail="fetched — whole document — all 3 sections in context",
+        document_sections_selected=[0, 1, 2],
+    )
+
+    path = tmp_path / "history.json"
+    save_history([entry], path)
+    loaded = load_history(path)[0]
+
+    assert loaded.document_id == "doc:abc"
+    assert loaded.document_detail == "fetched — whole document — all 3 sections in context"
+    assert loaded.document_sections_selected == [0, 1, 2]
+
+
+def test_the_selection_record_carries_no_document_text(tmp_path):
+    """This file is committed; only facts *about* the document belong in it."""
+    import json
+
+    from src.chat.history import build_entry, save_history
+
+    entry = build_entry(
+        "review https://example.com/cv",
+        [],
+        document_id="doc:abc",
+        document_detail="fetched — whole document — all 3 sections in context",
+        document_sections_selected=[0, 1, 2],
+    )
+
+    path = tmp_path / "history.json"
+    save_history([entry], path)
+
+    written = json.loads(path.read_text(encoding="utf-8"))["conversations"][0]
+    assert set(written) == {
+        "id",
+        "question",
+        "url",
+        "asked_at",
+        "answers",
+        "document_id",
+        "document_detail",
+        "document_sections_selected",
+    }
+
+
+def test_an_ordinary_question_records_no_selection(tmp_path):
+    from src.chat.history import build_entry
+
+    entry = build_entry("what changed?", [])
+
+    assert entry.document_detail is None
+    assert entry.document_sections_selected is None
+
+
+def test_entries_written_before_the_selection_existed_still_load(tmp_path):
+    """Back-compat: the committed history predates these fields."""
+    import json
+
+    from src.chat.history import load_history
+
+    path = tmp_path / "history.json"
+    path.write_text(
+        json.dumps(
+            {
+                "conversations": [
+                    {
+                        "id": "q-1",
+                        "question": "q?",
+                        "url": None,
+                        "asked_at": "now",
+                        "answers": [],
+                        "document_id": "doc:old",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_history(path)[0]
+
+    assert loaded.document_id == "doc:old"
+    assert loaded.document_detail is None
+    assert loaded.document_sections_selected is None

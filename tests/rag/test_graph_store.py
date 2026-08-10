@@ -20,6 +20,7 @@ class RecordingStore(GraphStore):
         self.calls: list[tuple[str, dict[str, Any]]] = []
         self.rows = rows or []
         self.uri = "bolt://recording"
+        self.exclude_video_ids: list[str] = []
 
     def _run(self, query: str, **params: Any) -> list[dict[str, Any]]:
         self.calls.append((query, params))

@@ -38,11 +38,33 @@ class FakeSettings:
     judge_samples: int = 1
 
 
+class FakeCorpus:
+    """The corpus a fake runner retrieves from.
+
+    ``run_matrix`` digests this into cache identity, because a cell scored
+    before an ingestion is not a valid answer for the same question after one.
+    A runner that exposes no corpus cannot be fingerprinted, so the fakes model
+    the same contract the real ``RagSetupRunner`` does.
+    """
+
+    def __init__(self, video_ids=("v1", "v2"), chunks=2) -> None:
+        self._metadatas = [{"video_id": video_ids[i % len(video_ids)]} for i in range(chunks)]
+
+    def get(self, include=None):
+        return {"metadatas": self._metadatas}
+
+
+class FakeProvider:
+    def __init__(self, corpus=None) -> None:
+        self.chunk_store = type("Store", (), {"collection": corpus or FakeCorpus()})()
+
+
 class CountingRunner:
     """A fake RagSetupRunner: records every call, answers deterministically."""
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
+        self.provider = FakeProvider()
 
     def run(self, key: str, question: str, *, top_k=None, scope=None) -> SetupResult:
         self.calls.append((key, question))
@@ -147,6 +169,7 @@ def test_a_failed_cell_is_not_cached_and_retries_next_run(tmp_path) -> None:
 
         def __init__(self) -> None:
             self.attempts = 0
+            self.provider = FakeProvider()
 
         def run(self, key, question, *, top_k=None, scope=None):
             self.attempts += 1

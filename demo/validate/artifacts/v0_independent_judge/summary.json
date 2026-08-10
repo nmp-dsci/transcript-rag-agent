@@ -1,0 +1,170 @@
+{
+  "question": "Does the depth-v2 ranking survive a judge from a different provider?",
+  "headline": "Yes \u2014 the full 4-setup order is identical; rag_agent > rag_llm holds, with the gap narrowing from +0.1454 to +0.0709.",
+  "self_graded_run": {
+    "run_id": "matrix-20260809-071818-depth-v2",
+    "path": "evals/runs/matrix-20260809-071818-depth-v2.json",
+    "answer_model": "deepseek-v4-flash",
+    "grounding_judge": "deepseek-v4-flash",
+    "depth_judge": "deepseek-v4-flash"
+  },
+  "independent_run": {
+    "run_id": "matrix-20260809-074957-depth-v2",
+    "path": "demo/validate/artifacts/v0_independent_judge/matrix-20260809-074957-depth-v2-judge-gpt-5.5.json",
+    "answer_model": "deepseek-v4-flash",
+    "grounding_judge_reused_from_source": "deepseek-v4-flash",
+    "depth_judge": "gpt-5.5",
+    "depth_judge_base_url": "https://api.openai.com/v1",
+    "note": "Only the five depth metrics were recomputed; grounding scores are the stored DeepSeek ones, by design of src/evals/rejudge.py."
+  },
+  "composites": {
+    "rag_llm": {
+      "self_graded": 0.6782,
+      "independent": 0.6835,
+      "delta": 0.0053
+    },
+    "rag_llm_recursive": {
+      "self_graded": 0.6655,
+      "independent": 0.6232,
+      "delta": -0.0423
+    },
+    "rag_agent": {
+      "self_graded": 0.8236,
+      "independent": 0.7544,
+      "delta": -0.0692
+    },
+    "graph_rag": {
+      "self_graded": 0.6286,
+      "independent": 0.5484,
+      "delta": -0.0802
+    }
+  },
+  "ranking": {
+    "self_graded_order": [
+      "rag_agent",
+      "rag_llm",
+      "rag_llm_recursive",
+      "graph_rag"
+    ],
+    "independent_order": [
+      "rag_agent",
+      "rag_llm",
+      "rag_llm_recursive",
+      "graph_rag"
+    ],
+    "identical": true,
+    "spearman_rho": 1.0,
+    "kendall_tau": 1.0,
+    "concordant_pairs": 6,
+    "discordant_pairs": 0,
+    "rag_agent_minus_rag_llm": {
+      "self_graded": 0.1454,
+      "independent": 0.0709
+    }
+  },
+  "per_metric_paired_shift": {
+    "insight_depth": {
+      "self_mean": 0.5766,
+      "independent_mean": 0.53,
+      "mean_diff": -0.0466,
+      "cells_scored_lower_by_independent": 45,
+      "n": 79
+    },
+    "specificity": {
+      "self_mean": 0.8247,
+      "independent_mean": 0.729,
+      "mean_diff": -0.0957,
+      "cells_scored_lower_by_independent": 61,
+      "n": 79
+    },
+    "coverage": {
+      "self_mean": 0.669,
+      "independent_mean": 0.5896,
+      "mean_diff": -0.0794,
+      "cells_scored_lower_by_independent": 47,
+      "n": 79
+    },
+    "evidence_breadth": {
+      "self_mean": 0.5994,
+      "independent_mean": 0.5144,
+      "mean_diff": -0.0849,
+      "cells_scored_lower_by_independent": 49,
+      "n": 79
+    },
+    "calibration": {
+      "self_mean": 0.619,
+      "independent_mean": 0.4815,
+      "mean_diff": -0.1375,
+      "cells_scored_lower_by_independent": 50,
+      "n": 79
+    },
+    "composite": {
+      "self_mean": 0.6974,
+      "independent_mean": 0.6511,
+      "mean_diff": -0.0463,
+      "cells_scored_lower_by_independent": 54,
+      "n": 79
+    }
+  },
+  "coverage": {
+    "cells": 80,
+    "depth_judged": 79,
+    "skipped": 1,
+    "skipped_cells": [
+      [
+        "rag_agent",
+        "g003",
+        "no answer to grade for depth"
+      ]
+    ],
+    "skips_identical_to_self_graded_run": true,
+    "depth_judge_errors": 0,
+    "capped_cells": [
+      [
+        "rag_llm",
+        "g008"
+      ],
+      [
+        "rag_llm",
+        "g010"
+      ],
+      [
+        "rag_llm",
+        "g012"
+      ]
+    ],
+    "capped_identical_to_self_graded_run": true,
+    "context_short_cells": [
+      [
+        "graph_rag",
+        "g010",
+        24,
+        36
+      ],
+      [
+        "graph_rag",
+        "g011",
+        24,
+        36
+      ],
+      [
+        "graph_rag",
+        "g012",
+        24,
+        36
+      ],
+      [
+        "graph_rag",
+        "g020",
+        24,
+        36
+      ]
+    ]
+  },
+  "cost": {
+    "depth_judge_calls": 79,
+    "max_workers": 4,
+    "wall_clock_seconds": 256,
+    "throughput_problems": "none \u2014 steady completion, no stalls"
+  }
+}

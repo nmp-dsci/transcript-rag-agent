@@ -1,0 +1,25 @@
+{
+  "key": "u01-keywords-invented:ungrounded",
+  "scores": {
+    "faithfulness": 0.0,
+    "answer_relevancy": 0.3742,
+    "context_precision": 0.3333,
+    "insight_depth": 0.0,
+    "specificity": 1.0,
+    "coverage": 0.1,
+    "evidence_breadth": 0.0,
+    "calibration": 0.0
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.2358
+  },
+  "depth_v2": {
+    "composite": 0.2308,
+    "uncapped": 0.2308,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 6
+}

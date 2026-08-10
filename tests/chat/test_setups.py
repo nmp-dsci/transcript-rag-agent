@@ -964,7 +964,77 @@ def test_a_baseline_only_session_never_builds_a_variant(settings) -> None:
     [
         ("rag_llm_hyde", "--query-transform hyde"),
         ("rag_llm_contextual", "--contextual"),
+        ("rag_llm_filtered", "--filter-transcripts"),
     ],
 )
 def test_a_variant_reports_the_flag_that_reproduces_it(key, expected) -> None:
     assert expected in command_for(key)
+
+
+def test_the_filtered_setup_asks_for_the_summary_filter(settings) -> None:
+    """The gap this setup closes: nothing else ever set ``filter_transcripts``."""
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm_filtered", "how do I prepare for interviews?")
+
+    assert agent.requests[-1].filter_transcripts is True
+    assert agent.requests[-1].transcript_filter_top_k == settings.transcript_filter_top_k
+    assert agent.requests[-1].transcript_filter_min_score == settings.transcript_filter_min_score
+
+
+def test_the_unfiltered_setup_is_the_same_call_without_the_filter(settings) -> None:
+    """The two setups have to differ on this axis and no other, or the
+    score gap between them is not attributable to the filter."""
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm_filtered", "how do I prepare for interviews?")
+    runner.run("rag_llm", "how do I prepare for interviews?")
+
+    filtered, baseline = agent.requests
+    assert filtered.filter_transcripts is True
+    assert baseline.filter_transcripts is False
+    assert filtered.model_dump(exclude={"filter_transcripts"}) == baseline.model_dump(
+        exclude={"filter_transcripts"}
+    )
+
+
+def test_the_filtered_setup_answers_over_the_baseline_retrieval_stack(settings) -> None:
+    """A per-request filter, not a second index: same provider, same models."""
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    assert runner.provider_for("rag_llm_filtered") is runner.provider_for("rag_llm")
+
+
+def test_an_explicit_scope_filter_survives_an_unfiltered_setup(settings) -> None:
+    """``--filter-transcripts`` on a plain run is still the caller's request."""
+    from src.chat.setups import AskScope
+
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm", "question", scope=AskScope(filter_transcripts=True))
+
+    assert agent.requests[-1].filter_transcripts is True
+
+
+def test_the_coverage_warning_is_readable_rather_than_clipped(settings) -> None:
+    """It renders on the wrapping note line; ``detail`` is ellipsised at about
+    a quarter of this warning's length, which hid the half that says what to do."""
+    from src.chat.setups import AskScope
+
+    warning = (
+        "This document does not match a kind the corpus has criteria for "
+        "(resume, portfolio, professional profile, cover letter). The retrieved "
+        "chunks are the closest the corpus holds, which may be advice about a "
+        "different kind of document entirely — say so rather than applying it."
+    )
+    runner = _runner(settings, rag_llm=FakeRagLlm())
+
+    result = runner.run("rag_llm", "review this", scope=AskScope(coverage_warning=warning))
+
+    step = result.trace[0]
+    assert step["label"] == "Corpus coverage"
+    assert step["note"] == warning
+    assert len(step["detail"]) < 70

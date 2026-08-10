@@ -1,0 +1,25 @@
+{
+  "key": "p09-where-time:deep",
+  "scores": {
+    "faithfulness": 0.8909,
+    "answer_relevancy": 0.4317,
+    "context_precision": 1.0,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 0.9,
+    "evidence_breadth": 0.9,
+    "calibration": 1.0
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.7742
+  },
+  "depth_v2": {
+    "composite": 0.9013,
+    "uncapped": 0.9013,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 5
+}

@@ -1,0 +1,3 @@
+# Verdicts are the evidence and get committed; the screenshots beside them are
+# regenerable by re-running the script and would add a few MB per slice per run.
+*.png

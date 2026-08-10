@@ -38,18 +38,21 @@ from src.evals.golden import GoldenEntry, load_golden  # noqa: E402
 from src.evals.judge import ragas_version  # noqa: E402
 from src.evals.matrix import (  # noqa: E402
     DEFAULT_MATRIX_SETUPS,
-    _summarize_dicts,
     build_comparison,
     config_snapshot,
     format_matrix_table,
+    summarize_cells,
 )
 from src.evals.matrix_cache import (  # noqa: E402
     DEFAULT_CACHE_DIR,
     cell_fingerprint,
+    corpus_digest_for,
     load_cell,
     save_cell,
 )
 from src.evals.regression import run_golden_eval, save_run  # noqa: E402
+from src.rag.embeddings import HuggingFaceEmbeddingModel  # noqa: E402
+from src.rag.storage import TranscriptChunkStore  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,17 @@ def main() -> int:
     entries = load_golden()
     judge_model_name = settings.judge_model or settings.deepseek_model
     ragas_version_str = ragas_version()
+    # The corpus every cell in this run retrieves from. One bulk metadata read,
+    # and it is part of cache identity — a cell scored before an ingestion is
+    # not a valid answer for the same question after one.
+    corpus = corpus_digest_for(
+        TranscriptChunkStore(
+            settings.chroma_path,
+            embedding_model=HuggingFaceEmbeddingModel(settings.embedding_model),
+            collection_name=settings.chunk_collection,
+        )
+    )
+    print(f"corpus digest: {corpus}", flush=True)
 
     def fingerprint(setup: str, entry: GoldenEntry) -> str:
         return cell_fingerprint(
@@ -87,6 +101,7 @@ def main() -> int:
             judge_samples=settings.judge_samples,
             ragas_version=ragas_version_str,
             reference_scored=True,
+            corpus=corpus,
         )
 
     cache: dict[tuple[str, str], dict] = {}
@@ -216,7 +231,7 @@ def main() -> int:
             "setup": setup,
             "config": config,
             "entries": setup_entries,
-            "summary": _summarize_dicts(setup_entries),
+            "summary": summarize_cells(setup_entries),
         }
 
     result = {

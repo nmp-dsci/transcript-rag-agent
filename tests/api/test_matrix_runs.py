@@ -91,7 +91,19 @@ def test_load_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path
     descriptor = describe_matrix_run(runs[0])
     assert descriptor["setups"] == ["rag_llm", "rag_agent"]
     assert descriptor["judged"] is True
-    assert set(descriptor) == {"run_id", "created_at", "setups", "entry_count", "judged"}
+    assert set(descriptor) == {
+        "run_id",
+        "created_at",
+        "setups",
+        "entry_count",
+        "judged",
+        "rubric_version",
+        "rejudged_from",
+        "rejudged_cells",
+        "skipped_cells",
+    }
+    # A run committed before rubrics were named is read as the original one.
+    assert descriptor["rubric_version"] == "ragas-v1"
 
 
 def test_load_matrix_runs_reparses_only_when_the_directory_changes(

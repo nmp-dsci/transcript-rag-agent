@@ -1,0 +1,25 @@
+{
+  "key": "p06-keywords:deep",
+  "scores": {
+    "faithfulness": 0.5238,
+    "answer_relevancy": 0.8055,
+    "context_precision": 1.0,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 0.7,
+    "evidence_breadth": 1.0,
+    "calibration": 0.8
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.7764
+  },
+  "depth_v2": {
+    "composite": 0.5,
+    "uncapped": 0.8453,
+    "cap_applied": true,
+    "cap_reason": "faithfulness 0.52 below 0.6 \u2014 depth cannot rescue an ungrounded answer"
+  },
+  "context_count": 6
+}

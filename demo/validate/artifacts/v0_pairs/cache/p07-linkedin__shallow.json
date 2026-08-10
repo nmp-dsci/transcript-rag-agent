@@ -1,0 +1,25 @@
+{
+  "key": "p07-linkedin:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.7792,
+    "context_precision": 1.0,
+    "insight_depth": 0.1,
+    "specificity": 0.4,
+    "coverage": 0.17,
+    "evidence_breadth": 0.0,
+    "calibration": 0.2
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9264
+  },
+  "depth_v2": {
+    "composite": 0.4849,
+    "uncapped": 0.4849,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 6
+}

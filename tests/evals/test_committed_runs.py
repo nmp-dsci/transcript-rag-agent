@@ -129,3 +129,175 @@ class TestGoldenRuns:
                 if entry.get("error"):
                     continue
                 _assert_reproducible(entry, golden)
+
+
+class TestCritiqueRuns:
+    """The held-out claim, re-checked from the committed file with no API key.
+
+    Every assertion here is arithmetic over what the run stored, so a snapshot
+    whose numbers stopped matching its own evidence fails in CI — which matters
+    more for this run than for the others, because its whole value is the claim
+    that one video was absent, and a leak looks like nothing at all until
+    somebody counts.
+    """
+
+    def test_at_least_one_critique_run_is_committed(self) -> None:
+        assert _load("critique-*.json"), (
+            "commit a held-out critique run: see src.evals.critique_run"
+        )
+
+    def test_the_held_out_video_appears_nowhere_in_any_run(self) -> None:
+        for run in _load("critique-*.json"):
+            held_out = run["held_out_video_id"]
+            for cell in run["cells"]:
+                leaked = [
+                    chunk_id
+                    for chunk_id in cell["retrieved_chunk_ids"]
+                    if chunk_id.startswith(f"chunk:{held_out}:")
+                ]
+                assert leaked == [], f"{run['run_id']} {cell['setup']} retrieved {leaked}"
+                assert held_out not in cell["retrieved_video_ids"]
+                for finding in cell["findings"]:
+                    for citation in finding["citations"]:
+                        assert citation["video_id"] != held_out, (
+                            f"{run['run_id']} {finding['id']} cites the held-out video"
+                        )
+
+    def test_the_stored_leak_count_matches_a_fresh_scan(self) -> None:
+        """The run's own ``held_out_leaks`` is re-derived, not trusted."""
+        from src.evals.critique import Citation, held_out_leaks
+
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                recomputed = held_out_leaks(
+                    run["held_out_video_id"],
+                    chunk_ids=cell["retrieved_chunk_ids"],
+                    video_ids=cell["retrieved_video_ids"],
+                    citations=[
+                        Citation(
+                            video_id=citation["video_id"],
+                            start_seconds=citation["start_seconds"],
+                            quote=citation["quote"],
+                        )
+                        for finding in cell["findings"]
+                        for citation in finding["citations"]
+                    ],
+                )
+                assert len(recomputed) == cell["held_out_leaks"]
+
+    def test_provenance_holds_at_ninety_five_percent(self) -> None:
+        """The gate: cited timestamps must resolve to text containing the quote.
+
+        Read off the stored per-citation checks rather than recomputed against
+        the corpus, so this runs in CI where there is no Chroma — the
+        recomputation against the real transcript is
+        ``test_critique.py``'s job, and it skips without a corpus.
+        """
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                checks = [
+                    check for finding in cell["findings"] for check in finding["citation_checks"]
+                ]
+                if not checks:
+                    continue
+                resolved = sum(1 for check in checks if check["resolved"])
+                assert resolved / len(checks) >= 0.95, (
+                    f"{run['run_id']} {cell['setup']}: only {resolved}/{len(checks)} "
+                    "cited timestamps resolve to the quote"
+                )
+
+    def test_every_score_reproduces_from_the_stored_detail(self) -> None:
+        """Scores are re-derived from the matches and findings beside them.
+
+        A run whose headline number no longer follows from its own evidence is
+        the failure this catches — including the one where somebody edits a
+        score by hand.
+
+        ``applicable`` comes from the committed dataset, **not** from the run's
+        own ``applies_to`` copy. Deriving it from the run (as an earlier version
+        did) let a hand-edited file define the denominator it was checked
+        against, so every run passed.
+        """
+        from src.evals.critique import load_critique_dataset
+
+        applicable = {c.id for c in load_critique_dataset().applicable()}
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                # ``counted``, not ``matched``: a criterion paired with a finding
+                # that rests on no exclusive evidence does not score.
+                counted = sum(
+                    1 for match in cell["matches"] if match["counted"] and match["id"] in applicable
+                )
+                assert cell["scores"]["criteria_recall"] == pytest.approx(
+                    counted / len(applicable), abs=1e-4
+                )
+                grounded = sum(1 for finding in cell["findings"] if finding["grounded"])
+                assert cell["scores"]["evidence_precision"] == pytest.approx(
+                    grounded / len(cell["findings"]), abs=1e-4
+                )
+
+    def test_the_run_matches_the_committed_criteria_dataset(self) -> None:
+        """Every match row must be the criterion the dataset says it is.
+
+        The run carries a copy of each criterion's text, timestamp and
+        applicability for the UI. That copy is not a second source of truth — if
+        it drifts from ``critique_dataset.json``, the scores were computed
+        against something no longer in the repo.
+        """
+        from src.evals.critique import load_critique_dataset
+
+        dataset = load_critique_dataset()
+        by_id = {c.id: c for c in dataset.criteria}
+        for run in _load("critique-*.json"):
+            assert run["criteria_total"] == len(dataset.criteria)
+            assert run["criteria_applicable"] == len(dataset.applicable())
+            for cell in run["cells"]:
+                assert [m["id"] for m in cell["matches"]] == list(by_id)
+                for match in cell["matches"]:
+                    criterion = by_id[match["id"]]
+                    assert match["criterion"] == criterion.criterion
+                    assert match["quote"] == criterion.quote
+                    assert match["start_seconds"] == criterion.start_seconds
+                    assert match["applies_to"] == list(criterion.applies_to)
+
+    def test_a_finding_never_claims_evidence_another_finding_also_claims(self) -> None:
+        """Grounding rests on exclusive evidence — re-derived, not trusted.
+
+        This is the rule that closes the padding attack (18 findings reciting the
+        criteria on one shared quote used to score a perfect sweep), so the
+        committed run has to demonstrate it rather than assert it.
+        """
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                owners: dict[str, set[str]] = {}
+                for finding in cell["findings"]:
+                    for check in finding["citation_checks"]:
+                        if check["resolved"] and check["chunk_id"]:
+                            owners.setdefault(check["chunk_id"], set()).add(finding["id"])
+                for finding in cell["findings"]:
+                    exclusive = [
+                        chunk_id
+                        for chunk_id in finding["exclusive_chunk_ids"]
+                        if owners.get(chunk_id) == {finding["id"]}
+                    ]
+                    assert bool(exclusive) == finding["grounded"], finding["id"]
+
+    def test_the_reported_spread_brackets_the_reported_score(self) -> None:
+        """A score outside its own spread means the two were computed apart."""
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                spread = cell["score_spread"]
+                if spread["criteria_recall_min"] is None:
+                    continue
+                assert (
+                    spread["criteria_recall_min"]
+                    <= cell["scores"]["criteria_recall"]
+                    <= spread["criteria_recall_max"]
+                )
+                assert len(cell["match_runs"]) == cell["match_repeats"]
+
+    def test_a_finding_may_not_be_spent_on_two_criteria(self) -> None:
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                used = [m["finding_id"] for m in cell["matches"] if m["matched"]]
+                assert len(used) == len(set(used)), f"{run['run_id']} reused a finding"

@@ -1,0 +1,25 @@
+{
+  "key": "p08-agent-share:shallow",
+  "scores": {
+    "faithfulness": 0.8333,
+    "answer_relevancy": 0.4159,
+    "context_precision": 0.9167,
+    "insight_depth": 0.1,
+    "specificity": 0.7,
+    "coverage": 0.2,
+    "evidence_breadth": 0.2,
+    "calibration": 0.1
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.722
+  },
+  "depth_v2": {
+    "composite": 0.4699,
+    "uncapped": 0.4699,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 4
+}

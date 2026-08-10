@@ -1,0 +1,25 @@
+{
+  "key": "p10-ide:deep",
+  "scores": {
+    "faithfulness": 0.7568,
+    "answer_relevancy": 0.2731,
+    "context_precision": 1.0,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 1.0,
+    "evidence_breadth": 1.0,
+    "calibration": 1.0
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.6766
+  },
+  "depth_v2": {
+    "composite": 0.8787,
+    "uncapped": 0.8787,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 3
+}

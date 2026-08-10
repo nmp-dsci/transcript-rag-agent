@@ -10,6 +10,8 @@ from src.evals.matrix_cache import (
     _ENGINE_SETTINGS,
     _SETTINGS_DEFAULTS,
     cell_fingerprint,
+    corpus_digest,
+    corpus_digest_for,
     load_cell,
     save_cell,
 )
@@ -251,3 +253,98 @@ def test_retrieval_breadth_still_reaches_the_new_vector_variants() -> None:
 
     for setup in ("rag_llm_hyde", "rag_llm_contextual"):
         assert cell_fingerprint(setup, e, settings) != cell_fingerprint(setup, e, wider)
+
+
+def test_holding_out_a_video_changes_the_fingerprint():
+    """A full-corpus cell must never answer for a held-out one.
+
+    Same question, same engine, same judge — the only difference is that one
+    run could see the video and the other could not, which is precisely the
+    difference the held-out experiment measures. Sharing a cache entry between
+    them produces a number that looks fine and means nothing.
+    """
+    settings = FakeSettings()
+    e = entry()
+    full = cell_fingerprint("rag_llm_filtered", e, settings)
+    held_out = cell_fingerprint("rag_llm_filtered", e, settings, exclude_video_ids=["15rTnqKBlO8"])
+    other = cell_fingerprint("rag_llm_filtered", e, settings, exclude_video_ids=["3pFRqPqzBCM"])
+
+    assert full != held_out
+    assert held_out != other
+
+
+def test_an_empty_exclusion_leaves_the_fingerprint_untouched():
+    """Cells scored before held-out runs existed must stay valid."""
+    settings = FakeSettings()
+    e = entry()
+
+    assert cell_fingerprint("rag_llm", e, settings) == cell_fingerprint(
+        "rag_llm", e, settings, exclude_video_ids=[]
+    )
+
+
+# --- corpus identity -----------------------------------------------------
+
+
+def test_ingesting_videos_changes_the_fingerprint():
+    """The defect this exists to prevent.
+
+    A ``rag_llm`` baseline scored over 38 videos and a ``rag_llm_filtered`` arm
+    scored over 53 differ in the corpus and in nothing else this material
+    tracked, so the cache handed back the stale arm and the comparison read as
+    filtered-vs-unfiltered when it was actually old-corpus-vs-new.
+    """
+    settings = FakeSettings()
+    e = entry()
+    before = cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(["a", "b"], 40))
+    after = cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(["a", "b", "c"], 60))
+
+    assert before != after
+
+
+def test_rechunking_the_same_videos_changes_the_fingerprint():
+    """Same videos, different chunking: the retrieved units are not the same."""
+    same_videos = ["a", "b"]
+    settings = FakeSettings()
+    e = entry()
+
+    assert corpus_digest(same_videos, 40) != corpus_digest(same_videos, 80)
+    assert cell_fingerprint(
+        "rag_llm", e, settings, corpus=corpus_digest(same_videos, 40)
+    ) != cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(same_videos, 80))
+
+
+def test_corpus_digest_ignores_video_order_and_duplicates():
+    """It identifies the corpus, not the order one bulk read happened to return."""
+    assert corpus_digest(["b", "a", "a"], 10) == corpus_digest(["a", "b"], 10)
+
+
+def test_an_unknown_corpus_is_omitted_so_unit_tests_need_no_store():
+    """``None`` means "not supplied", and only tests supply nothing."""
+    settings = FakeSettings()
+    e = entry()
+
+    assert cell_fingerprint("rag_llm", e, settings) == cell_fingerprint(
+        "rag_llm", e, settings, corpus=None
+    )
+    assert cell_fingerprint("rag_llm", e, settings) != cell_fingerprint(
+        "rag_llm", e, settings, corpus=corpus_digest(["a"], 1)
+    )
+
+
+def test_corpus_digest_for_reads_a_store_in_one_call():
+    class FakeCollection:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, include):
+            self.calls += 1
+            return {"metadatas": [{"video_id": "a"}, {"video_id": "b"}, {"video_id": "a"}]}
+
+    class FakeStore:
+        def __init__(self):
+            self.collection = FakeCollection()
+
+    store = FakeStore()
+    assert corpus_digest_for(store) == corpus_digest(["a", "b"], 3)
+    assert store.collection.calls == 1

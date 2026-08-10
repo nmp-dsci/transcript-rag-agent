@@ -1,0 +1,49 @@
+{
+  "source_run": "matrix-20260729-025133",
+  "questions": 20,
+  "setups": [
+    "rag_llm",
+    "rag_llm_recursive",
+    "rag_agent",
+    "graph_rag"
+  ],
+  "ragas_v1_ranking": [
+    [
+      "rag_llm",
+      0.7525
+    ],
+    [
+      "rag_agent",
+      0.7392
+    ],
+    [
+      "rag_llm_recursive",
+      0.7092
+    ],
+    [
+      "graph_rag",
+      0.6806
+    ]
+  ],
+  "depth_v2_ranking": [
+    [
+      "rag_agent",
+      0.7843
+    ],
+    [
+      "rag_llm",
+      0.6815
+    ],
+    [
+      "rag_llm_recursive",
+      0.6742
+    ],
+    [
+      "graph_rag",
+      0.6396
+    ]
+  ],
+  "order_changed": true,
+  "capped_cells": 3,
+  "depth_errors": []
+}

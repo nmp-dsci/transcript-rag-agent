@@ -170,8 +170,7 @@ def _final_message(content: str) -> AIMessage:
 
 def _retrieve_then_answer(num_retrievals: int, final: str) -> list[AIMessage]:
     messages = [
-        _tool_call_message(f"focused query {i}", f"call_{i}")
-        for i in range(num_retrievals)
+        _tool_call_message(f"focused query {i}", f"call_{i}") for i in range(num_retrievals)
     ]
     messages.append(_final_message(final))
     return messages
@@ -407,9 +406,7 @@ class FakeCliRagAgent:
     def answer_streaming(self, request, on_event=None):
         FakeCliRagAgent.last_request = request
         if on_event is not None:
-            on_event(
-                AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q")
-            )
+            on_event(AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q"))
             on_event(
                 AgentProgressEvent(
                     iteration=1,
@@ -511,9 +508,7 @@ def test_cli_agent_flag_instantiates_rag_agent(monkeypatch, tmp_path, capsys) ->
     capsys.readouterr()
 
 
-def test_cli_without_agent_flag_instantiates_pipeline_agent(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_cli_without_agent_flag_instantiates_pipeline_agent(monkeypatch, tmp_path, capsys) -> None:
     _patch_cli_for_agent(monkeypatch, tmp_path)
     FakeCliRagAgent.instantiated = False
     FakePipelineRagAgent.instantiated = False
@@ -526,9 +521,7 @@ def test_cli_without_agent_flag_instantiates_pipeline_agent(
     capsys.readouterr()
 
 
-def test_cli_rag_llm_flag_instantiates_pipeline_agent(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_cli_rag_llm_flag_instantiates_pipeline_agent(monkeypatch, tmp_path, capsys) -> None:
     _patch_cli_for_agent(monkeypatch, tmp_path)
     FakeCliRagAgent.instantiated = False
     FakePipelineRagAgent.instantiated = False
@@ -541,9 +534,7 @@ def test_cli_rag_llm_flag_instantiates_pipeline_agent(
     capsys.readouterr()
 
 
-def test_cli_rag_llm_and_rag_agent_are_mutually_exclusive(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_cli_rag_llm_and_rag_agent_are_mutually_exclusive(monkeypatch, tmp_path, capsys) -> None:
     _patch_cli_for_agent(monkeypatch, tmp_path)
 
     with pytest.raises(SystemExit):
@@ -590,9 +581,7 @@ def test_cli_tty_iteration_one_has_cyan_and_reset() -> None:
     original = sys.stdout
     sys.stdout = _Recorder()
     try:
-        printer(
-            AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q1")
-        )
+        printer(AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q1"))
         printer(
             AgentProgressEvent(
                 iteration=1,
@@ -625,9 +614,7 @@ def test_cli_non_tty_has_no_ansi_codes() -> None:
     original = sys.stdout
     sys.stdout = _Recorder()
     try:
-        printer(
-            AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q1")
-        )
+        printer(AgentProgressEvent(iteration=1, event_type="retrieval_start", query="q1"))
         printer(
             AgentProgressEvent(
                 iteration=1,
@@ -685,14 +672,163 @@ def test_answer_references_footer_lines_have_no_ansi(monkeypatch, tmp_path) -> N
 
     output = "".join(captured)
     for line in output.splitlines():
-        if (
-            line.startswith("Answer")
-            or line.startswith("References")
-            or line.startswith("Agent:")
-        ):
+        if line.startswith("Answer") or line.startswith("References") or line.startswith("Agent:"):
             assert "\033[" not in line, line
 
 
 @pytest.mark.parametrize("iteration", [1, 7, 13])
 def test_color_for_wraps_palette(iteration) -> None:
     assert cli._color_for(iteration) == cli._ITERATION_COLORS[(iteration - 1) % 6]
+
+
+# --- citations resolve to real chunks ----------------------------------------
+
+
+def _answer_with_references(references: list) -> str:
+    return json.dumps(
+        {
+            "question": "q",
+            "answer": "## Key Findings\n1. A finding [1].",
+            "references": references,
+        }
+    )
+
+
+def test_a_model_supplied_chunk_index_is_replaced_by_the_real_one() -> None:
+    """The chunk header shows video and timestamp but never chunk_index, so
+    chunk_index is the one field the model can only be guessing at."""
+    llm = FakeLlm(
+        _retrieve_then_answer(
+            1,
+            _answer_with_references(
+                [
+                    {
+                        "label": "[1]",
+                        "video_id": "abc",
+                        "source_url": "https://www.youtube.com/watch?v=abc",
+                        "timestamp_url": "https://www.youtube.com/watch?v=abc&t=593s",
+                        "start_seconds": 593.0,
+                        "end_seconds": 665.0,
+                        "chunk_index": 999,
+                    }
+                ]
+            ),
+        )
+    )
+    agent = RagAgent(llm, FakeProvider())
+
+    answer = agent.answer(_request())
+
+    assert [reference.chunk_index for reference in answer.references] == [0]
+    assert answer.references[0].label == "[1]"
+
+
+def test_a_citation_resolves_by_identity_not_by_label_position() -> None:
+    """Every tool call renumbers from [1], so position cannot disambiguate —
+    the label here says [1] but the timestamp names the second call's chunk."""
+    llm = FakeLlm(
+        _retrieve_then_answer(
+            2,
+            _answer_with_references(
+                [
+                    {
+                        "label": "[1]",
+                        "video_id": "abc",
+                        "source_url": "https://www.youtube.com/watch?v=abc",
+                        "timestamp_url": "https://www.youtube.com/watch?v=abc&t=594s",
+                        "start_seconds": 594.0,
+                        "end_seconds": 666.0,
+                        "chunk_index": 3,
+                    }
+                ]
+            ),
+        )
+    )
+    agent = RagAgent(llm, FakeProvider())
+
+    answer = agent.answer(_request())
+
+    # start_seconds 594 is offset 1, whose real chunk_index is 1 (call 0) — not
+    # the 3 the model wrote, and not chunk 0 that its [1] label would suggest.
+    assert answer.references[0].start_seconds == 594.0
+    assert answer.references[0].chunk_index == 1
+
+
+def test_a_citation_of_a_video_that_was_never_retrieved_is_dropped() -> None:
+    llm = FakeLlm(
+        _retrieve_then_answer(
+            1,
+            _answer_with_references(
+                [
+                    {
+                        "label": "[1]",
+                        "video_id": "NEVER_RETRIEVED",
+                        "source_url": "https://www.youtube.com/watch?v=zzz",
+                        "timestamp_url": "https://www.youtube.com/watch?v=zzz&t=10s",
+                        "start_seconds": 10.0,
+                        "end_seconds": 20.0,
+                        "chunk_index": 0,
+                    }
+                ]
+            ),
+        )
+    )
+    agent = RagAgent(llm, FakeProvider())
+
+    answer = agent.answer(_request())
+
+    # Nothing resolved, so the answer's own [N] labels drive the fallback
+    # instead — never the invented video.
+    assert all(reference.video_id != "NEVER_RETRIEVED" for reference in answer.references)
+
+
+def test_a_timestamp_too_far_from_any_chunk_is_dropped_not_snapped() -> None:
+    """Attaching the label to the nearest plausible chunk would turn a visible
+    error into an invisible one."""
+    from src.agents.models import RagAnswerReference
+    from src.agents.rag_agent import reconcile_agent_references
+
+    class Chunk:
+        video_id = "abc"
+        source_url = "https://www.youtube.com/watch?v=abc"
+        start_seconds = 593.0
+        end_seconds = 665.0
+        chunk_index = 4
+
+    drifted = RagAnswerReference(
+        label="[1]",
+        video_id="abc",
+        source_url="https://www.youtube.com/watch?v=abc",
+        timestamp_url="https://www.youtube.com/watch?v=abc&t=900s",
+        start_seconds=900.0,
+        chunk_index=0,
+    )
+
+    assert reconcile_agent_references([drifted], [Chunk()]) == []
+
+
+def test_a_second_of_clock_rounding_still_resolves() -> None:
+    """The model is shown mm:ss, so a faithful echo is the truncated second."""
+    from src.agents.models import RagAnswerReference
+    from src.agents.rag_agent import reconcile_agent_references
+
+    class Chunk:
+        video_id = "abc"
+        source_url = "https://www.youtube.com/watch?v=abc"
+        start_seconds = 593.36
+        end_seconds = 665.44
+        chunk_index = 4
+
+    rounded = RagAnswerReference(
+        label="[2]",
+        video_id="abc",
+        source_url="https://www.youtube.com/watch?v=abc",
+        timestamp_url="https://www.youtube.com/watch?v=abc&t=593s",
+        start_seconds=593.0,
+        chunk_index=0,
+    )
+
+    resolved = reconcile_agent_references([rounded], [Chunk()])
+
+    assert [reference.chunk_index for reference in resolved] == [4]
+    assert resolved[0].start_seconds == 593.36
