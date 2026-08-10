@@ -100,6 +100,13 @@ export function buildRefMap(references: Reference[] | undefined): Record<string,
 /** Inline formatting: escape, bold, and turn [n] citations into linked chips. */
 function inline(text: string, refMap: Record<string, Reference>): string {
   let out = escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Document-section markers, before the corpus ones: [§3] points at the card
+  // above the answer, not at a transcript, and a reader has to be able to tell
+  // the two apart at a glance. It carries no link because the section it names
+  // is already on screen.
+  out = out.replace(/\[§\s*(\d+)\]/g, (_match, number: string) => {
+    return `<span class="cite-doc" title="Section ${escapeHtml(number)} of the reviewed document">§${escapeHtml(number)}</span>`;
+  });
   out = out.replace(/\[(\d+)\]/g, (_match, number: string) => {
     const reference = refMap[number];
     if (!reference) return `<span class="cite-missing">${number}</span>`;

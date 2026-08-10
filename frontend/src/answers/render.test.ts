@@ -83,6 +83,17 @@ describe('renderAnswer', () => {
     expect(renderAnswer('Unknown [9].', REFS)).toContain('<span class="cite-missing">9</span>');
   });
 
+  it('marks a document section apart from a corpus citation', () => {
+    const html = renderAnswer('[§3] opens with "responsible for" [1].', REFS);
+    expect(html).toContain('<span class="cite-doc"');
+    expect(html).toContain('>§3</span>');
+    expect(html).toContain('<a class="cite"');
+  });
+
+  it('does not read a section marker as an unresolved corpus citation', () => {
+    expect(renderAnswer('Tighten [§2].', REFS)).not.toContain('cite-missing');
+  });
+
   it('renders ordered and unordered lists', () => {
     const html = renderAnswer('- first\n- second\n\n1. one\n2. two', []);
     expect(html).toContain('<ul><li>first</li><li>second</li></ul>');

@@ -76,6 +76,7 @@ function data(overrides: Partial<Experiments> = {}): Experiments {
     ablations: [ablation()],
     golden_runs: [goldenRun()],
     matrix_runs: [],
+    critique_runs: [],
     ...overrides,
   };
 }

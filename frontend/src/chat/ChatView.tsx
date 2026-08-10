@@ -46,6 +46,32 @@ interface Props {
   pendingChannel?: string | null;
 }
 
+/**
+ * The card for one entry: the cached page, wearing that entry's own selection.
+ *
+ * The two halves come from different places and must be recombined per entry,
+ * never per document. `GET /api/documents/:id` returns the page as stored — it
+ * has no idea which question narrowed it — while `document_detail` and
+ * `document_sections_selected` record what *this* answer was actually given.
+ * Two conversations reviewing the same URL can select different sections, so
+ * merging into the shared cache would show the first one's selection on both.
+ */
+export function documentForEntry(
+  entry: Entry,
+  documents: Record<string, ReviewedDocument>,
+): ReviewedDocument | null {
+  const page = entry.document_id ? documents[entry.document_id] : undefined;
+  if (!page) return null;
+  const selected = entry.document_sections_selected ?? null;
+  if (entry.document_detail == null && selected == null) return page;
+  return {
+    ...page,
+    detail: entry.document_detail ?? page.detail,
+    sections_selected: selected ?? page.sections_selected,
+    narrowed: selected ? selected.length < page.sections.length : page.narrowed,
+  };
+}
+
 function suggestionsFor(corpus: Corpus | null): string[] {
   const titles = (corpus?.videos ?? [])
     .map((video) => video.title)
@@ -121,6 +147,13 @@ export function ChatView({
   // server-side, out of the committed history — so fetch what the thread
   // references and has not already got. A document that has been cleared from
   // the store simply has no card; the conversation still reads.
+  //
+  // This cache holds *pages*, keyed by document id, and nothing question-
+  // specific: how much of a page a given answer read belongs to the entry, and
+  // is applied at render by `documentForEntry`. Keeping it out of the cache is
+  // not tidiness — the cache is filled once per id, so folding a selection into
+  // it would freeze the first entry's selection onto every later conversation
+  // that reviews the same URL.
   useEffect(() => {
     const missing = thread
       .map((entry) => entry.document_id)
@@ -130,14 +163,12 @@ export function ChatView({
     void Promise.all(
       Array.from(new Set(missing)).map((id) =>
         api.document(id).then(
-          (found) => [id, found] as const,
+          (found): [string, ReviewedDocument] | null => [id, found],
           () => null,
         ),
       ),
     ).then((loaded) => {
-      const found = loaded.filter((item): item is readonly [string, ReviewedDocument] =>
-        item !== null,
-      );
+      const found = loaded.filter((item): item is [string, ReviewedDocument] => item !== null);
       if (!live || !found.length) return;
       setDocuments((current) => ({ ...current, ...Object.fromEntries(found) }));
     });
@@ -434,8 +465,8 @@ export function ChatView({
             {thread.map((entry) => (
               <div key={entry.id} style={{ display: 'contents' }}>
                 <div className="msg-user">{entry.question}</div>
-                {entry.document_id && documents[entry.document_id] ? (
-                  <DocumentCard document={documents[entry.document_id]!} />
+                {documentForEntry(entry, documents) ? (
+                  <DocumentCard document={documentForEntry(entry, documents)!} />
                 ) : null}
                 <MessageBubble
                   question={entry.question}

@@ -8,16 +8,18 @@ import { CorpusTree, type SortKey } from "./CorpusTree";
 import { IndexPanel } from "./IndexPanel";
 import { KnowledgeGraphView } from "./KnowledgeGraphView";
 import { RetrievalLab } from "./RetrievalLab";
+import { ThemesView } from "./ThemesView";
 import { VideoDetail } from "./VideoDetail";
 import { type TreeFilter, applyFilter } from "./insights";
 import { PIPELINE_STYLES } from "./styles";
 
-type SubTab = "corpus" | "graph" | "knowledge";
+type SubTab = "corpus" | "graph" | "knowledge" | "themes";
 
 const SUBTABS: { id: SubTab; label: string }[] = [
   { id: "corpus", label: "Corpus & retrieval" },
   { id: "graph", label: "Chunk graph" },
   { id: "knowledge", label: "Knowledge graph" },
+  { id: "themes", label: "Themes" },
 ];
 
 interface Props {
@@ -42,6 +44,7 @@ export function PipelineView({
   // hidden — switching sub-tabs must not rebuild a 281-node projection.
   const [graphMounted, setGraphMounted] = useState(false);
   const [knowledgeMounted, setKnowledgeMounted] = useState(false);
+  const [themesMounted, setThemesMounted] = useState(false);
   const [sort, setSort] = useState<SortKey>("views");
   const [filter, setFilter] = useState<TreeFilter | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
@@ -109,6 +112,7 @@ export function PipelineView({
   const showSub = (next: SubTab) => {
     if (next === "graph") setGraphMounted(true);
     if (next === "knowledge") setKnowledgeMounted(true);
+    if (next === "themes") setThemesMounted(true);
     setSub(next);
   };
 
@@ -220,6 +224,12 @@ export function PipelineView({
       {knowledgeMounted ? (
         <div className="pipe-pane" hidden={sub !== "knowledge"}>
           <KnowledgeGraphView />
+        </div>
+      ) : null}
+
+      {themesMounted ? (
+        <div className="pipe-pane" hidden={sub !== "themes"}>
+          <ThemesView />
         </div>
       ) : null}
     </section>

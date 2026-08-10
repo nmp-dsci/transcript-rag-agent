@@ -1,5 +1,5 @@
 import type { ScoreboardRow } from '../api/types';
-import { LOW_N, efficiency } from '../eval/breakdown';
+import { efficiency, isLowN } from '../eval/breakdown';
 import { useEvalStyles } from '../eval/styles';
 
 interface Ranked {
@@ -46,7 +46,7 @@ export function EfficiencyPanel({ rows }: { rows: readonly ScoreboardRow[] }) {
         bar is better value.
       </p>
       {ranked.map(({ row, value }, index) => {
-        const lowN = row.judged < LOW_N;
+        const lowN = isLowN(row.judged);
         return (
           <div className="effrow" key={`${row.key}:${row.model ?? 'legacy'}`}>
             <div className="effname" title={label(row)}>

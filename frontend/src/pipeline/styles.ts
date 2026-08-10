@@ -130,6 +130,72 @@ export const PIPELINE_STYLES = `
   .graph-side { width: auto; min-width: 0; max-height: 40%; border-left: none; border-top: 1px solid var(--border); }
 }
 
+/* ── Themes (RAPTOR level 2) ──
+   Everything that can hold model-written text wraps. Theme titles and summaries
+   are LLM output of unbounded length, and this app has repeatedly shipped a
+   nowrap field that silently truncated one to a third of itself. The only
+   ellipsis here is on the collapsed chunk preview, which is a deliberate
+   fixed-length excerpt, not a title. */
+.th-toplevel { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 16px; margin: 16px; line-height: 1.6; }
+.th-toplevel code { font-size: 11.5px; word-break: break-all; }
+.th-layout { flex: 1; min-height: 0; display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 12px;
+  padding: 12px 16px; box-sizing: border-box; overflow: hidden; }
+@media (max-width: 900px) { .th-layout { grid-template-columns: 1fr; overflow-y: auto; } }
+
+.th-list { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+  padding-right: 4px; }
+.th-listhead { padding: 2px 2px 6px; }
+.th-blurb { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55; }
+.th-statline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.th-row { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%;
+  text-align: left; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--panel); color: var(--text2); cursor: pointer; }
+.th-row:hover { background: var(--hover); }
+.th-row.on { border-color: var(--accent-border); background: var(--accent-dim); }
+.th-row-title { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.45;
+  overflow-wrap: anywhere; }
+.th-row-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.th-tag { font: 600 9.5px var(--mono); letter-spacing: 0.03em; border-radius: 8px;
+  padding: 2px 7px; border: 1px solid var(--border2); color: var(--muted);
+  background: var(--panel2); white-space: normal; overflow-wrap: anywhere; }
+.th-tag.cross { color: var(--good); border-color: var(--good-border); background: var(--good-dim); }
+.th-tag.single { color: var(--dim); }
+.th-tag.warn { color: var(--bad); border-color: var(--bad-border); background: var(--bad-dim); }
+
+.th-detail { min-height: 0; overflow-y: auto; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; }
+.th-empty { color: var(--muted); font-size: 12.5px; }
+.th-title { margin: 0; font-size: 15px; color: var(--text); line-height: 1.4; overflow-wrap: anywhere; }
+.th-summary { margin: 8px 0 0; font-size: 12.5px; color: var(--text2); line-height: 1.6;
+  overflow-wrap: anywhere; }
+.th-note { margin: 10px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55;
+  background: var(--panel3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+
+.th-group { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.th-grouphead { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.th-groupname { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.4;
+  overflow-wrap: anywhere; }
+.th-groupmeta { font: 10.5px var(--mono); color: var(--accent2); overflow-wrap: anywhere; }
+
+.th-chunk { border: 1px solid var(--border); border-radius: 8px; background: var(--panel3);
+  margin-top: 5px; }
+.th-chunk.on { border-color: var(--accent-border); }
+.th-chunkhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; width: 100%;
+  text-align: left; padding: 6px 9px; background: none; border: none; cursor: pointer; }
+.th-chunkhead:hover { background: var(--hover); border-radius: 8px; }
+.th-chunkid { font: 600 10px var(--mono); color: var(--dim); flex: 0 0 auto; }
+.th-chunktime { font: 10px var(--mono); color: var(--accent2); flex: 0 0 auto; }
+.th-chunkpreview { flex: 1 1 160px; min-width: 0; font-size: 11.5px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.th-chunkbody { padding: 2px 10px 10px; }
+.th-chunkbody p { margin: 0 0 6px; font-size: 12.5px; color: var(--text2); line-height: 1.6;
+  overflow-wrap: anywhere; }
+.th-chunkbody a { font-size: 11px; color: var(--accent2); }
+
 /* ── Knowledge graph (GraphRAG entities) ── */
 .kg-toplevel-empty { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px 16px; margin: 16px; }

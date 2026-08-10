@@ -66,6 +66,11 @@ export interface Evaluation {
   embedding_model?: string | null;
   scores: Record<string, number>;
   composite: number | null;
+  /** True when the rubric's cap decided the composite; false/absent otherwise. */
+  cap_applied?: boolean;
+  cap_reason?: string | null;
+  grounding_floor_breached?: boolean;
+  grounding_reason?: string | null;
   elapsed_seconds: number;
   scored_at: string;
   error: string | null;
@@ -85,6 +90,22 @@ export interface TraceStep {
   phase: "route" | "filter" | "retrieve" | "rerank" | "merge" | "llm";
   label: string;
   detail: string;
+  /**
+   * What was actually embedded/searched. Not always the user's question — a
+   * follow-up is rewritten and a document review searches for the criteria the
+   * document should be judged against — so it is rendered in full rather than
+   * folded into the truncated detail line. Absent on non-search steps and on
+   * traces written before this existed.
+   */
+  query?: string | null;
+  /**
+   * Long-form text this step has to show in full — a coverage caveat, the list
+   * of videos a filter routed to. `detail` renders on the single-line row and
+   * ellipsises at whatever width is left; anything a reader has to actually
+   * read comes through here and gets its own wrapping line. Absent on steps
+   * with nothing long to say, and on traces written before this existed.
+   */
+  note?: string | null;
   chunk_ids: string[];
   model: string | null;
   elapsed_ms: number | null;
@@ -137,6 +158,15 @@ export interface Entry {
    * fetched with `api.document(id)`.
    */
   document_id?: string | null;
+  /**
+   * How much of that document the answer read — "whole document — all 9
+   * sections in context", or the narrowed equivalent. Recorded on the entry
+   * rather than derived on reload, so a reopened conversation reports what
+   * actually happened at the time it was answered.
+   */
+  document_detail?: string | null;
+  /** Section indices the answer call actually received. */
+  document_sections_selected?: number[] | null;
 }
 
 export interface DocumentSection {
@@ -328,6 +358,74 @@ export interface ChunkList {
   total: number;
 }
 
+/* ── Themes: RAPTOR level 2, clusters that cross video boundaries ────────── */
+
+/** One video contributing members to a theme (GET /api/themes). */
+export interface ThemeVideo {
+  video_id: string;
+  title: string | null;
+  channel_name: string | null;
+  member_count: number;
+  domain: string;
+}
+
+export interface Theme {
+  theme_id: string;
+  title: string;
+  summary: string;
+  member_count: number;
+  video_count: number;
+  channel_count: number;
+  /** False when every member came from one video — no lift over level 1. */
+  cross_video: boolean;
+  domain: string;
+  domain_mix: Record<string, number>;
+  property_share: number;
+  videos: ThemeVideo[];
+}
+
+export interface ThemeStats {
+  themes?: number;
+  cross_video_themes?: number;
+  single_video_themes?: number;
+  video_count_distribution?: Record<string, number>;
+  max_videos_in_a_theme?: number;
+  chunks_clustered?: number;
+  videos_covered?: number;
+  job_search_themes?: number;
+  impure_job_search_themes?: string[];
+  max_property_share_in_job_search_theme?: number;
+}
+
+export interface ThemeList {
+  themes: Theme[];
+  stats: ThemeStats;
+  generated_at: string | null;
+  summary_model: string | null;
+  embedding_model: string | null;
+  build_command: string;
+}
+
+/** A member chunk, hydrated from the chunk store (GET /api/themes/{id}). */
+export interface ThemeChunk {
+  chunk_id: string;
+  chunk_index: number;
+  probability: number;
+  text: string;
+  start_seconds: number | null;
+  end_seconds: number | null;
+  source_url: string | null;
+}
+
+export interface ThemeVideoGroup extends ThemeVideo {
+  chunks: ThemeChunk[];
+}
+
+export interface ThemeDetail {
+  theme: Theme;
+  videos: ThemeVideoGroup[];
+}
+
 export type RankMode = "semantic" | "bm25" | "graph";
 
 export interface RankRow {
@@ -386,14 +484,39 @@ export interface ScoreboardRow {
   win_rate: number | null;
   avg_latency_seconds: number | null;
   avg_token_estimate: number | null;
+  /** Judged answers in this row that hit the rubric's cap; 0 without a cap. */
+  capped?: number;
+  /** Judged answers that breached the grounding floor — a superset of `capped`. */
+  ungrounded?: number;
+}
+
+/** A named block of metrics and the share of the composite it owns. */
+export interface MetricGroup {
+  key: string;
+  label: string;
+  weight: number;
+  metrics: string[];
 }
 
 export interface Provenance {
   judge_models: string[];
+  /** The judge behind the depth metrics; empty under a rubric without them. */
+  depth_judge_models?: string[];
   ragas_versions: string[];
   embedding_models: string[];
   last_judged: string | null;
+  /** True when the answering model also graded these answers. */
+  self_graded?: boolean;
+  self_graded_answers?: number;
+  /** Which rubric composited these rows; drives the metric columns below. */
+  rubric_version?: string;
+  /** Every rubric seen in the run — more than one means mixed records. */
+  rubric_versions?: string[];
   metrics: string[];
+  /** Each metric's share of the composite. Absent on older payloads. */
+  metric_weights?: Record<string, number>;
+  /** Grouping for the rubric panel; empty for an ungrouped rubric. */
+  metric_groups?: MetricGroup[];
   composite: string;
 }
 
@@ -404,6 +527,13 @@ export interface MatrixRunOption {
   setups: string[];
   entry_count: number | null;
   judged: boolean;
+  /** Which rubric composited it — two runs can rank the same setups differently. */
+  rubric_version?: string;
+  /** The run whose answers and grounding scores this one re-scored. */
+  rejudged_from?: string | null;
+  rejudged_cells?: number | null;
+  /** Cells this run's rubric could not score, excluded from every average. */
+  skipped_cells?: number | null;
 }
 
 /** One setup's answer to one golden question within the selected matrix run. */
@@ -420,6 +550,28 @@ export interface ScoreboardQuestionSetup {
   elapsed_seconds: number | null;
   token_estimate: number | null;
   chunk_count: number;
+  /** Which rubric composited this cell. Absent on older payloads (= ragas-v1). */
+  rubric_version?: string;
+  /** True when the rubric's cap decided this composite. */
+  cap_applied?: boolean;
+  /** Why, in a sentence — rendered as page text, not only as a tooltip. */
+  cap_reason?: string | null;
+  /** True whenever the grounding floor was breached, capped or not. */
+  grounding_floor_breached?: boolean;
+  grounding_reason?: string | null;
+  /** False on a cell this run's rubric could not score. */
+  rejudged?: boolean | null;
+  rejudge_skipped_reason?: string | null;
+  /** How much of the retrieved context the judge actually saw. */
+  contexts_resolved?: number | null;
+  contexts_expected?: number | null;
+  depth_error?: string | null;
+  /** The weighted sum before the cap, so the cost of the cap is readable. */
+  composite_uncapped?: number | null;
+  /** Every metric the judge scored for this cell. */
+  scores?: Record<string, number>;
+  /** The judge's one-sentence reason per depth metric. */
+  rationales?: Record<string, string>;
 }
 
 /** One golden question judged in the selected matrix run, with every setup's score on it. */
@@ -440,6 +592,8 @@ export interface Scoreboard {
   provenance: Provenance;
   /** The matrix run these rows were aggregated from; null when none exists. */
   run_id: string | null;
+  /** That run's descriptor, for the coverage facts the averages depend on. */
+  run?: MatrixRunOption | null;
   /** Every committed run, newest first — the picker's options. */
   runs: MatrixRunOption[];
   /** Every golden question in the selected run, for the question-level breakdown. */
@@ -525,11 +679,115 @@ export interface GoldenRunSummary {
   };
 }
 
+/** One setup's row in a held-out critique run, without the per-finding detail. */
+export interface CritiqueCell {
+  setup: string;
+  scores: Record<string, number | null>;
+  /** Min/median/max of criteria_recall across the matcher's own repeats. */
+  score_spread: {
+    criteria_recall_min: number | null;
+    criteria_recall_median: number | null;
+    criteria_recall_max: number | null;
+  };
+  match_repeats: number | null;
+  criteria_recall_all: number | null;
+  criteria_recall_grouped: number | null;
+  criteria_groups: number | null;
+  criteria_applicable: number | null;
+  criteria_matched: number | null;
+  criteria_matched_ungrounded: number | null;
+  findings_total: number | null;
+  findings_grounded: number | null;
+  findings_sharing_evidence: number | null;
+  citations_total: number | null;
+  citations_resolved: number | null;
+  contested_findings: number | null;
+  held_out_leaks: number | null;
+  elapsed_seconds: number | null;
+  token_estimate: number | null;
+  error: string | null;
+  retrieved_video_ids: string[];
+}
+
+/** Can the corpus reach an expert's criteria without having read that expert? */
+export interface CritiqueRunSummary {
+  run_id: string;
+  created_at: string;
+  held_out_video_id: string;
+  held_out_title: string;
+  artifact_url: string;
+  artifact_kind: string;
+  criteria_total: number;
+  criteria_applicable: number;
+  criteria_groups: number | null;
+  match_repeats: number | null;
+  metrics: string[];
+  baseline: string;
+  held_out_leaks: number;
+  exclusion_version: string | null;
+  config: Record<string, unknown>;
+  cells: CritiqueCell[];
+}
+
+/** One held-out criterion and the finding (if any) that independently reached it. */
+export interface CritiqueMatch {
+  id: string;
+  criterion: string;
+  quote: string;
+  video_id: string;
+  start_seconds: number;
+  applies_to: string[];
+  note: string | null;
+  group: string;
+  matched: boolean;
+  /** Paired with a finding whose evidence no other finding also claims. */
+  counted: boolean;
+  /** Paired, but that finding rests on no exclusive corpus evidence. */
+  ungrounded: boolean;
+  /** Share of matcher repeats that backed this verdict. */
+  agreement: number;
+  finding_id: string | null;
+  finding_criterion: string | null;
+  score: number;
+  why: string | null;
+}
+
+export interface CritiqueCitationCheck {
+  video_id: string;
+  start_seconds: number;
+  quote: string;
+  resolved: boolean;
+  reason: string;
+  ratio: number;
+  chunk_id: string | null;
+  /** Another finding also rests on this chunk, so neither may claim it. */
+  shared: boolean;
+}
+
+export interface CritiqueFinding {
+  id: string;
+  criterion: string;
+  detail: string;
+  contested: boolean;
+  grounded: boolean;
+  exclusive_chunk_ids: string[];
+  citation_checks: CritiqueCitationCheck[];
+}
+
+/** The full run behind one expanded row (GET /api/experiments/critique/{id}). */
+export interface CritiqueRunDetail extends CritiqueRunSummary {
+  cells: (CritiqueCell & {
+    matches: CritiqueMatch[];
+    findings: CritiqueFinding[];
+  })[];
+}
+
 /** Committed eval snapshots for the Experiments tab (GET /api/experiments). */
 export interface Experiments {
   ablations: AblationRun[];
   golden_runs: GoldenRunSummary[];
   matrix_runs: MatrixRunSummary[];
+  critique_runs: CritiqueRunSummary[];
 }
 
 /** A matrix run started from the Experiments tab (POST/GET /api/eval/matrix). */

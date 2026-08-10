@@ -8,6 +8,7 @@ import type {
   ChunkGraph,
   ChunkList,
   Corpus,
+  CritiqueRunDetail,
   Entry,
   EntityDetail,
   Evaluation,
@@ -25,6 +26,8 @@ import type {
   Scoreboard,
   SetupSpec,
   SystemDesign,
+  ThemeDetail,
+  ThemeList,
   VideoChunkEnrichment,
 } from "./types";
 
@@ -96,6 +99,12 @@ export const api = {
     getJson<ChunkList>(`/api/corpus/${encodeURIComponent(videoId)}/chunks`),
 
   experiments: () => getJson<Experiments>("/api/experiments"),
+
+  /** The full held-out critique run behind one row, fetched only on expand. */
+  critiqueRun: (runId: string) =>
+    getJson<CritiqueRunDetail>(
+      `/api/experiments/critique/${encodeURIComponent(runId)}`,
+    ),
 
   /** Start a judged eval matrix. Returns the run already in flight, if any. */
   startMatrixRun: (setups: string[] = []) =>
@@ -190,6 +199,12 @@ export const api = {
     },
     signal?: AbortSignal,
   ) => getStream("/api/index/queue/stream", handlers, signal),
+
+  /** Cross-video themes (RAPTOR level 2), without their member lists. */
+  themes: () => getJson<ThemeList>("/api/themes"),
+  /** One theme's members, grouped by video, with text and timestamps. */
+  theme: (themeId: string) =>
+    getJson<ThemeDetail>(`/api/themes/${encodeURIComponent(themeId)}`),
 
   chunkGraph: (
     opts: {

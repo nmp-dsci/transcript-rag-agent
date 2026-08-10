@@ -38,6 +38,14 @@ export function DocumentCard({
         </a>
       </div>
 
+      {/*
+        What the answer above it actually read. Stated on every review, not only
+        the narrowed ones: "all 9 sections in context" is the claim that makes
+        the feedback a review of the document rather than of part of it, and a
+        claim nobody states is a claim nobody can check.
+      */}
+      <p className="doccard-detail">{document.detail ?? fallbackDetail(document)}</p>
+
       <div className="doccard-meta">
         <span>
           {document.sections.length} section{document.sections.length === 1 ? '' : 's'}
@@ -89,6 +97,22 @@ export function DocumentCard({
       </div>
     </div>
   );
+}
+
+/**
+ * The selection line for a document that predates the field, or that was
+ * fetched by `GET /api/documents/:id` with no entry to pair it with.
+ *
+ * Derived from the section list rather than left blank, so the card never
+ * silently implies a whole-document review it cannot vouch for.
+ */
+function fallbackDetail(document: ReviewedDocument): string {
+  const total = document.sections.length;
+  const selected = document.sections_selected;
+  if (selected && selected.length < total) {
+    return `${selected.length} of ${total} sections selected for this question`;
+  }
+  return `whole document — all ${total} section${total === 1 ? '' : 's'} in context`;
 }
 
 function hostOf(url: string): string {

@@ -113,12 +113,35 @@ export function colourMap(nodes: GraphNode[]): Map<string, string> {
   return new Map(channelLegend(nodes).map((item) => [item.id, item.colour]));
 }
 
-/** Deep-link into the video at the moment the chunk starts. */
+/** Params that already point YouTube at a moment, in every spelling it accepts. */
+const SEEK_PARAMS = ['t', 'start', 'time_continue'];
+
+/**
+ * Deep-link into the video at the moment the chunk starts.
+ *
+ * Existing seek params are *replaced*, not appended to. Eight of this corpus's
+ * source URLs were ingested with a `t=` already on them (share links carry
+ * one), and YouTube honours the first `t` it sees — so the older idiom of
+ * `url + '&t=' + seconds` produced a link whose visible label said 1:13 and
+ * whose player opened at 0:51. `start` and `time_continue` are stripped for
+ * the same reason: either one would outrank the `t` appended after it.
+ */
 export function chunkTimestampUrl(
   sourceUrl: string | null,
   startSeconds: number | null,
 ): string | null {
   if (!sourceUrl) return null;
   const seconds = Math.max(0, Math.floor(startSeconds ?? 0));
-  return `${sourceUrl}${sourceUrl.includes('?') ? '&' : '?'}t=${seconds}s`;
+  let url: URL;
+  try {
+    url = new URL(sourceUrl);
+  } catch {
+    // Not an absolute URL (a test fixture, or a relative path). Nothing to
+    // parse, so fall back to appending — the seek-param clash cannot arise
+    // for a string that has no parseable query in the first place.
+    return `${sourceUrl}${sourceUrl.includes('?') ? '&' : '?'}t=${seconds}s`;
+  }
+  for (const param of SEEK_PARAMS) url.searchParams.delete(param);
+  url.searchParams.set('t', `${seconds}s`);
+  return url.toString();
 }

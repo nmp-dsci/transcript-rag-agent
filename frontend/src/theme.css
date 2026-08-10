@@ -227,6 +227,7 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 [data-key='graph_rag'] .sw { background: #a371f7; }
 [data-key='rag_llm_hyde'] .sw { background: #3fb950; }
 [data-key='rag_llm_contextual'] .sw { background: #db61a2; }
+[data-key='rag_llm_filtered'] .sw { background: #39c5cf; }
 .tab .win { color: var(--good); }
 
 /* reviewed document card — the page a message's URL pointed at */
@@ -246,6 +247,9 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 }
 .doccard-link { font: 10.5px var(--mono); color: var(--muted); flex: 0 0 auto; }
 .doccard-link:hover { color: var(--accent2); }
+.doccard-detail {
+  margin: 6px 0 0; font: 11px var(--mono); color: var(--text2);
+}
 .doccard-meta {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline;
   margin-top: 5px; font: 10.5px var(--mono); color: var(--dim);
@@ -282,6 +286,20 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .trace-line .q { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trace-line .c { margin-left: auto; flex: 0 0 auto; color: var(--dim); }
 .trace-line.live .q { color: var(--accent2); }
+.trace-query {
+  display: flex; gap: 8px; align-items: baseline; padding: 0 0 3px 0;
+  margin-left: 4px; color: var(--text2); font-family: var(--mono); font-size: 10px;
+}
+.trace-query span:last-child { min-width: 0; overflow-wrap: anywhere; }
+/* Long-form step text (routing decisions, coverage caveats): wraps in full,
+   because it is the part of its step a reader has to be able to read. */
+.trace-note { padding-bottom: 4px; }
+.trace-note span:last-child { color: var(--text); }
+.trace-line .ph-filter { color: var(--accent); border-color: var(--accent-border); background: var(--accent-dim); }
+.trace-query-label {
+  flex: 0 0 auto; color: var(--dim); text-transform: uppercase;
+  letter-spacing: 0.04em; font-weight: 600; font-size: 9px;
+}
 .trace summary { cursor: pointer; color: var(--dim); font-size: 10px; }
 /* persisted-trace phase chips */
 .trace-line .ph {
@@ -367,6 +385,13 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .body .cite-missing {
   display: inline-block; font-size: 9.5px; line-height: 1; vertical-align: super;
   background: var(--panel2); color: var(--muted); border-radius: 4px; padding: 1px 4px; margin: 0 1px;
+}
+/* A document-section marker, coloured away from the corpus citation so the two
+   kinds of evidence in a review are distinguishable without reading them. */
+.body .cite-doc {
+  display: inline-block; font-size: 9.5px; line-height: 1; vertical-align: super;
+  background: rgba(210, 153, 34, 0.14); color: #e3bc63; border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: 4px; padding: 1px 4px; margin: 0 1px;
 }
 .body.clamp {
   max-height: 320px; overflow: hidden;

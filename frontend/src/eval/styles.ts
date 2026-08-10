@@ -140,6 +140,37 @@ const CSS = `
 /* low-n de-emphasis on the scoreboard */
 tr.lown td { opacity: 0.62; }
 .nchip { font: 9.5px var(--mono); color: var(--dim); }
+
+/* rubric panel: metric rows banded by group, each carrying its weight */
+tr.grouprow td {
+  background: var(--panel2); font: 600 10px var(--mono); letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text2); padding-top: 7px; padding-bottom: 7px;
+}
+tr.metricrow td:first-child { padding-left: 20px; }
+th .wchip { display: block; font: 9.5px var(--mono); color: var(--dim); font-weight: 400; }
+
+/* why a cell scored what it did, under an expanded answer */
+.cellwhy {
+  margin-top: 8px; max-width: 62ch; border-left: 2px solid var(--border2); padding-left: 10px;
+}
+.cellwhy .capwhy {
+  margin: 0 0 7px; font-size: 11.5px; line-height: 1.55; color: var(--bad);
+}
+.cellwhy .whyline {
+  margin: 0 0 5px; font-size: 11.5px; line-height: 1.55; color: var(--muted);
+}
+.cellwhy .whyline b { color: var(--text2); }
+.cellwhy .whyline.partial { color: var(--text2); }
+
+/* run-level warnings that must not read as decoration: a mixed-rubric ranking
+   and a self-graded one are both reasons to distrust the table under them */
+.rubricwarn {
+  margin: 0 0 12px; padding: 9px 12px; border-radius: 7px;
+  background: var(--bad-dim); border: 1px solid var(--border);
+  font-size: 12px; line-height: 1.6; color: var(--text2);
+}
+.rubricwarn code { font: 11px var(--mono); color: var(--accent2); }
+.provbar .provwarn { color: var(--bad); }
 `;
 
 /**

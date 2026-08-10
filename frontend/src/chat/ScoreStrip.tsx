@@ -3,17 +3,15 @@ import { useState } from 'react';
 import type { Evaluation } from '../api/types';
 import { BreakdownDrawer } from '../eval/BreakdownDrawer';
 import { spreadRange } from '../eval/breakdown';
+import { RAGAS_METRIC_NAMES, metricLabel, metricTitle } from '../eval/metrics';
 import { useEvalStyles } from '../eval/styles';
 
-export const METRICS: [string, string, string][] = [
-  ['faithfulness', 'Faithful', 'Faithfulness — is the answer supported by the retrieved chunks?'],
-  ['answer_relevancy', 'Relevant', 'Answer relevancy — does the answer address the question?'],
-  [
-    'context_precision',
-    'Precision',
-    'Context precision — were the retrieved chunks useful for the answer?',
-  ],
-];
+/** The strip's columns, resolved from the shared metric registry. */
+const METRICS: [string, string, string][] = RAGAS_METRIC_NAMES.map((name) => [
+  name,
+  metricLabel(name),
+  metricTitle(name),
+]);
 
 export function fmtScore(value: number | null | undefined): string {
   return value == null ? '—' : value.toFixed(2);

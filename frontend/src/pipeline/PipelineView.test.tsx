@@ -11,6 +11,7 @@ const chunks = vi.fn();
 const chunkGraph = vi.fn();
 const rank = vi.fn();
 const chunkEnrichment = vi.fn();
+const themes = vi.fn();
 
 vi.mock('../api/client', () => ({
   api: {
@@ -19,6 +20,8 @@ vi.mock('../api/client', () => ({
     chunkGraph: (...args: never[]) => chunkGraph(...args),
     rank: (...args: never[]) => rank(...args),
     chunkEnrichment: (...args: never[]) => chunkEnrichment(...args),
+    themes: (...args: never[]) => themes(...args),
+    theme: () => Promise.reject(new Error('not used')),
     indexStream: () => new Promise<void>(() => undefined),
     subscribeIndexQueue: () => new Promise<void>(() => undefined),
   },
@@ -62,6 +65,14 @@ describe('PipelineView', () => {
     health.mockResolvedValue({ embedding_model: 'from-health' });
     chunks.mockResolvedValue({ video_id: 'a', chunks: [], total: 0 });
     chunkEnrichment.mockResolvedValue({ chunks: {} });
+    themes.mockResolvedValue({
+      themes: [],
+      stats: {},
+      generated_at: null,
+      summary_model: null,
+      embedding_model: null,
+      build_command: 'uv run python -m src.cli index-themes',
+    });
     chunkGraph.mockResolvedValue({
       nodes: [],
       edges: [],
@@ -125,6 +136,19 @@ describe('PipelineView', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Corpus & retrieval' }));
     await userEvent.click(screen.getByRole('button', { name: 'Chunk graph' }));
     expect(chunkGraph).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the theme layer behind its own sub-tab and fetches it once', async () => {
+    renderView();
+    expect(themes).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Themes' }));
+    await waitFor(() => expect(themes).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/No theme layer built yet/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Corpus & retrieval' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Themes' }));
+    expect(themes).toHaveBeenCalledTimes(1);
   });
 
   it('prompts for content when the corpus is empty', () => {

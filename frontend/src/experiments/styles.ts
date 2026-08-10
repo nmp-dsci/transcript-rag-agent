@@ -73,6 +73,49 @@ const CSS = `
 .exp-goldmetrics { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 8px; }
 .exp-gm { display: flex; flex-direction: column; gap: 1px; }
 .exp-gm b { font: 700 13px var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── held-out critique eval ──────────────────────────────────────────────
+   Everything below has to escape .exp-table's white-space: nowrap. This tab
+   has clipped long text before — 66 of 273 characters — and a criterion is a
+   whole sentence, so every block that carries prose re-declares its own
+   wrapping rather than inheriting the table's. */
+.exp-tag.ok { color: var(--good); background: var(--good-dim); border-color: var(--good-border); }
+.exp-tag.bad { color: var(--bad); background: var(--bad-dim); border-color: var(--bad-border); }
+.exp-table td.num.bad { color: var(--bad); font-weight: 700; }
+.crit-intro { color: var(--text2); font-size: 12.5px; line-height: 1.55; max-width: 82ch;
+  margin: 0 0 12px; white-space: normal; }
+.crit-empty { color: var(--muted); font-size: 12px; margin: 8px 0 0; white-space: normal; }
+.crit-detailrow > td { white-space: normal; padding: 0 10px 14px; }
+.crit-detail { padding-top: 4px; white-space: normal; }
+.crit-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px; align-items: start; }
+.crit-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 8px; }
+.crit-item { border-left: 2px solid var(--border2); padding: 4px 0 4px 10px;
+  white-space: normal; }
+.crit-item.hit { border-left-color: var(--good); }
+.crit-item.miss { border-left-color: var(--border2); }
+.crit-rule { color: var(--text); font-size: 12.5px; line-height: 1.5; }
+.crit-rule b { font: 700 10.5px var(--mono); color: var(--muted); margin-right: 6px; }
+.crit-na { margin-left: 6px; font: 600 9px var(--mono); letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted); background: var(--panel2);
+  border: 1px solid var(--border2); border-radius: 8px; padding: 1px 5px;
+  white-space: nowrap; }
+.crit-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-top: 3px; }
+.crit-ts { font: 600 10.5px var(--mono); color: var(--accent2); background: var(--accent-dim);
+  border: 1px solid var(--accent-border); border-radius: 8px; padding: 1px 6px;
+  text-decoration: none; white-space: nowrap; }
+.crit-ts.bad { color: var(--bad); background: var(--bad-dim); border-color: var(--bad-border); }
+.crit-quote { color: var(--muted); font-size: 11.5px; font-style: italic; line-height: 1.45; }
+.crit-found { color: var(--text2); font-size: 12px; line-height: 1.45; margin-top: 4px; }
+.crit-why { color: var(--muted); }
+.crit-spread { display: block; font: 500 9.5px var(--mono); color: var(--muted);
+  letter-spacing: 0; }
+.crit-agree { margin-left: 6px; font: 600 9px var(--mono); letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted); background: var(--panel2);
+  border: 1px solid var(--border2); border-radius: 8px; padding: 1px 5px;
+  white-space: nowrap; }
+.crit-extra { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 `;
 
 /** Install the stylesheet once per document, keyed by id (see useEvalStyles). */
