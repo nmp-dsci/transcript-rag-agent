@@ -80,4 +80,5 @@ files = [
     "src/rag/fusion.py",
     "src/rag/bm25.py",
     "src/rag/context.py",
+    "src/rag/conflicts.py",
 ]

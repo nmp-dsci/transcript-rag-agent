@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s11 — Distilling the corpus into a reviewer</title>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #0e1116; --panel: #12161d; --panel2: #1c2330; --panel3: #161b22;
+    --border: #252b35; --border2: #2b3442;
+    --text: #e6edf3; --text2: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --accent: #2f81f7; --accent2: #79b8ff; --accent-dim: #132339; --accent-border: #1f4a7a;
+    --good: #3fb950; --good-dim: #173a2b; --good-border: #1f5937;
+    --warn: #d29922; --warn-dim: #3a2e12; --warn-border: #5c451a;
+    --bad: #f85149; --bad-dim: #3d1d1f; --bad-border: #6b2a2c;
+    --purple: #a371f7; --purple-dim: #271947; --purple-border: #3d2a63;
+    --on-accent: #0b1220; --btn-hover: #232b38; --accent-hover: #4b93f8;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eaeef2; --panel3: #f6f8fa;
+    --border: #d1d9e0; --border2: #bcc4cc;
+    --text: #1f2328; --text2: #424a53; --muted: #59636e; --dim: #818b98;
+    --accent: #0969da; --accent2: #0550ae; --accent-dim: #ddf4ff; --accent-border: #b6e3ff;
+    --good: #1a7f37; --good-dim: #dafbe1; --good-border: #aceebb;
+    --warn: #9a6700; --warn-dim: #fff8c5; --warn-border: #d4a72c;
+    --bad: #cf222e; --bad-dim: #ffebe9; --bad-border: #ffcecb;
+    --purple: #8250df; --purple-dim: #fbefff; --purple-border: #e3c6ff;
+    --on-accent: #ffffff; --btn-hover: #eef2f6; --accent-hover: #0860ca;
+  }
+  * { box-sizing: border-box; }
+  *, *::before, *::after { min-width: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.6 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 40px 24px 140px;
+  }
+  h1 { font-size: 27px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 52px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14.5px; margin: 22px 0 8px; color: var(--text); }
+  h4 { font-size: 12.5px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  p { color: var(--text2); }
+  .lede { color: var(--muted); font-size: 15px; max-width: 900px; }
+  code { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; overflow-wrap: anywhere; }
+  a { color: var(--accent2); }
+  ul, ol { padding-left: 20px; }
+  li { color: var(--text2); margin: 3px 0; }
+  b.k { color: var(--text); }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 2px 7px; font: 600 10.5px var(--mono); white-space: nowrap; }
+  .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
+  .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+  .badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
+  .badge.purple { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+  .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 7px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  td.est { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; color: var(--accent2); }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .tablewrap table { min-width: 560px; }
+
+  .statrow { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+  @media (max-width: 860px) { .statrow { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; text-align: center; padding: 14px 10px; }
+  .stat .v { font: 700 21px var(--mono); color: var(--text); }
+  .stat .l { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .stat.gap { border-color: var(--warn-border); background: linear-gradient(180deg, var(--warn-dim), var(--panel) 55%); }
+  .stat.gap .v { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: var(--text2); margin: 14px 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout.risk { border-left-color: var(--bad); background: var(--bad-dim); }
+  .callout.good { border-left-color: var(--good); background: var(--good-dim); }
+  .callout b { color: var(--text); }
+
+  .opt { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 17px 19px; margin: 16px 0; }
+  .opt.rec { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-dim), var(--panel) 32%); }
+  .opt .ohead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .opt .rank { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font: 700 12px var(--mono); color: var(--muted); }
+  .opt.rec .rank { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .opt .ohead b { font-size: 14.5px; }
+  .opt .ohead .spacer { flex: 1 1 auto; }
+  .opt p.why { font-size: 12.75px; margin: 8px 0 10px; }
+  .opt .evid { font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 12px; padding-top: 10px; }
+  .opt .evid b { color: var(--text2); }
+
+  .mermaid-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; overflow-x: auto; }
+  .mermaid-wrap.inner { background: var(--panel3); margin: 12px 0 4px; padding: 12px; }
+  .mermaid { display: flex; justify-content: center; min-width: 640px; }
+  .mermaid.sm { min-width: 460px; }
+  .diagcap { font-size: 11.5px; color: var(--dim); margin: 6px 2px 0; }
+
+  .tree { background: var(--panel3); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .tree pre { margin: 0; font: 12px/1.75 var(--mono); color: var(--text2); white-space: pre; }
+  .tree pre .c { color: var(--dim); }
+  .tree pre .n { color: var(--accent2); }
+  .tree pre .new { color: var(--good); }
+
+  .seq { display: flex; flex-direction: column; margin: 6px 0 0; }
+  .seq .n { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .seq .n:first-child { border-top: none; }
+  .seq .n .wk { flex: 0 0 auto; font: 700 11px var(--mono); color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 5px; padding: 3px 8px; height: fit-content; white-space: nowrap; }
+  .seq .n .why { color: var(--dim); font-size: 12px; }
+
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .decision .q { font-size: 13.5px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  .decision .qsub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .decision label.opt2 { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border2); border-radius: 8px; margin-bottom: 7px; cursor: pointer; background: var(--panel2); transition: border-color .12s; }
+  .decision label.opt2:hover { border-color: var(--accent-border); }
+  .decision label.opt2 input { margin-top: 3px; flex: 0 0 auto; }
+  .decision label.opt2 .otext b { font-size: 12.5px; color: var(--text); }
+  .decision label.opt2 .otext span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .decision .queuebar { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .decision button.q-submit { background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 7px 14px; font: 600 12px var(--mono); cursor: pointer; }
+  .decision button.q-submit:hover { background: var(--accent-hover); }
+  .decision textarea { width: 100%; background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); padding: 9px 11px; font: 12.5px/1.55 'Segoe UI', Helvetica, Arial, sans-serif; resize: vertical; min-height: 74px; }
+  .decision.is-queued { border-color: var(--good-border); }
+  .decision.is-queued .queue-note { color: var(--good); }
+  .queue-note { font-size: 11.5px; color: var(--dim); }
+
+  .fileref { font-family: var(--mono); font-size: 11.5px; color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+  .refs li { font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<h1>Distilling the corpus into a reviewer</h1>
+<p class="lede">
+  You asked whether there is something better than feeding chunked transcripts to a coding agent, and whether
+  deep research helps. Short answer: <b class="k">your instinct is right, the technique has a name, and the
+  literature is unusually clear about it</b> — but the win is not a better retriever. It is a different
+  <em>task shape</em>. This plan names that shape, maps the five most advanced distillation techniques onto
+  code you already have, places deep research precisely, and — because your current approach already works —
+  proposes the experiment that would tell you whether any of it is actually an improvement.
+  <b class="k">Step 1 is fixing the judge</b> (§3) — everything downstream gets scored by it, and today it
+  cannot see depth at all.
+</p>
+
+<div class="callout">
+  <b>Relationship to <span class="fileref">s08_expert-agents-plan</span>.</b> s08 designed distilled expert
+  <em>cards</em> plus a router, for the task <em>“answer my question as this expert.”</em> This plan takes the
+  harder half of your ask — <em>“review my work through their eyes”</em> — which is not a retrieval task at all,
+  and specifies the artifact and evaluation that s08's pipeline would produce. They compose: s08 is the
+  build pipeline, s11 is what it should build and how you'd know it worked.
+</div>
+
+<h2>1. The reframe: you are not doing Q&amp;A</h2>
+
+<p>
+  Every retrieval design in this repo assumes a question arrives and supplies the entry point into the corpus.
+  Review has no question. You hand it a resume and say “make this better.” There is nothing to embed.
+</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h4>Q&amp;A — what the repo does today</h4>
+    <p style="font-size:12.75px;margin:0 0 8px">
+      <code>question → embed → top-k chunks → answer</code>
+    </p>
+    <p style="font-size:12.5px;margin:0;color:var(--muted)">
+      The user's question <em>is</em> the query. Retrieval is well-posed. RAGAS measures it well:
+      faithfulness, answer relevancy, context precision all assume a question exists.
+    </p>
+  </div>
+  <div class="panel" style="border-color:var(--warn-border)">
+    <h4>Critique — what you actually want</h4>
+    <p style="font-size:12.75px;margin:0 0 8px">
+      <code>artifact → <b class="k">??</b> → findings</code>
+    </p>
+    <p style="font-size:12.5px;margin:0;color:var(--muted)">
+      No query exists. Worse, the most valuable findings are about what the artifact
+      <em>fails to do</em> — and absences cannot be retrieved by similarity, because there is
+      no text to match on.
+    </p>
+  </div>
+</div>
+
+<div class="callout">
+  <b>The load-bearing insight: in review, the query is the rubric, not the user.</b> You must
+  <em>generate</em> the questions from the corpus before you can retrieve anything. That single move —
+  making evaluation criteria an explicit intermediate artifact instead of leaving them implicit — is what
+  the strongest recent work has in common, and it is the reason chunk-dumping works at all.
+</div>
+
+<p>
+  Which explains your own experience precisely. When you paste chunks into a coding agent, <b class="k">the
+  agent induces the rubric on the fly</b> from what it happens to read, then judges against it in the same
+  breath. That works. It is also: re-derived from scratch every session, invisible (you cannot see which
+  criteria it used), uncorrectable (you cannot tell it “that criterion is wrong” durably), unevaluable, and
+  silently dependent on which chunks you happened to paste.
+</p>
+
+<h2>2. What you already have</h2>
+
+<p class="lede" style="font-size:13.5px;margin-bottom:14px">
+  Verified against the tree, so this plan is a delta and not a rebuild. You have more of the substrate
+  than a plan like this usually gets to assume.
+</p>
+
+<div class="statrow">
+  <div class="stat"><div class="v">715</div><div class="l">chunks indexed</div></div>
+  <div class="stat"><div class="v">35</div><div class="l">videos</div></div>
+  <div class="stat"><div class="v">6</div><div class="l">comparable setups</div></div>
+  <div class="stat gap"><div class="v">0</div><div class="l">review evals</div></div>
+</div>
+
+<h3>Corpus composition — read from the running app, not assumed</h3>
+<p style="font-size:12.75px">
+  I pulled <code>/api/corpus</code> off the live server rather than trusting the plan's assumptions, and the
+  actual mix is <b class="k">not the four topics you described</b>. This changes two recommendations below,
+  so it is worth looking at directly.
+</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Cluster</th><th>Videos</th><th>Chunks</th><th>Share</th><th>Verdict for this plan</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b class="k">Resume / LinkedIn / job search</b></td>
+      <td class="est">22</td><td class="est">321</td><td class="est">45%</td>
+      <td><span class="badge good">well covered</span> Deep enough to distil properly — 13 resume videos alone.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Australian property / tax / budget</b></td>
+      <td class="est">5</td><td class="est">181</td><td class="est">25%</td>
+      <td><span class="badge bad">off-mission</span> A quarter of the corpus, unrelated to any expert you want.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Agentic dev workflow</b></td>
+      <td class="est">2</td><td class="est">77</td><td class="est">11%</td>
+      <td><span class="badge warn">too thin</span></td>
+    </tr>
+    <tr>
+      <td><b class="k">MLOps / LLMOps</b></td>
+      <td class="est">2</td><td class="est">70</td><td class="est">10%</td>
+      <td><span class="badge warn">too thin</span> — the closest thing to "system design" you have.</td>
+    </tr>
+    <tr>
+      <td><b class="k">UI / app design polish</b></td>
+      <td class="est">4</td><td class="est">66</td><td class="est">9%</td>
+      <td><span class="badge warn">too thin</span> — and it is UI craft, not app architecture.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout risk">
+  <b>Two corrections to what you described.</b>
+  <br><br>
+  <b>1. There is essentially no system-design or app-architecture content.</b> You named those as two of your
+  four topics; the corpus has 2 videos of MLOps/LLMOps and 4 of UI polish. Those packs cannot be built today
+  — not because the method fails at small N, but because the material is not there. Resume/job, by contrast,
+  is <em>abundantly</em> covered. <span class="badge good">decided — D1</span> All four packs stay in scope,
+  so ingestion for the two empty topics is now its own slice (V4b).
+  <br><br>
+  <b>2. A quarter of the corpus is Australian property and tax content</b> — 181 chunks across 5 videos,
+  including the single largest video in the index. For a Q&amp;A app that is harmless noise. For
+  <em>distillation</em> it is not: RAPTOR clusters, Leiden communities and any corpus-wide rubric induction
+  will all happily form themes out of it, and whole-corpus retrieval is already skewed by it (your own readme
+  flags a single cluster holding over half the chunks). <span class="badge good">decided — D5</span> These
+  five videos are excluded from every pack build via topic routing, and stay indexed for Q&amp;A.
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Layer</th><th>Status</th><th>Where</th><th>Reusable for review?</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b class="k">Chunks + embeddings + BM25</b></td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/rag/</span></td>
+      <td>Yes — the evidence layer under every rubric judgment.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Per-video summaries</b></td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/rag/summaries.py</span></td>
+      <td>Yes — this is already abstraction level 1 of a RAPTOR-style tree.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Summary-level video pre-filter</b><br><span style="font-size:11.5px;color:var(--dim)">question → top-k videos by summary similarity → chunks only from those</span></td>
+      <td><span class="badge warn">built, off everywhere</span></td>
+      <td><span class="fileref">src/rag/context.py:165</span>, <span class="fileref">--filter-transcripts</span></td>
+      <td>Yes — your two-stage suggestion, and it already exists end to end. Default-off and enabled by no comparable setup, so it has never appeared on the scoreboard. See §4.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Entity graph + Leiden communities + summaries</b></td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/rag/communities.py</span>, <span class="fileref">graph_pipeline.py</span></td>
+      <td>Yes — cross-video themes, the one structure that ignores video boundaries.</td>
+    </tr>
+    <tr>
+      <td><b class="k">GraphRAG global mode</b> (community summaries → corpus-wide themes)</td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/rag/graph_view.py</span></td>
+      <td>Yes — this is the natural source of <em>general</em> rubrics.</td>
+    </tr>
+    <tr>
+      <td><b class="k">6 comparable retrieval setups</b><br><span style="font-size:11.5px;color:var(--dim)">single-hop, recursive, agentic, GraphRAG, HyDE, contextual</span></td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/chat/setups.py</span></td>
+      <td>Yes — and unusually valuable: a ready-made multi-modal sweep for the research phase.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Document fetch → sections → review against corpus</b></td>
+      <td><span class="badge warn">built, unexercised</span></td>
+      <td><span class="fileref">src/documents/review.py</span></td>
+      <td>Partly — whole-doc-when-it-fits is right, but it critiques <em>directly</em> (see §5.1).</td>
+    </tr>
+    <tr>
+      <td><b class="k">RAGAS judge, matrix runs, ablation</b></td>
+      <td><span class="badge good">built</span></td>
+      <td><span class="fileref">src/evals/</span></td>
+      <td><span class="badge bad">too light</span> — grounding only, no depth. Fixed first, in §3.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Distillation into a durable, inspectable artifact</b></td>
+      <td><span class="badge bad">missing</span></td>
+      <td>—</td>
+      <td>This is the whole plan.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout warn">
+  <b>One honest note on the review path.</b> <span class="fileref">src/documents/review.py</span> is written
+  and its whole-document-when-it-fits rule is well-reasoned, but the committed history contains
+  <b>zero</b> document-review entries — the same gap that capped every round of the walkthrough video's
+  adversarial loop at ~5/10. Whatever else this plan does, seeding that path with real runs is on the
+  critical path.
+</div>
+
+<h2>3. Step 1 — make the judge measure depth <span class="badge good">decided — 40/60 + hard cap (D0)</span></h2>
+
+<p>
+  You are right that the current measure is too light, and the code says exactly why. The composite is an
+  <b class="k">unweighted mean of three metrics that all measure the same family of thing</b>:
+</p>
+
+<div class="panel" style="margin:12px 0">
+  <p style="margin:0 0 6px;font-size:12.75px"><span class="fileref">src/evals/judge.py:407</span></p>
+  <p style="margin:0;font-size:13px"><code>composite = sum(scores.values()) / len(scores)</code>
+  &nbsp;over&nbsp;<code>["faithfulness", "answer_relevancy", "context_precision"]</code></p>
+</div>
+
+<p>
+  Faithfulness asks <em>is every claim supported by the retrieved context</em>. Answer relevancy asks <em>is
+  this on topic</em>. Context precision asks <em>did retrieval rank the right things first</em>. All three are
+  <b class="k">grounding and on-topic-ness</b>. None of them asks whether the answer is any good.
+</p>
+
+<div class="callout warn">
+  <b>The concrete failure this produces.</b> An answer that faithfully restates a single retrieved chunk,
+  stays on topic, and cites well scores <b>near 1.0</b> — while being shallow, obvious, single-source and
+  useless as advice. A deeper answer that synthesises four creators and names a tradeoff scores
+  <em>no higher</em>, and can score <em>lower</em> if synthesis costs it a little faithfulness. The current
+  composite is not neutral about depth; it mildly penalises it.
+</div>
+
+<h3>Judge v2 — grounding as a floor, depth as the score</h3>
+
+<p>
+  Keep the RAGAS three, but demote them to a <b class="k">floor</b> that catches fabrication, and put the
+  weight on dimensions that measure critique quality. Bump <code>RUBRIC_VERSION</code> from
+  <code>"ragas-v1"</code> to <code>"depth-v2"</code> — that field is already recorded on every judgment
+  (<span class="fileref">src/evals/judge.py:43</span>), so old runs stay interpretable rather than silently
+  incomparable.
+</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Dimension</th><th>Weight</th><th>Asks</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td colspan="4" style="background:var(--panel2);color:var(--muted);font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.04em">Grounding floor — 40%</td></tr>
+    <tr><td><b class="k">faithfulness</b></td><td class="est">0.20</td><td>Is every claim supported by retrieved context?</td><td>RAGAS, unchanged</td></tr>
+    <tr><td><b class="k">context_precision</b></td><td class="est">0.10</td><td>Did retrieval rank the right chunks first?</td><td>RAGAS, unchanged</td></tr>
+    <tr><td><b class="k">answer_relevancy</b></td><td class="est">0.10</td><td>Is it on topic?</td><td>RAGAS, unchanged</td></tr>
+    <tr><td colspan="4" style="background:var(--panel2);color:var(--muted);font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.04em">Depth &amp; critique — 60% <span style="text-transform:none;letter-spacing:0;font-weight:400">(new LLM-as-judge rubric dimensions)</span></td></tr>
+    <tr><td><b class="k">insight_depth</b></td><td class="est">0.20</td><td>Does it go beyond restating the retrieved chunks — synthesise, infer, connect?</td><td><span class="badge acc">new</span></td></tr>
+    <tr><td><b class="k">specificity</b></td><td class="est">0.15</td><td>Is the advice concrete and actionable, or generic filler that would apply to anyone?</td><td><span class="badge acc">new</span></td></tr>
+    <tr><td><b class="k">coverage</b></td><td class="est">0.10</td><td>Does it address the hard part of the question, or only the easy part?</td><td><span class="badge acc">new</span></td></tr>
+    <tr><td><b class="k">evidence_breadth</b></td><td class="est">0.10</td><td>Does it draw on multiple sources, or lean entirely on one chunk?</td><td><span class="badge acc">new</span> — partly computable from <code>retrieved_chunk_ids</code></td></tr>
+    <tr><td><b class="k">calibration</b></td><td class="est">0.05</td><td>Does it flag uncertainty and expert disagreement rather than asserting?</td><td><span class="badge acc">new</span></td></tr>
+    <tr class="total"><td><b class="k">composite</b></td><td class="est">1.00</td><td colspan="2">weighted sum, then the cap below</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <b>The hard cap, and why it is not optional.</b> If <code>faithfulness &lt; 0.6</code>, cap the composite at
+  <code>0.5</code> no matter how the depth dimensions scored — because a deep, articulate, ungrounded answer
+  is <em>worse</em> than a shallow grounded one, and a purely weighted sum would rank it higher. This is the
+  same weighted-rubric-plus-hard-cap shape your video reviewer already uses in
+  <span class="fileref">demo/review.py</span>, which is a point in its favour: one scoring idiom across the repo.
+</div>
+
+<div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart LR
+  Q["question + answer + contexts"] --> G["GROUNDING<br/>faithfulness .20<br/>context_precision .10<br/>answer_relevancy .10"]
+  Q --> D["DEPTH<br/>insight .20 / specificity .15<br/>coverage .10 / breadth .10<br/>calibration .05"]
+  G --> W["weighted sum"]
+  D --> W
+  W --> CAP{"faithfulness<br/>below 0.6 ?"}
+  CAP -->|yes| CAPPED["composite capped at 0.50<br/>reason recorded"]
+  CAP -->|no| FINAL["composite<br/>rubric_version: depth-v2"]
+</pre>
+</div>
+
+<div class="callout risk">
+  <b>The cost, stated plainly: this invalidates every cached matrix cell.</b>
+  <span class="fileref">src/evals/matrix_cache.py</span> fingerprints a cell on the judging configuration as
+  well as the answering one — deliberately, so a changed judge can never return a stale score. Changing the
+  composite therefore forces a <b>full re-run of the 20 × 4 matrix</b>, not just a re-score. That is a known,
+  bounded cost you have paid before, but it should be a decision rather than a surprise. Budget it once and
+  land all the dimensions in a single version bump rather than iterating the weights across three re-runs.
+</div>
+
+<div class="callout good">
+  <b>Why this genuinely is the right step 1, beyond being your call.</b> The five depth dimensions above are a
+  first draft of the critique scorers in §8 — <code>insight_depth</code>, <code>specificity</code> and
+  <code>evidence_breadth</code> are asking, in Q&amp;A form, most of what <em>finding quality</em> asks in
+  review form. Building them now means the critique harness is an extension of a judge you already trust,
+  not a second scoring system with its own unvalidated opinions. It also re-baselines the whole scoreboard
+  before any distillation work claims an improvement against it.
+</div>
+
+<h2>4. The proposal: a two-speed system</h2>
+
+<p>
+  The single structural decision is to split what currently happens in one pass into two systems running at
+  different speeds. Distillation is expensive, rare, and worth doing well. Review is cheap, frequent, and
+  must be reproducible. Today both happen inside one prompt, which is why neither can be inspected.
+</p>
+
+<div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart TB
+  subgraph SLOW["SLOW PATH — offline, re-runs only when the corpus changes"]
+    direction TB
+    T["35 transcripts / 715 chunks"] --> L1["per-video summaries<br/>EXISTS: rag/summaries.py"]
+    T --> G["entity graph + Leiden communities<br/>EXISTS: rag/communities.py"]
+    L1 --> R["cross-video theme clusters<br/>NEW: RAPTOR levels 2-3"]
+    G --> R
+    R --> RI["rubric induction<br/>NEW"]
+    RI --> DIS["disagreement mining<br/>NEW"]
+    DIS --> PACK[["EXPERT PACK<br/>principles + rubrics + provenance<br/>versioned, readable, correctable"]]
+  end
+  subgraph FAST["FAST PATH — online, per review, seconds"]
+    direction TB
+    ART["your artifact<br/>resume / design doc"] --> SEL["select applicable rubrics"]
+    SEL --> EV["per-rubric evidence retrieval<br/>REUSES the 6 existing setups"]
+    EV --> J["atomic per-rubric judgment"]
+    J --> OUT["consolidated review<br/>every finding cites a timestamp"]
+  end
+  PACK ==> SEL
+</pre>
+</div>
+
+<div class="callout good">
+  <b>This is where deep research goes.</b> Deep research belongs on the <b>slow path</b> — it is how you
+  <em>build</em> the expert, not how you serve it. Running a plan→retrieve→gap-check→synthesize loop at
+  review time would be slow, expensive, and non-reproducible; running it once per topic, offline, against a
+  fixed corpus is exactly what it is good at. Detail in §7.
+</div>
+
+<h3>Two-stage retrieval — the summary pre-filter you asked for is already in the tree</h3>
+
+<p>
+  Your instinct — route at the <em>video</em> level first, because on a mixed corpus most videos simply do not
+  matter for a given question — is correct, and this repo has already implemented it end to end.
+  <span class="fileref">src/rag/context.py:165</span>: with <code>filter_transcripts=True</code>, the provider
+  embeds the question, scores it against the 35 per-video summary embeddings
+  (<code>query_relevant_transcripts</code>), keeps the top-k videos above <code>min_score</code>
+  (defaults: <code>top_k=5</code>, <code>min_score=0.25</code>), and then runs chunk retrieval <b class="k">only
+  inside the matched videos</b>. It records a trace step showing which videos survived, and fails loudly —
+  not silently wide — when nothing matches. There is even a dedicated eval,
+  <span class="fileref">src/evals/s4_rag_filter_eval.py</span>, whose default question is a capital-gains one
+  asked against this mixed corpus: the filter has already been demonstrated on exactly the heterogeneity
+  problem you are describing.
+</p>
+
+<div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart LR
+  Q["question"] --> S[("summary index<br/>35 per-video summaries<br/>EXISTS")]
+  S --> M["videos above min_score,<br/>top-k by cosine"]
+  M --> C["chunk retrieval<br/>ONLY inside matched videos"]
+  C --> A["answer"]
+  T["topic description<br/>'resume design'"] -.->|"the same index routes the<br/>PACK BUILD input - no question needed"| S
+</pre>
+</div>
+<p class="diagcap">One index, two consumers: questions route through it at answer time, and a topic description routes through it at pack-build time.</p>
+
+<div class="callout warn">
+  <b>The actual gap: it is switched off everywhere that gets measured.</b>
+  <span class="fileref">src/chat/setups.py:141</span> defaults <code>filter_transcripts: bool = False</code> and
+  none of the six comparable setups overrides it, so the filter has never been in a matrix run and never on
+  the scoreboard. The fix is cheap and fits the repo's own philosophy: add a seventh comparable setup —
+  <code>rag_llm_filtered</code>, byte-for-byte the single-hop path with only the filter switched on — so the
+  score delta is attributable to the filter alone. The per-cell matrix cache means the new column only pays
+  for its own cells. Two knobs to tune on the golden set while you are there: <code>top_k=5</code> may be too
+  narrow for corpus-wide questions now that there are 35 videos, and <code>min_score=0.25</code> was
+  presumably set before the property cluster grew to a quarter of the corpus.
+</div>
+
+<p>
+  And note the second consumer in the diagram, because it is how the decided D5 exclusion is actually implemented: a
+  <b class="k">pack build has no question to route on — but it has a topic</b>, and the topic description
+  (“resume writing, bullets, ATS, recruiters, LinkedIn”) can be the routing query. The same summary index then
+  selects the build input dynamically instead of you hand-excluding the property videos: the static exclusion
+  and the dynamic filter become one mechanism used at two different times.
+</p>
+
+<h2>5. The five techniques, ranked for your case</h2>
+<p class="lede" style="font-size:13.5px;margin-bottom:4px">
+  Each card carries its own architecture diagram — what the technique actually does to your data, and where
+  it plugs into what you already have.
+</p>
+
+<div class="opt rec">
+  <div class="ohead">
+    <div class="rank">1</div>
+    <b>Rubric induction — make the criteria an explicit artifact</b>
+    <div class="spacer"></div>
+    <span class="badge acc">highest payoff</span>
+  </div>
+  <p class="why">
+    Do not map artifact → review directly. Generate the evaluation criteria first, judge each one atomically
+    against retrieved evidence, then consolidate. The reason this wins is decomposition: direct generation
+    conflates <em>deriving</em> criteria with <em>judging</em> against them into a single high-variance problem.
+    Split, both halves get tractable — and the criteria become inspectable and correctable, which is precisely
+    what your chunk-dump approach cannot offer.
+  </p>
+  <p class="why">
+    Three rubric sources, all of which map cleanly onto things you already have:
+    <b class="k">general</b> (corpus-wide themes — your GraphRAG global mode already produces these),
+    <b class="k">domain</b> (per topic pack: system design, app architecture, resume, job search), and
+    <b class="k">artifact-specific</b> (generated per document at review time, evidence-grounded).
+  </p>
+  <div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart TB
+  subgraph TODAY["TODAY — direct critique (src/documents/review.py)"]
+    direction LR
+    A1["your artifact"] --> J1["ONE call:<br/>derive criteria AND judge,<br/>both implicit"]
+    J1 --> O1["review<br/>neutral, superficial,<br/>criteria invisible"]
+  end
+  subgraph PROP["PROPOSED — rubric-driven"]
+    direction LR
+    A2["your artifact"] --> SEL["1. select applicable rubrics"]
+    BANK[("rubric bank<br/>general - from GraphRAG global<br/>domain - per topic pack<br/>artifact-specific - generated now")] --> SEL
+    SEL --> EV["2. retrieve evidence<br/>PER criterion"]
+    EV --> V["3. atomic verdict per criterion<br/>pass / fail / n-a + citation"]
+    V --> CON["4. consolidate + rank"]
+    CON --> O2["review<br/>every finding traceable<br/>to a criterion and a timestamp"]
+  end
+  TODAY -.->|"the fix is decomposition,<br/>not a better prompt"| PROP
+</pre>
+  </div>
+  <p class="diagcap">The whole move: criteria stop being implicit inside one call and become a queryable bank.</p>
+  <div class="evid">
+    <b>Evidence.</b> RubricReviewer reports 80.5% rubric recall vs 45.7% for the strongest baseline, ~54 rubrics
+    per artifact vs 7.7–13.5, and 81.5% of reviews judged gold-standard quality vs 56.5%. It also names the
+    failure mode of direct LLM critique explicitly: <b>superficial critiques that gravitate toward neutral
+    assessments</b> — which is the exact way a chunk-dump review disappoints.
+  </div>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <div class="rank">2</div>
+    <b>RAPTOR — retrieve at the right altitude</b>
+    <div class="spacer"></div>
+    <span class="badge acc">strong fit</span>
+  </div>
+  <p class="why">
+    A review needs <em>principles</em> (“a resume bullet that buries the outcome reads as a job description”),
+    not <em>sentences</em>. RAPTOR embeds chunks, clusters them (Gaussian mixture + BIC), summarises each
+    cluster into a higher-level node, and recurses — producing a tree where you can retrieve from whichever
+    level of abstraction the query needs.
+  </p>
+  <p class="why">
+    <b class="k">You are already two-thirds there and it is worth being precise about the missing third.</b>
+    You have level 0 (chunks) and a level-1 abstraction (per-video summaries). What you do not have is
+    clustering that <em>ignores video boundaries</em> — and that is the level review needs, because “what do
+    these four creators collectively believe about resume bullets” is not any one video's summary. Your graph
+    communities partially cover this via entities; RAPTOR covers it via semantics. They are complementary.
+  </p>
+  <div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart BT
+  C1["chunk"] --> V1["per-video summary<br/>EXISTS: rag/summaries.py"]
+  C2["chunk"] --> V1
+  C3["chunk"] --> V2["per-video summary<br/>EXISTS"]
+  C4["chunk"] --> V2
+  V1 --> T1["theme cluster<br/>NEW - GMM + BIC<br/>crosses video boundaries"]
+  V2 --> T1
+  V2 --> T2["theme cluster<br/>NEW"]
+  T1 --> P["principle<br/>NEW - level 3<br/>'what they collectively believe'"]
+  T2 --> P
+  Q(["a query arrives"]) -.->|"'what did she say at 14:02?'<br/>retrieve LOW"| C2
+  Q -.->|"'is this bullet weak?'<br/>retrieve HIGH"| P
+</pre>
+  </div>
+  <p class="diagcap">You own the bottom two rows already. The clustering layer is the missing third — it is the only structure here that ignores which video a claim came from.</p>
+  <div class="evid">
+    <b>Evidence.</b> Retrieving from the appropriate tree level yields a reported <b>20% absolute accuracy
+    gain</b> on QuALITY. <b>Cost note:</b> at 546 chunks the whole build is a few hundred summarisation calls —
+    cents, not dollars.
+  </div>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <div class="rank">3</div>
+    <b>Skill packaging — the literal answer to “into something usable”</b>
+    <div class="spacer"></div>
+    <span class="badge purple">format, not method</span>
+  </div>
+  <p class="why">
+    COLLEAGUE.SKILL is the closest published match to what you described, down to the input type: it accepts
+    chat logs, work documents, public research material and <b class="k">subtitles</b>, and emits an installable
+    skill package. Its two-track extraction is the useful idea — a <b class="k">capability track</b> (durable
+    work methods, expert heuristics, source-grounded mental models) kept separate from a <b class="k">behaviour
+    track</b> (expression and interaction patterns). For your purpose the capability track is the product; the
+    behaviour track is a distraction you should deliberately skip.
+  </p>
+  <p class="why">
+    It also gets the lifecycle right, which matters more than it sounds: versioned corrections driven by
+    natural-language feedback (“he would not say that”), with rollback. That is the mechanism that makes an
+    expert improvable instead of regenerated.
+  </p>
+  <div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart LR
+  SRC[("YouTube transcripts<br/>= 'subtitles' in the paper")] --> N["normalise"]
+  N --> AN["analyse"]
+  AN --> CAP["CAPABILITY track<br/>durable work methods,<br/>expert heuristics,<br/>mental models"]
+  AN --> BEH["BEHAVIOUR track<br/>phrasing, persona,<br/>interaction style"]
+  CAP --> PK[["SKILL.md + work.md<br/>+ manifest.json"]]
+  BEH -.->|"SKIP — you want a<br/>reviewer, not an impersonation"| PK
+  PK --> HOST["agent host<br/>Claude Code / any"]
+  FIX["'that criterion is wrong'"] --> PATCH["versioned correction<br/>+ rollback"]
+  PATCH --> PK
+</pre>
+  </div>
+  <p class="diagcap">The dotted edge is the deliberate omission: the behaviour track is what makes this a persona product, and it is exactly what you do not want.</p>
+  <div class="evid">
+    <b>Read the caveat carefully.</b> The paper reports <em>adoption</em> (215 skills, 165 contributors) and
+    explicitly disclaims performance: it <em>“does not claim that generated skills faithfully reproduce a
+    person or improve downstream work.”</em> It even names the missing study — <em>whether colleague skills
+    catch the same review issues as the source expert</em>. Take the artifact format; that missing study is
+    yours to run, and it is §8 of this plan.
+  </div>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <div class="rank">4</div>
+    <b>Conflict-preserving synthesis — treat disagreement as the product</b>
+    <div class="spacer"></div>
+    <span class="badge warn">differentiator</span>
+  </div>
+  <p class="why">
+    Four creators on resume design <em>will</em> contradict each other, and a distillation step that averages
+    them produces bland consensus — the least useful possible output. The literature distinguishes
+    <b class="k">complementary</b> from <b class="k">conflicting</b> evidence by asking whether one person could
+    plausibly hold all the views at once; complementary evidence should be fused, conflicting evidence should be
+    surfaced as disagreement rather than resolved.
+  </p>
+  <p class="why">
+    For a reviewer that is a feature, not a caveat: <em>“Expert A would cut this section entirely; Expert B
+    treats it as the strongest signal in the document; the axis is whether you're optimising for recruiter
+    screen or hiring-manager read.”</em> That is more useful than either verdict alone, and no chunk-dump
+    produces it reliably because contradictory chunks just make the model hedge.
+  </p>
+  <div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart TB
+  CL["all claims on one topic<br/>e.g. 'resume bullet openings'"] --> D{"could ONE person<br/>plausibly hold<br/>all of these?"}
+  D -->|"yes — complementary"| FUSE["fuse into one principle"]
+  D -->|"no — conflicting"| AX["name the AXIS<br/>not the winner"]
+  FUSE --> PACK[["expert pack"]]
+  AX --> PACK
+  PACK --> REV["review output:<br/>'A would cut this, B calls it<br/>the strongest signal —<br/>the axis is recruiter-screen<br/>vs hiring-manager read'"]
+  BAD["what averaging produces instead:<br/>bland consensus, model hedges"]
+  D -.->|"the failure mode<br/>if you skip this test"| BAD
+</pre>
+  </div>
+  <p class="diagcap">The single test — <em>could one person hold all these views?</em> — is what routes a claim to fusion or to disagreement. Chunk-dumping has no such test, so contradictory chunks just make the model hedge.</p>
+  <div class="evid">
+    <b>Method.</b> MADAM-RAG runs multi-round debate between agents holding different retrieved positions, with
+    an aggregator that collates by disambiguated entity while discarding noise. Lighter option that fits your
+    stack: mine disagreements once, offline, into an explicit <code>disagreements.md</code> per pack.
+  </div>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <div class="rank">5</div>
+    <b>Procedural / experiential memory — learn from your own review history</b>
+    <div class="spacer"></div>
+    <span class="badge plain">defer</span>
+  </div>
+  <p class="why">
+    The 2026 memory work splits distillation into <b class="k">factual</b> (documents → declarative knowledge)
+    and <b class="k">experiential</b> (trajectories → strategies, planning principles from successes, corrective
+    signals from failures). Memp's build/retrieve/update loop is the reference shape.
+  </p>
+  <p class="why">
+    <b class="k">Deliberately ranked last.</b> This distils <em>your review sessions</em>, and you have none yet.
+    It is the right layer once packs exist and you have been correcting them for a while — and the field's own
+    warning applies directly: skills extracted from narrow experience work in their source setting and fail
+    when context changes.
+  </p>
+  <div class="mermaid-wrap inner">
+<pre class="mermaid sm">
+flowchart LR
+  R["your review sessions<br/>(none exist yet — hence rank 5)"] --> B["BUILD<br/>distil trajectories into<br/>stepwise + script-level procedures"]
+  B --> M[("procedural memory")]
+  M --> RET["RETRIEVE<br/>at the next review"]
+  RET --> U["UPDATE<br/>keep what transferred,<br/>prune what was incidental"]
+  U --> M
+  W["risk: narrow experience<br/>works here, fails elsewhere"] -.-> U
+</pre>
+  </div>
+  <p class="diagcap">Note the loop has no corpus input at all — this layer learns from you, not from the transcripts, which is why it cannot come first.</p>
+</div>
+
+<h2>6. What an expert pack actually looks like</h2>
+
+<p>
+  Concrete enough to implement. One directory per topic, versioned in the repo, human-readable, and
+  installable as a Claude Code skill — which is the format you are already getting value from, just made
+  durable.
+</p>
+
+<div class="tree">
+<pre><span class="c">experts/</span>
+  <span class="n">resume-design/</span>
+    pack.json          <span class="c"># version, corpus snapshot hash, source video ids</span>
+    principles.md      <span class="c"># RAPTOR L2/L3 distillate — the durable claims</span>
+    rubrics.jsonl      <span class="c"># the criteria, each with provenance</span>
+    disagreements.md   <span class="c"># where the experts conflict, and on what axis</span>
+    SKILL.md           <span class="c"># installable into Claude Code / any agent host</span>
+  <span class="n">system-design/</span>   <span class="c">...</span>
+  <span class="n">app-architecture/</span> <span class="c">...</span>
+  <span class="n">job-search/</span>      <span class="c">...</span></pre>
+</div>
+
+<h3>How a pack gets decided</h3>
+<p style="font-size:12.75px">
+  Your question from review. Packs are <b class="k">declared in a manifest, membership is computed by routing,
+  and both are visible in the app before any build spends a call</b>:
+</p>
+<ol style="font-size:12.75px">
+  <li><b class="k">A pack is declared, not discovered.</b> <code>experts/packs.json</code> holds one entry per
+    pack: a name plus a topic description written as routing text (“resume writing, bullets, ATS, recruiter
+    screens, LinkedIn profiles…”). Creating a pack = adding an entry. Nothing about pack identity is inferred
+    by clustering — clustering decides <em>content</em>, never <em>which packs exist</em>.</li>
+  <li><b class="k">Membership is computed, not hand-picked.</b> Each pack's topic description routes through
+    the per-video summary index (§4) exactly like a question would, giving every video a per-pack score;
+    videos above threshold join that pack's build input. The D5 exclusion list is applied here, so the
+    property videos can never enter any build.</li>
+  <li><b class="k">The assignment is reviewable before a build runs.</b> A membership table in the app
+    (Experiments → Expert packs): rows = 35 videos, columns = the declared packs, cells = routing score,
+    with unassigned and double-assigned videos flagged. A cell can be overridden by hand and the override
+    persists in the manifest — routing proposes, you dispose.</li>
+  <li><b class="k">Thin packs are visible immediately.</b> system-design and app-architecture will show ~2
+    and ~0 members today. That is the V4b ingestion signal doing its job in the UI, not a routing failure.</li>
+</ol>
+
+<h3>One rubric record</h3>
+<p style="font-size:12.75px">
+  Every field here exists to make a claim auditable — <code>evidence</code> is what lets a finding cite a
+  timestamp, and <code>contested_by</code> is what stops the pack pretending to a consensus that isn't there.
+</p>
+<div id="rubric-file"></div>
+
+<div class="callout">
+  <b>Why JSONL and not a prompt.</b> Because a criterion is a <em>row</em>: it can be counted, filtered by
+  topic, individually scored against a held-out expert review, deleted when wrong, and diffed across pack
+  versions. A criterion buried in a system prompt can do none of those things. This is the entire difference
+  between a distillation you can improve and one you regenerate.
+</div>
+
+<h2>7. Where deep research fits — precisely</h2>
+
+<p>
+  Deep research agents run a planning loop: decompose the question, retrieve iteratively, evaluate what is
+  still missing, retrieve again, critique the draft, synthesise. The canonical split — GPT-Researcher's
+  planner / parallel executors / publisher — maps onto your repo almost embarrassingly well, because
+  <b class="k">you already built the executors</b>.
+</p>
+
+<div class="seq">
+  <div class="n">
+    <div class="wk">planner</div>
+    <div>
+      <b class="k">Decompose “what does this corpus say about resume design?”</b> into 20–40 sub-questions.
+      <div class="why">Seeded from GraphRAG global themes and RAPTOR cluster labels, so the decomposition is corpus-grounded rather than invented.</div>
+    </div>
+  </div>
+  <div class="n">
+    <div class="wk">executors</div>
+    <div>
+      <b class="k">Answer each sub-question across your 6 setups in parallel.</b>
+      <div class="why">This is the multi-modal sweep pattern for free — single-hop, recursive, agentic, GraphRAG, HyDE and contextual each find different things, and you already have the harness that runs all six comparably.</div>
+    </div>
+  </div>
+  <div class="n">
+    <div class="wk">gap critic</div>
+    <div>
+      <b class="k">“What did we not ask? Which claim has one source? Which is unverified?”</b>
+      <div class="why">Its output becomes round two. This is the step that separates deep research from a big fan-out, and the one most implementations skip.</div>
+    </div>
+  </div>
+  <div class="n">
+    <div class="wk">publisher</div>
+    <div>
+      <b class="k">Emit the pack</b> — principles, rubrics with provenance, disagreements.
+      <div class="why">Not a report for a human to read once. A structured artifact the fast path consumes.</div>
+    </div>
+  </div>
+</div>
+
+<div class="callout warn">
+  <b>What deep research does not buy you.</b> Coverage and gap-closure, yes — measurably. Correctness, no.
+  A deep-research loop over a corpus of four confident YouTubers produces a thorough distillation of four
+  confident YouTubers. The thing that buys correctness is §8, and it is the part that is genuinely hard.
+</div>
+
+<h2>8. The experiment that decides whether any of this is better</h2>
+
+<p>
+  This section matters more than the rest, because <b class="k">you already have a working baseline</b> and
+  no current way to beat it on paper. Even judge v2 from §3 cannot settle it on its own — faithfulness and
+  answer relevancy presuppose a question, and review has none. But the depth dimensions you build in §3 carry
+  straight over, so this is an extension of that work rather than a second scoring system.
+</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Metric</th><th>What it asks</th><th>Why it's the right question</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b class="k">Finding recall</b></td>
+      <td>Of the issues the source expert raises, how many did the reviewer independently surface?</td>
+      <td>The direct operationalisation of “through their eyes.” This is the study COLLEAGUE.SKILL says nobody has run.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Finding precision</b></td>
+      <td>Of the issues raised, how many are supported by the corpus rather than model prior?</td>
+      <td>Guards the failure your video loop already caught twice: inventing specifics that no source supports.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Provenance validity</b></td>
+      <td>For each cited timestamp — does the transcript at that timestamp actually say that?</td>
+      <td>Cheap, deterministic, no judge needed. You have the raw transcripts.</td>
+    </tr>
+    <tr>
+      <td><b class="k">Contested coverage</b></td>
+      <td>On topics where experts disagree, does the review surface the disagreement or silently pick a side?</td>
+      <td>The one metric where a distilled pack should beat chunk-dumping structurally, not marginally.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>The held-out design</h3>
+<ol>
+  <li><b class="k">Hold out a video</b> in which an expert critiques something concrete — a resume teardown, an architecture review. Exclude it from the corpus entirely.</li>
+  <li><b class="k">Give the reviewer the same artifact</b> that expert critiqued.</li>
+  <li><b class="k">Score overlap</b> between its findings and the expert's actual findings.</li>
+  <li><b class="k">Run the baseline in the same harness</b> — chunk-dump into a coding agent, same corpus, no pack.</li>
+</ol>
+
+<div class="callout risk">
+  <b>The honest risk, stated up front: chunk-dumping might win.</b> At 715 chunks across 35 videos your
+  entire corpus is roughly within reach of a long context window, and the crossover where retrieval pipelines
+  become clearly worth it is usually cited around the couple-thousand-page mark — you are two orders of
+  magnitude below it. So the distillation cannot justify itself on cost or on context limits. It has to earn
+  its place on <b>inspectability, correctability, disagreement handling, and reuse</b>. Those are real
+  advantages, but they are the ones you must actually measure, and the held-out test above is designed so a
+  negative result is legible rather than embarrassing.
+  <br><br>
+  <b>Your pre-filter point sharpens the fight.</b> The baseline to beat is not a naive dump of all 715
+  chunks — it is a <em>summary-filtered</em> dump: route over the 35 per-video summaries first and dump only
+  the matched videos' chunks (§4). On this heterogeneous corpus that is a materially stronger baseline, and
+  it is the fair one, because the routing layer exists either way.
+</div>
+
+<h2>9. Build order — vertical slices, each with a loop gate</h2>
+
+<p>
+  Structured for an agent building in a loop, on the same harness shape as
+  <span class="fileref">demo/loop.py</span>: <b class="k">deterministic checks run first and are free; the LLM
+  judge runs second and costs money; a failed gate sends the findings back to the generator with the failure
+  attached, not to you.</b> Two rules hold for every slice:
+</p>
+<ul>
+  <li><b class="k">Vertical, not horizontal.</b> Every slice cuts backend → data → API → frontend and ships
+    something you can click. No slice is “the backend half” of a later slice; there is never a big
+    integration step waiting at the end.</li>
+  <li><b class="k">The app is the review surface.</b> Each slice names the exact click path at
+    <code>:8021</code> where you review it, because “done” means you can see it in the UI, not that a script
+    printed a number.</li>
+  <li><b class="k">Hypothesis-first review.</b> Each slice states up front the falsifiable claim the feature
+    should add. Reviewing a slice = walking its click path and checking whether the hypothesis is visibly
+    true. <b>A slice whose hypothesis cannot be seen in the frontend fails review even if every automated
+    gate passed</b> — that is the standing rule for anything built from this plan.</li>
+</ul>
+
+<div class="tablewrap">
+<table style="min-width:1120px">
+  <thead><tr><th style="min-width:130px">Slice</th><th>Hypothesis — what this should add</th><th>Review it at :8021 — exact path</th><th>Loop gate — PASS when</th></tr></thead>
+  <tbody>
+    <tr style="background:var(--accent-dim)">
+      <td><b class="k">V0 — Judge v2 on the Scoreboard</b> <span class="badge acc">first</span></td>
+      <td>The judge can now <b class="k">see depth</b>: answers that synthesise several creators outrank faithful restatements of one chunk — so the setup ranking should <em>change</em>. If the ranking is identical to ragas-v1, the new dimensions measured nothing and the slice failed its point.</td>
+      <td><b class="k">Scoreboard</b> → pick the new <code>depth-v2</code> matrix run → the metric table lists <b>8 rows</b> (3 grounding + 5 depth) → open <b>Answers</b> panel → expand any low-faithfulness cell → it shows a <b>capped</b> badge with the reason. Then switch the run selector to the old <code>ragas-v1</code> run and compare rankings side by side.</td>
+      <td>≥10 hand-built shallow/deep answer pairs: depth-v2 ranks the deep one higher in ≥80% of pairs <em>where ragas-v1 does not</em>; a deliberately ungrounded deep answer caps at ≤0.5; Scoreboard renders 8 rows + cap reasons.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V1 — First real document review in Chat</b></td>
+      <td>The app can review <b class="k">your artifact</b> against the corpus — not just answer questions about it. The review should reference specific resume sections <em>and</em> specific expert timestamps in the same answer; feedback that could have been written without reading your resume means the hypothesis failed.</td>
+      <td><b class="k">Chat</b> → history rail → the resume-review conversation → the document card shows the section-selection line (“whole document — all N sections in context”) → the answer names resume sections → open <b>Sources (N)</b> → corpus timestamps resolve to the videos that back each point.</td>
+      <td>≥1 committed document entry (today: 0); the review cites ≥1 corpus timestamp <em>and</em> ≥1 document section; the walkthrough loop's blocked <code>document</code> scene now records.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V2 — Summary pre-filter on the Scoreboard</b></td>
+      <td>Video-level routing removes the off-topic quarter <b class="k">without costing accuracy</b>: resume answers should stop containing property chunks, and the composite should hold. If scores drop, the filter is cutting signal, not noise.</td>
+      <td><b class="k">Chat</b> → ask a resume question with the <code>rag_llm_filtered</code> setup → the trace shows “Summary filter: N videos matched” with the list — no property videos in it. Then <b class="k">Scoreboard</b> → <b>Answers</b> panel → filter setup = <code>rag_llm_filtered</code> → same question under <code>rag_llm</code> vs filtered, chunk counts and scores side by side.</td>
+      <td>Deterministic from <code>retrieved_chunk_ids</code>: resume question → 0 property chunks (baseline has ≥1); property question routes only to property videos; filtered composite ≥ baseline − 0.02 on the 20-q set; 7th column + trace step render.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V3 — Critique eval harness in Experiments</b></td>
+      <td>Critique quality becomes <b class="k">a number with a baseline</b>: the summary-filtered chunk-dump gets scored on the held-out teardown, so every later reviewer has something to beat. Until this row renders, “better than chunk-dumping” is unfalsifiable.</td>
+      <td><b class="k">Experiments</b> → new <b>Critique eval</b> panel → one row per reviewer variant, chunk-dump baseline first, columns recall / precision / provenance / contested → click a row → the findings vs the expert's actual findings, matched and unmatched, each with its timestamp.</td>
+      <td>Held-out video provably absent from the index during the run; ≥95% of cited timestamps resolve to transcript text containing the quote (deterministic); the baseline row renders with non-null scores.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V4 — Theme layer in RAG Pipeline</b></td>
+      <td>The corpus holds <b class="k">cross-video themes no single video contains</b> — each theme should read as a claim several creators make, not as one video's outline with a fancier name. Themes that are just per-video summaries restated mean RAPTOR added nothing over what exists.</td>
+      <td><b class="k">RAG Pipeline</b> → new <b>Themes</b> sub-tab (beside “Corpus &amp; retrieval / Chunk graph / Knowledge graph”) → theme list with member counts → click one → member chunks grouped by video (≥2 videos) → click a chunk → its transcript text + timestamp link.</td>
+      <td>≥5 clusters span ≥2 videos (deterministic); no resume-topic cluster &gt;20% property members; judge spots a planted intruder chunk ≥80% of the time; themes render and click through.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V4b — Ingest the two empty topics</b> <span class="badge plain">from D1</span></td>
+      <td>The corpus can support system-design and app-architecture packs at all — today it cannot (2 MLOps videos, 0 architecture). After ingestion, routing should place the new videos in the right packs <b class="k">without being told</b>; hand-fixing every assignment means the routing text is wrong.</td>
+      <td><b class="k">RAG Pipeline → Corpus &amp; retrieval</b> → the corpus tree shows the new videos with chunk counts → <b class="k">Experiments → Expert packs</b> → the membership table now shows ≥5 members for each of the two new packs, scores visible, no property video in either column.</td>
+      <td>≥5 videos per new topic ingested and chunked (deterministic); routing assigns them to the intended pack without manual override; zero property-cluster members in either new pack.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V5 — Rubric packs in the app</b></td>
+      <td>The distillate is <b class="k">checkable criteria, not summaries</b>: each rubric should read as something you could hold a real resume against, with evidence you can verify in two clicks. Any property/tax-themed rubric in the list is instantly visible leakage and fails the slice on sight.</td>
+      <td><b class="k">Experiments</b> → <b>Expert pack: resume-design</b> panel → rubric list with severity + confidence → click a rubric → its evidence quotes → each jumps to the YouTube timestamp → contested rubrics carry a badge → the pack version + corpus snapshot hash shown in the header.</td>
+      <td>≥95% of evidence quotes resolve at their timestamps (deterministic); ≥30% of rubrics cite ≥2 creators; every GraphRAG global theme for the topic maps to ≥1 rubric or a logged gap (judge); every evidence link resolves in the UI. <b class="k">D2 ablation:</b> the pack builds three ways — raptor-only / communities-only / merged — all three scored on the V3 harness and rendered as comparison rows; if merged does not beat or match both single sources, ship the winner and say so.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V6 — Rubric-driven reviewer in Chat</b></td>
+      <td>Rubric-driven review <b class="k">finds real issues direct critique missed</b> — visible as findings the V1 review of the same resume did not surface, each carrying its provenance. If the two reviews find the same things, the machinery added nothing over chunk-dumping.</td>
+      <td><b class="k">Chat</b> → submit the same resume reviewed in V1 → the review now renders per-rubric verdicts (pass / fail / n-a) filterable by severity, each with rubric id + timestamp → open the V1 conversation from the history rail beside it and compare findings directly.</td>
+      <td><b class="k">Report-both (D4):</b> finding recall vs the chunk-dump baseline is computed and <b>published</b> in the Critique eval panel — shipping proceeds either way, but a missing comparison FAILS; 100% of findings carry rubric id + timestamp (deterministic); a finding clicks through to rubric and video moment.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V7 — Disagreements as a first-class view</b></td>
+      <td>The corpus <b class="k">genuinely disagrees with itself</b> and the system names the axis instead of averaging: you should recognise the surfaced conflicts as real controversies from the videos you watched — not manufactured ones, and not silence.</td>
+      <td><b class="k">Experiments</b> → Critique eval panel → the <b>contested-coverage</b> column is filled → new <b>Disagreements</b> view → each conflict shows the axis, both creators quoted with timestamps → click through to both video moments and confirm they actually disagree.</td>
+      <td>A planted contradictory pair surfaces as a conflict, not fused (deterministic); ≥3 genuine cross-creator disagreements with valid provenance on both sides; the view shows axes, never a winner.</td>
+    </tr>
+    <tr>
+      <td><b class="k">V8 — Deep-research build loop</b></td>
+      <td>The automated loop <b class="k">builds a better pack than the hand run</b> — and provably iterates: the build report should show round 2 adding rubrics the gap critic asked for. A one-shot that happens to score well is a FAIL; the loop is the deliverable.</td>
+      <td><b class="k">Experiments</b> → <b>Build report</b> for pack v2 → per-round: sub-questions asked, gaps the critic raised, rubrics added → pack browser shows the v1 → v2 diff (added / changed rubrics) → Critique eval panel shows v2's row above v1's.</td>
+      <td>Loop-built pack ≥ hand-built v1 on the V3 metrics; round 2 exists and adds ≥1 rubric the gap critic asked for (deterministic — one-shot fails by definition); the report renders each round's delta.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <b>How the loop uses this table.</b> Each slice is one loop iteration cycle: generate → run the gate →
+  if FAIL, feed the specific failed check (not a vibe) back to the generator and re-run — the
+  <span class="fileref">demo/loop.py</span> pattern, with the gate column above playing the role of
+  <span class="fileref">review.py</span>. Deterministic checks are listed before judge checks in every gate
+  deliberately: a slice that fails a free check never spends a judge call. V0 stays first for the same reason
+  as before — every later gate that says “composite” or “recall” is scored by the judge V0 fixes, and
+  measurement built after the thing it measures is how the video shipped at 5.2/10 with no argument it beat
+  take one.
+</div>
+
+<h2>10. Risks &amp; open questions</h2>
+
+<ul>
+  <li><b class="k">The off-mission quarter</b> — <span class="badge good">resolved, D5</span>: the 5
+    property/tax videos are excluded from all pack builds via topic routing (§6 “How a pack gets decided”)
+    and stay indexed for Q&amp;A. The residual risk is a routing miss, which V4's purity check
+    (&gt;20% property members fails the cluster) exists to catch.</li>
+  <li><b class="k">Two intended topics have no material</b> — <span class="badge good">resolved, D1</span>:
+    all four packs stay in scope, so system-design and app-architecture get a deliberate ingestion slice
+    (V4b, ≥5 videos each). The residual risk is source selection: those videos do not exist in the corpus
+    pipeline yet, and picking them is editorial work the loop cannot do for you.</li>
+  <li><b class="k">Expert authority is unmodelled.</b> A rubric mined from a creator with 200 subscribers
+    weighs the same as one from a practitioner with real hiring experience. Nothing in the current pipeline
+    captures that. <b>Open:</b> do you want a manual credibility weight per source video?</li>
+  <li><b class="k">Recency.</b> Resume and job-search advice decays fast; system design advice does not.
+    s08 already proposed recency-weighted distillation — that should carry into rubrics, per topic.</li>
+  <li><b class="k">Rubric count is a real cost.</b> ~54 criteria per artifact means ~54 judgment calls per
+    review. Fine offline, noticeable in a live UI. Rubric selection before judging is what keeps the fast
+    path fast.</li>
+  <li><b class="k">Corpus depth is topic-dependent, not uniformly thin.</b> Resume/job has 22 videos and 321
+    chunks — genuinely enough to distil something that is not just a paraphrase of one creator. Every other
+    topic has 2–4. So "is the corpus big enough" has different answers per pack, and only the resume pack
+    can be answered yes today.</li>
+</ul>
+
+<h2>11. Decisions — resolved</h2>
+<p class="lede" style="font-size:13.5px">All six decisions are taken and the plan above reflects them; recorded here so the artifact stays the source of truth.</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Decision</th><th>Call</th><th>Consequence in the plan</th></tr></thead>
+  <tbody>
+    <tr><td><b class="k">D0 — judge weights</b></td><td><span class="badge good">40 / 60 + hard cap</span></td><td>§3 ships as proposed: grounding floor 40%, depth 60%, composite capped at 0.5 when faithfulness &lt; 0.6, <code>rubric_version: depth-v2</code>. V0 unchanged.</td></tr>
+    <tr><td><b class="k">D1 — scope</b></td><td><span class="badge acc">all four packs</span></td><td>resume-design and job-search build from existing material; system-design and app-architecture have no material yet, so ingestion for them is now in scope — the new <b>V4b</b> slice.</td></tr>
+    <tr><td><b class="k">D2 — abstraction layer</b></td><td><span class="badge acc">both, merged — and compared</span></td><td>RAPTOR semantic themes + graph-community entity themes, merged with dedup. Per your annotation, packs are built <b>three ways — raptor-only / communities-only / merged</b> — and all three are scored on the critique harness so the combo has to earn its keep (V5 gate).</td></tr>
+    <tr><td><b class="k">D3 — where packs live</b></td><td><span class="badge good">files + app</span></td><td>Files (<code>experts/&lt;topic&gt;/</code>) are the source of truth; the app renders them. And yes — served in the app for review: the V5 pack browser (Experiments → Expert pack panel) is that surface, evidence links, contested badges and all.</td></tr>
+    <tr><td><b class="k">D4 — the bar</b></td><td><span class="badge warn">report both, ship anyway</span></td><td>No hard gate on beating chunk-dumping. V6's gate becomes: the recall-vs-baseline comparison is computed and <b>published</b> in the Critique eval panel; shipping proceeds either way — the same rule that shipped the video at 5.2/10 with the number in the open.</td></tr>
+    <tr><td><b class="k">D5 — off-mission quarter</b></td><td><span class="badge good">exclude from pack builds</span></td><td>The 5 property/tax videos stay indexed for Q&amp;A and are excluded from every distillation input via topic routing (§4). V4's purity check enforces it.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<form class="decision" data-lavish-question="freeform"
+      onsubmit="event.preventDefault(); submitFreeform(this)">
+  <div class="q">Anything else</div>
+  <div class="qsub">The decisions above are applied — queue here only if one should change, or a new constraint appears.</div>
+  <textarea name="freeform" placeholder="e.g. reweigh a technique / change a gate / rename a pack"></textarea>
+  <div class="queuebar"><button class="q-submit" type="submit">Queue note</button><span class="queue-note">not queued yet</span></div>
+</form>
+
+<h2>Sources</h2>
+<ul class="refs">
+  <li><a href="https://arxiv.org/html/2608.00005">RubricReviewer: From Direct Critique to Objective and Comprehensive Rubric-Driven Peer Review</a> — rubric induction, the three rubric sources, failure modes of direct critique</li>
+  <li><a href="https://proceedings.iclr.cc/paper_files/paper/2024/file/8a2acd174940dbca361a6398a4f9df91-Paper-Conference.pdf">RAPTOR: Recursive Abstractive Processing for Tree-Organized Retrieval</a> (ICLR 2024) — hierarchical clustering + recursive summarisation</li>
+  <li><a href="https://arxiv.org/html/2605.31264v1">COLLEAGUE.SKILL: Automated AI Skill Generation via Expert Knowledge Distillation</a> — skill-package format, capability/behaviour tracks, correction lifecycle, and the explicit no-performance-claim caveat</li>
+  <li><a href="https://arxiv.org/abs/2404.16130">From Local to Global: A Graph RAG Approach to Query-Focused Summarization</a> — community summaries for corpus-level questions</li>
+  <li><a href="https://arxiv.org/html/2506.08500v2">(D)RAGged Into a Conflict: Detecting and Addressing Conflicting Sources</a> — complementary vs conflicting evidence</li>
+  <li><a href="https://arxiv.org/pdf/2504.13079">Retrieval-Augmented Generation with Conflicting Evidence</a> — MADAM-RAG multi-agent debate</li>
+  <li><a href="https://arxiv.org/abs/2506.18096">Deep Research Agents: A Systematic Examination and Roadmap</a> — planner/executor/publisher decomposition</li>
+  <li><a href="https://arxiv.org/pdf/2606.23127">Managing Procedural Memory in LLM Agents</a> — factual vs experiential distillation, transfer failure modes</li>
+  <li><a href="https://truestandard.ai/blog/long-context-vs-rag-2026">Long Context vs RAG in 2026</a> — the corpus-size crossover underlying the §8 risk</li>
+</ul>
+
+<script type="module">
+  import { File } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const raw = {
+    "id": "resume.bullet.outcome-first",
+    "topic": "resume-design",
+    "criterion": "Every experience bullet leads with the outcome, not the activity.",
+    "why_it_matters": "Recruiters scan the first four words of a bullet. An activity-first bullet reads as a job description and gets skipped.",
+    "check": "For each bullet: does the first clause name a result, a number, or a change of state? Flag bullets opening with 'Responsible for', 'Worked on', 'Helped with'.",
+    "severity": "high",
+    "evidence": [
+      { "video_id": "<vid-a>", "t": 842, "quote": "nobody reads past the first four words of a bullet" },
+      { "video_id": "<vid-b>", "t": 1517, "quote": "lead with the number, then explain how you got it" }
+    ],
+    "confidence": 0.82,
+    "contested_by": [
+      { "video_id": "<vid-c>", "t": 305,
+        "position": "argues outcome-first reads as inflated for juniors with no numbers to cite" }
+    ],
+    "source_pack_version": 3
+  };
+  const contents = JSON.stringify(raw, null, 2) + "\n";
+  const isDark = () => {
+    const t = document.documentElement.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  };
+  const target = document.querySelector("#rubric-file");
+  function paintFile() {
+    target.innerHTML = "";
+    new File({
+      theme: { light: "github-light", dark: "github-dark" },
+      themeType: isDark() ? "dark" : "light",
+      overflow: "wrap",
+    }).render({
+      containerWrapper: target,
+      file: { name: "experts/resume-design/rubrics.jsonl  (one record, pretty-printed)", contents },
+    });
+  }
+  paintFile();
+  new MutationObserver(paintFile).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintFile);
+</script>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0]*fa + bg[0]*ba*(1-fa)) / a,
+      (fg[1]*fa + bg[1]*ba*(1-fa)) / a,
+      (fg[2]*fa + bg[2]*ba*(1-fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBg = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBg = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0,0,0,0];
+    const [r,g,b,a] = compositeRgba(bodyBg, rootBg);
+    if (a > 0) return (0.2126*r + 0.7152*g + 0.0722*b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (!rendering) void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (e) { console.error("Mermaid render failed:", e); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener("transitionend", ({ propertyName }) => { if (propertyName === "background-color") queueRender(); }, true);
+  darkQuery.addEventListener("change", queueRender);
+</script>
+
+<script>
+  function markQueued(form, text) {
+    form.closest('.decision') ? form.closest('.decision').classList.add('is-queued') : form.classList.add('is-queued');
+    const note = form.querySelector('.queue-note');
+    if (note) note.textContent = text;
+  }
+  function submitDecision(form, question, labels) {
+    const answer = new FormData(form).get(question);
+    if (!answer) return;
+    const prompt = 'Decision — ' + question + ': ' + labels[answer];
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt(prompt, {
+        tag: 'decision',
+        text: question + ': ' + answer,
+        element: form,
+        queueKey: question,
+        data: { question, answer }
+      });
+      markQueued(form, 'queued — will send with the rest');
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+  function submitFreeform(form) {
+    const value = (new FormData(form).get('freeform') || '').toString().trim();
+    if (!value) return;
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt('Note on s11: ' + value, {
+        tag: 'note', text: value.slice(0, 80), element: form, queueKey: 'freeform',
+        data: { question: 'freeform', answer: value }
+      });
+      markQueued(form, 'queued — will send with the rest');
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+</script>
+
+</body>
+</html>
