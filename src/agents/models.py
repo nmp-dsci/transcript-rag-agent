@@ -209,3 +209,8 @@ class AgentProgressEvent(BaseModel):
     event_type: Literal["retrieval_start", "retrieval_complete", "answer_start"]
     query: str | None = Field(default=None, description="The retrieval query for this iteration.")
     chunk_count: int | None = Field(default=None, description="Populated on retrieval_complete.")
+    #: What ``chunk_count`` counts, when it is not chunks. The rubric reviewer
+    #: reports verdicts per pack on this same channel, and a live trace reading
+    #: "17 chunks" for seventeen rubric verdicts is a measurement of the wrong
+    #: thing. ``None`` keeps the chunk wording every other path means.
+    unit: str | None = Field(default=None, description="Noun for chunk_count; chunks if unset.")

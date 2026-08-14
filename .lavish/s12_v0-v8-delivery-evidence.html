@@ -1,0 +1,451 @@
+<style>
+  :root{
+    --bg:#0c0e12; --panel:#12151b; --panel2:#161a21; --line:#242a35;
+    --ink:#e6e9ef; --dim:#98a2b3; --faint:#6b7480;
+    --ok:#3fb950; --warn:#d29922; --bad:#f85149; --accent:#58a6ff; --amber:#e3a008;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{--bg:#fbfcfd;--panel:#fff;--panel2:#f4f6f9;--line:#dde3ec;
+      --ink:#111826;--dim:#4d5766;--faint:#78828f;--accent:#0969da;--amber:#9a6700;}
+  }
+  :root[data-theme="dark"]{--bg:#0c0e12;--panel:#12151b;--panel2:#161a21;--line:#242a35;
+    --ink:#e6e9ef;--dim:#98a2b3;--faint:#6b7480;--accent:#58a6ff;--amber:#e3a008;}
+  :root[data-theme="light"]{--bg:#fbfcfd;--panel:#fff;--panel2:#f4f6f9;--line:#dde3ec;
+    --ink:#111826;--dim:#4d5766;--faint:#78828f;--accent:#0969da;--amber:#9a6700;}
+
+  *{box-sizing:border-box;min-width:0}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.6;font-size:15px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  h1{font-size:2.1rem;line-height:1.2;margin:0 0 8px;letter-spacing:-.02em}
+  h2{font-size:1.35rem;margin:56px 0 6px;letter-spacing:-.01em;
+    padding-top:20px;border-top:1px solid var(--line)}
+  h3{font-size:1.02rem;margin:28px 0 8px;color:var(--ink)}
+  p{margin:0 0 14px;color:var(--dim)}
+  strong{color:var(--ink);font-weight:600}
+  code{font-family:var(--mono);font-size:.86em;background:var(--panel2);
+    padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  a{color:var(--accent)}
+
+  .lede{font-size:1.06rem;color:var(--dim);max-width:74ch}
+  .kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+
+  .scoreband{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:10px;margin:28px 0 8px}
+  .sb{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .sb b{display:block;font-size:1.7rem;line-height:1.1;font-family:var(--mono)}
+  .sb span{font-size:.76rem;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+  .sb.ok b{color:var(--ok)} .sb.warn b{color:var(--warn)} .sb.bad b{color:var(--bad)}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:18px 0}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th{background:var(--panel2);text-align:left;padding:10px 14px;font-weight:600;
+    font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+    border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim)}
+  tr:last-child td{border-bottom:none}
+  td.num{font-family:var(--mono);text-align:right;white-space:nowrap;color:var(--ink)}
+  td strong{color:var(--ink)}
+
+  .pill{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:2px 8px;
+    border-radius:999px;border:1px solid;white-space:nowrap;font-weight:600}
+  .pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent);
+    background:color-mix(in srgb,var(--ok) 12%,transparent)}
+  .pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent);
+    background:color-mix(in srgb,var(--warn) 12%,transparent)}
+  .pill.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent);
+    background:color-mix(in srgb,var(--bad) 12%,transparent)}
+  .pill.none{color:var(--faint);border-color:var(--line);background:var(--panel2)}
+
+  figure{margin:16px 0 22px;border:1px solid var(--line);border-radius:12px;
+    overflow:hidden;background:var(--panel)}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{padding:11px 15px;font-size:.83rem;color:var(--faint);
+    border-top:1px solid var(--line);background:var(--panel2)}
+  figcaption b{color:var(--dim);font-weight:600}
+
+  .card{background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:18px 20px;margin:18px 0}
+  .card.flag{border-left:3px solid var(--bad)}
+  .card.note{border-left:3px solid var(--accent)}
+  .card.win{border-left:3px solid var(--ok)}
+  .card h4{margin:0 0 8px;font-size:.95rem;color:var(--ink)}
+  .card p:last-child{margin-bottom:0}
+
+  ul{margin:0 0 14px;padding-left:20px;color:var(--dim)}
+  li{margin-bottom:7px}
+
+  .slice{border:1px solid var(--line);border-radius:12px;margin:20px 0;
+    background:var(--panel);overflow:hidden}
+  .slicehead{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;
+    padding:14px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .slicehead .id{font-family:var(--mono);font-weight:700;color:var(--ink)}
+  .slicehead .ttl{flex:1;min-width:180px;color:var(--ink);font-weight:600}
+  .slicebody{padding:16px 18px}
+  .hyp{font-style:italic;color:var(--dim);border-left:2px solid var(--line);
+    padding-left:12px;margin:0 0 12px}
+
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+    font-size:.85rem;color:var(--faint)}
+</style>
+
+<div class="wrap">
+
+<div class="kicker">transcript·lab — delivery evidence</div>
+<h1>V0–V8: what shipped, what didn't</h1>
+<p class="lede">
+Ten vertical slices were planned. <strong>Five are delivered and independently
+validated</strong>, one is delivered-but-failing, two exist as backend code with no
+interface, and two were never started. Every claim below is either a screenshot of
+the running app at <code>127.0.0.1:8021</code> or a committed verdict file — nothing
+here rests on an agent's self-report.
+</p>
+
+<div class="scoreband">
+  <div class="sb ok"><b>5</b><span>validated</span></div>
+  <div class="sb warn"><b>1</b><span>failing</span></div>
+  <div class="sb warn"><b>2</b><span>no UI</span></div>
+  <div class="sb bad"><b>2</b><span>not started</span></div>
+  <div class="sb"><b>128/129</b><span>checks passed</span></div>
+</div>
+
+<h2>The scoreboard</h2>
+
+<div class="tablewrap">
+<table>
+<thead><tr>
+  <th>Slice</th><th>Deliverable</th><th>State</th><th>Evidence</th>
+</tr></thead>
+<tbody>
+<tr>
+  <td><strong>V0</strong></td>
+  <td>Depth-aware judge on the Scoreboard</td>
+  <td><span class="pill ok">validated</span></td>
+  <td class="num">36/36</td>
+</tr>
+<tr>
+  <td><strong>V1</strong></td>
+  <td>Document review grounded in the corpus</td>
+  <td><span class="pill ok">validated</span></td>
+  <td class="num">39/39</td>
+</tr>
+<tr>
+  <td><strong>V2</strong></td>
+  <td>Summary pre-filter as a comparable setup</td>
+  <td><span class="pill warn">partial</span></td>
+  <td>deterministic gate passed; no committed run → no Scoreboard column</td>
+</tr>
+<tr>
+  <td><strong>V3</strong></td>
+  <td>Held-out critique harness</td>
+  <td><span class="pill ok">validated</span><br><span class="pill bad">metric gameable</span></td>
+  <td class="num">30/30</td>
+</tr>
+<tr>
+  <td><strong>V4</strong></td>
+  <td>Cross-video theme layer</td>
+  <td><span class="pill bad">failing</span></td>
+  <td class="num">23/24</td>
+</tr>
+<tr>
+  <td><strong>V4b</strong></td>
+  <td>Ingest the two empty topics</td>
+  <td><span class="pill ok">delivered</span></td>
+  <td>corpus 38 → 56 videos</td>
+</tr>
+<tr>
+  <td><strong>V5</strong></td>
+  <td>Rubric packs in the app</td>
+  <td><span class="pill warn">backend only</span></td>
+  <td>17 rubrics on disk, 3 arms built, no UI, no ablation</td>
+</tr>
+<tr>
+  <td><strong>V6</strong></td>
+  <td>Rubric-driven reviewer in Chat</td>
+  <td><span class="pill none">not started</span></td>
+  <td>—</td>
+</tr>
+<tr>
+  <td><strong>V7</strong></td>
+  <td>Disagreements as a first-class view</td>
+  <td><span class="pill warn">backend only</span></td>
+  <td><code>conflicts.py</code>, no UI, no artifact</td>
+</tr>
+<tr>
+  <td><strong>V8</strong></td>
+  <td>Deep-research build loop</td>
+  <td><span class="pill none">not started</span></td>
+  <td>—</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>V0 — the judge can now see depth</h2>
+
+<div class="slice">
+  <div class="slicehead"><span class="id">V0</span>
+    <span class="ttl">Depth-aware judge on the Scoreboard</span>
+    <span class="pill ok">36/36</span></div>
+  <div class="slicebody">
+    <p class="hyp">Answers that synthesise several creators should outrank faithful
+    restatements of one chunk — so the setup ranking should <em>change</em>.</p>
+    <p>The old composite averaged three metrics that all measure grounding. A faithful
+    one-chunk restatement scored ~1.0; a synthesised answer could score lower. The new
+    rubric is 40% grounding / 60% depth with a hard cap at faithfulness &lt; 0.6.</p>
+  </div>
+</div>
+
+<figure>
+  <img src="evidence/v0-scoreboard.jpg" alt="Scoreboard showing eight weighted metric columns, a self-graded warning banner, and four ranked setups">
+  <figcaption><b>Scoreboard →</b> eight metric columns each carrying its weight
+  (FAITHFUL 20%, PRECISION 10%, RELEVANT 10%, INSIGHT 20%, SPECIFIC 15%, COVERAGE 10%…),
+  the red <b>self-graded</b> banner naming the confound, and the footnote explaining why
+  one row shows n=19 rather than 20.</figcaption>
+</figure>
+
+<div class="card win">
+  <h4>The ranking moved, and it moved for a checkable reason</h4>
+  <p>Under the old rubric the top three sat within <strong>0.004</strong> of each other —
+  a tie that told you nothing. Under depth-v2 <code>rag_agent</code> takes first on
+  insight (0.78 vs 0.46) and <code>graph_rag</code> drops to third on
+  <strong>evidence breadth 0.20</strong>: it answers off a single subgraph. That weakness
+  was invisible to a composite where every term measured grounding.</p>
+  <p>The flip was then reproduced under an <strong>independent OpenAI judge</strong>
+  (ρ = τ = +1.00 across all four setups), so it is not the model flattering itself —
+  though the independent judge was uniformly harsher, halving the top-two margin from
+  +0.145 to +0.071.</p>
+</div>
+
+<h2>V1 — review of your own work, grounded twice</h2>
+
+<div class="slice">
+  <div class="slicehead"><span class="id">V1</span>
+    <span class="ttl">Document review in Chat</span>
+    <span class="pill ok">39/39</span></div>
+  <div class="slicebody">
+    <p class="hyp">The review should reference specific document sections <em>and</em>
+    specific expert timestamps in the same answer. Feedback that could have been written
+    without reading the document means the hypothesis failed.</p>
+  </div>
+</div>
+
+<figure>
+  <img src="evidence/v1-document-card.jpg" alt="Chat showing a document card for the portfolio site with all nine sections listed">
+  <figcaption><b>Chat → history rail →</b> the document card states
+  <b>“fetched — whole document — all 9 sections in context”</b> and lists every section
+  §1–§9, so you can see exactly what the reviewer read.</figcaption>
+</figure>
+
+<figure>
+  <img src="evidence/v1-answer-chips.jpg" alt="Review answer with amber section chips interleaved with numeric corpus citations, and a Sources (9) disclosure">
+  <figcaption><b>The answer itself —</b> amber <b>§2 §4 §6</b> chips point at your document,
+  numeric chips at corpus timestamps, interleaved in the same sentence.
+  <b>Sources (9)</b> expands to nine video moments.</figcaption>
+</figure>
+
+<div class="card win">
+  <h4>Two claims that could not have been written without reading the page</h4>
+  <p>The independent evaluator checked these against the stored extraction:
+  <strong>§4 “Data Pilot” contains zero digits</strong> while every other card carries its
+  hero number (9/9, 84.5%, 77.1%, 6.1×, +$360/wk) — so “make <em>every project ships with
+  its number</em> true” is precise, not generic. And <strong>“10,250” and “Model
+  Evaluation” appear only in the §2 hero and in no card</strong>, making the orphan-stat
+  point exactly right.</p>
+</div>
+
+<div class="card note">
+  <h4>The fix that mattered more than the feature</h4>
+  <p>Reviews were being answered with the prompt that says <em>“answer using only the
+  retrieved chunks”</em> — backwards when the subject is your own document. And the
+  retrieval query was built from the document's <em>subject</em>, so a bare
+  <code>review this: &lt;url&gt;</code> retrieved <strong>0 of 30</strong> relevant chunks:
+  your headings are project names, so it fetched agentic-engineering talks. Building the
+  query from the document's <em>kind</em> instead took that to <strong>29 of 30</strong>.</p>
+</div>
+
+<h2>V3 — critique quality became a number, then the number was broken</h2>
+
+<div class="slice">
+  <div class="slicehead"><span class="id">V3</span>
+    <span class="ttl">Held-out critique harness</span>
+    <span class="pill ok">30/30 checks</span>
+    <span class="pill bad">metric gameable</span></div>
+  <div class="slicebody">
+    <p class="hyp">Until this row renders, “better than chunk-dumping” is unfalsifiable.</p>
+    <p>A resume-teardown video is excluded from every retrieval path; the criteria that
+    expert applies are extracted by hand with timestamps; the system then reviews your
+    portfolio using only the rest of the corpus. Recall is how many of those criteria it
+    reached <em>without ever seeing the video they came from</em>.</p>
+  </div>
+</div>
+
+<figure>
+  <img src="evidence/v3-critique.jpg" alt="Critique eval panel with held-out absent chip and four metric columns">
+  <figcaption><b>Experiments → Critique eval —</b> the green
+  <b>held-out absent · 0 leaks</b> chip, the held-out video named, and four metrics with
+  <b>no composite</b>: recall 0.158, precision 0.556, provenance 1.000, contested 0.000.</figcaption>
+</figure>
+
+<div class="card flag">
+  <h4>Open defect: the metric rewards reciting what the model already knew</h4>
+  <p>An evaluation agent found — and I reproduced by hand — that
+  <strong><code>criteria_recall</code> is still gameable</strong>. Exclusive-evidence
+  grounding killed the attack where every finding shares one quote. It did not close the
+  relevance hole: the citation check asks whether the quoted words appear at that
+  timestamp, never whether <em>that chunk supports the finding it is attached to</em>.</p>
+  <p>Give each recited finding its own distinct real chunk and precision goes
+  <strong>0.556 → 1.000</strong>, recall ceiling <strong>0.158 → 0.526</strong> — a system
+  reciting generic advice beats the honest baseline by <strong>3.3×</strong> on the metric
+  whose entire purpose is proving the corpus produced the insight.</p>
+  <p>Written up beside the code at <code>src/evals/KNOWN_GAP_attack2.md</code>.
+  <strong>V5, V6 and V8 are all scored here</strong>, so this should close before any of
+  them claims a win.</p>
+</div>
+
+<h2>V4 — cross-video themes, with an honest asterisk</h2>
+
+<div class="slice">
+  <div class="slicehead"><span class="id">V4</span>
+    <span class="ttl">Theme layer in RAG Pipeline</span>
+    <span class="pill bad">23/24 — failing</span></div>
+  <div class="slicebody">
+    <p class="hyp">Each theme should read as a claim several creators make, not as one
+    video's outline with a fancier name.</p>
+  </div>
+</div>
+
+<figure>
+  <img src="evidence/v4-themes.jpg" alt="Themes sub-tab showing RAPTOR level 2 clusters with video and creator counts, and member chunks grouped by video">
+  <figcaption><b>RAG Pipeline → Themes —</b> 30 themes, <b>24 of 30 span 2+ videos</b>,
+  each row tagged <b>N videos · M creators</b>; the right pane groups member chunks under
+  their source video with timestamps.</figcaption>
+</figure>
+
+<div class="card flag">
+  <h4>Two findings that change how you should read that screen</h4>
+  <p><strong>“24 of 30 span 2+ videos” overstates it.</strong> Sixteen of thirty themes
+  carry a single creator's voice. One theme spans four videos but takes 145 of its 146
+  chunks from a single podcast — the fourth video contributes <em>one chunk</em>. The
+  flagship distributed-systems theme is 55% one lecture. Only <strong>8 themes</strong>
+  are genuinely balanced, and all 8 sit in the densest parts of the corpus — cross-video
+  reach tracks corpus density, not the algorithm.</p>
+  <p><strong>The intruder probe that certifies coherence proves nothing.</strong> It scored
+  29/30 — but a no-LLM baseline (“pick the chunk furthest from the centroid”) scores
+  <strong>93%</strong> on the same probes. Re-run with the intruder drawn from the
+  <em>nearest</em> theme instead of a random one, the same layer scores
+  <strong>43%</strong>.</p>
+</div>
+
+<div class="card flag">
+  <h4>The one hard failure: timestamp links land ~22s early</h4>
+  <p>Eight of the corpus videos already carry a <code>t=</code> parameter in their source
+  URL, so the link builder appends a second one and YouTube honours the first. A row
+  displaying 1:13 opens at 0:51. The same idiom appears in three other views.</p>
+</div>
+
+<h2>What did not ship</h2>
+
+<div class="card">
+  <h4>V5 — rubric packs: built, not visible</h4>
+  <p>The distillate exists on disk: <code>experts/resume-design/</code> holds
+  <strong>17 rubrics</strong> across three arms (<code>raptor.json</code>,
+  <code>communities.json</code>, <code>merged.json</code>) with a manifest. A real one reads:
+  <em>“Write every experience bullet as a full qualification: what you did, how you did it,
+  the result, and the context it happened in”</em> — with a machine-checkable
+  <code>check</code> field, which is the difference between a criterion and a summary.</p>
+  <p>But <strong>no pack browser reached the Experiments tab</strong> and the
+  <strong>D2 three-way ablation never ran</strong>. By this page's own standard — a slice
+  whose hypothesis can't be seen in the frontend fails review — V5 is not delivered.</p>
+</div>
+
+<div class="card">
+  <h4>V7 — disagreements: detector written, nothing surfaced</h4>
+  <p><code>src/rag/conflicts.py</code> exists and the corpus was deliberately stocked to
+  collide (modular monolith as a real style vs a rebrand; ports-and-adapters as default vs
+  answering the wrong question). No conflict artifact was produced and no Disagreements
+  view exists. <code>contested_rate</code> on the Critique panel reads <strong>0.000</strong>,
+  which is a floor, not a measurement.</p>
+</div>
+
+<div class="card">
+  <h4>V6 and V8 — not started</h4>
+  <p>The rubric-driven reviewer and the deep-research build loop were never begun. Both
+  depend on V5's packs, which are not yet scored.</p>
+</div>
+
+<h2>Findings worth more than the slices</h2>
+
+<div class="card flag">
+  <h4>The eval cache was comparing across different corpora</h4>
+  <p>The cell fingerprint hashed the setup, question, models, top_k, reranker and judge —
+  and <strong>nothing identifying the corpus</strong>. Baseline cells scored on a 38-video
+  corpus were being compared against cells scored after ingestion took it to 53. Every
+  cross-arm delta produced before the fix was <em>stale-vs-fresh</em>, not
+  <em>treatment-vs-control</em>. Fixed; the digest now enters the fingerprint and is
+  written into each run's config.</p>
+</div>
+
+<div class="card flag">
+  <h4>A composite can improve while the answer gets worse</h4>
+  <p>On the whole-corpus question, the filtered arm's composite <em>rises</em> by 0.368 —
+  purely because <code>context_precision</code> hits 1.000 when the context narrows to two
+  videos, while <code>answer_correctness</code> collapses 0.390 → 0.137. Anyone tuning the
+  filter against the composite will make global questions worse while watching a rising
+  number.</p>
+</div>
+
+<div class="card note">
+  <h4>The filter's real value was not what the plan predicted</h4>
+  <p>The plan assumed resume answers were polluted with property content. They are not —
+  the embedding geometry keeps those topics apart, so no property chunk ever enters the
+  candidate pool. What routing removes is <strong>near-neighbour</strong> contamination:
+  “Caching in System Design <em>Interviews</em>” leaking into “how do I prepare for
+  behavioural <em>interview</em> questions”, where the reranker keeps 3 of 8 off-genre
+  chunks and routing takes it to 0. The filter is complementary to reranking, covering
+  exactly its weakest case.</p>
+</div>
+
+<div class="card note">
+  <h4>Model-supplied citation metadata was wrong 35 times out of 39</h4>
+  <p>Chunk indices came from the model rather than the server. They are now derived by
+  identity — video id plus timestamp — with unmatched citations dropped rather than snapped
+  to the nearest plausible chunk. Independently confirmed safe: the minimum gap between
+  consecutive chunk starts anywhere in the corpus is <strong>39.7 s</strong> against a 2.0 s
+  match window.</p>
+</div>
+
+<h2>How this was built</h2>
+
+<p>Every slice ran as <strong>two independent agents</strong>: one to build, one to
+validate. The validator never saw the builder's reasoning, wrote its own browser script,
+and asserted on <em>rendered page text</em> — never on API responses, because a correct API
+behind a broken UI has to fail. That separation is why this page can report a failing slice
+and a gameable metric at all.</p>
+
+<p>The validators earned it. They broke the critique metric with a padding attack, proved
+the intruder probe was trivial by beating it with a no-LLM baseline, measured that a
+“cross-video” theme was 55% one creator, and caught that a builder's own audit had silently
+skipped 16 of 25 records. One builder retracted a defect it had reported; the evaluator
+checked the retraction and found it <em>half</em> wrong.</p>
+
+<div class="card">
+  <h4>Environment note</h4>
+  <p>This machine's Metal compiler service is wedged: any process letting
+  sentence-transformers select <code>mps</code> hangs forever at 0% CPU, and
+  <code>chromium.launch()</code> times out — so the acceptance scripts had their assertions
+  executed through an already-open browser rather than under Playwright, and the server runs
+  under a CPU-only shim. A reboot clears it. Several failures today looked like code bugs
+  and were this.</p>
+</div>
+
+<div class="foot">
+  Screenshots captured from the running app on 2026-08-10. Verdicts at
+  <code>demo/validate/artifacts/&lt;slice&gt;/verdict.json</code>. Five commits on
+  <code>agent-experts</code>, 1166 tests passing, nothing pushed.
+</div>
+
+</div>

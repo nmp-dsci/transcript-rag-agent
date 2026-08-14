@@ -17,7 +17,13 @@ reads (its recursion budget, its iteration cap), and the fingerprint changes,
 so the old score is never mistaken for still being valid. Settings that
 cannot change what got scored (Neo4j's password, cache directories) are
 deliberately excluded from the fingerprint, and the engine-specific ones are
-scoped to the engines that read them — see :func:`_engine_material`. This
+scoped to the engines that read them — see :func:`_engine_material`.
+
+Not every change that moves a score moves a *field*, though. The summary
+pre-filter's corpus-wide handling is decided from the question at query time, so
+changing it changes what a filtered engine retrieves while every setting stays
+where it was — see :func:`behavior_material`, which puts a declared behaviour
+name in the fingerprint for exactly the cells that behaviour can reach. This
 mirrors
 :mod:`src.rag.graph_extract`'s chunk-hash cache for the same reason: cache
 identity should track only what the cached thing actually depends on.
@@ -40,8 +46,23 @@ from typing import Any, Iterable, Sequence
 from src.config import Settings
 from src.evals.critique import EXCLUSION_VERSION
 from src.evals.golden import GoldenEntry
+from src.rag.question_scope import (
+    CORPUS_WIDE_BEHAVIORS,
+    DEFAULT_CORPUS_WIDE_BEHAVIOR,
+    LEGACY_CORPUS_WIDE_BEHAVIOR,
+    corpus_wide_signal,
+)
 
 DEFAULT_CACHE_DIR = Path(".yt-agent/eval_cache")
+
+#: The setups whose engine switches the summary pre-filter on, and therefore the
+#: only ones a corpus-wide *behaviour* change can reach: the corpus-wide path
+#: runs inside ``get_context``'s ``filter_transcripts`` branch and nowhere else.
+#: Kept narrow on purpose — scoping it to every vector setup would invalidate
+#: six times as many cells to protect cells that never ran the filter. A test
+#: pins this against ``src.chat.setups.SETUP_SPECS``, so a second filtered setup
+#: cannot be added without this list following it.
+_FILTERED_SETUPS = ("rag_llm_filtered",)
 
 #: Settings outside the shared material above that change an answer, mapped to
 #: the setups whose engine actually reads them: the recursion budget only
@@ -100,11 +121,26 @@ def corpus_digest(video_ids: Iterable[str], chunk_count: int) -> str:
     return hashlib.sha256(payload).hexdigest()[:16]
 
 
-def corpus_digest_for(chunk_store: Any) -> str:
-    """:func:`corpus_digest` for a live chunk store, in one metadata read."""
+def corpus_stats_for(chunk_store: Any) -> tuple[str, int, int]:
+    """``(digest, video_count, chunk_count)`` for a live store, in one read.
+
+    The digest is what :func:`cell_fingerprint` needs; the two counts are what a
+    *reader* needs. A digest answers "was this the same corpus?" and nothing
+    else — two runs whose digests differ are known to be incomparable, but
+    nothing on the page says whether the corpus grew by one video or by thirty.
+    Recording the sizes beside the digest costs nothing here (they fall out of
+    the same metadata read the digest already pays for) and is the difference
+    between a reader inferring which corpus a number came from and reading it.
+    """
     result = chunk_store.collection.get(include=["metadatas"])
     metadatas = result.get("metadatas") or []
-    return corpus_digest((str(meta.get("video_id")) for meta in metadatas if meta), len(metadatas))
+    video_ids = [str(meta.get("video_id")) for meta in metadatas if meta]
+    return corpus_digest(video_ids, len(metadatas)), len(set(video_ids)), len(metadatas)
+
+
+def corpus_digest_for(chunk_store: Any) -> str:
+    """:func:`corpus_digest` for a live chunk store, in one metadata read."""
+    return corpus_stats_for(chunk_store)[0]
 
 
 def _engine_material(setup: str, settings: Settings) -> dict[str, Any]:
@@ -130,6 +166,64 @@ def _engine_material(setup: str, settings: Settings) -> dict[str, Any]:
     return material
 
 
+def behavior_material(setup: str, question: str, behavior: str) -> str | None:
+    """The behaviour name that belongs in this cell's fingerprint, or ``None``.
+
+    Task #58 put the *corpus* in the fingerprint because a score is meaningless
+    without knowing what was retrieved from. This is the same defect one level
+    up: a change to *how* retrieval behaves that moves no configuration field.
+    The summary pre-filter's ``top_k`` became a budget rather than a cap this
+    session, so a question the corpus-wide detector fires on now routes to every
+    video above ``min_score`` instead of to five — and nothing in the material
+    above moves, because the decision is derived from the question at query time
+    by a deterministic lexical rule rather than read from config. Six of the
+    twenty golden questions fire that detector; six cached cells scored under the
+    old capped behaviour would have been handed back and averaged into one
+    column with fourteen post-change locals. It was moot only by accident: the
+    corpus moved in the same session and invalidated all forty cells anyway.
+
+    **Why a declared version rather than a hash of the code path.** Hashing the
+    source of ``question_scope`` and ``_filter_budget`` needs no discipline,
+    which is its whole appeal — but it invalidates the entire cache for a fixed
+    typo in a docstring, and it still cannot see behaviour that lives one call
+    away. A cache that is thrown away on every comment edit is a cache nobody
+    keeps, and the pressure that creates is to stop touching the file. A
+    declared name says what changed, in words, in the run record.
+
+    **Why it does not cost the whole cache.** It is included only for the cells
+    it can actually move: a setup that runs the summary filter, asked a question
+    the detector fires on. That is six cells of a forty-cell run, not forty —
+    which is what makes adding it a decision rather than a demolition. And it is
+    omitted at :data:`~src.rag.question_scope.LEGACY_CORPUS_WIDE_BEHAVIOR`,
+    following ``_engine_material``'s rule that a field sitting at the value the
+    untracked history was produced under stays absent. Absence has exactly one
+    meaning here — *this cell behaves as the cache's untracked history did* —
+    whether it comes from a non-filtered setup, a question that is not
+    corpus-wide, or a run with the corpus-wide path switched off. The pre-change
+    arm of an A/B therefore comes back from the cache for free.
+
+    **How it fails closed.** An unrecognised name raises rather than hashing:
+    a typo must not quietly produce a fingerprint that collides with nothing and
+    is silently treated as a fresh cell forever, and a name nobody registered is
+    a behaviour nobody wrote down. There is no "compare the recorded version"
+    step that could read absent as equal — the version is *in the key*, so a
+    cell scored under another behaviour simply is not found.
+    """
+    if behavior not in CORPUS_WIDE_BEHAVIORS:
+        raise ValueError(
+            f"unknown retrieval behavior {behavior!r}; register it in "
+            f"src.rag.question_scope.CORPUS_WIDE_BEHAVIORS "
+            f"(known: {', '.join(sorted(CORPUS_WIDE_BEHAVIORS))})"
+        )
+    if behavior == LEGACY_CORPUS_WIDE_BEHAVIOR:
+        return None
+    if setup not in _FILTERED_SETUPS:
+        return None
+    if corpus_wide_signal(question) is None:
+        return None
+    return behavior
+
+
 def cell_fingerprint(
     setup: str,
     entry: GoldenEntry,
@@ -142,6 +236,7 @@ def cell_fingerprint(
     reference_scored: bool = False,
     exclude_video_ids: Sequence[str] | None = None,
     corpus: str | None = None,
+    retrieval_behavior: str = DEFAULT_CORPUS_WIDE_BEHAVIOR,
 ) -> str:
     """A hash identifying everything that determines this cell's score.
 
@@ -175,6 +270,15 @@ def cell_fingerprint(
     The exclusion *mechanism*'s version rides along for the same reason a judge
     upgrade rescores an unchanged answer: a change in how a video is held out
     can change what was retrieved even when the id list is identical.
+
+    ``retrieval_behavior`` is the same argument applied to behaviour that no
+    configuration field records — see :func:`behavior_material`. It defaults to
+    what a default-constructed
+    :class:`~src.rag.context.MultiTranscriptRagContextProvider` implements, so
+    the ordinary caller is correct without doing anything; a harness that
+    constructs a provider with a non-default switch passes that provider's
+    ``retrieval_behavior`` property rather than a literal, so the two cannot
+    drift apart.
     """
     material = {
         "setup": setup,
@@ -207,6 +311,9 @@ def cell_fingerprint(
     if exclude_video_ids:
         material["exclude_video_ids"] = sorted(dict.fromkeys(exclude_video_ids))
         material["exclusion_version"] = EXCLUSION_VERSION
+    behavior = behavior_material(setup, entry.question, retrieval_behavior)
+    if behavior is not None:
+        material["retrieval_behavior"] = behavior
     material.update(_engine_material(setup, settings))
     encoded = json.dumps(material, sort_keys=True, default=str).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()[:24]

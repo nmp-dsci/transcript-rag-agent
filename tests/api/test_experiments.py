@@ -179,6 +179,146 @@ def test_selecting_an_unknown_or_wrong_kind_run_returns_none(tmp_path: Path) -> 
     assert select_critique_run("ablation-1", tmp_path) is None
 
 
+def _critique_with_ballots(run_id: str, created_at: str) -> dict:
+    """A run whose matcher paired c05 on two of five repeats and was outvoted.
+
+    The shape of the committed ``rubric_packs`` arm that published a 0.000 the
+    tab could not explain.
+    """
+    payload = _critique(run_id, created_at)
+    payload["cells"] = [
+        {
+            "setup": "rubric_packs",
+            "scores": {"criteria_recall": 0.0},
+            "criteria_matched": 0,
+            "retrieved_video_ids": ["vidA"],
+            "match_runs": [
+                {"c01": None, "c05": None},
+                {"c01": None, "c05": None},
+                {"c01": None, "c05": "job-search:r0601"},
+                {"c01": None, "c05": "job-search:r0601"},
+                {"c01": None, "c05": None},
+            ],
+            "matches": [
+                {
+                    "id": "c05",
+                    "criterion": "Put explicit numbers on claims of scale.",
+                    "applies_to": ["resume", "portfolio"],
+                    "matched": False,
+                    "finding_id": None,
+                    "finding_criterion": None,
+                    "agreement": 0.6,
+                }
+            ],
+            "findings": [{"id": "job-search:r0601", "criterion": "Quantify every claimed result."}],
+        }
+    ]
+    return payload
+
+
+def test_the_critique_list_carries_the_per_repeat_matcher_ballots(tmp_path: Path) -> None:
+    """A zero the vote produced must be tellable from a zero nothing reached.
+
+    The ballots ride along on the list rather than the detail fetch because the
+    reader who never expands the row is exactly the one they exist for.
+    """
+    _write(
+        tmp_path, "critique-1.json", _critique_with_ballots("critique-1", "2026-08-10T00:00:00Z")
+    )
+
+    cell = load_experiments(tmp_path)["critique_runs"][0]["cells"][0]
+
+    assert cell["match_ballots"] == [
+        {
+            "criterion_id": "c05",
+            "criterion": "Put explicit numbers on claims of scale.",
+            "applies_to": ["resume", "portfolio"],
+            "draws": [None, None, "job-search:r0601", "job-search:r0601", None],
+            "votes": [
+                {"finding_id": None, "finding_criterion": None, "count": 3},
+                {
+                    "finding_id": "job-search:r0601",
+                    "finding_criterion": "Quantify every claimed result.",
+                    "count": 2,
+                },
+            ],
+            # Read from the run's own consensus, never re-decided here.
+            "consensus_finding_id": None,
+            "consensus_finding_criterion": None,
+            "agreement": 0.6,
+        }
+    ]
+
+
+def test_a_criterion_no_repeat_ever_paired_carries_no_ballot(tmp_path: Path) -> None:
+    """Its ballot is a row of blanks and the missed column already says so."""
+    _write(
+        tmp_path, "critique-1.json", _critique_with_ballots("critique-1", "2026-08-10T00:00:00Z")
+    )
+
+    cell = load_experiments(tmp_path)["critique_runs"][0]["cells"][0]
+
+    assert [b["criterion_id"] for b in cell["match_ballots"]] == ["c05"]
+
+
+def test_a_run_without_recorded_ballots_gets_an_empty_list(tmp_path: Path) -> None:
+    """Runs committed before ``match_runs`` existed must still render."""
+    _write(tmp_path, "critique-1.json", _critique("critique-1", "2026-08-10T00:00:00Z"))
+
+    assert load_experiments(tmp_path)["critique_runs"][0]["cells"][0]["match_ballots"] == []
+
+
+def test_the_critique_list_carries_the_gate_and_its_ungraded_verdict(tmp_path: Path) -> None:
+    """An arm the gate could not grade must reach the tab as *ungraded*.
+
+    The tab cannot tell an unmeasurable cell from an unlucky one by looking at
+    the score: both arrive as ``None``. Without ``gradable`` and the ungated pair
+    beside it, the panel renders a dash — and a dash in a column that held 0.158
+    last week is read as 0.158.
+    """
+    run = _critique("critique-1", "2026-08-10T00:00:00Z")
+    run["grounding_gate"] = "retrieval_provenance"
+    run["ungraded_cells"] = ["rag_llm_filtered"]
+    run["cells"][0] |= {
+        "scores": {"criteria_recall": None, "evidence_precision": None},
+        "gradable": False,
+        "ungradable_reason": "11 of 11 findings record no per-finding retrieval",
+        "grounding_gate": "retrieval_provenance",
+        "criteria_recall_ungated": 0.1579,
+        "evidence_precision_ungated": 0.3636,
+        "findings_with_provenance": 0,
+        "provenance_distinct_sets": 0,
+        "citations_off_retrieval": 0,
+    }
+    _write(tmp_path, "critique-1.json", run)
+
+    summary = load_experiments(tmp_path)["critique_runs"][0]
+
+    assert summary["grounding_gate"] == "retrieval_provenance"
+    assert summary["ungraded_cells"] == ["rag_llm_filtered"]
+    cell = summary["cells"][0]
+    assert cell["gradable"] is False
+    assert cell["ungradable_reason"].startswith("11 of 11 findings")
+    assert cell["criteria_recall_ungated"] == 0.1579
+    assert cell["evidence_precision_ungated"] == 0.3636
+    assert cell["findings_with_provenance"] == 0
+    assert cell["provenance_distinct_sets"] == 0
+    assert cell["citations_off_retrieval"] == 0
+
+
+def test_a_run_committed_before_the_gate_says_so_rather_than_claiming_one(
+    tmp_path: Path,
+) -> None:
+    """No backfilling. A snapshot with no gate recorded reports none."""
+    _write(tmp_path, "critique-1.json", _critique("critique-1", "2026-08-10T00:00:00Z"))
+
+    summary = load_experiments(tmp_path)["critique_runs"][0]
+
+    assert summary["grounding_gate"] is None
+    assert summary["ungraded_cells"] == []
+    assert summary["cells"][0]["gradable"] is None
+
+
 def test_a_critique_run_id_cannot_escape_the_runs_directory(tmp_path: Path) -> None:
     """The id arrives from a URL path segment and is never trusted as a path."""
     (tmp_path.parent / "secret.json").write_text('{"kind": "critique-eval"}', encoding="utf-8")

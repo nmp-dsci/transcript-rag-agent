@@ -52,6 +52,7 @@ from src.rag.packs import (
     corpus_digest,
     dedupe_rubrics,
     digest_of,
+    eligible_units,
     format_excerpts,
     included_video_ids,
     pack_statistics,
@@ -285,8 +286,7 @@ def rubrics_for_unit(
                 # A contested rubric has to cite two creators or it is just an
                 # assertion that people disagree; the scorer applies the same
                 # rule, so applying it here keeps the pack and its score aligned.
-                contested=bool(row.get("contested"))
-                and len({e.video_id for e in evidence}) >= 2,
+                contested=bool(row.get("contested")) and len({e.video_id for e in evidence}) >= 2,
                 unit_id=unit.unit_id,
                 unit_kind=unit.kind,
                 unit_title=unit.title,
@@ -343,6 +343,9 @@ def build_pack(
                     unit_title=unit.title,
                     videos=len(unit.video_ids),
                     chunks=len(unit.chunk_ids),
+                    creator_count=unit.creator_count,
+                    top_creator=unit.top_creator,
+                    top_creator_share=unit.top_creator_share,
                     reason=reason,
                 )
             )
@@ -360,6 +363,9 @@ def build_pack(
                 unit_title=unit.title,
                 videos=len(unit.video_ids),
                 chunks=len(unit.chunk_ids),
+                creator_count=unit.creator_count,
+                top_creator=unit.top_creator,
+                top_creator_share=unit.top_creator_share,
                 reason="every rubric it produced restated a rule an earlier unit already covered",
             )
         )
@@ -426,8 +432,17 @@ def shared_budget(
     fewer. Capping every arm at the smaller pool is the only version of this
     comparison that is about *where the abstraction came from*. Both pools being
     empty is a pack with nothing to say, and the budget is then irrelevant.
+
+    Counted over *eligible* units, because that is what
+    :func:`~src.rag.packs.select_units` actually draws from. Counting the raw
+    pools reintroduces the very asymmetry this function exists to remove: the
+    app-architecture pack has fourteen themes but four that clear the creator
+    floor, so a raw count would have given the communities arm eight calls
+    against the raptor arm's four and then reported the difference as an
+    abstraction result.
     """
-    available = [len(pool) for pool in (raptor_pool, community_pool) if pool]
+    pools = (eligible_units(raptor_pool), eligible_units(community_pool))
+    available = [len(pool) for pool in pools if pool]
     return min([budget, *available]) if available else budget
 
 
@@ -449,8 +464,12 @@ def build_topic(
         f"[{declaration.topic}] routed {len(videos)} videos "
         f"({len(overrides)} override(s)): {', '.join(videos)}"
     )
-    raptor_pool = raptor_units(workspace.themes, videos)
-    community_pool = community_units(workspace.extractions, videos)
+    # The chunk records are not optional here. Both unit builders derive their
+    # creator-diversity floor from them, and without the lookup every unit
+    # profiles as zero creators, is marked ineligible, and the pack silently
+    # comes out empty — which is exactly how the three unbuilt packs failed.
+    raptor_pool = raptor_units(workspace.themes, videos, workspace.by_chunk)
+    community_pool = community_units(workspace.extractions, videos, workspace.by_chunk)
     effective = shared_budget(budget, raptor_pool, community_pool)
     progress(
         f"[{declaration.topic}] units available — raptor {len(raptor_pool)}, "
@@ -525,9 +544,7 @@ def open_workspace(
     for record in records:
         record.pop("embedding", None)
     theme_index = ThemeStore(settings.theme_path).load()
-    extractions = (
-        load_extractions(settings.graph_cache_dir) if settings.graph_cache_dir else []
-    )
+    extractions = load_extractions(settings.graph_cache_dir) if settings.graph_cache_dir else []
 
     embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
     summary_store = TranscriptSummaryStore(

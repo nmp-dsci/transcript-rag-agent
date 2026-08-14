@@ -18,6 +18,11 @@ vi.mock('../api/client', () => ({
     // the real endpoint behaves; the view must render without waiting on it.
     subscribeMatrixRun: () => new Promise<void>(() => undefined),
     startMatrixRun: () => Promise.resolve(null),
+    // The pack panel reads experts/ rather than evals/runs/ and loads on its
+    // own. This view must render its committed-run sections whether or not any
+    // pack is built, so the stub answers with none.
+    packs: () => Promise.resolve({ packs: [], build_command: 'build-packs' }),
+    pack: () => Promise.resolve(null),
   },
 }));
 

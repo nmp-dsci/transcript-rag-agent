@@ -723,7 +723,10 @@ class RagasJudge:
             )
         )
         embeddings = LangchainEmbeddingsWrapper(
-            HuggingFaceEmbeddings(model_name=settings.embedding_model)
+            HuggingFaceEmbeddings(
+                model_name=settings.embedding_model,
+                model_kwargs={"device": settings.embedding_device},
+            )
         )
 
         faithfulness = Faithfulness(llm=llm)

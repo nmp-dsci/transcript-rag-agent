@@ -11,7 +11,12 @@ from fastapi.testclient import TestClient
 
 from src.api import main as api_main
 from src.api.main import create_app
-from src.chat.setups import SETUP_KEYS, SetupResult, setup_spec
+from src.chat.setups import (
+    DOCUMENT_ONLY_SETUP_KEYS,
+    SETUP_KEYS,
+    SetupResult,
+    setup_spec,
+)
 from src.config import Settings
 from src.evals.matrix import DEFAULT_MATRIX_SETUPS
 from src.rag.models import RetrievedChunk
@@ -301,10 +306,20 @@ def test_ask_streams_answers_and_persists(harness: Harness) -> None:
     assert len(history["conversations"]) == 1
 
 
-def test_ask_defaults_to_all_setups(harness: Harness) -> None:
+def test_ask_defaults_to_every_setup_that_can_answer(harness: Harness) -> None:
+    """Every setup but the document-only ones, which have nothing to review.
+
+    ``rubric_review`` judges an attached document against the rubric packs, so a
+    question with no URL in it gives that setup nothing to do. Running it anyway
+    would put an error tab in the bubble on every ordinary question.
+    """
     response = harness.client.post("/api/ask", json={"question": "Hello?"})
-    answers = [d for e, d in sse_events(response.text) if e == "answer"]
-    assert [a["key"] for a in answers] == SETUP_KEYS
+    events = sse_events(response.text)
+    answers = [d for e, d in events if e == "answer"]
+    assert [a["key"] for a in answers] == [
+        key for key in SETUP_KEYS if key not in DOCUMENT_ONLY_SETUP_KEYS
+    ]
+    assert any("rubric_review" in d.get("message", "") for e, d in events if e == "progress")
 
 
 def test_ask_passes_url_filter(harness: Harness) -> None:

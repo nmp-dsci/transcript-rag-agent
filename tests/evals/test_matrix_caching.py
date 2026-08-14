@@ -226,6 +226,33 @@ def test_a_run_records_which_questions_it_scored_not_just_how_many(tmp_path) -> 
     assert result["question_ids"] == ["g001", "g007"]
 
 
+def test_a_run_records_the_size_of_the_corpus_it_scored_over(tmp_path) -> None:
+    """The digest says *whether* the corpus moved; the sizes say how far.
+
+    This slice was measured on three corpora in one day (59/1460 → 67/1736 →
+    71/1792) and every move invalidated the whole cache. A reader holding two
+    runs side by side should not have to re-derive the corpus from a hash to
+    find out which one a number belongs to.
+    """
+    result = run_matrix(
+        CountingRunner(),
+        FakeSettings(),
+        setups=["rag_llm"],
+        entries=entries(),
+        cache_dir=tmp_path,
+    )
+
+    config = result["config"]
+    assert config["corpus_videos"] == 2
+    assert config["corpus_chunks"] == 2
+    # The digest still identifies the corpus; the counts describe it.
+    assert config["corpus"] and isinstance(config["corpus"], str)
+    # The pre-filter's knobs travel with the run that used them: ``top_k`` is a
+    # floor a corpus-wide question lifts, so a reader needs to see what it was.
+    assert config["transcript_filter_top_k"] == 5
+    assert config["transcript_filter_min_score"] == 0.25
+
+
 def test_scoping_to_a_sample_only_answers_that_sample(tmp_path) -> None:
     runner = CountingRunner()
 

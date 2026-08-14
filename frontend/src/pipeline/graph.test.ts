@@ -7,7 +7,6 @@ import {
   VIEW_H,
   VIEW_W,
   channelLegend,
-  chunkTimestampUrl,
   colourMap,
   edgeOpacity,
   nodeRadius,
@@ -98,25 +97,5 @@ describe('channelLegend', () => {
 
   it('handles an empty graph', () => {
     expect(channelLegend([])).toEqual([]);
-  });
-});
-
-describe('chunkTimestampUrl', () => {
-  it('appends the start second to a watch URL', () => {
-    expect(chunkTimestampUrl('https://www.youtube.com/watch?v=x', 91.7)).toBe(
-      'https://www.youtube.com/watch?v=x&t=91s',
-    );
-  });
-
-  it('starts the query string when the URL has none', () => {
-    expect(chunkTimestampUrl('https://youtu.be/x', 5)).toBe('https://youtu.be/x?t=5s');
-  });
-
-  it('treats a missing timestamp as the start of the video', () => {
-    expect(chunkTimestampUrl('https://youtu.be/x', null)).toBe('https://youtu.be/x?t=0s');
-  });
-
-  it('has no link without a source URL', () => {
-    expect(chunkTimestampUrl(null, 10)).toBeNull();
   });
 });

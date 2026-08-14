@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -832,3 +833,89 @@ def test_a_second_of_clock_rounding_still_resolves() -> None:
 
     assert [reference.chunk_index for reference in resolved] == [4]
     assert resolved[0].start_seconds == 593.36
+
+
+# --- Continuous citation numbering across tool calls --------------------------
+
+
+def _run_agent_over_retrievals(num_retrievals: int, chunk_count: int = 2):
+    """Drive the agent through ``num_retrievals`` tool calls and return it."""
+    llm = FakeLlm(_retrieve_then_answer(num_retrievals, FLAT_ANSWER_TEXT))
+    provider = FakeProvider(chunk_count=chunk_count)
+    agent = RagAgent(llm, provider)
+    agent.answer(_request())
+    return agent
+
+
+def test_citation_labels_run_on_across_tool_calls() -> None:
+    """A label must name one chunk, so numbering cannot restart per retrieval.
+
+    Three tool calls of two chunks each used to produce three ``[1]`` blocks and
+    three ``[2]`` blocks, and an answer citing ``[1]`` was unreadable: it could
+    mean any of three different chunks.
+    """
+    agent = _run_agent_over_retrievals(3, chunk_count=2)
+    context = agent.last_context
+    assert context is not None
+
+    labels = re.findall(r"^\[(\d+)\] video=", context.context_text or "", flags=re.MULTILINE)
+
+    assert labels == ["1", "2", "3", "4", "5", "6"]
+    assert len(labels) == len(set(labels))
+
+
+def test_a_chunk_retrieved_twice_keeps_one_label() -> None:
+    """Overlapping retrievals are the norm; a repeat is the same chunk, not a new one."""
+    from src.rag.context import ChunkLabeller
+
+    class Chunk:
+        def __init__(self, index: int) -> None:
+            self.video_id = "abc"
+            self.chunk_index = index
+
+    labeller = ChunkLabeller()
+    first = [Chunk(4), Chunk(9)]
+    second = [Chunk(9), Chunk(11)]
+
+    labels = [labeller.label_for(chunk) for chunk in first + second]
+
+    assert labels == [1, 2, 2, 3]
+    assert len(labeller) == 3
+
+
+def test_label_n_is_the_nth_chunk_of_the_merged_context() -> None:
+    """The labels and the merged chunk list must agree, or the fallbacks lie.
+
+    ``_fallback_references`` and everything else that resolves a bare ``[n]``
+    indexes into ``last_context.retrieved_chunks``. That was wrong on this path
+    while each tool call restarted at ``[1]``; the shared labeller and the merge
+    now deduplicate on the same key, in the same order, so it holds.
+    """
+    agent = _run_agent_over_retrievals(3, chunk_count=2)
+    context = agent.last_context
+    assert context is not None
+    chunks = context.retrieved_chunks or []
+
+    for label, chunk in enumerate(chunks, 1):
+        header = f"[{label}] video={chunk.video_id}"
+        assert header in (context.context_text or "")
+        block = (context.context_text or "").split(header, 1)[1]
+        assert chunk.text in block.split("\n\n", 1)[0]
+
+
+def test_a_second_question_starts_numbering_again_at_one() -> None:
+    """Labels belong to one answer; the next question is a fresh numbering."""
+    llm = FakeLlm(_retrieve_then_answer(2, FLAT_ANSWER_TEXT))
+    provider = FakeProvider(chunk_count=2)
+    agent = RagAgent(llm, provider)
+
+    agent.answer(_request())
+    first = agent.last_context
+    llm.invocations.clear()
+    agent.answer(_request())
+    second = agent.last_context
+
+    assert first is not None and second is not None
+    assert (second.context_text or "").startswith("[1] ")
+    labels = re.findall(r"^\[(\d+)\] video=", second.context_text or "", flags=re.MULTILINE)
+    assert labels == ["1", "2", "3", "4"]

@@ -274,7 +274,7 @@ def creator_profile(
 def raptor_units(
     themes: Iterable[Any],
     video_ids: Sequence[str],
-    records: dict[str, dict[str, Any]] | None = None,
+    records: dict[str, dict[str, Any]],
     *,
     min_chunks: int = 5,
     min_videos: int = 2,
@@ -294,10 +294,16 @@ def raptor_units(
     silently discards a creator is exactly the failure a coverage claim hides.
     The corpus's most contrarian résumé voice sits in a single-video theme; it
     cannot honestly become a shared rule, and it must not vanish either.
+
+    ``records`` is required rather than optional. It was optional once, and the
+    three packs that were never built failed exactly there: with no lookup every
+    unit profiles as zero creators, trips ``creators < 2``, and the pack comes
+    out empty with a gap log blaming the corpus. A missing argument has to be a
+    ``TypeError``, not a plausible-looking empty pack.
     """
     units: list[SourceUnit] = []
     allowed = set(video_ids)
-    lookup = records or {}
+    lookup = records
     for theme in themes:
         members = [m for m in theme.members if m.video_id in allowed]
         videos = sorted({m.video_id for m in members})
@@ -362,7 +368,9 @@ def load_extractions(cache_dir: Path | str) -> list[Any]:
     return sorted(extractions, key=lambda item: str(item.chunk_id))
 
 
-def entity_graph(extractions: Sequence[Any]) -> tuple[list[str], list[tuple[str, str, float]], dict[str, str], list[_Claim]]:
+def entity_graph(
+    extractions: Sequence[Any],
+) -> tuple[list[str], list[tuple[str, str, float]], dict[str, str], list[_Claim]]:
     """The weighted entity graph, rebuilt exactly as the Neo4j export builds it.
 
     Mirrors :meth:`src.rag.graph_store.GraphStore.entity_edges`: explicit
@@ -390,7 +398,9 @@ def entity_graph(extractions: Sequence[Any]) -> tuple[list[str], list[tuple[str,
             relates[key] = max(relates.get(key, weight), weight)
         for claim in extraction.claims:
             anchors = tuple(
-                sorted({entity_id_for(name) for name in claim.entities if entity_id_for(name) in known})
+                sorted(
+                    {entity_id_for(name) for name in claim.entities if entity_id_for(name) in known}
+                )
             )
             claim_id = claim_id_for(str(extraction.chunk_id), claim.text)
             claims[claim_id] = _Claim(
@@ -419,7 +429,7 @@ def entity_graph(extractions: Sequence[Any]) -> tuple[list[str], list[tuple[str,
 def community_units(
     extractions: Sequence[Any],
     video_ids: Sequence[str],
-    records: dict[str, dict[str, Any]] | None = None,
+    records: dict[str, dict[str, Any]],
     *,
     min_entities: int = 5,
     min_chunks: int = 5,
@@ -446,7 +456,7 @@ def community_units(
     for entity_id, community_id in assignments.items():
         members.setdefault(community_id, []).append(entity_id)
 
-    lookup = records or {}
+    lookup = records
     units: list[SourceUnit] = []
     for community_id, entity_ids in sorted(members.items()):
         if len(entity_ids) < min_entities:
@@ -469,7 +479,9 @@ def community_units(
         elif creators < 2:
             reason = f"every chunk comes from one creator ({loudest})"
         elif share > max_creator_share:
-            reason = f"{share:.0%} of the community's chunks are {loudest} — one voice with visitors"
+            reason = (
+                f"{share:.0%} of the community's chunks are {loudest} — one voice with visitors"
+            )
         units.append(
             SourceUnit(
                 unit_id=f"community:{community_id}",
@@ -689,6 +701,14 @@ class PackGap(BaseModel):
     logged gap**: silence is the failure mode a coverage claim hides behind, so
     a unit that was selected and yielded nothing, and a unit that was relevant
     but lost to the budget, both leave a row here.
+
+    The creator columns are the ones to read on a rejected unit. ``videos`` is
+    the number a coverage claim overstates with — a theme can span four videos
+    and still be 145 chunks of one podcast — so the count of distinct creators
+    and the loudest one's share are carried beside it rather than left to be
+    parsed out of ``reason``. They were passed by the builder and silently
+    dropped for want of these three fields, which is why every gap row shipped
+    so far says "one creator" in prose and nothing in data.
     """
 
     unit_id: str
@@ -696,6 +716,9 @@ class PackGap(BaseModel):
     unit_title: str
     videos: int = 0
     chunks: int = 0
+    creator_count: int = 0
+    top_creator: str = ""
+    top_creator_share: float = 0.0
     reason: str = ""
 
 

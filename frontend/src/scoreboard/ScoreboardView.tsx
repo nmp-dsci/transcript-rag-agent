@@ -8,6 +8,8 @@ import { metricLabel, metricTitle, weightLabel } from '../eval/metrics';
 import { MetricExplainers } from '../eval/MetricExplainer';
 import { useEvalStyles } from '../eval/styles';
 import { AnswersPanel } from './AnswersPanel';
+import { corpusDetail, corpusLabel, corpusValue } from './corpus';
+import { CorpusNote } from './CorpusNote';
 import { EfficiencyPanel } from './EfficiencyPanel';
 import { ProvenanceBar } from './ProvenanceBar';
 import { QuestionsPanel } from './QuestionsPanel';
@@ -16,11 +18,17 @@ import { RubricPanel } from './RubricPanel';
 type GroupBy = 'setup' | 'setup_model';
 
 /**
- * "matrix-20260727-015519 · 14 questions · 4 setups · ragas-v1"
+ * "matrix-20260727-015519 · 14 questions · 4 setups · ragas-v1 · corpus 1bdb1971 (size not recorded)"
  *
  * The rubric is part of the label because two runs over identical questions
  * and setups can rank them differently purely by rubric — without it, switching
  * runs to compare rankings would look like the engines had changed.
+ *
+ * The corpus is part of it for the stronger version of the same reason. The
+ * picker is the only surface a reader flipping between runs actually reads, and
+ * two committed runs whose numbers came from different corpora rendered here as
+ * the identical string `20 questions · 2 setups · ragas-v1` — so moving between
+ * two incomparable measurements looked like watching one number change.
  */
 function runLabel(run: MatrixRunOption): string {
   const parts = [run.run_id];
@@ -28,6 +36,7 @@ function runLabel(run: MatrixRunOption): string {
   parts.push(`${run.setups.length} setup${run.setups.length === 1 ? '' : 's'}`);
   if (!run.judged) parts.push('unjudged');
   if (run.rubric_version) parts.push(run.rubric_version);
+  parts.push(corpusLabel(run));
   return parts.join(' · ');
 }
 
@@ -86,6 +95,20 @@ export function ScoreboardView() {
               {judgeOptions.length > 1 ? `${judgeOptions.length} judges in history` : 'single judge'}
             </span>
           </div>
+          {/*
+            The corpus these numbers were retrieved from, beside the numbers.
+            The page header states the corpus indexed *right now*, which is a
+            different corpus from the one a committed run was scored on as soon
+            as anything is ingested — so without this tile the page asserts a
+            corpus the table below does not belong to.
+          */}
+          <div className="stat">
+            <div className="microlabel">corpus scored on</div>
+            <b style={{ fontSize: 13 }} title={selectedRun?.corpus ?? undefined}>
+              {selectedRun ? corpusValue(selectedRun) : '—'}
+            </b>
+            <span>{selectedRun ? corpusDetail(selectedRun) : 'no run selected'}</span>
+          </div>
           <div className="stat">
             <div className="microlabel">grouping</div>
             <b style={{ fontSize: 13 }}>
@@ -140,6 +163,13 @@ export function ScoreboardView() {
         </div>
 
         {error ? <div className="errtext">{error}</div> : null}
+
+        {/*
+          Directly under the picker, because the picker is where a reader
+          decides that two runs are comparable. See CorpusNote for what it can
+          and cannot honestly claim.
+        */}
+        <CorpusNote run={selectedRun} runs={runOptions} />
 
         {mixedRubrics ? (
           <div className="rubricwarn">
@@ -328,7 +358,7 @@ export function ScoreboardView() {
           <MetricExplainers names={metrics} />
         </div>
 
-        {board ? <ProvenanceBar provenance={board.provenance} /> : null}
+        {board ? <ProvenanceBar provenance={board.provenance} run={selectedRun} /> : null}
 
         <p className="board-note">
           Every row comes from one <b>committed matrix run</b>: each setup answering the same
@@ -337,8 +367,11 @@ export function ScoreboardView() {
           to be asked would decide the ranking. Chat and its history are the <em>live</em> set
           for exploring the corpus; this tab is the <em>eval</em> set. All answers in a run are
           graded under one rubric — this one is <b>{rubricVersion}</b>, whose composite is{' '}
-          {board?.provenance.composite ?? 'the mean of the metric scores'}. Pick a different run
-          above to see the same answers ranked under a different rubric. A win counts a question
+          {board?.provenance.composite ?? 'the mean of the metric scores'}. What makes rows
+          comparable is that they sit <em>inside</em> one run: picking a different run above
+          replaces the whole table, and the new numbers are only comparable with these ones when
+          both runs name the same corpus — read the corpus line at the top of the tab before
+          carrying a figure from one run to another. A win counts a question
           where a setup scored highest <em>among answers graded by the same judge</em>. Rows
           judged on {LOW_N} questions or fewer are dimmed and marked{' '}
           <span className="badge warn">thin</span>: an average over a handful of questions moves

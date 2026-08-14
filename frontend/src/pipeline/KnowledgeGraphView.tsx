@@ -7,20 +7,12 @@ import type {
   GraphCommunity,
   KnowledgeGraph,
 } from "../api/types";
-import { fmtSeconds } from "../answers/render";
+import { fmtSeconds, videoTimestampUrl } from "../answers/render";
 import { VIEW_H, VIEW_W, nodeRadius, projectNode } from "./graph";
 import { communityLegend, communityColourMap } from "./entityGraph";
 import { useSvgZoomPan } from "./useSvgZoomPan";
 
 const MAX_RENDERED_NODES = 400;
-
-function chunkTimestampUrl(
-  sourceUrl: string,
-  startSeconds: number | null,
-): string {
-  const seconds = Math.max(0, Math.floor(startSeconds ?? 0));
-  return `${sourceUrl}${sourceUrl.includes("?") ? "&" : "?"}t=${seconds}s`;
-}
 
 function DetailPanel({
   node,
@@ -83,7 +75,10 @@ function DetailPanel({
             <p className="kg-claimtext">{claim.text}</p>
             <a
               className="kg-claimlink"
-              href={chunkTimestampUrl(claim.source_url, claim.start_seconds)}
+              href={
+                videoTimestampUrl(claim.source_url, claim.start_seconds) ??
+                undefined
+              }
               target="_blank"
               rel="noreferrer"
             >

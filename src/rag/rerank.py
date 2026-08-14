@@ -34,9 +34,7 @@ Loader = Callable[[str], Any]
 class Reranker(Protocol):
     """The interface callers switch on, so config never becomes a branch."""
 
-    def rerank(
-        self, query: str, chunks: Sequence[Any], top_k: int
-    ) -> list["RetrievedChunk"]: ...
+    def rerank(self, query: str, chunks: Sequence[Any], top_k: int) -> list["RetrievedChunk"]: ...
 
     def rerank_with_scores(
         self, query: str, chunks: Sequence[Any], top_k: int
@@ -48,7 +46,12 @@ def _load_cross_encoder(name: str) -> Any:
     # costs seconds of import time that non-reranking code paths must not pay.
     from sentence_transformers import CrossEncoder
 
-    return CrossEncoder(name)
+    from src.config import load_settings
+
+    # Pinned for the same reason as the embedding model: left to choose, torch
+    # picks MPS on Apple Silicon and the first scoring call never returns,
+    # wedging the calling process. See ``Settings.embedding_device``.
+    return CrossEncoder(name, device=load_settings(require_keys=False).embedding_device)
 
 
 @dataclass
@@ -69,9 +72,7 @@ class CrossEncoderReranker:
     model_name: str = DEFAULT_MODEL
     loader: Loader | None = None
     _model: Any = field(default=None, init=False, repr=False)
-    _lock: threading.Lock = field(
-        default_factory=threading.Lock, init=False, repr=False
-    )
+    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     @classmethod
     def from_model_name(cls, name: str = DEFAULT_MODEL) -> "CrossEncoderReranker":
@@ -93,9 +94,7 @@ class CrossEncoderReranker:
                     self._model = load(self.model_name)
         return self._model
 
-    def rerank(
-        self, query: str, chunks: Sequence[Any], top_k: int
-    ) -> list["RetrievedChunk"]:
+    def rerank(self, query: str, chunks: Sequence[Any], top_k: int) -> list["RetrievedChunk"]:
         """The ``top_k`` most relevant chunks to ``query``, best first."""
         return [chunk for chunk, _score in self.rerank_with_scores(query, chunks, top_k)]
 
@@ -114,13 +113,9 @@ class CrossEncoderReranker:
         raw = self._get_model().predict(pairs)
         scores = [float(value) for value in raw]
         if len(scores) != len(chunks):
-            raise ValueError(
-                f"reranker returned {len(scores)} scores for {len(chunks)} chunks"
-            )
+            raise ValueError(f"reranker returned {len(scores)} scores for {len(chunks)} chunks")
 
-        ordered = sorted(
-            enumerate(chunks), key=lambda item: (-scores[item[0]], item[0])
-        )
+        ordered = sorted(enumerate(chunks), key=lambda item: (-scores[item[0]], item[0]))
         return [(chunk, scores[index]) for index, chunk in ordered[:top_k]]
 
 
@@ -132,9 +127,7 @@ class NullReranker:
     construction instead of branching at every retrieval site.
     """
 
-    def rerank(
-        self, query: str, chunks: Sequence[Any], top_k: int
-    ) -> list["RetrievedChunk"]:
+    def rerank(self, query: str, chunks: Sequence[Any], top_k: int) -> list["RetrievedChunk"]:
         if top_k <= 0:
             return []
         return list(chunks[:top_k])

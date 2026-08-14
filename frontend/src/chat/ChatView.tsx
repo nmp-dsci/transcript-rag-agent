@@ -105,6 +105,10 @@ export function ChatView({
   // Reviewed documents by id, so a card survives the live run and can be
   // re-rendered for any history entry that references one.
   const [documents, setDocuments] = useState<Record<string, ReviewedDocument>>({});
+  // Which section of a reviewed document is open, per entry. Held here rather
+  // than inside DocumentCard because the thing that opens it is a rubric
+  // verdict in the answer *below* the card.
+  const [openSections, setOpenSections] = useState<Record<string, number>>({});
   const [judgingId, setJudgingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scope, setScope] = useState<ChatScope>(WHOLE_CORPUS);
@@ -273,15 +277,24 @@ export function ChatView({
             progress: (data) => setStatus(data.message),
             document: (reviewed: ReviewedDocument) => {
               // Arrives before the answer, so the card renders while the
-              // review is still being written. A review answers with the
-              // single-hop path only, so the other tabs stop waiting.
+              // review is still being written. Only the document-capable
+              // setups thread the page into their answer call, so the tabs
+              // the server is about to skip stop waiting here too. Read off
+              // the setup list rather than a spelled-in key: the server
+              // derives the same list from the same flag, and two hand-kept
+              // copies of it are how the next reviewing setup gets dropped.
+              const capable = new Set(
+                setups.filter((setup) => setup.document_capable).map((setup) => setup.key),
+              );
               setDocuments((current) => ({ ...current, [reviewed.id]: reviewed }));
               setLive((current) =>
                 current
                   ? {
                       ...current,
                       document: reviewed,
-                      running: current.running.filter((setup) => setup.key === 'rag_llm'),
+                      running: current.running.filter(
+                        (setup) => capable.size === 0 || capable.has(setup.key),
+                      ),
                     }
                   : current,
               );
@@ -360,16 +373,29 @@ export function ChatView({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /**
+   * The setups that could still answer this entry.
+   *
+   * A document-grounded entry can only be filled in by setups that thread the
+   * page into their answer call — the rest would answer from the corpus and the
+   * tab would read as a second review of a document it never saw. Which is also
+   * what makes the two that *can* worth offering: the rubric reviewer and the
+   * chunk-dump review of the same page, side by side in one bubble, is the
+   * comparison this whole slice is about.
+   */
+  const missingSetups = useCallback(
+    (entry: Entry): string[] =>
+      setups
+        .filter((setup) => !entry.document_id || setup.document_capable)
+        .map((setup) => setup.key)
+        .filter((key) => !entry.answers.some((answer) => answer.key === key)),
+    [setups],
+  );
+
   /** Re-run the setups that have not answered yet, under the original scope. */
   const compare = (entry: Entry) => {
     if (busy) return;
-    // A document-grounded entry only ever answers with rag_llm (the only
-    // setup that threads document_context into its answer call), so other
-    // setups can never be filled in and must not be offered.
-    if (entry.document_id) return;
-    const missing = setups
-      .map((setup) => setup.key)
-      .filter((key) => !entry.answers.some((answer) => answer.key === key));
+    const missing = missingSetups(entry);
     if (!missing.length) return;
     const prefs = readAskPrefs();
     const prior = entry.answers.find((answer) => answer.channel_id || answer.retrieval_mode);
@@ -466,25 +492,30 @@ export function ChatView({
               <div key={entry.id} style={{ display: 'contents' }}>
                 <div className="msg-user">{entry.question}</div>
                 {documentForEntry(entry, documents) ? (
-                  <DocumentCard document={documentForEntry(entry, documents)!} />
+                  <DocumentCard
+                    // Remounted when the target section changes, so clicking a
+                    // second verdict re-opens the card at the new section
+                    // instead of leaving the first one showing: DocumentCard
+                    // reads `openSection` once, as its initial state.
+                    key={`${entry.id}-${openSections[entry.id] ?? 'none'}`}
+                    document={documentForEntry(entry, documents)!}
+                    openSection={openSections[entry.id] ?? null}
+                  />
                 ) : null}
                 <MessageBubble
                   question={entry.question}
                   answers={entry.answers}
                   running={[]}
                   onAskFollowup={askFollowup}
+                  onOpenSection={(index) =>
+                    setOpenSections((current) => ({ ...current, [entry.id]: index }))
+                  }
                   judging={judgingId === entry.id}
                   busy={busy}
                   onJudge={() => void judge(entry.id)}
                   onCompare={() => compare(entry)}
                   traces={traces[entry.id]}
-                  remainingSetups={
-                    entry.document_id
-                      ? 0
-                      : setups.filter(
-                          (setup) => !entry.answers.some((answer) => answer.key === setup.key),
-                        ).length
-                  }
+                  remainingSetups={missingSetups(entry).length}
                 />
               </div>
             ))}

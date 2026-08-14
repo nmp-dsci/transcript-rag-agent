@@ -94,13 +94,25 @@ def pack_as_critique(pack: ExpertPack) -> SetupCritique:
     not just the ones that ended up cited — the leak check has to see what the
     system was *exposed* to, since a held-out video that reached the prompt and
     was merely not quoted has still contaminated the experiment.
+
+    Each finding also carries the narrower thing the grounding gate needs: the
+    chunks of the one unit *its own* rubric was distilled from
+    (:func:`~src.evals.critique_run.pack_finding_provenance`). That is what lets
+    these arms be graded under
+    :data:`~src.evals.critique.GATE_PROVENANCE` at all — a rubric quoting a
+    chunk from somebody else's unit is not evidence it retrieved.
     """
+    from src.evals.critique import attach_provenance
+    from src.evals.critique_run import pack_finding_provenance
+
     exposed = sorted({chunk_id for unit in pack.units for chunk_id in unit.chunk_ids})
     return SetupCritique(
         setup=pack.arm,
-        findings=rubrics_as_findings(pack),
+        findings=attach_provenance(rubrics_as_findings(pack), pack_finding_provenance([pack])),
         retrieved_chunk_ids=exposed,
-        retrieved_video_ids=sorted({unit_video for unit in pack.units for unit_video in unit.video_ids}),
+        retrieved_video_ids=sorted(
+            {unit_video for unit in pack.units for unit_video in unit.video_ids}
+        ),
         answer="",
     )
 
@@ -148,6 +160,16 @@ def winner(run: dict[str, Any], metric: str = "criteria_recall") -> dict[str, An
     score clears the runner-up's *maximum*, which is the bar the V3 fix set for
     any later slice. When it is false the honest report is "these are the same",
     and the decided fallback applies: ship the winner and say so.
+
+    Three outcomes, not two. Only ``criteria_recall`` is scored repeatedly, so
+    only it has a ``*_max`` to clear; every other metric is a single draw. This
+    used to read the missing key as ``None`` and fall through to ``decisive``,
+    which meant ``evidence_precision`` and ``provenance`` always announced
+    "leader clears the runner-up's own spread" — a comparison that had not been
+    performed. A lead with no repeats behind it is not decisive and not inside
+    the noise either; both of those claim knowledge of a range nobody measured.
+    So ``basis`` names which of the three situations produced the verdict, and
+    ``decisive`` is now reserved for the one case that was actually checked.
     """
     scored = [
         (cell["setup"], cell.get("scores", {}).get(metric), cell.get("score_spread") or {})
@@ -158,10 +180,23 @@ def winner(run: dict[str, Any], metric: str = "criteria_recall") -> dict[str, An
         key=lambda row: (-float(row[1]), row[0]),
     )
     if not ranked:
-        return {"metric": metric, "leader": None, "decisive": False, "reason": "no scored arm"}
+        return {
+            "metric": metric,
+            "leader": None,
+            "decisive": False,
+            "basis": "no-scored-arm",
+            "reason": "no scored arm",
+        }
     leader, best, _ = ranked[0]
     if len(ranked) == 1:
-        return {"metric": metric, "leader": leader, "value": best, "decisive": True, "reason": "only one arm scored"}
+        return {
+            "metric": metric,
+            "leader": leader,
+            "value": best,
+            "decisive": False,
+            "basis": "single-arm",
+            "reason": "only one arm scored — nothing to compare against",
+        }
     tied = [name for name, value, _ in ranked if value == best]
     runner_max = max(
         (
@@ -171,22 +206,132 @@ def winner(run: dict[str, Any], metric: str = "criteria_recall") -> dict[str, An
         ),
         default=None,
     )
-    decisive = len(tied) == 1 and (
-        runner_max is None or float(best) > float(runner_max)
-    )
+    if len(tied) > 1:
+        basis = "tied"
+        reason = "two or more arms scored the same"
+    elif runner_max is None:
+        # No repeats were run for this metric, so there is no range to clear and
+        # no range to sit inside. Say that, rather than borrowing either verdict.
+        basis = "unrepeated"
+        reason = "scored once per arm — no repeat spread, so the gap's reliability is unmeasured"
+    elif float(best) > float(runner_max):
+        basis = "cleared-spread"
+        reason = "leader clears the runner-up's own spread"
+    else:
+        basis = "inside-spread"
+        reason = "the lead sits inside the scorer's own range across repeats"
     return {
         "metric": metric,
         "leader": leader,
         "value": best,
         "tied": tied,
         "runner_up_max": runner_max,
-        "decisive": decisive,
-        "reason": (
-            "leader clears the runner-up's own spread"
-            if decisive
-            else "the lead sits inside the scorer's own range across repeats"
-        ),
+        "decisive": basis == "cleared-spread",
+        "basis": basis,
+        "reason": reason,
     }
+
+
+#: Metrics scored once per arm because nothing in their path can disagree.
+#:
+#: ``evidence_precision`` is quote resolution, set exclusivity and the unit each
+#: rubric was distilled from; ``provenance`` is quote resolution alone. Neither
+#: has a model in it, so there is no spread to clear and no noise to sit inside.
+#: Filing them under "unrepeated" would put a deterministic number under the
+#: same doubt as a judged one, which is why :func:`against_baseline` names them
+#: rather than letting the missing ``*_max`` decide.
+DETERMINISTIC_METRICS: tuple[str, ...] = ("evidence_precision", "provenance")
+
+
+def against_baseline(run: dict[str, Any], metric: str = "criteria_recall") -> list[dict[str, Any]]:
+    """Every arm against the run's **baseline**, not against the runner-up.
+
+    :func:`winner` answers "which arm leads, and does the lead survive the
+    scorer's noise". That is the right question for an ablation and the wrong
+    one for a gate phrased as *"does the loop-built pack reach the hand-built
+    one"*: when two loop arms tie for the lead, ``winner`` reports ``tied`` and
+    says nothing whatever about the pack they were built to beat.
+
+    So this states that pair directly, one row per non-baseline arm, under the
+    same rule the V3 fix set — a lead smaller than the ranges under it is not a
+    lead. The form is the most conservative one available: the arm's *minimum*
+    across repeats against the baseline's *maximum*. Two ranges that touch count
+    as overlapping.
+
+    It lives here, beside ``winner``, rather than in the panel that renders it,
+    because a finding that exists only at render time is absent from the run
+    file, and the run file is what a reader outside the browser has.
+    """
+    cells = {str(cell.get("setup") or ""): cell for cell in run.get("cells") or []}
+    base_name = str(run.get("baseline") or "")
+    base = cells.get(base_name)
+    if base is None:
+        return []
+    base_value = (base.get("scores") or {}).get(metric)
+    base_max = (base.get("score_spread") or {}).get(f"{metric}_max")
+    rows: list[dict[str, Any]] = []
+    for name, cell in cells.items():
+        if name == base_name:
+            continue
+        value = (cell.get("scores") or {}).get(metric)
+        low = (cell.get("score_spread") or {}).get(f"{metric}_min")
+        if not isinstance(value, (int, float)) or not isinstance(base_value, (int, float)):
+            rows.append(
+                {
+                    "arm": name,
+                    "baseline": base_name,
+                    "metric": metric,
+                    "value": value,
+                    "baseline_value": base_value,
+                    "delta": None,
+                    "beats_baseline": None,
+                    "basis": "ungraded",
+                    "reason": "one of the two cells is not graded under this run's gate",
+                }
+            )
+            continue
+        delta = round(float(value) - float(base_value), 4)
+        if metric in DETERMINISTIC_METRICS:
+            basis = "deterministic"
+            beats = delta > 0
+            reason = (
+                "scored once per arm because there is no model in this metric's path — "
+                "the gap is the whole of the comparison"
+            )
+        elif isinstance(low, (int, float)) and isinstance(base_max, (int, float)):
+            beats = float(low) > float(base_max)
+            basis = "ranges-disjoint" if beats else "ranges-overlap"
+            reason = (
+                f"this arm's worst of the run's repeats ({low}) sits above the baseline's "
+                f"best ({base_max})"
+                if beats
+                else "the two repeat ranges cross, so neither arm is credited with a lead"
+            )
+        else:
+            beats = None
+            basis = "unrepeated"
+            reason = "no repeat spread on one side, so the gap's reliability is unmeasured"
+        rows.append(
+            {
+                "arm": name,
+                "baseline": base_name,
+                "metric": metric,
+                "value": value,
+                "baseline_value": base_value,
+                "arm_min": low,
+                "baseline_max": base_max,
+                "delta": delta,
+                "beats_baseline": beats,
+                "basis": basis,
+                "reason": reason,
+            }
+        )
+    return sorted(rows, key=lambda row: (-(row["delta"] or 0.0), row["arm"]))
+
+
+def baseline_table(run: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """:func:`against_baseline` for every metric the harness scores."""
+    return {metric: against_baseline(run, metric) for metric in CRITIQUE_METRICS}
 
 
 def run_pack_ablation(
@@ -237,5 +382,6 @@ def run_pack_ablation(
         on_progress=on_progress,
     )
     run["verdicts"] = {metric: winner(run, metric) for metric in CRITIQUE_METRICS}
+    run["against_baseline"] = baseline_table(run)
     run["generated_at"] = datetime.now(timezone.utc).isoformat()
     return run

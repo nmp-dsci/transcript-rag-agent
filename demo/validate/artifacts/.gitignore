@@ -1,3 +1,21 @@
 # Verdicts are the evidence and get committed; the screenshots beside them are
 # regenerable by re-running the script and would add a few MB per slice per run.
+#
+# The extension is an accident of the driver, not a difference in kind. When
+# Playwright launches, `harness.py` writes .png; while chromium.launch() stays
+# wedged on this host the evaluations drive an already-open Chrome, which saves
+# .jpg. Ignoring one and committing the other would make V0's and V1's evidence
+# disposable and V4b's permanent on the strength of which launcher happened to
+# work that afternoon, so both are dropped.
+#
+# What survives is the verdict. Every check records its finding as text in
+# `detail` — the counts, the quoted DOM, the ids — and most carry `shot: null`
+# because nothing was captured for them at all; V8's notes say outright that "no
+# check above depends on a screenshot's framing, every assertion was made
+# against DOM text". Several captures are in fact weaker than the prose beside
+# them: V5's shot 06 is a 0.78-zoom crop and V8's 02/03/05 are clipped at the
+# right edge, both of which their verdicts disclose. A reader reviewing without
+# re-running reads the verdict; the image only ever illustrated it.
 *.png
+*.jpg
+*.jpeg

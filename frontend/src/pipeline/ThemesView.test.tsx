@@ -205,6 +205,35 @@ describe("ThemesView", () => {
     );
   });
 
+  // Nine of this corpus's stored source_urls are share links that already
+  // carry a t=. Appending a second one gave a row labelled 1:13 an href the
+  // player honoured as 0:51, because YouTube reads the first t it is given.
+  it("links to the clock it displays even when source_url already has a t", async () => {
+    const withSeek = detail();
+    withSeek.videos[0]!.chunks[0] = {
+      ...withSeek.videos[0]!.chunks[0]!,
+      start_seconds: 73,
+      end_seconds: 147,
+      source_url:
+        "https://www.youtube.com/watch?v=by8wrrXW3So&t=51s&pp=ygUScmVzdW1lIGFpIGVuZ2luZWVy",
+    };
+    themes.mockResolvedValue(list());
+    theme.mockResolvedValue(withSeek);
+    render(<ThemesView />);
+    await screen.findByText("1 of 2 span 2+ videos");
+
+    await userEvent.click(document.querySelectorAll(".th-chunkhead")[0]!);
+    const body = document.querySelector(".th-chunkbody") as HTMLElement;
+    const link = within(body).getByRole("link", { name: /open at 1:13/ });
+    const href = link.getAttribute("href")!;
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.get("t")).toBe("73s");
+    expect([...params.keys()].filter((key) => key === "t").length).toBe(1);
+    // The rest of the share link survives untouched.
+    expect(params.get("v")).toBe("by8wrrXW3So");
+    expect(href).toContain("pp=ygUScmVzdW1lIGFpIGVuZ2luZWVy");
+  });
+
   it("selecting another theme fetches it", async () => {
     themes.mockResolvedValue(list());
     theme.mockResolvedValue(detail());

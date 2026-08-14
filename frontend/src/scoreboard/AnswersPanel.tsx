@@ -54,7 +54,8 @@ function flatten(questions: ScoreboardQuestion[]): AnswerRow[] {
  *
  * The run itself is chosen by the picker at the top of the tab — these filters
  * narrow *within* one run, because answers from different runs were produced
- * under different configs and are not comparable side by side.
+ * under different configs, and often over different corpora, and are not
+ * comparable side by side or through the leaderboard.
  */
 export function AnswersPanel({ questions }: { questions: ScoreboardQuestion[] }) {
   const rows = useMemo(() => flatten(questions), [questions]);
@@ -288,10 +289,22 @@ export function AnswersPanel({ questions }: { questions: ScoreboardQuestion[] })
         </div>
       )}
 
+      {/*
+        This note used to end "so they are compared through the leaderboard,
+        not read side by side here" — which sent a reader who noticed two runs
+        were incomparable into the leaderboard to compare them anyway. The
+        leaderboard ranks setups *within* one run; it is not a cross-run
+        instrument, and two runs can differ by corpus (visible, at the top of
+        the tab) or by engine behaviour (recorded nowhere at all).
+      */}
       <p className="board-note" style={{ marginTop: 10 }}>
-        These are the answers from the run selected above. Switching runs changes the whole set —
-        answers from two runs were produced under different configurations, so they are compared
-        through the leaderboard, not read side by side here.
+        These are the answers from the run selected above. Switching runs changes the whole set:
+        another run&apos;s answers were produced under a different configuration, and often over a
+        different corpus, so they are <b>not</b> a comparison set — neither read side by side here
+        nor carried across through the leaderboard, which ranks setups against each other{' '}
+        <em>within</em> one run. To compare two runs, check first that they name the same corpus at
+        the top of this tab; even then, nothing in a run file records the engine version that wrote
+        its answers.
       </p>
     </details>
   );

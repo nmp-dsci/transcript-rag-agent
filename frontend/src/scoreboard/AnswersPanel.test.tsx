@@ -54,6 +54,20 @@ function open() {
 }
 
 describe('AnswersPanel', () => {
+  it('does not route a cross-run comparison into the leaderboard', () => {
+    // The footer used to end "so they are compared through the leaderboard,
+    // not read side by side here" — which sent a reader who had noticed two
+    // runs were different into comparing them anyway. The leaderboard ranks
+    // setups within one run; it is not a cross-run instrument.
+    const { container } = render(<AnswersPanel questions={QUESTIONS} />);
+    const note = container.querySelector('.board-note');
+    expect(note?.textContent).not.toContain('compared through the leaderboard');
+    expect(note?.textContent).toContain('not a comparison set');
+    expect(note?.textContent).toContain('within');
+    expect(note?.textContent).toContain('same corpus');
+    expect(note?.textContent).toContain('engine version');
+  });
+
   it('renders one row per question x setup cell', () => {
     open();
     expect(screen.getByText('Answers (3)')).toBeInTheDocument();

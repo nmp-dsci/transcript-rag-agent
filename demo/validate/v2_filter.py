@@ -36,6 +36,15 @@ instance, exactly as ``v0_judge_negatives`` does for the two conditional
 banners. A fixture is not a committed run and must not be written into
 ``evals/runs``.
 
+The two Scoreboard-badge fixes need rare data too — a cell the judge saw only
+part of the context for, and a cell with no answer to grade — and both are
+therefore read from a **named** run (``FOLDED_IN_RUN``) rather than from
+whatever the picker's "newest run" default resolves to. They were written
+against a 4-setup run, and inheriting the default silently re-pointed them at a
+2-setup run that contains neither condition, which would have reported five
+failures with no regression behind any of them. A check that needs particular
+data has to name it; see ``select_matrix_run``.
+
 **Provenance of the 2026-08-10 evaluation.** This script did not run to a
 verdict on that machine: ``chromium.launch`` timed out on every installed
 Playwright revision (1208/1223/1228/1234, headless and headed), each shell
@@ -51,10 +60,8 @@ host can launch a browser again; nothing about it is machine-specific.
 
 from __future__ import annotations
 
-import json
 import os
 import re
-import shutil
 import socket
 import subprocess
 import sys
@@ -119,6 +126,24 @@ NOT_RESCORED_QUESTION = "What is now the best property strategy for investors po
 FIXTURE_RUN = "matrix-29990101-000003-floor"
 FIXTURE_PORT = 8023
 
+#: The committed run the two folded-in Scoreboard badges are read from.
+#:
+#: Named, not inherited. The picker's default option is "newest run", and the
+#: two conditions these checks need — a cell judged on fewer chunks than
+#: retrieval returned, and a cell with no answer to grade — exist in exactly one
+#: committed run. Every matrix run written since is a 2-setup ``rag_llm`` /
+#: ``rag_llm_filtered`` sweep with no ``graph_rag`` row, no ``rag_agent`` row and
+#: neither condition anywhere in it, so a script that took the newest run would
+#: report five failures that are not regressions: the badges would be missing
+#: because nothing on screen should be wearing them.
+#:
+#: Pinned the way ``FIXTURE_RUN`` is pinned, and for the same reason. These five
+#: assert that a *rendering* is correct given data of a certain shape, so they
+#: must be pointed at data of that shape. The checks in ``scoreboard_checks``
+#: are deliberately **not** pinned: those assert what a reader sees on opening
+#: the tab, and the default view is the thing under test there.
+FOLDED_IN_RUN = "matrix-20260809-071818-depth-v2"
+
 VIDEO_ID = re.compile(r"\(([0-9A-Za-z_-]{11})\)")
 
 
@@ -131,16 +156,34 @@ def overflow(locator) -> dict[str, int]:
     evidence. A wrapping element has ``scrollHeight == clientHeight`` and more
     than one line of height; a ``nowrap`` one has ``scrollWidth > clientWidth``
     and exactly one.
+
+    ``lines`` is the number of line boxes the text was actually broken into,
+    measured by laying a ``Range`` over the node's contents and grouping the
+    rectangles it reports by their top edge. It replaces an earlier
+    ``parseFloat(getComputedStyle(node).lineHeight)``, which could not work on
+    these nodes: nothing in this app sets a numeric ``line-height`` on them, so
+    the computed value is the keyword ``normal``, ``parseFloat`` returns ``NaN``,
+    and the ``|| 0`` behind it made every "did this wrap?" assertion read
+    ``0 > 0`` — false for a wrapped element and a clipped one alike. Counting
+    rectangles asks the question directly and needs no font metrics.
     """
     return locator.evaluate(
-        """node => ({
-            scrollWidth: node.scrollWidth,
-            clientWidth: node.clientWidth,
-            scrollHeight: node.scrollHeight,
-            clientHeight: node.clientHeight,
-            lineHeight: Math.round(parseFloat(getComputedStyle(node).lineHeight) || 0),
-            nowrap: getComputedStyle(node).whiteSpace === 'nowrap' ? 1 : 0,
-        })"""
+        """node => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const tops = new Set();
+            for (const rect of range.getClientRects()) {
+                if (rect.width > 0 && rect.height > 0) tops.add(Math.round(rect.top));
+            }
+            return {
+                scrollWidth: node.scrollWidth,
+                clientWidth: node.clientWidth,
+                scrollHeight: node.scrollHeight,
+                clientHeight: node.clientHeight,
+                lines: tops.size,
+                nowrap: getComputedStyle(node).whiteSpace === 'nowrap' ? 1 : 0,
+            };
+        }"""
     )
 
 
@@ -156,7 +199,7 @@ def check_wraps_in_full(session: UserSession, name: str, locator, expected: str 
     detail = (
         f"{len(rendered)} chars laid out in {box['clientWidth']}x{box['clientHeight']}px "
         f"(content {box['scrollWidth']}x{box['scrollHeight']}px, "
-        f"line-height {box['lineHeight']}px, white-space:"
+        f"{box['lines']} line box(es), white-space:"
         f"{'nowrap' if box['nowrap'] else 'normal'})"
     )
     session.check(name, not clipped, detail)
@@ -215,10 +258,14 @@ def filter_trace_checks(session: UserSession, tag: str) -> set[str]:
     if line is None:
         return set()
 
+    # ``.ph`` is ``text-transform: uppercase``, so ``inner_text`` returns what is
+    # painted — "FILTER" — while the source string is "filter". Compared
+    # case-insensitively, like the sibling label check just below: the claim is
+    # which phase the step is tagged as, not which case the CSS renders it in.
     phase = line.locator(".ph").first.inner_text().strip()
     session.check(
         f"{tag}: the routing step is marked as a filter phase",
-        phase == "filter",
+        phase.lower() == "filter",
         f"phase chip reads {phase!r}",
     )
     session.check(
@@ -247,10 +294,12 @@ def filter_trace_checks(session: UserSession, tag: str) -> set[str]:
     box, rendered = check_wraps_in_full(
         session, f"{tag}: the matched-video list renders in full, not clipped", text_span
     )
+    # Counted line boxes, not a height divided by a line-height: the spans here
+    # inherit ``line-height: normal``, so there is no numeric value to divide by.
     session.check(
         f"{tag}: the list wraps onto more than one line",
-        box["lineHeight"] > 0 and box["clientHeight"] >= box["lineHeight"] * 2 - 1,
-        f"{box['clientHeight']}px tall at a {box['lineHeight']}px line-height",
+        box["lines"] >= 2,
+        f"{box['lines']} line box(es) in {box['clientHeight']}px of height",
         shot=True,
     )
 
@@ -479,6 +528,71 @@ def coverage_warning_checks(session: UserSession) -> None:
     session.shot("coverage_caveat")
 
 
+def answers_panel(session: UserSession):
+    """The **Answers** ``details``, located by the heading a reader clicked."""
+    return session.page.locator("details.qpanel").filter(
+        has=session.page.locator("summary", has_text="Answers (")
+    )
+
+
+def answers_table(session: UserSession):
+    """The **Answers** panel's ``tbody`` — not the Questions panel's.
+
+    Both panels render as ``details.panel.qpanel`` and QuestionsPanel is mounted
+    first, so a bare ``.qpanel tbody`` resolves to the Questions panel. That
+    panel also ships collapsed, which is the part that makes the mistake quiet
+    rather than loud: a collapsed ``details`` reports zero characters of
+    ``innerText``, so every text assertion made against it reads an empty string
+    and reports "the phrase is missing" no matter what the Scoreboard shows.
+    The checks below are about the Answers panel the click path just expanded,
+    so they are scoped to it by the heading a reader clicked.
+    """
+    return answers_panel(session).locator("tbody")
+
+
+def open_answers_panel(session: UserSession) -> None:
+    """Leave the Answers panel expanded, whatever state it is in.
+
+    Clicking the summary unconditionally would *close* an already-open panel,
+    and a closed ``details`` reports zero characters of ``innerText`` — the
+    quiet failure ``answers_table`` documents. Switching runs re-renders the
+    panel without unmounting it, so in practice it stays open; this makes that
+    an assumption the script does not have to rely on.
+    """
+    panel = answers_panel(session)
+    if panel.count() and panel.first.get_attribute("open") is None:
+        panel.first.locator("summary").click()
+        session.page.wait_for_timeout(400)
+
+
+def select_matrix_run(session: UserSession, run_id: str) -> tuple[bool, str]:
+    """Point the Scoreboard at one named run, or say why it could not.
+
+    Returns ``(selected, detail)`` rather than raising, so a run that has been
+    superseded, renamed or deleted produces one legible failure naming the run
+    it wanted — not a scatter of unrelated content checks reading FALSE because
+    the page is showing different data than the checks were written for. Those
+    two outcomes have to look different: the first is a stale script, the second
+    is a broken feature, and only one of them is worth waking anybody up for.
+
+    ``run_id`` is the option's *value*; the label a reader sees carries the
+    question and setup counts as well, and those move when a run is rejudged.
+    """
+    picker = session.page.get_by_role("combobox", name="Matrix run")
+    options = picker.locator("option")
+    values = [options.nth(index).get_attribute("value") or "" for index in range(options.count())]
+    if run_id not in values:
+        offered = [value for value in values if value]
+        return False, (
+            f"the run picker has no option for it — it offers {len(offered)} run(s): {offered}"
+        )
+    picker.select_option(run_id)
+    session.page.wait_for_timeout(1200)
+    open_answers_panel(session)
+    settled = picker.input_value()
+    return settled == run_id, f"the run picker reads {settled!r}"
+
+
 def scoreboard_checks(session: UserSession) -> None:
     session.tab("Scoreboard")
     session.click("Answers (", exact=False)
@@ -496,7 +610,7 @@ def scoreboard_checks(session: UserSession) -> None:
     if FILTERED_TITLE in labels:
         setup_filter.select_option(label=FILTERED_TITLE)
         session.page.wait_for_timeout(500)
-        rows = session.page.locator(".qpanel tbody tr")
+        rows = answers_table(session).locator("tr")
         session.check(
             "selecting it shows its graded cells",
             rows.count() > 0,
@@ -511,7 +625,7 @@ def scoreboard_checks(session: UserSession) -> None:
         label=label_containing(session, "Filter by question", "ATS-friendly")
     )
     session.page.wait_for_timeout(600)
-    body = session.page.locator(".qpanel tbody").inner_text()
+    body = answers_table(session).inner_text()
     session.check(
         "one question shows the filtered setup's cell beside the baseline's",
         FILTERED_TITLE in body and BASELINE_TITLE in body,
@@ -524,6 +638,37 @@ def scoreboard_checks(session: UserSession) -> None:
 
 
 def folded_in_scoreboard_fixes(session: UserSession) -> None:
+    # The run is named before anything is read off the page. If it is gone the
+    # five checks below are not run at all: they would each report a missing
+    # badge, which is true of the data and says nothing about the rendering
+    # they exist to police. One failure that names the run is the honest
+    # outcome, and it is a failure — a check whose data has vanished has not
+    # passed.
+    pinned, detail = select_matrix_run(session, FOLDED_IN_RUN)
+    session.check(
+        "the folded-in badge checks read the run that holds their conditions",
+        pinned,
+        f"{FOLDED_IN_RUN}: {detail}",
+        shot=True,
+    )
+    if not pinned:
+        return
+    try:
+        pinned_scoreboard_fixes(session)
+    finally:
+        # Back to the reader's default, so nothing after this inherits the pin.
+        # The question filter goes first: its options are this run's question
+        # ids, and leaving one selected across the switch would empty the table
+        # for a reason that has nothing to do with the run.
+        session.page.get_by_role("combobox", name="Filter by question").select_option(
+            label="all questions"
+        )
+        session.page.get_by_role("combobox", name="Matrix run").select_option("")
+        session.page.wait_for_timeout(1200)
+        open_answers_panel(session)
+
+
+def pinned_scoreboard_fixes(session: UserSession) -> None:
     question_filter = session.page.get_by_role("combobox", name="Filter by question")
 
     # -- partial context, without expanding anything ------------------------
@@ -531,7 +676,7 @@ def folded_in_scoreboard_fixes(session: UserSession) -> None:
         label=label_containing(session, "Filter by question", PARTIAL_CONTEXT_QUESTION[:40])
     )
     session.page.wait_for_timeout(600)
-    badges = session.page.locator(".qpanel tbody .badge", has_text="partial context")
+    badges = answers_table(session).locator(".badge", has_text="partial context")
     session.check(
         "a partially-judged cell says so on its collapsed row",
         badges.count() > 0,
@@ -551,8 +696,8 @@ def folded_in_scoreboard_fixes(session: UserSession) -> None:
         label=label_containing(session, "Filter by question", NOT_RESCORED_QUESTION[:40])
     )
     session.page.wait_for_timeout(600)
-    body = session.page.locator(".qpanel tbody")
-    expanded = session.page.locator(".qpanel tbody .cellwhy")
+    body = answers_table(session)
+    expanded = answers_table(session).locator(".cellwhy")
     text = body.inner_text()
     session.check(
         "the un-rescored cell explains itself with nothing expanded",
@@ -568,10 +713,10 @@ def folded_in_scoreboard_fixes(session: UserSession) -> None:
     )
     session.check(
         "the cell that carries it has no Expand button to hide behind",
-        session.page.locator(".qpanel tbody").get_by_role("button", name="Expand").count()
-        < session.page.locator(".qpanel tbody tr").count(),
-        f"{session.page.locator('.qpanel tbody').get_by_role('button', name='Expand').count()} "
-        f"Expand buttons across {session.page.locator('.qpanel tbody tr').count()} rows",
+        answers_table(session).get_by_role("button", name="Expand").count()
+        < answers_table(session).locator("tr").count(),
+        f"{answers_table(session).get_by_role('button', name='Expand').count()} "
+        f"Expand buttons across {answers_table(session).locator('tr').count()} rows",
     )
 
 

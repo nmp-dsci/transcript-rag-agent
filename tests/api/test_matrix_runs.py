@@ -101,9 +101,19 @@ def test_load_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path
         "rejudged_from",
         "rejudged_cells",
         "skipped_cells",
+        "corpus",
+        "corpus_videos",
+        "corpus_chunks",
     }
     # A run committed before rubrics were named is read as the original one.
     assert descriptor["rubric_version"] == "ragas-v1"
+    # …and one committed before corpus identity entered the fingerprint carries
+    # None, not a default. The picker renders that as *unknown*, never as "the
+    # same corpus" — a reader who reads absence as agreement would compare two
+    # runs whose relationship was never established.
+    assert descriptor["corpus"] is None
+    assert descriptor["corpus_videos"] is None
+    assert descriptor["corpus_chunks"] is None
 
 
 def test_load_matrix_runs_reparses_only_when_the_directory_changes(

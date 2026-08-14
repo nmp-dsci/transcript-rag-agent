@@ -20,11 +20,24 @@ prevent. And it does not infer success from code existing: a slice with a module
 and no verdict is reported as *built, unvalidated*, because under this plan's
 standing rule a hypothesis that cannot be seen in the frontend has not shipped
 however much code is behind it.
+
+Two qualifications on a green row are *computed* rather than written down, for
+the same reason this page is generated at all — a hand-maintained note about a
+verdict is a note that stops being true without anyone noticing.
+
+* **Reduced independence.** A verdict whose notes carry the README's
+  ``REDUCED INDEPENDENCE`` disclosure is marked as such on its row. The spend
+  limit forced the orchestrating agent to re-check its own fix on three slices;
+  a summary that folds those checks into a plain tally overstates them.
+* **Evidence that has moved.** Run files get superseded and deleted. A verdict
+  that named one is still a true record of what its evaluator saw, but it is no
+  longer reproducible, so the row says which runs no longer resolve on disk.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +50,19 @@ PLAN_ARTIFACT = ".lavish/s11_distilled-reviewer-deep-research.html"
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
+
+#: The disclosure the README asks for when an evaluation could not be independent.
+INDEPENDENCE_FLAG = "REDUCED INDEPENDENCE"
+
+#: Run ids as they are written in prose and in check details:
+#: ``critique-<video>-<YYYYMMDD>-<HHMMSS>``, ``matrix-<YYYYMMDD>-<HHMMSS>-<label>``.
+#: Matched loosely, then kept only if it carries a timestamp — that filter is what
+#: stops ordinary words beginning "eval-" from being treated as run ids.
+RUN_ID = re.compile(r"\b(?:critique|matrix|ablation|eval)-[A-Za-z0-9][A-Za-z0-9_-]*")
+RUN_STAMP = re.compile(r"\d{8}-\d{6}")
+#: Where a named run could legitimately live: the committed runs, the fixture runs
+#: a validator serves from a second instance, and the artifact directory itself.
+RUN_DIRS = ("evals/runs", "demo/validate/fixtures")
 
 
 @dataclass(frozen=True)
@@ -92,11 +118,20 @@ SLICES: tuple[Slice, ...] = (
             "frontend/src/experiments/CritiquePanel.tsx",
         ),
         caveat=(
-            "src/evals/KNOWN_GAP_attack2.md is open: the grounding gate checks that a "
-            "quote resolves, never that the cited chunk supports the finding it is "
-            "attached to. Reproduced 2026-08-10 — reciting the criteria with one "
-            "distinct real chunk each scores evidence_precision 1.000 and "
-            "criteria_recall 0.526 against the honest baseline's 0.556 / 0.158. "
+            "src/evals/KNOWN_GAP_attack2.md is now *partly* closed, and what it costs "
+            "matters as much as what it fixed. The distinct-chunk attack — recite the "
+            "criteria, give each recited finding its own distinct real chunk, score "
+            "evidence_precision 1.000 / criteria_recall 0.526 against the honest "
+            "baseline's 0.364 / 0.158 — was gated on 2026-08-11 by GATE_PROVENANCE: a "
+            "citation grounds a finding only when the chunk it resolves to is one that "
+            "finding's own retrieval returned. Every committed run was rescored in "
+            "place with no model calls; no score moved and no within-run ranking "
+            "flipped. The cost is that the retrieval arms (rag_llm_filtered, "
+            "rag_conflict_aware) have no per-finding provenance and are now ungraded "
+            "rather than scored, which is why V6's rubric_packs 0.000 has no certified "
+            "baseline to be subtracted from. Still open is the relevance question "
+            "itself: a chunk the finding really did retrieve, cited for a rule it does "
+            "not support, still passes, and only an entailment check reaches it. "
             "V5, V6 and V8 are all scored on this metric."
         ),
     ),
@@ -110,6 +145,13 @@ SLICES: tuple[Slice, ...] = (
         id="V4b",
         title="Ingest the two empty topics (system design, app architecture)",
         artifact_dirs=("v4b_ingest",),
+        # V4b produces no module of its own — it is an ingestion slice, and the
+        # only thing it leaves behind is corpus. A built pack for each of the two
+        # previously-empty topics is the closest thing to "code on disk" it has.
+        build_paths=(
+            "experts/system-design/pack.json",
+            "experts/app-architecture/pack.json",
+        ),
     ),
     Slice(
         id="V5",
@@ -119,6 +161,8 @@ SLICES: tuple[Slice, ...] = (
             "src/rag/packs.py",
             "src/rag/pack_build.py",
             "src/evals/pack_ablation.py",
+            "src/api/packs.py",
+            "frontend/src/experiments/PackPanel.tsx",
             "experts/resume-design/pack.json",
         ),
     ),
@@ -126,17 +170,55 @@ SLICES: tuple[Slice, ...] = (
         id="V6",
         title="Rubric-driven reviewer in Chat",
         artifact_dirs=("v6_reviewer",),
+        build_paths=(
+            "src/documents/rubric_review.py",
+            "src/agents/rubric_review_agent.py",
+            "frontend/src/chat/RubricVerdicts.tsx",
+        ),
     ),
     Slice(
         id="V7",
         title="Disagreements as a first-class view",
-        artifact_dirs=("v7_conflicts",),
-        build_paths=("src/rag/conflicts.py",),
+        # The plan named this ``v7_conflicts``; the slice shipped as
+        # "Disagreements" in the UI and its validator followed the label a reader
+        # sees. Both are listed so the reconciliation does not depend on which
+        # name an evaluator picked — a status page that reports validated work as
+        # unvalidated because of a directory name is worse than useless.
+        artifact_dirs=("v7_conflicts", "v7_disagreements"),
+        build_paths=(
+            "src/rag/conflicts.py",
+            "frontend/src/pipeline/DisagreementsView.tsx",
+        ),
+        # Carried while the slice reads FAILING so it is already true if the count
+        # ever clears the gate: the row below states the failure, the caveat states
+        # what would still be open once it is fixed.
+        caveat=(
+            "The count is short of the gate and that is the one failing check in a "
+            "64/65 verdict — 2 disagreement cards render where the gate asks for >=3. "
+            "What would still be open if the count rose is its reliability. It is "
+            "measured at 3 looks per pair with no recorded spread, and two builds over "
+            "a provably identical candidate pool returned 4 cards and then 2, with two "
+            "cards moving 3/3 to 0/3. The layer now says so in its own voice rather "
+            "than reading as confidence: a warn chip beside the count ('spread not "
+            "recorded — nearer 2 ± 1 than exactly 2'), card chips reading 'agreed 3/3 "
+            "looks — the most 3 can show' in grey rather than green, and a "
+            "self-agreement chip that no longer calls itself an error bar. That "
+            "fallback retires automatically on a build that records its own spread, "
+            "verified against a 9-look artifact served from a second instance. "
+            "Unaddressed: corpus_fingerprint is computed onto ConflictIndex.corpus and "
+            "never forwarded by list_conflicts, so a reader cannot see which corpus "
+            "the count was measured over."
+        ),
     ),
     Slice(
         id="V8",
         title="Deep-research build loop",
         artifact_dirs=("v8_loop",),
+        build_paths=(
+            "src/rag/deep_research.py",
+            "frontend/src/experiments/ResearchPanel.tsx",
+            "experts/resume-design/research.json",
+        ),
     ),
 )
 
@@ -154,6 +236,29 @@ class Evidence:
     #: pass/fail claim, so it never counts towards a slice being validated.
     supporting_only: bool = False
     failed_checks: tuple[str, ...] = ()
+    #: The verdict discloses that some part of it was not written independently.
+    reduced_independence: bool = False
+    #: Run ids the verdict names that no longer resolve to a file on disk.
+    absent_runs: tuple[str, ...] = ()
+
+
+def absent_runs(text: str, directory: Path) -> tuple[str, ...]:
+    """Run ids named in a verdict that nothing on disk answers to any more.
+
+    Not a failure of the verdict — it recorded what its evaluator saw. But a
+    reader who wants to re-derive a number from the run behind it cannot, and a
+    row that reads PASSED without saying so is quietly overstating the evidence.
+    """
+    missing: list[str] = []
+    for run_id in dict.fromkeys(RUN_ID.findall(text)):
+        if not RUN_STAMP.search(run_id):
+            continue
+        if (directory / f"{run_id}.json").exists():
+            continue
+        if any((ROOT / d / f"{run_id}.json").exists() for d in RUN_DIRS):
+            continue
+        missing.append(run_id)
+    return tuple(missing)
 
 
 def read_evidence(name: str) -> Evidence | None:
@@ -167,7 +272,8 @@ def read_evidence(name: str) -> Evidence | None:
         # distinguishing from a directory that was never created at all.
         return Evidence(name=name, supporting_only=bool(others))
     try:
-        data = json.loads(verdict.read_text(encoding="utf-8"))
+        raw = verdict.read_text(encoding="utf-8")
+        data = json.loads(raw)
     except (json.JSONDecodeError, OSError):
         return Evidence(name=name)
     checks = data.get("checks") or []
@@ -178,7 +284,20 @@ def read_evidence(name: str) -> Evidence | None:
         checks_total=len(checks),
         started_at=str(data.get("started_at") or "")[:19],
         failed_checks=tuple(str(c.get("name") or "?") for c in checks if not c.get("passed")),
+        reduced_independence=INDEPENDENCE_FLAG in raw,
+        absent_runs=absent_runs(raw, directory),
     )
+
+
+def qualifiers(verdicts: list[Evidence]) -> str:
+    """The computed riders on a tally: who wrote it, and whether it can be redone."""
+    parts: list[str] = []
+    if any(e.reduced_independence for e in verdicts):
+        parts.append("reduced independence disclosed")
+    gone = sorted({run for e in verdicts for run in e.absent_runs})
+    if gone:
+        parts.append(f"names {len(gone)} run(s) no longer on disk: {', '.join(gone)}")
+    return "".join(f" · {part}" for part in parts)
 
 
 def state_of(item: Slice, evidence: list[Evidence]) -> tuple[str, str]:
@@ -191,12 +310,14 @@ def state_of(item: Slice, evidence: list[Evidence]) -> tuple[str, str]:
     if any(e.passed is False for e in verdicts):
         failed = next(e for e in verdicts if e.passed is False)
         detail = failed.failed_checks[0] if failed.failed_checks else "see verdict"
-        return "FAILING", f"{failed.name}: {failed.checks_passed}/{failed.checks_total} — {detail}"
+        why = f"{failed.name}: {failed.checks_passed}/{failed.checks_total} — {detail}"
+        return "FAILING", why + qualifiers(verdicts)
     if verdicts:
         total = sum(e.checks_total for e in verdicts)
         passed = sum(e.checks_passed for e in verdicts)
         label = "PASSED (caveat)" if item.caveat else "PASSED"
-        return label, f"{passed}/{total} checks across {len(verdicts)} verdict(s)"
+        why = f"{passed}/{total} checks across {len(verdicts)} verdict(s)"
+        return label, why + qualifiers(verdicts)
     built = [p for p in item.build_paths if (ROOT / p).exists()]
     if any(e.supporting_only for e in evidence):
         return "UNVALIDATED", "artifacts present but no verdict.json recorded"
@@ -254,6 +375,14 @@ def build_status() -> str:
         "frontend fails review even if every automated gate passed) this is **not** "
         "done, however much code is behind it.",
         "- **NOT STARTED** — no code, no artifacts.",
+        "",
+        "Two riders in the Evidence column are read out of the verdicts rather than "
+        "written here by hand. *Reduced independence disclosed* means the verdict "
+        "itself records that some part of it was not written by an independent "
+        "evaluator — read the scope it gives before treating the whole tally as "
+        "arm's-length. *Names N run(s) no longer on disk* means the verdict was "
+        "decided against run files that have since been superseded or deleted: still "
+        "a true record of what was seen, but no longer reproducible from the repo.",
         "",
     ]
     if caveats:

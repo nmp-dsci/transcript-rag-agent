@@ -29,6 +29,12 @@ class Settings:
     contextual_chunk_collection: str = "transcript_chunks_contextual"
     transcript_summary_collection: str = "transcript_summaries"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # Torch device for the embedding model. Defaults to CPU because
+    # sentence-transformers' own auto-selection picks MPS on Apple Silicon,
+    # where the first embed call hangs indefinitely inside the Metal driver
+    # and takes the whole uvicorn process with it. Set "mps" or "cuda" to
+    # opt back into a GPU where one actually works.
+    embedding_device: str = "cpu"
     rag_top_k: int = 10
     transcript_filter_top_k: int = 5
     transcript_filter_min_score: float = 0.25
@@ -223,6 +229,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         embedding_model=os.environ.get(
             "YT_AGENT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
         ),
+        embedding_device=os.environ.get("YT_AGENT_EMBEDDING_DEVICE", "cpu"),
         rag_top_k=_int_env("YT_AGENT_RAG_TOP_K", 10),
         transcript_filter_top_k=_int_env("YT_AGENT_TRANSCRIPT_FILTER_TOP_K", 5),
         transcript_filter_min_score=_float_env("YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE", 0.25),

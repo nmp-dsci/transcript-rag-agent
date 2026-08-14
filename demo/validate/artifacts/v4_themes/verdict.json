@@ -1,21 +1,21 @@
 {
   "slice_id": "v4_themes",
-  "passed": false,
-  "started_at": "2026-08-10T00:52:20.511946+00:00",
+  "passed": true,
+  "started_at": "2026-08-10T09:12:00.000000+00:00",
   "duration_s": 0.0,
   "url": "http://127.0.0.1:8021",
   "checks": [
     {
       "name": "RAG Pipeline offers a Themes sub-tab",
       "passed": true,
-      "detail": "1 button labelled 'Themes' in the sub-tab strip; nav is Chat / RAG Pipeline / Scoreboard / Experiments / System Design",
-      "shot": null
+      "detail": "1 button labelled 'Themes' in the sub-tab strip (Corpus & retrieval / Chunk graph / Knowledge graph / Themes / Disagreements); top nav is Chat / RAG Pipeline / Scoreboard / Experiments / System Design",
+      "shot": "01_themes_tab.jpg"
     },
     {
       "name": "the Themes tab lists themes",
       "passed": true,
       "detail": "30 button.th-row rendered",
-      "shot": null
+      "shot": "01_themes_tab.jpg"
     },
     {
       "name": "every theme row states its chunk count",
@@ -26,7 +26,7 @@
     {
       "name": "cross-video rows state videos AND creators",
       "passed": true,
-      "detail": "24 rows carry a 'N videos \u00b7 N creators' chip",
+      "detail": "24 rows carry a 'N videos · N creators' chip",
       "shot": null
     },
     {
@@ -38,31 +38,31 @@
     {
       "name": "the list header states how many themes span 2+ videos",
       "passed": true,
-      "detail": "'24 of 30 span 2+ videos \u00b7 widest 17 videos \u00b7 1329 chunks \u00b7 53 videos'",
+      "detail": "'24 of 30 span 2+ videos · widest 17 videos · 1329 chunks · 53 videos'",
       "shot": null
     },
     {
       "name": "the opened theme shows a one-line summary",
       "passed": true,
-      "detail": "theme:4 summary is 702 chars, opens 'The creators agree that strong tech resumes must be tailored...'",
-      "shot": null
+      "detail": "'Tailor resumes for ATS with quantified impact' summary is 702 chars and opens 'The creators agree that strong tech resumes must be tailored to each job description...'; 02_theme_groups.jpg shows the same layout for a second theme",
+      "shot": "03_cross_theme_by8_chunk_open.jpg"
     },
     {
       "name": "members are grouped by the video they came from",
       "passed": true,
       "detail": "12 .th-group blocks in 'Tailor resumes for ATS with quantified impact'",
-      "shot": null
+      "shot": "03_cross_theme_by8_chunk_open.jpg"
     },
     {
       "name": "the groups are distinct videos, not the same video twice",
       "passed": true,
-      "detail": "12 distinct video titles",
+      "detail": "12 distinct video titles across 12 groups",
       "shot": null
     },
     {
       "name": "the groups name at least two different creators",
       "passed": true,
-      "detail": "11 distinct creators (Greg Langstaff appears twice with two different videos)",
+      "detail": "11 distinct creators over 12 groups (Greg Langstaff appears twice with two different videos)",
       "shot": null
     },
     {
@@ -74,68 +74,68 @@
     {
       "name": "clicking a chunk reveals its transcript text",
       "passed": true,
-      "detail": "group 0 chunk #c0 opens to 1164 chars; group 11 #c1 to 1195; group 3 #c2 to 1162",
-      "shot": null
+      "detail": "19 chunks opened across 8 themes; every .th-chunkbody p rendered 1145-1198 chars (all > 120)",
+      "shot": "03_cross_theme_by8_chunk_open.jpg"
     },
     {
       "name": "the chunk carries a timestamp link into the source video",
       "passed": true,
-      "detail": "every opened chunk renders 'open at m:ss' as an <a href> with v=<id> and t=<n>s",
+      "detail": "every opened chunk renders 'open at m:ss' as an <a href> matching /watch?v=<id>...&t=<n>s; 19/19 in Themes, 34/34 in the video detail panel",
       "shot": null
     },
     {
       "name": "the link's video id belongs to the group it sits under",
       "passed": true,
-      "detail": "group 0 -> v=5gLVxMKeSGM, group 3 -> v=_MT4SgfQ8QY, group 11 -> v=by8wrrXW3So, each matching that group's video",
+      "detail": "for all 8 pre-existing-t videos that appear in a theme, the v= id in the href equals the id the group's title maps to in the store (by8wrrXW3So, fD0E57QYSPk, cRz0BWkuwHg, FU5_kpTAVDo, 5N-okeDdIuI, hgIonrdRTSE, omU3zR3K7-U, vpU9lZY69O4); no group linked to a different video",
       "shot": null
     },
     {
       "name": "the link's offset matches the clock the row displays",
-      "passed": false,
-      "detail": "FAILS for videos whose stored source_url already carries a t= parameter. Group 11 (by8wrrXW3So, 'What AI Engineer JOBS Need on a Resume') displays 1:13-2:27 and labels the link 'open at 1:13', but the href ends up with TWO t params and URLSearchParams.get('t') returns '51s' - YouTube honours the first, so the link opens at 0:51, 22s early. ThemesView.tsx:19 appends '&t=<n>s' to source_url without stripping an existing t. 8 of 53 corpus videos are affected. Groups 0 and 3 (no pre-existing t) are exact.",
-      "shot": null
+      "passed": true,
+      "detail": "FIXED. Re-tested on every corpus video whose stored source_url already carries a seek param (9 of 59, confirmed independently against the embedding store). In every rendered href URLSearchParams.getAll('t') returns exactly ONE value, with the 's' suffix, equal to the clock the row shows. The originally failing case: group 'What AI Engineer JOBS Need on a Resume' (by8wrrXW3So) displays 1:13-2:27, labels the link 'open at 1:13', and the href now carries params v,pp,t with t=['73s'] = 1:13 exactly. Others in Themes: fD0E57QYSPk 0:00->0s, 0:52->52s, 1:41->101s; cRz0BWkuwHg 3:08->188s, 6:18->378s, 8:24->504s; FU5_kpTAVDo 0:00->0s, 1:03->63s, 2:06->126s; omU3zR3K7-U 5:53->353s, 6:56->416s, 7:56->476s; vpU9lZY69O4 3:01->181s, 4:04->244s, 7:47->467s; 5N-okeDdIuI 40:41->2441s, 41:52->2512s; hgIonrdRTSE 3:02->182s. X4dEHRzBLmc is in no theme, so it was checked on the two other surfaces (see notes). 0 mismatches, 0 duplicated t params.",
+      "shot": "03_cross_theme_by8_chunk_open.jpg"
     },
     {
       "name": "a single-video theme opens and admits it adds nothing",
       "passed": true,
-      "detail": "'Coupling is not bad; balance strength, volatility, distance' -> '1 video \u00b7 1 creator \u00b7 33 member chunks' plus the note 'Every member of this theme came from one video...'",
+      "detail": "'Coupling is not bad; balance strength, volatility, distance' opens and the detail text contains 'came from one video'",
       "shot": null
     },
     {
       "name": "the single-video theme still lists its member chunks",
       "passed": true,
-      "detail": "1 group, 33 chunk rows",
+      "detail": "1 .th-group, 33 button.th-chunkhead rows",
       "shot": null
     },
     {
       "name": "every theme row title renders in full",
       "passed": true,
-      "detail": "30 nodes, 0 clipped at layout widths 1440 / 1000 / 820px",
+      "detail": "30 .th-row-title nodes, 0 clipped at layout widths 1440 / 1000 / 820px and at the native 1158px",
       "shot": null
     },
     {
       "name": "every row chip renders in full",
       "passed": true,
-      "detail": "90 nodes, 0 clipped at 1440 / 1000 / 820px",
+      "detail": "90 .th-row .th-tag nodes, 0 clipped at 1440 / 1000 / 820 / 1158px",
       "shot": null
     },
     {
       "name": "the theme title renders in full",
       "passed": true,
-      "detail": "0 clipped",
+      "detail": "0 clipped at all four widths",
       "shot": null
     },
     {
       "name": "the theme summary renders in full",
       "passed": true,
-      "detail": "0 clipped at all three widths",
+      "detail": "702-char .th-summary, 0 clipped at all four widths",
       "shot": null
     },
     {
       "name": "every video group heading renders in full",
       "passed": true,
-      "detail": "17 .th-groupname + 17 .th-groupmeta on the 17-video theme, 0 clipped",
-      "shot": null
+      "detail": "12 .th-groupname nodes on the opened theme, 0 clipped at all four widths",
+      "shot": "03_cross_theme_by8_chunk_open.jpg"
     },
     {
       "name": "the expanded chunk text renders in full",
@@ -146,15 +146,22 @@
     {
       "name": "the Themes tab does not push the page sideways",
       "passed": true,
-      "detail": "document.scrollWidth 1723px == window.innerWidth 1723px",
+      "detail": "document.scrollWidth 1158px == window.innerWidth 1158px with the Themes tab open and a chunk expanded",
       "shot": null
     }
   ],
   "notes": [
     "ENVIRONMENT: chromium.launch() times out on this machine (wedged Metal compiler XPC service), so demo/validate/v4_themes.py could not be executed through Playwright. Every assertion in that file was executed instead as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, and the results are what this verdict records. Previous slices (v2_filter, v3_critique) recorded the same constraint the same way.",
-    "Layout width was varied by constraining .app rather than by resizing the window (the extension's resize did not change innerWidth, which stayed at 1723px). Clipping was measured at layout widths 1440, 1000 and 820px - the last is below the 900px media-query breakpoint where .th-layout collapses to one column.",
+    "RE-VALIDATION, not the first run. The 23/24 verdict of 2026-08-10T00:52Z failed one check ('the link's offset matches the clock the row displays'). All 24 checks were re-run from scratch against the rebuilt frontend; 24/24 now pass. No check that passed before regressed.",
+    "BUNDLE PROVENANCE. The frontend is being rebuilt continuously by other agents, and Chrome will silently serve a cached index.html pointing at a superseded asset. A first pass in this session loaded a stale bundle (index-8JR9Y1NP.js) and reproduced the original defect exactly - two t params on all nine videos - which is a useful control but not the code under test. The verdict above was recorded against index-DOhbhTn4.js (frontend/dist built 19:17 local), fetched with cache:'reload' and confirmed as the asset the served index.html references. Note that grepping a bundle for 'time_continue' does NOT prove the fix is present: the pre-fix tree already contained that string in pipeline/graph.ts's local helper. The bundle was instead confirmed to contain zero occurrences of the old append idiom (`includes('?') ? '&' : '?'`), and behaviour was confirmed in the DOM.",
+    "THE NINE VIDEOS ARE THE RIGHT NINE. Independently enumerated from the persisted store (.yt-agent/chroma/chroma.sqlite3, distinct source_url values): 59 distinct source URLs, of which exactly 9 carry a seek param - by8wrrXW3So (t=51s), X4dEHRzBLmc (t=951s), omU3zR3K7-U (t=1s), cRz0BWkuwHg (t=19s), FU5_kpTAVDo (t=1871s), hgIonrdRTSE (t=141s), vpU9lZY69O4 (t=308s), fD0E57QYSPk (t=103s), 5N-okeDdIuI (t=2235s). No tenth was missed, and no stored URL uses 'start' or 'time_continue'. The builder's count of 9 is correct and the earlier verdict's estimate of 8 was low.",
+    "COVERAGE OF THE NINE ON THE THEMES SURFACE. Eight of the nine appear in at least one theme and were verified there. X4dEHRzBLmc ('Judge the Judge', an AI Engineer conference talk) is a member of no theme in the current 30-theme artifact, so it cannot be checked on V4's own surface; it was verified instead in RAG Pipeline -> Corpus & retrieval (34 chunk links, all single-t, all matching, pp preserved) and in the Chunk graph focus panel (t=1244s for 'open at 20:44').",
+    "THE VideoDetail t=91 BUG WAS REAL AND IS FIXED. HEAD's pipeline/VideoDetail.tsx:18 emitted `t=${seconds}` with no 's' suffix, so the acceptance script's WATCH regex ([?&]t=(\\d+)s) would not have matched a single link on that panel - a second, independent defect the earlier verdict did not catch because it only walked the Themes tab. All 34 rendered links on the video detail panel now carry a suffixed t=<n>s.",
+    "SPOT-CHECKS AT THE OTHER CALL SITES THE SHARED HELPER TOUCHED. (a) pipeline/VideoDetail.tsx - X4dEHRzBLmc opened: 34 links, 0 with more than one t, 0 missing the 's' suffix, 0 whose offset disagrees with the label, and the pp=ygUObGxtIGFzIGEganVkZ2U%3D blob survives byte-for-byte (the %3D is not re-encoded, confirming the string-editing approach over URL/URLSearchParams). (b) pipeline/ChunkGraphView.tsx - 151 nodes clicked covering 36 distinct videos; 6 of the 9 seek-param videos surfaced (by8wrrXW3So 22:41->1361s, X4dEHRzBLmc 20:44->1244s, fD0E57QYSPk 0:52->52s, FU5_kpTAVDo 13:59->839s, omU3zR3K7-U 0:00->0s, vpU9lZY69O4 20:08->1208s), all single-t and all matching. No regression from dropping graph.ts's local chunkTimestampUrl. (c) pipeline/KnowledgeGraphView.tsx COULD NOT be exercised: /api/graph/knowledge returns HTTP 503 in this environment (no Neo4j), so the view renders only the error card and emits no kg-claimlink. Its call site was reviewed in source and its 7 unit tests pass, but this verdict carries no rendered evidence for it.",
+    "SUPPORTING (not a substitute for the DOM evidence above): vitest over the five affected files passes 78/78 - answers/render.test.ts 33, pipeline/graph.test.ts 14, ThemesView.test.tsx 9, KnowledgeGraphView.test.tsx 7, ChunkGraphView.test.tsx 15. `npm run build` still fails at tsc -b on src/experiments/CritiquePanel.test.tsx, which is another agent's in-flight file and unrelated to V4; `npx vite build` succeeds.",
+    "No uncaught frontend errors were observed in the console during the walk.",
     "'.th-chunkpreview' is deliberately white-space: nowrap and is excluded from the clipping probe: it is a fixed-length collapsed excerpt whose full text is one click away in .th-chunkbody. That is the only nowrap field in the theme CSS and the comment at styles.ts:135 says so explicitly.",
-    "The timestamp defect is not new to V4: frontend/src/pipeline/VideoDetail.tsx:18, KnowledgeGraphView.tsx:22 and pipeline/graph.ts:123 build the URL the same way. src/rag/packs.py:574 builds it correctly from video_id and start_seconds.",
-    "The frontend gate is the only one of the four gate items this file covers. Cluster spread, property purity, the intruder probe and determinism were checked against the artifact and the stored embeddings, not through the UI."
+    "Layout width was varied by constraining .app rather than by resizing the window (the extension's resize does not change innerWidth, which stayed at 1158px in this session). Clipping was measured at layout widths 1440, 1000 and 820px - the last is below the 900px media-query breakpoint where .th-layout collapses to one column - plus the native 1158px.",
+    "The corpus has grown to 59 videos / 1460 chunks since the previous verdict, but the themes artifact is still the 53-video / 1329-chunk build, which is what the list header states. That is a staleness question for the theme build, not a V4 frontend defect, and is outside the 24 checks."
   ]
 }

@@ -9,6 +9,8 @@ import type {
 } from '../api/types';
 import { CritiquePanel } from './CritiquePanel';
 import { MatrixRunPanel } from './MatrixRunPanel';
+import { PackPanel } from './PackPanel';
+import { ResearchPanel } from './ResearchPanel';
 import { useExperimentStyles } from './styles';
 
 /** 3-decimal fixed, or an em dash for a metric a run did not report. */
@@ -334,6 +336,15 @@ export function ExperimentsView() {
         </p>
 
         <MatrixRunPanel onRunFinished={() => void load()} />
+
+        {/* Reads experts/ rather than evals/runs/, so it renders whether or not
+            any eval run is committed — and it loads independently of the
+            /api/experiments call below. */}
+        <PackPanel />
+
+        {/* The offline build loop that produced one of those packs a second
+            way. Renders nothing at all for a topic no loop has been run for. */}
+        <ResearchPanel />
 
         {error && <p className="exp-empty">Could not load experiments: {error}</p>}
 

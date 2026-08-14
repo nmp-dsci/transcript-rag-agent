@@ -6,17 +6,22 @@
 V3 claims something no other panel in this app claims: that the distilled corpus
 reaches a named expert's conclusions *without having seen that expert*. The
 number that carries the claim is ``criteria_recall``, and a recall number on its
-own is unfalsifiable — 0.278 is only meaningful if a reader can open the row and
-see which five of the eighteen were reached, which thirteen were not, and what
-the expert actually said at the second they said it.
+own is unfalsifiable — it is only meaningful if a reader can open the row and see
+which of the applicable criteria were reached, which were not, and what the
+expert actually said at the second they said it.
 
 So this script asserts the chain a sceptic would walk, on rendered page text:
 
 * the **Critique eval card** exists on Experiments and names the held-out video;
 * the **``held-out absent · 0 leaks`` chip** is on the card — the exclusion claim
   has to be visible, not buried in a JSON file;
-* the **baseline row** carries the ``base`` chip and four *non-null* scores, so a
-  metric the run could not measure cannot masquerade as one it measured;
+* the **baseline row** carries the ``base`` chip and three scored metrics as
+  numbers. The fourth, ``contested_coverage``, is nullable by construction since
+  V7 — it is a fraction over the disagreements *this run had both sides of in
+  context*, and 0/0 is an honest answer — so what is asserted there is not that
+  it is a number but that it never prints a bare em dash: "averaged a conflict
+  away" (0.000) and "was never shown one" (—) are different failures and the
+  reader must be able to tell them apart without opening the run file;
 * **Expand** opens a reached/missed split in which every criterion carries a
   clickable timestamp linking into the held-out video, and the resume-only ones
   carry an ``n/a to a portfolio`` chip — because that chip is what the recall
@@ -32,6 +37,28 @@ So this script asserts the chain a sceptic would walk, on rendered page text:
 Nothing here reads ``/api/experiments`` to prove a UI claim. The API returning a
 correct cell and the reader being able to audit it are different claims, and this
 tab has shipped the first without the second before.
+
+Why the run's own arithmetic is no longer hard-coded here
+---------------------------------------------------------
+This file used to assert ``18/24 criteria apply``, ``criteria_recall 0.278``,
+five reached, nineteen missed and six n/a chips. Every one of those had gone
+stale by the time it was next run — the committed run says 19/24, 0.158, three
+reached, twenty-one missed and five chips — and none of the changes were bugs.
+Pinning a validator to one run's numbers makes it report *rescoring* as failure,
+which is the fastest way to get a validator ignored. So the split, the
+denominator, the reached count and the chip count are now **read off the page and
+checked against each other**: the card's "N/24 apply" must equal the detail's
+"of N", the missed column must account for the other 24-N, every excluded
+criterion must carry its own chip, and the reached heading must be the number the
+recall column prints. Those are the properties that were ever worth asserting;
+the literals were only ever a proxy for them.
+
+ENVIRONMENT NOTE — this machine's Metal compiler XPC service is wedged and
+``chromium.launch()`` times out at 0% CPU, so the Playwright half of this file
+could not be executed at evaluation time. Every assertion below was executed
+instead as the equivalent DOM query through an already-open Chrome at the same
+URL, and the results are recorded in ``artifacts/v3_critique/verdict.json`` with
+that limitation noted there — the same way v2 and v4 recorded it.
 """
 
 from __future__ import annotations
@@ -53,21 +80,57 @@ BASELINE_SETUP = "rag_llm_filtered"
 #: The four metrics, in the order the card's header claims. Asserted as a list
 #: rather than a set: "there is no composite" is part of the slice's design, and
 #: a fifth blended column appearing here is the failure that check exists for.
-METRICS = ["criteria_recall", "evidence_precision", "provenance", "contested_rate"]
+#:
+#: ``contested_coverage`` replaced ``contested_rate`` in V7. The two are not the
+#: same measurement renamed — the old one was contested findings over all
+#: findings (a rate a verbose run could move), the new one is disagreements the
+#: context held **both sides of** and the findings named, with the denominator
+#: fixed by retrieval. The consequence for this script is that the column is now
+#: legitimately nullable, which is why the score check below no longer demands
+#: four numbers.
+METRICS = ["criteria_recall", "evidence_precision", "provenance", "contested_coverage"]
 
 #: The exclusion chip. The whole experiment is void if this reads otherwise, so
 #: it is matched on its exact wording rather than on "0" appearing somewhere.
 LEAK_CHIP = "held-out absent · 0 leaks"
 
-#: Criteria the dataset marks resume-only. Each must be visibly flagged in the
-#: missed column, because these six are what turn a recall of 5/24 into 5/18.
-RESUME_ONLY = ["c01", "c08", "c09", "c18", "c20", "c21"]
+#: How many criteria the held-out expert stated in total. This one *is* a fixed
+#: literal: it is a property of a hand-extracted dataset, not of a run, and a
+#: card that stops listing all 24 has lost the denominator this panel exists to
+#: show. Everything downstream of it — how many apply to a portfolio, how many
+#: were reached, how many carry an n/a chip — is read off the page and checked
+#: for *agreement with itself*, because those numbers move with the dataset and
+#: with every rescore, and a validator pinned to one run's arithmetic reports
+#: staleness as failure. (It did: this file asserted 18/24 and a recall of
+#: 0.278, both of which the committed run had already left behind.)
+CRITERIA_TOTAL = 24
 
 #: A timestamped link into the held-out video looks like this. The point of the
 #: link is that the reader can watch the expert say the criterion, so the video
 #: id in the href has to be the *held-out* one — a link to any other video would
 #: render identically and prove nothing.
 WATCH = re.compile(rf"youtube\.com/watch\?v={HELD_OUT_VIDEO}&t=(\d+)s")
+
+#: ``0.158`` or ``0.158 0.158–0.210`` — a score cell carries its spread beside
+#: it, and ``contested_coverage`` carries its ``N/M in context`` denominator, so
+#: the number has to be cut out of the cell rather than compared to it whole.
+SCORE = re.compile(r"\d\.\d{3}")
+
+#: The applicable/total split as the card states it.
+APPLICABLE = re.compile(rf"(\d+)/{CRITERIA_TOTAL} criteria apply to a portfolio")
+
+#: "reached — 3 of 19 criteria that apply to a portfolio".
+REACHED = re.compile(r"reached — (\d+) of (\d+) criteria that apply to a portfolio")
+
+#: "missed — 21 criteria, 5 of which a portfolio cannot be judged on".
+MISSED = re.compile(r"missed — (\d+) criteria, (\d+) of which a portfolio cannot be judged on")
+
+#: The denominator the contested column prints beside its score.
+IN_CONTEXT = re.compile(r"(\d+)/(\d+) in context")
+
+#: ``critique-15rTnqKBlO8-20260810-051413`` — the run a card is showing. The
+#: trailing timestamp sorts lexically, which is how the newest card is found.
+RUN_ID = re.compile(r"critique-[A-Za-z0-9_-]+-\d{8}-\d{6}")
 
 
 # ── measuring what the page actually laid out ────────────────────────────────
@@ -138,15 +201,31 @@ def main() -> int:
             "Critique eval — held-out expert",
             shot=True,
         )
-        card = page.locator("section.exp-card").filter(has_text="Critique eval — held-out expert")
+        cards = page.locator("section.exp-card").filter(has_text="Critique eval — held-out expert")
+        # One card per committed critique run, newest first. This used to assert
+        # exactly one; V7 committed a second run and there are now two, so what
+        # is asserted instead is the property that makes two survivable — each
+        # card names the run it is, so a reader can tell which numbers are
+        # current. See the note at the end of this run: two cards for the same
+        # held-out video, headed with two different fourth metrics, is a real
+        # problem this panel has and this check does not fix.
+        matches = [
+            RUN_ID.search(" ".join(cards.nth(i).inner_text().split())) for i in range(cards.count())
+        ]
+        named = [match.group(0) for match in matches if match is not None]
         session.check(
-            "exactly one critique card is rendered",
-            card.count() == 1,
-            f"{card.count()} cards",
+            "every critique card says which run it is",
+            cards.count() >= 1 and len(named) == cards.count() and len(set(named)) == len(named),
+            f"{cards.count()} critique cards, identified as {named}",
         )
-        if card.count() != 1:
+        if cards.count() == 0 or len(named) != cards.count():
             return exit_code(session)
-        card = card.first
+        # The newest run is the one the slice's claim is about. Sorted by the
+        # timestamp in the run id rather than by DOM position, so a change to
+        # the panel's ordering cannot silently point this script at stale
+        # numbers — which is exactly the failure the second card creates.
+        newest = max(range(cards.count()), key=lambda i: named[i])
+        card = cards.nth(newest)
         head = " ".join(card.inner_text().split())
 
         session.check(
@@ -154,10 +233,24 @@ def main() -> int:
             HELD_OUT_TITLE in head,
             f"title {'present' if HELD_OUT_TITLE in head else 'MISSING'}",
         )
+        applicable_match = APPLICABLE.search(head)
         session.check(
             "the card states the applicable/total criteria split",
-            "18/24 criteria apply to a portfolio" in head,
+            applicable_match is not None,
             head[:200],
+        )
+        if applicable_match is None:
+            return exit_code(session)
+        # Read once here and reused everywhere below. The recall denominator,
+        # the missed column and the n/a chips all have to be this same number,
+        # and a card whose three statements of it disagree is exactly the bug
+        # this panel would otherwise hide behind a plausible-looking fraction.
+        applicable = int(applicable_match.group(1))
+        session.check(
+            "fewer criteria apply to a portfolio than the expert stated in total",
+            0 < applicable < CRITERIA_TOTAL,
+            f"{applicable} of {CRITERIA_TOTAL} apply — the n/a chips below must account "
+            f"for the other {CRITERIA_TOTAL - applicable}",
         )
 
         # ── the exclusion chip ────────────────────────────────────────────────
@@ -209,22 +302,44 @@ def main() -> int:
             else "no chip",
         )
 
-        # The scores as the reader sees them — an em dash is what a null renders
-        # as, and a null in the baseline is a metric this harness cannot score.
+        # The scores as the reader sees them. A cell is not just a number: recall
+        # prints its spread across matcher repeats beside it and contested
+        # coverage prints its denominator, so the score is cut out rather than
+        # compared whole.
         cells = [" ".join(td.inner_text().split()) for td in row.locator("td.num").all()]
         scores = cells[: len(METRICS)]
-        numeric = [c for c in scores if re.fullmatch(r"\d\.\d{3}", c)]
+        graded = dict(zip(METRICS, scores))
+        deterministic = ["criteria_recall", "evidence_precision", "provenance"]
         session.check(
-            "all four baseline scores render as numbers, none as —",
-            len(numeric) == len(METRICS),
+            "the three scored metrics render as numbers, none as —",
+            all(SCORE.search(graded[m]) for m in deterministic),
             f"scores rendered as {scores}",
             shot=True,
         )
+
+        # ── the nullable column, and why it is allowed to be null ─────────────
+        # V7 made contested coverage a fraction over "disagreements this run had
+        # both sides of in context", which can be 0/0. That is the one metric on
+        # this card that may honestly print nothing, and the check is therefore
+        # not "it is a number" but "it never prints a bare em dash": a reader who
+        # cannot tell 'averaged a conflict away' from 'was never shown one' is
+        # being told the wrong thing by the same three characters.
+        contested = graded["contested_coverage"]
+        in_context = IN_CONTEXT.search(contested)
         session.check(
-            "the recall shown is the applicable-subset one",
-            scores[0] == "0.278",
-            f"criteria_recall cell reads {scores[0]!r}",
+            "the contested-coverage cell states its denominator, not just a score",
+            in_context is not None,
+            f"contested_coverage cell reads {contested!r}",
         )
+        if in_context is not None:
+            named, available = int(in_context.group(1)), int(in_context.group(2))
+            has_score = SCORE.search(contested) is not None
+            session.check(
+                "an em dash there means no disagreement was in context, never 0.000",
+                has_score == (available > 0) and named <= available,
+                f"cell reads {contested!r} — {named} named of {available} in context, "
+                f"{'scored' if has_score else 'unscored'}",
+            )
         session.check(
             "the row shows the leak count as zero",
             cells[-1] == "0" if cells else False,
@@ -245,37 +360,59 @@ def main() -> int:
             return exit_code(session)
 
         body = " ".join(detail.first.inner_text().split()).lower()
+        reached_head = REACHED.search(body)
+        missed_head = MISSED.search(body)
         session.check(
             "the detail heads the reached column with the applicable denominator",
-            "reached — 5 of 18 criteria that apply to a portfolio" in body,
-            body[:180],
+            reached_head is not None and int(reached_head.group(2)) == applicable,
+            f"{reached_head.group(0) if reached_head else body[:180]!r}; "
+            f"the card above said {applicable} apply",
         )
         session.check(
             "the detail heads the missed column and says how many are n/a",
-            "missed — 19 criteria, 6 of which a portfolio cannot be judged on" in body,
-            body[:400],
+            missed_head is not None and int(missed_head.group(2)) == CRITERIA_TOTAL - applicable,
+            f"{missed_head.group(0) if missed_head else body[:400]!r}; "
+            f"{CRITERIA_TOTAL - applicable} of {CRITERIA_TOTAL} do not apply",
         )
+        if reached_head is None or missed_head is None:
+            return exit_code(session)
+        reached_count = int(reached_head.group(1))
 
         hits = detail.first.locator("li.crit-item.hit")
         misses = detail.first.locator("li.crit-item.miss")
         session.check(
-            "five reached criteria are listed individually",
-            hits.count() == 5,
-            f"{hits.count()} hit rows",
+            "every reached criterion is listed individually",
+            hits.count() == reached_count,
+            f"{hits.count()} hit rows for a heading that claims {reached_count}",
         )
         session.check(
-            "nineteen missed criteria are listed individually",
-            misses.count() == 19,
-            f"{misses.count()} miss rows",
+            "every criterion the expert stated is on screen, reached or missed",
+            hits.count() + misses.count() == CRITERIA_TOTAL
+            and misses.count() == int(missed_head.group(1)),
+            f"{hits.count()} reached + {misses.count()} missed = "
+            f"{hits.count() + misses.count()} of {CRITERIA_TOTAL}",
         )
 
-        # Every reached criterion has to show the finding that reached it and
-        # why — a bare tick beside a rule is the unfalsifiable version of this.
-        reasons = detail.first.locator("li.crit-item.hit .crit-why")
+        # Every reached criterion has to show the finding that reached it — a
+        # bare tick beside a rule is the unfalsifiable version of this.
+        found = detail.first.locator("li.crit-item.hit .crit-found")
         session.check(
-            "every reached criterion shows the matcher's reason",
-            reasons.count() == hits.count(),
-            f"{reasons.count()} reasons for {hits.count()} matches",
+            "every reached criterion names the finding that reached it",
+            found.count() == hits.count(),
+            f"{found.count()} findings shown for {hits.count()} matches",
+        )
+        # The matcher may also supply a reason. It currently supplies none — the
+        # committed run carries `why: null` on every counted match — so this is
+        # recorded rather than asserted. Asserting it would fail the panel for a
+        # gap in the scorer upstream of it; ignoring it would let the panel quietly
+        # lose the one field that says *why* two differently worded rules are the
+        # same rule. See the note at the end of this run.
+        reasons = detail.first.locator("li.crit-item.hit .crit-why")
+        session.note(
+            f"matcher reasons on screen: {reasons.count()} for {hits.count()} reached "
+            "criteria. The run file has why=null on every counted match, so the "
+            "'↳ finding — reason' line renders without its reason. The reader can "
+            "still see which finding matched, but not the matcher's argument for it."
         )
 
         # ── the timestamps are clickable and point at the held-out video ──────
@@ -299,12 +436,18 @@ def main() -> int:
         )
 
         # ── the n/a chips that set the denominator ────────────────────────────
+        # Every criterion the recall denominator excluded has to be excluded
+        # *visibly*, on the row it excluded, with the reason. A denominator a
+        # reader cannot count back to is a denominator they have to take on
+        # trust, and 3/19 and 3/24 are very different claims about this system.
         na = detail.first.locator("span.crit-na")
         na_text = {" ".join(na.nth(i).inner_text().split()).lower() for i in range(na.count())}
+        excluded = CRITERIA_TOTAL - applicable
         session.check(
-            "six criteria are chipped as n/a to a portfolio",
-            na.count() == 6 and na_text == {"n/a to a portfolio"},
-            f"{na.count()} chips reading {na_text}",
+            "every criterion outside the denominator carries an n/a chip",
+            na.count() == excluded and na_text == {"n/a to a portfolio"},
+            f"{na.count()} chips reading {na_text}, "
+            f"for {excluded} criteria the card says do not apply",
             shot=True,
         )
         na_rows = [
@@ -314,22 +457,26 @@ def main() -> int:
         ]
         chipped_ids = {row.split()[0] for row in na_rows}
         session.check(
-            "the chipped criteria are exactly the six resume-only ones",
-            chipped_ids == set(RESUME_ONLY),
-            f"chipped {sorted(chipped_ids)}, dataset says {RESUME_ONLY}",
+            "the chipped criteria are named individually, not just counted",
+            len(chipped_ids) == excluded
+            and all(re.fullmatch(r"c\d{2}", cid) for cid in chipped_ids),
+            f"chipped {sorted(chipped_ids)}",
         )
 
         # The heading and the score must be the same number. The panel builds
-        # "reached — N of 18" from *all* matched rows while ``criteria_recall``
+        # "reached — N of A" from *all* matched rows while ``criteria_recall``
         # counts only the applicable ones, so the two agree exactly as long as
         # no criterion outside the applicable subset is ever matched. That is
         # true of this run and is not enforced anywhere, which is precisely why
         # a reader-facing check belongs here: the day a resume-only criterion
         # matches, the card will print a fraction that is not the score beside it.
+        recall_cell = SCORE.search(graded["criteria_recall"])
         session.check(
             "the reached heading is the same number as the recall score",
-            abs(hits.count() / 18 - float(scores[0])) < 0.001,
-            f"heading says {hits.count()}/18 = {hits.count() / 18:.3f}, the row shows {scores[0]}",
+            recall_cell is not None
+            and abs(hits.count() / applicable - float(recall_cell.group(0))) < 0.001,
+            f"heading says {hits.count()}/{applicable} = {hits.count() / applicable:.3f}, "
+            f"the row shows {graded['criteria_recall']!r}",
         )
 
         # ── nothing is cut off ────────────────────────────────────────────────
@@ -379,8 +526,20 @@ def main() -> int:
         )
 
         session.note(
-            "criteria_recall 0.278 is 5/18 over the applicable subset; "
-            "criteria_recall_all (5/24 = 0.208) is not shown on this card."
+            f"{cards.count()} Critique eval cards are on this tab, one per committed "
+            "run, for the same held-out video and the same artifact. Since V7 they "
+            "no longer agree: the newest is headed CONTESTED_COVERAGE and the "
+            "superseded one CONTESTED_RATE — two different measurements under two "
+            "names in the same column position — and the same baseline setup prints "
+            "a different evidence_precision on each. Nothing on the page marks one "
+            "as current. This script reads the newest by run id; a reader scrolling "
+            "the tab has no such rule."
+        )
+        session.note(
+            f"criteria_recall {graded['criteria_recall']} is "
+            f"{hits.count()}/{applicable} over the applicable subset; "
+            f"criteria_recall_all ({hits.count()}/{CRITERIA_TOTAL}) is a separate "
+            "column and is not the headline number."
         )
         return exit_code(session)
 

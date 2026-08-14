@@ -375,6 +375,57 @@ def theme_detail(
     }
 
 
+def list_conflicts(conflict_path: Path) -> dict[str, Any]:
+    """The disagreement layer: every conflict, its axis, and both sides.
+
+    One payload rather than a list plus a detail route, unlike the themes above.
+    A theme carries hundreds of member chunks and would be wasteful to send
+    whole; a conflict is an axis and two quotes, the whole artifact is tens of
+    kilobytes, and splitting it would mean a reader could see a list of axes
+    before the evidence loaded — which is the one state this view must never be
+    in, because an axis without both quotes beside it is exactly the "the corpus
+    says X" summary the layer exists to prevent.
+
+    The probes ship with it for the same reason. A count of disagreements is
+    only worth reading next to the evidence that the adjudicator which produced
+    it was, on that run, still capable of saying "complementary" — so the
+    calibration results travel to the UI rather than staying in a build log.
+
+    A missing artifact is not an error: the layer is optional derived state, and
+    the build command goes back with the empty payload.
+    """
+    from src.rag.conflicts import ConflictStore
+
+    empty: dict[str, Any] = {
+        "conflicts": [],
+        "stats": {},
+        "probes": [],
+        "generated_at": None,
+        "adjudicator_model": None,
+        "embedding_model": None,
+        "config": {},
+        "corpus": {},
+        "build_command": "uv run python -m src.cli index-conflicts",
+    }
+    index = ConflictStore(conflict_path).load()
+    if index is None:
+        return empty
+    return {
+        "conflicts": [conflict.model_dump(mode="json") for conflict in index.conflicts],
+        "stats": index.stats,
+        "probes": index.probes,
+        "generated_at": index.generated_at,
+        "adjudicator_model": index.adjudicator_model,
+        "embedding_model": index.embedding_model,
+        "config": index.config,
+        # The population the count was taken over. Travels to the UI because a
+        # conflict count is a measurement of a corpus, and this one moved from
+        # 1372 to 1792 chunks while the layer was being built.
+        "corpus": index.corpus,
+        "build_command": "uv run python -m src.cli index-conflicts",
+    }
+
+
 def load_chunk_corpus(
     chroma_path: Path,
     chunk_collection: str = "transcript_chunks",

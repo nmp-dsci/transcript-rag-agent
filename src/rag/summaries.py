@@ -28,8 +28,7 @@ generic filler. Return only JSON in this shape:
 
 
 class ChatModel(Protocol):
-    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object:
-        ...
+    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object: ...
 
 
 class TranscriptSummaryGenerator:
@@ -44,9 +43,7 @@ class TranscriptSummaryGenerator:
         self.max_transcript_chars = max_transcript_chars
 
     def summarize(self, raw_document: RawTranscriptDocument) -> str:
-        transcript_text = " ".join(
-            segment.text for segment in raw_document.segments
-        ).strip()
+        transcript_text = " ".join(segment.text for segment in raw_document.segments).strip()
         if len(transcript_text) > self.max_transcript_chars:
             half = self.max_transcript_chars // 2
             transcript_text = f"{transcript_text[:half]}\n...\n{transcript_text[-half:]}"
@@ -192,6 +189,14 @@ class TranscriptSummaryStore:
                 }
             )
         )
+
+    def count(self) -> int:
+        """How many summarised videos this store could route to.
+
+        The upper bound on "no cap": a filter allowed to keep every video above
+        the score threshold can never keep more than this.
+        """
+        return max(self.collection.count() - len(self.exclude_video_ids), 0)
 
     def query_relevant_transcripts(
         self,

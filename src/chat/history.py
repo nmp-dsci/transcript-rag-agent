@@ -61,6 +61,13 @@ class ChatAnswer:
     # Ordered execution steps (serialized TraceSteps) for this answer. Empty on
     # entries written before tracing existed; the UI only renders it when set.
     trace: list[dict[str, Any]] = field(default_factory=list)
+    # Per-rubric verdicts, on answers produced by the rubric reviewer. Unlike
+    # the reviewed document itself this is safe to commit: it names rubric ids,
+    # verdicts and the corpus timestamps behind them, and quotes the *creator*
+    # rather than the user's page. The finding text can name a section, so it
+    # carries whatever phrase the reviewer quoted — which is the same exposure
+    # the answer prose already has.
+    rubric_review: dict[str, Any] | None = None
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -86,6 +93,7 @@ class ChatAnswer:
             retrieval_mode=result.retrieval_mode,
             followups=list(result.followups),
             trace=list(result.trace),
+            rubric_review=result.rubric_review,
         )
 
 

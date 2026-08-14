@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from langchain_openai import ChatOpenAI
 
@@ -50,6 +51,7 @@ from src.rag.ingestion import (
     start_ingestion_run,
     write_ingestion_run,
 )
+from src.rag.deep_research import DEFAULT_GAP_PROBES, DEFAULT_ROUND_ONE_PROBES
 from src.rag.packs import PACK_ARMS
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
 from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
@@ -178,19 +180,36 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Comma-separated setup keys to measure, baseline first "
-            "(default: rag_llm_filtered, the summary-filtered chunk dump)"
+            "(default: rag_llm_filtered, the summary-filtered chunk dump). "
+            "rag_conflict_aware appends both sides of a known disagreement; "
+            "rubric_packs is the rubric-driven reviewer, which runs no retrieval "
+            "and judges the artifact against the shipped expert packs"
         ),
     )
     critique.add_argument(
         "--rescore",
         default=None,
-        metavar="RUN_ID",
+        metavar="RUN_ID_OR_PATH",
         help=(
             "Re-score a committed run's stored findings under the current scorer "
             "instead of retrieving and critiquing again. Use when the scoring rule "
             "changed and the old number is no longer comparable — re-running the "
             "whole thing would change the findings too, so the two effects could "
-            "not be told apart"
+            "not be told apart. A bare id names a file in evals/runs/; a path "
+            "ending in .json is read as written, so a committed run that lives "
+            "elsewhere (experts/ablation.json) re-scores under the same rule"
+        ),
+    )
+    critique.add_argument(
+        "--in-place",
+        action="store_true",
+        help=(
+            "Write the re-scored run back over its source instead of committing a "
+            "second file, keeping its run id, timestamp and envelope. Use when the "
+            "old file's numbers are ones the project no longer stands behind: a "
+            "stale run left in evals/runs/ is read by the app as a current "
+            "measurement. Nothing is lost — the published figures stay on every "
+            "cell as criteria_recall_ungated / evidence_precision_ungated"
         ),
     )
     critique.add_argument(
@@ -407,16 +426,48 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Adjudication budget, highest-similarity pairs first. Raising it "
             "cannot raise conflict_precision — that is conflicts over pairs "
-            "adjudicated (default: 240)"
+            "adjudicated. The default is set above the pool this corpus "
+            "produces, so every candidate is adjudicated and none is excluded "
+            "by budget (default: 600)"
         ),
     )
     index_conflicts.add_argument(
-        "--allow-within-creator",
+        "--allow-within-channel",
         action="store_true",
         help=(
-            "Also adjudicate pairs of videos by the same creator. Off by "
+            "Also adjudicate pairs of videos from the same channel. Off by "
             "default: one person qualifying themselves is not a corpus "
             "disagreement"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--adjudicate-repeats",
+        type=int,
+        default=None,
+        help=(
+            "Times each corpus pair is put to the adjudicator before it is "
+            "believed; a strict majority carries and the tally ships on the "
+            "card. 1 is a single draw, which is what the first sweep did and "
+            "why three of its four conflicts did not reproduce (default: 9)"
+        ),
+    )
+    index_conflicts.add_argument(
+        "--max-workers",
+        type=int,
+        default=8,
+        help="Concurrent adjudication calls (default: 8)",
+    )
+    index_conflicts.add_argument(
+        "--resume-key",
+        default=None,
+        help=(
+            "Cache each (pair, look) under this name so a killed sweep resumes "
+            "instead of restarting. At 9 looks a sweep is thousands of calls "
+            "and the artifact is only written at the end, so a kill near the "
+            "finish costs everything. Reuse the key to resume a run; use a NEW "
+            "key to measure again — reusing one would replay the first run's "
+            "answers and manufacture agreement between two runs that never "
+            "independently happened. Off by default"
         ),
     )
 
@@ -556,8 +607,9 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=8,
         help=(
-            "Source units per arm, capped to the smaller pool so every arm "
-            "spends the same number of LLM calls (default: 8)"
+            "Source units per arm, capped to the smaller pool of units that "
+            "clear the creator floor, so every arm spends the same number of "
+            "LLM calls (default: 8)"
         ),
     )
     build_packs.add_argument(
@@ -590,6 +642,73 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     score_packs.add_argument(
+        "--repeats",
+        type=int,
+        default=5,
+        help="Matcher repeats resolved by per-criterion vote (default: 5)",
+    )
+
+    deep_research = subparsers.add_parser(
+        "deep-research",
+        help=(
+            "Build one pack the slow way — plan, execute, criticise, republish — "
+            "and write the build report to experts/<topic>/research.json. Also "
+            "builds the one-shot control that spends the same executor budget "
+            "without the critic, which is what the loop has to beat."
+        ),
+    )
+    deep_research.add_argument(
+        "--topic",
+        default="resume-design",
+        help=(
+            "Pack to build. Only a pack whose artifact the held-out expert "
+            "reviews can be scored (default: resume-design)"
+        ),
+    )
+    deep_research.add_argument(
+        "--probes",
+        type=int,
+        default=DEFAULT_ROUND_ONE_PROBES,
+        help=(
+            "Executor calls in round one. Defaults to the unit budget the "
+            "hand-built arms spent, so round one and the shipped pack cost the "
+            f"same (default: {DEFAULT_ROUND_ONE_PROBES})"
+        ),
+    )
+    deep_research.add_argument(
+        "--gap-probes",
+        type=int,
+        default=DEFAULT_GAP_PROBES,
+        help=(
+            "Probes the critic's round gets, and equally the extra probes the "
+            f"one-shot control gets (default: {DEFAULT_GAP_PROBES})"
+        ),
+    )
+    deep_research.add_argument(
+        "--frontier",
+        action="store_true",
+        help=(
+            "Skip the three-arm build and add V8's frontier round instead: a "
+            "coverage-aware gap critic, round-two retrieval forbidden to re-read "
+            "round one's ground, and rules admitted only when they rest on a "
+            "passage no admitted rule rests on. Also writes the deep-r2-admit "
+            "ablation, which spends no call"
+        ),
+    )
+    deep_research.add_argument(
+        "--score",
+        action="store_true",
+        help=(
+            "After building, score every arm and the hand-built pack on the "
+            "held-out critique harness and fold the table into the report"
+        ),
+    )
+    deep_research.add_argument(
+        "--score-only",
+        action="store_true",
+        help="Skip the build and score the arms already on disk",
+    )
+    deep_research.add_argument(
         "--repeats",
         type=int,
         default=5,
@@ -919,12 +1038,15 @@ def _run_index_conflicts(args, settings) -> int:
     guessed at.
     """
     from src.rag.conflicts import (
+        DEFAULT_ADJUDICATE_REPEATS,
         ConflictConfig,
+        AdjudicationCache,
         ConflictStore,
         LlmAdjudicator,
         build_conflicts,
         candidate_pairs,
         claims_from_chunks,
+        corpus_fingerprint,
         probes_passed,
         run_probes,
     )
@@ -982,12 +1104,15 @@ def _run_index_conflicts(args, settings) -> int:
         return [claim.text for claim in extraction.claims]
 
     claims = claims_from_chunks(chunks, claim_texts)
+    corpus = corpus_fingerprint(chunks)
     print(
-        f"{len(chunks)} chunks, {len(claims)} claims ({missing} chunks with no cached extraction)"
+        f"{corpus['videos']} videos, {len(chunks)} chunks (digest {corpus['digest']}), "
+        f"{len(claims)} claims ({missing} chunks with no cached extraction)"
     )
 
     config = ConflictConfig(
-        cross_creator_only=not args.allow_within_creator,
+        cross_channel_only=not args.allow_within_channel,
+        adjudicate_repeats=max(1, args.adjudicate_repeats or DEFAULT_ADJUDICATE_REPEATS),
         **({"max_candidates": args.max_candidates} if args.max_candidates else {}),
     )
 
@@ -1011,18 +1136,44 @@ def _run_index_conflicts(args, settings) -> int:
         embedding_model=settings.embedding_model,
         adjudicator_model=settings.deepseek_model,
         chunk_collection=settings.chunk_collection,
+        corpus=corpus,
         probe_repeats=max(1, args.probe_repeats),
+        cache=(
+            AdjudicationCache(settings.chroma_path.parent / "conflict_cache", args.resume_key)
+            if args.resume_key
+            else None
+        ),
+        max_workers=max(1, args.max_workers),
         on_progress=print,
     )
 
     stats = index.stats
     print("\nDisagreement layer built")
     print(
-        f"  Conflicts:     {stats['conflicts']} ({stats['cross_creator_conflicts']} cross-creator)"
+        f"  Conflicts:     {stats['conflicts']} "
+        f"({stats['unanimous_conflicts']} unanimous, {stats['split_conflicts']} split; "
+        f"{stats['factual_conflicts']} factual)"
     )
-    print(f"  Adjudicated:   {stats['candidates_adjudicated']} candidate pairs")
+    print(
+        f"  Adjudicated:   {stats['candidates_adjudicated']} candidate pairs "
+        f"x {stats['adjudicate_repeats']} = {stats['adjudications']} calls"
+    )
+    print(
+        f"  Agreement:     {stats['verdict_agreement']} "
+        f"({stats['pairs_with_split_verdicts']} pairs drew more than one verdict)"
+    )
     print(f"  Precision:     {stats['conflict_precision']} (conflicts / pairs adjudicated)")
-    print(f"  Creators:      {stats['creators_involved']} across {stats['videos_involved']} videos")
+    print(f"  Channels:      {stats['channels_involved']} across {stats['videos_involved']} videos")
+    print(
+        f"  Corpus:        {corpus['videos']} videos / {corpus['chunks']} chunks "
+        f"(digest {corpus['digest']}); {index.corpus['chunks_with_claims']} chunks had claims"
+    )
+    if stats.get("subsample_counts_at_3") is not None:
+        print(
+            f"  Spread:        ±{stats['count_sd_estimate']} "
+            f"({stats['firm_conflicts']} firm, {stats['undecided_pairs']} pairs undecided); "
+            f"3-look sub-runs of this data: {stats['subsample_counts_at_3']}"
+        )
     print(f"  Rejected:      {stats['rejected']}")
     print(f"  Probes passed: {stats['probes_passed']}")
     if not stats["probes_passed"]:
@@ -1069,8 +1220,8 @@ def _run_build_packs(args, settings) -> int:
                 continue
             members = route_members(workspace, declaration, store.overrides(declaration.topic))
             videos = included_video_ids(members)
-            raptor = raptor_units(workspace.themes, videos)
-            communities = community_units(workspace.extractions, videos)
+            raptor = raptor_units(workspace.themes, videos, workspace.by_chunk)
+            communities = community_units(workspace.extractions, videos, workspace.by_chunk)
             print(
                 f"\n{declaration.topic}: {len(videos)} videos · "
                 f"raptor {len(raptor)} units · communities {len(communities)} units · "
@@ -1108,6 +1259,26 @@ def _run_build_packs(args, settings) -> int:
     return 0
 
 
+def _verdict_weight(verdict: dict) -> str:
+    """How much weight a metric's lead carries, in the words the verdict earned.
+
+    Kept next to its two callers rather than in ``pack_ablation`` because it is
+    presentation: the verdict itself carries ``basis``, and this only names it.
+    The fallback covers runs committed before ``basis`` existed.
+    """
+    basis = verdict.get("basis")
+    if basis is None:
+        return "decisive" if verdict.get("decisive") else "inside the scorer noise"
+    return {
+        "cleared-spread": "decisive",
+        "inside-spread": "inside the scorer noise",
+        "unrepeated": "scored once — reliability unmeasured",
+        "tied": "tied",
+        "single-arm": "no comparison",
+        "no-scored-arm": "not scored",
+    }.get(basis, basis)
+
+
 def _run_score_packs(args, settings) -> int:
     """D2: score one pack's three arms on the held-out critique harness."""
     from src.api.corpus import load_chunk_embeddings
@@ -1128,11 +1299,121 @@ def _run_score_packs(args, settings) -> int:
     for metric, verdict in run["verdicts"].items():
         print(
             f"  {metric}: {verdict.get('leader')} leads "
-            f"({'decisive' if verdict.get('decisive') else 'inside the scorer noise'}) "
+            f"({_verdict_weight(verdict)}) "
             f"— {verdict.get('reason')}"
         )
     path = PackStore("experts").save_ablation(run)
     print(f"\nsaved {path}")
+    return 0
+
+
+def _run_deep_research(args, settings) -> int:
+    """Build one pack through the plan → execute → criticise → republish loop.
+
+    The report is written whether or not the arms are scored, because the thing
+    worth reading first is not a number: it is what the gap critic said was
+    missing and which rules its probes actually produced. ``--score`` adds the
+    held-out table underneath, including the hand-built pack — which costs
+    nothing to include, since the matcher cache is keyed on the findings text
+    and the shipped pack's have not moved.
+    """
+    from src.api.corpus import load_chunk_embeddings
+    from src.evals.critique import format_table
+    from src.evals.regression import save_run
+    from src.rag.deep_research import (
+        attach_scores,
+        load_report,
+        run_deep_research,
+        run_frontier_round,
+        score_research,
+    )
+    from src.rag.packs import PackStore
+
+    store = PackStore("experts")
+    records = load_chunk_embeddings(settings.chroma_path, settings.chunk_collection)
+
+    if args.score_only:
+        report = load_report(store, args.topic)
+        if report is None:
+            print(f"No build report for {args.topic}. Run without --score-only first.")
+            return 1
+    elif args.frontier:
+        # Additive on purpose: the frontier arm has to be scored *beside* the
+        # arms it claims to beat, so it is built into the existing report rather
+        # than replacing a build whose three arms are already committed.
+        report = run_frontier_round(
+            settings,
+            topic=args.topic,
+            gap_probes_count=args.gap_probes,
+            records=records,
+            on_progress=print,
+        )
+        block = report["frontier"]
+        print("\nGaps the coverage-aware critic named after round 1")
+        for gap in block["gaps"]:
+            print(f"  {gap['gap_id']}: {gap['missing']}")
+            print(f"      probe: {gap['probe']}")
+        print("\nRules the frontier round added")
+        for row in block["diff"]["added"]:
+            print(f"  {row['rubric_id']} [{row['unit_id']}] {row['criterion']}")
+        print("\nRules refused for resting on no passage of their own")
+        for row in block["refused"]:
+            print(f"  {row['rubric_id']} {row['criterion']}")
+        print("\nRediscovery against the shipped pack")
+        for arm, row in block["rediscovery"].items():
+            print(
+                f"  {arm:<16} {row['rediscovered']}/{row['added']} added rules cite a chunk "
+                f"{row.get('shipped_arm')} already cites"
+            )
+    else:
+        report = run_deep_research(
+            settings,
+            topic=args.topic,
+            round_one_probes=args.probes,
+            gap_probes_count=args.gap_probes,
+            records=records,
+            on_progress=print,
+        )
+        print("\nGaps the critic named after round 1")
+        for gap in report["gaps"]:
+            print(f"  {gap['gap_id']}: {gap['missing']}")
+            print(f"      probe: {gap['probe']}")
+        print("\nRules round 2 added because of them")
+        for row in report["diff"]["added"]:
+            print(f"  {row['rubric_id']} [{row['unit_id']}] {row['criterion']}")
+        print("\nCall budget")
+        for row in report["budget"]:
+            print(
+                f"  {row['arm']:<14} planner {row['planner_calls']} · "
+                f"executor {row['executor_calls']}/{row['probes_budgeted']} · "
+                f"critic {row['critic_calls']} · total {row['total_llm_calls']} · "
+                f"{row['rubrics']} rubrics · {row['citations']} quotes"
+            )
+
+    if not (args.score or args.score_only):
+        print(f"\nsaved {store.topic_dir(args.topic) / 'research.json'}")
+        return 0
+
+    run = score_research(
+        settings, topic=args.topic, repeats=args.repeats, records=records, on_progress=print
+    )
+    print()
+    print(format_table(run))
+    for metric, verdict in run["verdicts"].items():
+        print(
+            f"  {metric}: {verdict.get('leader')} leads "
+            f"({_verdict_weight(verdict)}) "
+            f"— {verdict.get('reason')}"
+        )
+    attach_scores(store, args.topic, run)
+    # Committed beside the other held-out runs as well as folded into the build
+    # report: the report is the loop's own account of itself, and a score that
+    # only exists inside the artifact it is arguing for is not a score a
+    # reviewer can put next to anything. This is the file the Critique panel
+    # reads.
+    run_path = save_run(run)
+    print(f"\nsaved {store.topic_dir(args.topic) / 'research.json'}")
+    print(f"saved {run_path}")
     return 0
 
 
@@ -1247,6 +1528,70 @@ def _run_eval_ablation(args, settings) -> int:
     return 0
 
 
+def _with_published_contested(source: dict[str, Any], rescored: dict[str, Any]) -> dict[str, Any]:
+    """Carry every cell's contested measurement over from the run being re-scored.
+
+    ``contested_coverage`` sits deliberately outside the grounding gate — its
+    denominator is fixed by retrieval before the answering call, so the padding
+    attacks the gate exists for cannot move it (``src/evals/KNOWN_GAP_attack2``).
+    A re-score under the gate therefore has no business changing it, and left to
+    itself it would: the committed conflict corpus has been edited since these
+    runs were published, so re-deriving the pairs turns "0 of 2 disagreements in
+    context" into "0 of 1" — a movement with nothing to do with the rule under
+    test, in a file whose whole purpose is to make one difference legible.
+
+    So the published rows are kept verbatim. A run that wants a re-derived
+    conflict layer wants a re-run, which is where that measurement is made.
+    """
+    cells: list[dict[str, Any]] = []
+    for stored, fresh in zip(source.get("cells", []), rescored.get("cells", []), strict=True):
+        cell = dict(fresh)
+        cell["scores"] = {
+            **(fresh.get("scores") or {}),
+            "contested_coverage": (stored.get("scores") or {}).get("contested_coverage"),
+        }
+        for key in ("conflicts", "conflicts_in_context", "conflicts_named"):
+            if key in stored:
+                cell[key] = stored[key]
+        cells.append(cell)
+    return {**rescored, "cells": cells}
+
+
+def _rescored_in_place(source: dict[str, Any], rescored: dict[str, Any]) -> dict[str, Any]:
+    """The re-scored run written back over its source, identity and envelope intact.
+
+    It is the *same run* — same findings, same matcher votes, same held-out
+    video — read under a different scoring rule, so it keeps its ``run_id`` and
+    ``created_at``: everything that cites this run by id (the app's expand
+    request, the demo verdicts, the walkthrough) still resolves, and the file
+    does not claim to be a measurement taken today.
+
+    Merged rather than replaced, because two of the committed runs carry an
+    envelope :func:`~src.evals.critique.build_run` knows nothing about — the pack
+    ablation is ``kind: pack-ablation`` with a ``topic`` and per-arm ``rubrics``
+    the packs tab reads, and re-scoring it into a bare critique run would take
+    that tab down to make a metrics change.
+
+    Nothing is lost by writing over the old numbers: the replay reproduces them
+    exactly, so they survive on every cell as ``criteria_recall_ungated`` and
+    ``evidence_precision_ungated``. What is gained is that no file in
+    ``evals/runs/`` still presents an uncertified figure as a measured one.
+    """
+    cells = [
+        {**stored, **fresh}
+        for stored, fresh in zip(source.get("cells", []), rescored.get("cells", []), strict=True)
+    ]
+    merged = {**source, **rescored, "cells": cells}
+    merged["run_id"] = source.get("run_id")
+    merged["created_at"] = source.get("created_at")
+    merged["kind"] = source.get("kind", rescored.get("kind"))
+    # ``rescored_from`` would name this file itself, which reads as a second run
+    # derived from a first. There is one run; it was re-scored on this date.
+    merged.pop("rescored_from", None)
+    merged["rescored_at"] = datetime.now(timezone.utc).isoformat()
+    return merged
+
+
 def _run_eval_critique(args, settings) -> int:
     """Measure whether the corpus reaches a held-out expert's criteria.
 
@@ -1268,21 +1613,82 @@ def _run_eval_critique(args, settings) -> int:
             cached_matcher,
             chunk_text_lookup,
             llm_matcher,
+            provenance_for_run,
             repeated_matcher,
+            replay_matcher,
             rescore_committed_run,
         )
         from src.evals.regression import DEFAULT_RUNS_DIR
 
-        source = json.loads((DEFAULT_RUNS_DIR / f"{args.rescore}.json").read_text(encoding="utf-8"))
-        result = rescore_committed_run(
-            source,
-            load_critique_dataset(),
-            cached_matcher(
-                repeated_matcher(llm_matcher(settings), repeats=repeats), repeats=repeats
-            ),
-            chunk_text_lookup(settings),
-            config={"match_repeats": repeats},
+        # A bare id names a file in ``evals/runs/``; a path is read as written,
+        # because one committed critique run lives outside that directory
+        # (``experts/ablation.json``, which the packs tab reads) and it has to be
+        # re-scorable under the same rule as the rest or the gate is applied to
+        # the runs that happen to be conveniently placed.
+        source_path = (
+            Path(args.rescore)
+            if args.rescore.endswith(".json")
+            else DEFAULT_RUNS_DIR / f"{args.rescore}.json"
         )
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        dataset = load_critique_dataset()
+        # A rescore re-applies an *arithmetic* rule to findings that have not
+        # changed, so re-rolling the pairing would move the number for a reason
+        # that is not the rule under test — and cost a call per cell. Every cell
+        # stores the votes its matcher cast, so they are replayed when they are
+        # there; the LLM matcher is the fallback for a run old enough not to
+        # have them.
+        has_votes = all(cell.get("match_runs") for cell in source.get("cells", []))
+        match = (
+            replay_matcher(source)
+            if has_votes
+            else cached_matcher(
+                repeated_matcher(llm_matcher(settings), repeats=repeats), repeats=repeats
+            )
+        )
+        rescore_config: dict[str, Any] = {
+            # The source's own repeat count, not this invocation's default: the
+            # votes are replayed, so the number of them is a fact about the run
+            # being re-scored and not about the command re-scoring it.
+            "match_repeats": source.get("match_repeats") or repeats,
+            # Beside ``matcher`` rather than over it. The pairing really was cast
+            # by the model named there; what changed is only that this file's
+            # scores were re-derived from those stored votes.
+            "rescored_matcher": "replayed-votes" if has_votes else "llm",
+            "rescore_note": (
+                "re-scored from this run's own stored findings and matcher votes — no "
+                "model calls. Replaying under the gate the run published under reproduces "
+                "every published score exactly, which is what makes any difference here "
+                "attributable to the gate alone; criteria_recall_ungated and "
+                "evidence_precision_ungated are the figures this run published"
+            ),
+        }
+        result = _with_published_contested(
+            source,
+            rescore_committed_run(
+                source,
+                dataset,
+                match,
+                chunk_text_lookup(settings),
+                # No conflict layer is loaded: the contested measurement is
+                # carried over from the run being re-scored, because the gate
+                # does not touch it and the committed conflict corpus has moved
+                # since. See :func:`_with_published_contested`.
+                conflicts=(),
+                # Pack arms kept their per-finding provenance on disk even when
+                # the run file predates the field; a retrieval arm never had one
+                # and stays ungraded. See :func:`provenance_for_run`.
+                provenance=provenance_for_run(source),
+                config=rescore_config,
+            ),
+        )
+        if args.in_place:
+            merged = _rescored_in_place(source, result)
+            source_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+            print(f"\n{merged['run_id']} — re-scored in place\n")
+            print(format_table(merged))
+            print(f"\nwrote {source_path}")
+            return 0
         path = save_run(result)
         print(f"\n{result['run_id']} — rescored from {args.rescore}\n")
         print(format_table(result))
@@ -1342,6 +1748,8 @@ def main(argv: list[str] | None = None) -> int:
             return _run_build_packs(args, settings)
         if args.command == "score-packs":
             return _run_score_packs(args, settings)
+        if args.command == "deep-research":
+            return _run_deep_research(args, settings)
         if args.command == "eval-graph-extraction":
             return _run_eval_graph_extraction(settings)
         source_url = getattr(args, "url", None)
@@ -1397,6 +1805,7 @@ def main(argv: list[str] | None = None) -> int:
                         chunk_count=len(result.chunks),
                         summary_status=result.summary_status,
                         chroma_path=settings.chroma_path,
+                        removed_chunk_ids=result.removed_chunk_ids,
                     )
                 )
                 dashboard_path = _refresh_rag_pipeline_dashboard(settings)
@@ -1852,18 +2261,31 @@ def _format_index(
     chunk_count: int,
     summary_status: str | None,
     chroma_path,
+    removed_chunk_ids: list[str] | None = None,
 ) -> str:
-    return "\n".join(
+    lines = [
+        "RAG index updated",
+        f"Raw transcript collection: {raw_collection}",
+        f"Chunk collection: {chunk_collection}",
+        f"Transcript summary collection: {summary_collection}",
+        f"Chunks: {chunk_count}",
+    ]
+    # Only printed when a re-index actually shrank the video. Silence means
+    # nothing was removed, which is the normal case; a number here means chunks
+    # that would otherwise still be retrievable are gone.
+    if removed_chunk_ids:
+        lines.append(
+            f"Removed stale chunks: {len(removed_chunk_ids)} "
+            f"({', '.join(removed_chunk_ids[:5])}"
+            f"{', …' if len(removed_chunk_ids) > 5 else ''})"
+        )
+    lines.extend(
         [
-            "RAG index updated",
-            f"Raw transcript collection: {raw_collection}",
-            f"Chunk collection: {chunk_collection}",
-            f"Transcript summary collection: {summary_collection}",
-            f"Chunks: {chunk_count}",
             f"Summary: {summary_status or 'not configured'}",
             f"Chroma path: {chroma_path}",
         ]
     )
+    return "\n".join(lines)
 
 
 def _format_comparison(comparison) -> str:

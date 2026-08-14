@@ -558,3 +558,76 @@ tr.legacyrow td { opacity: 0.6; }
 @media (max-width: 860px) {
   .rail, .tree { display: none; }
 }
+
+/* ── rubric verdicts — one row per rule the reviewer applied ───────────────
+   Wrapping is deliberate everywhere a rule's own words appear. Criteria run to
+   two hundred characters and the nowrap+ellipsis pattern used for scannable
+   metadata elsewhere in this file has clipped 273-char strings to about 66
+   before; a criterion a reader cannot finish is a verdict they cannot check. */
+.rubrics {
+  border: 1px solid var(--border2); border-radius: 8px; background: var(--panel2);
+  padding: 9px 11px; margin-bottom: 10px;
+}
+.rvsum { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.rvsum-lead { font-weight: 600; color: var(--text); font-size: 12.5px; }
+.rvsum-counts { font: 11px var(--mono); color: var(--text2); }
+.rvsum-counts .rv-fail { color: var(--bad); }
+.rvsum-prov { font: 10.5px var(--mono); color: var(--dim); margin-left: auto; }
+.rvfilters {
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  margin: 8px 0 6px; padding-top: 7px; border-top: 1px solid var(--border2);
+}
+.rvfilters .pill:disabled { opacity: 0.4; cursor: default; }
+.rvlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rvrow { border-top: 1px solid var(--border2); padding: 7px 0 8px; }
+.rvrow:first-child { border-top: none; }
+.rvhead { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.rvbadge {
+  font: 600 9px var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 8px; padding: 1px 6px; flex: 0 0 auto; border: 1px solid transparent;
+}
+.rvbadge.rv-fail { color: var(--bad); background: var(--bad-dim); border-color: var(--bad-border); }
+.rvbadge.rv-pass { color: var(--good); background: var(--good-dim); border-color: var(--good-border); }
+.rvbadge.rv-n-a { color: var(--dim); background: var(--panel3); border-color: var(--border2); }
+.rvbadge.rv-unjudged { color: var(--warn); background: var(--warn-dim); border-color: var(--warn-border); }
+.rvsev {
+  font: 10px var(--mono); border-radius: 8px; padding: 0 6px; flex: 0 0 auto;
+  border: 1px solid var(--border2); color: var(--muted);
+}
+.rvsev.sev-blocker { color: var(--bad); border-color: var(--bad-border); }
+.rvsev.sev-major { color: var(--warn); border-color: var(--warn-border); }
+.rvid {
+  font: 600 10.5px var(--mono); color: var(--accent2); background: none;
+  border: 0; padding: 0; cursor: pointer; flex: 0 0 auto; text-decoration: underline dotted;
+}
+.rvid:hover { color: var(--accent); }
+.rvpack { font: 10px var(--mono); color: var(--dim); flex: 0 0 auto; }
+.rvsecs { display: flex; gap: 4px; flex: 0 0 auto; }
+.rvsec {
+  font: 10px var(--mono); color: var(--accent2); background: var(--accent-dim);
+  border: 1px solid var(--accent-border); border-radius: 4px; padding: 0 5px; cursor: pointer;
+}
+.rvts { display: flex; gap: 6px; margin-left: auto; flex: 0 0 auto; }
+.rvts a { font: 10px var(--mono); color: var(--muted); }
+.rvts a:hover { color: var(--accent2); }
+.rvcrit { margin-top: 4px; font-size: 12.5px; color: var(--text); line-height: 1.5; }
+.rvfind { margin-top: 3px; font-size: 12px; color: var(--text2); line-height: 1.5; }
+.rvnote { margin-top: 3px; font: 11px var(--mono); color: var(--warn); line-height: 1.5; }
+.rvdetail {
+  margin-top: 7px; padding: 7px 9px; border-radius: 6px; background: var(--bg);
+  border: 1px solid var(--border2);
+}
+.rvline { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; font-size: 11.5px; color: var(--text2); line-height: 1.5; }
+.rvlabel {
+  font: 9px var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--dim); flex: 0 0 46px;
+}
+.rvquotes { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rvquotes li { display: flex; flex-wrap: wrap; gap: 7px; align-items: baseline; }
+.rvquotes a { font: 10px var(--mono); color: var(--accent2); flex: 0 0 auto; }
+.rvquote { font-size: 11.5px; color: var(--muted); font-style: italic; line-height: 1.5; }
+.rvempty { padding: 10px 0; font-size: 11.5px; color: var(--dim); }
+.rvpackerr {
+  margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border2);
+  font: 11px var(--mono); color: var(--bad); line-height: 1.5;
+}

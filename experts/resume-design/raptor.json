@@ -6,11 +6,11 @@
   "artifact": "resume",
   "routing_text": "How should a software engineer or data scientist write their resume? Bullet points, professional summary, page length, formatting and layout, ATS keyword matching, quantified impact and metrics, tailoring a CV to one job description, and what a recruiter looks for in the seconds they spend skimming it.",
   "blurb": "What a technical resume has to do on the page before anyone reads it closely.",
-  "generated_at": "2026-08-10T00:54:32.683538+00:00",
+  "generated_at": "2026-08-10T04:54:43.644447+00:00",
   "provenance": {
-    "corpus_digest": "c773ab89fc2b0f51",
-    "chunk_count": 1329,
-    "video_count": 53,
+    "corpus_digest": "e1b17b35cb7190cf",
+    "chunk_count": 1372,
+    "video_count": 56,
     "theme_generated_at": "2026-08-10T00:22:21.813165+00:00",
     "theme_count": 30,
     "graph_cache_digest": "b3edae8f87405fcb",
@@ -259,7 +259,12 @@
         "fD0E57QYSPk",
         "owIP4Qr39BY"
       ],
-      "retained": 76
+      "retained": 76,
+      "creator_count": 9,
+      "top_creator": "Anthony D. Mays",
+      "top_creator_share": 0.2895,
+      "eligible": true,
+      "reject_reason": ""
     },
     {
       "unit_id": "raptor:theme:11",
@@ -328,7 +333,12 @@
         "eGmZZFJ-8PY",
         "owIP4Qr39BY"
       ],
-      "retained": 49
+      "retained": 49,
+      "creator_count": 6,
+      "top_creator": "Greg Langstaff",
+      "top_creator_share": 0.5714,
+      "eligible": true,
+      "reject_reason": ""
     },
     {
       "unit_id": "raptor:theme:8",
@@ -376,7 +386,12 @@
         "fD0E57QYSPk",
         "ozwmlFencJI"
       ],
-      "retained": 31
+      "retained": 31,
+      "creator_count": 6,
+      "top_creator": "Ashish Pratap Singh",
+      "top_creator_share": 0.3226,
+      "eligible": true,
+      "reject_reason": ""
     },
     {
       "unit_id": "raptor:theme:17",
@@ -408,7 +423,12 @@
         "_MT4SgfQ8QY",
         "fD0E57QYSPk"
       ],
-      "retained": 16
+      "retained": 16,
+      "creator_count": 5,
+      "top_creator": "Boris Meinardus",
+      "top_creator_share": 0.3125,
+      "eligible": true,
+      "reject_reason": ""
     },
     {
       "unit_id": "raptor:theme:13",
@@ -435,7 +455,12 @@
         "_MT4SgfQ8QY",
         "owIP4Qr39BY"
       ],
-      "retained": 10
+      "retained": 10,
+      "creator_count": 5,
+      "top_creator": "Greg Langstaff",
+      "top_creator_share": 0.5,
+      "eligible": true,
+      "reject_reason": ""
     },
     {
       "unit_id": "raptor:theme:18",
@@ -457,7 +482,12 @@
         "dQ6RNltrXro",
         "ozwmlFencJI"
       ],
-      "retained": 8
+      "retained": 8,
+      "creator_count": 3,
+      "top_creator": "Stefan Masnikovic",
+      "top_creator_share": 0.625,
+      "eligible": true,
+      "reject_reason": ""
     }
   ],
   "rubrics": [
@@ -1170,11 +1200,25 @@
   ],
   "gaps": [
     {
+      "unit_id": "raptor:theme:25",
+      "unit_kind": "raptor",
+      "unit_title": "AI engineer resumes need exact keywords, no hot dogs",
+      "videos": 1,
+      "chunks": 24,
+      "creator_count": 1,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 1.0,
+      "reason": "only one of this pack's videos is in the theme \u2014 one creator's position"
+    },
+    {
       "unit_id": "community:6",
       "unit_kind": "communities",
       "unit_title": "resume, LinkedIn profile, recruiters, linkedin, keywords, ATS",
       "videos": 14,
       "chunks": 154,
+      "creator_count": 11,
+      "top_creator": "Greg Langstaff",
+      "top_creator_share": 0.1753,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1183,6 +1227,9 @@
       "unit_title": "AI engineer, AI engineering, rag, LLM, prompt engineering, data scientist",
       "videos": 6,
       "chunks": 15,
+      "creator_count": 6,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 0.3333,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1191,6 +1238,9 @@
       "unit_title": "fastapi, Python, Java, ai automation stack, FrontEnd, object-oriented programming",
       "videos": 7,
       "chunks": 18,
+      "creator_count": 6,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 0.5556,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1199,6 +1249,9 @@
       "unit_title": "AI, design system, components, design tokens, dashboard, landing page",
       "videos": 6,
       "chunks": 10,
+      "creator_count": 6,
+      "top_creator": "Anthony D. Mays",
+      "top_creator_share": 0.3,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1207,6 +1260,9 @@
       "unit_title": "amy, linkedin algorithm, linkedin headline, LinkedIn Legend, app, content",
       "videos": 3,
       "chunks": 8,
+      "creator_count": 3,
+      "top_creator": "Stefan Masnikovic",
+      "top_creator_share": 0.625,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1215,6 +1271,9 @@
       "unit_title": "resume formula, project section, measurable impact, entry-level engineer, action verb, professional experience",
       "videos": 3,
       "chunks": 7,
+      "creator_count": 3,
+      "top_creator": "Jash Radia",
+      "top_creator_share": 0.4286,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1223,6 +1282,9 @@
       "unit_title": "companies, speaker, Open to Work banner, work summary, LeetCode, notion",
       "videos": 7,
       "chunks": 11,
+      "creator_count": 7,
+      "top_creator": "Stefan Masnikovic",
+      "top_creator_share": 0.2727,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1231,7 +1293,10 @@
       "unit_title": "Darwin, Sydney, brisbane, Melbourne, Perth, Adelaide",
       "videos": 3,
       "chunks": 8,
-      "reason": "relevant but outside the 6-unit budget for this arm"
+      "creator_count": 2,
+      "top_creator": "Greg Langstaff",
+      "top_creator_share": 0.875,
+      "reason": "88% of the community's chunks are Greg Langstaff \u2014 one voice with visitors"
     },
     {
       "unit_id": "community:1",
@@ -1239,6 +1304,9 @@
       "unit_title": "negative gearing, budget 2026, property, rents, government, investors",
       "videos": 3,
       "chunks": 6,
+      "creator_count": 3,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 0.5,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1247,6 +1315,9 @@
       "unit_title": "microservices, module, modules, monolith, modularity, component",
       "videos": 3,
       "chunks": 6,
+      "creator_count": 3,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 0.6667,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1255,6 +1326,9 @@
       "unit_title": "agent, model, code, software, code base, pull request",
       "videos": 4,
       "chunks": 6,
+      "creator_count": 4,
+      "top_creator": "Concepts of AI (Akash Gupta)",
+      "top_creator_share": 0.3333,
       "reason": "relevant but outside the 6-unit budget for this arm"
     },
     {
@@ -1263,6 +1337,9 @@
       "unit_title": "transaction, acknowledgement, consistency, snapshot isolation, leader, load balancer",
       "videos": 2,
       "chunks": 5,
+      "creator_count": 2,
+      "top_creator": "Headless Headhunter",
+      "top_creator_share": 0.8,
       "reason": "relevant but outside the 6-unit budget for this arm"
     }
   ],
@@ -1282,12 +1359,12 @@
     "units_by_kind": {
       "raptor": 6
     },
-    "gaps": 12,
+    "gaps": 13,
     "excluded_video_citations": 0,
     "excluded_video_members": 0,
     "rubrics_deduped": 0,
     "rubric_candidates": 18,
-    "raptor_pool": 6,
+    "raptor_pool": 7,
     "community_pool": 12,
     "unit_budget": 6
   }

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
+  MatrixRunOption,
   Scoreboard,
   ScoreboardQuestion,
   ScoreboardQuestionSetup,
@@ -28,6 +29,19 @@ function row(overrides: Partial<ScoreboardRow> = {}): ScoreboardRow {
     win_rate: 0.625,
     avg_latency_seconds: 4,
     avg_token_estimate: 3000,
+    ...overrides,
+  };
+}
+
+/** A picker entry. Corpus fields absent by default — a pre-corpus-identity run. */
+function matrixRun(overrides: Partial<MatrixRunOption> = {}): MatrixRunOption {
+  return {
+    run_id: 'matrix-20260811-023531',
+    created_at: '2026-08-11T02:35:31+00:00',
+    setups: ['rag_llm', 'rag_llm_filtered'],
+    entry_count: 20,
+    judged: true,
+    rubric_version: 'ragas-v1',
     ...overrides,
   };
 }
@@ -201,12 +215,79 @@ describe('ScoreboardView', () => {
     expect(picker).toBeEnabled();
     expect(screen.getByRole('option', { name: 'newest run' })).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: 'matrix-newer · 20 questions · 2 setups' }),
+      screen.getByRole('option', {
+        name: 'matrix-newer · 20 questions · 2 setups · no corpus recorded',
+      }),
     ).toBeInTheDocument();
     // An unjudged run is labelled as such, so it is not mistaken for a ranking.
     expect(
-      screen.getByRole('option', { name: 'matrix-older · 14 questions · 1 setup · unjudged' }),
+      screen.getByRole('option', {
+        name: 'matrix-older · 14 questions · 1 setup · unjudged · no corpus recorded',
+      }),
     ).toBeInTheDocument();
+  });
+
+  it('distinguishes two otherwise identical runs by the corpus each was scored on', async () => {
+    // The defect this fixes: both of these labelled "20 questions · 2 setups ·
+    // ragas-v1", so flipping between two runs scored on different corpora read
+    // as one number moving rather than as two incomparable measurements.
+    scoreboard.mockResolvedValue(
+      board([row()], {
+        runs: [
+          matrixRun({
+            run_id: 'matrix-20260811-023531',
+            corpus: 'dceb228df01f7418',
+            corpus_videos: 71,
+            corpus_chunks: 1792,
+          }),
+          matrixRun({ run_id: 'matrix-20260810-110656', corpus: '1bdb1971fc49bb77' }),
+          matrixRun({ run_id: 'matrix-20260809-071818-depth-v2' }),
+        ],
+      }),
+    );
+    render(<ScoreboardView />);
+    await screen.findByLabelText('Matrix run');
+    expect(
+      screen.getByRole('option', {
+        name: 'matrix-20260811-023531 · 20 questions · 2 setups · ragas-v1 · corpus dceb228d (71 videos · 1792 chunks)',
+      }),
+    ).toBeInTheDocument();
+    // Digest recorded, counts not — the label says so rather than borrowing
+    // the other run's counts or implying the size is unknown-because-equal.
+    expect(
+      screen.getByRole('option', {
+        name: 'matrix-20260810-110656 · 20 questions · 2 setups · ragas-v1 · corpus 1bdb1971 (size not recorded)',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', {
+        name: 'matrix-20260809-071818-depth-v2 · 20 questions · 2 setups · ragas-v1 · no corpus recorded',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('states the corpus a run was scored on beside its numbers', async () => {
+    scoreboard.mockResolvedValue(
+      board([row()], {
+        run: matrixRun({
+          run_id: 'matrix-20260811-023531',
+          corpus: 'dceb228df01f7418',
+          corpus_videos: 71,
+          corpus_chunks: 1792,
+        }),
+      }),
+    );
+    render(<ScoreboardView />);
+    expect(await screen.findByText('corpus scored on')).toBeInTheDocument();
+    expect(screen.getByText('dceb228d')).toBeInTheDocument();
+    expect(screen.getAllByText('71 videos · 1792 chunks').length).toBeGreaterThan(0);
+  });
+
+  it('says a run recorded no corpus rather than leaving the header to speak for it', async () => {
+    scoreboard.mockResolvedValue(board([row()], { run: matrixRun() }));
+    render(<ScoreboardView />);
+    expect(await screen.findByText('not recorded')).toBeInTheDocument();
+    expect(screen.getByText('run predates corpus identity')).toBeInTheDocument();
   });
 
   it('refetches the board for the run the user picks', async () => {
@@ -443,12 +524,12 @@ describe('ScoreboardView under depth-v2', () => {
     await screen.findByLabelText('Matrix run');
     expect(
       screen.getByRole('option', {
-        name: 'matrix-20260809-051901-depth-v2 · 5 questions · 1 setup · depth-v2',
+        name: 'matrix-20260809-051901-depth-v2 · 5 questions · 1 setup · depth-v2 · no corpus recorded',
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('option', {
-        name: 'matrix-20260729-061607 · 5 questions · 1 setup · ragas-v1',
+        name: 'matrix-20260729-061607 · 5 questions · 1 setup · ragas-v1 · no corpus recorded',
       }),
     ).toBeInTheDocument();
   });

@@ -111,11 +111,237 @@ const CSS = `
 .crit-why { color: var(--muted); }
 .crit-spread { display: block; font: 500 9.5px var(--mono); color: var(--muted);
   letter-spacing: 0; }
+/* Disagreements in a cell's context. Full width rather than a column in
+   .crit-cols: an axis is a whole question and reads as one line of prose, and
+   the two-column grid would break it over four. Nothing here clips — the axis
+   is model-written text of unbounded length. */
+.crit-conflicts { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border);
+  white-space: normal; }
+.crit-missnote { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.crit-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .crit-agree { margin-left: 6px; font: 600 9px var(--mono); letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--muted); background: var(--panel2);
   border: 1px solid var(--border2); border-radius: 8px; padding: 1px 5px;
   white-space: nowrap; }
 .crit-extra { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* ── matcher ballots ─────────────────────────────────────────────────────
+   The per-repeat votes behind one consensus pairing. Full width like the
+   conflicts block: a criterion is a whole sentence and the two-column grid
+   would break the ballot chips away from the rule they belong to. */
+.crit-ballots { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border);
+  white-space: normal; }
+.crit-draws { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.crit-draw { display: inline-flex; align-items: baseline; gap: 5px; font: 600 10.5px var(--mono);
+  color: var(--muted); background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
+.crit-draw.on { color: var(--accent2); background: var(--accent-dim);
+  border-color: var(--accent-border); }
+.crit-draw em { font-style: normal; font-size: 9px; color: var(--dim); }
+/* A pairing the vote discarded, wherever it is named. Warn rather than bad:
+   consensus doing its job is not an error, but a zero that came out of it is
+   not the same zero as one nothing reached, and the reader has to see which. */
+.crit-agree.lost, .crit-spread.lost { color: var(--warn, #c9922b); }
+
+/* ── an arm the grounding gate could not grade ───────────────────────────
+   Deliberately *not* styled like a zero or like a bad score. The cell holds no
+   number at all, and the two ways to get this wrong are rendering a dash (which
+   a reader fills in with the figure they last saw) and rendering red (which
+   reads as "scored badly"). So: words, in muted text, with the published figure
+   underneath labelled as uncertified, and a full-width row saying why. */
+.exp-table td.num .crit-nomeasure { display: block; font: 600 9px var(--mono);
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+/* .exp-table sets white-space: nowrap, and "no comparison — rag_llm_filtered is
+   ungraded" is half again as long as the delta it replaced: left to itself it
+   widens the recall column enough to push the whole table into a horizontal
+   scroll. It wraps instead, right-aligned with the column it annotates. */
+.crit-spread.nocmp { white-space: normal; max-width: 24ch; margin-left: auto; }
+.crit-ungradedrow > td { white-space: normal; padding: 0 10px 10px;
+  border-bottom: 1px solid var(--border); }
+.crit-ungraded { color: var(--text2); font-size: 12px; line-height: 1.55;
+  max-width: 82ch; border-left: 2px solid var(--warn, #c9922b); padding-left: 10px; }
+.crit-ungraded b { color: var(--text); }
+.crit-ungraded code { font: 600 11px var(--mono); color: var(--muted); }
+
+/* ── expert rubric packs ─────────────────────────────────────────────────
+   Same discipline as the block above: .exp-table sets white-space: nowrap and
+   every rule in a pack is a whole sentence, so each block carrying prose
+   re-declares its own wrapping. The clipping bug this guards against showed 66
+   of 273 characters and looked like a short criterion rather than a broken one. */
+.pk-intro { color: var(--text2); font-size: 12.5px; line-height: 1.55; max-width: 84ch;
+  margin: 0 0 10px; white-space: normal; }
+/* Reads before the rules it qualifies, so nobody trusts the list first and
+   discovers its build date afterwards. Left border rather than a fill: it must
+   be impossible to miss without looking like an error the reader caused. */
+.pk-stale { color: var(--text2); font-size: 12.5px; line-height: 1.55; max-width: 84ch;
+  margin: 0 0 12px; padding: 8px 12px; white-space: normal;
+  border-left: 3px solid var(--warn, #c9922b); background: var(--surface2, rgba(201,146,43,0.07));
+  border-radius: 0 6px 6px 0; }
+.pk-stale b { color: var(--text); }
+.pk-stale code { font-size: 11.5px; }
+.pk-fresh { color: var(--muted); font-size: 11.5px; margin: 0 0 12px; white-space: normal; }
+/* Why the loop lost, on the row where it happened. An addition that is new
+   against round one but already covered by the pack it is measured against is
+   rediscovery, and the diff read as ten discoveries until this said otherwise. */
+.rs-rediscovered { display: block; font-size: 11px; margin-top: 3px; color: var(--warn, #c9922b);
+  white-space: normal; }
+.rs-newground { display: block; font-size: 11px; margin-top: 3px; color: var(--ok, #4a9d6b);
+  white-space: normal; }
+.rs-rediscovered code, .rs-newground code { font-size: 10.5px; }
+.pk-blurb { color: var(--text); font-size: 13px; line-height: 1.5; margin: 0 0 8px;
+  white-space: normal; }
+.pk-routing { color: var(--muted); font-size: 11.5px; line-height: 1.5; margin: 0 0 12px;
+  max-width: 90ch; white-space: normal; }
+.pk-routing .microlabel, .pk-check .microlabel, .pk-why .microlabel { display: block; }
+.pk-unbuilt { color: var(--bad); }
+
+.pk-checks { display: flex; flex-wrap: wrap; gap: 20px; padding: 10px 12px;
+  background: var(--panel3); border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 12px; }
+.pk-check-item { display: flex; flex-direction: column; gap: 1px; }
+.pk-check-item b { font: 700 15px var(--mono); color: var(--text);
+  font-variant-numeric: tabular-nums; }
+.pk-check-item b.good { color: var(--good); }
+.pk-check-item b.bad { color: var(--bad); }
+.pk-checksub { font: 10px var(--mono); color: var(--muted); }
+
+.pk-section { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
+.pk-section h4 { margin: 0 0 8px; font-size: 12.5px; color: var(--text);
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; white-space: normal; }
+.pk-hint { font: 400 11px var(--mono); color: var(--muted); white-space: normal; }
+.pk-notice { margin: 8px 0 0; font: 11px var(--mono); color: var(--accent2);
+  white-space: normal; }
+.pk-nod2 { margin: 16px 0 0; padding: 10px 12px; background: var(--panel3);
+  border: 1px solid var(--border); border-radius: 8px; color: var(--muted);
+  font-size: 12px; line-height: 1.5; white-space: normal; }
+.pk-linkbtn { background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--text); font: 600 12.5px inherit; }
+
+.pk-rublist { list-style: none; margin: 0; padding: 0; display: flex;
+  flex-direction: column; gap: 6px; }
+.pk-rubric { border: 1px solid var(--border); border-radius: 8px; background: var(--panel3);
+  overflow: hidden; }
+.pk-rubric.open { border-color: var(--accent-border); }
+.pk-rubhead { display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  background: none; border: none; cursor: pointer; text-align: left;
+  padding: 9px 11px; color: inherit; font: inherit; }
+.pk-rubhead:hover { background: var(--panel2); }
+.pk-rubid { flex: 0 0 auto; font: 700 10.5px var(--mono); color: var(--muted);
+  padding-top: 2px; }
+.pk-rubtext { flex: 1 1 auto; min-width: 0; color: var(--text); font-size: 12.5px;
+  line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.pk-rubtags { flex: 0 0 auto; display: flex; gap: 5px; flex-wrap: wrap;
+  justify-content: flex-end; }
+.pk-badge { font: 600 9.5px var(--mono); letter-spacing: 0.04em; color: var(--muted);
+  background: var(--panel2); border: 1px solid var(--border2); border-radius: 8px;
+  padding: 1px 6px; white-space: nowrap; }
+.pk-badge.ok { color: var(--good); background: var(--good-dim); border-color: var(--good-border); }
+.pk-badge.thin { color: var(--muted); }
+.pk-badge.contested { color: var(--bad); background: var(--bad-dim);
+  border-color: var(--bad-border); }
+
+.pk-rubbody { padding: 2px 11px 12px 11px; border-top: 1px solid var(--border);
+  white-space: normal; }
+.pk-check, .pk-why { margin: 10px 0 0; color: var(--text2); font-size: 12px;
+  line-height: 1.5; max-width: 84ch; white-space: normal; }
+.pk-why { color: var(--muted); }
+.pk-unit { margin: 10px 0 0; font: 10.5px var(--mono); color: var(--muted);
+  white-space: normal; overflow-wrap: anywhere; }
+.pk-evlist { list-style: none; margin: 10px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 10px; }
+.pk-ev { border-left: 2px solid var(--accent-border); padding-left: 10px;
+  white-space: normal; }
+.pk-evmeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.pk-ts { font: 600 10.5px var(--mono); color: var(--accent2); background: var(--accent-dim);
+  border: 1px solid var(--accent-border); border-radius: 8px; padding: 1px 6px;
+  text-decoration: none; white-space: nowrap; }
+.pk-ts.bad { color: var(--bad); background: var(--bad-dim); border-color: var(--bad-border); }
+.pk-creator { font: 600 11px var(--mono); color: var(--text); }
+.pk-vidtitle { font-size: 11px; color: var(--muted); white-space: normal;
+  overflow-wrap: anywhere; }
+.pk-quote { margin: 4px 0 0; padding: 0; color: var(--text2); font-size: 12.5px;
+  font-style: italic; line-height: 1.5; max-width: 84ch; white-space: normal;
+  overflow-wrap: anywhere; }
+.pk-drift { margin-top: 3px; font: 10px var(--mono); color: var(--muted);
+  white-space: normal; overflow-wrap: anywhere; }
+
+.pk-table td.pk-cellwrap { white-space: normal; min-width: 180px; max-width: 420px;
+  overflow-wrap: anywhere; }
+.exp-table td.pk-cellwrap { white-space: normal; overflow-wrap: anywhere; }
+.pk-pin { display: flex; gap: 4px; }
+.exp-table td.pk-src { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+
+.pk-verdicts { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.pk-verdict { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  white-space: normal; }
+.pk-verdict b { font: 700 12px var(--mono); color: var(--text); }
+.pk-verdictwhy { font-size: 11.5px; color: var(--muted); white-space: normal; }
+
+.pk-gaps { list-style: none; margin: 8px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 7px; }
+.pk-gaps li { display: flex; flex-direction: column; gap: 1px; white-space: normal;
+  border-left: 2px solid var(--border2); padding-left: 10px; }
+.pk-gaps code { font: 10.5px var(--mono); color: var(--muted); }
+.pk-gaptitle { color: var(--text2); font-size: 12px; line-height: 1.45;
+  overflow-wrap: anywhere; }
+.pk-gapreason { color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+/* Deep-research build report. Every text cell wraps: the critic's findings and
+   the criteria they produced are the evidence this panel exists to show, and a
+   truncated one is a claim a reader cannot check. */
+.rs-note { margin: 10px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.55;
+  max-width: 92ch; white-space: normal; }
+.exp-table tr.rs-loop td { background: var(--accent-dim); }
+
+.rs-gaps { list-style: none; margin: 0; padding: 0; display: flex;
+  flex-direction: column; gap: 12px; }
+.rs-gap { border: 1px solid var(--border); border-radius: 8px; background: var(--panel3);
+  padding: 10px 12px; white-space: normal; }
+.rs-gaphead { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.rs-gapid { font: 700 10.5px var(--mono); color: var(--muted); }
+.rs-gapmissing { flex: 1 1 320px; min-width: 0; color: var(--text); font-size: 12.5px;
+  line-height: 1.5; overflow-wrap: anywhere; }
+.rs-gapwhy { margin: 6px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.5;
+  max-width: 92ch; overflow-wrap: anywhere; }
+.rs-probe { margin: 8px 0 0; color: var(--text2); font-size: 12px; line-height: 1.5;
+  overflow-wrap: anywhere; }
+.rs-probe .microlabel { display: block; }
+.rs-probemeta { display: block; margin-top: 2px; font: 10.5px var(--mono);
+  color: var(--muted); overflow-wrap: anywhere; }
+.rs-caused { list-style: none; margin: 9px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 7px; }
+.rs-caused li { border-left: 2px solid var(--good-border); padding-left: 10px;
+  display: flex; flex-direction: column; gap: 2px; }
+.rs-caused code { font: 10.5px var(--mono); color: var(--muted); }
+.rs-crit { color: var(--text); font-size: 12.5px; line-height: 1.5;
+  overflow-wrap: anywhere; }
+.rs-critmeta { font: 10.5px var(--mono); color: var(--muted); line-height: 1.5;
+  overflow-wrap: anywhere; }
+
+.rs-diff { list-style: none; margin: 8px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 6px; }
+.rs-diffrow { display: flex; gap: 9px; align-items: baseline; white-space: normal;
+  border-left: 2px solid var(--border2); padding-left: 9px; }
+.rs-diffrow.added { border-left-color: var(--good-border); }
+.rs-diffrow.removed { border-left-color: var(--bad-border); }
+.rs-diffmark { flex: 0 0 auto; width: 9px; font: 700 12px var(--mono); color: var(--muted); }
+/* The restatement rows reuse the diff row but put a cosine in the gutter, which
+   does not fit the 9px a "+"/"−" needs. Sized in ch so the number never clips. */
+.rs-cos { flex: 0 0 auto; width: 5ch; font: 700 11px var(--mono); color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.rs-diffrow.removed .rs-cos { color: var(--bad); }
+.rs-diffrow.added .rs-diffmark { color: var(--good); }
+.rs-diffrow.removed .rs-diffmark { color: var(--bad); }
+.rs-diffbody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+  gap: 1px; }
+
+.rs-plan { margin: 8px 0 0; padding-left: 22px; display: flex; flex-direction: column;
+  gap: 8px; }
+.rs-plan li { white-space: normal; color: var(--muted); }
+.rs-plan li.in-r1 { color: var(--text2); }
+.rs-facet { display: block; font: 600 12px var(--mono); color: var(--text); }
+.rs-question { display: block; font-size: 12px; line-height: 1.5; color: inherit;
+  overflow-wrap: anywhere; }
 `;
 
 /** Install the stylesheet once per document, keyed by id (see useEvalStyles). */

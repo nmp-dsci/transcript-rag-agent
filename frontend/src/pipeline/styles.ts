@@ -196,6 +196,90 @@ export const PIPELINE_STYLES = `
   overflow-wrap: anywhere; }
 .th-chunkbody a { font-size: 11px; color: var(--accent2); }
 
+/* ── Disagreements (the conflict layer) ──
+   Two rules hold this block together. Nothing that can carry model-written text
+   or a transcript quote is allowed to clip — no nowrap, no fixed height, no
+   line-clamp anywhere below — because a truncated quote is a misquote and this
+   app has shipped that bug more than once. And the two sides are a symmetric
+   grid: equal columns, identical styling, no accent on either, because any
+   asymmetry reads as the app taking a side in a disagreement that has none. */
+.dis-wrap { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 20px;
+  box-sizing: border-box; }
+.dis-head { padding: 2px 2px 10px; }
+.dis-blurb { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.6;
+  max-width: 78ch; overflow-wrap: anywhere; }
+.dis-blurb b { color: var(--text2); }
+.dis-statline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.dis-rejected { margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55;
+  max-width: 78ch; overflow-wrap: anywhere; }
+/* The count's error bar when the build never recorded one. Boxed and warn-toned
+   rather than set as a fourth paragraph of muted grey, because the thing it has
+   to beat is a reader skimming the headline chip and stopping — and the caveat
+   is only worth writing if it is read. Warn and not bad: an unrecorded spread
+   is a limit on what this build can say, not a failure of the layer. */
+.dis-caveat { margin: 10px 0 0; padding: 9px 11px; font-size: 11.5px; color: var(--text2);
+  line-height: 1.6; max-width: 78ch; overflow-wrap: anywhere; background: var(--warn-dim);
+  border: 1px solid var(--warn-border); border-radius: 8px; }
+.dis-caveat b, .dis-caveat i { color: var(--text); }
+
+.dis-probes { margin-top: 10px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--panel3); }
+.dis-probehead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%;
+  text-align: left; padding: 7px 10px; background: none; border: none; cursor: pointer; }
+.dis-probehead:hover { background: var(--hover); border-radius: 9px; }
+.dis-probesum { flex: 1 1 220px; min-width: 0; font-size: 11.5px; color: var(--muted);
+  line-height: 1.5; overflow-wrap: anywhere; }
+.dis-chev { font-size: 10px; color: var(--dim); flex: 0 0 auto; }
+.dis-probelist { list-style: none; margin: 0; padding: 0 10px 10px; }
+.dis-probe { border-top: 1px solid var(--border); padding: 8px 0 2px; }
+.dis-probeline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  font-size: 11.5px; color: var(--text2); }
+.dis-probeverdicts { font: 10.5px var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+.dis-probewhy { margin: 4px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55;
+  overflow-wrap: anywhere; }
+.dis-probeaxis { margin: 4px 0 0; font-size: 11.5px; color: var(--text2); line-height: 1.55;
+  overflow-wrap: anywhere; }
+
+.dis-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.dis-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; }
+/* A factual contradiction gets a different edge from an axis on purpose. Two
+   defensible answers and one wrong number are not the same object, and drawing
+   them identically is the even-handedness that would mislead. */
+.dis-card.factual { border-color: var(--bad-border); }
+.dis-factual { margin: 6px 0 0; font-size: 11.5px; color: var(--text2); line-height: 1.6;
+  background: var(--bad-dim); border: 1px solid var(--bad-border); border-radius: 8px;
+  padding: 8px 10px; overflow-wrap: anywhere; }
+.dis-cardhead { display: flex; flex-direction: column; gap: 4px; }
+.dis-axis { margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text);
+  line-height: 1.45; overflow-wrap: anywhere; }
+.dis-taglist { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+
+.dis-sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  margin-top: 12px; align-items: start; }
+@media (max-width: 820px) { .dis-sides { grid-template-columns: 1fr; } }
+.dis-side { min-width: 0; background: var(--panel3); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 12px; }
+.dis-sidehead { display: flex; flex-direction: column; gap: 2px; }
+.dis-sidelabel { font: 600 9.5px var(--mono); letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--dim); }
+.dis-creator { font-size: 12.5px; font-weight: 600; color: var(--text); line-height: 1.4;
+  overflow-wrap: anywhere; }
+.dis-position { margin: 6px 0 0; font-size: 12.5px; color: var(--text2); line-height: 1.6;
+  overflow-wrap: anywhere; }
+.dis-quote { margin: 8px 0 0; padding: 8px 10px; border-left: 2px solid var(--border2);
+  background: var(--panel2); border-radius: 0 8px 8px 0; font-size: 12px; color: var(--text2);
+  line-height: 1.65; overflow-wrap: anywhere; }
+.dis-prov { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
+.dis-ts { font-size: 11px; color: var(--accent2); overflow-wrap: anywhere; }
+.dis-ratio { font: 10px var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+
+.dis-why { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 9px; }
+.dis-why p { margin: 4px 0 0; font-size: 12px; color: var(--text2); line-height: 1.6;
+  overflow-wrap: anywhere; }
+.dis-foot { margin: 16px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6;
+  max-width: 82ch; overflow-wrap: anywhere; }
+
 /* ── Knowledge graph (GraphRAG entities) ── */
 .kg-toplevel-empty { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px 16px; margin: 16px; }

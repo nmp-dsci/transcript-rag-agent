@@ -1,0 +1,271 @@
+{
+  "slice_id": "v4b_ingest",
+  "passed": true,
+  "started_at": "2026-08-10T19:05:00+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "the corpus surface states how much is in the corpus",
+      "passed": true,
+      "detail": "pipe-stats render '59 videos · 1460 chunks · 41 channels · 56/59 with summaries · sentence-transformers/all-MiniLM-L6-v2 embedding model'. The slice brief quotes 56 videos / 1372 chunks; the corpus has grown by 3 more videos since, from concurrent work, and the extra ids are not V4b candidates.",
+      "shot": "01_corpus_tree_system_design.jpg"
+    },
+    {
+      "name": "every corpus row renders something a reader could pin to one video",
+      "passed": true,
+      "detail": "59 video rows in nav.tree, 59 img.thumb src carrying an 11-character id (i.ytimg.com/vi/<id>/ or /vi_webp/<id>/); 0 rows with no id in the DOM",
+      "shot": null
+    },
+    {
+      "name": "the corpus grew beyond the 35 videos that predate V4b",
+      "passed": true,
+      "detail": "24 of the 59 rendered ids are absent from the pre-V4b projection (commit 2f58ea1, 35 videos / 715 chunks — the figures the brief quotes). 13 of the 24 are V4b topic candidates; the other 11 are AI-agent material from other work (Dave Ebbelaar x3, David Ondrej x2, AI Engineer x2, and 4 singletons).",
+      "shot": null
+    },
+    {
+      "name": "system-design: at least 5 videos are listed in the corpus tree",
+      "passed": true,
+      "detail": "7 of the 9 candidates ingested and rendered: 1NngTUYPdpI 'Caching in System Design Interviews w/ Meta Staff Engineer' (Hello Interview, 30:13, 33 chunks); L521gizea4s 'Sharding in System Design Interviews w/ Meta Staff Engineer' (Hello Interview, 30:34, 33); wXvljefXyEo 'Database Sharding and Partitioning' (Arpit Bhayani, 23:53, 23); uFGJVQvR59A 'Everything you need to know about REST' (Arpit Bhayani, 23:42, 21); iJLL-KPqBpM 'System Design Interview - Distributed Message Queue' (System Design Interview, 26:28, 25); m4q7VkgDWrM 'Data Consistency and Tradeoffs in Distributed Systems' (Gaurav Sen, 25:42, 23); 5ZjhNTM8XU8 '\"Transactions: myths, surprises and opportunities\" by Martin Kleppmann' (Strange Loop Conference, 41:08, 36). Never ingested: YPorP8BsF_c (Hussein Nasser), e2iK8pUP9Vs (Jordan has no life) — both were listed in the candidate file as lower-confidence, and the target is >=5, so this is a shortfall against the candidate list rather than against the slice.",
+      "shot": "01_corpus_tree_system_design.jpg"
+    },
+    {
+      "name": "system-design: the videos come from at least 3 different channels",
+      "passed": true,
+      "detail": "5 channels as the tree groups them: Arpit Bhayani, Gaurav Sen, Hello Interview, Strange Loop Conference, System Design Interview",
+      "shot": null
+    },
+    {
+      "name": "system-design: no channel contributes more than 2 videos",
+      "passed": true,
+      "detail": "per-channel counts {Hello Interview: 2, Arpit Bhayani: 2, System Design Interview: 1, Gaurav Sen: 1, Strange Loop Conference: 1}; cap 2 held exactly",
+      "shot": null
+    },
+    {
+      "name": "system-design: no D5-excluded property video is among its material",
+      "passed": true,
+      "detail": "property ids present: none. All 5 of 7m27Go3K1d0, AdRL6tKu3Gk, Bw58mV015z4, ZiEGOgTC56Y, gXf7fRvuaXA are in the pre-V4b set, so none can be new material; they render under Smart Property Investment (3), The Follio Property Podcast Clips (1) and Suburb Data (1).",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: at least 5 videos are listed in the corpus tree",
+      "passed": true,
+      "detail": "6 of the 11 candidates ingested and rendered: 5OjqD-ow8GE 'Modular Monoliths • Simon Brown • GOTO 2018' (GOTO Conferences, 46:32, 39 chunks); fc6_NtD9soI 'Modularizing the Monolith - Jimmy Bogard - NDC Oslo 2024' (NDC Conferences, 56:43, 54); 4qfsmE11Ejo 'Modular Monoliths and Other Facepalms - Kevlin Henney - NDC London 2026' (NDC Conferences, 63:59, 63); FXwBWS4qDAA 'Stop Mixing FastAPI with Business Logic: Fix It with Ports & Adapters' (ArjanCodes, 25:23, 20); KTy4rqgPOjg 'Balancing Coupling in Software Design - Vlad Khononov - DDD Europe 2023' (Domain-Driven Design Europe, 50:42, 36); co3acmgP2Ng 'Domain centric? Why Hexagonal, Onion and Clean architecture are answers to the wrong question' (Devoxx, 48:02, 37). Never ingested: eiDyK_ofPPM (ArjanCodes, Cohesion and Coupling), dnhshUdRW70 (CodeOpinion), EZ05e7EMOLM (Ian Cooper, TDD), zzMLg3Ys5vI (Dave Farley), msjnfdeDCmo (Milan Jovanovic, vertical slices) — 5 of 11. Above the >=5 bar, but see notes: two of the conflict axes the candidate list planned lost their only source.",
+      "shot": "02_corpus_tree_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: the videos come from at least 3 different channels",
+      "passed": true,
+      "detail": "5 channels as the tree groups them: ArjanCodes, Devoxx, Domain-Driven Design Europe, GOTO Conferences, NDC Conferences",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: no channel contributes more than 2 videos",
+      "passed": true,
+      "detail": "per-channel counts {NDC Conferences: 2, GOTO Conferences: 1, ArjanCodes: 1, Domain-Driven Design Europe: 1, Devoxx: 1}. Worth stating precisely: the candidate list counted 'NDC (Jimmy Bogard)' and 'NDC (Kevlin Henney)' as two entries, and the app groups them as one channel with 2 videos. The cap holds under either reading, but the app's reading is the stricter one and it is the one measured here.",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: no D5-excluded property video is among its material",
+      "passed": true,
+      "detail": "property ids present: none",
+      "shot": null
+    },
+    {
+      "name": "system-design: the chunk count in the tree, the header and the pane agree",
+      "passed": true,
+      "detail": "7/7 consistent — 1NngTUYPdpI 33/33/33, L521gizea4s 33/33/33, wXvljefXyEo 23/23/23, uFGJVQvR59A 21/21/21, iJLL-KPqBpM 25/25/25, m4q7VkgDWrM 23/23/23, 5ZjhNTM8XU8 36/36/36 (tree .cnt / header 'N chunks' / rendered .chunkcard count). Every first-chunk timestamp link carries the same video id as the row it was opened from.",
+      "shot": null
+    },
+    {
+      "name": "system-design: no chunk renders escaped or empty text",
+      "passed": true,
+      "detail": "0 of 194 rendered .chunkcard bodies match &amp;|&lt;|&gt;|&quot;|&#39;|&#x27;|&nbsp;. Shortest card per video: 1132, 378, 321, 566, 227, 881, 806 chars — all well above the 40-char floor, and the short ones are trailing chunks. Spot-checked prose reads as speech, e.g. wXvljefXyEo #c0 'so sharding and partitioning come in very handy when we want to scale our systems…' and 5ZjhNTM8XU8 #c0 'hello everybody thank you very much for coming my name is Martin kman…'.",
+      "shot": "03_video_detail_chunk_text.jpg"
+    },
+    {
+      "name": "system-design: each transcript holds a speaker's worth of words per minute",
+      "passed": true,
+      "detail": "chars/min: 1NngTUYPdpI 1290, L521gizea4s 1249, wXvljefXyEo 1103, uFGJVQvR59A 1018, iJLL-KPqBpM 1065, m4q7VkgDWrM 1042, 5ZjhNTM8XU8 1023 — all inside 700–1500, so none is a stub or a partial fetch",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: the chunk count in the tree, the header and the pane agree",
+      "passed": true,
+      "detail": "6/6 consistent — 5OjqD-ow8GE 39/39/39, fc6_NtD9soI 54/54/54, 4qfsmE11Ejo 63/63/63, FXwBWS4qDAA 20/20/20, KTy4rqgPOjg 36/36/36, co3acmgP2Ng 37/37/37",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: no chunk renders escaped or empty text",
+      "passed": true,
+      "detail": "0 of 249 rendered .chunkcard bodies carry an HTML entity. Shortest card per video: 207, 934, 507, 520, 1152, 674 chars. 4qfsmE11Ejo is the strongest counter-example to a stale escape pass: its rendered text contains real apostrophes and real double quotes — 'you're going like, \"What Kevin? Where are all the people?\"' — rather than &#39; and &quot;.",
+      "shot": "03_video_detail_chunk_text.jpg"
+    },
+    {
+      "name": "app-architecture: each transcript holds a speaker's worth of words per minute",
+      "passed": true,
+      "detail": "chars/min: 5OjqD-ow8GE 967, fc6_NtD9soI 1121, 4qfsmE11Ejo 1152, FXwBWS4qDAA 903, KTy4rqgPOjg 840, co3acmgP2Ng 900 — all inside 700–1500",
+      "shot": null
+    },
+    {
+      "name": "system-design: the ranking is run over the whole corpus",
+      "passed": true,
+      "detail": "scope chip reads 'Scope: Whole corpus' on a freshly mounted page — the lab scopes to the selected video otherwise, and a scoped ranking would only prove the video it was scoped to",
+      "shot": null
+    },
+    {
+      "name": "system-design: every SEMANTIC row comes from a newly ingested video",
+      "passed": true,
+      "detail": "'When should you shard a database rather than add a read replica, and how do you pick a partition key?' — 10/10 rows from wXvl, L521; both resolve to newly ingested system-design videos and nothing pre-V4b appears",
+      "shot": "04_retrieval_system_design.jpg"
+    },
+    {
+      "name": "system-design: no SEMANTIC row comes from a D5-excluded property video",
+      "passed": true,
+      "detail": "property prefixes among results: none",
+      "shot": null
+    },
+    {
+      "name": "system-design: every BM25 row comes from a newly ingested video",
+      "passed": true,
+      "detail": "10/10 rows from wXvl, L521, iJLL — all three newly ingested. Both arms agree, so this is not a quirk of one ranker.",
+      "shot": "04_retrieval_system_design.jpg"
+    },
+    {
+      "name": "system-design: no BM25 row comes from a D5-excluded property video",
+      "passed": true,
+      "detail": "property prefixes among results: none",
+      "shot": null
+    },
+    {
+      "name": "system-design: the top-ranked row opens the newly ingested video it claims",
+      "passed": true,
+      "detail": "clicking row 1 ('wXvl·#c11') opens the detail pane on 'Database Sharding and Partitioning · Arpit Bhayani · 23:53 · 23 chunks', chunk #c11 11:44–13:08, whose timestamp link carries v=wXvljefXyEo — so the truncated prefix is the video it appears to be, not another id sharing four characters",
+      "shot": "04_retrieval_system_design.jpg"
+    },
+    {
+      "name": "app-architecture: the ranking is run over the whole corpus",
+      "passed": true,
+      "detail": "scope chip reads 'Scope: Whole corpus'",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: every SEMANTIC row comes from a newly ingested video",
+      "passed": true,
+      "detail": "'Is a modular monolith a better default than microservices, and how should I find module boundaries in a codebase?' — 10/10 rows from fc6_, 4qfs, 5Ojq, all newly ingested app-architecture videos",
+      "shot": "05_retrieval_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: no SEMANTIC row comes from a D5-excluded property video",
+      "passed": true,
+      "detail": "property prefixes among results: none",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: every BM25 row comes from a newly ingested video",
+      "passed": true,
+      "detail": "10/10 rows from fc6_, 4qfs, 5Ojq",
+      "shot": "05_retrieval_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: no BM25 row comes from a D5-excluded property video",
+      "passed": true,
+      "detail": "property prefixes among results: none",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: the top-ranked row opens the newly ingested video it claims",
+      "passed": true,
+      "detail": "clicking row 1 ('fc6_·#c43') opens 'Modularizing the Monolith - Jimmy Bogard - NDC Oslo 2024 · NDC Conferences · 56:43 · 54 chunks', link v=fc6_NtD9soI",
+      "shot": "05_retrieval_app_architecture.jpg"
+    },
+    {
+      "name": "system-design: every ingested video surfaces for some whole-corpus query",
+      "passed": true,
+      "detail": "7 of 7 reachable. 'cache invalidation, eviction policy and cache aside for a read heavy service' returned 20 rows all from one video — the lab therefore printed no prefix at all, and clicking row 1 resolved it to 1NngTUYPdpI 'Caching in System Design Interviews'. 'REST API design: resources, verbs, idempotency and status codes' surfaced uFGJ alongside four pre-V4b videos (vpU9, 5N-o, hgIo, 15rT), which is expected — the older AI-engineering material also discusses APIs — and the new video still ranks. 'strong versus eventual consistency, serializable isolation and write skew' returned 5Zjh and m4q7 only. Union with the headline probe covers wXvljefXyEo, L521gizea4s, iJLL-KPqBpM, 1NngTUYPdpI, uFGJVQvR59A, 5ZjhNTM8XU8, m4q7VkgDWrM.",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: every ingested video surfaces for some whole-corpus query",
+      "passed": true,
+      "detail": "6 of 6 reachable. 'hexagonal ports and adapters: keeping domain logic out of the web framework' returned co3a, FXwB, 5Ojq. 'how do you measure coupling strength, volatility and distance between components' returned KTy4 (9 of 10 semantic rows) and fc6_. Union with the headline probe covers 5OjqD-ow8GE, fc6_NtD9soI, 4qfsmE11Ejo, FXwBWS4qDAA, KTy4rqgPOjg, co3acmgP2Ng.",
+      "shot": "10_coverage_probe_coupling.jpg"
+    },
+    {
+      "name": "system-design: the question is answered in Chat",
+      "passed": true,
+      "detail": "rag_llm (single-hop), judge off: answer and trace rendered after 26s. Trace reads RETRIEVE 'semantic search over the whole corpus — 30 candidates', RERANK 'reordered 30 candidates, kept top 10', LLM 'one answer call over the retrieved chunks, citing chunk ids'; footer '~3206 tok · 10 chunks · 1 LLM calls · 32.8s · top_k 10 · deepseek-v4-flash'.",
+      "shot": "06_chat_system_design.jpg"
+    },
+    {
+      "name": "system-design: the answer cites chunks a reader can open",
+      "passed": true,
+      "detail": "15 citation links in a 1790-character bubble, each an anchor into a watch URL with a t= offset; the answer is on-topic prose about read replicas, partition keys, rebalancing hot partitions and cross-shard queries rather than a refusal",
+      "shot": null
+    },
+    {
+      "name": "system-design: every cited video is one of the newly ingested ones",
+      "passed": true,
+      "detail": "cited {L521gizea4s, wXvljefXyEo}; both are new system-design material; outside the new set: none",
+      "shot": "07_chat_system_design_sources.jpg"
+    },
+    {
+      "name": "system-design: no D5-excluded property video is cited",
+      "passed": true,
+      "detail": "property ids cited: none",
+      "shot": null
+    },
+    {
+      "name": "system-design: the Sources list names the videos rather than only numbering them",
+      "passed": true,
+      "detail": "Sources (6) renders '[1] open at 19:34 wXvljefXyEo · [2] open at 18:29 wXvljefXyEo · [3] open at 21:34 wXvljefXyEo · [8] open at 20:35 wXvljefXyEo · [9] open at 3:48 L521gizea4s · [10] open at 16:20 wXvljefXyEo'",
+      "shot": "07_chat_system_design_sources.jpg"
+    },
+    {
+      "name": "app-architecture: the question is answered in Chat",
+      "passed": true,
+      "detail": "rag_llm (single-hop), judge off: answered in 49.34s, '~3198 tok · 10 chunks · 1 LLM calls · top_k 10 · deepseek-v4-flash'",
+      "shot": "08_chat_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: the answer cites chunks a reader can open",
+      "passed": true,
+      "detail": "23 citation links over a 212-word answer that mentions monolith, microservices and boundaries, and — notably — declines the framing: it renders 'a modular monolith is not framed as an unconditional \"better default\" than microservices' and then gives the conditional trade-offs. That is the shape of an answer drawn from a corpus containing Kevlin Henney's contrarian talk, not a generic one.",
+      "shot": "08_chat_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: every cited video is one of the newly ingested ones",
+      "passed": true,
+      "detail": "cited {fc6_NtD9soI x16, 4qfsmE11Ejo x5, 5OjqD-ow8GE x2}; all three are new app-architecture material; outside the new set: none",
+      "shot": "08_chat_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: no D5-excluded property video is cited",
+      "passed": true,
+      "detail": "property ids cited: none",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: the Sources list names the videos rather than only numbering them",
+      "passed": true,
+      "detail": "Sources (8) renders '[1] open at 45:51 fc6_NtD9soI · [2] 15:55 fc6_NtD9soI · [3] 44:49 fc6_NtD9soI · [4] 6:19 fc6_NtD9soI · [5] 31:24 4qfsmE11Ejo · [6] 32:28 4qfsmE11Ejo · [9] 4:17 fc6_NtD9soI · [10] 38:28 5OjqD-ow8GE'",
+      "shot": null
+    },
+    {
+      "name": "no new topic video is stranded without a summary the filter can route on",
+      "passed": true,
+      "detail": "the corpus-health chip '3 of 59 videos have no transcript summary, so the summary filter can never select them' filters the tree to exactly 3 videos, and all 3 are property: Bw58mV015z4, ZiEGOgTC56Y, 7m27Go3K1d0. None of the 13 new topic videos is in that set, so every one of them is eligible for the V2 summary pre-filter as well as for direct retrieval.",
+      "shot": "09_summary_gap_is_property_only.jpg"
+    }
+  ],
+  "notes": [
+    "ENVIRONMENT: chromium.launch() times out after 180s on this machine (a wedged Metal compiler XPC service), so demo/validate/v4b_ingest.py could not be executed through Playwright. Every assertion in that file was executed instead as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, in a tab created for this evaluation, and the results are what this verdict records. Slices v2_filter, v3_critique and v4_themes recorded the same constraint the same way. Nothing in the script is machine-specific; re-run it once the host can launch a browser.",
+    "The browser window was 1028px wide rather than the harness's 1440x900, and no resize was available. This gate makes no layout or clipping claims, so the narrower viewport does not weaken any check recorded here — but it also means this verdict says nothing about whether the new corpus rows render in full at any width. If that matters, it needs its own probe.",
+    "Topic membership comes from the V4b candidate list at scratchpad/v4b_candidates.json — the ingestion input — not from experts/<topic>/manifest.json or the Expert-pack panel. The panel was under concurrent edit by other agents and was out of bounds; a manifest is the category of evidence this directory exists to distrust. The corpus tree has no topic dimension at all: it groups by channel. So 'five videos for this topic' is asserted as five named ids rendered in the tree plus retrieval probes that tie those ids to the topic's subject matter, not as a topic heading a reader could count under. A reader who wanted to see 'system design' as a labelled thing in the corpus surface still cannot.",
+    "'New' is defined against the last committed chunk-space projection that predates the ingestion (commit 2f58ea1: 35 videos, 715 chunks — exactly the figures the slice brief quotes). All 24 currently-new ids were checked against it; none of the 13 topic videos was in the corpus before V4b, so nothing counted here is pre-existing material rebadged.",
+    "The corpus now reports 59 videos / 1460 chunks, not the 56 / 1372 the brief quotes and the 56 / 1372 recorded in the experts/*/manifest.json provenance blocks. Three further videos were ingested by concurrent work during this evaluation; none is a V4b candidate and none changes any count above. It does mean the built packs' provenance digest is already stale against the live corpus — a V5 concern, not a V4b one.",
+    "7 of the 20 candidates were never ingested: system-design lost YPorP8BsF_c and e2iK8pUP9Vs (both flagged in the candidate file as lower-confidence), app-architecture lost eiDyK_ofPPM, dnhshUdRW70, EZ05e7EMOLM, zzMLg3Ys5vI and msjnfdeDCmo. Both topics clear the >=5 bar and this is not scored as a failure, but it is not cost-free downstream: the candidate list's planned conflict axes 'horizontal layering vs vertical slices' and 'test the port vs test the class' each lost their only source (msjnfdeDCmo and EZ05e7EMOLM), and 'coupling: minimise vs balance' now has Khononov arguing against no one. V7 is already recorded as short of genuine cross-creator disagreements; this is one upstream reason why.",
+    "The property-exclusion check here is the reader-visible one — no property video is new topic material, none is ranked for either topic query, none is cited by either answer. Whether experts/<topic>/manifest.json excludes them at pack level is a pack claim on a surface that was out of bounds, and is not evidenced by this verdict.",
+    "The two Chat asks were run with judging off and left two conversations in the history rail ('When should you shard a database…' and 'Is a modular monolith a better default…', both 10/08/2026 19:13 and 19:15). They are evaluation artefacts, not curated demo content."
+  ]
+}

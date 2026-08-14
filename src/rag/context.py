@@ -7,6 +7,7 @@ from src.agents.context import TranscriptContext
 from src.agents.models import TraceStep, chunk_id, chunk_ids_for
 from src.rag.chunking import format_timestamp
 from src.rag.indexing import RagIndexer
+from src.rag.question_scope import corpus_wide_behavior, corpus_wide_signal
 from src.rag.references import format_chunk_reference
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore, transcript_from_raw_document
 from src.rag.summaries import TranscriptSummaryStore
@@ -103,6 +104,15 @@ class MultiTranscriptRagContextProvider:
     semantic and BM25 rankings, optionally reranked and widened to neighbouring
     chunks before the answer call sees it.
 
+    The optional summary pre-filter narrows the corpus to whole videos before
+    any chunk is searched. Its ``top_k`` is a budget rather than a relevance
+    test, so it is lifted for questions that are about the corpus as a whole —
+    see :meth:`_filter_budget`. Lifting that cap makes breadth *possible*
+    without making it happen, because the answer still sees only ``top_k``
+    chunks; :func:`select_diverse_sources`, switched on with
+    ``corpus_wide_max_per_video``, is the half that spends that budget across
+    videos rather than within one.
+
     An optional ``query_transform`` sits in front of all of that, rewriting
     *what* is embedded (see :mod:`src.rag.query_transform`) before any of the
     scoping applies. It only ever changes the vector search: BM25 fusion below
@@ -121,6 +131,8 @@ class MultiTranscriptRagContextProvider:
         reranker: _Reranker | None = None,
         neighbor_span: int = 0,
         query_transform: "QueryTransform | None" = None,
+        corpus_wide_filter: bool = True,
+        corpus_wide_max_per_video: int = 0,
     ) -> None:
         self.raw_store = raw_store
         self.chunk_store = chunk_store
@@ -131,6 +143,33 @@ class MultiTranscriptRagContextProvider:
         self.reranker = reranker
         self.neighbor_span = neighbor_span
         self.query_transform = query_transform
+        #: Whether a corpus-wide question lifts the summary filter's ``top_k``
+        #: cap (see :meth:`_filter_budget`). A switch rather than a constant so
+        #: the change can be A/B'd against the old behaviour when the matrix is
+        #: re-run: the eval harness has to be able to produce both arms.
+        self.corpus_wide_filter = corpus_wide_filter
+        #: How many chunks one video may contribute to the final ``top_k`` on a
+        #: corpus-wide question. ``0`` is off, and off is the shipped default:
+        #: this changes what every corpus-wide answer is built from, and no
+        #: shipped behaviour should move before the matrix has measured it. See
+        #: :func:`select_diverse_sources` for what "diversity-constrained" means
+        #: here and what it costs.
+        self.corpus_wide_max_per_video = corpus_wide_max_per_video
+
+    @property
+    def retrieval_behavior(self) -> str:
+        """The corpus-wide behaviour this provider implements, as a name.
+
+        Derived from the switches, so it cannot drift from them. It exists
+        because neither switch is a ``Settings`` field and neither is therefore
+        visible to :func:`src.evals.matrix_cache.cell_fingerprint`: a harness
+        running a non-default provider passes this value so the cache can tell
+        two behaviours apart instead of averaging them into one column.
+        """
+        return corpus_wide_behavior(
+            cap_lifted=self.corpus_wide_filter,
+            max_chunks_per_video=self.corpus_wide_max_per_video,
+        )
 
     def get_context(
         self,
@@ -147,6 +186,10 @@ class MultiTranscriptRagContextProvider:
         selected_transcripts = []
         trace: list[TraceStep] = []
         mode = retrieval_mode or self.retrieval_mode
+        # Only a corpus-wide question routed through the summary filter can be
+        # narrowed by the defect this cap addresses, so only that path arms it.
+        # Every other branch keeps the shipped selection byte for byte.
+        max_per_video = 0
         # Retrieve wide, then let fusion/reranking narrow to top_k. With neither
         # enabled this collapses to the original single top_k query.
         candidates = (
@@ -164,10 +207,15 @@ class MultiTranscriptRagContextProvider:
             if filter_transcripts:
                 if self.summary_store is None:
                     raise RetrievalError("Transcript filtering requires a summary store", trace)
+                filter_top_k, scope_signal = self._filter_budget(
+                    question, transcript_filter_top_k, trace
+                )
+                if scope_signal is not None:
+                    max_per_video = self.corpus_wide_max_per_video
                 filter_started = time.monotonic()
                 selected_transcripts = self.summary_store.query_relevant_transcripts(
                     question,
-                    top_k=transcript_filter_top_k,
+                    top_k=filter_top_k,
                     min_score=transcript_filter_min_score,
                 )
                 trace.append(
@@ -176,7 +224,8 @@ class MultiTranscriptRagContextProvider:
                         label="Summary filter",
                         detail=(
                             f"{len(selected_transcripts)} videos matched by per-video "
-                            f"summary (top {transcript_filter_top_k}, min score "
+                            f"summary (top {filter_top_k}"
+                            f"{' — cap lifted' if scope_signal else ''}, min score "
                             f"{transcript_filter_min_score})"
                         ),
                         # The count is the measurement; *which* videos is the
@@ -250,7 +299,15 @@ class MultiTranscriptRagContextProvider:
                     "the whole corpus",
                     trace,
                 )
-            retrieved = self._refine(question, retrieved, top_k, mode, channel_id, trace=trace)
+            retrieved = self._refine(
+                question,
+                retrieved,
+                top_k,
+                mode,
+                channel_id,
+                trace=trace,
+                max_per_video=max_per_video,
+            )
             transcript = _context_transcript_from_chunks(retrieved)
         else:
             video_id = _extract_video_id(source_url)
@@ -287,6 +344,75 @@ class MultiTranscriptRagContextProvider:
             top_k=top_k,
             trace=trace,
         )
+
+    def _filter_budget(
+        self,
+        question: str,
+        transcript_filter_top_k: int,
+        trace: list[TraceStep],
+    ) -> tuple[int, str | None]:
+        """How many videos the summary filter may keep for this question.
+
+        ``transcript_filter_top_k`` is a *budget*, not a relevance criterion —
+        ``transcript_filter_min_score`` is the criterion. For a question whose
+        answer lives in a few videos the budget is the point: it is what stops
+        a resume question dragging in three system-design talks. For a question
+        about the corpus as a whole ("what are the main themes across this
+        corpus?") the budget is simply wrong. There is no top five; the answer
+        is the spread, and capping at five produces a confident answer about a
+        fifth of the evidence with nothing in the output to say so.
+
+        So a corpus-wide question keeps the criterion and loses the budget: the
+        cap rises to the number of summarised videos, which is "no cap" stated
+        as a number. Every video that clears ``min_score`` is routed to.
+
+        Two alternatives were rejected.
+
+        *Bypass the filter entirely* — the obvious reading of "top-k narrows a
+        global question" — throws away the part that works. Without the filter,
+        corpus-wide retrieval is a flat top_k over every chunk, which is not
+        broader in any way that matters: ten chunks still come from at most ten
+        videos, and now nothing has checked that those videos are relevant at
+        all. Bypassing removes the relevance test and keeps the narrowing, which
+        is the wrong half.
+
+        *Raise the default ``top_k``* would change every question to fix some,
+        and the live V2 numbers say the filter's tight routing is what local
+        questions are winning on. A per-question decision is the only one that
+        does not trade one regression for another.
+
+        The failure mode is deliberately asymmetric. A false positive lifts a
+        cap: ``min_score`` still rejects irrelevant videos, so a local question
+        misread as global degrades *towards* the unfiltered baseline, which is
+        the arm that already scores better on local questions. A false negative
+        is the behaviour that shipped for months. Detection erring generous
+        therefore costs less than detection erring strict, and the patterns in
+        :mod:`src.rag.question_scope` are written accordingly.
+        """
+        if not self.corpus_wide_filter:
+            return transcript_filter_top_k, None
+        signal = corpus_wide_signal(question)
+        if signal is None:
+            return transcript_filter_top_k, None
+        assert self.summary_store is not None  # caller checked
+        widened = max(transcript_filter_top_k, self.summary_store.count())
+        trace.append(
+            TraceStep(
+                phase="route",
+                label="Corpus-wide question",
+                detail=(
+                    f"matched {signal!r} — summary filter cap raised from "
+                    f"{transcript_filter_top_k} to {widened} (every video above "
+                    f"the score threshold)"
+                ),
+                # No ``query``: this step did not search, and the question it
+                # classified is already on screen above the trace. Naming the
+                # signal in ``detail`` is what makes the decision checkable —
+                # a reader can hold "matched 'corpus'" against the question
+                # they can see.
+            )
+        )
+        return widened, signal
 
     def _search(
         self,
@@ -423,15 +549,26 @@ class MultiTranscriptRagContextProvider:
         channel_id: str | None,
         video_id: str | None = None,
         trace: list[TraceStep] | None = None,
+        max_per_video: int = 0,
     ) -> list:
         """Fuse, rerank, and widen a candidate set down to the final top_k.
 
         When ``trace`` is given, each stage that actually ran appends a
         :class:`TraceStep` describing what it did to the candidate set.
+
+        ``max_per_video`` arms :func:`select_diverse_sources` for the final cut
+        to ``top_k``. When it is set, the ranking stages are asked to *order*
+        the candidate pool rather than to cut it, because a per-video cap can
+        only promote a chunk that something still ranked: cutting to ``top_k``
+        first and diversifying afterwards would have nothing left to promote
+        from. When it is ``0`` — the default, and every path but a corpus-wide
+        filtered one — this method behaves exactly as it did before.
         """
         if mode == "hybrid":
             fuse_width = (
-                max(top_k, self.retrieval_candidates) if self.reranker is not None else top_k
+                max(top_k, self.retrieval_candidates)
+                if (self.reranker is not None or max_per_video > 0)
+                else top_k
             )
             fuse_started = time.monotonic()
             before_fuse = len(retrieved)
@@ -449,16 +586,20 @@ class MultiTranscriptRagContextProvider:
                         elapsed_ms=int((time.monotonic() - fuse_started) * 1000),
                     )
                 )
+        # The width the ranking stages cut to. Diversity does the cutting when
+        # it is armed, so they only sort — computed here rather than on entry
+        # because BM25 fusion can widen the pool it applies to.
+        select_width = len(retrieved) if max_per_video > 0 else top_k
         if self.reranker is not None and retrieved:
             rerank_started = time.monotonic()
             before_rerank = len(retrieved)
             degraded = False
             try:
-                retrieved = self.reranker.rerank(question, retrieved, top_k)
+                retrieved = self.reranker.rerank(question, retrieved, select_width)
             except Exception:
                 # A reranker failure must degrade to the underlying ranking
                 # rather than lose the answer entirely.
-                retrieved = retrieved[:top_k]
+                retrieved = retrieved[:select_width]
                 degraded = True
             if trace is not None:
                 trace.append(
@@ -477,7 +618,7 @@ class MultiTranscriptRagContextProvider:
                 )
         else:
             before_trim = len(retrieved)
-            retrieved = retrieved[:top_k]
+            retrieved = retrieved[:select_width]
             if trace is not None and before_trim > len(retrieved):
                 # Without this the preceding stage's step is the last word on
                 # what the answer call saw, and it would overstate the count.
@@ -490,6 +631,30 @@ class MultiTranscriptRagContextProvider:
                             f"{before_trim} in ranking order"
                         ),
                         chunk_ids=chunk_ids_for(retrieved),
+                    )
+                )
+        if max_per_video > 0:
+            diversify_started = time.monotonic()
+            pool = retrieved
+            retrieved = select_diverse_sources(pool, top_k, max_per_video)
+            if trace is not None:
+                trace.append(
+                    TraceStep(
+                        phase="merge",
+                        label="Source diversity",
+                        detail=(
+                            f"at most {max_per_video} chunk(s) per video — kept "
+                            f"{len(retrieved)} of {len(pool)} ranked candidates, "
+                            f"from {source_breadth(retrieved)} videos "
+                            f"(the pool held {source_breadth(pool)})"
+                        ),
+                        # The chunk ids are the check on the count: a reader can
+                        # see *which* chunk the cap displaced and from where,
+                        # which is the only way to tell breadth bought by
+                        # promoting a ranked chunk from breadth bought by
+                        # retrieving a worse one.
+                        chunk_ids=chunk_ids_for(retrieved),
+                        elapsed_ms=int((time.monotonic() - diversify_started) * 1000),
                     )
                 )
         if self.neighbor_span > 0:
@@ -602,6 +767,114 @@ class MultiTranscriptRagContextProvider:
                 widened.append(_as_retrieved(neighbor))
             widened.append(chunk)
         return widened
+
+
+def select_diverse_sources(chunks: list, top_k: int, max_per_video: int) -> list:
+    """The final ``top_k``, with no video contributing more than ``max_per_video``.
+
+    **The defect.** Lifting the summary filter's *video* cap for a corpus-wide
+    question does not lift the *chunk* budget, and the chunk budget is what
+    actually bounds breadth: retrieval returns ``top_k`` chunks, so an answer
+    draws on at most ``top_k`` videos however many the filter admits. Measured
+    on ``matrix-20260811-023531`` (71 videos, 1792 chunks), the six corpus-wide
+    golden questions moved from 3.33 to 4.50 distinct videos per answer when the
+    cap was lifted — still below the 5.00 of the *unfiltered* baseline the
+    filtered arm was meant to catch up with, and three of the six (g010, g011,
+    g013) did not move at all. Admitting seventy-one videos to a ten-chunk
+    budget changes nothing if the top ten chunks all come from three of them.
+
+    **The rule.** Walk the ranked candidates in order and take a chunk unless
+    its video already holds ``max_per_video`` places. Chunks passed over are
+    *parked*, not dropped: if the cap leaves the selection short of ``top_k``,
+    they are taken back in rank order until it is full. The result is then
+    restored to the candidates' own ranking order, so the cap changes *which*
+    chunks reach the answer and never what order they arrive in.
+
+    Three properties follow, and they are the reason this design was chosen over
+    the two alternatives:
+
+    * Every selected chunk was ranked by the retriever (and by the reranker,
+      where one ran). The relevance test is preserved in full — the cap can only
+      promote a chunk relevance had already ranked below the cut, never admit
+      one it never saw.
+    * The selection is exactly as large as it would have been. Backfill
+      guarantees ``min(top_k, len(chunks))`` chunks, so a corpus with fewer
+      videos than ``top_k // max_per_video`` loses no context.
+    * With ``max_per_video`` at or above ``top_k`` the result is the unchanged
+      ranking, so the switch degrades to a no-op rather than to a surprise.
+
+    *Round-robin over the admitted videos* was rejected: taking each video's
+    best chunk in turn hands a place to every video the summary filter admitted,
+    whatever that video's best chunk scores. Breadth then measures the filter's
+    admissions rather than the corpus's evidence, and a video that scraped past
+    ``min_score`` contributes a chunk that nothing tested at the chunk level. It
+    manufactures the number this change is measured by, which is the one failure
+    mode that would make the measurement worthless.
+
+    *An MMR-style re-rank* trading relevance against coverage was rejected for a
+    different reason: it works, but the trade is a continuous knob with no
+    natural setting and the result is unreadable in a trace — you cannot say
+    which chunk was displaced or why, only that a blended score moved. A hard
+    per-video cap is one integer, and the trace can name the chunk it cost.
+
+    **The failure mode, stated plainly.** On a question whose evidence really is
+    concentrated in one or two videos, the cap displaces that video's third and
+    fourth chunks in favour of another video's weaker ones. Breadth rises and
+    the answer is built on worse evidence. **A breadth gain bought by retrieving
+    worse chunks is not a gain**, and breadth alone cannot tell the two apart:
+    it has to be read next to ``faithfulness`` and ``context_precision`` on the
+    same cells. That is why this is gated to questions the corpus-wide detector
+    fires on — where the spread *is* the answer — and why the switch ships off.
+    """
+    if max_per_video <= 0 or top_k <= 0:
+        return chunks[:top_k] if top_k > 0 else []
+    counts: dict[str, int] = {}
+    # Rank travels with the chunk rather than being looked up afterwards: a pool
+    # that happens to contain the same object twice must not have both copies
+    # collapse onto one rank.
+    kept: list[tuple[int, object]] = []
+    parked: list[tuple[int, object]] = []
+    for index, chunk in enumerate(chunks):
+        video_id = str(getattr(chunk, "video_id", "") or "")
+        # A chunk with no video identity is never grouped with another: it has
+        # no source to be over-represented by, and bucketing them all under ""
+        # would cap unrelated chunks against each other.
+        capped = bool(video_id) and counts.get(video_id, 0) >= max_per_video
+        if len(kept) < top_k and not capped:
+            if video_id:
+                counts[video_id] = counts.get(video_id, 0) + 1
+            kept.append((index, chunk))
+        else:
+            parked.append((index, chunk))
+    if len(kept) < top_k:
+        kept.extend(parked[: top_k - len(kept)])
+    return [chunk for _, chunk in sorted(kept, key=lambda pair: pair[0])]
+
+
+def source_breadth(chunks_or_ids) -> int:
+    """How many distinct videos a retrieval (or an answer's chunk ids) drew on.
+
+    The instrument for the change above, and deliberately a pure function of
+    ids: it costs no model call, so it can be computed over every cell of an
+    already-committed matrix run without re-scoring anything. Accepts chunk
+    objects or the ``chunk:<video_id>:<index>`` ids a run records, because the
+    live retrieval has the former and a committed run only has the latter.
+
+    Faithfulness cannot adjudicate a breadth change on its own — an answer built
+    from three chunks of one video can be perfectly faithful to them — so this is
+    the number that says whether a corpus-wide answer actually spanned the
+    corpus.
+    """
+    videos: set[str] = set()
+    for item in chunks_or_ids or []:
+        if isinstance(item, str):
+            parts = item.split(":")
+            video_id = parts[1] if len(parts) == 3 else ""
+        else:
+            video_id = str(getattr(item, "video_id", "") or "")
+        if video_id:
+            videos.add(video_id)
+    return len(videos)
 
 
 #: How much of the embedded query a trace step shows. Set above the longest
@@ -738,10 +1011,54 @@ def _as_retrieved(chunk):
     return RetrievedChunk(**chunk.model_dump(), score=None)
 
 
-def format_retrieved_chunks_with_references(chunks) -> str:
+class ChunkLabeller:
+    """Hands out citation numbers that stay unique for the life of one answer.
+
+    A single retrieval formats its chunks ``[1]``, ``[2]`` … and that is
+    unambiguous, because there is one list. The agentic path retrieves several
+    times, and each call used to start from ``[1]`` again — so an answer built
+    from three tool calls contained three different chunks all labelled ``[1]``,
+    and a reader following a citation had no way to tell which one was meant.
+    The numbering was the ambiguity, not the model.
+
+    One labeller per answer fixes that: the first time a chunk is seen it is
+    given the next number, and every later sighting gets the *same* number back.
+    So a label names exactly one chunk, and one chunk carries exactly one label
+    even when two tool calls both retrieve it — which is the common case, since
+    successive queries in a research loop overlap heavily.
+
+    Identity is ``(video_id, chunk_index)``, the same key the agent's context
+    merge deduplicates on. That is deliberate: it makes labels agree with
+    positions in the merged chunk list, so ``[n]`` is the *n*-th merged chunk,
+    and the label-based fallbacks stay correct on this path instead of pointing
+    into whichever tool call happened to run last.
+    """
+
+    def __init__(self) -> None:
+        self._labels: dict[tuple[str, int], int] = {}
+
+    def label_for(self, chunk) -> int:
+        key = (str(chunk.video_id), int(chunk.chunk_index))
+        if key not in self._labels:
+            self._labels[key] = len(self._labels) + 1
+        return self._labels[key]
+
+    def __len__(self) -> int:
+        return len(self._labels)
+
+
+def format_retrieved_chunks_with_references(chunks, labeller: ChunkLabeller | None = None) -> str:
+    """Render chunks as numbered, citable context blocks.
+
+    Without a ``labeller`` the numbering is positional and restarts at ``[1]``,
+    which is right for a single retrieval whose whole context is this one list.
+    Pass a :class:`ChunkLabeller` when several retrievals feed one answer, so the
+    numbering runs on across them.
+    """
     parts: list[str] = []
     for index, chunk in enumerate(chunks, 1):
-        parts.append(f"{format_chunk_reference(index, chunk)}\n{chunk.text}")
+        label = labeller.label_for(chunk) if labeller is not None else index
+        parts.append(f"{format_chunk_reference(label, chunk)}\n{chunk.text}")
     return "\n\n".join(parts)
 
 

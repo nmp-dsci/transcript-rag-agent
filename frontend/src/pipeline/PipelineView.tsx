@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { Chunk, Corpus } from "../api/types";
 import { ChunkGraphView } from "./ChunkGraphView";
+import { DisagreementsView } from "./DisagreementsView";
 import { CorpusSummary } from "./CorpusSummary";
 import { CorpusTree, type SortKey } from "./CorpusTree";
 import { IndexPanel } from "./IndexPanel";
@@ -13,13 +14,14 @@ import { VideoDetail } from "./VideoDetail";
 import { type TreeFilter, applyFilter } from "./insights";
 import { PIPELINE_STYLES } from "./styles";
 
-type SubTab = "corpus" | "graph" | "knowledge" | "themes";
+type SubTab = "corpus" | "graph" | "knowledge" | "themes" | "conflicts";
 
 const SUBTABS: { id: SubTab; label: string }[] = [
   { id: "corpus", label: "Corpus & retrieval" },
   { id: "graph", label: "Chunk graph" },
   { id: "knowledge", label: "Knowledge graph" },
   { id: "themes", label: "Themes" },
+  { id: "conflicts", label: "Disagreements" },
 ];
 
 interface Props {
@@ -45,6 +47,7 @@ export function PipelineView({
   const [graphMounted, setGraphMounted] = useState(false);
   const [knowledgeMounted, setKnowledgeMounted] = useState(false);
   const [themesMounted, setThemesMounted] = useState(false);
+  const [conflictsMounted, setConflictsMounted] = useState(false);
   const [sort, setSort] = useState<SortKey>("views");
   const [filter, setFilter] = useState<TreeFilter | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
@@ -113,6 +116,7 @@ export function PipelineView({
     if (next === "graph") setGraphMounted(true);
     if (next === "knowledge") setKnowledgeMounted(true);
     if (next === "themes") setThemesMounted(true);
+    if (next === "conflicts") setConflictsMounted(true);
     setSub(next);
   };
 
@@ -230,6 +234,12 @@ export function PipelineView({
       {themesMounted ? (
         <div className="pipe-pane" hidden={sub !== "themes"}>
           <ThemesView />
+        </div>
+      ) : null}
+
+      {conflictsMounted ? (
+        <div className="pipe-pane" hidden={sub !== "conflicts"}>
+          <DisagreementsView />
         </div>
       ) : null}
     </section>

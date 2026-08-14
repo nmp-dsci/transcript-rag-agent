@@ -107,6 +107,7 @@ class FakeIndexer:
             raw_document = None
             chunks = [object(), object()]
             summary_status = "hit"
+            removed_chunk_ids: list[str] = []
 
         return Result()
 
@@ -598,3 +599,106 @@ def test_eval_matrix_rejects_an_unknown_question_id(monkeypatch, tmp_path, capsy
 
     assert cli.main(["eval-matrix", "--questions", "g001,nope"]) == 2
     assert "nope" in capsys.readouterr().err
+
+
+# ── re-scoring a committed critique run in place ──────────────────────────
+#
+# The gate that ungrades the retrieval arms landed after these runs were
+# committed, so the files in ``evals/runs/`` carried numbers the scorer no
+# longer certified while the app rendered them as measurements. ``--rescore
+# --in-place`` is what closes that, and its whole value rests on moving exactly
+# one thing.
+
+
+def _stored_run() -> dict:
+    return {
+        "run_id": "critique-HELD-20260810-094922",
+        "created_at": "2026-08-10T09:49:22+00:00",
+        # A pack ablation is a critique run in a different envelope, and it is
+        # read by a tab that keys off both of these.
+        "kind": "pack-ablation",
+        "topic": "resume-design",
+        "verdicts": {"criteria_recall": {"leader": "merged"}},
+        "config": {"matcher": "llm", "conflicts_available": 3},
+        "cells": [
+            {
+                "setup": "rag_llm_filtered",
+                "rubrics": 18,
+                "scores": {"criteria_recall": 0.1579, "contested_coverage": 0.0},
+                "conflicts": [{"conflict_id": "conflict:2"}],
+                "conflicts_in_context": 2,
+                "conflicts_named": 0,
+            }
+        ],
+    }
+
+
+def _rescored_run() -> dict:
+    return {
+        "run_id": "critique-HELD-20260811-101010",
+        "created_at": "2026-08-11T10:10:10+00:00",
+        "kind": "critique-eval",
+        "grounding_gate": "retrieval_provenance",
+        "ungraded_cells": ["rag_llm_filtered"],
+        "rescored_from": "critique-HELD-20260810-094922",
+        "config": {"matcher": "llm", "rescored_gate_from": "exclusive"},
+        "cells": [
+            {
+                "setup": "rag_llm_filtered",
+                "scores": {"criteria_recall": None, "contested_coverage": None},
+                "gradable": False,
+                "criteria_recall_ungated": 0.1579,
+                "conflicts": [],
+                "conflicts_in_context": 0,
+                "conflicts_named": 0,
+            }
+        ],
+    }
+
+
+def test_a_rescore_keeps_the_contested_measurement_the_run_published() -> None:
+    """The gate does not touch contested_coverage, so neither may the re-score.
+
+    Its denominator is fixed by retrieval before the answering call, which is
+    why it sits outside the gate. But the committed conflict corpus has been
+    edited since these runs, so re-deriving it moves "0 of 2 disagreements in
+    context" to "0 of 1" — a second difference, in the one file whose job is to
+    make a single difference legible.
+    """
+    merged = cli._with_published_contested(_stored_run(), _rescored_run())
+
+    cell = merged["cells"][0]
+    assert cell["scores"]["contested_coverage"] == 0.0
+    assert cell["conflicts_in_context"] == 2
+    assert cell["conflicts"] == [{"conflict_id": "conflict:2"}]
+    # And nothing else is restored: the gate's verdict stands.
+    assert cell["scores"]["criteria_recall"] is None
+    assert cell["gradable"] is False
+
+
+def test_a_rescore_in_place_keeps_the_runs_identity_and_its_envelope() -> None:
+    """Same run, same id, read under a different rule.
+
+    The id is how the app expands a row and how the demo verdicts cite this
+    measurement, and the envelope is how the packs tab finds it at all. A
+    re-score that renamed either would be a new run — which is exactly the claim
+    it must not make, because no answer was re-generated.
+    """
+    merged = cli._rescored_in_place(_stored_run(), _rescored_run())
+
+    assert merged["run_id"] == "critique-HELD-20260810-094922"
+    assert merged["created_at"] == "2026-08-10T09:49:22+00:00"
+    assert merged["kind"] == "pack-ablation"
+    assert merged["topic"] == "resume-design"
+    assert merged["verdicts"] == {"criteria_recall": {"leader": "merged"}}
+    # Envelope the scorer knows nothing about survives on the cell too.
+    assert merged["cells"][0]["rubrics"] == 18
+    # The gate's verdict is what actually changed.
+    assert merged["grounding_gate"] == "retrieval_provenance"
+    assert merged["ungraded_cells"] == ["rag_llm_filtered"]
+    assert merged["cells"][0]["scores"]["criteria_recall"] is None
+    # Nothing is lost: the published figure is on the cell, named as ungated.
+    assert merged["cells"][0]["criteria_recall_ungated"] == 0.1579
+    # And it does not claim to be derived from some other run.
+    assert "rescored_from" not in merged
+    assert merged["rescored_at"]

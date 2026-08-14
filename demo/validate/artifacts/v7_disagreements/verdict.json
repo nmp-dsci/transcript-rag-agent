@@ -1,0 +1,417 @@
+{
+  "slice_id": "v7_disagreements",
+  "passed": true,
+  "started_at": "2026-08-11T14:30:00+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "driver": "cdp-fallback",
+  "viewport": [
+    1440,
+    900
+  ],
+  "checks": [
+    {
+      "name": "RAG Pipeline offers a Disagreements sub-tab",
+      "passed": true,
+      "detail": "1 button labelled 'Disagreements' in the RAG Pipeline sub-nav",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "the tab lists disagreements as cards",
+      "passed": true,
+      "detail": "7 article.dis-card rendered, gate is >=3. THE FAILURE THAT STOOD THROUGH THREE VERDICTS IS NOW CLOSED. All 7 are cross_channel; votes 6/9, 7/9, 7/9, 9/9, 8/9, 7/9, 5/9.",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "the count is shown with the pairs it was drawn from",
+      "passed": true,
+      "detail": "'7 disagreements \u00b1 1.4' with 'from 710 candidate pairs adjudicated \u00d7 9 looks each = 6390 calls'",
+      "shot": null
+    },
+    {
+      "name": "a precision is shown, so proposing more candidates cannot flatter the layer",
+      "passed": true,
+      "detail": "'precision 0.010' \u2014 matches the script's \\d\\.\\d{3}; up from 0.004, so the larger count is not merely a wider net",
+      "shot": null
+    },
+    {
+      "name": "the channels and videos the layer touched are counted",
+      "passed": true,
+      "detail": "'13 channels \u00b7 13 videos'",
+      "shot": null
+    },
+    {
+      "name": "the headline count carries its spread, not a bare integer",
+      "passed": true,
+      "detail": "measured\u00b1=True. '7 disagreements \u00b1 1.4' from count_sd_estimate 1.37, plus '6 firm \u00b7 9 pairs undecided' and the sub-run sentence. This is the first real artifact to satisfy the check on the MEASURED branch rather than the stated-caveat branch \u2014 all three renderings the amended check accepts have now been exercised against real or constructed data.",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "the missing-spread note retires once a build records its own spread",
+      "passed": true,
+      "detail": "THE CHECK'S REASON FOR EXISTING, NOW PROVEN ON A REAL ARTIFACT. .dis-caveat count 0 at every one of the four widths, with the measured \u00b1 present. Previously verified only against a synthetic artifact I built; the fallback retires against the genuine 9-look build exactly as it did against the synthetic one.",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "the rejection tally is on the page, not only in the artifact",
+      "passed": true,
+      "detail": "'675 not a conflict \u00b7 27 minority verdict \u00b7 1 duplicate evidence' \u2014 the duplicate-evidence bucket appears for the first time and renders correctly alongside the others",
+      "shot": null
+    },
+    {
+      "name": "the calibration strip is on the same page as the findings",
+      "passed": true,
+      "detail": "one .dis-probehead reading 'calibration 5/5'",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "calibration reports the planted contradictions it surfaced",
+      "passed": true,
+      "detail": "'2/2 planted contradictions surfaced as conflicts'",
+      "shot": null
+    },
+    {
+      "name": "calibration also reports the complementary pairs it rejected",
+      "passed": true,
+      "detail": "'3/3 complementary pairs correctly rejected'",
+      "shot": null
+    },
+    {
+      "name": "each calibration probe can be opened and read individually",
+      "passed": true,
+      "detail": "5 li.dis-probe, each printing its expected verdict and the verdicts drawn",
+      "shot": "01_measured_spread_caveat_retired_7_cards.jpg"
+    },
+    {
+      "name": "a surfaced planted pair shows its axis and both positions, not a blend",
+      "passed": true,
+      "detail": "2 .dis-probeaxis nodes, both naming an axis and printing 'X' against 'Y'",
+      "shot": null
+    },
+    {
+      "name": "every axis is stated as a question, not as an answer",
+      "passed": true,
+      "detail": "all 7 axes end in '?'",
+      "shot": null
+    },
+    {
+      "name": "every disagreement has exactly two sides",
+      "passed": true,
+      "detail": "all 7 cards show two .dis-side blocks (14 total)",
+      "shot": null
+    },
+    {
+      "name": "both sides of every disagreement come from different creators",
+      "passed": true,
+      "detail": "all 7 cards are cross-channel; 0 cards quote one channel twice",
+      "shot": null
+    },
+    {
+      "name": "every quote is at least 8 words",
+      "passed": true,
+      "detail": "14 quotes, none under the 8-word floor",
+      "shot": null
+    },
+    {
+      "name": "the two sides are labelled without ranking them",
+      "passed": true,
+      "detail": "side labels in use: ['one view', 'the other']",
+      "shot": null
+    },
+    {
+      "name": "the two sides are drawn the same width, so neither reads as the main one",
+      "passed": true,
+      "detail": "7 side pairs, widest gap 0px; 677/507/387px per column at 1440/1100/860 and 625px stacked at 700",
+      "shot": "02_vote_chips_9of9_green_vs_split_warn.jpg"
+    },
+    {
+      "name": "no card declares a winner in its own voice",
+      "passed": true,
+      "detail": "0 matches of the verdict-language pattern across .dis-axis/.dis-position/.dis-why on all 7 cards",
+      "shot": null
+    },
+    {
+      "name": "the page says outright that it is not answering",
+      "passed": true,
+      "detail": "'What survives is an axis and two sides \u2014 never a verdict, because the corpus does not have one.'",
+      "shot": null
+    },
+    {
+      "name": "no card renders a resolution field",
+      "passed": true,
+      "detail": "no winner/resolution/'the corpus says' anywhere in .dis-wrap",
+      "shot": null
+    },
+    {
+      "name": "every side carries a timestamp link",
+      "passed": true,
+      "detail": "14 a.dis-ts for 7 cards",
+      "shot": null
+    },
+    {
+      "name": "each link carries exactly one t= offset",
+      "passed": true,
+      "detail": "14 links, 0 with a duplicated or missing t=",
+      "shot": null
+    },
+    {
+      "name": "each link carries exactly one v= video id",
+      "passed": true,
+      "detail": "14 links, 0 with a duplicated or missing v=",
+      "shot": null
+    },
+    {
+      "name": "every link points at YouTube, not at a relative path",
+      "passed": true,
+      "detail": "14/14 links resolve to a youtube watch URL",
+      "shot": null
+    },
+    {
+      "name": "the offset in every link matches the clock printed beside it",
+      "passed": true,
+      "detail": "14 timestamps agree with their links within 1s",
+      "shot": null
+    },
+    {
+      "name": "each quote states how much of it was found in the stored transcript",
+      "passed": true,
+      "detail": "14 provenance chips, all matching 'quote N% in transcript'",
+      "shot": null
+    },
+    {
+      "name": "every axis renders in full at 1440px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every quote renders in full at 1440px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every position renders in full at 1440px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every incompatibility note renders in full at 1440px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every creator name renders in full at 1440px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every timestamp line renders in full at 1440px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every stat chip renders in full at 1440px",
+      "passed": true,
+      "detail": "8 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "the missing-spread note renders in full at 1440px",
+      "passed": true,
+      "detail": "0 nodes \u2014 correctly absent on a build that measured its own spread; the minimum=0 guard asserts 'if present, readable'",
+      "shot": null
+    },
+    {
+      "name": "the layer does not push the page sideways at 1440px",
+      "passed": true,
+      "detail": "document 1440px in a 1440px viewport; two columns at 677px",
+      "shot": null
+    },
+    {
+      "name": "every axis renders in full at 1100px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every quote renders in full at 1100px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every position renders in full at 1100px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every incompatibility note renders in full at 1100px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every creator name renders in full at 1100px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every timestamp line renders in full at 1100px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every stat chip renders in full at 1100px",
+      "passed": true,
+      "detail": "8 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "the missing-spread note renders in full at 1100px",
+      "passed": true,
+      "detail": "0 nodes \u2014 correctly absent on a build that measured its own spread; the minimum=0 guard asserts 'if present, readable'",
+      "shot": null
+    },
+    {
+      "name": "the layer does not push the page sideways at 1100px",
+      "passed": true,
+      "detail": "document 1100px in a 1100px viewport; two columns at 507px",
+      "shot": null
+    },
+    {
+      "name": "every axis renders in full at 860px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every quote renders in full at 860px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every position renders in full at 860px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every incompatibility note renders in full at 860px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every creator name renders in full at 860px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every timestamp line renders in full at 860px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every stat chip renders in full at 860px",
+      "passed": true,
+      "detail": "8 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "the missing-spread note renders in full at 860px",
+      "passed": true,
+      "detail": "0 nodes \u2014 correctly absent on a build that measured its own spread; the minimum=0 guard asserts 'if present, readable'",
+      "shot": null
+    },
+    {
+      "name": "the layer does not push the page sideways at 860px",
+      "passed": true,
+      "detail": "document 860px in a 860px viewport; two columns at 387px",
+      "shot": null
+    },
+    {
+      "name": "every axis renders in full at 700px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every quote renders in full at 700px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": "02_vote_chips_9of9_green_vs_split_warn.jpg"
+    },
+    {
+      "name": "every position renders in full at 700px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every incompatibility note renders in full at 700px",
+      "passed": true,
+      "detail": "7 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every creator name renders in full at 700px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every timestamp line renders in full at 700px",
+      "passed": true,
+      "detail": "14 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "every stat chip renders in full at 700px",
+      "passed": true,
+      "detail": "8 nodes laid out in full",
+      "shot": null
+    },
+    {
+      "name": "the missing-spread note renders in full at 700px",
+      "passed": true,
+      "detail": "0 nodes \u2014 correctly absent on a build that measured its own spread; the minimum=0 guard asserts 'if present, readable'",
+      "shot": null
+    },
+    {
+      "name": "the layer does not push the page sideways at 700px",
+      "passed": true,
+      "detail": "document 700px in a 700px viewport; one column at 625px \u2014 the 820px media query fires and the sides stack, still equal to the pixel",
+      "shot": null
+    },
+    {
+      "name": "no uncaught frontend errors",
+      "passed": true,
+      "detail": "no pageerror or unhandled rejection across both bundles walked",
+      "shot": null
+    }
+  ],
+  "driver_note": "Playwright still cannot launch on this host (chromium.launch() times out at 180s at 0% CPU; the macOS XPC services it and the Metal shader compiler share are wedged). Every check was executed as the equivalent DOM query through an already-open Chrome against the running app, in tabs created for this run. Four-width sweep run in a same-origin iframe sized to 1440/1100/860/700 CSS px so window.innerWidth really was the target and the 820px media query on .dis-sides evaluated against it.\n\nBUNDLE \u2014 AND THE STALE-BUNDLE TRAP FIRED AGAIN, MID-RUN. Pinned before the first assertion: assets/index-S8nzILcC.js, sha256 82f9a3635551bb57 over 454574 bytes, matching frontend/dist. The whole suite was run and passed against it. On the closing re-pin the in-page no-store fetch of that same URL returned 22 bytes \u2014 the API's {\"detail\":\"Not Found\"} body \u2014 while the CSS still served 200. Cause: a concurrent agent rebuilt the frontend at 14:41, replacing index-S8nzILcC.js with index-DC5ijKw3.js; the CSS filename is content-identical across builds (index-CjtTw7_q.css throughout) so it kept serving, which is what made the failure look selective rather than like a rebuild. Rather than mix observations, EVERY check was re-executed end to end against the new bundle \u2014 index-DC5ijKw3.js, sha256 e16540f3029c5378 over 459136 bytes, verified against disk before and after, and stable across the re-run. Both bundles produced identical results on every check. frontend/src/pipeline/DisagreementsView.tsx is unchanged from HEAD (mtime 14:15, predating both rebuilds), so the rebuilds came from the concurrent scoreboard work. A transient note worth recording for operators: between the rebuild and a server restart, http://127.0.0.1:8021/ served an index.html naming an asset the running process could no longer produce, so a reader loading the app in that window got a blank page. That is an artifact of rebuilding under a long-running server, not a defect in this layer.\n\nThe real .yt-agent/conflicts.json was read but never modified. No second instance was needed this run; 8021 was never restarted.",
+  "notes": [
+    "BOTH FAILURES ARE NOW CLOSED AND V7 PASSES. The gate: 7 cross-channel conflicts against >=3. The error bar: the artifact carries count_sd_estimate 1.37 and the headline renders '7 disagreements \u00b1 1.4' with '6 firm \u00b7 9 pairs undecided' and the observed sub-run line 'the same data yields 7, 6, 10 disagreements'. Not re-adjudicated by me \u2014 the provider is still 402 and this evaluation needed zero model calls.",
+    "THE RETIRE CHECK EARNED ITS KEEP. I wrote it against a synthetic artifact because no real one carried the stability fields; this is the first real build to have them, and .dis-caveat is absent at all four widths while the measured \u00b1 renders. The fallback did not outlive the gap it covered. Every one of the three renderings the spread check accepts has now been exercised: stated-caveat on the 3-look artifact, measured \u00b1 on this one, observed sub-runs on both this one and the synthetic.",
+    "undecided_pairs RENDERS 9, so the float fix is visible where it matters. The chip reads '6 firm \u00b7 9 pairs undecided' in warn styling (warn because firm 6 != count 7). I did not re-derive the fix, but the rendered 9 is consistent with 27 minority verdicts and with 6 of 7 cards sitting below unanimity, and a rendered '0 pairs undecided' beside 27 minority verdicts would have been the visible symptom of the bug.",
+    "THE REGIME IS UNMISTAKABLE, AND THE 3-LOOK SPECIAL-CASING CORRECTLY DOES NOT FIRE. The statline prints '\u00d7 9 looks each = 6390 calls'; card chips read 'agreed 9/9 looks' (green) for the unanimous card and 'split \u2014 only N of 9 looks' (warn) for the other six. No .dis-taglist chip contains the string 'the most' \u2014 checked per-element, not by scanning body text, because card 6's axis legitimately contains 'the most annoying/repetitive part of their work' and a naive body-text scan reports that as the special-case firing.",
+    "NEAR-MISSES STILL UNREACHABLE, and the surface got larger in two ways this build: 25 near-misses (up from 11) and a NEW 710-entry vote_ledger carrying chunk ids and vote counts for every candidate pair. Neither is forwarded: list_conflicts returns a nine-key dict (the eight from before plus corpus), and the payload the page itself received confirms it \u2014 no near_misses, no vote_ledger. The served bundle contains zero occurrences of near_miss/nearMiss/vote_ledger/voteLedger, as does frontend/src. A DOM sweep with the calibration strip expanded found none of the 47 distinct near-miss chunk ids and none of the near-miss axes as exact strings.",
+    "ONE APPARENT LEAK, RUN DOWN AND DISMISSED \u2014 recorded because it is exactly the finding that would be misreported. My first sweep used 38-character axis prefixes and returned two hits. Both landed in .dis-axis of SHIPPED cards, and both are prefix collisions: the near-miss axis \"Should the term 'non-functional requirements' be used?\" is a proper prefix of shipped card 1's \"...be used as a category in requirements discussions?\", and similarly for the job-seekers axis. No near-miss axis is exactly equal to any shipped axis, the pairs are different (near-miss chunk:4qfsmE11Ejo:47+iJLL-KPqBpM:2 at 3/9 versus the shipped chunk:4qfsmE11Ejo:47+iJLL-KPqBpM:1), and the text on screen belongs entirely to the pair that won. Three chunk ids appear in both a near-miss pair and a shipped card, which is expected since a chunk can be in several candidate pairs \u2014 and irrelevant to the UI, because chunk ids render nowhere at all.",
+    "THE NEW corpus FIELD RENDERS HONESTLY, and closes a gap I flagged in both previous verdicts. Chip: 'over 71 videos / 1792 chunks \u00b7 00813df8', tooltip 'The corpus this count was taken over, digested over chunk id and text. Two runs are only comparable if this matches.' It states the population, shows the digest a reader would need to compare two runs, truncates it visibly rather than implying the full value, and does not overclaim \u2014 it says what the count was measured over, not that the corpus is complete. The artifact also carries chunks_with_claims 1749 / videos_with_claims 71, which are not rendered; that is a defensible omission rather than a misleading one.",
+    "OBSERVATION, NOT A FAILURE \u2014 a vocabulary mismatch between the header and the cards. The header says '6 firm' using FIRM_VOTE_SHARE (>=2/3 of looks), while a card chip goes green only at full unanimity, so six of seven cards wear an amber 'split \u2014 only N of 9 looks' including the 8/9 and 6/9 cards that the header counts as firm. A reader is told six are firm and cannot tell from the cards which six. This errs toward under-confidence, which is the safe direction and the opposite of the defect I originally raised, so I am not counting it against the slice \u2014 but the two vocabularies are measuring different things under labels that read as if they measure the same thing.",
+    "Probe repeats are now 3 while corpus pairs get 9, inverting the asymmetry the first v7 verdict recorded. That earlier version was serious because the strip certified a stability the cards had not been given; this inversion is the benign direction \u2014 the calibration strip is now the weaker measurement, so it understates rather than overstates what the cards are worth. Recorded, not counted.",
+    "Carried forward unchanged: the 'no winner language' scan still deliberately excludes .dis-factual, because extending it there fires on 'settle' and would report an explicit refusal to pick a winner as winner language. Re-read by hand on this build across all 7 cards; no card names a side."
+  ]
+}

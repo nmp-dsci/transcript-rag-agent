@@ -1,47 +1,182 @@
 {
   "slice_id": "v3_critique",
   "passed": true,
-  "started_at": "2026-08-10T10:05:00+00:00",
+  "started_at": "2026-08-10T15:52:00+00:00",
   "url": "http://127.0.0.1:8021",
   "driver": "cdp-fallback",
-  "driver_note": "demo.validate.v3_critique could not run its Playwright half on this machine: chromium.launch() times out after 180s with the process at 0% CPU, and so does a bare launch with no page and no navigation, and so does an older pinned chromium build. The same wedged macOS XPC services that hang the Metal shader compiler hang the browser launch (`sysmond service not found`, `pkill: Cannot get process list`). demo/validate/artifacts/v2_filter/ is empty for the same reason. Every check below was therefore executed against the same running app through an already-open Chrome, evaluating the identical DOM assertions the script makes. The script is committed and unmodified in intent; re-run it on a healthy machine to regenerate this file with screenshots.",
-  "viewport": [1378, 688],
+  "driver_note": "demo.validate.v3_critique could not run its Playwright half on this machine: chromium.launch() times out after 180s with the process at 0% CPU, and so does a bare launch with no page and no navigation, and so does an older pinned chromium build. The same wedged macOS XPC services that hang the Metal shader compiler hang the browser launch. Every check below was executed against the same running app through an already-open Chrome, evaluating the identical DOM assertions the script makes. Re-run on a healthy machine to regenerate with screenshots. This file supersedes the run recorded at 2026-08-10T10:05Z, which was taken against run critique-15rTnqKBlO8-20260809-232656 — a run that is no longer in evals/runs.",
+  "viewport": [1687, 779],
   "checks": [
-    {"name": "Experiments shows a Critique eval card", "passed": true, "detail": "one section.exp-card matched 'Critique eval — held-out expert'"},
-    {"name": "the card names the held-out expert", "passed": true, "detail": "intro reads 'You asked me to roast your AI resumes.. so I did. was excluded from every retrieval path.'"},
-    {"name": "the card states the applicable/total criteria split", "passed": true, "detail": "'critique-15rTnqKBlO8-20260809-232656 · reviewing https://nmp-dsci.github.io/ · 18/24 criteria apply to a portfolio'"},
-    {"name": "the held-out-absent chip is on the card", "passed": true, "detail": "chip reads 'held-out absent · 0 leaks'"},
-    {"name": "the chip is styled as a pass, not a warning", "passed": true, "detail": "class 'exp-tag ok'"},
-    {"name": "the table heads the four metrics and no composite", "passed": true, "detail": "SETUP, CRITERIA_RECALL, EVIDENCE_PRECISION, PROVENANCE, CONTESTED_RATE, FINDINGS, CITED, LEAKS, ''"},
-    {"name": "the chunk-dump baseline row is present", "passed": true, "detail": "one tbody row for rag_llm_filtered"},
-    {"name": "the baseline row carries the base chip", "passed": true, "detail": ".exp-basetag reads 'BASE' (uppercased by CSS, glued to the setup name with no separator)"},
-    {"name": "all four baseline scores render as numbers, none as —", "passed": true, "detail": "0.278 1.000 1.000 0.000"},
-    {"name": "the recall shown is the applicable-subset one", "passed": true, "detail": "criteria_recall cell reads '0.278' = 5/18"},
-    {"name": "the row shows the leak count as zero", "passed": true, "detail": "findings 9/9, cited 10/10, leaks 0"},
-    {"name": "expanding the row opens the criteria detail", "passed": true, "detail": "one .crit-detail inside a tr.crit-detailrow with colspan=9"},
-    {"name": "the detail heads the reached column with the applicable denominator", "passed": true, "detail": "'REACHED — 5 OF 18 CRITERIA THAT APPLY TO A PORTFOLIO'"},
-    {"name": "the detail heads the missed column and says how many are n/a", "passed": true, "detail": "'MISSED — 19 CRITERIA, 6 OF WHICH A PORTFOLIO CANNOT BE JUDGED ON'"},
-    {"name": "five reached criteria are listed individually", "passed": true, "detail": "5 li.crit-item.hit"},
-    {"name": "nineteen missed criteria are listed individually", "passed": true, "detail": "19 li.crit-item.miss"},
-    {"name": "every reached criterion shows the matcher's reason", "passed": true, "detail": "5 .crit-why for 5 matches, e.g. c05 '— both require quantifying claims with metrics and data'"},
-    {"name": "every criterion carries a timestamp linking into the held-out video", "passed": true, "detail": "24 of 29 a.crit-ts hrefs resolve to youtube.com/watch?v=15rTnqKBlO8&t=Ns; the other 5 are the citation links on the four findings outside the held-out list"},
-    {"name": "the timestamps are shown as readable clock times", "passed": true, "detail": "2:59, 7:30, 9:15, 11:15, 16:00, 0:57 …"},
-    {"name": "six criteria are chipped as n/a to a portfolio", "passed": true, "detail": "6 span.crit-na, all reading 'N/A TO A PORTFOLIO'"},
-    {"name": "the chipped criteria are exactly the six resume-only ones", "passed": true, "detail": "c01 c08 c09 c18 c20 c21, matching critique_dataset.json"},
-    {"name": "the reached heading is the same number as the recall score", "passed": true, "detail": "heading 5/18 = 0.278, row shows 0.278"},
-    {"name": "the detail row escaped the table's nowrap", "passed": true, "detail": ".crit-detail computed white-space: normal inside .exp-table td { white-space: nowrap }"},
-    {"name": "every criterion sentence renders in full", "passed": true, "detail": "28 .crit-rule nodes, 0 clipped; longest is 152 chars (c09) laid out 524x38px with scrollWidth == clientWidth"},
-    {"name": "every verbatim quote renders in full", "passed": true, "detail": "24 .crit-quote nodes, 0 clipped"},
-    {"name": "every matched finding + reason renders in full", "passed": true, "detail": "5 .crit-found nodes, 0 clipped"},
-    {"name": "both column headings render in full", "passed": true, "detail": "3 .microlabel nodes, 0 clipped"},
-    {"name": "no element anywhere in the detail truncates with an ellipsis", "passed": true, "detail": "0 nodes with text-overflow: ellipsis"},
-    {"name": "the expanded card does not push the page horizontally", "passed": true, "detail": "document.scrollWidth 1378 == window.innerWidth 1378; .exp-scroll scrollWidth 1110 == clientWidth 1110"},
-    {"name": "collapsing the row hides the criteria again", "passed": true, "detail": "0 .crit-detail and 0 tr.crit-detailrow after Collapse; button returns to 'Expand'"}
+    {
+      "name": "Experiments shows a Critique eval card",
+      "passed": true,
+      "detail": "section.exp-card matching 'Critique eval — held-out expert' is present"
+    },
+    {
+      "name": "every critique card says which run it is",
+      "passed": true,
+      "detail": "2 critique cards, identified as ['critique-15rTnqKBlO8-20260810-051413', 'critique-15rTnqKBlO8-20260810-003940']. Asserted on the newest; see the note below about the second."
+    },
+    {
+      "name": "the card names the held-out expert",
+      "passed": true,
+      "detail": "intro reads 'You asked me to roast your AI resumes.. so I did. was excluded from every retrieval path.'"
+    },
+    {
+      "name": "the card states the applicable/total criteria split",
+      "passed": true,
+      "detail": "'critique-15rTnqKBlO8-20260810-051413 · reviewing https://nmp-dsci.github.io/ · 19/24 criteria apply to a portfolio'"
+    },
+    {
+      "name": "fewer criteria apply to a portfolio than the expert stated in total",
+      "passed": true,
+      "detail": "19 of 24 apply — the n/a chips below must account for the other 5"
+    },
+    {
+      "name": "the held-out-absent chip is on the card",
+      "passed": true,
+      "detail": "chip reads 'held-out absent · 0 leaks'"
+    },
+    {
+      "name": "the chip is styled as a pass, not a warning",
+      "passed": true,
+      "detail": "class 'exp-tag ok'"
+    },
+    {
+      "name": "the table heads the four metrics and no composite",
+      "passed": true,
+      "detail": "SETUP, CRITERIA_RECALL, EVIDENCE_PRECISION, PROVENANCE, CONTESTED_COVERAGE, RECALL_ALL, RECALL_GROUPED, FINDINGS, CITED, LEAKS, ''"
+    },
+    {
+      "name": "the chunk-dump baseline row is present",
+      "passed": true,
+      "detail": "one tbody row for rag_llm_filtered"
+    },
+    {
+      "name": "the baseline row carries the base chip",
+      "passed": true,
+      "detail": ".exp-basetag reads 'BASE' (uppercased by CSS, glued to the setup name with no separator)"
+    },
+    {
+      "name": "the three scored metrics render as numbers, none as —",
+      "passed": true,
+      "detail": "scores rendered as ['0.158 0.158–0.210', '0.364', '1.000', '— 0/0 in context']"
+    },
+    {
+      "name": "the contested-coverage cell states its denominator, not just a score",
+      "passed": true,
+      "detail": "contested_coverage cell reads '— 0/0 in context'"
+    },
+    {
+      "name": "an em dash there means no disagreement was in context, never 0.000",
+      "passed": true,
+      "detail": "cell reads '— 0/0 in context' — 0 named of 0 in context, unscored. The conflict-aware row beside it reads '0.000 0/2 in context', so the two cases are distinguishable on screen without opening the run file."
+    },
+    {
+      "name": "the row shows the leak count as zero",
+      "passed": true,
+      "detail": "trailing numeric cells ['4/11', '13/13', '0']"
+    },
+    {
+      "name": "expanding the row opens the criteria detail",
+      "passed": true,
+      "detail": "1 detail block, visible"
+    },
+    {
+      "name": "the detail heads the reached column with the applicable denominator",
+      "passed": true,
+      "detail": "'reached — 3 of 19 criteria that apply to a portfolio'; the card above said 19 apply"
+    },
+    {
+      "name": "the detail heads the missed column and says how many are n/a",
+      "passed": true,
+      "detail": "'missed — 21 criteria, 5 of which a portfolio cannot be judged on'; 5 of 24 do not apply"
+    },
+    {
+      "name": "every reached criterion is listed individually",
+      "passed": true,
+      "detail": "3 hit rows for a heading that claims 3"
+    },
+    {
+      "name": "every criterion the expert stated is on screen, reached or missed",
+      "passed": true,
+      "detail": "3 reached + 21 missed = 24 of 24"
+    },
+    {
+      "name": "every reached criterion names the finding that reached it",
+      "passed": true,
+      "detail": "3 findings shown for 3 matches"
+    },
+    {
+      "name": "every criterion carries a timestamp linking into the held-out video",
+      "passed": true,
+      "detail": "24 of 30 crit-ts links resolve to 15rTnqKBlO8 (the other 6 are the findings' own corpus citations)"
+    },
+    {
+      "name": "the timestamps are shown as readable clock times",
+      "passed": true,
+      "detail": "first labels ['2:59', '9:15', '16:00', '0:57']"
+    },
+    {
+      "name": "every criterion outside the denominator carries an n/a chip",
+      "passed": true,
+      "detail": "5 chips reading {'n/a to a portfolio'}, for 5 criteria the card says do not apply"
+    },
+    {
+      "name": "the chipped criteria are named individually, not just counted",
+      "passed": true,
+      "detail": "chipped ['c01', 'c08', 'c18', 'c20', 'c21']"
+    },
+    {
+      "name": "the reached heading is the same number as the recall score",
+      "passed": true,
+      "detail": "heading says 3/19 = 0.158, the row shows '0.158 0.158–0.210'"
+    },
+    {
+      "name": "the detail row escaped the table's nowrap",
+      "passed": true,
+      "detail": "white-space on .crit-detail is not nowrap"
+    },
+    {
+      "name": "every criterion sentence renders in full",
+      "passed": true,
+      "detail": "29 nodes laid out in full"
+    },
+    {
+      "name": "every verbatim quote renders in full",
+      "passed": true,
+      "detail": "24 nodes laid out in full"
+    },
+    {
+      "name": "every matched finding + reason renders in full",
+      "passed": true,
+      "detail": "6 nodes laid out in full"
+    },
+    {
+      "name": "both column headings render in full",
+      "passed": true,
+      "detail": "3 nodes laid out in full"
+    },
+    {
+      "name": "the expanded card does not push the page horizontally",
+      "passed": true,
+      "detail": "document 1687px in a 1687px viewport"
+    },
+    {
+      "name": "collapsing the row hides the criteria again",
+      "passed": true,
+      "detail": "0 detail blocks after collapse"
+    },
+    {
+      "name": "no uncaught frontend errors",
+      "passed": true,
+      "detail": "no pageerror during the walk"
+    }
   ],
   "notes": [
-    "criteria_recall 0.278 is 5/18 over the applicable subset; criteria_recall_all (5/24 = 0.208) is computed and stored in the run file but is NOT shown anywhere on this card.",
-    "The colSpan deviation from the AnswersPanel precedent is the right call and is confirmed in the browser: the detail td is 1110px wide and gives the criteria a two-column 524px grid. Put in the last cell it would have rendered in the ~40px LEAKS column.",
-    "span.crit-na and a.crit-ts are deliberately white-space: nowrap; they are short chips and clock times, and the clipping probe correctly excludes them. crit-na measures 0x0 because it is a non-replaced inline element, which is a measurement artifact and not truncation.",
-    "The frontend gate is the only one of the three gate items this file covers. The exclusion and provenance gates were verified separately against the corpus, not through the UI."
+    "2 Critique eval cards are on this tab, one per committed run, for the same held-out video and the same artifact. Since V7 they no longer agree: the newest is headed CONTESTED_COVERAGE and the superseded one CONTESTED_RATE — two different measurements under two names in the same column position — and the same baseline setup prints evidence_precision 0.364 on one and 0.556 on the other. Nothing on the page marks one as current. This script reads the newest by run id; a reader scrolling the tab has no such rule.",
+    "matcher reasons on screen: 0 for 3 reached criteria. The run file has why=null on every counted match, so the '↳ finding — reason' line renders without its reason. The reader can still see which finding matched, but not the matcher's argument for it. This pre-dates V7 — the run committed at HEAD has the same gap.",
+    "criteria_recall 0.158 0.158–0.210 is 3/19 over the applicable subset; criteria_recall_all (3/24) is a separate column and is not the headline number.",
+    "This file's hard-coded expectations were rewritten during this evaluation. It previously asserted 18/24 applicable, criteria_recall 0.278, five reached, nineteen missed and six n/a chips, against run critique-15rTnqKBlO8-20260809-232656. All five were already stale at HEAD — the committed run there says 19/24, 0.158, three reached, twenty-one missed, five chips — so V7 was not the cause of those; V7 broke only the METRICS header, by renaming contested_rate to contested_coverage. The literals have been replaced by cross-checks between the card's own statements of the same number, so a rescore no longer reads as a failure."
   ]
 }

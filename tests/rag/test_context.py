@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from src.rag.context import MultiTranscriptRagContextProvider, RagTranscriptContextProvider
+from src.rag.context import (
+    MultiTranscriptRagContextProvider,
+    RagTranscriptContextProvider,
+    select_diverse_sources,
+    source_breadth,
+)
 from src.rag.models import (
     RawTranscriptDocument,
     RawTranscriptSegment,
@@ -748,3 +753,330 @@ def test_a_very_long_query_is_shortened_rather_than_dropped() -> None:
     assert query is not None
     assert len(query) <= MAX_TRACE_QUERY_CHARS
     assert query.endswith("…")
+
+
+# --- The summary filter's cap on a corpus-wide question -----------------------
+
+
+class RecordingSummaryStore:
+    """A summary store that reports the ``top_k`` it was asked for.
+
+    ``video_count`` is what :meth:`count` returns — the ceiling the cap rises
+    to — and every video is returned so the filter's own top_k does the cutting.
+    """
+
+    def __init__(self, video_count: int = 40) -> None:
+        self.video_count = video_count
+        self.requested_top_k: list[int] = []
+
+    def count(self) -> int:
+        return self.video_count
+
+    def query_relevant_transcripts(self, question: str, top_k: int, min_score: float):
+        self.requested_top_k.append(top_k)
+        return [
+            RetrievedTranscriptSummary(
+                transcript_id=f"raw_transcript:vid{index:09d}",
+                video_id=f"vid{index:08d}",
+                source_url=f"https://www.youtube.com/watch?v=vid{index:08d}",
+                summary=f"summary {index}",
+                summary_model="deepseek-test",
+                summary_generated_at="2026-05-16T00:00:00+00:00",
+                summary_embedding=[1.0, 0.0, 1.0],
+                summary_embedding_model="fake",
+                summary_embedded_at="2026-05-16T00:01:00+00:00",
+                score=0.8,
+            )
+            for index in range(min(top_k, self.video_count))
+        ]
+
+
+def _filtered_context(question: str, summary_store, *, chunk_store=None, top_k=10, **kwargs):
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=chunk_store or FakeMultiChunkStore(),
+        summary_store=summary_store,
+        **kwargs,
+    )
+    return provider.get_context(
+        question,
+        top_k=top_k,
+        filter_transcripts=True,
+        transcript_filter_top_k=5,
+    )
+
+
+def test_a_corpus_wide_question_lifts_the_summary_filter_cap() -> None:
+    """ "Main themes across this corpus" has no top five — the answer is the spread."""
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context(
+        "What are the main themes across this corpus of videos?", summary_store
+    )
+
+    assert summary_store.requested_top_k == [40]
+    assert len(context.selected_transcripts or []) == 40
+
+
+def test_a_specific_question_keeps_the_cap() -> None:
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context("How do I make my resume ATS-friendly?", summary_store)
+
+    assert summary_store.requested_top_k == [5]
+    assert len(context.selected_transcripts or []) == 5
+
+
+def test_lifting_the_cap_is_recorded_in_the_trace_with_the_signal_that_fired() -> None:
+    """A silent behaviour change is a behaviour change nobody can audit."""
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context(
+        "What are the main themes across this corpus of videos?", summary_store
+    )
+
+    steps = [step for step in (context.trace or []) if step.label == "Corpus-wide question"]
+    assert len(steps) == 1
+    assert "'corpus'" in steps[0].detail
+    assert "5 to 40" in steps[0].detail
+    filter_step = next(step for step in context.trace if step.label == "Summary filter")
+    assert "cap lifted" in filter_step.detail
+
+
+def test_no_corpus_wide_step_is_recorded_for_a_specific_question() -> None:
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context("How do I make my resume ATS-friendly?", summary_store)
+
+    assert not [step for step in (context.trace or []) if step.label == "Corpus-wide question"]
+    filter_step = next(step for step in context.trace if step.label == "Summary filter")
+    assert "cap lifted" not in filter_step.detail
+
+
+def test_the_cap_lift_can_be_switched_off_for_a_controlled_comparison() -> None:
+    """The eval harness has to be able to produce the pre-change arm."""
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    _filtered_context(
+        "What are the main themes across this corpus of videos?",
+        summary_store,
+        corpus_wide_filter=False,
+    )
+
+    assert summary_store.requested_top_k == [5]
+
+
+def test_a_corpus_smaller_than_the_cap_never_shrinks_the_filter() -> None:
+    """Lifting a cap must not lower it: max(), not replace."""
+    summary_store = RecordingSummaryStore(video_count=2)
+
+    _filtered_context("What are the main themes across this corpus?", summary_store)
+
+    assert summary_store.requested_top_k == [5]
+
+
+# --- Diversity-constrained selection on a corpus-wide question ----------------
+
+
+def _ranked(*specs) -> list[RetrievedChunk]:
+    """Chunks in ranking order, given ``(video_id, chunk_index)`` pairs."""
+    return [
+        RetrievedChunk(
+            transcript_id=f"raw_transcript:{video_id}",
+            video_id=video_id,
+            source_url=f"https://www.youtube.com/watch?v={video_id}",
+            chunk_index=index,
+            text=f"{video_id} chunk {index}",
+            start_seconds=0,
+            end_seconds=10,
+            score=1.0 - position / 100,
+        )
+        for position, (video_id, index) in enumerate(specs)
+    ]
+
+
+def test_a_per_video_cap_promotes_chunks_the_budget_had_crowded_out() -> None:
+    """The defect: ten chunks from three videos is a three-video answer.
+
+    ``vidaaa`` monopolises the ranking, so lifting the *video* cap admitted
+    seventy-one videos to a budget that four of them were already spending.
+    """
+    pool = _ranked(
+        ("vidaaa", 0),
+        ("vidaaa", 1),
+        ("vidaaa", 2),
+        ("vidbbb", 0),
+        ("vidccc", 0),
+        ("vidddd", 0),
+    )
+
+    kept = select_diverse_sources(pool, top_k=4, max_per_video=1)
+
+    assert [chunk.video_id for chunk in kept] == ["vidaaa", "vidbbb", "vidccc", "vidddd"]
+    assert source_breadth(kept) == 4
+    assert source_breadth(pool[:4]) == 2
+
+
+def test_the_cap_never_changes_the_order_the_retriever_ranked_in() -> None:
+    """It changes *which* chunks reach the answer, not what order they arrive."""
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidbbb", 0), ("vidaaa", 2), ("vidccc", 0))
+
+    kept = select_diverse_sources(pool, top_k=3, max_per_video=1)
+
+    assert [(c.video_id, c.chunk_index) for c in kept] == [
+        ("vidaaa", 0),
+        ("vidbbb", 0),
+        ("vidccc", 0),
+    ]
+
+
+def test_the_selection_is_never_smaller_than_it_would_have_been() -> None:
+    """Backfill, not truncation: a narrow corpus must not lose context.
+
+    Three videos and a cap of one would leave a four-chunk budget three-quarters
+    spent if capped chunks were dropped rather than parked.
+    """
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidaaa", 2), ("vidbbb", 0), ("vidccc", 0))
+
+    kept = select_diverse_sources(pool, top_k=4, max_per_video=1)
+
+    assert len(kept) == 4
+    # The backfilled chunk is the best-ranked parked one, restored to its place.
+    assert [(c.video_id, c.chunk_index) for c in kept] == [
+        ("vidaaa", 0),
+        ("vidaaa", 1),
+        ("vidbbb", 0),
+        ("vidccc", 0),
+    ]
+
+
+def test_every_selected_chunk_came_from_the_ranking() -> None:
+    """The honest half: the cap can only promote what relevance already ranked.
+
+    A round-robin over the *admitted videos* would have added a chunk from a
+    video the ranking never surfaced — breadth measuring the filter's
+    admissions rather than the corpus's evidence.
+    """
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidbbb", 7))
+
+    kept = select_diverse_sources(pool, top_k=3, max_per_video=1)
+
+    assert all(chunk in pool for chunk in kept)
+
+
+def test_a_cap_at_or_above_top_k_is_a_no_op() -> None:
+    """The switch degrades to nothing, not to a surprise."""
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidaaa", 2), ("vidbbb", 0))
+
+    assert select_diverse_sources(pool, top_k=3, max_per_video=3) == pool[:3]
+
+
+def test_diversity_is_off_when_the_cap_is_zero() -> None:
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidbbb", 0))
+
+    assert select_diverse_sources(pool, top_k=2, max_per_video=0) == pool[:2]
+
+
+def test_source_breadth_reads_chunk_ids_as_well_as_chunks() -> None:
+    """The instrument has to work on a committed run, which stores only ids."""
+    pool = _ranked(("vidaaa", 0), ("vidaaa", 1), ("vidbbb", 0))
+
+    assert source_breadth(pool) == 2
+    assert source_breadth(["chunk:vidaaa:0", "chunk:vidaaa:1", "chunk:vidbbb:0"]) == 2
+    assert source_breadth([]) == 0
+    assert source_breadth(["not-a-chunk-id"]) == 0
+
+
+class BroadChunkStore(FakeMultiChunkStore):
+    """A store whose ranking is dominated by one video, like the real one."""
+
+    def query_by_video_ids(self, video_ids: list[str], query: str, top_k: int):
+        self.calls.append(("video_ids", video_ids, query, top_k))
+        return _ranked(
+            ("vid00000000", 0),
+            ("vid00000000", 1),
+            ("vid00000000", 2),
+            ("vid00000001", 0),
+            ("vid00000002", 0),
+        )
+
+
+def test_the_diversity_cap_is_off_by_default() -> None:
+    """No shipped behaviour moves before the matrix has measured it."""
+    provider = MultiTranscriptRagContextProvider(
+        raw_store=FakeMultiRawStore(),
+        chunk_store=BroadChunkStore(),
+        summary_store=RecordingSummaryStore(video_count=40),
+    )
+
+    context = provider.get_context(
+        "What are the main themes across this corpus?",
+        top_k=3,
+        filter_transcripts=True,
+        transcript_filter_top_k=5,
+    )
+
+    assert [c.video_id for c in context.retrieved_chunks] == ["vid00000000"] * 3
+    assert not [s for s in (context.trace or []) if s.label == "Source diversity"]
+
+
+def test_the_diversity_cap_widens_a_corpus_wide_answer_when_switched_on() -> None:
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context(
+        "What are the main themes across this corpus?",
+        summary_store,
+        chunk_store=BroadChunkStore(),
+        corpus_wide_max_per_video=1,
+        top_k=3,
+    )
+
+    assert source_breadth(context.retrieved_chunks) == 3
+    step = next(s for s in context.trace if s.label == "Source diversity")
+    assert "at most 1 chunk(s) per video" in step.detail
+    assert "from 3 videos" in step.detail
+
+
+def test_a_specific_question_is_untouched_by_the_diversity_cap() -> None:
+    """It is gated on the corpus-wide signal, where the spread *is* the answer."""
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context(
+        "How do I make my resume ATS-friendly?",
+        summary_store,
+        chunk_store=BroadChunkStore(),
+        corpus_wide_max_per_video=1,
+        top_k=3,
+    )
+
+    assert [c.video_id for c in context.retrieved_chunks] == ["vid00000000"] * 3
+    assert not [s for s in (context.trace or []) if s.label == "Source diversity"]
+
+
+def test_switching_the_corpus_wide_path_off_disables_the_diversity_cap_too() -> None:
+    """``corpus_wide_filter=False`` reproduces the pre-change arm end to end."""
+    summary_store = RecordingSummaryStore(video_count=40)
+
+    context = _filtered_context(
+        "What are the main themes across this corpus?",
+        summary_store,
+        chunk_store=BroadChunkStore(),
+        corpus_wide_filter=False,
+        corpus_wide_max_per_video=1,
+        top_k=3,
+    )
+
+    assert [c.video_id for c in context.retrieved_chunks] == ["vid00000000"] * 3
+
+
+def test_the_provider_reports_the_behaviour_its_switches_implement() -> None:
+    """The fingerprint reads this rather than a literal, so they cannot drift."""
+
+    def provider(**kwargs):
+        return MultiTranscriptRagContextProvider(
+            raw_store=FakeMultiRawStore(), chunk_store=FakeMultiChunkStore(), **kwargs
+        )
+
+    assert provider().retrieval_behavior == "budget"
+    assert provider(corpus_wide_max_per_video=2).retrieval_behavior == "budget+diversity"
+    assert provider(corpus_wide_filter=False).retrieval_behavior == "capped"

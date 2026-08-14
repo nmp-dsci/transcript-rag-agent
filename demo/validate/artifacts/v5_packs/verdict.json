@@ -1,0 +1,247 @@
+{
+  "slice_id": "v5_packs",
+  "passed": true,
+  "started_at": "2026-08-10T19:38:00+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "all four declared packs are offered in the app",
+      "passed": true,
+      "detail": "the Experiments tab renders an 'Expert pack' card whose tablist offers resume-design, job-search, system-design, app-architecture; none carries the '\u00b7' unbuilt marker, and each selects to a full detail (header, checks strip, criteria list, arms table, membership table, gap list). The panel loads independently of /api/experiments, so it renders whether or not an eval run is committed.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "resume-design: the rules on screen are the rules in the pack file",
+      "passed": true,
+      "detail": "17 rubric rows rendered, ids r0101 r0102 r0103 r0201 r0202 r0203 r0302 r0303 r0401 r0402 r0403 r0501 r0502 r0503 r0601 r0602 r0603 \u2014 identical list and order to experts/resume-design/pack.json. Section heading reads '17 criteria'.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "resume-design: every rule opens to the quotes behind it",
+      "passed": true,
+      "detail": "17 of 17 rules expand; 30 quote rows rendered against 30 evidence entries in the pack file; 0 rules render with an empty evidence list. 4 rules carry a single quote, 13 carry two.",
+      "shot": "02_rubric_r0101_two_creators.jpg"
+    },
+    {
+      "name": "job-search: the rules on screen are the rules in the pack file",
+      "passed": true,
+      "detail": "17 rendered ids match experts/job-search/pack.json exactly; heading reads '17 criteria'.",
+      "shot": null
+    },
+    {
+      "name": "job-search: every rule opens to the quotes behind it",
+      "passed": true,
+      "detail": "17 of 17 expand; 29 quote rows against 29 evidence entries; 0 empty rules; 5 single-quote rules.",
+      "shot": null
+    },
+    {
+      "name": "system-design: the rules on screen are the rules in the pack file",
+      "passed": true,
+      "detail": "15 rendered ids match experts/system-design/pack.json exactly; heading reads '15 criteria'.",
+      "shot": null
+    },
+    {
+      "name": "system-design: every rule opens to the quotes behind it",
+      "passed": true,
+      "detail": "15 of 15 expand; 26 quote rows against 26 evidence entries; 0 empty rules; 4 single-quote rules.",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: the rules on screen are the rules in the pack file",
+      "passed": true,
+      "detail": "12 rendered ids match experts/app-architecture/pack.json exactly; heading reads '12 criteria'.",
+      "shot": "04_arms_as_built_app_architecture.jpg"
+    },
+    {
+      "name": "app-architecture: every rule opens to the quotes behind it",
+      "passed": true,
+      "detail": "12 of 12 expand; 20 quote rows against 20 evidence entries; 0 empty rules; 4 single-quote rules. Totals across the four packs: 61 rules, 105 quotes.",
+      "shot": null
+    },
+    {
+      "name": "every cited video is one a reader can open in the corpus",
+      "passed": true,
+      "detail": "105 citations resolve to 31 distinct video ids, and all 31 render as rows in the RAG Pipeline corpus tree (60 videos / 1503 chunks at the time of the sweep). 0 citations render without a video id in their href.",
+      "shot": null
+    },
+    {
+      "name": "every rendered quote is in the transcript chunk its citation names",
+      "passed": true,
+      "detail": "105 of 105. For each citation the chunk id was taken from the link's own title attribute ('chunk:<video>:<index> \u2014 opens at M:SS'), the named video was opened in the corpus tree, and the rendered .chunkcard for that index was searched for the quote. Every quote matched verbatim; none matched only some other chunk of the same video, and none failed to appear at all. Worked example, resume-design r0101: the panel renders '6:29 \u00b7 Farah Sharghi \u00b7 Ex-Google Recruiter Explains: 6 R\u00e9sum\u00e9 Secrets That Get You Hired \u00b7 \"Worked on a migration project for internal tools. Tools for what? What do those tools even do\"', and chunk #c6 of eGmZZFJ-8PY (6:26\u20137:36, 31 segments) renders '...Here's a bad one. Worked on a migration project for internal tools. Tools for what? What do those tools even do? I have no context...'. This was checked against the transcript the app itself renders, not against the pack's stored quote_resolution field, which the panel also advertises as 100%.",
+      "shot": "05_citation_resolves_in_transcript.jpg"
+    },
+    {
+      "name": "every citation's link lands inside the chunk it quotes",
+      "passed": true,
+      "detail": "105 of 105 link offsets (?t=<n>s, built server-side as quote_start-2) fall inside the from\u2013to window the corpus tree renders for that chunk. The clock label the panel prints beside each quote also agrees with its own link on all 105 (within 3s, the -2s lead-in). So the link is not merely to the right video: it is to the right sentence.",
+      "shot": null
+    },
+    {
+      "name": "the creator printed beside a quote is that video's channel",
+      "passed": true,
+      "detail": "105 of 105 creator labels equal the channel in the video's own header line in the corpus detail pane ('Farah Sharghi \u00b7 9:40 \u00b7 \u2026 \u00b7 10 chunks'). 0 quotes fall back to rendering a bare video id in place of a creator.",
+      "shot": null
+    },
+    {
+      "name": "no citation is rendered as unresolved",
+      "passed": true,
+      "detail": "0 of 105 citation links carry the .pk-ts.bad style, and 0 render the 'model wrote \"\u2026\" \u2014 snapped at \u2026' drift line, i.e. every quote snapped onto the transcript at ratio 1.0. Worth noting the counter-example that shows the badge is not cosmetic: the app-architecture raptor arm renders 'quotes resolved 95%' in the Arms-as-built table, so an arm with an imperfect quote does show as one; the shipped merged arm is 100% for all four topics.",
+      "shot": "04_arms_as_built_app_architecture.jpg"
+    },
+    {
+      "name": "resume-design: the creator badge counts the creators actually shown",
+      "passed": true,
+      "detail": "17 of 17 rules agree \u2014 the 'N creators' badge equals the number of distinct creator names rendered under the rule, and the badge tooltip lists exactly that set (ordering differs: the tooltip is alphabetical, the rows are in evidence order).",
+      "shot": null
+    },
+    {
+      "name": "resume-design: no rule reaches two creators by counting one twice",
+      "passed": true,
+      "detail": "13 rules are badged '2 creators'; in every one the two quotes come from two different channels and two different video ids. 0 rules badged >=2 rest on one voice.",
+      "shot": "02_rubric_r0101_two_creators.jpg"
+    },
+    {
+      "name": "resume-design: the pack header's creator count is the one on the page",
+      "passed": true,
+      "detail": "header reads 'DISTINCT CREATORS 11'; the quotes name 11: Anthony D. Mays, Anthony Sistilli, Ashish Pratap Singh, Boris Meinardus, Concepts of AI (Akash Gupta), Farah Sharghi, Greg Langstaff, Headless Headhunter, Jash Radia, Jean Lee, Stefan Masnikovic.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "job-search: the creator badge counts the creators actually shown",
+      "passed": true,
+      "detail": "17 of 17 rules agree; 12 badged '2 creators'.",
+      "shot": null
+    },
+    {
+      "name": "job-search: no rule reaches two creators by counting one twice",
+      "passed": true,
+      "detail": "0 rules badged >=2 rest on one voice. Header 'DISTINCT CREATORS 10' matches the 10 names rendered: Anthony D. Mays, Anthony Sistilli, Ashish Pratap Singh, Boris Meinardus, Farah Sharghi, Greg Langstaff, HubSpot Marketing, Jean Lee, Kevin Stratvert, Stefan Masnikovic.",
+      "shot": null
+    },
+    {
+      "name": "system-design: no rule reaches two creators by counting one twice",
+      "passed": true,
+      "detail": "This is the pack where the trap actually fires and the app does not fall into it. r0101 cites two different videos \u2014 fc6_NtD9soI (Jimmy Bogard) and 4qfsmE11Ejo (Kevlin Henney) \u2014 but both are NDC Conferences, and the badge reads '1 creator' with the thin style rather than '2 creators'. 7 of 15 rules are badged '2 creators' and all 7 span two distinct channels. Header 'DISTINCT CREATORS 9' matches the 9 rendered: Arpit Bhayani, Databricks, Domain-Driven Design Europe, GOTO Conferences, Gaurav Sen, Hello Interview, NDC Conferences, Strange Loop Conference, System Design Interview.",
+      "shot": null
+    },
+    {
+      "name": "app-architecture: no rule reaches two creators by counting one twice",
+      "passed": true,
+      "detail": "5 of 12 badged '2 creators', all spanning two channels; 3 rules cite one video twice and are badged '1 creator'. Header 'DISTINCT CREATORS 7' matches the 7 rendered: ArjanCodes, Dave Ebbelaar, Devoxx, Domain-Driven Design Europe, GOTO Conferences, NDC Conferences, Ras Mic.",
+      "shot": null
+    },
+    {
+      "name": "the four packs are four different sets of rules",
+      "passed": true,
+      "detail": "61 distinct criteria across 61 rendered rules \u2014 no criterion text is repeated between packs, even though the topic pairs share source units (resume-design and job-search both draw on raptor:theme:4, raptor:theme:8 and community:6; system-design and app-architecture both draw on raptor:theme:3 and community:27).",
+      "shot": null
+    },
+    {
+      "name": "the D2 ablation is rendered as a three-way table",
+      "passed": true,
+      "detail": "resume-design renders 'D2 \u2014 raptor vs communities vs merged, on the held-out expert \u00b7 You asked me to roast your AI resumes.. so I did. \u00b7 19/24 criteria apply \u00b7 5 matcher repeats' over a three-row table with columns arm / criteria_recall / evidence_precision / provenance / contested_coverage / recall_all / recall_grouped / rubrics / cited / leaks. A reader sees the three techniques measured against each other, not a sentence saying merged won.",
+      "shot": "03_d2_three_arms_and_membership.jpg"
+    },
+    {
+      "name": "resume-design: the committed D2 numbers are the ones on screen",
+      "passed": true,
+      "detail": "raptor (tagged BASE) 0.263 [0.210\u20130.316] / 0.667, communities 0.105 [0.105\u20130.210] / 0.778, merged 0.263 [0.210\u20130.368] / 0.824 \u2014 the figures committed in experts/ablation.json (0.2632/0.6667, 0.1053/0.7778, 0.2632/0.8235), rendered with each point estimate's spread across the 5 matcher repeats underneath it. Provenance 1.000 for all three; leaks 0 for all three; cited 35/35, 30/30, 30/30.",
+      "shot": "03_d2_three_arms_and_membership.jpg"
+    },
+    {
+      "name": "resume-design: the reader is told which lead survives the scorer's noise",
+      "passed": true,
+      "detail": "four verdict rows under the table: 'CRITERIA_RECALL merged \u2014 inside scorer noise \u2014 the lead sits inside the scorer's own range across repeats'; 'EVIDENCE_PRECISION merged \u2014 decisive \u2014 leader clears the runner-up's own spread'; 'PROVENANCE communities \u2014 inside scorer noise'; 'CONTESTED_COVERAGE \u2014 \u2014 no scored arm'. So the app makes exactly the claim the decision rests on (merged ships on precision) and explicitly refuses the one it cannot support (recall is a tie).",
+      "shot": "03_d2_three_arms_and_membership.jpg"
+    },
+    {
+      "name": "packs with no D2 run still compare the three arms and say why they have no score",
+      "passed": true,
+      "detail": "job-search, system-design and app-architecture each render an 'Arms as built' table with three rows and the shipped arm tagged, plus the paragraph 'No D2 score for this pack. The held-out critique harness reviews one artifact \u2014 a r\u00e9sum\u00e9 \u2014 so only a pack whose criteria apply to it can be scored against it. The arms are still comparable above on the deterministic counts.' Rendered rows (arm|units|rubrics|quotes|resolved|>=2 creators|contested|gaps): job-search raptor 6|16|30|100%|81%|0|7, communities 6|18|29|100%|56%|0|7, merged 6|17|29|100%|71%|0|7; system-design 5|15|26|100%|40%|0|29, 5|15|25|100%|60%|0|29, 5|15|26|100%|47%|0|29; app-architecture 4|12|20|95%|17%|0|30, 4|12|20|100%|67%|0|30, 4|12|20|100%|42%|0|30. resume-design also renders it: 6|18|35|100%|89%|0|13, 6|18|30|100%|56%|0|13, 6|17|30|100%|76%|0|13. The three-way comparison is therefore visible on all four topics, and the merged arm's case \u2014 fewer or equal rules, best or near-best multi-creator share against communities, no loss of quote resolution \u2014 is legible without the scored table.",
+      "shot": "04_arms_as_built_app_architecture.jpg"
+    },
+    {
+      "name": "each pack states the corpus it was built from",
+      "passed": true,
+      "detail": "all four render 'v1 \u00b7 shipped arm merged \u00b7 corpus e1b17b35cb7190cf (1372 chunks, 56 videos) \u00b7 deepseek-v4-flash'. The artifact is dated and identifiable, which is the half of provenance that is present.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "a reader is told when the pack is behind the corpus they are browsing",
+      "passed": true,
+      "detail": "RE-CHECKED 2026-08-11 after the notice was built. Read out of the live DOM at .pk-stale, visible without hovering and rendered ABOVE the rules it qualifies: 'These rules are out of date. They were distilled from 56 videos / 1372 chunks (e1b17b35cb7190cf). The corpus you are browsing now holds 68 videos / 1753 chunks (06850725b67a67f4) - 12 videos and 381 chunks the build never saw. Nothing below is wrong, but it is not everything the corpus now supports. Rebuild with uv run python -m src.cli build-packs.' The present-tense intro this check also objected to now reads '...drawn from the corpus AS IT STOOD AT BUILD TIME...' and the header says 'built from corpus' rather than 'corpus'. The comparison is computed server-side against the live corpus digest, so it tracks further ingestion instead of hard-coding today's gap; when the digests match it renders the 'Built from the corpus as it stands now' line instead, and when the live corpus cannot be read it renders nothing at all rather than implying currency.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "V8's loop-built section has not displaced V5's own rendering",
+      "passed": true,
+      "detail": "the row '\u25b8 Loop-built pack: deep-r1 \u2192 deep-r2 \u2014 10 added, 16 kept, 0 removed \u00b7 the one-shot control, same budget and no critic, added 10 on the same v1' renders on resume-design only, between 'Arms as built' and the D2 table, and is absent from the other three. resume-design still renders 17 rules / 30 quotes / 14 members with it in place, so V5's own content is intact. That section belongs to V8 and is not judged here.",
+      "shot": null
+    },
+    {
+      "name": "no D5-excluded property video is cited by any rendered rule",
+      "passed": true,
+      "detail": "105 citations over 31 videos; none of 7m27Go3K1d0, AdRL6tKu3Gk, Bw58mV015z4, ZiEGOgTC56Y, gXf7fRvuaXA appears. No property creator (Smart Property Investment, Suburb Data, The Follio Property Podcast Clips) appears among the 4 packs' 37 creator attributions either.",
+      "shot": null
+    },
+    {
+      "name": "no D5-excluded property video is a member of any rendered pack",
+      "passed": true,
+      "detail": "55 membership rows across the four packs (14/14/14/13); 0 match any of the five property videos, whose rendered titles in the corpus tree are 'The Real Reason Gold Coast Market Could Colla\u2026' (Bw58mV015z4), 'The budget has sparked panic\u2026' (ZiEGOgTC56Y), 'The end of the old property playbook? Taxes\u2026' (7m27Go3K1d0), 'The strategy to win after this budget' (gXf7fRvuaXA), 'Ep. 55: What's Happening Across Australia's Property Markets?' (AdRL6tKu3Gk). All five remain in the corpus tree and answerable, which is what D5 asks for.",
+      "shot": "06_membership_override_controls.jpg"
+    },
+    {
+      "name": "the exclusion is stated on the pack surface, not left to be assumed",
+      "passed": true,
+      "detail": "all four packs render 'EXCLUDED-VIDEO CITATIONS 0 \u2014 5 videos blocked' in the checks strip, so the absence is a stated policy with a live counter rather than something a reader has to infer from nothing being there.",
+      "shot": "01_pack_panel_resume_design.jpg"
+    },
+    {
+      "name": "membership is reviewable: every routed video shows its score and where it came from",
+      "passed": true,
+      "detail": "55 rows over four tables with columns score / video / creator / chunks / source / pin. resume-design 14 rows (scores 0.733 down to 0.387), job-search 14 (0.708\u20130.442), system-design 14 (0.714\u20130.276), app-architecture 13 (0.622\u20130.256); all 55 marked 'routed', 0 'hand-added'. The heading states the mechanism \u2014 'Membership \u2014 14 videos routed by topic description \u00b7 scored against each video's summary; overrides apply at the next build' \u2014 and rows that contributed nothing are marked rather than hidden: 6 'no units' (job-search 3, app-architecture 2, system-design 1) and 8 'uncited'.",
+      "shot": "06_membership_override_controls.jpg"
+    },
+    {
+      "name": "every membership row offers an override",
+      "passed": true,
+      "detail": "55 of 55 rows render three buttons \u2014 in / out / auto \u2014 in a 'pin' column. So D3's 'overridable in the app' is built, not merely planned.",
+      "shot": "06_membership_override_controls.jpg"
+    },
+    {
+      "name": "an override is recorded, acknowledged, and honest about when it applies",
+      "passed": true,
+      "detail": "pressing 'out' on the lowest-scoring job-search member ('Engineering Resume Hack (from Big Tech Hiring Manager)', _MT4SgfQ8QY) rendered the notice '_MT4SgfQ8QY: recorded \u2014 applies at the next build' and the row gained a 'pinned out' badge beside 'routed'. The rubric list and the membership count did not change \u2014 which is the designed behaviour and is stated on screen in the heading's hint, so the panel is not pretending the artifact moved. Verified server-side afterwards: experts/job-search/manifest.json went from overrides {} to {\"_MT4SgfQ8QY\": false}.",
+      "shot": null
+    },
+    {
+      "name": "the override can be handed back to the router",
+      "passed": true,
+      "detail": "pressing 'auto' on the same row removed the 'pinned out' badge, leaving 'routed'; the manifest's overrides returned to {}. The round trip is complete, so the control is a real two-way editor rather than a one-way write.",
+      "shot": null
+    },
+    {
+      "name": "exercising the pack panel raises no uncaught frontend errors",
+      "passed": true,
+      "detail": "switching all four packs, expanding rules, opening and closing the gap list and pressing an override produced no console errors. Two React #185 errors were observed earlier in the session and are not V5's: their stack is CorpusTree.tsx's <details onToggle> \u2192 onSelectVideo, and they were caused by this evaluation setting .open on all 60 corpus-tree rows at once to scrape transcripts. No human click path reaches that.",
+      "shot": null
+    }
+  ],
+  "notes": [
+    "ENVIRONMENT: chromium.launch() times out after 180s on this machine (a wedged Metal compiler XPC service), so demo/validate/v5_packs.py could not be executed through Playwright. Every assertion in that file was executed instead as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, in a tab created for this evaluation, and the results are what this verdict records. Slices v2_filter, v3_critique, v4_themes and v4b_ingest recorded the same constraint the same way. Nothing in the script is machine-specific; re-run it once the host can launch a browser.",
+    "STALE BUNDLE RULED OUT before judging: the document loads /assets/index-B_gk10NF.js, a no-store refetch of it returns 427074 bytes with sha256 34f383453eaf24c53217474bd7215c7abf8b3a17e7650c54b6426ba1caa012ad, and that is byte-identical to frontend/dist/assets/index-B_gk10NF.js built at 19:34:49 \u2014 which postdates the 19:08:40 edit to PackPanel.tsx. So the DOM judged here is the current source, and no check rests on grepping the bundle for a marker string.",
+    "Quote resolution was asserted DOM against DOM. The pack's own quote_resolution field and the panel's 'quotes resolving 100%' chip were treated as claims to be tested, not evidence: for each of the 105 citations the chunk id was read off the link's title attribute, the video was opened in the RAG Pipeline corpus tree, and the quote was matched against the .chunkcard text the app renders for that chunk index. All 105 matched, in the cited chunk, with the link offset inside that chunk's rendered window. This is the check that would have caught the fabricated quote this project shipped once before, and it does not depend on any field the pack writes about itself.",
+    "The corpus moved under this evaluation. It read 59 videos / 1460 chunks in the V4b verdict, 60 / 1503 when the transcript sweep started, and 65 / 1654 an hour later with the header showing 'Indexing 1 \u00b7 0 queued'. Every count in this verdict is stated with the moment it was read. The pack's own figure (56 / 1372) did not move, which is the subject of the one failing check.",
+    "The one failing check is not a defect in what V5 built; it is a gap in what V5 says. Everything the slice brief asked to be established holds: four packs render with rubric counts matching their files, all 105 citations resolve to real transcript text at the right video and second, the multi-creator claim is honest down to the one rule that could have been inflated and was not, D2 is on screen as a three-way comparison with its noise ranges, no property video reaches any pack, and membership is both reviewable and genuinely overridable. What is missing is a sentence telling the reader that the pack in front of them was distilled from 56 of the corpus's now-65 videos.",
+    "D3's override is deliberately non-destructive by design and the panel says so ('overrides apply at the next build', 'nothing on screen changes until then'). That is a defensible choice \u2014 the rendered pack is the artifact on disk and only a rebuild can move it \u2014 but it does mean a reviewer cannot see the consequence of their own correction without leaving the app and running build-packs. Whether that is enough for 'overridable in the app' is a judgement; the mechanism is fully built and works end to end, so this verdict records it as passing.",
+    "THIS EVALUATION WROTE ONE FILE OUTSIDE ITS OWN ARTIFACT DIRECTORY: pressing the override control caused the server to rewrite experts/job-search/manifest.json. job-search was chosen because that directory is untracked, so no committed state changed. The overrides map was restored to {} by pressing 'auto'; the only residue is a new updated_at (2026-08-10T04:54:44 -> 2026-08-10T10:11:48) in an untracked file. Nothing else under experts/ was touched.",
+    "Routing quality is not scored here but a reader will notice it. system-design and app-architecture share two of their source units (raptor:theme:3 'Modular monoliths need vertical slicing and encapsulation' and community:27 'microservices, module, monolith\u2026'), and three of the system-design pack's fifteen rules (r0101-r0103) are about module boundaries and encapsulation rather than distributed systems. Its membership table likewise routes in 'Exploring MLOps and LLMOps' (Databricks, 0.411) and 'Large Language Model Operations (LLMOps) Explained' (IBM Technology, 0.338). The rules are all distinct and all cited, so nothing here is fabricated \u2014 but 'system design' as this pack defines it is looser than the routing text describes, and the two lowest-scoring members of each pack are the place to look first if a reviewer wants to tighten it.",
+    "The gap lists are the strongest evidence that the distillation is not overclaiming, and they are rendered: 13 source units produced no rule for resume-design, 7 for job-search, 29 for system-design, 30 for app-architecture, each with its own reason and creator profile \u2014 e.g. 'raptor:theme:5 Modular Monoliths Beat the Microservices Mess \u00b7 76 chunks \u00b7 4 videos \u00b7 3 creators \u2014 87% of the theme's chunks are NDC Conferences' and 'raptor:theme:24 Coupling is not bad; balance strength, volatility, distance \u00b7 33 chunks \u00b7 1 videos \u00b7 1 creators \u2014 only one of this pack's videos is in the theme'. A pack that logs 30 places it looked and found nothing usable is making a smaller and more believable claim than one that does not.",
+    "Contested rubrics are 0 in all four packs, and the checks strip says so rather than hiding it. The panel therefore advertises a 'contested' badge that nothing currently earns \u2014 consistent with V7 being recorded as short of genuine cross-creator disagreements, and worth reading as a corpus limitation rather than a rendering one.",
+    "Screenshots are 1008x761 crops of an 1152x870 window rather than the harness's 1440x900; the pack card lays out at 1106px, so the pin column sits inside the window but outside the capture. Shot 06 was taken at 0.78 page zoom for that reason. No check in this verdict makes a layout or clipping claim.",
+    "Other agents were driving the same browser profile and the same server throughout: tabs were created, navigated and closed under this evaluation, and the corpus was being ingested into. The tab used for the readings recorded here was created for this evaluation and its readings were re-verified against the pack files after the fact; where a reading could have been contaminated by a concurrent action it was retaken.",
+    "RE-CHECK 2026-08-11: check 27, the only one this verdict failed, was re-run after its fix was built. REDUCED INDEPENDENCE, stated plainly: the same agent built the notice and re-checked it, because the Claude spend limit was terminating subagents \u2014 so for this one check the project's builder-is-not-evaluator rule did not hold. The other 36 checks are untouched and remain the independent evaluator's work, including the 105-of-105 citation resolution it verified by reading each cited chunk rather than trusting quote_resolution.",
+    "Related fix verified in the same pass, from V8's evaluator (task #69): the ablation 'decisive' badge used to fire by fallback on every metric except criteria_recall, because runner_max read a *_max spread key that only criteria_recall has \u2014 so evidence_precision and provenance always rendered 'leader clears the runner-up's own spread', a comparison never performed. winner() now returns a three-way basis and the panel reads 'EVIDENCE_PRECISION merged | scored once - reliability unmeasured'. Verdicts are recomputed at read time in both the pack reader and the build-report reader, so runs committed before the fix get the corrected reading rather than serving the old one forever. Recomputing also revealed criteria_recall is TIED between raptor and merged at 0.2632, which the stored verdict had shown as a merged lead."
+  ]
+}

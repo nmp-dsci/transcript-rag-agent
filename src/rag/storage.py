@@ -183,6 +183,46 @@ class TranscriptChunkStore:
             metadatas=[_chunk_metadata(chunk) for chunk in chunks],
         )
 
+    def chunk_ids_for_video(self, video_id: str) -> list[str]:
+        """Every chunk id currently stored for one video, in ascending order."""
+        result = self.collection.get(where={"video_id": video_id}, include=["metadatas"])
+        return sorted(result.get("ids") or [])
+
+    def replace_chunks(self, video_id: str, chunks: list[TranscriptChunk]) -> list[str]:
+        """Make ``chunks`` the *complete* stored chunk set for one video.
+
+        :meth:`upsert_chunks` alone cannot do this. Chunk ids are positional
+        (``chunk:<video>:<n>``), so re-chunking a video to a *smaller* count
+        overwrites ``0..n-1`` and leaves ``n..m-1`` from the previous run behind
+        — still indexed, still returned by ``query``, still carrying the text
+        they were written with. That is not a stale cache entry that gets
+        corrected on the next read: it is a chunk that no longer exists in the
+        transcript, answering questions about it forever. This deletes them.
+
+        Order matters. The new chunks are written *first* and the surplus is
+        deleted second, so a crash between the two leaves the video
+        over-covered (the old failure, no worse) rather than gutted.
+
+        Returns the ids it removed, so a caller can report a re-index that
+        actually cleaned something up.
+
+        An empty ``chunks`` is a no-op rather than a wipe. Rebuilding to zero
+        chunks means the raw document had no segments, which in this system is
+        a fetch that came back empty far more often than a video that genuinely
+        lost its transcript — and deleting a video's whole index on the strength
+        of a bad fetch is a worse failure than the one this method exists to
+        fix. Removing a video is an explicit operation, not a side effect of
+        re-indexing it.
+        """
+        if not chunks:
+            return []
+        existing = set(self.chunk_ids_for_video(video_id))
+        self.upsert_chunks(chunks)
+        stale = sorted(existing - {chunk.chunk_id for chunk in chunks})
+        if stale:
+            self.collection.delete(ids=stale)
+        return stale
+
     def has_chunks(self, video_id: str) -> bool:
         result = self.collection.get(
             where={"video_id": video_id},

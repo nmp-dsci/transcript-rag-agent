@@ -47,6 +47,34 @@ fingerprint, so stale numbers are never silently reused. Engine-specific setting
 are scoped to the engines that read them, so tuning one engine keeps the others'
 cells valid. Pass `--refresh` to bypass the cache.
 
+The corpus is part of that fingerprint, because a RAG score is meaningless without
+the corpus it was retrieved from. Each run's `config` records `corpus` (a digest of
+the video-id set plus the chunk count) alongside `corpus_videos` and `corpus_chunks`
+— the digest says *whether* two runs saw the same corpus, the counts say how far it
+moved. A run whose digest differs from another's shares no comparable cell with it.
+
+### What the fingerprint cannot see
+
+The fingerprint is built from **configuration**, not from code. A change to how an
+engine behaves that moves no config field is invisible to it, and cells scored
+before and after such a change will be silently reused together unless someone
+invalidates them by hand (`--refresh`, or deleting the affected cells).
+
+This has bitten once and is worth stating concretely:
+
+| Run | Corpus | `rag_llm_filtered` behaviour |
+|-----|--------|------------------------------|
+| `matrix-20260810-110656` | 67 videos / 1736 chunks (`1bdb1971fc49bb77`) | `transcript_filter_top_k` a hard cap on every question |
+| `matrix-20260811-*` | 71 videos / 1792 chunks (`dceb228df01f7418`) | `top_k` a *budget*: a question detected as corpus-wide by `src/rag/question_scope.py` keeps `min_score` and lifts the cap to every summarised video |
+
+**Those two runs' `rag_llm_filtered` columns are not comparable**, and the digests
+alone do not say why — they differ because the corpus moved, which happens to have
+forced every cell to be re-scored and so dissolved the hazard by luck rather than by
+design. Had the corpus held still, six cells (the four `global` and two `temporal`
+golden questions, which are the ones the detector fires on) would have carried the
+old capped behaviour into a column of otherwise-new numbers. Treat a behaviour
+change to an engine as cache-invalidating even though nothing forces you to.
+
 
 ## Provenance
 

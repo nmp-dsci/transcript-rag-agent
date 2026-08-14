@@ -581,6 +581,96 @@ The user's request:
 {question}
 """
 
+RUBRIC_REVIEW_SYSTEM_PROMPT = """You apply a fixed list of review rubrics to one document, and return a verdict for every rubric.
+
+You are given two things:
+
+1. THE RUBRICS — numbered by id (r0101, r0203, ...). Each is a criterion and the
+   check that decides it. This list is the whole job. You did not choose it, you
+   cannot add to it, and you must not judge the document against anything that
+   is not on it.
+2. THE DOCUMENT — the user's page, split into numbered sections marked [§1],
+   [§2] and so on. This is the only source of what the document says.
+
+Return exactly one verdict per rubric id, and only for ids on the list.
+
+The verdicts:
+- "fail" — the check applies to this document and the document does not satisfy
+  it. Say what is wrong, name the section, quote the phrase.
+- "pass" — the check applies and the document satisfies it. Say what satisfies
+  it and name the section.
+- "n-a" — the check cannot be applied to a document of this kind at all. Most
+  packs contain rules written for a different artifact, and marking those "n-a"
+  is the correct answer, not a cop-out. Use it when the rubric is about
+  something this kind of document does not have.
+
+Rules:
+- Every "fail" must name at least one section in `sections`. A failure you
+  cannot attach to a section is advice about documents in general, and it will
+  be discarded. If a rubric fails because something is *absent*, name the
+  section where it should have been.
+- Scope every absence to what you were actually given. You have the text of
+  specific sections of one page: "no Skills section appears in the sections I
+  was given" is a finding; "there is no Skills section" is not, because a nav
+  bar, a footer or a linked page you were not given may hold it.
+- Do not soften a fail into an n-a because the document is a different kind of
+  thing than the rubric expected, when the rubric's underlying check still has
+  something to bite on. "Quantify the outcome" applies to a project card as much
+  as to a resume bullet. "Keep it to one page" does not apply to a website.
+- Never invent a rubric id. Never merge two rubrics into one verdict.
+- Do not quote or cite the transcripts. You are not given them, and every
+  citation is attached afterwards from the rubric's own recorded evidence.
+
+Severity applies to failures only, and describes this document's failure rather
+than the rule's importance:
+- "blocker" — a reader making a decision about this person would be stopped or
+  misled by it.
+- "major" — it measurably weakens the document for its purpose.
+- "minor" — worth fixing, costs little to leave.
+"""
+
+RUBRIC_REVIEW_USER_PROMPT = """Judge the document above against every rubric in the list, one verdict each.
+
+Work rubric by rubric, in the order given. For each one: decide whether the
+check can be applied to a document of this kind at all; if it can, decide
+whether this document satisfies it; write what you found.
+
+Return JSON with this exact shape and nothing else:
+{{
+  "verdicts": [
+    {{
+      "rubric_id": "r0101",
+      "verdict": "fail",
+      "severity": "major",
+      "sections": [3, 5],
+      "finding": "what this document does about this rubric, quoting the phrase"
+    }}
+  ]
+}}
+
+`sections` are the [§N] numbers as printed above the document text, as integers.
+`severity` is "blocker", "major" or "minor" on a failure, and omitted otherwise.
+`finding` is one or two sentences. On a pass, say what satisfies the check. On
+an n-a, say what the rubric is about that this document does not have.
+
+Return one entry for every rubric id in the list — {rubric_count} of them.
+"""
+
+
+def build_rubric_review_prompt(document_context: str, rubrics_block: str, rubric_count: int) -> str:
+    """The user turn for one pack's review call: the document, then the rules.
+
+    Document first and rubrics second, deliberately. The instruction the model
+    has to still be holding when it starts writing is "one verdict per rubric,
+    in this order", and the last thing it read is the thing it follows.
+    """
+    return (
+        f"{document_context}\n\n"
+        f"RUBRICS ({rubric_count})\n{rubrics_block}\n\n"
+        f"{RUBRIC_REVIEW_USER_PROMPT.format(rubric_count=rubric_count)}"
+    )
+
+
 CHUNK_CONTEXT_SYSTEM_PROMPT = """You situate one transcript chunk inside its video, for retrieval.
 
 Transcript chunks are conversational fragments that lose their subject ("...had
@@ -830,6 +920,20 @@ PROMPT_REGISTRY: list[dict[str, object]] = [
         "role": "user_template",
         "template_vars": ["question"],
         "text": DOC_REVIEW_USER_PROMPT,
+    },
+    {
+        "name": "RUBRIC_REVIEW_SYSTEM_PROMPT",
+        "system": "doc_review",
+        "role": "system",
+        "template_vars": [],
+        "text": RUBRIC_REVIEW_SYSTEM_PROMPT,
+    },
+    {
+        "name": "RUBRIC_REVIEW_USER_PROMPT",
+        "system": "doc_review",
+        "role": "user_template",
+        "template_vars": ["rubric_count"],
+        "text": RUBRIC_REVIEW_USER_PROMPT,
     },
     {
         "name": "CHUNK_CONTEXT_USER_PROMPT",

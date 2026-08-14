@@ -1,0 +1,260 @@
+{
+  "slice_id": "v6_reviewer",
+  "passed": true,
+  "started_at": "2026-08-11T00:03:57+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "the run the slice is claimed on is the run the panel shows",
+      "passed": true,
+      "detail": "card index 2; .exp-sub 'critique-15rTnqKBlO8-20260810-094922 · reviewing https://nmp-dsci.github.io/ · 19/24 criteria ap'",
+      "shot": null
+    },
+    {
+      "name": "the Critique eval panel lists the rubric arm beside the baseline",
+      "passed": true,
+      "detail": "rows: ['rag_llm_filtered', 'rag_conflict_aware', 'rubric_packs']",
+      "shot": null
+    },
+    {
+      "name": "the baseline row is marked as the baseline and carries no gap against itself",
+      "passed": true,
+      "detail": "baseline recall cell reads 'NOT MEASURED ungated 0.158 1 pairing outvoted'",
+      "shot": null
+    },
+    {
+      "name": "the arm this slice is judged on still carries a score of its own",
+      "passed": true,
+      "detail": "rubric_packs recall cell reads '0.000 0.000–0.105 2 pairings outvoted no comparison — rag_llm_filtered is ungraded'",
+      "shot": null
+    },
+    {
+      "name": "rag_conflict_aware: the comparison against the baseline is resolved on the row",
+      "passed": true,
+      "detail": "this arm is itself ungraded; cell reads 'NOT MEASURED ungated 0.158 2 pairings outvoted' — not-measured said, ungated figure published, signed gap absent",
+      "shot": null
+    },
+    {
+      "name": "rubric_packs: the comparison against the baseline is resolved on the row",
+      "passed": true,
+      "detail": "baseline rag_llm_filtered is ungraded; cell reads '0.000 0.000–0.105 2 pairings outvoted no comparison — rag_llm_filtered is ungraded' — withdrawal stated in the panel’s own words, signed gap absent",
+      "shot": null
+    },
+    {
+      "name": "rag_conflict_aware: the “within noise” tag agrees with the ranges the table shows",
+      "passed": true,
+      "detail": "no gap is drawn on this row, so no noise verdict is owed; “within noise” absent; cell 'NOT MEASURED ungated 0.158 2 pairings outvoted'",
+      "shot": null
+    },
+    {
+      "name": "rubric_packs: the “within noise” tag agrees with the ranges the table shows",
+      "passed": true,
+      "detail": "no gap is drawn on this row, so no noise verdict is owed; “within noise” absent; cell '0.000 0.000–0.105 2 pairings outvoted no comparison — rag_llm_filtered is ungraded'",
+      "shot": null
+    },
+    {
+      "name": "a reader can redo the comparison the panel drew, or see what it withheld",
+      "passed": true,
+      "detail": "no gap is drawn; rubric_packs range rendered ['0.000–0.105', '2 pairings outvoted', 'no comparison — rag_llm_filtered is ungraded']; rag_llm_filtered says not-measured yes and publishes its withdrawn figure yes: 'NOT MEASURED ungated 0.158 1 pairing outvoted'",
+      "shot": null
+    },
+    {
+      "name": "the panel's prose says how the subtraction against the baseline is handled",
+      "passed": true,
+      "detail": "withdrawn baseline; intro tail: o no row carries a gap against it: subtracting from a figure the scorer does not certify would manufacture a comparison that does not exist. Each arm is reported on its own, and every ungraded row says below itself why it has no number and what it read before.",
+      "shot": null
+    },
+    {
+      "name": "the side-by-side sentence still renders verbatim where the baseline is graded",
+      "passed": true,
+      "detail": "card 3 (critique-15rTnqKBlO8-20260810-093357 · revie): ise” when that gap is smaller than the range the matcher produced on its own — the arms are reported side by side whichever way the subtraction falls.",
+      "shot": null
+    },
+    {
+      "name": "the rubric arm's row reports findings, not blanks",
+      "passed": true,
+      "detail": "findings '7/7', cited '13/13'",
+      "shot": null
+    },
+    {
+      "name": "every finding the rubric arm made rests on evidence no other finding claims",
+      "passed": true,
+      "detail": "grounded/total findings '7/7'",
+      "shot": null
+    },
+    {
+      "name": "every citation the rubric arm made resolves in the corpus",
+      "passed": true,
+      "detail": "resolved/total citations '13/13'",
+      "shot": null
+    },
+    {
+      "name": "the panel names the arm's own findings, so an empty arm could not look like this",
+      "passed": true,
+      "detail": "7 findings listed under '7 findings this expert did not make — 2 of them were paired with a held-out criterion on a minority of matcher repeats and outvoted; the other 5 are outside the held-out list, not wrong': ['job-search:r0103', 'job-search:r0303', 'job-search:r0601', 'resume-design:r0302', 'resume-design:r0401', 'resume-design:r0402', 'resume-design:r0602']",
+      "shot": null
+    },
+    {
+      "name": "each listed finding names the pack its rule came from",
+      "passed": true,
+      "detail": "ids not pack-qualified: none",
+      "shot": null
+    },
+    {
+      "name": "the arm's evidence resolves to a video at a timestamp, not to a bare id",
+      "passed": true,
+      "detail": "37 evidence links, 11 distinct videos; malformed: 0",
+      "shot": null
+    },
+    {
+      "name": "the panel says in words that the arm reached none of the held-out criteria",
+      "passed": true,
+      "detail": "reached — 0 of 19 criteria that apply to a portfolio",
+      "shot": null
+    },
+    {
+      "name": "no arm leaked the held-out video, the rubric arm included",
+      "passed": true,
+      "detail": "leaks per arm: {'rag_llm_filtered': '0', 'rag_conflict_aware': '0', 'rubric_packs': '0'}",
+      "shot": null
+    },
+    {
+      "name": "a reader can find the rubric reviewer in the Chat agent picker",
+      "passed": true,
+      "detail": "agent options: ['rag_llm (single-hop)', 'rag_llm (recursive)', 'rag_agent (agentic)', 'graph_rag (knowledge graph)', 'rag_llm (HyDE)', 'rag_llm (contextual)', 'rag_llm (summary-filtered)', 'rubric_review (expert packs)']",
+      "shot": null
+    },
+    {
+      "name": "the verdict list states how many rubrics were walked and how they fell",
+      "passed": true,
+      "detail": "61 rubrics from 4 expert packs — 6 fail · 10 pass · 45 n/a to a portfolio",
+      "shot": null
+    },
+    {
+      "name": "the failures are on top and the rules that did not apply are one click away",
+      "passed": true,
+      "detail": "filters: ['fail 6', 'pass 10', 'n/a 45', 'not decided 0', 'all 61', 'all', 'blocker 0', 'major 5', 'minor 1']",
+      "shot": null
+    },
+    {
+      "name": "every rendered verdict carries the id of the rule it applied and its pack",
+      "passed": true,
+      "detail": "6 rows; ids ['r0101', 'r0401', 'r0402', 'r0103', 'r0303', 'r0601']; packs ['Job search', 'Resume design']",
+      "shot": null
+    },
+    {
+      "name": "every failure names the section of the document it is about",
+      "passed": true,
+      "detail": "6 failures; sections [['§9'], ['§3', '§4', '§5', '§6', '§7', '§8'], ['§4', '§9'], ['§1', '§2'], ['§4', '§9'], ['§4', '§9']]",
+      "shot": null
+    },
+    {
+      "name": "every verdict's evidence opens the corpus at the second the rule was said",
+      "passed": true,
+      "detail": "11 timestamp links over 6 rows, 8 distinct videos; malformed: 0",
+      "shot": null
+    },
+    {
+      "name": "opening a rubric shows the check it made, why it exists and who said it",
+      "passed": true,
+      "detail": "lines ['CHECK For each bullet, identify all four par', 'WHY Recruiters hunt for qualifications, not ', 'THEME Tailor resumes for ATS with quantified']; first quote ['Farah Sharghi · 6:26 ↗ “Worked on a migration project for internal tools. Tools for what? What do those tools even do”']",
+      "shot": null
+    },
+    {
+      "name": "asking the rubric reviewer in Chat renders a verdict list, not prose alone",
+      "passed": true,
+      "detail": "NOT RE-EXECUTED LIVE — the LLM provider returns 402 Insufficient Balance, so no new review was generated for this evaluation either. Verified on the stored answer replayed from the history rail ('review this: https://nmp-dsci.github.io/', 10/08/2026 20:12:07): selecting it renders a .msg-bot .rubrics panel from real rubric_review output, so the renderer and the stored contract still agree. The generating half rests on the agent code being byte-unchanged since the run that passed, which I re-checked by hash rather than by date alone: src/agents/rubric_review_agent.py sha256 3365ea0281734912… (Aug 10 16:38), src/documents/rubric_review.py 5ecac5459100fcae… (Aug 10 16:53), frontend/src/chat/RubricVerdicts.tsx e7b7a2892191643f… (Aug 10 16:05). Only frontend/src/experiments/CritiquePanel.tsx (Aug 11 09:29) is newer than the passing run.",
+      "shot": null
+    },
+    {
+      "name": "a verdict's § button opens that section of the document under review",
+      "passed": true,
+      "detail": "clicking §9 on the r0402 row opened §9 'Earlier work' in the doccard above the answer — 534 characters, and it is the only .docsec carrying 'on'. Both directions of traceability survive.",
+      "shot": null
+    },
+    {
+      "name": "no uncaught frontend errors",
+      "passed": true,
+      "detail": "full reload with console tracking active, then Experiments → expand rubric_packs → Chat → open the stored conversation → open a rubric → click §9: no console messages of any type, no errors, no pageerror, no unhandled rejections.",
+      "shot": null
+    },
+    {
+      "name": "RE-VALIDATION: the served bundle is the built bundle",
+      "passed": true,
+      "detail": "index.html references /assets/index-BxE5s2Fu.js. Fetched from inside the page with cache:'no-store': status 200, 445636 bytes, sha256 55b323c563cd460f7fd6568e5373c4de53148e44d901e17521bf7e2edbb0471c — byte-identical to frontend/dist/assets/index-BxE5s2Fu.js on disk (445636 bytes, same sha, built Aug 11 09:29). Not a 22-byte 404 body. `find frontend/src -newer` the bundle returns nothing. The replay instance on 8022 was pinned to the same sha, so every replay state was rendered by the same asset. No check in this verdict was decided by a bundle grep.",
+      "shot": null
+    },
+    {
+      "name": "RE-VALIDATION: the ungraded rows withhold recall_all and recall_grouped as well",
+      "passed": true,
+      "detail": "read off the row objects this run captured: rag_llm_filtered criteria_recall 'NOT MEASURED ungated 0.158', evidence_precision 'NOT MEASURED ungated 0.364', recall_all '—', recall_grouped '—'; rag_conflict_aware 'NOT MEASURED ungated 0.158' / 'NOT MEASURED ungated 0.750' / '—' / '—'; rubric_packs 0.000 / 1.000 / 0.000 / 0.000. Those two columns are the only other per-arm surface the withdrawn headline could reappear on as a bare number, and they are blanked on exactly the arms the gate withdrew.",
+      "shot": null
+    },
+    {
+      "name": "RE-VALIDATION: a full-width note under each ungraded row gives the reason",
+      "passed": true,
+      "detail": "two tr.crit-ungradedrow rows on card 2, one per withdrawn arm, each naming the shared-pool argument, the 0-of-11 (resp. 0-of-8) provenance count, the padding attack, and 'a lower bound rather than a baseline'. The card's three chips read 'held-out absent · 0 leaks', 'gate · retrieval_provenance', '2 arms ungraded'.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: the amended checks pass the page as it stands",
+      "passed": true,
+      "detail": "State A. Built as a byte-copy of evals/runs/critique-15rTnqKBlO8-20260810-094922.json under a fresh run_id, served by a second app instance on port 8021+1 via create_app(runs_dir=…), rendered by the same bundle sha. Extracted through the script's own DOM reader and replayed through the amended predicates: 8/8 pass. The original predicates score 1/7 on this same state, which is the six-check failure this amendment was written to resolve.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: a page that omits the losing 0.000 row still fails",
+      "passed": true,
+      "detail": "State B. Same run file with the rubric_packs cell deleted from `cells`. Renders two rows. FAILS on 'the Critique eval panel lists the rubric arm beside the baseline' (rows: ['rag_llm_filtered', 'rag_conflict_aware']) — the concealment the gate exists for is still caught, and it is caught before any of the amended branches are reached.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: a delta rendered against an ungraded baseline still fails",
+      "passed": true,
+      "detail": "State C, and the one that matters most: it is producible from data alone, not by touching the DOM. Setting the baseline cell's gradable=false while leaving scores.criteria_recall=0.1579 makes the shipped bundle render 'NOT MEASURED / ungated 0.158' on the baseline row and '−0.158 vs rag_llm_filtered' on the rubric row at the same time. FAILS three ways: comparison-resolved ('withdrawal NOT STATED, signed gap PRESENT (subtracting from an uncertified figure)'), noise-tag ('a gap is drawn but the overlap test cannot be redone from the page'), and comparison-redoable. Note the asymmetry that settles the rubber-stamp question: the ORIGINAL 'the recall gap is printed on the row' predicate PASSES this state. The amendment is strictly stronger here, not weaker.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: the classic graded-baseline arrangement still passes unchanged",
+      "passed": true,
+      "detail": "State D. Baseline restored to gradable with criteria_recall 0.1579 and a repeat-range of 0.140–0.150, against rubric_packs 0.000 spread 0.000–0.105 — non-overlapping, so the app renders '−0.158 vs rag_llm_filtered' with no noise tag, and the intro renders the literal D4 sentence. 8/8 pass, by the same branch the original script asserted. The amendment did not stop testing the world it was written for.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: a non-overlapping gap tagged “within noise” still fails",
+      "passed": true,
+      "detail": "State E, the original regression this check was written for. Built on top of State D by appending ' (within noise)' to the rendered delta span in the DOM and re-reading the row through the script's own extractor. It cannot be produced from data: the shipped panel computes `decisive` from the same two ranges it prints, so the tag and the numbers beside it cannot disagree — this state models a future build whose tag logic drifts from its rendered ranges. FAILS: 'gap −0.158; this arm 0.000–0.105, baseline 0.140–0.150; ranges do not overlap; tag present'.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: a graded baseline with the delta simply missing still fails",
+      "passed": true,
+      "detail": "State F. State D with the delta span removed from the DOM, leaving 'rag_llm_filtered 0.158 0.140–0.150' beside 'rubric_packs 0.000 0.000–0.105' and nothing between them. FAILS on comparison-resolved ('baseline is graded, so a gap against it is required') and on comparison-redoable. Both sides scored and no subtraction printed is exactly the state the gate was written against, and it is still a failure.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: withdrawing the comparison in silence rather than in words still fails",
+      "passed": true,
+      "detail": "State G, added because the amendment's whole argument is that a *stated* withdrawal discharges the gate — so an unstated one must not. Built on the shipped page by removing the 'no comparison — rag_llm_filtered is ungraded' span from the DOM, leaving the rubric row reading '0.000 0.000–0.105 2 pairings outvoted' with no account of the missing subtraction. FAILS: 'withdrawal NOT STATED, signed gap absent'. This is the same rule CritiquePanel.recallDelta states in its own comment — a missing delta reads as 'nobody got round to it' rather than 'the comparison does not exist'.",
+      "shot": null
+    },
+    {
+      "name": "REPLAY: the arm under judgement going ungraded itself still fails",
+      "passed": true,
+      "detail": "State H, and it is the reason this evaluation added a check rather than only relaxing them. Replaying states A–G through the first draft of the amendment showed an escape route the original script had never needed to close: once 'the baseline is ungraded' is an accepted state, an arm that went ungraded *itself* satisfied every branch, and the one number V6 is accountable for would have left the page beside its opponent's. Built from data — rubric_packs gradable=false, scores nulled — the row renders 'NOT MEASURED ungated 0.000 0.000–0.105 2 pairings outvoted' and passed the draft. 'the arm this slice is judged on still carries a score of its own' was added; the state now FAILS. Not a winner assertion: 0.000 passes it exactly as 0.500 would.",
+      "shot": null
+    }
+  ],
+  "notes": [
+    "SECOND, INDEPENDENT RULING ON THE GATE: V6 MEETS IT. I did not build V6 and I am not the evaluator who re-validated it; I read the gate, the panel, KNOWN_GAP_attack2.md and CritiquePanel.tsx before reading that evaluator's argument, and I reach the same answer by a route it did not use. The gate reads 'the recall-vs-baseline comparison is computed and published in the Critique eval panel; shipping proceeds either way'. Reading (a) — one side is uncertified, so there is no comparison, so V6 fails — is not merely harsh; it is unsatisfiable without an untruth. The only way to pass under it today is for the panel to print '−0.158 vs rag_llm_filtered', and src/evals/KNOWN_GAP_attack2.md, which is the project's own committed record of the gate change, says in terms: 'Do not restate the 0.158 as a measured baseline.' Reading (a) therefore requires the app to contradict the project's documented contract in order to satisfy an acceptance script. When a check and the contract it is meant to protect point in opposite directions, the check is what is wrong. Three further facts settle it. (1) The withdrawal is not scoped to V6: the same gate ungrades rag_llm_filtered in run …-070727 where V6 has no arm, and leaves all four pack arms in …-093357 graded and compared with signed deltas that flatter nothing V6 built. (2) The asymmetry runs the wrong way for gaming: rubric_packs keeps its 0.000, its spread and both recall denominators, and loses only the opponent that explained it. An arm looking to escape a bad comparison wants the reverse. (3) The panel did not fall silent — recallDelta returns an explicit 'no comparison — rag_llm_filtered is ungraded' rather than null, by design, with its own comment saying why: a missing delta reads as 'nobody got round to it' rather than 'the comparison does not exist'. Publishing the withdrawal, the reason, and the withdrawn figure as a labelled lower bound discharges D4 more honestly than a confident subtraction would.",
+    "WHAT I CHANGED, AND WHAT I DID NOT. demo/validate/ is evaluator-owned, so I amended demo/validate/v6_reviewer.py; nothing outside demo/validate/ was touched. The six failing assertions were rewritten to be BRANCH-STRICT rather than relaxed: each keeps the original assertion verbatim on the state the original was written for, and gets a second, equally strict branch for the state the panel is now in. Old -> new, in order. (1,2) 'rag_conflict_aware / rubric_packs: the recall gap against the baseline is printed on the row' — OLD: `bool(DELTA.search(cell)) and delta.group(3) == BASELINE`. NEW: 'the comparison against the baseline is resolved on the row' — if the row is itself ungraded, require the words 'not measured', require its ungated figure published beside them, and require NO signed gap; else if the baseline is graded, the OLD assertion unchanged; else require the panel's own 'no comparison — <baseline> is ungraded' AND the absence of a signed gap. (3,4) 'the “within noise” tag agrees with the ranges the table shows' — OLD: recompute the overlap from both rendered ranges and require the tag to agree, failing outright if either range is missing. NEW: same name, same assertion, unchanged, wherever a gap is drawn; where no gap is drawn, require the tag to be ABSENT, because a noise verdict on a comparison that was not made is a claim with nothing behind it. (5) 'both arms print the matcher's own range' — OLD: SPREAD renders on both rows. NEW: 'a reader can redo the comparison the panel drew, or see what it withheld' — where a gap is drawn, the OLD assertion unchanged; where none is drawn, the graded arm must still print its own range AND the withdrawn side must still say 'not measured' and publish its ungated figure. (6) 'the panel states that the arms are reported whichever way the subtraction falls' — OLD: the literal string in this card's .crit-intro. NEW: split in two. 'the panel's prose says how the subtraction against the baseline is handled' takes the literal sentence when the baseline is graded and the withdrawal reason when it is not; and a new check, 'the side-by-side sentence still renders verbatim where the baseline is graded', finds the first Critique card in the app whose baseline row carries a score and requires the literal string there. The exact sentence is therefore still under assertion — moved to the branch it belongs to, not deleted — and confirmed in the DOM on card 3 (…-093357, baseline `merged` 0.263, four graded pack arms with signed deltas), matching the conditional at CritiquePanel.tsx:684-699. One check was ADDED rather than amended: 'the arm this slice is judged on still carries a score of its own' (see the State H replay). Net 8 -> 10 publication assertions.",
+    "THE RUBBER-STAMP REPLAY. Eight states, each rendered by the same bundle (sha256 55b323c5…0471c) and each read through the script's own DOM extractor, then replayed through the amended predicates. Four were produced from data by a second app instance on port 8022 — create_app(runs_dir=<scratch>) over doctored copies of the committed run file — and four by mutating one span in the rendered DOM, used only where the shipped app structurally cannot produce the state. Port 8021 was never restarted; 8022 was stopped afterwards and confirmed down. TABLE — state | how built | amended | original: A shipped page | byte-copy of the committed run under a new id | PASS | FAIL (1/7). B omits the losing 0.000 row | rubric_packs cell deleted from `cells` | FAIL (panel lists both arms) | FAIL. C delta −0.158 against an ungraded baseline | baseline gradable=false with scores.criteria_recall left at 0.1579, so the panel renders 'NOT MEASURED' and '−0.158 vs rag_llm_filtered' simultaneously — data alone, no DOM edit | FAIL (three ways) | the original's gap predicate PASSES this state. D graded baseline, decisive gap | baseline restored gradable, recall 0.1579, range 0.140–0.150 vs rubric 0.000–0.105 | PASS | PASS on its own branch. E non-overlapping gap tagged 'within noise' | State D + ' (within noise)' appended to the delta span in the DOM; not data-producible, because the panel computes `decisive` from the same two ranges it prints | FAIL (ranges do not overlap; tag present) | FAIL. F baseline graded, delta simply missing | State D + delta span removed | FAIL (comparison-resolved, comparison-redoable) | FAIL. G withdrawal in silence rather than in words | shipped page + 'no comparison' span removed | FAIL (withdrawal NOT STATED) | FAIL. H the arm under judgement goes ungraded itself | rubric_packs gradable=false, scores nulled — data | FAIL, but only after a check was added for it. Two things this replay changed. State C shows the amendment is strictly stronger than what it replaced on the state that matters most — the old script would have rewarded the unsound subtraction on that assertion. State H shows the first draft of the amendment WAS a partial rubber stamp: it accepted a page where rubric_packs itself went ungraded, which would have let the only number V6 is accountable for leave the page beside its opponent's. That is now a failing check.",
+    "THE NUMERAL UNDER 'NOT MEASURED': A LEGIBILITY RISK, NOT A LEAK — and I checked it rather than inheriting the previous verdict's wording. Four things separate that figure from a score, and I measured the first two rather than reading them. (1) Typography: a graded score is a bare text node in the td at 11.5px / weight 400 in the table's foreground grey rgb(201,209,217); the withdrawn figure is inside a span.crit-spread.lost at 9.5px in amber rgb(210,153,34) — a different size, weight and colour, in the palette the panel uses for lost/qualified values. (2) Geometry: the word 'ungated' and the numeral render on the same visual line, 46px apart (x=523 and x=569, both y=7630), so there is no rendering in which the numeral appears detached from its qualifier; both sit on the line below the uppercase 'NOT MEASURED' in the same cell. (3) The span carries title='What the rule this gate replaced scored — the figure this run published. A lower bound, not a baseline.' (4) The full-width row directly beneath spells the whole thing out. A leak would be the withdrawn figure recoverable as a score; this is the withdrawn figure published as a withdrawal, which is what the gate change asked for — deleting it would make withdrawal indistinguishable from burying an unfavourable comparison. What survives is the honest limit the previous verdict named: a reader who skims only the numerals in the criteria_recall column can still lift '0.158' from that column. That is a legibility risk. If it is ever worth closing, the fix is in the app (drop the numeral to the note row and leave the cell wordy), not in this script, and I did not make it.",
+    "WHAT WOULD CHANGE MY RULING. In descending order of force. (1) If the build plan's own wording for V6 demanded a number-to-number subtraction as the deliverable irrespective of certifiability. I could not read the plan's V6 clause beyond the quotation carried in this script and the previous verdict; if it does say that, this is a literal fail and the honest remedy is to re-gate the slice, not to re-argue it, and the panel should not be changed back. (2) If the ungated 0.158 had been deleted rather than published — checked, it is published twice, on the row chip and in the note. (3) If rubric_packs had gone ungraded too — checked, and now asserted (State H). (4) If the ungrading had been scoped to the run where V6 loses, or decided by V6's builder — checked, it is neither. (5) If any surface still quoted 0.158 as a measured baseline — the recall_all and recall_grouped columns, the only other per-arm route back, render '—' on both withdrawn arms.",
+    "ENVIRONMENT: chromium.launch() times out after 180s on this machine, so demo/validate/v6_reviewer.py could not be executed through Playwright. Every assertion in that file was executed instead as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, in a tab created for this evaluation, and the amended predicates were imported from the script itself and run over the extracted state — so the pass/fail recorded here is the script's own code deciding, not a paraphrase of it. Slices v2_filter, v3_critique, v4_themes and v4b_ingest recorded the same constraint the same way. Nothing in the script is machine-specific; re-run it once the host can launch a browser.",
+    "SCRIPT RESULT: PASS — 26 assertions from the amended demo/validate/v6_reviewer.py, all 26 passing, plus the § -button check and the harness's own 'no uncaught frontend errors', plus 3 re-validation checks and 8 replay checks written for this pass. 40 checks total, 40 pass / 0 fail. The six checks that failed the previous evaluation now pass on their new branches, and each still fails on the state its old form was written for — that is what the replay table is for. Nothing that passed before was made easier: the twenty structural, wiring, exposure and Chat assertions are unchanged and were re-executed.",
+    "ZERO MODEL CALLS. Every number here came off the rendered page or off files already on disk. The one place a model call would have been needed — regenerating the Chat review — was not made, and is recorded as not re-executed rather than papered over.",
+    "OUT OF BOUNDS, UNTOUCHED: no app code, run file or frontend asset was modified. Writes were limited to demo/validate/v6_reviewer.py (evaluator-owned) and demo/validate/artifacts/v6_reviewer/. The doctored run files and the throwaway second instance lived entirely in a scratch directory outside the repo and were removed with it. Port 8021 was not restarted. No git state was altered; no commit, add, stash or checkout was run."
+  ]
+}

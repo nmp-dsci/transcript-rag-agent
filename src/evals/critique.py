@@ -45,10 +45,33 @@ The four measures
 ``provenance``
     Citations whose quoted words are actually present in the transcript at the
     timestamp cited. Pure string work against the chunk store: no LLM, no judge.
-``contested_rate``
-    Findings that surfaced a disagreement between videos instead of averaging it
-    away, counted only when at least two *distinct* videos are cited and their
-    citations resolve. A reporting-behaviour measure, not an accuracy one.
+``contested_coverage``
+    Of the disagreements the corpus actually contains **and this run had both
+    sides of in its context**, how many the findings named instead of averaging
+    away. A reporting-behaviour measure, not an accuracy one.
+
+    This replaces an earlier ``contested_rate``, which was contested findings
+    over all findings and read 0.000 on every run ever measured. It was a floor,
+    not a measurement, and for two reasons. It trusted a model-set boolean, so a
+    system that never volunteered the flag scored zero however much
+    disagreement it had actually retrieved; and it was a *rate over findings*,
+    so the denominator moved with verbosity and the number said as much about
+    how many points the model made as about how it handled conflict.
+
+    Both are fixed by grounding it in the conflict layer
+    (:mod:`src.rag.conflicts`). ``contested`` is now **derived**: a finding
+    names a disagreement when its resolving citations land on both sides of a
+    detected conflict — the model's own flag is recorded and ignored. And the
+    denominator is the conflicts whose two chunks were both in the retrieved
+    context, which is fixed by retrieval before the answering call is made, so
+    more findings cannot move it. Each conflict counts once however many
+    findings mention it, for the same reason :func:`ground_findings` makes
+    evidence exclusive.
+
+    ``None`` — not zero — when the context held no disagreement at all. That
+    distinction is the whole point of the rework: "averaged a conflict away" and
+    "was never shown one" are different failures and an 0.000 in both places
+    hides which one happened.
 
 The grounding gate, and the attack that forced it
 -------------------------------------------------
@@ -75,6 +98,53 @@ supports two different rules is penalised. That is the conservative direction on
 purpose — this is the baseline every later slice must beat, and a baseline scorer
 should under-credit rather than over-credit.
 
+The second attack, and the retrieval-provenance gate
+----------------------------------------------------
+Exclusivity closed the *sharing* loophole and not the *relevance* one. The same
+recitation survives one edit — give each recited finding its **own distinct**
+real chunk — and against the committed baseline's own ten retrieved chunks it
+scored ``evidence_precision 1.000`` and a ``criteria_recall`` ceiling of 0.526
+against the honest baseline's 0.556 and 0.158. Nothing in :func:`check_citation`
+ever asked whether the chunk supports the finding it is stapled to; it asks only
+whether the quoted words are in the transcript at that timestamp.
+
+:data:`GATE_PROVENANCE` is the deterministic half of the answer, and it is the
+shipped default. A citation now grounds a finding only when the chunk it
+resolves to is one **that finding's own reasoning retrieved** —
+:attr:`Finding.retrieved_chunk_ids`, recorded by the engine that produced the
+finding, not the cell-wide pool the answering call chose out of. Grabbing an
+arbitrary chunk from the corpus to decorate a recited rule no longer grounds
+anything, because that chunk is not in the finding's own provenance.
+
+The arms differ in what they can honestly record, and the gate refuses to paper
+over that:
+
+* :func:`~src.evals.critique_run.rubric_critique` and
+  :func:`~src.evals.pack_ablation.pack_as_critique` have real per-finding
+  provenance — a rubric is distilled from exactly one pack unit, and that unit's
+  ``chunk_ids`` are the chunks the distilling model saw for that rubric and
+  nothing else. All 273 citations across every committed pack arm land inside
+  their own unit, so these arms pass the gate with their published numbers
+  unchanged.
+* The retrieval arms have none. One call sees one pool of ten chunks and emits
+  every finding from it, so "what this finding retrieved" is the whole pool for
+  every finding, and a gate against the pool is a gate that passes the attack
+  the pool was used to mount. Those cells are therefore scored **``None`` —
+  ungraded** on ``criteria_recall`` and ``evidence_precision``, which is the
+  word this module already uses for "this cell was not measured" (see
+  :func:`_ratio` and ``contested_coverage``). Not zero: zero asserts the
+  findings have no corpus behind them, and nothing here has shown that. Not
+  exempt either — an arm that cannot substantiate the claim the metric makes
+  does not get to keep the number.
+
+Every cell records ``grounding_gate``, ``gradable`` and the ungated pair
+(``criteria_recall_ungated``, ``evidence_precision_ungated``), so a number can
+always be read back to the gate that produced it and the historical series stays
+comparable. What the gate does **not** catch is stated in
+:mod:`src.evals.KNOWN_GAP_attack2`: a finding whose own retrieval really did
+return the chunk, and which cites it for a rule it does not support, still
+passes. Only an entailment check reaches that one.
+
 **There is deliberately no composite.** A weighted blend of these four is exactly
 the shape that lets a run look better while getting worse — the matrix has
 already produced a cell whose composite rose 0.368 because context_precision hit
@@ -93,7 +163,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -105,7 +175,7 @@ CRITIQUE_METRICS: list[str] = [
     "criteria_recall",
     "evidence_precision",
     "provenance",
-    "contested_rate",
+    "contested_coverage",
 ]
 
 DEFAULT_DATASET_PATH = Path(__file__).resolve().parent / "critique_dataset.json"
@@ -153,6 +223,30 @@ QUOTE_MATCH_RATIO = 0.80
 #: is over the *pairing*, not the count, because the pairing drifted (c02 vs c22
 #: swapping) even in runs whose totals agreed.
 DEFAULT_MATCH_REPEATS = 5
+
+#: The original gate: a finding is grounded by a resolving citation no other
+#: finding also rests on. Kept as a named value rather than deleted, because
+#: every committed run before 2026-08-11 was scored under it and a number whose
+#: gate cannot be named is a number nobody can compare.
+GATE_EXCLUSIVE = "exclusive_evidence"
+
+#: The shipped gate: exclusivity **plus** the requirement that the cited chunk is
+#: one the finding's own reasoning retrieved. See the module docstring, and
+#: :mod:`src.evals.KNOWN_GAP_attack2` for what it does and does not close.
+GATE_PROVENANCE = "retrieval_provenance"
+
+GROUNDING_GATES: tuple[str, ...] = (GATE_EXCLUSIVE, GATE_PROVENANCE)
+
+#: On by default, and the choice is written into every cell and every run.
+#:
+#: The argument for shipping it off was that it turns the retrieval arms — the
+#: baseline this whole harness compares against — into ungraded cells. That is
+#: the argument *for* it: the harness cannot substantiate what
+#: ``criteria_recall`` claims about those arms, and a scorer whose default is the
+#: version with the known hole open republishes the overstated number every time
+#: anybody runs it. ``None`` costs nothing that ``criteria_recall_ungated`` does
+#: not keep.
+DEFAULT_GROUNDING_GATE = GATE_PROVENANCE
 
 #: Version of the exclusion mechanism the run was produced under. Part of the
 #: cache fingerprint (see :func:`src.evals.matrix_cache.cell_fingerprint`), so a
@@ -281,6 +375,27 @@ class Citation:
 
 
 @dataclass(frozen=True)
+class ContestedPair:
+    """One detected disagreement, reduced to what scoring needs of it.
+
+    A projection of :class:`src.rag.conflicts.Conflict` rather than the thing
+    itself, so this module stays pure and importable without the retrieval
+    stack — the same reason :data:`ChunkTextFn` is a callable instead of a
+    store. :func:`src.evals.critique_run.contested_pairs` builds these from the
+    committed conflict artifact.
+    """
+
+    conflict_id: str
+    axis: str
+    #: The two videos, in artifact order. Order carries no meaning: a conflict
+    #: has two sides and no first side.
+    video_ids: tuple[str, str]
+    #: The two chunks the axis was read out of, used to decide whether a run's
+    #: context actually held both sides.
+    chunk_ids: tuple[str, str]
+
+
+@dataclass(frozen=True)
 class Finding:
     """One point the system made about the artifact.
 
@@ -295,6 +410,17 @@ class Finding:
     detail: str
     citations: tuple[Citation, ...] = ()
     contested: bool = False
+    #: The chunks **this finding's own reasoning** retrieved, as recorded by the
+    #: engine that produced it — a pack unit's ``chunk_ids`` for a rubric, and
+    #: nothing at all for a critique that emitted every finding out of one shared
+    #: retrieval.
+    #:
+    #: ``None`` is not an empty list and the difference decides a score.
+    #: ``None`` means *this engine cannot say what this finding retrieved*, and
+    #: :data:`GATE_PROVENANCE` marks the whole cell ungraded rather than passing
+    #: it. An empty tuple means the engine says this finding retrieved nothing,
+    #: which is a claim, and the finding grounds nothing.
+    retrieved_chunk_ids: tuple[str, ...] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -303,15 +429,27 @@ class Finding:
             "detail": self.detail,
             "citations": [c.to_dict() for c in self.citations],
             "contested": self.contested,
+            "retrieved_chunk_ids": (
+                None if self.retrieved_chunk_ids is None else list(self.retrieved_chunk_ids)
+            ),
         }
 
 
-def parse_findings(payload: Any) -> list[Finding]:
+def parse_findings(payload: Any, *, trust_provenance: bool = False) -> list[Finding]:
     """Findings out of the answering call's JSON, skipping anything unusable.
 
     A malformed finding is dropped rather than repaired: an entry with no
     criterion text cannot be matched against anything, and inventing a criterion
     for it would put a score on the parser instead of on the system.
+
+    ``retrieved_chunk_ids`` is read back **only** when ``trust_provenance`` is
+    set, which is true for a stored run being re-scored and false for a model
+    reply. The distinction is the gate itself: provenance is a record the engine
+    keeps of what it put in front of the model, and a model allowed to write its
+    own would simply list the chunks it wanted to cite. A payload with no such
+    field parses to ``None`` — the honest answer for every run committed before
+    the gate existed, and the one that leaves the cell ungraded rather than
+    passed.
     """
     rows = payload.get("findings") if isinstance(payload, dict) else payload
     findings: list[Finding] = []
@@ -331,6 +469,7 @@ def parse_findings(payload: Any) -> list[Finding]:
             if not video_id or not quote or not isinstance(start, (int, float)):
                 continue
             citations.append(Citation(video_id=video_id, start_seconds=float(start), quote=quote))
+        provenance = row.get("retrieved_chunk_ids") if trust_provenance else None
         findings.append(
             Finding(
                 id=str(row.get("id") or f"f{index + 1:02d}"),
@@ -338,9 +477,40 @@ def parse_findings(payload: Any) -> list[Finding]:
                 detail=str(row.get("detail") or "").strip(),
                 citations=tuple(citations),
                 contested=bool(row.get("contested")),
+                retrieved_chunk_ids=(
+                    tuple(str(chunk_id) for chunk_id in provenance)
+                    if isinstance(provenance, (list, tuple))
+                    else None
+                ),
             )
         )
     return findings
+
+
+def attach_provenance(
+    findings: Sequence[Finding],
+    provenance: dict[str, Sequence[str]],
+) -> list[Finding]:
+    """Stamp each finding with the chunks its own reasoning retrieved.
+
+    Applied by the engine that knows the answer, after the findings are built,
+    so the modules that *produce* findings (``rubrics_as_findings``,
+    ``verdicts_as_findings``) do not have to grow a scoring concern. A finding
+    the map does not name keeps ``None`` and is therefore ungradable — a missing
+    key is never read as "retrieved nothing", because those are opposite claims
+    and only one of them is safe to guess.
+    """
+    return [
+        (
+            finding
+            if finding.id not in provenance
+            else replace(
+                finding,
+                retrieved_chunk_ids=tuple(dict.fromkeys(str(c) for c in provenance[finding.id])),
+            )
+        )
+        for finding in findings
+    ]
 
 
 # ── provenance: does the quote really appear where it was cited? ──────────
@@ -375,6 +545,13 @@ class CitationCheck:
     #: :func:`ground_findings`). Recorded rather than silently discounted,
     #: because "your evidence is somebody else's" is the diagnosis.
     shared: bool = False
+    #: Set under :data:`GATE_PROVENANCE` when the quote really is in the
+    #: transcript but the chunk is **not** one this finding's own reasoning
+    #: retrieved — the second padding attack's signature. Distinct from
+    #: ``resolved: false``, which is a fabricated quote, and from ``shared``,
+    #: which is somebody else's evidence. Three different failures, three
+    #: different fields.
+    off_retrieval: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -384,6 +561,7 @@ class CitationCheck:
             "ratio": round(self.ratio, 3),
             "chunk_id": self.chunk_id,
             "shared": self.shared,
+            "off_retrieval": self.off_retrieval,
         }
 
 
@@ -635,43 +813,117 @@ def repeated_matcher(inner: MatchFn, repeats: int = DEFAULT_MATCH_REPEATS) -> Ma
     return match
 
 
+def _own_retrieval(finding: Finding, check: CitationCheck, gate: str) -> bool:
+    """Whether ``check`` may count as evidence for ``finding`` under ``gate``.
+
+    Under :data:`GATE_EXCLUSIVE` any resolving citation may; under
+    :data:`GATE_PROVENANCE` the chunk it resolved to must also be one the
+    finding's own reasoning retrieved. A finding that declares no provenance
+    counts nothing — the cell it belongs to is ungraded anyway (see
+    :func:`gate_verdict`), and letting it ground findings here would make the
+    ungraded verdict depend on which branch read the number first.
+    """
+    if not check.resolved or check.chunk_id is None:
+        return False
+    if gate != GATE_PROVENANCE:
+        return True
+    if finding.retrieved_chunk_ids is None:
+        return False
+    return check.chunk_id in set(finding.retrieved_chunk_ids)
+
+
 def ground_findings(
     findings: Sequence[Finding],
     checks: dict[str, list[CitationCheck]],
+    *,
+    gate: str = GATE_EXCLUSIVE,
+    record: bool = True,
 ) -> dict[str, list[str]]:
     """The chunks each finding can claim as **its own** evidence.
 
-    A finding is grounded when it cites at least one resolving chunk that no
-    other finding cites. Sharing is symmetric — if two findings rest on the same
-    single chunk then *neither* is grounded, rather than the first one listed
-    winning it — because any tie-break would decide the score by output order,
-    and this scorer already has one source of run-to-run drift too many.
+    A finding is grounded when it cites at least one chunk that resolves, that
+    the gate in force lets it claim, and that no other finding also claims.
+    Sharing is symmetric — if two findings rest on the same single chunk then
+    *neither* is grounded, rather than the first one listed winning it — because
+    any tie-break would decide the score by output order, and this scorer
+    already has one source of run-to-run drift too many.
 
-    This is the lever that kills the padding attack in the module docstring: an
-    output of N findings all pointing at one quote yields no exclusive evidence
-    at all, so nothing is grounded and both ``evidence_precision`` and
-    ``criteria_recall`` collapse. The cost is that a chunk genuinely supporting
-    two rules grounds neither — deliberately conservative, see the docstring.
+    :data:`GATE_EXCLUSIVE` is the lever that kills the first padding attack in
+    the module docstring: an output of N findings all pointing at one quote
+    yields no exclusive evidence at all. The cost is that a chunk genuinely
+    supporting two rules grounds neither — deliberately conservative.
+
+    :data:`GATE_PROVENANCE` adds the lever for the second one, where each
+    recited finding gets its own distinct real chunk: a chunk the finding's own
+    reasoning never retrieved is not that finding's evidence however exclusively
+    it is quoted. Ownership is computed **after** the gate, so a chunk one
+    finding grabbed off-retrieval does not spoil the exclusivity of the finding
+    that actually retrieved it.
+
+    ``record`` writes the ``shared`` and ``off_retrieval`` diagnoses back onto
+    the checks. The second, ungated pass a cell makes for its
+    ``*_ungated`` figures runs with it off, so the flags a reader sees are the
+    ones the gate in force produced rather than whichever pass ran last.
     """
+    claimed: dict[str, list[str]] = {}
     owners: dict[str, set[str]] = {}
-    for finding in findings:
-        for check in checks.get(finding.id, []):
-            if check.resolved and check.chunk_id is not None:
-                owners.setdefault(check.chunk_id, set()).add(finding.id)
-    exclusive: dict[str, list[str]] = {}
     for finding in findings:
         mine = [
             check.chunk_id
             for check in checks.get(finding.id, [])
-            if check.resolved
-            and check.chunk_id is not None
-            and owners.get(check.chunk_id) == {finding.id}
+            if check.chunk_id is not None and _own_retrieval(finding, check, gate)
         ]
-        exclusive[finding.id] = sorted(dict.fromkeys(mine))
+        claimed[finding.id] = mine
+        for chunk_id in mine:
+            owners.setdefault(chunk_id, set()).add(finding.id)
+
+    exclusive: dict[str, list[str]] = {}
+    for finding in findings:
+        exclusive[finding.id] = sorted(
+            dict.fromkeys(
+                chunk_id for chunk_id in claimed[finding.id] if owners.get(chunk_id) == {finding.id}
+            )
+        )
+        if not record:
+            continue
         for check in checks.get(finding.id, []):
-            if check.resolved and check.chunk_id is not None:
-                check.shared = len(owners.get(check.chunk_id, ())) > 1
+            if not check.resolved or check.chunk_id is None:
+                continue
+            allowed = _own_retrieval(finding, check, gate)
+            check.off_retrieval = not allowed
+            check.shared = allowed and len(owners.get(check.chunk_id, ())) > 1
     return exclusive
+
+
+def gate_verdict(findings: Sequence[Finding], gate: str) -> tuple[bool, str | None]:
+    """Whether this cell can be graded under ``gate``, and why not when it cannot.
+
+    :data:`GATE_PROVENANCE` needs every finding to carry what its own reasoning
+    retrieved. An engine that emitted every finding out of one shared retrieval
+    cannot say, and the two wrong answers are equally available: exempt it, and
+    the gate passes the attack it was written for; score it zero, and the run
+    asserts the findings have no corpus behind them, which nothing has shown.
+    So the cell is ungraded, and it says so in the run file.
+
+    Note what is *not* checked: whether a declared provenance set is narrower
+    than the cell's pool. An engine that declared the whole pool for every
+    finding would pass this, and the gate would be vacuous again — see
+    :mod:`src.evals.KNOWN_GAP_attack2`. That is reported rather than gated
+    (``provenance_distinct_sets`` on the cell), because every rule that would
+    catch it also fails a legitimate arm whose findings genuinely came from one
+    unit.
+    """
+    if gate != GATE_PROVENANCE:
+        return True, None
+    missing = [finding.id for finding in findings if finding.retrieved_chunk_ids is None]
+    if not missing:
+        return True, None
+    return False, (
+        f"{len(missing)} of {len(findings)} findings record no per-finding retrieval, so "
+        "this arm cannot be graded under the retrieval-provenance gate: what each finding "
+        "retrieved is the whole shared pool, and a gate against the pool passes the padding "
+        "attack the pool was used to mount"
+    )
 
 
 def embedding_matcher(embed: EmbedFn, *, threshold: float = MATCH_THRESHOLD) -> MatchFn:
@@ -757,30 +1009,121 @@ def held_out_leaks(
     return sorted(dict.fromkeys(leaks))
 
 
+def contested_coverage(
+    findings: Sequence[Finding],
+    checks: dict[str, list[CitationCheck]],
+    conflicts: Sequence[ContestedPair],
+    retrieved_chunk_ids: Sequence[str],
+) -> tuple[list[dict[str, Any]], int]:
+    """Which disagreements were in front of the model, and which it named.
+
+    *Available* is decided by retrieval, not by the answer: a conflict counts
+    only when **both** of its chunks are in ``retrieved_chunk_ids``. That fixes
+    the denominator before the answering call is made, so nothing the model
+    writes can move it — which is the property the metric it replaces did not
+    have, and the one :mod:`src.evals.KNOWN_GAP_attack2` exists to insist on.
+
+    *Named* is decided by the citations, not by the ``contested`` flag: the
+    finding must cite **both of the conflict's own chunks** and both citations
+    must resolve against the transcript. A model that sets ``contested: true``
+    on a finding resting on one chunk has not surfaced a disagreement, it has
+    asserted one.
+
+    Each conflict appears once however many findings mention it. Restating a
+    disagreement is not finding a second one — the same exclusivity rule
+    :func:`ground_findings` applies to evidence.
+
+    What this does and does not stop: the **denominator** is immovable, so no
+    output can widen the field it is scored against. The numerator is not
+    immune to volume — more findings are more chances that one of them cites
+    both sides — but it is capped by that fixed denominator and each conflict
+    counts once, so verbosity can only walk the score towards a ceiling
+    retrieval already set, and cannot invent a disagreement to walk towards.
+    """
+    available: list[ContestedPair] = [
+        conflict for conflict in conflicts if set(conflict.chunk_ids) <= set(retrieved_chunk_ids)
+    ]
+    rows: list[dict[str, Any]] = []
+    named = 0
+    for conflict in available:
+        # Both **chunks**, not both videos. Matching on video ids credited a
+        # finding that cited any chunk from each of the two videos, which in a
+        # context holding five chunks from one video is nearly free and says
+        # nothing about whether the finding engaged the disagreement. The
+        # conflict's own two chunks are the only citations that could.
+        by_finding = [
+            finding.id
+            for finding in findings
+            if set(conflict.chunk_ids)
+            <= {check.chunk_id for check in checks[finding.id] if check.resolved and check.chunk_id}
+        ]
+        if by_finding:
+            named += 1
+        rows.append(
+            {
+                "conflict_id": conflict.conflict_id,
+                "axis": conflict.axis,
+                "video_ids": list(conflict.video_ids),
+                "chunk_ids": list(conflict.chunk_ids),
+                "named_by": by_finding,
+            }
+        )
+    return rows, named
+
+
 def score_critique(
     critique: SetupCritique,
     dataset: CritiqueDataset,
     match: MatchFn,
     chunk_text: ChunkTextFn,
+    conflicts: Sequence[ContestedPair] = (),
+    *,
+    gate: str = DEFAULT_GROUNDING_GATE,
 ) -> dict[str, Any]:
-    """One setup's cell: four scores, the matched/unmatched split, the leaks."""
+    """One setup's cell: four scores, the matched/unmatched split, the leaks.
+
+    ``gate`` decides what counts as a finding's own evidence, and is written
+    into the cell so a number can be read back to the rule that produced it. A
+    cell the gate cannot grade reports ``None`` on the two scores that depend on
+    grounding and keeps the ungated pair beside them; see
+    :func:`gate_verdict`.
+    """
+    if gate not in GROUNDING_GATES:
+        raise ValueError(f"unknown grounding gate {gate!r}; expected one of {GROUNDING_GATES}")
     checks: dict[str, list[CitationCheck]] = {
         finding.id: [check_citation(c, chunk_text) for c in finding.citations]
         for finding in critique.findings
     }
-    exclusive = ground_findings(critique.findings, checks)
+    gradable, ungradable_reason = gate_verdict(critique.findings, gate)
+    # An ungradable cell is still *described* under the old gate — the per-finding
+    # arrays, the fabrication list and the counts all stay readable — and only the
+    # two scores that would be claims about grounding go to None.
+    applied = gate if gradable else GATE_EXCLUSIVE
+    exclusive = ground_findings(critique.findings, checks, gate=applied)
     grounded_ids = {fid for fid, chunks in exclusive.items() if chunks}
     grounded = [f for f in critique.findings if f.id in grounded_ids]
+    if applied == GATE_EXCLUSIVE:
+        ungated_grounded_ids = grounded_ids
+    else:
+        ungated_grounded_ids = {
+            fid
+            for fid, chunks in ground_findings(
+                critique.findings, checks, gate=GATE_EXCLUSIVE, record=False
+            ).items()
+            if chunks
+        }
 
     all_checks = [check for finding in critique.findings for check in checks[finding.id]]
     resolved_checks = [check for check in all_checks if check.resolved]
 
-    contested_findings = [
-        finding
-        for finding in critique.findings
-        if finding.contested
-        and len({check.citation.video_id for check in checks[finding.id] if check.resolved}) >= 2
-    ]
+    # Recorded, never scored. The model's own flag is kept beside the derived
+    # number so a reader can see the two disagree — on the runs measured so far
+    # it has been false on every finding, including ones that did cite two
+    # videos, which is precisely why nothing is scored on it any more.
+    self_declared_contested = [finding for finding in critique.findings if finding.contested]
+    contested_rows, contested_named = contested_coverage(
+        critique.findings, checks, conflicts, critique.retrieved_chunk_ids
+    )
 
     # Matched once over the whole list, then read twice. Matching the applicable
     # subset separately would let a finding that lost a resume-only criterion to
@@ -802,11 +1145,35 @@ def score_critique(
 
     groups = _group_recall(applicable, matches_applicable)
     total = len(critique.findings)
+    # Kept whatever the gate decides, so a run committed under the gate is still
+    # comparable with the series published before it existed. Under the
+    # exclusive gate these are the same two numbers as the scores above; under
+    # the provenance gate they are what the old rule would have said, and for an
+    # ungraded cell they are the only figures there are.
+    ungated = {
+        "criteria_recall_ungated": _ratio(
+            sum(
+                1 for m in matches_applicable if m.matched and m.finding_id in ungated_grounded_ids
+            ),
+            len(applicable),
+        ),
+        "evidence_precision_ungated": _ratio(len(ungated_grounded_ids), total),
+    }
     scores = {
-        "criteria_recall": _ratio(counted, len(applicable)),
-        "evidence_precision": _ratio(len(grounded), total),
+        # None, not 0.0, when the gate cannot grade this arm — the same
+        # distinction ``contested_coverage`` makes between "averaged it away"
+        # and "was never shown one". See :func:`gate_verdict`.
+        "criteria_recall": _ratio(counted, len(applicable)) if gradable else None,
+        "evidence_precision": _ratio(len(grounded), total) if gradable else None,
         "provenance": _ratio(len(resolved_checks), len(all_checks)),
-        "contested_rate": _ratio(len(contested_findings), total),
+        # None, not 0.0, when no disagreement was in context — see the module
+        # docstring. _ratio already returns None on a zero denominator.
+        #
+        # Deliberately outside the gate: its denominator is fixed by retrieval
+        # before the answering call, so verbosity cannot move it, and gating it
+        # on per-finding provenance would delete a behavioural measurement that
+        # the second padding attack does not touch.
+        "contested_coverage": _ratio(contested_named, len(contested_rows)),
     }
 
     leaks = held_out_leaks(
@@ -819,10 +1186,34 @@ def score_critique(
     return {
         "setup": critique.setup,
         "scores": scores,
-        "score_spread": spread,
+        **ungated,
+        # Which rule produced the two gated scores, on the cell itself, so a
+        # number lifted out of a run file carries its own provenance.
+        "grounding_gate": gate,
+        "grounding_gate_applied": applied,
+        "gradable": gradable,
+        "ungradable_reason": ungradable_reason,
+        "findings_with_provenance": sum(
+            1 for finding in critique.findings if finding.retrieved_chunk_ids is not None
+        ),
+        # How much per-finding information the declared provenance actually
+        # carried. One distinct set across many findings means every finding
+        # claimed the same retrieval, which is the shape the gate cannot tell
+        # apart from a pool — reported, not gated. See :func:`gate_verdict`.
+        "provenance_distinct_sets": len(
+            {
+                finding.retrieved_chunk_ids
+                for finding in critique.findings
+                if finding.retrieved_chunk_ids is not None
+            }
+        ),
+        "citations_off_retrieval": sum(1 for check in all_checks if check.off_retrieval),
+        "score_spread": spread if gradable else _recall_spread(dataset, [], applicable_ids, set()),
         "match_repeats": result.repeats,
-        "criteria_recall_all": _ratio(sum(m.counted for m in matches_all), len(dataset.criteria)),
-        "criteria_recall_grouped": _ratio(groups[0], groups[1]),
+        "criteria_recall_all": (
+            _ratio(sum(m.counted for m in matches_all), len(dataset.criteria)) if gradable else None
+        ),
+        "criteria_recall_grouped": _ratio(groups[0], groups[1]) if gradable else None,
         "criteria_groups": groups[1],
         "findings_total": total,
         "findings_grounded": len(grounded),
@@ -834,7 +1225,11 @@ def score_critique(
         "criteria_matched_ungrounded": sum(
             1 for m in matches_applicable if m.matched and m.ungrounded
         ),
-        "contested_findings": len(contested_findings),
+        "fabricated_citations": fabricated_citations(critique.findings, checks),
+        "conflicts_in_context": len(contested_rows),
+        "conflicts_named": contested_named,
+        "conflicts": contested_rows,
+        "self_declared_contested": len(self_declared_contested),
         "held_out_leaks": len(leaks),
         "held_out_leak_ids": leaks,
         "retrieved_chunk_ids": list(critique.retrieved_chunk_ids),
@@ -931,6 +1326,43 @@ def _ratio(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 4)
 
 
+def fabricated_citations(
+    findings: Sequence[Finding],
+    checks: dict[str, list[CitationCheck]],
+) -> list[dict[str, Any]]:
+    """Citations whose quoted words are not in the transcript they point at.
+
+    Hoisted out of the per-finding arrays and named at the top of the cell
+    because of what one of these turned out to be. A baseline run of this
+    harness cited ``ZqqzBCg6IGU@70.1`` for *"skill is not equal to subject. In
+    your skill section in resume don't write things like machine learning or
+    statistics under skills"* — a fluent, plausible, correctly-attributed quote
+    that **the speaker never said**, matched at 0.41 against the transcript at
+    that timestamp. Nobody read anything to catch it; a ``difflib`` ratio did.
+
+    That is the single failure this whole project is built to prevent, caught
+    live, and burying it as one ``resolved: false`` inside the eighth element of
+    a nested array is how an incident like it stops being visible. ``ratio`` and
+    the model's exact words are kept so the fabrication can be read rather than
+    only counted — a low ratio and an invented sentence are different things
+    from a quote that drifted by a filler word.
+    """
+    return [
+        {
+            "finding_id": finding.id,
+            "video_id": check.citation.video_id,
+            "start_seconds": check.citation.start_seconds,
+            "claimed_quote": check.citation.quote,
+            "ratio": check.ratio,
+            "chunk_id": check.chunk_id,
+            "reason": check.reason,
+        }
+        for finding in findings
+        for check in checks[finding.id]
+        if not check.resolved
+    ]
+
+
 def build_run(
     dataset: CritiqueDataset,
     cells: list[dict[str, Any]],
@@ -938,6 +1370,7 @@ def build_run(
     config: dict[str, Any],
     baseline: str,
     now: datetime | None = None,
+    gate: str = DEFAULT_GROUNDING_GATE,
 ) -> dict[str, Any]:
     """The committed snapshot, in the shape ``load_experiments`` reads.
 
@@ -962,9 +1395,21 @@ def build_run(
         "baseline": baseline,
         "match_repeats": config.get("match_repeats", DEFAULT_MATCH_REPEATS),
         "exclusion_version": EXCLUSION_VERSION,
+        # At the top of the run as well as on every cell. Two runs of this
+        # harness scored under different gates are not comparable, and a reader
+        # who has to open a cell to find that out will not.
+        "grounding_gate": gate,
+        "ungraded_cells": sorted(
+            str(cell.get("setup") or "") for cell in cells if cell.get("gradable") is False
+        ),
         "criteria_groups": len({c.group for c in dataset.applicable()}),
         "held_out_leaks": sum(int(cell.get("held_out_leaks") or 0) for cell in cells),
-        "config": config,
+        # At the top of the run, not only inside a cell: a fabricated citation
+        # is the incident this harness exists to catch, and a reader should not
+        # have to open a cell to find out one happened. See
+        # :func:`fabricated_citations`.
+        "fabricated_citations": sum(len(cell.get("fabricated_citations") or []) for cell in cells),
+        "config": {"grounding_gate": gate, **config},
         "cells": cells,
     }
 
@@ -1012,9 +1457,22 @@ def format_table(run: dict[str, Any]) -> str:
                 f"{cell.get('match_repeats', '?')} matcher runs — a later slice has to "
                 "beat that range, not the point estimate"
             )
+    for cell in run["cells"]:
+        if cell.get("gradable") is False:
+            lines.append(
+                f"  {cell['setup']}: ungraded — {cell.get('ungradable_reason')} "
+                f"(ungated it would read criteria_recall "
+                f"{_show(cell.get('criteria_recall_ungated'))} · evidence_precision "
+                f"{_show(cell.get('evidence_precision_ungated'))})"
+            )
     lines.append(
         f"held-out {run['held_out_video_id']} · leaks {run['held_out_leaks']} · "
         f"{run['criteria_applicable']}/{run['criteria_total']} criteria applicable "
-        f"({run.get('criteria_groups', '?')} groups)"
+        f"({run.get('criteria_groups', '?')} groups) · gate "
+        f"{run.get('grounding_gate', GATE_EXCLUSIVE)}"
     )
     return "\n".join(lines)
+
+
+def _show(value: Any) -> str:
+    return f"{value:.3f}" if isinstance(value, (int, float)) else "—"

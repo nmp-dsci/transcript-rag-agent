@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { api } from '../api/client';
 import type { Chunk, VideoChunkEnrichment, Video } from '../api/types';
-import { fmtSeconds } from '../answers/render';
+import { fmtSeconds, videoTimestampUrl } from '../answers/render';
 
 interface Props {
   video: Video | null;
@@ -12,10 +12,7 @@ interface Props {
 }
 
 function timestampUrl(video: Video, chunk: Chunk): string | null {
-  const base = chunk.source_url || video.source_url;
-  if (!base) return null;
-  const seconds = Math.floor(chunk.start_seconds ?? 0);
-  return `${base}${base.includes('?') ? '&' : '?'}t=${seconds}`;
+  return videoTimestampUrl(chunk.source_url || video.source_url, chunk.start_seconds);
 }
 
 export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props) {

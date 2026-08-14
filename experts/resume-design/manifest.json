@@ -2,12 +2,12 @@
   "topic": "resume-design",
   "name": "Resume design",
   "routing_text": "How should a software engineer or data scientist write their resume? Bullet points, professional summary, page length, formatting and layout, ATS keyword matching, quantified impact and metrics, tailoring a CV to one job description, and what a recruiter looks for in the seconds they spend skimming it.",
-  "updated_at": "2026-08-10T00:56:56.010619+00:00",
+  "updated_at": "2026-08-10T04:54:43.769716+00:00",
   "overrides": {},
   "provenance": {
-    "corpus_digest": "c773ab89fc2b0f51",
-    "chunk_count": 1329,
-    "video_count": 53,
+    "corpus_digest": "e1b17b35cb7190cf",
+    "chunk_count": 1372,
+    "video_count": 56,
     "theme_generated_at": "2026-08-10T00:22:21.813165+00:00",
     "theme_count": 30,
     "graph_cache_digest": "b3edae8f87405fcb",
@@ -163,17 +163,17 @@
   "arms": {
     "raptor": {
       "rubrics": 18,
-      "gaps": 12,
+      "gaps": 13,
       "multi_creator_share": 0.8889
     },
     "communities": {
       "rubrics": 18,
-      "gaps": 12,
+      "gaps": 13,
       "multi_creator_share": 0.5556
     },
     "merged": {
       "rubrics": 17,
-      "gaps": 12,
+      "gaps": 13,
       "multi_creator_share": 0.7647
     }
   }

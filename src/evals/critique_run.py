@@ -40,10 +40,13 @@ from typing import Any, Callable, Sequence
 
 from src.config import Settings
 from src.evals.critique import (
+    DEFAULT_GROUNDING_GATE,
     DEFAULT_MATCH_REPEATS,
+    GATE_EXCLUSIVE,
     EXCLUSION_VERSION,
     TIMESTAMP_TOLERANCE_SECONDS,
     ChunkTextFn,
+    ContestedPair,
     Criterion,
     CriterionMatch,
     CritiqueDataset,
@@ -52,6 +55,7 @@ from src.evals.critique import (
     MatchFn,
     MatchResult,
     SetupCritique,
+    attach_provenance,
     build_run,
     load_critique_dataset,
     parse_findings,
@@ -65,6 +69,57 @@ from src.evals.critique import (
 #: this whole harness exists to make falsifiable — the baseline is part of the
 #: experiment's definition, not a parameter of it.
 BASELINE_SETUP = "rag_llm_filtered"
+
+#: The baseline plus both sides of any disagreement the corpus holds about this
+#: kind of document.
+#:
+#: This exists because of what the baseline row measures. Its retrieval returned
+#: ten chunks from four videos, and the corpus's résumé disagreement — one
+#: creator saying 11-12 point body text, another saying 10 — is in two videos it
+#: never reached. A top-k over one embedding neighbourhood converges: it finds
+#: the *most typical* answer, and the most typical answer is the consensus,
+#: which is exactly the material a disagreement is not. So the baseline could
+#: not have named a conflict however willing it was, and its
+#: ``contested_coverage`` is ``None`` rather than 0 for that reason.
+#:
+#: The fix is not a bigger k. It is to look the disagreement up: the conflict
+#: layer already knows which two chunks contradict each other, so this setup
+#: appends both sides of the most relevant ones to the retrieved context and
+#: leaves everything else identical. What it then measures is behavioural — the
+#: model has both sides in front of it, and either it names the axis or it
+#: blends the two into one confident sentence.
+CONFLICT_AWARE_SETUP = "rag_conflict_aware"
+
+#: Disagreements appended to the conflict-aware context, most relevant first.
+#: Small on purpose: this is a measurement of what the model does with a
+#: conflict it can see, and burying the artifact's own material under a dozen
+#: injected excerpts would measure something else.
+CONFLICT_INJECT_LIMIT = 2
+
+#: V6's arm: the rubric-driven reviewer, scored against the same held-out
+#: expert as the chunk dump.
+#:
+#: The two arms differ in *where the criteria come from*, and in nothing else —
+#: same held-out video, same corpus, same artifact, same answering model, same
+#: matcher. :data:`BASELINE_SETUP` retrieves ten chunks at review time and asks
+#: the model to work out what rules they imply. This one never retrieves: the
+#: rules were distilled once at pack build time over the whole corpus, and the
+#: review walks them one at a time and returns a verdict per rubric.
+#:
+#: Only the **failures** become findings (see
+#: :func:`src.documents.rubric_review.verdicts_as_findings`). That is not a
+#: filter chosen to flatter the arm — it is the only version of this comparison
+#: that is not the padding attack in :mod:`src.evals.KNOWN_GAP_attack2`. Sixty-one
+#: rubrics emitted as sixty-one findings, each with its own real pack citation,
+#: would score recall far above the baseline while having applied nothing to the
+#: document; a rubric earns a finding only when the reviewer judged this document
+#: to fail it *and* pointed at a section of it.
+#:
+#: What the arm carries that the baseline does not is stated rather than hidden:
+#: the packs read the corpus through a build the baseline never had. That is the
+#: thing being measured, and the run records the pack provenance so it can be
+#: argued with.
+RUBRIC_PACK_SETUP = "rubric_packs"
 
 CRITIQUE_SYSTEM_PROMPT = """You review a document against criteria drawn from \
 expert video transcripts.
@@ -139,6 +194,44 @@ def chunk_text_lookup(
         ]
 
     return lookup
+
+
+def contested_pairs(
+    conflict_path: Path,
+    *,
+    exclude_video_ids: Sequence[str] = (),
+) -> list[ContestedPair]:
+    """The committed conflict artifact, reduced to what the scorer needs.
+
+    Conflicts touching an excluded video are dropped rather than filtered later:
+    a held-out run must not be able to score itself on a disagreement one of
+    whose sides is the video it is meant to be blind to, and dropping it here
+    means no downstream caller has to remember.
+
+    A missing artifact yields an empty list, which makes ``contested_coverage``
+    ``None`` on every cell — the honest reading of "the disagreement layer was
+    never built" is that this run did not measure it, not that it scored zero.
+    """
+    from src.rag.conflicts import ConflictStore
+
+    index = ConflictStore(conflict_path).load()
+    if index is None:
+        return []
+    blocked = set(exclude_video_ids)
+    pairs: list[ContestedPair] = []
+    for conflict in index.conflicts:
+        videos = (conflict.left.video_id, conflict.right.video_id)
+        if blocked & set(videos):
+            continue
+        pairs.append(
+            ContestedPair(
+                conflict_id=conflict.conflict_id,
+                axis=conflict.axis,
+                video_ids=videos,
+                chunk_ids=(conflict.left.chunk_id, conflict.right.chunk_id),
+            )
+        )
+    return pairs
 
 
 def embedder(settings: Settings) -> EmbedFn:
@@ -353,12 +446,273 @@ def load_artifact(dataset: CritiqueDataset) -> Any:
     return document
 
 
-def build_critique_fn(settings: Settings, dataset: CritiqueDataset) -> CritiqueFn:
+def conflict_excerpts(
+    settings: Settings,
+    query: str,
+    conflicts: Sequence[ContestedPair],
+    *,
+    limit: int = CONFLICT_INJECT_LIMIT,
+) -> list[Any]:
+    """Both sides of the disagreements closest to ``query``, as chunk records.
+
+    Ranked by cosine between the **axis** and the review query, which is the
+    right text to rank on: the axis is one sentence naming the question the two
+    creators answer differently, while the two chunks are seventy seconds of
+    speech each and would rank on whatever else they happen to mention.
+
+    Both sides always travel together. Appending one side of a conflict would be
+    worse than appending neither — it puts a contested claim in the context
+    wearing the same clothes as an uncontested one, which is precisely the state
+    this whole slice exists to get the system out of.
+
+    Ties break on ``conflict_id`` so the same corpus and query always inject the
+    same excerpts in the same order.
+    """
+    if not conflicts:
+        return []
+    from src.rag.embeddings import HuggingFaceEmbeddingModel
+    from src.rag.storage import TranscriptChunkStore
+
+    embed = HuggingFaceEmbeddingModel(settings.embedding_model)
+    vectors = embed.embed_documents([query] + [pair.axis for pair in conflicts])
+
+    def cosine(left: Sequence[float], right: Sequence[float]) -> float:
+        dot = sum(a * b for a, b in zip(left, right))
+        norms = (sum(a * a for a in left) ** 0.5) * (sum(b * b for b in right) ** 0.5)
+        return dot / norms if norms else 0.0
+
+    ranked = sorted(
+        zip(conflicts, (cosine(vectors[0], row) for row in vectors[1:])),
+        key=lambda item: (-item[1], item[0].conflict_id),
+    )[: max(0, limit)]
+
+    wanted = {chunk_id for pair, _ in ranked for chunk_id in pair.chunk_ids}
+    videos = sorted({video_id for pair, _ in ranked for video_id in pair.video_ids})
+    store = TranscriptChunkStore(
+        settings.chroma_path,
+        embedding_model=embed,
+        collection_name=settings.chunk_collection,
+    )
+    by_id = {chunk.chunk_id: chunk for chunk in store.chunks_for_videos(videos)}
+    return [by_id[chunk_id] for chunk_id in sorted(wanted) if chunk_id in by_id]
+
+
+def pack_exposure(packs: Sequence[Any]) -> tuple[list[str], list[str]]:
+    """Every chunk and video the pack **build** put in front of a model.
+
+    Not the chunks the shipped rubrics happen to quote. The leak check has to
+    see what the system was *exposed* to — a held-out video that reached the
+    build prompt and was merely not quoted has still contaminated the
+    experiment — which is the same reading
+    :func:`src.evals.pack_ablation.pack_as_critique` takes of the same packs.
+
+    It is also the honest answer to "what was in this arm's context" for
+    :func:`~src.evals.critique.contested_coverage`. The reviewer itself sees no
+    transcript at all; whatever chance it had to notice a disagreement was
+    spent at build time, on these chunks.
+    """
+    chunk_ids = sorted(
+        {chunk_id for pack in packs for unit in pack.units for chunk_id in unit.chunk_ids}
+    )
+    video_ids = sorted(
+        {video_id for pack in packs for unit in pack.units for video_id in unit.video_ids}
+    )
+    return chunk_ids, video_ids
+
+
+def pack_finding_provenance(
+    packs: Sequence[Any],
+    *,
+    qualify: bool = False,
+) -> dict[str, list[str]]:
+    """``finding id -> the chunks that finding's own distillation saw``.
+
+    The per-finding half of :func:`pack_exposure`, and the reason the pack arms
+    can be graded under :data:`~src.evals.critique.GATE_PROVENANCE` at all. A
+    rubric is distilled from exactly one unit — a RAPTOR theme or a graph
+    community — and that unit's ``chunk_ids`` are the entire corpus the
+    distilling model had in front of it when it wrote that rule. So they are
+    literally "what this finding retrieved", not an approximation of it.
+
+    ``qualify`` matches the id scheme the reviewer uses
+    (``{topic}:{rubric_id}``, because rubric ids are numbered per pack and
+    ``r0101`` exists in all four); the D2 ablation scores one pack at a time and
+    uses the bare id.
+
+    A rubric whose ``unit_id`` names no unit in its own pack is left out of the
+    map rather than given an empty list, so it comes back ``None`` and takes the
+    cell to ungraded. A pack that cannot say where a rubric came from is exactly
+    the case the gate must not wave through.
+    """
+    provenance: dict[str, list[str]] = {}
+    for pack in packs:
+        units = {unit.unit_id: sorted(dict.fromkeys(unit.chunk_ids)) for unit in pack.units}
+        for rubric in pack.rubrics:
+            chunk_ids = units.get(getattr(rubric, "unit_id", "") or "")
+            if chunk_ids is None:
+                continue
+            key = f"{pack.topic}:{rubric.rubric_id}" if qualify else rubric.rubric_id
+            provenance[key] = chunk_ids
+    return provenance
+
+
+def provenance_for_run(
+    run: dict[str, Any],
+    *,
+    packs_dir: Path | str = Path("experts"),
+) -> dict[str, dict[str, Sequence[str]]]:
+    """Rebuild ``{setup: {finding_id: chunk_ids}}`` for a committed run's arms.
+
+    A run written before the gate existed did not serialise per-finding
+    provenance, but for a pack arm it was never lost: the pack is a committed
+    artifact and still says which unit every rubric came out of. So re-scoring
+    such a run under the gate reads the answer back rather than marking the arm
+    ungraded over a field that did not exist yet.
+
+    Only the arms that *have* an answer get one. A retrieval arm's setup name
+    matches no pack, so it is absent from the map, stays ``None``, and is
+    ungraded — which is the correct verdict and not a gap in this function.
+    """
+    from src.rag.packs import PackStore
+
+    store = PackStore(Path(packs_dir))
+    topic = str(run.get("topic") or "")
+    out: dict[str, dict[str, Sequence[str]]] = {}
+    for cell in run.get("cells", []):
+        setup = str(cell.get("setup") or "")
+        if setup == RUBRIC_PACK_SETUP:
+            from src.documents.rubric_review import load_review_packs
+
+            packs = load_review_packs(packs_dir)
+            if packs:
+                out[setup] = dict(pack_finding_provenance(packs, qualify=True))
+            continue
+        if not topic:
+            continue
+        try:
+            pack = store.load_pack(topic, setup)
+        except (OSError, ValueError):
+            continue
+        if pack is not None:
+            out[setup] = dict(pack_finding_provenance([pack]))
+    return out
+
+
+def rubric_critique(
+    llm: Any,
+    dataset: CritiqueDataset,
+    document: Any,
+    query: str,
+    *,
+    setup: str = RUBRIC_PACK_SETUP,
+    model_name: str = "",
+    packs_dir: Path | str | None = None,
+) -> SetupCritique:
+    """V6's arm: judge the artifact rubric by rubric, and hand over the failures.
+
+    No retrieval runs here — see :data:`RUBRIC_PACK_SETUP`. The document is read
+    with the same :func:`~src.documents.review.select_sections` call the baseline
+    makes, so the two arms are judging the same text and any gap between them is
+    about the criteria, not about which half of the page each one saw.
+    """
+    from src.agents.rubric_review_agent import RubricReviewAgent
+    from src.documents.review import select_sections
+    from src.documents.rubric_review import load_review_packs, verdicts_as_findings
+    from src.rag.eval import estimate_tokens
+
+    started = time.monotonic()
+    result = SetupCritique(setup=setup)
+    packs = load_review_packs(packs_dir)
+    if not packs:
+        result.error = "No rubric packs are built. Run `uv run python -m src.cli build-packs`."
+        result.elapsed_seconds = time.monotonic() - started
+        return result
+
+    chunk_ids, video_ids = pack_exposure(packs)
+    result.retrieved_chunk_ids = chunk_ids
+    result.retrieved_video_ids = video_ids
+
+    selection = select_sections(document, query)
+    try:
+        review = RubricReviewAgent(llm, packs, model_name=model_name).review(document, selection)
+    except Exception as exc:  # noqa: BLE001 - a failed setup is a reported cell
+        result.error = f"{type(exc).__name__}: {exc}"
+        result.elapsed_seconds = time.monotonic() - started
+        return result
+
+    # Stamped here rather than inside ``verdicts_as_findings``, which does not
+    # know about scoring and should not have to: the pack is what knows which
+    # unit each rubric came out of.
+    result.findings = attach_provenance(
+        verdicts_as_findings(review.review),
+        pack_finding_provenance(packs, qualify=True),
+    )
+    result.answer = review.answer
+    result.token_estimate = estimate_tokens(review.answer)
+    stats = review.review.stats
+    counts = stats["verdicts"]
+    declared = sorted(
+        {
+            video_id
+            for pack in packs
+            for video_id in getattr(getattr(pack, "provenance", None), "held_out_video_ids", [])
+        }
+    )
+    held_out = ", ".join(declared) or "nothing"
+    if dataset.held_out_video_id not in declared:
+        # Said out loud rather than left to the leak count. A pack that never
+        # declared this video held out may still show zero leaks — the build
+        # simply never routed to it — and "excluded on purpose" and "missed by
+        # luck" are not the same experiment.
+        held_out += f" — but NOT {dataset.held_out_video_id}, which this run holds out"
+    result.trace = [
+        {
+            "phase": "route",
+            "label": "Load rubric packs",
+            # What the packs *say* they held out, not what this run wanted them
+            # to: the two agreeing is the claim, and printing the dataset's own
+            # id here would make the trace agree with itself by construction.
+            # ``held_out_leaks`` re-derives the answer from the chunk ids above
+            # either way.
+            "detail": (
+                f"{stats['packs_used']} packs, {stats['rubrics_total']} rubrics — distilled "
+                f"once over the corpus, held out {held_out}; "
+                "no retrieval runs at review time"
+            ),
+        },
+        {
+            "phase": "read",
+            "label": "Read the document",
+            "detail": selection.detail(),
+        },
+        {
+            "phase": "answer",
+            "label": "Judge each rubric",
+            "detail": (
+                f"{counts.get('fail', 0)} fail, {counts.get('pass', 0)} pass, "
+                f"{counts.get('n-a', 0)} n/a, {counts.get('unjudged', 0)} unjudged — "
+                "only the failures are scored as findings"
+            ),
+        },
+    ]
+    result.elapsed_seconds = time.monotonic() - started
+    return result
+
+
+def build_critique_fn(
+    settings: Settings,
+    dataset: CritiqueDataset,
+    conflicts: Sequence[ContestedPair] = (),
+) -> CritiqueFn:
     """A critique callable over the real stack, held-out video excluded.
 
     The stores are built once and shared across setups, exactly as
     :func:`src.evals.ablation.build_retrieve` does — so a multi-setup run loads
     the embedding model and the cross-encoder once between them.
+
+    ``conflicts`` is only read by :data:`CONFLICT_AWARE_SETUP`; every other
+    setup retrieves exactly as it did before this argument existed, so the
+    baseline row stays comparable with the runs already committed.
     """
     from src.agents.llm import chat_model_kwargs
     from src.documents.review import REVIEW_INTENT_QUERIES, select_sections
@@ -422,12 +776,29 @@ def build_critique_fn(settings: Settings, dataset: CritiqueDataset) -> CritiqueF
 
     def critique(_: CritiqueDataset, setup: str) -> SetupCritique:
         started = time.monotonic()
+        # The rubric arm shares the document, the section selection and the
+        # answering client with the retrieval arms, and shares nothing else:
+        # it never touches the provider above, because having no retrieval at
+        # review time is the thing it is being measured for.
+        if setup == RUBRIC_PACK_SETUP:
+            return rubric_critique(
+                llm,
+                dataset,
+                document,
+                query,
+                setup=setup,
+                model_name=settings.deepseek_model,
+            )
         result = SetupCritique(setup=setup)
         try:
             context = provider.get_context(
                 query,
                 top_k=settings.rag_top_k,
-                filter_transcripts=setup == BASELINE_SETUP,
+                # The conflict-aware setup routes exactly as the baseline does.
+                # Its only difference is what gets appended afterwards, so that
+                # a gap between the two rows is attributable to the conflict
+                # layer rather than to two different retrieval strategies.
+                filter_transcripts=setup in {BASELINE_SETUP, CONFLICT_AWARE_SETUP},
                 transcript_filter_top_k=settings.transcript_filter_top_k,
                 transcript_filter_min_score=settings.transcript_filter_min_score,
                 retrieval_mode=settings.retrieval_mode,
@@ -438,6 +809,19 @@ def build_critique_fn(settings: Settings, dataset: CritiqueDataset) -> CritiqueF
             return result
 
         chunks = list(context.retrieved_chunks or [])
+        # Appended, not merged into the ranking: these are not retrieval hits
+        # and pretending they competed for a top-k slot would misreport what the
+        # setup did. Dedup on chunk id keeps a side that retrieval already found
+        # from appearing twice.
+        injected: list[Any] = []
+        if setup == CONFLICT_AWARE_SETUP:
+            seen = {chunk.chunk_id for chunk in chunks}
+            injected = [
+                chunk
+                for chunk in conflict_excerpts(settings, query, conflicts)
+                if chunk.chunk_id not in seen
+            ]
+            chunks = chunks + injected
         result.retrieved_chunk_ids = [
             f"chunk:{chunk.video_id}:{chunk.chunk_index}" for chunk in chunks
         ]
@@ -459,6 +843,20 @@ def build_critique_fn(settings: Settings, dataset: CritiqueDataset) -> CritiqueF
                     f"— {dataset.held_out_video_id} excluded from every store"
                 ),
             },
+            *(
+                [
+                    {
+                        "phase": "merge",
+                        "label": "Add both sides of known disagreements",
+                        "detail": (
+                            f"{len(injected)} chunks appended from the conflict layer "
+                            f"— {len(injected) // 2} disagreement(s), both sides each"
+                        ),
+                    }
+                ]
+                if setup == CONFLICT_AWARE_SETUP
+                else []
+            ),
             {
                 "phase": "read",
                 "label": "Read the document",
@@ -476,6 +874,13 @@ def build_critique_fn(settings: Settings, dataset: CritiqueDataset) -> CritiqueF
             )
             answer = str(getattr(response, "content", response))
             result.answer = answer
+            # No ``trust_provenance`` and nothing stamped afterwards, on purpose.
+            # Every finding here came out of one call over one shared pool, so
+            # there is no per-finding retrieval to record and the honest state
+            # is ``None`` — which makes the cell **ungraded** under
+            # :data:`~src.evals.critique.GATE_PROVENANCE` rather than passed.
+            # Declaring the pool per finding would satisfy the gate and mean
+            # nothing; see :mod:`src.evals.KNOWN_GAP_attack2`.
             result.findings = parse_findings(_json_object(answer))
         except Exception as exc:  # noqa: BLE001 - a failed setup is a reported cell
             result.error = f"{type(exc).__name__}: {exc}"
@@ -574,7 +979,9 @@ def run_critique_eval(
     match: MatchFn,
     chunk_text: ChunkTextFn,
     *,
+    conflicts: Sequence[ContestedPair] = (),
     config: dict[str, Any] | None = None,
+    gate: str = DEFAULT_GROUNDING_GATE,
     on_progress: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Critique the artifact with each setup, score them, assemble the run.
@@ -596,7 +1003,7 @@ def run_critique_eval(
         if on_progress is not None:
             on_progress(f"[{setup}] critiquing {dataset.artifact_url}")
         result = critique(dataset, setup)
-        cells.append(score_critique(result, dataset, match, chunk_text))
+        cells.append(score_critique(result, dataset, match, chunk_text, conflicts, gate=gate))
     return build_run(
         dataset,
         cells,
@@ -605,7 +1012,46 @@ def run_critique_eval(
             **(config or {}),
         },
         baseline=setups[0] if setups else BASELINE_SETUP,
+        gate=gate,
     )
+
+
+def replay_matcher(run: dict[str, Any]) -> MatchFn:
+    """Replay the pairings a committed run's matcher already voted, per setup.
+
+    ``score_critique`` needs a :data:`~src.evals.critique.MatchFn`, and the only
+    shipped one costs an LLM call. But every cell already stores ``match_runs``
+    — the five per-repeat votes the matcher cast — so re-scoring a committed run
+    under a new *arithmetic* rule needs no model at all: the pairing is data,
+    and re-rolling it would change the number for a reason that has nothing to
+    do with the rule being tested.
+
+    Cells are consumed in file order, one per call, because the matcher
+    signature carries no setup and two arms of the same run are matched over the
+    same criteria list. A run whose cells are re-scored out of order would get
+    another cell's votes, so this raises instead of guessing when it runs out.
+    """
+    from src.evals.critique import consensus, enforce_one_to_one
+
+    pending = [
+        (str(cell.get("setup") or ""), list(cell.get("match_runs") or []))
+        for cell in run.get("cells", [])
+    ]
+    position = 0
+
+    def match(criteria: Sequence[Criterion], findings: Sequence[Finding]) -> MatchResult:
+        nonlocal position
+        if position >= len(pending):
+            raise ValueError(
+                f"{run.get('run_id')} stored votes for {len(pending)} cells and a "
+                f"{position + 1}th was asked for — re-score its cells once each, in order"
+            )
+        _, runs = pending[position]
+        position += 1
+        merged = enforce_one_to_one(consensus(criteria, findings, [dict(row) for row in runs]))
+        return MatchResult(matches=merged, runs=[dict(row) for row in runs])
+
+    return match
 
 
 def rescore_committed_run(
@@ -614,7 +1060,10 @@ def rescore_committed_run(
     match: MatchFn,
     chunk_text: ChunkTextFn,
     *,
+    conflicts: Sequence[ContestedPair] = (),
     config: dict[str, Any] | None = None,
+    gate: str = DEFAULT_GROUNDING_GATE,
+    provenance: dict[str, dict[str, Sequence[str]]] | None = None,
     now: Any = None,
 ) -> dict[str, Any]:
     """Re-score a committed run's stored findings under the current scorer.
@@ -628,12 +1077,30 @@ def rescore_committed_run(
     Retrieval is not repeated, so the held-out guarantee is inherited from the
     source run — and re-checked here, against the ids that run stored, rather
     than assumed.
+
+    ``provenance`` is ``{setup: {finding_id: chunk_ids}}``, and exists because a
+    run committed before the gate did not serialise what each finding retrieved
+    even when the engine knew. For a pack arm the answer is still on disk — the
+    pack is committed and :func:`pack_finding_provenance` reads it back — so
+    supplying it re-scores that arm on the evidence it actually had rather than
+    marking it ungraded over a missing field. Nothing is invented: a setup the
+    map does not name keeps whatever the stored findings carried, which for a
+    pre-gate run is nothing at all.
     """
+    supplied = provenance or {}
     cells: list[dict[str, Any]] = []
     for stored in run.get("cells", []):
+        setup = str(stored.get("setup") or "")
+        findings = parse_findings(
+            {"findings": stored.get("findings", [])},
+            # A stored run is the engine's own record, not a model reply.
+            trust_provenance=True,
+        )
+        if setup in supplied:
+            findings = attach_provenance(findings, dict(supplied[setup]))
         critique = SetupCritique(
-            setup=str(stored.get("setup") or ""),
-            findings=parse_findings({"findings": stored.get("findings", [])}),
+            setup=setup,
+            findings=findings,
             retrieved_chunk_ids=list(stored.get("retrieved_chunk_ids") or []),
             retrieved_video_ids=list(stored.get("retrieved_video_ids") or []),
             elapsed_seconds=float(stored.get("elapsed_seconds") or 0.0),
@@ -642,7 +1109,7 @@ def rescore_committed_run(
             error=stored.get("error"),
             trace=list(stored.get("trace") or []),
         )
-        cells.append(score_critique(critique, dataset, match, chunk_text))
+        cells.append(score_critique(critique, dataset, match, chunk_text, conflicts, gate=gate))
     rescored = build_run(
         dataset,
         cells,
@@ -650,9 +1117,11 @@ def rescore_committed_run(
             **(run.get("config") or {}),
             **(config or {}),
             "rescored_from": run.get("run_id"),
+            "rescored_gate_from": (run.get("grounding_gate") or GATE_EXCLUSIVE),
         },
         baseline=str(run.get("baseline") or BASELINE_SETUP),
         now=now,
+        gate=gate,
     )
     rescored["rescored_from"] = run.get("run_id")
     return rescored
@@ -664,22 +1133,65 @@ def run_default_critique_eval(
     setups: Sequence[str] | None = None,
     dataset_path: Path | None = None,
     repeats: int = DEFAULT_MATCH_REPEATS,
+    gate: str = DEFAULT_GROUNDING_GATE,
     on_progress: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Load the held-out dataset and measure the named setups over the real stack."""
     dataset = load_critique_dataset(dataset_path)
     chosen = list(setups or [BASELINE_SETUP])
+    # Stated in the run rather than left to be inferred from the arm's name.
+    # The rubric arm's whole advantage is a build the baseline never had, so
+    # which packs it used and what each of them held out is part of reading its
+    # number — not a footnote.
+    pack_config: dict[str, Any] = {}
+    if RUBRIC_PACK_SETUP in chosen:
+        from src.documents.rubric_review import load_review_packs
+
+        packs = load_review_packs()
+        pack_config = {
+            "rubric_packs": [
+                {
+                    "topic": pack.topic,
+                    "arm": pack.arm,
+                    "rubrics": len(pack.rubrics),
+                    "held_out_video_ids": list(pack.provenance.held_out_video_ids),
+                    "excluded_video_ids": list(pack.provenance.excluded_video_ids),
+                }
+                for pack in packs
+            ],
+            "rubric_pack_note": (
+                "the rubric arm runs no retrieval at review time; its criteria were "
+                "distilled once over the corpus at pack build time, and only rubrics "
+                "the reviewer failed against a named section of the document are "
+                "scored as findings"
+            ),
+        }
+    # Loaded with the held-out video already dropped, so a run can never score
+    # itself on a disagreement one of whose sides it is meant to be blind to.
+    conflicts = contested_pairs(
+        settings.conflict_path, exclude_video_ids=[dataset.held_out_video_id]
+    )
     return run_critique_eval(
         dataset,
         chosen,
-        build_critique_fn(settings, dataset),
+        build_critique_fn(settings, dataset, conflicts),
         cached_matcher(
             repeated_matcher(llm_matcher(settings), repeats=repeats),
             repeats=repeats,
         ),
         chunk_text_lookup(settings),
+        conflicts=conflicts,
+        gate=gate,
         config={
             "answer_model": settings.deepseek_model,
+            "grounding_gate_note": (
+                "criteria_recall and evidence_precision are None for any arm that cannot "
+                "record what each finding's own reasoning retrieved — the retrieval arms "
+                "emit every finding from one shared pool, so the gate cannot grade them "
+                "and criteria_recall_ungated is the only figure they have"
+            ),
+            "conflicts_available": len(conflicts),
+            "conflict_inject_limit": CONFLICT_INJECT_LIMIT,
             "matcher": "llm",
             "matcher_model": settings.deepseek_model,
             "matcher_version": MATCHER_VERSION,
@@ -694,6 +1206,7 @@ def run_default_critique_eval(
                 "3 of 53 videos have no stored summary, so the summary-filtered "
                 "setup routes over 50 videos before the held-out one is removed"
             ),
+            **pack_config,
         },
         on_progress=on_progress,
     )

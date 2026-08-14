@@ -4,6 +4,7 @@ import type { Answer, AgentStep, Followup } from '../api/types';
 import { AgentTrace } from './AgentTrace';
 import { AnswerTrace } from './AnswerTrace';
 import { AnswerBody } from './AnswerBody';
+import { RubricVerdicts } from './RubricVerdicts';
 import { ScoreStrip, fmtScore } from './ScoreStrip';
 
 export interface RunningSetup {
@@ -36,6 +37,12 @@ interface Props {
   question?: string;
   /** Ask a proposed follow-up, reusing this answer's retrieval scope. */
   onAskFollowup?: (query: string) => void;
+  /**
+   * Open a section of the document card above this bubble. A rubric verdict
+   * names the sections it lands on, and a finding a reader cannot follow back
+   * into the document is a finding they have to take on trust.
+   */
+  onOpenSection?: (index: number) => void;
 }
 
 /** Re-render on an interval so running timers advance. */
@@ -74,6 +81,7 @@ export function MessageBubble({
   traces,
   question,
   onAskFollowup,
+  onOpenSection,
 }: Props) {
   useTick(running.length > 0);
 
@@ -150,6 +158,17 @@ export function MessageBubble({
             <AnswerTrace steps={active.trace} />
           ) : traces?.[active.key]?.length ? (
             <AgentTrace steps={traces[active.key]!} running={false} />
+          ) : null}
+          {/*
+            Above the prose, not below it. The prose is assembled from these
+            verdicts, so the rows are the review and the paragraphs are the
+            summary of it — printing the summary first buries the evidence.
+          */}
+          {active.rubric_review ? (
+            <RubricVerdicts
+              review={active.rubric_review}
+              {...(onOpenSection ? { onOpenSection } : {})}
+            />
           ) : null}
           <AnswerBody answer={active} />
           <ScoreStrip

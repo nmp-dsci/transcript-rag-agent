@@ -282,11 +282,15 @@ class ContextualIndexResult:
     contextualized: int = 0
     cached: int = 0
     failed: int = 0
+    #: Contextual chunks dropped because the baseline no longer has them — the
+    #: mirror catching up with a video that was re-chunked smaller.
+    removed: int = 0
 
     def summary(self) -> str:
+        removed = f", {self.removed} stale removed" if self.removed else ""
         return (
             f"{self.contextualized}/{self.chunks} chunks situated across "
-            f"{self.videos} videos ({self.cached} cached, {self.failed} failed)"
+            f"{self.videos} videos ({self.cached} cached, {self.failed} failed{removed})"
         )
 
 
@@ -311,6 +315,14 @@ def build_contextual_index(
     deterministic header it already had. That keeps the contextual collection a
     complete copy of the corpus: a missing chunk would silently depress recall
     and read as a retrieval result rather than an indexing gap.
+
+    This collection is a *mirror* of the baseline, so a full pass replaces each
+    video's chunks rather than upserting over them — otherwise a video the
+    baseline re-chunked smaller keeps its old tail here, and the contextual arm
+    of an ablation retrieves chunks the baseline arm cannot. A ``max_chunks``
+    pass upserts instead: it deliberately reads a prefix of the corpus, so the
+    last video it reaches is partial and replacing from it would delete real
+    chunks on the strength of a truncation.
     """
     result = ContextualIndexResult()
     chunks = chunk_store.all_chunks()
@@ -339,7 +351,10 @@ def build_contextual_index(
             result.contextualized += 1
             result.cached += 1 if context.cached else 0
             situated.append(situate(chunk, context.context))
-        contextual_store.upsert_chunks(situated)
+        if max_chunks is None:
+            result.removed += len(contextual_store.replace_chunks(video_id, situated))
+        else:
+            contextual_store.upsert_chunks(situated)
     return result
 
 

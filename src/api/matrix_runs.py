@@ -119,6 +119,7 @@ def describe_matrix_run(data: dict[str, Any]) -> dict[str, Any]:
     rubric's score, so the count belongs beside the run that reports the
     averages.
     """
+    config = data.get("config") or {}
     return {
         "run_id": data.get("run_id"),
         "created_at": data.get("created_at"),
@@ -129,6 +130,16 @@ def describe_matrix_run(data: dict[str, Any]) -> dict[str, Any]:
         "rejudged_from": data.get("rejudged_from"),
         "rejudged_cells": data.get("rejudged_cells"),
         "skipped_cells": data.get("skipped_cells"),
+        # The corpus this run's numbers were scored over. Absent on runs
+        # committed before corpus identity entered the fingerprint, and left
+        # absent rather than defaulted: the picker treats "unrecorded" as
+        # *unknown*, never as *the same corpus*, because a reader who reads
+        # absence as agreement compares numbers with no shown relationship.
+        # Counts are separate from the digest because a run can identify its
+        # corpus without recording how big it was.
+        "corpus": config.get("corpus"),
+        "corpus_videos": config.get("corpus_videos"),
+        "corpus_chunks": config.get("corpus_chunks"),
     }
 
 

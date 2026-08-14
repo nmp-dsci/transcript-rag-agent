@@ -164,6 +164,26 @@ def rejudge_run(
 
     moment = now or datetime.now(timezone.utc)
     stamp = moment.strftime("%Y%m%d-%H%M%S")
+    # The id carries the stamp and the rubric and deliberately not the depth
+    # judge, which has been asked for more than once — a rejudge and the run it
+    # rejudged can differ in exactly the one thing the id does not name. The
+    # rubric is in there because ``describe_matrix_run`` needs the picker to
+    # distinguish two rankings produced under different scoring; the judge is
+    # not, because it is already on the record twice, in ``depth_judge_model``
+    # at run and setup level below, which is what ``depth_judge_models`` on the
+    # Scoreboard and ``_self_graded`` in ``src/api/matrix_runs.py`` read to
+    # decide whether a ranking graded itself.
+    #
+    # Naming it here would cost more than it says. ``save_run`` uses the id as
+    # the filename, and the judge actually used for the independent run was
+    # ``gpt-5.5``: ``demo/validate/status.py`` scrapes run ids with a character
+    # class that stops at the dot, so such a run would be read as
+    # ``...-judge-gpt-5`` and reported as missing from disk forever after. Ids
+    # are also pinned by evaluator scripts and chained through
+    # ``rejudged_from`` — they are join keys, and a join key that encodes
+    # configuration rots the moment the configuration does. A run that needs
+    # its judge legible in a *filename* can be copied out under one, which is
+    # what ``demo/validate/artifacts/v0_independent_judge/`` did.
     run_id = f"matrix-{stamp}-{rubric.version}"
 
     cells: list[tuple[str, int, dict[str, Any]]] = [

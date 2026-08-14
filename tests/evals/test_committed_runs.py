@@ -217,6 +217,12 @@ class TestCritiqueRuns:
         own ``applies_to`` copy. Deriving it from the run (as an earlier version
         did) let a hand-edited file define the denominator it was checked
         against, so every run passed.
+
+        A cell the grounding gate cannot grade publishes ``None`` rather than a
+        number, so the figure this arithmetic reconciles with is the *ungated*
+        pair — which is the same pair, computed under the same old rule, kept on
+        the cell precisely so nothing is lost. Both are checked: the gated score
+        must be absent and the ungated one must still follow from the detail.
         """
         from src.evals.critique import load_critique_dataset
 
@@ -228,12 +234,86 @@ class TestCritiqueRuns:
                 counted = sum(
                     1 for match in cell["matches"] if match["counted"] and match["id"] in applicable
                 )
-                assert cell["scores"]["criteria_recall"] == pytest.approx(
-                    counted / len(applicable), abs=1e-4
-                )
                 grounded = sum(1 for finding in cell["findings"] if finding["grounded"])
-                assert cell["scores"]["evidence_precision"] == pytest.approx(
-                    grounded / len(cell["findings"]), abs=1e-4
+                recall = pytest.approx(counted / len(applicable), abs=1e-4)
+                precision = pytest.approx(grounded / len(cell["findings"]), abs=1e-4)
+                where = f"{run['run_id']} {cell['setup']}"
+                if cell.get("gradable") is False:
+                    assert cell["scores"]["criteria_recall"] is None, where
+                    assert cell["scores"]["evidence_precision"] is None, where
+                    assert cell["criteria_recall_ungated"] == recall, where
+                    assert cell["evidence_precision_ungated"] == precision, where
+                else:
+                    assert cell["scores"]["criteria_recall"] == recall, where
+                    assert cell["scores"]["evidence_precision"] == precision, where
+
+    def test_every_run_says_which_gate_produced_its_scores(self) -> None:
+        """A number lifted out of a run file has to carry the rule that made it.
+
+        Two runs of this harness scored under different grounding gates are not
+        comparable, and the run that does not say which one it used is the one a
+        later slice quotes as if it were the current series.
+        """
+        from src.evals.critique import GROUNDING_GATES
+
+        for run in _load("critique-*.json"):
+            assert run.get("grounding_gate") in GROUNDING_GATES, run["run_id"]
+            ungraded = sorted(
+                cell["setup"] for cell in run["cells"] if cell.get("gradable") is False
+            )
+            assert run.get("ungraded_cells") == ungraded, run["run_id"]
+            for cell in run["cells"]:
+                assert cell.get("grounding_gate") == run["grounding_gate"]
+                assert isinstance(cell.get("gradable"), bool)
+
+    def test_an_ungraded_cell_publishes_no_number_the_gate_did_not_certify(self) -> None:
+        """Every derived recall on an ungraded row is absent, not zero, not stale.
+
+        The gate refuses to grade an arm that cannot say what each finding's own
+        reasoning retrieved. That verdict is worthless if the row still carries
+        the old point estimate in one of the *other* recall columns — a reader
+        comparing arms would simply read the column that still has a number. So
+        ``criteria_recall_all``, ``criteria_recall_grouped`` and the whole
+        matcher spread go with it, and the reason travels with the cell.
+        """
+        for run in _load("critique-*.json"):
+            for cell in run["cells"]:
+                if cell.get("gradable") is not False:
+                    continue
+                where = f"{run['run_id']} {cell['setup']}"
+                assert cell["criteria_recall_all"] is None, where
+                assert cell["criteria_recall_grouped"] is None, where
+                assert set(cell["score_spread"].values()) == {None}, where
+                assert cell["ungradable_reason"], where
+                # And the published figures survive, or the verdict cost data.
+                assert isinstance(cell["criteria_recall_ungated"], float), where
+                assert isinstance(cell["evidence_precision_ungated"], float), where
+
+    def test_a_graded_cell_only_grounds_on_chunks_its_own_finding_retrieved(self) -> None:
+        """The gate itself, re-derived from the committed file.
+
+        ``citations_off_retrieval`` is the scorer's own count; this recomputes it
+        from the per-finding record beside it, so a cell that claims to have
+        passed the provenance gate has to demonstrate it rather than assert it.
+        """
+        for run in _load("critique-*.json"):
+            if run.get("grounding_gate") != "retrieval_provenance":
+                continue
+            for cell in run["cells"]:
+                if cell.get("gradable") is False:
+                    continue
+                off = 0
+                for finding in cell["findings"]:
+                    own = set(finding.get("retrieved_chunk_ids") or [])
+                    assert own, f"{run['run_id']} {finding['id']} records no own retrieval"
+                    off += sum(
+                        1
+                        for check in finding["citation_checks"]
+                        if check["resolved"] and check["chunk_id"] not in own
+                    )
+                assert off == cell["citations_off_retrieval"] == 0, (
+                    f"{run['run_id']} {cell['setup']}: {off} citations land outside "
+                    "the chunks their own finding retrieved"
                 )
 
     def test_the_run_matches_the_committed_criteria_dataset(self) -> None:
@@ -286,6 +366,10 @@ class TestCritiqueRuns:
         """A score outside its own spread means the two were computed apart."""
         for run in _load("critique-*.json"):
             for cell in run["cells"]:
+                # Outside the spread check, which an ungraded cell skips: the
+                # ballots are stored whether or not the cell was graded, and a
+                # run missing them cannot be re-scored from its own votes.
+                assert len(cell["match_runs"]) == cell["match_repeats"]
                 spread = cell["score_spread"]
                 if spread["criteria_recall_min"] is None:
                     continue
@@ -294,7 +378,6 @@ class TestCritiqueRuns:
                     <= cell["scores"]["criteria_recall"]
                     <= spread["criteria_recall_max"]
                 )
-                assert len(cell["match_runs"]) == cell["match_repeats"]
 
     def test_a_finding_may_not_be_spent_on_two_criteria(self) -> None:
         for run in _load("critique-*.json"):

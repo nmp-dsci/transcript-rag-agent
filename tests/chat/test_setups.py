@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from src.agents.models import RagTranscriptAnswer
@@ -1038,3 +1040,120 @@ def test_the_coverage_warning_is_readable_rather_than_clipped(settings) -> None:
     assert step["label"] == "Corpus coverage"
     assert step["note"] == warning
     assert len(step["detail"]) < 70
+
+
+# ── the rubric-review setup ───────────────────────────────────────────────
+
+
+class FakeRubricReviewer:
+    """Stands in for ``RubricReviewAgent``, returning a fixed review."""
+
+    def __init__(self) -> None:
+        self.calls: list = []
+
+    def review(self, document, selection, **kwargs):
+        from src.agents.models import TraceStep
+        from src.agents.rubric_review_agent import RubricReviewResult
+        from src.documents.rubric_review import (
+            PackOutcome,
+            RubricReview,
+            RubricVerdict,
+            VerdictEvidence,
+        )
+
+        self.calls.append((document, selection))
+        review = RubricReview(
+            document_id=document.id,
+            document_url=document.url,
+            document_kind="portfolio",
+            verdicts=[
+                RubricVerdict(
+                    rubric_id="r0101",
+                    topic="resume-design",
+                    pack_name="Resume design",
+                    criterion="Quantify the outcome.",
+                    check="If a bullet has no number, fail.",
+                    why="Recruiters skim for numbers.",
+                    unit_title="Quantified impact",
+                    creators=["A Recruiter"],
+                    verdict="fail",
+                    severity="major",
+                    finding="the third card has no number",
+                    sections=[2],
+                    evidence=[
+                        VerdictEvidence(
+                            video_id="vid1",
+                            chunk_id="chunk:vid1:2",
+                            quote="say the number",
+                            channel_name="A Recruiter",
+                            title="How to write it",
+                            start_seconds=60.0,
+                            url="https://www.youtube.com/watch?v=vid1&t=61s",
+                        )
+                    ],
+                )
+            ],
+            packs=[
+                PackOutcome(
+                    topic="resume-design", name="Resume design", artifact="resume", rubrics=1
+                )
+            ],
+        )
+        return RubricReviewResult(review, [TraceStep(phase="route", label="Load rubric packs")], 1)
+
+
+def _resolved_document():
+    from src.documents.models import Document, DocumentSection
+    from src.documents.review import select_sections
+
+    document = Document(
+        id="doc:1",
+        url="https://example.com",
+        requested_url="https://example.com",
+        sections=[
+            DocumentSection(index=index, heading=f"H{index}", text="body") for index in range(3)
+        ],
+    )
+    return SimpleNamespace(document=document, selection=select_sections(document, "review this"))
+
+
+def test_the_rubric_setup_carries_its_verdicts_beside_the_prose(settings) -> None:
+    """The panel renders from data, so the answer text cannot disagree with it."""
+    from src.chat.setups import AskScope
+
+    reviewer = FakeRubricReviewer()
+    runner = RagSetupRunner(settings, provider=None)
+    runner._rubric_reviewer = reviewer
+
+    result = runner.run(
+        "rubric_review",
+        "review this: https://example.com",
+        scope=AskScope(review_document=_resolved_document()),
+    )
+
+    assert result.error is None
+    assert result.rubric_review is not None
+    assert result.rubric_review["stats"]["with_id_and_timestamp"] == 1
+    assert "**r0101**" in result.answer
+    assert result.references[0]["timestamp_url"] == "https://www.youtube.com/watch?v=vid1&t=61s"
+    assert result.llm_calls == 1
+    # No retrieval ran, and the count says so rather than borrowing the field.
+    assert result.chunk_count == 0
+
+
+def test_the_rubric_setup_refuses_a_question_with_no_document(settings) -> None:
+    runner = RagSetupRunner(settings, provider=None)
+    runner._rubric_reviewer = FakeRubricReviewer()
+
+    result = runner.run("rubric_review", "what is agentic RAG?")
+
+    assert result.error is not None
+    assert "attached document" in result.error
+
+
+def test_the_rubric_setup_reports_a_command_that_actually_runs(settings) -> None:
+    """There is no ``rag-ask`` flag for it, so it must not print one."""
+    command = command_for("rubric_review")
+
+    assert "rag-ask" not in command
+    assert "rubric_review" in command

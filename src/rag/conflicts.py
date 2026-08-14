@@ -31,9 +31,27 @@ reader who has not watched the videos. So:
   contradictions that must surface, and complementary pairs (including two that
   are deliberately *about the same subject*, which is where a lazy adjudicator
   fails) that must not;
+* every corpus pair is adjudicated :data:`DEFAULT_ADJUDICATE_REPEATS` times and
+  carries only on a **strict majority**, with the tally on the record and on the
+  card. This module shipped once without that and it was the worst thing in it:
+  the probes were repeated, the corpus pairs were not, and three of the four
+  cards that shipped turned out to be coin flips that did not reproduce;
+* a quote has to be a *statement* (:func:`states_a_position`), because one of
+  those four rested on an eight-word rhetorical question that resolved perfectly
+  against the transcript and showed a reader nothing;
 * a low count is a legitimate result and is reported as one. The statistics
   carry ``candidates_adjudicated`` beside ``conflicts`` so that a run which
   looked at 200 pairs and found 4 cannot be confused with one that looked at 6.
+
+Axes and facts
+--------------
+Not every contradiction is a matter of judgement. "Should you cache?" has two
+defensible answers and belongs side by side; "what is Brisbane's vacancy rate?"
+has one, and two creators giving 8% and 0.4% two weeks apart is not an axis, it
+is an error. :attr:`Conflict.kind` separates them so the second is surfaced
+without even-handed framing. Neither names a winner — this layer can check a
+claim against the corpus and not against the world — but a reader is told which
+kind of thing they are looking at.
 
 Why this cannot be gamed by emitting more
 -----------------------------------------
@@ -84,6 +102,7 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
+from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
@@ -142,7 +161,16 @@ class CandidatePair:
         return tuple(sorted((self.left.chunk_id, self.right.chunk_id)))  # type: ignore[return-value]
 
     @property
-    def cross_creator(self) -> bool:
+    def cross_channel(self) -> bool:
+        """Different **channels** — which is not quite "different people".
+
+        Named for what it actually measures. ``channel_name`` is the uploading
+        channel, so a guest speaking in a cold-open montage, an interviewee, and
+        the host are all attributed to the channel owner. Two chunks from
+        different channels are therefore *at least* two videos and usually two
+        people, but "two creators disagree" is a stronger claim than this field
+        supports and calling it ``cross_creator`` made it silently.
+        """
         return self.left.channel_name.strip().lower() != self.right.channel_name.strip().lower()
 
 
@@ -179,7 +207,34 @@ class Conflict(BaseModel):
     left: Side
     right: Side
     similarity: float
-    cross_creator: bool
+    cross_channel: bool
+    #: ``"axis"`` when reasonable people could land on either side, ``"factual"``
+    #: when the two answer a question that has one true answer and one of them is
+    #: simply wrong.
+    #:
+    #: The distinction exists because even-handed presentation is right for the
+    #: first and misleading for the second. "Should you cache?" has two defensible
+    #: answers and showing them side by side is the honest rendering; "what is
+    #: Brisbane's vacancy rate?" has one, and framing 8% beside 0.4% as a matter
+    #: of perspective would be a worse lie than picking one. This layer still
+    #: names no winner in either case — it cannot check a fact against the world,
+    #: only against the corpus — but it says which kind of thing the reader is
+    #: looking at.
+    kind: str = "axis"
+    #: How many of :attr:`repeats` adjudications called this a conflict.
+    #:
+    #: On the record and on the card because the adjudicator does not agree with
+    #: itself: the first sweep of this corpus adjudicated every pair **once**, and
+    #: an independent re-run of its four shipped cards at three repeats each drew
+    #: 1/3, 2/3, 3/3, 1/3. A count produced by a single draw is not a measurement
+    #: of the corpus, and a reader cannot tell 3/3 from 1/3 unless the number is
+    #: printed.
+    votes: int = 1
+    repeats: int = 1
+
+    @property
+    def unanimous(self) -> bool:
+        return self.votes >= self.repeats
 
 
 class ConflictIndex(BaseModel):
@@ -192,19 +247,84 @@ class ConflictIndex(BaseModel):
     chunk_collection: str = ""
     config: dict[str, Any] = Field(default_factory=dict)
     stats: dict[str, Any] = Field(default_factory=dict)
+    #: The population this count was taken over — see
+    #: :func:`corpus_fingerprint`. Without it two counts taken hours apart
+    #: cannot be told apart from two counts taken over two different corpora.
+    corpus: dict[str, Any] = Field(default_factory=dict)
     #: Calibration results — see :data:`PROBES`. Stored with the run so the
     #: artifact carries the evidence that its adjudicator was working in both
     #: directions on the day it produced these conflicts.
     probes: list[dict[str, Any]] = Field(default_factory=list)
+    #: Every adjudicated pair with the rate it drew — see :func:`vote_ledger`.
+    #: The run's raw measurement, kept so that any claim about the spread on the
+    #: count can be recomputed from the artifact rather than taken on trust, and
+    #: so two runs can be compared pair by pair.
+    vote_ledger: list[dict[str, Any]] = Field(default_factory=list)
+    #: Pairs that drew at least one conflict verdict without carrying a
+    #: majority — see :func:`near_misses`. Not conflicts, and stored apart from
+    #: them, but recorded so a reviewer can see what sat near the threshold
+    #: rather than only how many did.
+    near_misses: list[dict[str, Any]] = Field(default_factory=list)
     conflicts: list[Conflict] = Field(default_factory=list)
 
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
+#: Times every corpus pair is put to the adjudicator before it is believed.
+#:
+#: Nine, and odd so a strict majority always exists. The history is the
+#: argument. One draw per pair shipped four cards, of which an independent
+#: re-run at three draws each scored 1/3, 2/3, 3/3, 1/3 — three coin flips.
+#: Three draws per pair then produced 4 conflicts and, on a second build over a
+#: *provably identical* 478-pair pool, 2 — with two cards moving 3/3 to 0/3.
+#:
+#: An earlier version of this note claimed the spread was **irreducible** — that
+#: more looks could not help — and gave a curve falling only from about 1.1 at
+#: three looks to 0.7 at twenty-one. That claim was withdrawn: it was computed
+#: by plugging ``p̂ = votes/3`` into the majority probability, and at three looks
+#: that estimator can only place a pair at 0, 1/3, 2/3 or 1, of which the two
+#: ends contribute no variance at all. The whole curve therefore collapses to
+#: ``0.4382 * sqrt(pairs that split)`` — a property of the four-point grid, not
+#: of any corpus. Simulation confirms it: three-look data reports the *same*
+#: 4.3x fall from r=3 to r=45 whether the truth genuinely plateaus (1.3x) or
+#: collapses to nothing (a factor of 10^8). It could not have told the
+#: difference, so it was never evidence.
+#:
+#: Nine looks can tell the difference — the same simulation recovers 76x, 3.9x
+#: and 2.0x for those corpora — which is the substantive reason to pay for them,
+#: alongside two mechanical ones. Measured at nine, the spread does fall as
+#: looks are added, slowly, and this corpus sits in the wide-ambiguous-band
+#: case; :func:`stability_statistics` carries those figures and the reason even
+#: they are only a floor.
+#:
+#: * **Resolution.** Three looks can only ever say 0, 1/3, 2/3 or 1, and the
+#:   smallest majority is the same 2/3 that :data:`FIRM_VOTE_SHARE` calls firm —
+#:   so a certainty and a coin flip are literally the same number. At nine, a
+#:   pair the judge is sure of clears 6/9 essentially always and a coin flip
+#:   clears it a quarter of the time.
+#: * **A free second opinion.** Nine splits into three disjoint groups of three,
+#:   so one run reports what three independent three-look builds of the same
+#:   data would have said — see :func:`stability_statistics`. That is the
+#:   4-then-2 discrepancy measured inside a single run instead of across two.
+#:
+#: The cost is real: on the shipped sweep 710 pairs became 6390 calls, better
+#: than an hour of wall clock — which is why :class:`AdjudicationCache` exists.
+#: There is no cheaper version
+#: that keeps the guarantee — filtering on a first pass and re-checking only the
+#: hits would be a precision filter over a *biased* sample, and would silently
+#: miss every pair that would have carried on the majority but happened to draw
+#: complementary first.
+DEFAULT_ADJUDICATE_REPEATS = 9
+
 
 @dataclass(frozen=True)
 class ConflictConfig:
-    """Knobs for candidate generation. All deterministic; none reach the LLM."""
+    """Knobs for the sweep. All deterministic; none reach the LLM as text.
+
+    Travels into the artifact as ``config``, so a reader can see the settings a
+    count was produced under without re-deriving them from the code that
+    happened to be checked out.
+    """
 
     #: Cosine below which two claims are not about the same thing at all. Chosen
     #: against this corpus by reading pairs at each band: below 0.62 the pairs
@@ -220,7 +340,19 @@ class ConflictConfig:
     neighbors_per_claim: int = 4
     #: Chunk pairs sent to the adjudicator, highest similarity first. A budget,
     #: not a target: raising it cannot raise ``conflict_precision``.
-    max_candidates: int = 240
+    #:
+    #: Set **above** the size of the pool this corpus produces (478 pairs after
+    #: the caps below) so that nothing is excluded by budget and the run cannot
+    #: be accused of having stopped just short of an inconvenient pair. That is
+    #: not generosity — it is the only setting under which "the corpus contains
+    #: N disagreements" is a statement about the corpus rather than about where
+    #: the budget happened to fall. The first sweep used 240 and cut the pool in
+    #: half at similarity 0.70; the sharpest dissent in the résumé material
+    #: ("recruiters hunt for qualifications, not keywords" against the
+    #: keyword-optimisation consensus) sits at rank 293 and was therefore
+    #: invisible to it, because a bi-encoder ranks restatement above
+    #: contradiction and the top of this list is agreements.
+    max_candidates: int = 600
     #: Chunk pairs kept from any single pair of videos. Without this, one pair
     #: of talks on the same subject consumes the whole budget.
     max_per_video_pair: int = 12
@@ -237,12 +369,22 @@ class ConflictConfig:
     #: chunk can only ever back one conflict, so proposing it ten times was
     #: always nine wasted calls.
     max_per_chunk: int = 2
-    #: Only pairs from different creators are adjudicated by default. Two videos
-    #: by one creator restating a position is not a corpus disagreement, and
-    #: within-creator "conflicts" are overwhelmingly one person qualifying
+    #: Only pairs from different **channels** are adjudicated by default. Two
+    #: videos on one channel restating a position is not a corpus disagreement,
+    #: and within-channel "conflicts" are overwhelmingly one person qualifying
     #: themselves ("usually X, but when Y, not X") — the textbook shape of
-    #: something one person can hold entirely.
-    cross_creator_only: bool = True
+    #: something one person can hold entirely. See
+    #: :attr:`CandidatePair.cross_channel` for why this is not "creator".
+    cross_channel_only: bool = True
+    #: Times each candidate pair is adjudicated before it is believed — see
+    #: :data:`DEFAULT_ADJUDICATE_REPEATS` and :class:`AdjudicationVote`.
+    #:
+    #: A knob rather than a constant so a run can be made cheaper deliberately
+    #: and *visibly*: it lands in the artifact's ``config`` beside the count it
+    #: produced, so a 1-repeat sweep can never again be read as if it had been
+    #: voted on. Setting it to 1 reproduces the behaviour this module shipped
+    #: with, in which three of four cards were coin flips.
+    adjudicate_repeats: int = DEFAULT_ADJUDICATE_REPEATS
 
 
 #: Similarity above which the adjudicator's quote counts as present in the
@@ -254,14 +396,57 @@ QUOTE_MATCH_RATIO = 0.80
 
 #: Words a quote must have before it is worth showing. A three-word "it depends"
 #: resolves perfectly and proves nothing.
-MIN_QUOTE_WORDS = 8
+#:
+#: Raised from 8 after a shipped card rested on ``"like what is a technology free
+#: domain model?"`` — exactly eight words, resolving perfectly, and stating no
+#: position at all. Length alone was never going to catch that (see
+#: :func:`states_a_position`), but eight words is short enough that a fragment
+#: clears it by accident.
+MIN_QUOTE_WORDS = 10
 
 _WORD = re.compile(r"[a-z0-9']+")
+
+#: Openers that make a span a question rather than a claim. Applied to the span
+#: cut from the transcript, where ASR punctuation is unreliable, so the opener is
+#: checked as well as the trailing "?".
+_INTERROGATIVE = re.compile(
+    r"^(?:so|and|but|well|like|now|i mean|you know|right|okay|ok)?[\s,]*"
+    r"(?:what|who|whom|whose|which|when|where|why|how|is|are|was|were|do|does|did|"
+    r"has|have|had|can|could|should|would|will|shall|am|any(?:one|body))\b",
+    re.IGNORECASE,
+)
 
 
 def normalize(text: str) -> list[str]:
     """Lowercase word tokens — the comparable form of transcript text."""
     return _WORD.findall(str(text).lower())
+
+
+def states_a_position(span: str) -> bool:
+    """Whether this span asserts something, as opposed to asking something.
+
+    A side of a conflict has to be the words in which that side *states* its
+    position. A rhetorical question is not that, however well it resolves
+    against the transcript and however clearly a human reading the surrounding
+    minute can tell which way the speaker leans — the reader of a conflict card
+    sees the span, not the minute.
+
+    This is the check that was missing when a card shipped with *"like what is a
+    technology free domain model?"* as one creator's position on ports and
+    adapters. The speaker does hold that position; that span does not express
+    it, and a reader could not verify it from what was on screen.
+
+    Deliberately crude, and biased towards rejection: it costs a real conflict
+    whose best sentence happens to be phrased as a question, which is the
+    direction this module errs in everywhere else. A conflict dropped for a weak
+    quote is a conflict that was going to be unfalsifiable on the card anyway.
+    """
+    stripped = str(span).strip()
+    if not stripped:
+        return False
+    if stripped.rstrip().endswith("?"):
+        return False
+    return not _INTERROGATIVE.match(stripped)
 
 
 # ─── Claims, with provenance stamped from the chunk ──────────────────────────
@@ -273,6 +458,45 @@ def normalize(text: str) -> list[str]:
 #: from a chunk is the handful of attributes read below, and importing the
 #: storage models here would drag chromadb into a module that is otherwise pure.
 ClaimTextsFn = Callable[[Any], Sequence[str]]
+
+
+def corpus_fingerprint(chunks: Sequence[Any]) -> dict[str, Any]:
+    """What corpus this run actually saw, pinned so two runs can be compared.
+
+    A conflict count is a measurement of a *population*, and this repo's corpus
+    is a live thing — it grew 1372 -> 1460 -> 1736 chunks during a single
+    afternoon's work, from ingests outside this layer entirely. Two counts taken
+    hours apart are only comparable if they were taken over the same pairs, and
+    without this a reader has no way to tell corpus drift from judge noise. That
+    distinction mattered immediately: a 4-conflict run and a 2-conflict run
+    looked like they might have been measuring different corpora, and were not —
+    both saw 6196 claims and the same 478 pairs, because the chunks added in
+    between had no cached extraction and so contributed nothing here.
+
+    The digest covers chunk **identity and text**, so a re-chunk or an edit
+    changes it even when the counts do not. It is deliberately not a hash of the
+    claims: claims come from a cache that can be backfilled independently, and
+    telling "the corpus changed" apart from "the extraction coverage changed" is
+    exactly what this has to support — which is why ``chunks_with_claims`` is
+    reported beside ``chunks`` rather than instead of it.
+    """
+    import hashlib
+
+    digest = hashlib.sha256()
+    videos: set[str] = set()
+    count = 0
+    for chunk in sorted(chunks, key=lambda item: str(getattr(item, "chunk_id", ""))):
+        chunk_id = str(getattr(chunk, "chunk_id", ""))
+        text = str(getattr(chunk, "text", "") or "")
+        digest.update(chunk_id.encode("utf-8"))
+        digest.update(hashlib.sha256(text.encode("utf-8")).digest())
+        videos.add(str(getattr(chunk, "video_id", "")))
+        count += 1
+    return {
+        "videos": len(videos),
+        "chunks": count,
+        "digest": digest.hexdigest()[:16],
+    }
 
 
 def claims_from_chunks(chunks: Sequence[Any], claim_texts: ClaimTextsFn) -> list[ClaimRef]:
@@ -374,7 +598,7 @@ def _similarity_matrix(
     an ANN index would add a dependency, an approximation and a tie-break that
     is not reproducible, to save nothing.
 
-    Same-video and (by default) same-creator pairs are masked to ``-1`` rather
+    Same-video and (by default) same-channel pairs are masked to ``-1`` rather
     than skipped in the caller so that "not eligible" and "not similar" are the
     same branch downstream. The diagonal goes with them: a claim is not evidence
     against itself.
@@ -388,9 +612,9 @@ def _similarity_matrix(
 
     videos = np.array([claim.video_id for claim in claims])
     scores[videos[:, None] == videos[None, :]] = -1.0
-    if config.cross_creator_only:
-        creators = np.array([claim.channel_name.strip().lower() for claim in claims])
-        scores[creators[:, None] == creators[None, :]] = -1.0
+    if config.cross_channel_only:
+        channels = np.array([claim.channel_name.strip().lower() for claim in claims])
+        scores[channels[:, None] == channels[None, :]] = -1.0
     np.fill_diagonal(scores, -1.0)
     return scores
 
@@ -446,19 +670,35 @@ cannot state that question in one sentence, it is not a conflict.
 Default to complementary. A wrongly reported conflict is far worse than a
 missed one: it tells a reader these creators fight about something they do not.
 
+Beware two shapes that look like conflict and are not:
+- Objecting to a REASON for a practice is not objecting to the practice. If one
+  speaker mocks the justification usually given for X and then concedes X is
+  still worth doing, that is not a conflict with someone who recommends X.
+- A title, a topic, or a tone is not a position. Judge only what the excerpts
+  actually say.
+
+Then say which KIND of disagreement it is:
+- "axis": a matter of judgement. Reasonable people land on either side and both
+  answers can be defended.
+- "factual": the question has ONE true answer and one of them is simply wrong —
+  two different numbers for the same quantity, two different dates, two
+  incompatible descriptions of the same thing.
+
 Quotes: copy the words VERBATIM from the excerpt, including any transcription
 errors. Do not tidy, do not paraphrase, do not join two separated sentences.
-Each quote must be at least 8 words and must be the words that state that
-side's position.
+Each quote must be at least 10 words, must be a STATEMENT rather than a
+question, and must be the words in which that side states its position. A
+rhetorical question is not a position, however clearly it implies one.
 
 Return only JSON:
 {"verdict": "conflict" | "complementary" | "unrelated",
+ "kind": "axis" | "factual",
  "axis": "the one question they answer differently, as a question",
  "why_incompatible": "why one person could not hold both",
  "position_a": "excerpt A's answer, one line",
  "position_b": "excerpt B's answer, one line",
- "quote_a": "verbatim from excerpt A",
- "quote_b": "verbatim from excerpt B"}
+ "quote_a": "verbatim statement from excerpt A",
+ "quote_b": "verbatim statement from excerpt B"}
 
 For a non-conflict, set verdict and leave the other fields as empty strings."""
 
@@ -474,6 +714,7 @@ class Adjudication:
     position_b: str = ""
     quote_a: str = ""
     quote_b: str = ""
+    kind: str = "axis"
     error: str | None = None
 
     @property
@@ -481,9 +722,135 @@ class Adjudication:
         return self.verdict == "conflict"
 
 
+@dataclass(frozen=True)
+class AdjudicationVote:
+    """Every verdict one pair drew, and the one that carries.
+
+    The adjudicator is an LLM and does not agree with itself. :func:`run_probes`
+    has said so since this module was written — *"a single pass proves nothing
+    about the next one"* — and then the corpus sweep adjudicated every pair
+    exactly once anyway, so the calibration strip certified a stability the cards
+    themselves were never given. An independent re-run of the four cards that
+    shipped from that sweep, three repeats each, drew **1/3, 2/3, 3/3, 1/3**:
+    only one of the four survived its own re-examination.
+
+    So a pair is a conflict when a **strict majority** of its repeats say so, and
+    the tally travels with it onto the record and onto the card. Ties and splits
+    resolve to *not* a conflict, which is the direction everything else in this
+    module errs in: a disagreement nobody can reproduce is not one this layer
+    should be asserting on a reader's behalf.
+    """
+
+    verdicts: tuple[Adjudication, ...]
+
+    @property
+    def repeats(self) -> int:
+        return len(self.verdicts)
+
+    @property
+    def votes(self) -> int:
+        """How many repeats said conflict."""
+        return sum(1 for verdict in self.verdicts if verdict.is_conflict)
+
+    @property
+    def is_conflict(self) -> bool:
+        """A strict majority, so 1/2 and 1/3 both fail and 2/3 carries."""
+        return self.votes * 2 > self.repeats
+
+    @property
+    def unanimous(self) -> bool:
+        return len({verdict.verdict for verdict in self.verdicts}) == 1
+
+    @property
+    def carried(self) -> Adjudication:
+        """The first repeat that voted conflict — the one whose axis ships.
+
+        First rather than best, because "best" would need a second judge and the
+        repeats are supposed to be interchangeable draws from one. Falls back to
+        the first verdict of any kind so the caller always has something to read
+        a rejection reason off.
+        """
+        return next(
+            (verdict for verdict in self.verdicts if verdict.is_conflict),
+            self.verdicts[0] if self.verdicts else Adjudication(verdict="error"),
+        )
+
+
 #: ``(pair) -> an Adjudication``. The shipped implementation is
 #: :class:`LlmAdjudicator`; the tests pass a dict-backed fake.
 AdjudicateFn = Callable[[CandidatePair], Adjudication]
+
+
+class AdjudicationCache:
+    """One file per (pair, attempt), so a killed sweep resumes where it stopped.
+
+    At nine looks this layer's sweep is thousands of calls and over an hour of
+    wall clock, and it has twice been killed most of the way through with
+    nothing to show — the artifact is only written at the end, so a run that
+    dies at 4400 of 4896 calls costs 4400 calls and yields nothing. Every other
+    expensive stage in this repo caches (``graph_cache``, ``context_cache``,
+    ``critique_cache``, the matrix's per-cell cache); this one did not.
+
+    **The attempt index is part of the key, and that is the whole design.** A
+    cache keyed on the pair alone would serve one verdict to all nine looks and
+    silently destroy the vote — the repeats would stop being independent draws
+    and every pair would come back unanimous. Keyed on ``(pair, attempt)``,
+    attempt 4 resumes as attempt 4 and the nine draws stay nine draws.
+
+    ``run_id`` scopes the whole cache, and exists so that a *second* measurement
+    cannot be accidentally served from the first one's answers. Reproducibility
+    is the thing this layer is currently trying to establish; a cache that
+    replayed the previous run would manufacture a perfect agreement between two
+    runs that never independently happened. Resuming one run reuses its key;
+    measuring again requires a new one, and there is deliberately no default.
+    """
+
+    def __init__(self, directory: Path | str, run_id: str) -> None:
+        self.directory = Path(directory) / run_id
+        self.run_id = run_id
+        self.hits = 0
+        self.writes = 0
+
+    def _path(self, pair: CandidatePair, attempt: int) -> Path:
+        import hashlib
+
+        # The chunk *text* is in the key, not only the id: a re-chunk or an ASR
+        # correction changes what the adjudicator was shown, and a cached
+        # verdict about different words is not a verdict about these ones.
+        digest = hashlib.sha256(
+            "\x00".join(
+                [
+                    pair.left.chunk_id,
+                    pair.right.chunk_id,
+                    pair.left.chunk_text,
+                    pair.right.chunk_text,
+                    str(attempt),
+                ]
+            ).encode("utf-8")
+        ).hexdigest()[:32]
+        return self.directory / f"{digest}.json"
+
+    def get(self, pair: CandidatePair, attempt: int) -> Adjudication | None:
+        path = self._path(pair, attempt)
+        if not path.is_file():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        self.hits += 1
+        return Adjudication(**data)
+
+    def put(self, pair: CandidatePair, attempt: int, adjudication: Adjudication) -> None:
+        # A failed call is never cached: it would pin a transient provider
+        # outage into the record and be re-served as though it were a verdict.
+        # Same rule as ``GraphExtractor._write_cache``.
+        if adjudication.verdict == "error":
+            return
+        path = self._path(pair, attempt)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(asdict(adjudication)), encoding="utf-8")
+        self.writes += 1
 
 
 def format_pair(pair: CandidatePair) -> str:
@@ -532,6 +899,7 @@ class LlmAdjudicator:
             position_b=str(data.get("position_b", "")).strip(),
             quote_a=str(data.get("quote_a", "")).strip(),
             quote_b=str(data.get("quote_b", "")).strip(),
+            kind="factual" if str(data.get("kind", "")).strip().lower() == "factual" else "axis",
         )
 
 
@@ -601,38 +969,48 @@ def verbatim_span(quote: str, chunk_text: str) -> QuoteMatch | None:
 
 def resolve_conflicts(
     pairs: Sequence[CandidatePair],
-    adjudications: Sequence[Adjudication],
+    votes: Sequence[AdjudicationVote],
 ) -> tuple[list[Conflict], dict[str, int]]:
     """Adjudicated pairs into conflicts, with the rejections counted.
 
-    Four gates, in order, each of which drops the pair and is tallied so a run
+    Six gates, in order, each of which drops the pair and is tallied so a run
     can say *why* it found few conflicts rather than only that it did:
 
-    1. the adjudicator said complementary, unrelated, or errored;
-    2. it said conflict but could not name an axis or say why the two positions
+    1. no repeat called it a conflict;
+    2. some did, but not a strict majority — see :class:`AdjudicationVote`.
+       Counted apart from gate 1 on purpose: it is the number that says how
+       close to the threshold this corpus sits, and the first sweep of this
+       module could not report it because it only ever drew once;
+    3. it said conflict but could not name an axis or say why the two positions
        are incompatible — a conflict nobody can state is not reportable;
-    3. one side's quote is not in the stored transcript (see
+    4. one side's quote is not in the stored transcript (see
        :func:`verbatim_span`);
-    4. one of the two chunks already backs a conflict. This is the exclusivity
+    5. one side's quote is not a *statement* (see :func:`states_a_position`).
+       A rhetorical question resolves perfectly against the transcript and shows
+       a reader nothing;
+    6. one of the two chunks already backs a conflict. This is the exclusivity
        rule from :func:`src.evals.critique.ground_findings`: distinct evidence
        per claim, so the count cannot be inflated by restating one disagreement.
 
-    Order matters for gate 4 — the highest-similarity pair wins the chunk — and
+    Order matters for gate 6 — the highest-similarity pair wins the chunk — and
     ``pairs`` arrives sorted, so the result does not depend on adjudication
     completion order.
     """
     tally = {
         "not_a_conflict": 0,
+        "minority_verdict": 0,
         "unstated_axis": 0,
         "quote_not_in_transcript": 0,
+        "quote_is_not_a_position": 0,
         "duplicate_evidence": 0,
     }
     conflicts: list[Conflict] = []
     spent: set[str] = set()
-    for pair, verdict in zip(pairs, adjudications):
-        if not verdict.is_conflict:
-            tally["not_a_conflict"] += 1
+    for pair, vote in zip(pairs, votes):
+        if not vote.is_conflict:
+            tally["minority_verdict" if vote.votes else "not_a_conflict"] += 1
             continue
+        verdict = vote.carried
         if not verdict.axis or not verdict.why_incompatible:
             tally["unstated_axis"] += 1
             continue
@@ -640,6 +1018,9 @@ def resolve_conflicts(
         right = verbatim_span(verdict.quote_b, pair.right.chunk_text)
         if left is None or right is None:
             tally["quote_not_in_transcript"] += 1
+            continue
+        if not states_a_position(left.text) or not states_a_position(right.text):
+            tally["quote_is_not_a_position"] += 1
             continue
         if pair.left.chunk_id in spent or pair.right.chunk_id in spent:
             tally["duplicate_evidence"] += 1
@@ -654,7 +1035,10 @@ def resolve_conflicts(
                 left=_side(pair.left, verdict.position_a, left),
                 right=_side(pair.right, verdict.position_b, right),
                 similarity=round(pair.similarity, 4),
-                cross_creator=pair.cross_creator,
+                cross_channel=pair.cross_channel,
+                kind=verdict.kind,
+                votes=vote.votes,
+                repeats=vote.repeats,
             )
         )
     return conflicts, tally
@@ -675,6 +1059,274 @@ def _side(claim: ClaimRef, position: str, quote: QuoteMatch) -> Side:
     )
 
 
+def near_misses(
+    pairs: Sequence[CandidatePair],
+    votes: Sequence[AdjudicationVote],
+    limit: int = 25,
+) -> list[dict[str, Any]]:
+    """Pairs that persuaded at least one look but not a majority.
+
+    The interesting list for anyone auditing this layer, and the one the
+    aggregate counts cannot give: a ``minority_verdict`` total says six pairs sat
+    near the threshold, and says nothing about *which*. Without them a reviewer
+    re-running the sweep and getting a different four has no way to tell whether
+    the layer moved or the judge did.
+
+    The axis is the minority verdict's own, recorded so the near-miss can be read
+    and dismissed on its merits rather than only counted. It is explicitly not a
+    conflict and never reaches :attr:`ConflictIndex.conflicts`.
+    """
+    near = [(pair, vote) for pair, vote in zip(pairs, votes) if vote.votes and not vote.is_conflict]
+    near.sort(key=lambda item: (-item[1].votes, -item[0].similarity, item[0].key))
+    return [
+        {
+            "chunk_ids": list(pair.key),
+            "channels": sorted({pair.left.channel_name, pair.right.channel_name}),
+            "votes": vote.votes,
+            "repeats": vote.repeats,
+            "similarity": round(pair.similarity, 4),
+            "axis_claimed": vote.carried.axis,
+        }
+        for pair, vote in near[:limit]
+    ]
+
+
+#: Share of looks a pair must win before its conflict verdict is called *firm*
+#: rather than a coin flip.
+#:
+#: Two thirds, which at nine looks means six. Chosen because it is the band that
+#: separates the two populations this layer actually contains: a pair the judge
+#: is sure about (per-call probability around 0.9) clears 6/9 essentially always
+#: (0.99), while a pair it is undecided about (0.5) clears it a quarter of the
+#: time. At three looks the same band is 2/3, which a coin-flip pair clears
+#: *half* the time — which is precisely why the single-draw and three-look
+#: builds could not tell the two apart, and why two cards moved 3/3 -> 0/3
+#: between runs.
+FIRM_VOTE_SHARE = 2 / 3
+
+#: :data:`FIRM_VOTE_SHARE` as an exact ratio, because the band edges have to be
+#: compared exactly and floats cannot do it.
+#:
+#: A vote share is a ratio of two small integers and so is the edge, but neither
+#: ``2 / 3`` nor ``1 / 3`` is representable in binary: ``1 - 2 / 3`` rounds to
+#: ``0.33333333333333337``, which is *above* ``1 / 3``. So the undecided band's
+#: lower edge silently excluded every pair that drew conflict on exactly a third
+#: of its looks — 1/3, 2/6, 3/9, 5/15, 7/21 — which is the most common undecided
+#: pair there is and the **only** one three looks can produce. The shipped
+#: three-look artifact has eleven of them and would have reported
+#: ``undecided_pairs: 0`` beside its own ``minority_verdict: 11``.
+#:
+#: Derived from :data:`FIRM_VOTE_SHARE` rather than written out a second time, so
+#: that changing the share cannot leave the two disagreeing.
+_FIRM_SHARE = Fraction(FIRM_VOTE_SHARE).limit_denominator(1000)
+
+
+def _is_firm(votes: int, repeats: int) -> bool:
+    """Whether this tally clears :data:`FIRM_VOTE_SHARE` of its looks."""
+    return bool(repeats) and Fraction(votes, repeats) >= _FIRM_SHARE
+
+
+def _is_undecided(votes: int, repeats: int) -> bool:
+    """Whether this tally sits between the two firm bands — see :data:`_FIRM_SHARE`.
+
+    Firm *against* is the mirror of firm *for*, so the band is everything that is
+    neither: a share of at least ``1 - FIRM_VOTE_SHARE`` and less than
+    ``FIRM_VOTE_SHARE``.
+    """
+    return bool(repeats) and 1 - _FIRM_SHARE <= Fraction(votes, repeats) < _FIRM_SHARE
+
+
+def _ships_probability(votes: int, repeats: int, at_repeats: int) -> float:
+    """P(a pair with this observed rate carries a strict majority of ``at_repeats``).
+
+    The pair's per-call conflict probability is estimated by its own vote share
+    and the majority is then a binomial tail. Crude — the estimate is itself
+    noisy at these repeat counts — but it is the only error bar available from a
+    single run, and an approximate spread on the record beats a bare count that
+    invites being read as exact.
+
+    **How crude, measured.** The plug-in is *upward* biased, and the bias is a
+    function of ``repeats`` rather than of the corpus:
+
+    * ``q(p) = 3p² - 2p³`` is convex near zero, so by Jensen ``E[q(p̂)] > q(p)``
+      when ``p̂`` is noisy. A pair whose true rate is 0.1 has a 2.8% chance of
+      carrying three looks; feed the same pair's three-look draws through here
+      and the average answer is 8.4%. Nearly every pair in this corpus sits in
+      that regime, so the sum over them inherits the bias.
+    * At ``repeats = 3`` the only rates this can see are 0, 1/3, 2/3 and 1, and
+      the first and last contribute no variance at all. So
+      ``stability_statistics`` collapses to ``0.4382 * sqrt(S)`` at three looks,
+      where ``S`` is the number of pairs that split — and the whole *shape* of
+      its 3 → 21 curve is a property of that four-point grid, not of the corpus.
+      Simulate a corpus with no pair within 0.4 of even odds, whose true spread
+      really does fall 0.77 → 0.05 by nine looks, and the three-look plug-in
+      still reports 1.49 → 1.18 and calls the variance irreducible.
+    * There is a reason three looks cannot do better. ``q(1 - q)`` is degree six
+      in ``p``, and ``n`` draws per pair identify ``p¹ … pⁿ`` and no further, so
+      the spread is not estimable at all below six looks. Nine — see
+      :data:`DEFAULT_ADJUDICATE_REPEATS` — is the first odd count that clears it.
+
+    A cheap check on any figure this produces: the count is a sum of independent
+    indicators, so ``Var = Σ q(1 - q) ≤ Σ q = E[count]`` and the spread can never
+    exceed ``sqrt`` of the count it is printed beside. The shipped three-look
+    artifact (465 pairs at 0/3, 11 at 1/3, 2 at 3/3) puts this estimator at 1.45
+    against a ceiling of ``sqrt(2) = 1.41``, and the model behind it expects
+    ``11 * 7/27 + 2 = 4.85`` conflicts from the run that returned 2. Both are the
+    same bias, showing up in the mean and in the spread.
+    """
+    from math import comb
+
+    if repeats <= 0:
+        return 0.0
+    p = votes / repeats
+    return sum(
+        comb(at_repeats, k) * p**k * (1 - p) ** (at_repeats - k)
+        for k in range(at_repeats // 2 + 1, at_repeats + 1)
+    )
+
+
+def stability_statistics(
+    pairs: Sequence[CandidatePair],
+    votes: Sequence[AdjudicationVote],
+) -> dict[str, Any]:
+    """How much of the headline count is measurement rather than corpus.
+
+    Two facts, kept apart because the obvious link between them does not hold.
+    Two builds of this layer over an identical candidate set returned 4
+    conflicts and then 2, with two cards moving 3/3 to 0/3. And the nine-look
+    sweep found a genuinely ambiguous band: 20 of its 710 pairs drew conflict
+    on between two and seven of their nine looks, where a pair the judge
+    answers at even odds carries a majority half the time however often it is
+    asked. It is tempting to explain the first by the second — the closing
+    paragraph below is why that explanation fails.
+
+    An earlier version of this docstring went further still and called the
+    spread *irreducible*, on a curve that barely moved between three looks and
+    twenty-one. That was wrong, and wrong in a way worth leaving on the record:
+    it was computed from three-look vote shares, which can only place a pair at
+    0, 1/3, 2/3 or 1 — and which therefore produce nearly the same curve for
+    corpora whose true spread differs by eight orders of magnitude. See
+    :data:`DEFAULT_ADJUDICATE_REPEATS` for that simulation. More looks *do*
+    reduce the spread within a build, slowly: the count still carries roughly
+    ±1 at any repeat count worth paying for.
+
+    So it ships with that spread, and with the two populations separated:
+
+    * ``firm_conflicts`` — carried by at least :data:`FIRM_VOTE_SHARE` of looks.
+      These are what the layer is actually asserting.
+    * ``undecided_pairs`` — drew conflict on between a third and two thirds of
+      looks. Named individually in :attr:`ConflictIndex.near_misses` when they
+      lost, on the cards when they won, and countable here either way. A run
+      that finds three firm conflicts and six undecided pairs is telling a very
+      different story from one that finds three firm and none.
+
+    ``subsample_counts_at_3`` is the direct measurement rather than the
+    modelled one: when the run has repeats to spare, its draws are split into
+    disjoint groups of three and the whole resolution is re-run on each. Those
+    counts are what independent three-look builds of this same corpus would
+    have reported, observed rather than predicted — which is the evidence that
+    the 4-then-2 discrepancy was the judge and not the layer.
+
+    ``count_sd_estimate`` is only worth reading at six looks or more. See
+    :func:`_ships_probability`: below that the spread is not an estimable
+    quantity, the number reduces to ``0.4382 * sqrt(split pairs)``, and on the
+    three-look artifact this layer shipped before the nine-look sweep it lands
+    at 1.45 — above the ``sqrt(count)`` ceiling that a sum of independent
+    indicators cannot exceed.
+    ``subsample_counts_at_3`` is the honest version and needs the looks to
+    spare. Nothing here is gated on the repeat count, because a run that reports
+    a bad error bar beside its own histogram is still better than one that
+    reports a bare integer, but a reader comparing the two should trust the
+    sub-runs.
+
+    **Both numbers are lower bounds, including the honest one.** Each is
+    computed from a single run's draws — the plug-in from the vote shares, the
+    sub-runs from disjoint thirds of them — so both measure how far the count
+    moves when the judge is asked again *inside one build*, and neither can see
+    anything that differs between builds. The two builds above say something
+    does. Under the iid-per-look model both estimators assume, a pair drawing
+    3/3 and then 0/3 has probability ``p³(1 - p)³``, at most ``1/64`` at
+    ``p = 1/2``, so two pairs doing it is about ``2e-4``. An observation that
+    unlikely under a model is evidence against the model, not a run of bad luck,
+    and what it points at is a between-run component — judge version, serving
+    stack, or state carried across builds — that no amount of repeating within
+    one run samples. So the measured curve (1.90 at three looks, 1.37 at nine,
+    1.01 at twenty-one, 0.77 at forty-five) is a **floor** under the spread a
+    reader comparing two artifacts actually cares about, not an estimate of it.
+    Measuring that one means building twice and matching the runs pair by pair,
+    which is the other thing :func:`vote_ledger` exists for.
+    """
+    if not pairs:
+        return {}
+    repeats = max((vote.repeats for vote in votes), default=0)
+    histogram = {index: 0 for index in range(repeats + 1)}
+    for vote in votes:
+        histogram[vote.votes] = histogram.get(vote.votes, 0) + 1
+
+    variance = sum(
+        _ships_probability(vote.votes, vote.repeats, repeats)
+        * (1 - _ships_probability(vote.votes, vote.repeats, repeats))
+        for vote in votes
+    )
+    undecided = [vote for vote in votes if _is_undecided(vote.votes, vote.repeats)]
+
+    stats: dict[str, Any] = {
+        # The distribution the single number is drawn from. A run whose pairs
+        # are all 0/9 or 9/9 has a trustworthy count; one with a pile at 4/9 and
+        # 5/9 does not, and only this tells them apart.
+        "vote_histogram": {str(key): value for key, value in sorted(histogram.items())},
+        "undecided_pairs": len(undecided),
+        "count_sd_estimate": round(variance**0.5, 2),
+    }
+    if repeats >= 6 and repeats % 3 == 0:
+        groups = [
+            [AdjudicationVote(verdicts=vote.verdicts[start : start + 3]) for vote in votes]
+            for start in range(0, repeats, 3)
+        ]
+        stats["subsample_counts_at_3"] = [
+            len(resolve_conflicts(pairs, group)[0]) for group in groups
+        ]
+    return stats
+
+
+def vote_ledger(
+    pairs: Sequence[CandidatePair],
+    votes: Sequence[AdjudicationVote],
+) -> list[dict[str, Any]]:
+    """Every adjudicated pair and the rate it drew, in candidate order.
+
+    The rate set this run measured, on the record in full rather than
+    summarised. It exists because the claim that once drove this layer's design
+    — that the spread on the count is irreducible, and that paying for more
+    looks therefore buys little — was argued from a rate set that lived only in
+    a build log, and did not survive being checked against one that did not. A
+    conclusion about variance has to be recomputable from the artifact by
+    someone who did not watch the run, and the histogram alone cannot support
+    the other thing this is for: matching a pair to *the same pair* in another
+    run, which is what turns two builds into a reproducibility measurement
+    instead of two numbers. That is the only route to the between-build
+    component of the spread — the one :func:`stability_statistics` can put a
+    floor under from a single run but, by construction, cannot see.
+
+    Deliberately the whole population, not the interesting tail. The pairs that
+    never drew a conflict verdict are most of the corpus and most of the
+    evidence that a low count is a property of the corpus rather than of a
+    filter; :func:`near_misses` keeps its own ranked, truncated list for
+    reading, and this one is for arithmetic.
+    """
+    return [
+        {
+            "chunk_ids": list(pair.key),
+            "video_ids": sorted({pair.left.video_id, pair.right.video_id}),
+            "votes": vote.votes,
+            "repeats": vote.repeats,
+            "similarity": round(pair.similarity, 4),
+            "errors": sum(1 for verdict in vote.verdicts if verdict.verdict == "error"),
+        }
+        for pair, vote in zip(pairs, votes)
+    ]
+
+
 def conflict_statistics(
     conflicts: Sequence[Conflict],
     candidates: int,
@@ -687,22 +1339,30 @@ def conflict_statistics(
     metric here that rewards volume, and ``conflicts`` on its own is meaningless
     without the denominator beside it — which is why they ship together.
     """
-    creators = sorted(
+    channels = sorted(
         {side.channel_name for conflict in conflicts for side in (conflict.left, conflict.right)}
     )
     videos = sorted(
         {side.video_id for conflict in conflicts for side in (conflict.left, conflict.right)}
     )
-    cross = sum(1 for conflict in conflicts if conflict.cross_creator)
+    cross = sum(1 for conflict in conflicts if conflict.cross_channel)
     return {
         "conflicts": len(conflicts),
-        "cross_creator_conflicts": cross,
-        "within_creator_conflicts": len(conflicts) - cross,
+        "cross_channel_conflicts": cross,
+        "within_channel_conflicts": len(conflicts) - cross,
+        # Split out because they are not the same claim. A unanimous conflict is
+        # one the adjudicator reproduced on every look; a split one is a coin
+        # that landed twice the same way, and a reader deciding how much to
+        # trust a card needs to know which it is.
+        "unanimous_conflicts": sum(1 for conflict in conflicts if conflict.unanimous),
+        "split_conflicts": sum(1 for conflict in conflicts if not conflict.unanimous),
+        "factual_conflicts": sum(1 for conflict in conflicts if conflict.kind == "factual"),
+        "axis_conflicts": sum(1 for conflict in conflicts if conflict.kind != "factual"),
         "candidates_adjudicated": candidates,
         "conflict_precision": round(len(conflicts) / candidates, 4) if candidates else None,
-        "creators_involved": len(creators),
+        "channels_involved": len(channels),
         "videos_involved": len(videos),
-        "creators": creators,
+        "channels": channels,
         "rejected": dict(tally),
         "quotes_resolved": 2 * len(conflicts),
         "min_quote_ratio": round(
@@ -989,8 +1649,10 @@ def build_conflicts(
     embedding_model: str = "",
     adjudicator_model: str = "",
     chunk_collection: str = "",
+    corpus: dict[str, Any] | None = None,
     probe_repeats: int = 1,
     max_workers: int = 6,
+    cache: AdjudicationCache | None = None,
     on_progress: Callable[[str], None] | None = None,
 ) -> ConflictIndex:
     """Candidates, then adjudication, then resolution — the whole layer.
@@ -1001,9 +1663,24 @@ def build_conflicts(
     Their results ship inside the artifact rather than being printed and
     forgotten, so the file carries the evidence that its own adjudicator was
     calibrated when it produced these conflicts.
+
+    Corpus pairs get the **same repeat-and-vote discipline as the probes**. They
+    did not, once, and that was this module's worst bug: the probes proved the
+    adjudicator was stable on five written pairs while every card that shipped
+    rested on a single draw. The calibration strip was certifying a property the
+    cards had never been tested for.
+
+    The vote is the *only* gate a pair passes into
+    :attr:`ConflictIndex.conflicts`, and every consumer — the view, ``stats``,
+    ``conflict_precision`` and the ``contested_coverage`` denominator in
+    :func:`src.evals.critique_run.contested_pairs` — reads that one list. A pair
+    that loses its vote is therefore absent from all of them by construction
+    rather than by four separate filters agreeing with each other, which is how
+    the first version of this managed to have them disagree.
     """
     settings = config or ConflictConfig()
     progress = on_progress or (lambda _message: None)
+    repeats = max(1, settings.adjudicate_repeats)
 
     probes = run_probes(adjudicate, repeats=probe_repeats)
     progress(
@@ -1012,25 +1689,55 @@ def build_conflicts(
     )
 
     pairs = candidate_pairs(claims, embed, settings)
-    progress(f"{len(claims)} claims -> {len(pairs)} candidate chunk pairs to adjudicate")
+    progress(
+        f"{len(claims)} claims -> {len(pairs)} candidate chunk pairs "
+        f"x {repeats} repeat(s) = {len(pairs) * repeats} adjudications"
+    )
 
-    adjudications = _adjudicate_all(pairs, adjudicate, max_workers, progress)
-    conflicts, tally = resolve_conflicts(pairs, adjudications)
-    progress(f"{len(conflicts)} conflicts kept; rejected {tally}")
+    votes = _adjudicate_all(pairs, adjudicate, repeats, max_workers, progress, cache)
+    conflicts, tally = resolve_conflicts(pairs, votes)
+    flapping = sum(1 for vote in votes if not vote.unanimous)
+    progress(
+        f"{len(conflicts)} conflicts kept; {flapping} of {len(pairs)} pairs drew "
+        f"more than one verdict; rejected {tally}"
+    )
 
     return ConflictIndex(
         generated_at=datetime.now(timezone.utc).isoformat(),
         embedding_model=embedding_model,
         adjudicator_model=adjudicator_model,
         chunk_collection=chunk_collection,
+        corpus={
+            **(corpus or {}),
+            # Chunks that actually reached the candidate stage. A chunk with no
+            # cached extraction contributes no claims and is invisible here
+            # however much it disagrees with anything, so the gap between this
+            # and ``chunks`` is the layer's blind spot, stated rather than left
+            # for a reader to infer from a claim count.
+            "chunks_with_claims": len({claim.chunk_id for claim in claims}),
+            "videos_with_claims": len({claim.video_id for claim in claims}),
+        },
         config=asdict(settings),
         stats={
             **conflict_statistics(conflicts, len(pairs), tally),
+            **stability_statistics(pairs, votes),
+            "firm_conflicts": sum(
+                1 for conflict in conflicts if _is_firm(conflict.votes, conflict.repeats)
+            ),
             "claims": len(claims),
             "probes_passed": probes_passed(probes),
             "probe_repeats": probe_repeats,
+            "adjudicate_repeats": repeats,
+            "adjudications": len(pairs) * repeats,
+            # How often the adjudicator disagreed with itself about the same
+            # pair. Published because it is the honest error bar on every other
+            # number in this artifact.
+            "pairs_with_split_verdicts": flapping,
+            "verdict_agreement": round(1 - flapping / len(pairs), 4) if pairs else None,
         },
         probes=probes,
+        vote_ledger=vote_ledger(pairs, votes),
+        near_misses=near_misses(pairs, votes),
         conflicts=conflicts,
     )
 
@@ -1038,33 +1745,69 @@ def build_conflicts(
 def _adjudicate_all(
     pairs: Sequence[CandidatePair],
     adjudicate: AdjudicateFn,
+    repeats: int,
     max_workers: int,
     progress: Callable[[str], None],
-) -> list[Adjudication]:
-    """Every pair adjudicated, concurrently, preserving input order.
+    cache: AdjudicationCache | None = None,
+) -> list[AdjudicationVote]:
+    """Every pair adjudicated ``repeats`` times, concurrently, in input order.
+
+    Repeats are submitted as individual tasks rather than looped inside one, so
+    the pool is saturated by ``pairs * repeats`` work and three passes cost
+    roughly three times the wall clock of one rather than three times the wall
+    clock of a serial pass.
 
     Order is preserved because :func:`resolve_conflicts` awards a contested
     chunk to the first pair that claims it, and "first" has to mean highest
     similarity rather than whichever call the endpoint happened to answer
     first — otherwise the artifact would differ between two runs over identical
     input.
+
+    The optional ``cache`` is consulted here rather than inside ``adjudicate``
+    because this is the only place that knows *which attempt* a call is — and
+    the attempt has to be in the key or the nine looks collapse into one. See
+    :class:`AdjudicationCache`.
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     if not pairs:
         return []
-    results: list[Adjudication | None] = [None] * len(pairs)
-    workers = max(1, min(max_workers, len(pairs)))
+    total = len(pairs) * repeats
+    results: list[list[Adjudication | None]] = [[None] * repeats for _ in pairs]
+    workers = max(1, min(max_workers, total))
     done = 0
+
+    def work(pair: CandidatePair, attempt: int) -> Adjudication:
+        if cache is not None:
+            cached = cache.get(pair, attempt)
+            if cached is not None:
+                return cached
+        verdict = adjudicate(pair)
+        if cache is not None:
+            cache.put(pair, attempt, verdict)
+        return verdict
+
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(adjudicate, pair): index for index, pair in enumerate(pairs)}
+        futures = {
+            pool.submit(work, pair, attempt): (index, attempt)
+            for index, pair in enumerate(pairs)
+            for attempt in range(repeats)
+        }
         for future in as_completed(futures):
-            index = futures[future]
-            results[index] = future.result()
+            index, attempt = futures[future]
+            results[index][attempt] = future.result()
             done += 1
-            if done % 20 == 0 or done == len(pairs):
-                progress(f"adjudicated {done}/{len(pairs)}")
-    return [result or Adjudication(verdict="error", error="no result") for result in results]
+            if done % 50 == 0 or done == total:
+                served = f", {cache.hits} from cache" if cache is not None else ""
+                progress(f"adjudicated {done}/{total}{served}")
+    return [
+        AdjudicationVote(
+            verdicts=tuple(
+                result or Adjudication(verdict="error", error="no result") for result in row
+            )
+        )
+        for row in results
+    ]
 
 
 def _json_object(content: str) -> dict[str, Any]:

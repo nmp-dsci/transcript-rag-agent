@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import replace
 from typing import Callable, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -28,7 +29,11 @@ from src.agents.rag_transcript_agent import (
     _reference_for_chunk,
 )
 from src.config import Settings
-from src.rag.context import MultiTranscriptRagContextProvider
+from src.rag.context import (
+    ChunkLabeller,
+    MultiTranscriptRagContextProvider,
+    format_retrieved_chunks_with_references,
+)
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.indexing import RagIndexer
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
@@ -231,8 +236,15 @@ class RagAgent:
         ``filter_transcripts`` from the request; only ``query`` varies per call.
         Every retrieved ``TranscriptContext`` is appended to ``retrieved_contexts``
         so the union can be assembled once the loop exits.
+
+        One :class:`ChunkLabeller` is created here and shared by every tool call
+        in this run, so citation numbers run on across the whole answer instead
+        of restarting at ``[1]`` per retrieval. It is per-request rather than
+        per-agent because the numbering belongs to one answer: a second question
+        must start from ``[1]`` again.
         """
         retrieved_contexts: list[TranscriptContext] = []
+        labeller = ChunkLabeller()
         source_url = str(request.source_url) if request.source_url else None
         top_k = request.top_k
         filter_transcripts = request.filter_transcripts
@@ -263,6 +275,19 @@ class RagAgent:
                 transcript_filter_min_score=transcript_filter_min_score,
                 channel_id=channel_id,
                 retrieval_mode=retrieval_mode,
+            )
+            # Renumber before anything reads the text. ``get_context`` numbers
+            # each retrieval from [1] — correct for a single-shot caller, wrong
+            # here — and the relabelled text has to replace the original on the
+            # context object too, because ``_merge_contexts`` concatenates these
+            # strings into the record the judge and the UI read. Two copies of
+            # the context under two numbering schemes is the same ambiguity
+            # again, one layer down.
+            context = replace(
+                context,
+                context_text=format_retrieved_chunks_with_references(
+                    context.retrieved_chunks or [], labeller
+                ),
             )
             retrieved_contexts.append(context)
             return context.context_text or ""
@@ -411,18 +436,19 @@ def reconcile_agent_references(
 ) -> list[RagAnswerReference]:
     """Resolve the agent's citations to real chunks by identity, not by position.
 
-    The single-hop path can reconcile on the label alone, because its context is
-    one numbered list and ``[3]`` is its third entry. This path cannot. The agent
-    retrieves several times, and every tool call formats its own results from
-    ``[1]`` again — so a bare ``[1]`` in the model's reference list may be the
-    first chunk of any of them. Resolving it positionally would be a coin toss
-    dressed as provenance.
+    Labels are now globally unique across an answer (see
+    :class:`~src.rag.context.ChunkLabeller`), so ``[3]`` does name one chunk and
+    a positional lookup into the merged context would be defensible. This still
+    does not do one. Identity matching is strictly stronger: it also catches the
+    model citing a label it was never shown, which positional resolution would
+    silently turn into a plausible-looking citation of whatever sits at that
+    index.
 
-    What *is* unambiguous is what the chunk header shows: ``video=<id>`` and a
-    timestamp URL. Those identify one chunk in the merged context, so that is
-    what a reference is matched on, and every field is then re-derived from the
-    chunk that matched. ``chunk_index`` in particular appears nowhere the model
-    can see it, which is exactly why it was the field the model got wrong.
+    What a reference is matched on is what the chunk header shows —
+    ``video=<id>`` and a timestamp URL — because those are the fields the model
+    can *copy* rather than derive. Every field is then re-derived from the chunk
+    that matched. ``chunk_index`` in particular appears nowhere the model can see
+    it, which is exactly why it was the field the model got wrong.
 
     A citation that matches nothing retrieved is dropped. The model cited
     something that was never in front of it, and attaching that label to the

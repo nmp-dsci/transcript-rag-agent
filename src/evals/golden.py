@@ -300,7 +300,10 @@ def answer_correctness_fns(settings: Settings) -> dict[str, ReferenceScoreFn]:
         )
     )
     embeddings = LangchainEmbeddingsWrapper(
-        HuggingFaceEmbeddings(model_name=settings.embedding_model)
+        HuggingFaceEmbeddings(
+            model_name=settings.embedding_model,
+            model_kwargs={"device": settings.embedding_device},
+        )
     )
 
     similarity = AnswerSimilarity(embeddings=embeddings)

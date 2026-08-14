@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api/client";
 import type { Theme, ThemeChunk, ThemeDetail, ThemeList } from "../api/types";
-import { fmtSeconds } from "../answers/render";
+import { fmtSeconds, videoTimestampUrl } from "../answers/render";
 
 /**
  * RAPTOR level 2 — the layer the per-video summaries cannot produce.
@@ -14,9 +14,7 @@ import { fmtSeconds } from "../answers/render";
  */
 
 function timestampUrl(chunk: ThemeChunk): string | null {
-  if (!chunk.source_url) return null;
-  const seconds = Math.max(0, Math.floor(chunk.start_seconds ?? 0));
-  return `${chunk.source_url}${chunk.source_url.includes("?") ? "&" : "?"}t=${seconds}s`;
+  return videoTimestampUrl(chunk.source_url, chunk.start_seconds);
 }
 
 function ThemeRow({
