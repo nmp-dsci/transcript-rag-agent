@@ -113,12 +113,8 @@ export function colourMap(nodes: GraphNode[]): Map<string, string> {
   return new Map(channelLegend(nodes).map((item) => [item.id, item.colour]));
 }
 
-/** Deep-link into the video at the moment the chunk starts. */
-export function chunkTimestampUrl(
-  sourceUrl: string | null,
-  startSeconds: number | null,
-): string | null {
-  if (!sourceUrl) return null;
-  const seconds = Math.max(0, Math.floor(startSeconds ?? 0));
-  return `${sourceUrl}${sourceUrl.includes('?') ? '&' : '?'}t=${seconds}s`;
-}
+/*
+ * Deep links into a video at a chunk's timestamp are built by
+ * `videoTimestampUrl` in ../answers/render, beside the `fmtSeconds` that
+ * labels them — this module is geometry only.
+ */

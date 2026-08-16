@@ -26,6 +26,7 @@ from typing import Any, Iterator
 from src.api.experiments import DEFAULT_RUNS_DIR
 from src.chat.history import ChatAnswer, ChatEntry
 from src.chat.setups import setup_spec
+from src.evals.judge import RUBRIC_VERSION
 
 #: Recorded on each adapted answer, so a Scoreboard row is traceable to the
 #: command that produced it the way a live answer names its chat command.
@@ -105,14 +106,50 @@ def load_matrix_runs(runs_dir: Path | None = None) -> list[dict[str, Any]]:
 
 
 def describe_matrix_run(data: dict[str, Any]) -> dict[str, Any]:
-    """One descriptor for the run picker, which only needs to label a run."""
+    """One descriptor for the run picker, which only needs to label a run.
+
+    ``rubric_version`` is part of the label because two runs over the same
+    questions and setups can rank them differently purely by rubric — a picker
+    that hid which rubric produced a ranking would make that difference look
+    like a change in the engines.
+
+    ``skipped_cells`` is how many cells this run's rubric could not cover (a
+    rejudge cannot grade depth on an answer that is empty or errored). Those
+    cells are excluded from every average rather than carried at their old
+    rubric's score, so the count belongs beside the run that reports the
+    averages.
+    """
+    config = data.get("config") or {}
     return {
         "run_id": data.get("run_id"),
         "created_at": data.get("created_at"),
         "setups": data.get("setups", []),
         "entry_count": data.get("entry_count"),
         "judged": bool(data.get("judged", False)),
+        "rubric_version": run_rubric_version(data),
+        "rejudged_from": data.get("rejudged_from"),
+        "rejudged_cells": data.get("rejudged_cells"),
+        "skipped_cells": data.get("skipped_cells"),
+        # The corpus this run's numbers were scored over. Absent on runs
+        # committed before corpus identity entered the fingerprint, and left
+        # absent rather than defaulted: the picker treats "unrecorded" as
+        # *unknown*, never as *the same corpus*, because a reader who reads
+        # absence as agreement compares numbers with no shown relationship.
+        # Counts are separate from the digest because a run can identify its
+        # corpus without recording how big it was.
+        "corpus": config.get("corpus"),
+        "corpus_videos": config.get("corpus_videos"),
+        "corpus_chunks": config.get("corpus_chunks"),
     }
+
+
+def run_rubric_version(data: dict[str, Any]) -> str:
+    """Which rubric composited this run. Runs predating rubrics are ragas-v1."""
+    return str(
+        data.get("rubric_version")
+        or (data.get("config") or {}).get("rubric_version")
+        or RUBRIC_VERSION
+    )
 
 
 def select_matrix_run(
@@ -139,14 +176,15 @@ def _title_for(setup: str) -> str:
 
 
 def _evaluation(
-    cell: dict[str, Any], config: dict[str, Any], created_at: str
+    cell: dict[str, Any], config: dict[str, Any], created_at: str, rubric_version: str
 ) -> dict[str, Any] | None:
     """The judge record for one cell, in the shape ``build_scoreboard`` reads.
 
     ``None`` when the cell carries no ``composite`` — an unjudged matrix run
     (``eval-matrix --no-judge``) has deterministic retrieval metrics but no
     RAGAS verdict, and must count as an answer that was never judged rather
-    than as a zero.
+    than as a zero. A cell a rejudge could not cover has its composite cleared
+    for the same reason: under *this* run's rubric it was never scored.
     """
     scores = cell.get("scores") or {}
     composite = scores.get("composite")
@@ -155,12 +193,19 @@ def _evaluation(
     return {
         "judge": "ragas",
         "judge_model": config.get("judge_model"),
+        "depth_judge_model": config.get("depth_judge_model"),
         "scores": {
             metric: value
             for metric, value in scores.items()
             if metric != "composite" and isinstance(value, (int, float))
         },
         "composite": composite,
+        "rubric_version": str(cell.get("rubric_version") or rubric_version),
+        "cap_applied": bool(cell.get("cap_applied", False)),
+        "cap_reason": cell.get("cap_reason"),
+        "grounding_floor_breached": bool(cell.get("grounding_floor_breached", False)),
+        "grounding_reason": cell.get("grounding_reason"),
+        "self_graded": _self_graded(config),
         "ragas_version": config.get("ragas_version"),
         "embedding_model": config.get("embedding_model"),
         "judge_samples": config.get("judge_samples"),
@@ -169,8 +214,29 @@ def _evaluation(
     }
 
 
+def _self_graded(config: dict[str, Any]) -> bool | None:
+    """Whether the model that wrote the answers also graded them.
+
+    ``None`` when the answering model is unrecorded — unknown is reported as
+    unknown rather than guessed at. Any judge in the pipeline matching the
+    answering model makes the verdict self-assessment, so the depth judge
+    counts here exactly as the grounding judge does: it produces 60% of a
+    depth-v2 composite, and a ranking is no more independent for having had
+    its smaller half graded by a third party.
+    """
+    answer_model = config.get("answer_model")
+    if not answer_model:
+        return None
+    judges = [config.get("judge_model"), config.get("depth_judge_model")]
+    return any(judge and judge == answer_model for judge in judges)
+
+
 def _answer(
-    setup: str, cell: dict[str, Any], config: dict[str, Any], created_at: str
+    setup: str,
+    cell: dict[str, Any],
+    config: dict[str, Any],
+    created_at: str,
+    rubric_version: str,
 ) -> ChatAnswer:
     return ChatAnswer(
         key=setup,
@@ -181,7 +247,7 @@ def _answer(
         elapsed_seconds=float(cell.get("elapsed_seconds") or 0.0),
         error=cell.get("error"),
         retrieved_chunk_ids=list(cell.get("retrieved_chunk_ids") or []),
-        evaluation=_evaluation(cell, config, created_at),
+        evaluation=_evaluation(cell, config, created_at, rubric_version),
         model=config.get("answer_model"),
         embedding_model=config.get("embedding_model"),
         top_k=config.get("top_k"),
@@ -198,10 +264,14 @@ def matrix_entries(data: dict[str, Any]) -> list[ChatEntry]:
     """
     run_config = data.get("config") or {}
     created_at = str(data.get("created_at") or "")
+    rubric_version = run_rubric_version(data)
     by_question: dict[str, ChatEntry] = {}
 
     for setup, run in (data.get("runs") or {}).items():
-        config = run.get("config") or run_config
+        # Run-level under, setup-level over: the setup config is authoritative
+        # for what answered, while fields recorded once for the whole run (the
+        # depth judge) would otherwise be invisible to every cell.
+        config = {**run_config, **(run.get("config") or {})}
         for cell in run.get("entries") or []:
             question_id = str(cell.get("id") or "")
             entry = by_question.get(question_id)
@@ -213,7 +283,7 @@ def matrix_entries(data: dict[str, Any]) -> list[ChatEntry]:
                     asked_at=created_at,
                 )
                 by_question[question_id] = entry
-            entry.answers.append(_answer(setup, cell, config, created_at))
+            entry.answers.append(_answer(setup, cell, config, created_at, rubric_version))
 
     return list(by_question.values())
 
@@ -225,10 +295,23 @@ def matrix_questions(data: dict[str, Any]) -> list[dict[str, Any]]:
     keeps the per-question rows those averages are built from, so a reader can
     see exactly which golden questions were judged and how each setup scored
     on each one, not just the aggregate.
+
+    Each cell also carries the **answer that was actually graded**, plus the
+    model and cost facts for it. A score with no way to read the text behind it
+    cannot be sanity-checked — "hybrid scored 0.71 here" only means something
+    once you can see what it said — so the run's own answer text travels with
+    its score rather than staying locked in the committed JSON.
+
+    Under a rubric with a cap, the same applies to *why* a score is what it is:
+    ``cap_applied``/``cap_reason`` and the per-metric scores and rationales
+    travel with the cell, so a capped 0.50 can be read as a sentence rather
+    than guessed at from a number.
     """
     by_question: dict[str, dict[str, Any]] = {}
+    rubric_version = run_rubric_version(data)
     for setup, run in (data.get("runs") or {}).items():
         title = _title_for(setup)
+        config = {**(data.get("config") or {}), **(run.get("config") or {})}
         for cell in run.get("entries") or []:
             question_id = str(cell.get("id") or "")
             row = by_question.get(question_id)
@@ -249,6 +332,36 @@ def matrix_questions(data: dict[str, Any]) -> list[dict[str, Any]]:
                 "composite": composite if isinstance(composite, (int, float)) else None,
                 "judged": isinstance(composite, (int, float)),
                 "error": cell.get("error"),
+                "answer": str(cell.get("answer") or ""),
+                "model": config.get("answer_model"),
+                "elapsed_seconds": cell.get("elapsed_seconds"),
+                "token_estimate": cell.get("token_estimate"),
+                "chunk_count": len(cell.get("retrieved_chunk_ids") or []),
+                "rubric_version": str(cell.get("rubric_version") or rubric_version),
+                "cap_applied": bool(cell.get("cap_applied", False)),
+                "cap_reason": cell.get("cap_reason"),
+                "grounding_floor_breached": bool(cell.get("grounding_floor_breached", False)),
+                "grounding_reason": cell.get("grounding_reason"),
+                "composite_uncapped": cell.get("composite_uncapped"),
+                # False only on a cell this run's rubric could not cover.
+                "rejudged": cell.get("rejudged"),
+                "rejudge_skipped_reason": cell.get("rejudge_skipped_reason"),
+                # How much of the retrieved context the judge actually saw. A
+                # depth verdict reached on two-thirds of the chunks is a weaker
+                # measurement and has to say so where the cell is read.
+                "contexts_resolved": cell.get("contexts_resolved"),
+                "contexts_expected": cell.get("contexts_expected"),
+                "depth_error": cell.get("depth_error"),
+                "scores": {
+                    metric: value
+                    for metric, value in scores.items()
+                    if metric != "composite" and isinstance(value, (int, float))
+                },
+                "rationales": {
+                    metric: str((detail or {}).get("rationale") or "")
+                    for metric, detail in (cell.get("depth_details") or {}).items()
+                    if (detail or {}).get("rationale")
+                },
             }
 
     questions = list(by_question.values())

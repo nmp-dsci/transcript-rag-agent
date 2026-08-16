@@ -21,17 +21,36 @@ class HuggingFaceEmbeddingModel:
     that do embed nothing but the same load a moment later.
     """
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, device: str | None = None) -> None:
         self.model_name = model_name
+        self.device = device
         self._lock = threading.Lock()
         self._embeddings: Any | None = None
+
+    def _resolve_device(self) -> str:
+        """Pin the torch device rather than letting sentence-transformers pick.
+
+        Its auto-selection prefers MPS on Apple Silicon, where the first embed
+        call never returns — it wedges inside the Metal driver, and under
+        uvicorn that hangs the whole server with the port still bound. The
+        default comes from settings (CPU unless overridden), so a machine with
+        a working GPU can opt back in without touching call sites.
+        """
+        if self.device is not None:
+            return self.device
+        from src.config import load_settings
+
+        return load_settings(require_keys=False).embedding_device
 
     def _model(self) -> Any:
         with self._lock:
             if self._embeddings is None:
                 from langchain_huggingface import HuggingFaceEmbeddings
 
-                self._embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+                self._embeddings = HuggingFaceEmbeddings(
+                    model_name=self.model_name,
+                    model_kwargs={"device": self._resolve_device()},
+                )
             return self._embeddings
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

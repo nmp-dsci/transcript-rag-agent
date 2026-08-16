@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.rag.chunking import build_chunks
 from src.rag.models import RawTranscriptDocument, TranscriptChunk
@@ -14,6 +14,10 @@ class RagIndexResult:
     chunks: list[TranscriptChunk]
     cache_status: str
     summary_status: str | None = None
+    #: Chunk ids this index run deleted because the rebuild no longer produces
+    #: them — the tail a shrinking re-chunk leaves behind. Empty on a first
+    #: index and on any re-index that did not shrink, which is the normal case.
+    removed_chunk_ids: list[str] = field(default_factory=list)
 
 
 class RagIndexer:
@@ -39,15 +43,16 @@ class RagIndexer:
         refresh: bool = False,
         refresh_summary: bool = False,
     ) -> RagIndexResult:
-        raw_document, cache_status = self.raw_store.ensure_raw_document(
-            source_url, refresh=refresh
-        )
+        raw_document, cache_status = self.raw_store.ensure_raw_document(source_url, refresh=refresh)
         chunks = build_chunks(
             raw_document,
             target_chars=self.target_chars,
             overlap_chars=self.overlap_chars,
         )
-        self.chunk_store.upsert_chunks(chunks)
+        # Replace rather than upsert: the rebuilt chunks are the whole truth for
+        # this video, so anything the previous run left at a higher index has to
+        # go with it. See ``TranscriptChunkStore.replace_chunks``.
+        removed = self.chunk_store.replace_chunks(raw_document.video_id, chunks)
         summary_status = None
         if self.summary_store is not None and self.summary_generator is not None:
             _summary, summary_status = self.summary_store.ensure_summary(
@@ -64,4 +69,5 @@ class RagIndexer:
             chunks=chunks,
             cache_status=cache_status,
             summary_status=summary_status,
+            removed_chunk_ids=removed,
         )

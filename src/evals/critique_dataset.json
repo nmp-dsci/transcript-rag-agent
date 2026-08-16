@@ -1,0 +1,294 @@
+{
+  "held_out_video_id": "15rTnqKBlO8",
+  "held_out_title": "You asked me to roast your AI resumes.. so I did.",
+  "held_out_source_url": "https://www.youtube.com/watch?v=15rTnqKBlO8",
+  "artifact_id": "doc:f52b88d70b35b908",
+  "artifact_url": "https://nmp-dsci.github.io/",
+  "artifact_kind": "portfolio",
+  "notes": [
+    "The criteria are the general, checkable rules behind the reviewer's specific",
+    "criticisms, not the criticisms themselves. The reviewed resumes exist only as",
+    "pixels in the video and are in no corpus, so 'find the same faults in the same",
+    "document' is not a measurable thing; 'reach the same rules' is.",
+    "Every quote is verified against the chunk store at its own start_seconds by",
+    "src.evals.critique.verify_dataset, which the tests run. A criterion whose quote",
+    "cannot be found where it claims is a criterion the dataset's author invented.",
+    "applies_to marks which artifact kinds a rule can be checked against at all, and",
+    "every exclusion must carry a note giving its reason (enforced by a test). This",
+    "is the softest judgement in the file and it moves the headline: an independent",
+    "audit found that all six original exclusions removed criteria the system had",
+    "MISSED and none it had reached, worth +33% relative. It overturned c09. Read",
+    "criteria_recall_all beside criteria_recall \u2014 it is served and rendered for",
+    "exactly this reason, and it is immune to the choice.",
+    "group marks criteria that are the same rule said twice. One-to-one matching",
+    "means a system making one correct point about links can only ever satisfy one",
+    "of c12/c24, which is a recall ceiling unrelated to retrieval; the grouped",
+    "recall reports the score without that ceiling."
+  ],
+  "criteria": [
+    {
+      "id": "c01",
+      "criterion": "A resume should fit on a single page, even for an engineer with more than ten years of experience.",
+      "quote": "you want to keep your resume to just a single page",
+      "start_seconds": 57.0,
+      "applies_to": [
+        "resume"
+      ],
+      "note": "Page count is a resume mechanic; a scrolling website has no equivalent.",
+      "group": "c01"
+    },
+    {
+      "id": "c02",
+      "criterion": "Cut or reorder experience that is irrelevant to the role being targeted, instead of listing everything you have ever done.",
+      "quote": "shuffle your experience around to make it make the most sense for the job application",
+      "start_seconds": 90.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c02"
+    },
+    {
+      "id": "c03",
+      "criterion": "Work should show clear individual ownership of what was built, not merely participation in a team that built it.",
+      "quote": "there's clear ownership of the projects. It's not just about building something with a team",
+      "start_seconds": 90.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c03"
+    },
+    {
+      "id": "c04",
+      "criterion": "Keep the opening summary to two or three lines and do not restate there what the body of the document already proves.",
+      "quote": "reduce their professional summary to just two to three lines",
+      "start_seconds": 150.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c04"
+    },
+    {
+      "id": "c05",
+      "criterion": "Put explicit numbers on claims of scale or reliability rather than leaving the reader to take the claim on trust.",
+      "quote": "be a little bit more explicit about how many releases there actually were",
+      "start_seconds": 179.24,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c05"
+    },
+    {
+      "id": "c06",
+      "criterion": "There must be a visible career narrative that leads from the previous roles into the role now being applied for.",
+      "quote": "there is no clear story that leads this person into AI engineering",
+      "start_seconds": 210.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c06"
+    },
+    {
+      "id": "c07",
+      "criterion": "Build one flagship project in the target domain that bridges the existing professional experience to the job being sought.",
+      "quote": "they don't have their own North Star project to showcase in the resume, there isn't a clear bridge",
+      "start_seconds": 270.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_bridge_project"
+    },
+    {
+      "id": "c08",
+      "criterion": "Limit any one role to about three bullet points, however long that role lasted.",
+      "quote": "limit the bullet points here to a maximum of three",
+      "start_seconds": 390.0,
+      "applies_to": [
+        "resume"
+      ],
+      "note": "About the bullet list under an employment entry, which a project portfolio does not have.",
+      "group": "c08"
+    },
+    {
+      "id": "c09",
+      "criterion": "Compress older roles to one or two lines rather than removing them, so the years of experience still show without consuming space.",
+      "quote": "you can optimize one or two lines in each of these sections and just keep them brief",
+      "start_seconds": 390.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c09"
+    },
+    {
+      "id": "c10",
+      "criterion": "Drop courses and credentials that add nothing for the target role, because the skill should be evident from the work instead.",
+      "quote": "I don't know what the added value is of this online course on training great tech leaders",
+      "start_seconds": 450.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c10"
+    },
+    {
+      "id": "c11",
+      "criterion": "Do not carry a separate skills list that repeats what the described work already demonstrates.",
+      "quote": "remove the skill section altogether because your skills will be very obvious from the work experience itself",
+      "start_seconds": 450.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_skills_selfevident"
+    },
+    {
+      "id": "c12",
+      "criterion": "Include links to your profiles and code so a reader can independently check that the projects are real.",
+      "quote": "links to LinkedIn, GitHub and actually a way to check out the validity of the projects mentioned",
+      "start_seconds": 555.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_verifiable_links"
+    },
+    {
+      "id": "c13",
+      "criterion": "Cut vague competence claims that could be said of anyone in the role and that the employment history already implies.",
+      "quote": "these kinds of fluffy sentences are really just a waste of the potential recruiter's attention",
+      "start_seconds": 555.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c13"
+    },
+    {
+      "id": "c14",
+      "criterion": "A recruiter gives the document twenty to thirty seconds, so the most convincing material has to be reachable immediately.",
+      "quote": "You really want to make sure that they get to the meat of your resume as soon as possible",
+      "start_seconds": 615.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_lead_with_strength"
+    },
+    {
+      "id": "c15",
+      "criterion": "Order the document so the strongest project sits at the very top, above any list of technologies.",
+      "quote": "put your top project, your North Star project, at the very top",
+      "start_seconds": 615.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_lead_with_strength"
+    },
+    {
+      "id": "c16",
+      "criterion": "Describe a project concretely enough that the underlying skills are self-evident, instead of asserting the skills separately.",
+      "quote": "skills like being able to build scalable solutions will be obvious from the project description alone",
+      "start_seconds": 675.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_skills_selfevident"
+    },
+    {
+      "id": "c17",
+      "criterion": "Check the document for stale statements left over from an earlier version, such as naming the wrong target role.",
+      "quote": "I assume that this is kind of from a previous version of the resume, but double-check these kinds of things",
+      "start_seconds": 675.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c17"
+    },
+    {
+      "id": "c18",
+      "criterion": "Keep the document in a plain-text source format such as LaTeX or markdown so it can be machine-checked before each application.",
+      "quote": "resume should be written in a format like LaTeX or a markdown file",
+      "start_seconds": 730.0,
+      "applies_to": [
+        "resume"
+      ],
+      "note": "A reviewer of a published site sees only the rendered output, so there is no source document for them to judge. (The earlier reason given here \u2014 that a website has no plain-text source \u2014 was simply wrong for a GitHub Pages site.)",
+      "group": "c18"
+    },
+    {
+      "id": "c19",
+      "criterion": "Reframe the earlier career as the foundation the target-domain work is built on, rather than as unrelated prior history.",
+      "quote": "reframed where the data infrastructure fundamentals that this person has is a foundation for the AI pipelines",
+      "start_seconds": 730.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_bridge_project"
+    },
+    {
+      "id": "c20",
+      "criterion": "Keep the education section to a single line once you have been working for years.",
+      "quote": "the education section is very slim here. It's just a single line",
+      "start_seconds": 850.0,
+      "applies_to": [
+        "resume"
+      ],
+      "group": "c20",
+      "note": "The portfolio has no education section to keep to a line."
+    },
+    {
+      "id": "c21",
+      "criterion": "Put certifications inside the experience they apply to and deep-link the proof, instead of listing them on their own line.",
+      "quote": "add a deep link to a certification platform where it shows the proof that you got that certification",
+      "start_seconds": 900.0,
+      "applies_to": [
+        "resume"
+      ],
+      "group": "c21",
+      "note": "About where certifications sit inside an employment history; the portfolio lists no certifications."
+    },
+    {
+      "id": "c22",
+      "criterion": "Aim the whole document at one clear role persona and build everything else around it.",
+      "quote": "You want to aim for one clear role persona and build the rest of your resume around that",
+      "start_seconds": 960.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c22"
+    },
+    {
+      "id": "c23",
+      "criterion": "Cut corporate jargon and reduce the volume of prose, because too much text crowds out the actual evidence.",
+      "quote": "there's a lot of corporate jargon because essentially we are trained to use corporate jargon",
+      "start_seconds": 1020.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "c23"
+    },
+    {
+      "id": "c24",
+      "criterion": "Every project mentioned should carry a link to the artifact itself so a reader can verify it exists.",
+      "quote": "none of them have an embedded link to a GitHub page",
+      "start_seconds": 1020.0,
+      "applies_to": [
+        "resume",
+        "portfolio"
+      ],
+      "group": "g_verifiable_links"
+    }
+  ]
+}

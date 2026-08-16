@@ -14,12 +14,21 @@ export function MetricExplainer({ copy }: { copy: MetricExplainerCopy }) {
   );
 }
 
-/** All three metrics as cards, for the scoreboard and unexplained evaluations. */
-export function MetricExplainers({ only }: { only?: string }) {
+/**
+ * Metric cards for the scoreboard and unexplained evaluations.
+ *
+ * `only` picks a single metric; `names` narrows to the rubric a run was judged
+ * under (and orders the cards the way that rubric lists them), so a ragas-v1
+ * run does not advertise depth metrics it never scored.
+ */
+export function MetricExplainers({ only, names }: { only?: string; names?: string[] }) {
   useEvalStyles();
+  const byName = new Map(METRIC_EXPLAINERS.map((copy) => [copy.name, copy]));
   const cards = only
     ? METRIC_EXPLAINERS.filter((copy) => copy.name === only)
-    : METRIC_EXPLAINERS;
+    : names && names.length > 0
+      ? names.map((name) => byName.get(name)).filter((copy) => copy != null)
+      : METRIC_EXPLAINERS;
   return (
     <div className="explainers">
       {cards.map((copy) => (

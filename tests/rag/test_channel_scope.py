@@ -30,6 +30,17 @@ class FakeChunkStore:
         self.video_ids_calls: list[tuple[list[str], str, int]] = []
         self.records: list[dict] = []
         self.collection = self
+        self.exclude_video_ids: list[str] = []
+
+    @property
+    def exclusion_key(self) -> str:
+        return "" if not self.exclude_video_ids else "|-" + ",".join(self.exclude_video_ids)
+
+    def scoped_where(self, where=None):
+        if not self.exclude_video_ids:
+            return where
+        excluded = {"video_id": {"$nin": list(self.exclude_video_ids)}}
+        return excluded if where is None else {"$and": [where, excluded]}
 
     def has_any_chunks(self) -> bool:
         return True

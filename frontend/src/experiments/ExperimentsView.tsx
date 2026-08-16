@@ -7,7 +7,10 @@ import type {
   GoldenRunSummary,
   MatrixRunSummary,
 } from '../api/types';
+import { CritiquePanel } from './CritiquePanel';
 import { MatrixRunPanel } from './MatrixRunPanel';
+import { PackPanel } from './PackPanel';
+import { ResearchPanel } from './ResearchPanel';
 import { useExperimentStyles } from './styles';
 
 /** 3-decimal fixed, or an em dash for a metric a run did not report. */
@@ -314,22 +317,34 @@ export function ExperimentsView() {
   const ablations = data?.ablations ?? [];
   const goldenRuns = data?.golden_runs ?? [];
   const matrixRuns = data?.matrix_runs ?? [];
+  const critiqueRuns = data?.critique_runs ?? [];
   const nothing =
     data !== null &&
     ablations.length === 0 &&
     goldenRuns.length === 0 &&
-    matrixRuns.length === 0;
+    matrixRuns.length === 0 &&
+    critiqueRuns.length === 0;
 
   return (
     <div className="scrollview">
       <div className="pagewrap">
         <p className="exp-intro">
           Committed retrieval experiments under <code>evals/runs/</code> — the head-to-head
-          matrix the Scoreboard ranks, the ablation sweeps, and the end-to-end golden runs.
+          matrix the Scoreboard ranks, the held-out critique eval, the ablation sweeps, and
+          the end-to-end golden runs.
           Every number here is reproducible from a snapshot a reviewer can open in the repo.
         </p>
 
         <MatrixRunPanel onRunFinished={() => void load()} />
+
+        {/* Reads experts/ rather than evals/runs/, so it renders whether or not
+            any eval run is committed — and it loads independently of the
+            /api/experiments call below. */}
+        <PackPanel />
+
+        {/* The offline build loop that produced one of those packs a second
+            way. Renders nothing at all for a topic no loop has been run for. */}
+        <ResearchPanel />
 
         {error && <p className="exp-empty">Could not load experiments: {error}</p>}
 
@@ -340,6 +355,10 @@ export function ExperimentsView() {
             <code>uv run python -m src.cli eval-ablation</code>.
           </p>
         )}
+
+        {critiqueRuns.map((run) => (
+          <CritiquePanel key={run.run_id} run={run} />
+        ))}
 
         {matrixRuns.map((run) => (
           <MatrixTable key={run.run_id} run={run} />

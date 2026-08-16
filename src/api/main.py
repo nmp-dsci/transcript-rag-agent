@@ -36,9 +36,12 @@ from pydantic import BaseModel, Field
 
 from src.api.corpus import (
     list_chunks,
+    list_conflicts,
     list_corpus,
+    list_themes,
     load_chunk_corpus,
     load_chunk_embeddings,
+    theme_detail,
 )
 from src.api.ingestion_queue import IngestionQueue
 from src.api.matrix_runner import MatrixRunner, RunFn
@@ -49,6 +52,7 @@ from src.api.matrix_runs import (
     matrix_questions,
     select_matrix_run,
 )
+from src.api.packs import list_packs, pack_detail, set_member_override
 from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.chat.frontend import (
@@ -67,6 +71,8 @@ from src.chat.history import (
     update_entry,
 )
 from src.chat.setups import (
+    DOCUMENT_ONLY_SETUP_KEYS,
+    DOCUMENT_SETUP_KEYS,
     SETUP_KEYS,
     SETUP_SPECS,
     AskScope,
@@ -149,6 +155,17 @@ class MatrixRunRequest(BaseModel):
     """Which engines to sweep; empty means every engine in the matrix default."""
 
     setups: list[str] = Field(default_factory=list)
+
+
+class MemberOverride(BaseModel):
+    """Pin a video into (``true``) or out of (``false``) a pack's membership.
+
+    ``null`` is not "no change" — it clears the override and hands the video
+    back to the router, which is a third decision a reviewer needs to be able to
+    make and cannot express with a boolean alone.
+    """
+
+    included: bool | None = None
 
 
 def _sse(event: str, data: dict) -> str:
@@ -344,6 +361,9 @@ def create_app(
     corpus_fn: Callable[[], dict[str, Any]] | None = None,
     chunks_fn: Callable[[str], dict[str, Any]] | None = None,
     chunk_records_fn: Callable[[str | None], list[dict[str, Any]]] | None = None,
+    themes_fn: Callable[[], dict[str, Any]] | None = None,
+    theme_detail_fn: Callable[[str], dict[str, Any] | None] | None = None,
+    conflicts_fn: Callable[[], dict[str, Any]] | None = None,
     graph_records_fn: Callable[[], list[dict[str, Any]]] | None = None,
     graph_store_factory: Callable[[], Any] | None = None,
     graph_extract_fn: Callable[[list[str]], dict[str, Any]] | None = None,
@@ -352,6 +372,7 @@ def create_app(
     index_fn: IndexFn = _default_index_fn,
     frontend_dist: Path = FRONTEND_DIST,
     runs_dir: Path | None = None,
+    packs_dir: Path | None = None,
     matrix_run_fn: RunFn | None = None,
     document_store: "DocumentStore | None" = None,
     document_fetch_fn: Callable[[str], Any] | None = None,
@@ -385,6 +406,13 @@ def create_app(
     graph_records_fn = graph_records_fn or (
         lambda: load_chunk_embeddings(resolved.chroma_path, resolved.chunk_collection)
     )
+    themes_fn = themes_fn or (lambda: list_themes(resolved.theme_path))
+    theme_detail_fn = theme_detail_fn or (
+        lambda theme_id: theme_detail(
+            resolved.theme_path, resolved.chroma_path, theme_id, resolved.chunk_collection
+        )
+    )
+    conflicts_fn = conflicts_fn or (lambda: list_conflicts(resolved.conflict_path))
     judge_model_name = resolved.judge_model or resolved.deepseek_model
 
     # Both stacks load models, so build each once, lazily, never at startup.
@@ -552,6 +580,21 @@ def create_app(
 
         return load_experiments(runs_dir)
 
+    @app.get("/api/experiments/critique/{run_id}")
+    def critique_run(run_id: str) -> dict:
+        """One held-out critique run in full — the matched/unmatched criteria.
+
+        Separate from ``/api/experiments`` because that endpoint re-parses every
+        committed run on every request, and the per-criterion detail is the bulk
+        of a critique file. A row nobody expanded costs nothing here.
+        """
+        from src.api.experiments import select_critique_run
+
+        found = select_critique_run(run_id, runs_dir)
+        if found is None:
+            raise HTTPException(status_code=404, detail=f"Unknown critique run: {run_id}")
+        return found
+
     @app.get("/api/prompts")
     def prompts() -> dict:
         from src.api.prompts import load_prompts
@@ -575,6 +618,90 @@ def create_app(
     @app.get("/api/corpus/{video_id}/chunks")
     def corpus_chunks(video_id: str) -> dict:
         return chunks_fn(video_id)
+
+    @app.get("/api/themes")
+    def themes() -> dict:
+        """RAPTOR level 2: themes clustered across video boundaries.
+
+        Member lists are omitted; the list view needs counts, and the members
+        of all thirty themes together are most of the corpus.
+        """
+        return themes_fn()
+
+    @app.get("/api/themes/{theme_id:path}")
+    def theme(theme_id: str) -> dict:
+        """One theme's members, grouped by the video each came from.
+
+        ``:path`` because theme ids contain a colon (``theme:0``) and are the
+        whole trailing segment.
+        """
+        result = theme_detail_fn(theme_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unknown theme: {theme_id}")
+        return result
+
+    @app.get("/api/conflicts")
+    def conflicts() -> dict:
+        """Disagreements between creators, with both sides and no verdict.
+
+        Whole artifact in one response — see :func:`list_conflicts` for why this
+        one is not split into a list and a detail route.
+        """
+        return conflicts_fn()
+
+    @app.get("/api/packs")
+    def packs() -> dict:
+        """Every declared expert pack with its shipped arm's headline numbers.
+
+        Rubrics are not included: four packs' criteria and quotes together are
+        larger than the list view needs, and one pack is one more request.
+        """
+        return list_packs(packs_dir)
+
+    @app.get("/api/packs/{topic}")
+    def pack(topic: str) -> dict:
+        """One pack — rubrics, evidence, membership, gaps and the D2 rows.
+
+        The live corpus listing goes in so the pack can be compared against the
+        corpus the reader is actually browsing. A pack is a snapshot and the
+        corpus keeps growing; without this the panel states the build's counts
+        in the present tense, which is what V5's gate failed on. A corpus read
+        that fails must not take the pack down with it — the comparison is
+        commentary, the rubrics are the payload.
+        """
+        try:
+            live_videos = list(corpus_fn().get("videos") or [])
+        except Exception:  # noqa: BLE001 - a missing comparison beats a 500
+            live_videos = None
+        result = pack_detail(topic, packs_dir, live_videos=live_videos)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unknown pack: {topic}")
+        return result
+
+    @app.get("/api/packs/{topic}/research")
+    def pack_research(topic: str) -> dict | None:
+        """The deep-research build report for one pack, or ``null``.
+
+        ``null`` rather than a 404 when the loop has not been run: every
+        declared pack is a legitimate topic to ask about, and "no loop yet" is
+        an answer the panel renders rather than an error it has to handle.
+        """
+        from src.rag.deep_research import research_report
+
+        return research_report(topic, packs_dir)
+
+    @app.post("/api/packs/{topic}/members/{video_id}")
+    def pack_member_override(topic: str, video_id: str, body: MemberOverride) -> dict:
+        """Pin a video in or out of a pack's membership by hand.
+
+        Recorded in the pack's manifest and applied by the next build, which is
+        the only place membership is decided. Answering 200 here does not mean
+        the rendered pack changed — the response says when it will.
+        """
+        try:
+            return set_member_override(topic, video_id, body.included, packs_dir)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/scoreboard")
     def scoreboard(
@@ -607,6 +734,11 @@ def create_app(
             "judge_model"
         ) or judge_model_name
         board["run_id"] = (run or {}).get("run_id")
+        # The selected run's own descriptor, not just its id: rubric coverage
+        # (how many cells the rubric could actually score) belongs next to the
+        # averages it shapes, and the picker list is keyed by id rather than
+        # ordered to be indexed into.
+        board["run"] = describe_matrix_run(run) if run is not None else None
         board["runs"] = [describe_matrix_run(data) for data in runs]
         board["questions"] = matrix_questions(run) if run is not None else []
         return board
@@ -756,20 +888,47 @@ def create_app(
                     yield _sse("error", {"message": describe_failure(exc)})
                     return
 
-                answer_keys = list(keys)
+                answer_keys = [key for key in keys if key not in DOCUMENT_ONLY_SETUP_KEYS]
+                if document is None and len(answer_keys) < len(keys):
+                    skipped = ", ".join(k for k in keys if k not in answer_keys)
+                    if not answer_keys:
+                        # Nothing left to run, so this is a failed request rather
+                        # than a partial one. Saying so beats writing an entry
+                        # with no answers in it.
+                        yield _sse(
+                            "error",
+                            {
+                                "message": (
+                                    f"{skipped} reviews a document you share in the "
+                                    "message, and this one has no URL in it."
+                                )
+                            },
+                        )
+                        return
+                    yield _sse(
+                        "progress",
+                        {
+                            "message": (
+                                f"{skipped} reviews an attached document; this "
+                                "message has none. Skipped."
+                            )
+                        },
+                    )
                 if document is not None:
                     yield _sse("document", _document_event(document))
-                    dropped = [key for key in answer_keys if key != "rag_llm"]
-                    # Only the single-hop path threads the document into its
-                    # answer call; the others would silently ignore it and
+                    dropped = [key for key in keys if key not in DOCUMENT_SETUP_KEYS]
+                    # Only the document-capable setups thread the document into
+                    # their answer call; the others would silently ignore it and
                     # produce a corpus answer dressed as a review.
-                    answer_keys = ["rag_llm"]
+                    kept = [key for key in keys if key in DOCUMENT_SETUP_KEYS]
+                    answer_keys = kept or ["rag_llm"]
                     if dropped:
                         yield _sse(
                             "progress",
                             {
                                 "message": (
-                                    "Reviewing a document only runs rag_llm; skipping "
+                                    "Reviewing a document only runs "
+                                    f"{', '.join(DOCUMENT_SETUP_KEYS)}; skipping "
                                     f"{', '.join(dropped)}."
                                 )
                             },
@@ -790,6 +949,9 @@ def create_app(
                     filter_transcripts=payload.filter_transcripts,
                     history=list(payload.history),
                     document_context=document.context if document else None,
+                    retrieval_query=(document.retrieval_query(question) if document else None),
+                    coverage_warning=(document.coverage_warning if document else None),
+                    review_document=document,
                 )
                 for key in answer_keys:
                     yield _sse(
@@ -818,6 +980,12 @@ def create_app(
                         results,
                         url=url,
                         document_id=document.document.id if document else None,
+                        document_detail=document.detail() if document else None,
+                        document_sections_selected=(
+                            [section.index for section in document.selection.sections]
+                            if document
+                            else None
+                        ),
                     )
                     entries = append_entry(entry, history_path)
                 write_chat_html(entries, chat_html_path)

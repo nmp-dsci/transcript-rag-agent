@@ -130,7 +130,10 @@ Then measure retrieval and validate everything:
 ```bash
 uv run python -m src.cli eval-ablation                    # retrieval science (free, deterministic)
 uv run python -m src.cli index-contextual                 # build the Contextual Retrieval index
+uv run python -m src.cli index-themes                     # build the cross-video theme layer (RAPTOR level 2)
+uv run python -m src.cli index-conflicts                   # build the disagreement layer (where the corpus contradicts itself)
 uv run python -m src.cli eval-ablation --sweep extended   # + HyDE / multi-query / contextual columns
+uv run python -m src.cli eval-critique                    # held-out expert: criteria recall + provenance
 uv run pytest -q                                          # 700+ Python tests
 cd frontend && npm test                                   # frontend tests
 ```
@@ -157,9 +160,12 @@ cd frontend && npm test                                   # frontend tests
   local questions with subgraph + vector evidence, global questions over
   community summaries, and temporal questions as dated claim timelines.
 - **Evaluation:** a RAGAS judge that derives each score from its own persisted
-  intermediates, a golden set with chunk-level labels plus global/temporal
+  intermediates, a second `depth-v2` rubric that weights grounding at 40% against
+  five LLM-judged depth metrics at 60% (with a hard cap when faithfulness is
+  low), a golden set with chunk-level labels plus global/temporal
   question types, deterministic IR metrics (`recall@k`, `MRR`, `NDCG`), an
-  ablation harness, a head-to-head engine matrix (`eval-matrix`), an
+  ablation harness, a head-to-head engine matrix (`eval-matrix`), rubric
+  re-scoring of a committed run without re-running it (`rejudge`), an
   extraction-quality check, independent (non-DeepSeek) judging, and committed
   run snapshots gated in CI.
 
@@ -202,6 +208,7 @@ YT_AGENT_RAW_TRANSCRIPT_COLLECTION=raw_transcripts
 YT_AGENT_CHUNK_COLLECTION=transcript_chunks
 YT_AGENT_TRANSCRIPT_SUMMARY_COLLECTION=transcript_summaries
 YT_AGENT_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+YT_AGENT_EMBEDDING_DEVICE=cpu
 YT_AGENT_RAG_TOP_K=10
 YT_AGENT_TRANSCRIPT_FILTER_TOP_K=5
 YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE=0.25
@@ -240,6 +247,13 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 ```
 
 `SUPADATA_API_KEY` is used with the Supadata transcript API. DeepSeek is called through the OpenAI-compatible LangChain client.
+
+`YT_AGENT_EMBEDDING_DEVICE` pins the torch device for the embedding model and
+defaults to `cpu`. Left to its own devices, sentence-transformers selects MPS on
+Apple Silicon, where the first embed call never returns — it wedges inside the
+Metal driver, and under `serve` that hangs the whole process with the port still
+bound and the PID unkillable (`STAT UE`). Set `mps` or `cuda` to opt back into a
+GPU where one actually works.
 
 ### Retrieval strategy
 
@@ -282,6 +296,31 @@ mm:ss-mm:ss]`) prepended before embedding. Transcript chunks are conversational
 fragments that frequently lose their subject ("had. So, I'm going to just
 copy…"), and the header restores the context the speaker left implicit; the
 header is embedded but is not part of the text shown to the answering LLM.
+
+**Stored citations written before references were reconciled** carry a
+`chunk_index` the answering LLM invented. The model never sees a chunk index —
+the context header shows `video=<id>`, a `mm:ss` window and a timestamp URL — so
+it wrote down the only number it could see, the citation label, and the field
+meant "the third chunk of this answer" while claiming to mean "chunk 3 of this
+video". Both live paths reconcile against real chunks now; this repairs the
+history they were fixed too late for:
+
+```bash
+PYTHONPATH=. uv run python scripts/backfill_reference_chunk_index.py --check
+PYTHONPATH=. uv run python scripts/backfill_reference_chunk_index.py --apply
+```
+
+It re-resolves each citation by `(video_id, start_seconds)` against the live
+chunk store — the same rule the agentic path uses at answer time, and it works
+because `start_seconds` was copied or derived from what the model was *shown*.
+A citation that does not resolve within two seconds is left alone and reported,
+not snapped to the nearest chunk. Three things make the result checkable:
+`--check` reports zero wrong after a successful `--apply` and stays zero
+(the operation is idempotent); the writer refuses to save if any value other
+than a `chunk_index` inside a `references` list differs from what it loaded; and
+every reference with a positional label is cross-checked against
+`retrieved_chunk_ids[n-1]`, a route that shares no input with the timestamps, so
+a disagreement aborts the write rather than being resolved by guess.
 
 Supadata can return async jobs for longer videos. `SUPADATA_MAX_POLL_SECONDS=600` lets indexing wait up to 10 minutes for those jobs before timing out.
 
@@ -338,10 +377,85 @@ Three boundaries make this a measurement rather than a rewrite:
 - **Cached by chunk hash**, like graph extraction, so a re-run only pays for
   chunks whose text changed, and a failed chunk retries rather than being pinned.
 
-Both variants are also registered as setups — `rag_llm_hyde` and
-`rag_llm_contextual` — which answer identically to `rag_llm` and differ only in
+**Corpus-side — `--filter-transcripts`.** Route the question to whole *videos*
+before any chunk is searched: each video's LLM-written summary is embedded, the
+question is matched against those summaries, and only the videos above
+`YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE` (default 0.25, top
+`YT_AGENT_TRANSCRIPT_FILTER_TOP_K` = 5) have their chunks searched at all. The
+answer trace records which videos matched and with what score, so the routing
+decision is checkable rather than implicit.
+
+```bash
+uv run python -m src.cli rag-ask "..." --rag_llm --filter-transcripts
+```
+
+**The cap does not apply to a corpus-wide question.** `TOP_K` is a *budget*;
+`MIN_SCORE` is the relevance test. "What are the main themes across this
+corpus?" has no top five — the answer is the spread, and capping at five gives
+a confident answer about a fifth of the evidence. `src/rag/question_scope.py`
+detects corpus-wide phrasing with a deterministic lexical rule (no LLM on the
+retrieval hot path) and lifts the cap to the number of summarised videos,
+keeping `MIN_SCORE` doing the filtering. The trace records a `route` step naming
+the signal that fired, e.g. `matched 'corpus' — summary filter cap raised from
+5 to 68`. A false positive only removes a cap, so a specific question misread as
+corpus-wide degrades *towards* the unfiltered baseline rather than towards
+nonsense. Pass `corpus_wide_filter=False` to `MultiTranscriptRagContextProvider`
+to reproduce the pre-change behaviour for a controlled comparison.
+
+**Lifting the video cap makes breadth possible, not certain — and the second
+half is off by default.** Retrieval still returns `top_k` *chunks*, so an answer
+draws on at most `top_k` videos however many the filter admits. On
+`matrix-20260811-023531` (71 videos, 1792 chunks) the six corpus-wide golden
+questions went from 3.33 to 4.50 distinct videos per answer when the cap was
+lifted — still below the 5.00 of the unfiltered `rag_llm` baseline, with three
+of the six unmoved. `corpus_wide_max_per_video=N` on
+`MultiTranscriptRagContextProvider` caps how many chunks one video may
+contribute to the final `top_k` on a corpus-wide question: chunks the cap passes
+over are parked and backfilled if the selection would otherwise come up short,
+so every chunk that reaches the answer was still ranked by retrieval and the
+ranking order is preserved. It ships **off** (`0`), because a breadth gain
+bought by retrieving worse chunks is not a gain, and only the matrix can tell
+the two apart — read `source_breadth` (distinct videos per answer, computed from
+chunk ids with no model calls) next to `faithfulness` and `context_precision` on
+the same cells. The trace records a `Source diversity` step naming the cap, the
+videos kept, and the videos in the pool.
+
+**Both switches are part of the eval cache's identity.** Neither is a `Settings`
+field, so neither moves anything `cell_fingerprint` reads — the same class of
+defect as comparing a 38-video corpus against a 53-video one.
+`src/rag/question_scope.py` therefore declares the corpus-wide behaviours by
+name (`capped` → `budget` → `budget+diversity`) and a provider derives its own
+from its switches, so a matrix run scored under one behaviour can never be
+handed back for a run of another. The name enters the fingerprint only for the
+cells it can reach — a summary-filtered setup asked a corpus-wide question — so
+adding it invalidated six cells of a forty-cell run rather than all forty, and
+`capped` is omitted entirely so the pre-change arm of an A/B comes back from the
+cache for free. An unregistered name raises rather than hashing. The name is
+also recorded in every run's `config` block as `retrieval_behavior`.
+
+**It is not redundant with the reranker, and the trace proves which one does
+what.** Every retrieval step records its 30-candidate pool before reranking, so
+the two stages can be counted separately:
+
+| question | off-genre chunks in the pool | kept by the reranker | kept after routing |
+|---|---|---|---|
+| "how should I prepare for behavioural interview questions?" | 8 system-design | **3 of 8** | **0** (none reach the pool) |
+| "…my investment and portfolio experience in an interview?" | 3 property | **1 of 3** | **0** |
+
+Two things follow. On ordinary career questions no property chunk enters the
+pool at all — property and career sit far apart in embedding space, so
+first-stage search never surfaces one and *nothing* has to remove it. But when
+an off-genre chunk is a **near neighbour** — "interview" meaning a system-design
+interview, "portfolio" meaning a property portfolio — the reranker keeps it,
+because lexically it really is on topic. Routing is the only stage that
+excludes it, and near neighbours are exactly where the reranker is weakest.
+
+All three are registered as setups — `rag_llm_hyde`, `rag_llm_contextual` and
+`rag_llm_filtered` — which answer identically to `rag_llm` and differ only in
 the retrieval they read. That is what lets `eval-matrix` and the Scoreboard
-attribute a score gap to retrieval alone.
+attribute a score gap to retrieval alone. `rag_llm_filtered` in particular
+shares the baseline's provider, index and models outright: the only difference
+is the set of videos that provider is allowed to search.
 
 ### Reviewing a document you share
 
@@ -375,12 +489,68 @@ What the design commits to, and why:
   conversation about one document cannot quietly become about two.
 - **The fetched text never enters `chat_history.json`.** That file is
   committed; the document lives under gitignored `.yt-agent/documents/` and the
-  history holds only its id. Clearing the store loses the cards, not the
+  history holds only its id, plus two facts *about* the read (`document_detail`,
+  `document_sections_selected`). Clearing the store loses the cards, not the
   conversation.
-- **Partial reads are labelled.** A page over the fetch cap, or a document too
-  long for the context budget, says so in the card *and* in the model's own
-  context — a review of 6 of 40 sections must not read as a review of the
-  document.
+
+  **Know the limit of that split.** It keeps the *extraction* out of the tracked
+  file — not every trace of the document. The answer quotes the phrases it
+  critiques, and the question contains the URL, so both land in
+  `chat_history.json` and in `dashboard/chat.html`. That is fine for a public
+  portfolio and is the point for a demo. For the private resume this feature is
+  pitched at, quoted lines of your employment history would be committed along
+  with the review. If that matters to you, review private documents in a
+  checkout you do not commit, or delete the entry before committing —
+  `create_app(history_path=...)` and `run_session(history_path=...)` both take a
+  path outside the repo, though no CLI flag exposes it yet.
+- **The card always states how much was read.** Every review card carries a
+  selection line — `whole document — all 9 sections in context`, or the narrowed
+  equivalent — and the entry records it alongside the document id, so a reopened
+  conversation reports what that answer actually saw rather than re-deriving it.
+  A page over the fetch cap, or a document too long for the context budget, says
+  so in the card *and* in the model's own context: a review of 6 of 40 sections
+  must not read as a review of the document.
+- **The URL is not what the corpus is searched with.** A URL matches no
+  transcript and dilutes the words that would, so it is stripped from the
+  retrieval query while the answering prompt keeps your original wording.
+- **A document with no question is retrieved on its *kind*, not its subject.**
+  `review this: <url>` leaves nothing to search on, and it is the shortest thing
+  anyone can type, so this path decides whether the feature works. The obvious
+  fallback — search for what the document is about — is wrong and measurably so.
+  A portfolio's headings are its project names, so it retrieved transcripts
+  about building those projects: **0 of the top 30 chunks were about hiring or
+  portfolios**, and the review was grounded in criteria that had nothing to do
+  with reviewing anything.
+
+  So `classify_document()` names the kind (`resume`, `portfolio`, `profile`,
+  `cover_letter`, else `document`) from the title, headings and host, and
+  `REVIEW_INTENT_QUERIES` turns that into the criteria query for that kind —
+  "how to present engineering projects on a personal portfolio site so
+  recruiters take them seriously…". Same page, same three words typed: **29 of
+  the top 30 chunks are now hiring/portfolio material.** Subject matter answers
+  "what is this document"; a review needs "what should this be judged against",
+  and those have different answers.
+
+  Classification reads what a document *calls itself*, never what it mentions —
+  headings and title for resume signals, opening and sign-off for a cover
+  letter — so a blog post about resumes is not a resume and a portfolio quoting
+  "Sincerely, Priya" is not a cover letter.
+- **An unrecognised kind says so.** Every kind above is a career document,
+  because that is what the corpus holds. A wedding invitation still retrieves
+  ten chunks — they are simply the closest career advice in the store. So
+  `corpus_coverage_warning()` fires for kind `document`, and it lands in three
+  places: the first step of the trace (`route · Corpus coverage`), the model's
+  own context, and a prompt rule requiring the answer to open with it and to
+  flag per-point when a citation is the nearest thing rather than a real
+  criterion. Reviewing an invitation half against resume advice is fine; doing
+  it silently is not.
+- **The answering prompt changes with the subject.** A review runs
+  `DOC_REVIEW_SYSTEM_PROMPT` *and* `DOC_REVIEW_USER_PROMPT` (both on the Prompts
+  tab). The ordinary RAG user template tells the model to answer "using only the
+  retrieved transcript chunks", which is the wrong instruction when the subject
+  is your document; the review template instead asks for every point to be
+  grounded twice — a `[§N]` naming the section and a `[N]` for the corpus
+  recommendation that makes it worth changing.
 
 Fetching a user-supplied URL is a server-side request forgery primitive, so
 `src/documents/fetch.py` bounds it on five axes: `http(s)` only, every resolved
@@ -433,6 +603,7 @@ The ask flow has three prompts:
      [4] graph_rag (knowledge graph) — Routes local/global/temporal, answers over the Neo4j entity/claim graph. Requires index-graph.
      [5] rag_llm (HyDE)              — Single-hop, but retrieval embeds an LLM-written hypothetical answer instead of the question.
      [6] rag_llm (contextual)        — Single-hop over the Contextual Retrieval index. Requires index-contextual.
+     [7] rag_llm (summary-filtered)  — Single-hop, but the question is routed to whole videos by their per-video summary first.
      [a] all (compare every setup)
    Choose setup(s) (e.g. 1,3 or a; blank to cancel):
    ```
@@ -551,7 +722,7 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   grid underneath. "Compare N more setups" runs the remaining ones into the
   *same* history entry so the scoreboard sees them as competing answers. Esc
   cancels a running ask.
-- **RAG Pipeline** (formerly **Library**) — two sub-tabs. **Corpus &
+- **RAG Pipeline** (formerly **Library**) — four sub-tabs. **Corpus &
   retrieval** opens on a summary strip of derived insights — e.g. one channel
   holding over half the corpus's chunks (skews whole-corpus retrieval toward
   it), videos with no transcript summary (invisible to the summary filter), or
@@ -598,14 +769,52 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   wheel-to-zoom toward the cursor, drag-to-pan, double-click-to-zoom, and
   +/−/reset buttons for reaching a dense cluster or a touch/no-wheel input —
   panning past a small pixel threshold suppresses the click that would
-  otherwise select the node under the pointer on release.
+  otherwise select the node under the pointer on release. **Themes** is
+  RAPTOR level 2: clusters built over chunk embeddings from the *whole corpus
+  at once*, so one theme can hold the same argument from creators who have
+  never heard of each other — something the per-video summaries one level down
+  cannot produce, because their unit is the video. Each theme lists the videos
+  and creators it spans, then its member chunks grouped by video; clicking a
+  member opens its transcript text and a deep link into that video at the
+  timestamp. Themes that span two or more videos sort first and a single-video
+  theme is labelled as such rather than hidden — that is precisely the case
+  where this layer adds nothing over level 1. Built by `index-themes` and
+  served by `GET /api/themes` and `GET /api/themes/{theme_id}`.
+  **Disagreements** is the layer that refuses to blend: pairs of claims from
+  different creators about the same subject, each put to one test — *could one
+  person hold both of these views?* — and only the ones where they could not are
+  here. Each card is an axis stated as a question and two sides in equal
+  columns, with each side's verbatim quote cut from the stored transcript and a
+  deep link to the second it was said. There is no winner anywhere, in the
+  layout or in the payload. The header carries the count *with its denominator*
+  (7 disagreements out of 710 candidate pairs, each looked at 9 times) and the
+  calibration probes, because a conflict count is only worth reading beside
+  evidence that the adjudicator which produced it could still say
+  "complementary" that day. Every card also carries its own vote — "agreed 3/3
+  looks" or "split — only 2 of 3 looks" — because the judge does not agree with
+  itself and those are different claims; and a factual contradiction is labelled
+  as one rather than dressed as a matter of taste.
+  Built by `index-conflicts` and served by `GET /api/conflicts`.
 - **Scoreboard** — the leaderboard for one **committed matrix run**: every setup
   answering the *same* golden questions under one recorded config, graded by one
   judge. A run picker selects which committed `matrix-*.json` to rank (newest by
-  default), so an older run stays available for comparison. Rows are groupable by
+  default), so an older run stays available for comparison; each option is
+  labelled with the **rubric** that composited it (`ragas-v1` or `depth-v2`),
+  because two runs over identical answers can rank the setups differently purely
+  by rubric. Rows are groupable by
   **setup × answering model** so scores from different model versions are never
-  silently averaged, and each shows average score per RAGAS metric, composite,
-  win rate, latency, and token estimate. An **efficiency panel** ranks setups
+  silently averaged, and each shows average score per metric of the run's rubric,
+  composite, win rate, latency, and token estimate — plus `capped` / `ungrounded`
+  badges where the rubric's faithfulness cap decided a row's answers or its
+  grounding floor was breached. A **self-graded** warning sits above the table
+  whenever the answering model also judged, and a coverage note states any cells
+  the rubric could not score. A **Rubric** panel
+  underneath turns the table on its side: one row per metric with the weight it
+  carries, banded into `grounding (40%)` and `depth (60%)` under `depth-v2`, or
+  three ungrouped rows under `ragas-v1`. Expanding a cell in the **Answers**
+  panel shows the cap reason and the judge's one-sentence rationale per depth
+  metric as readable text. See [4d](#4d-rejudging-a-run-under-a-different-rubric-depth-v2)
+  for the rubric itself. An **efficiency panel** ranks setups
   by composite score per 1k tokens, so a setup spending more to score lower is
   visible rather than merely "slower". A judge filter keeps self-graded and
   independently-graded runs apart, and a provenance bar states the judge model,
@@ -713,7 +922,7 @@ Endpoints (JSON unless noted):
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
-| `/api/setups` | GET | The four RAG setup descriptors |
+| `/api/setups` | GET | The RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
 | `/api/prompts` | GET | The live prompt registry, grouped by system |
 | `/api/system-design` | GET | The System Design graph: nodes, edges, and each node's prompts, live config, and (for answer paths) its `flow` steps |
@@ -771,6 +980,11 @@ the workbench renders them when a metric bar is clicked:
 - **context precision** — a usefulness verdict per retrieved chunk in rank
   order. Score is average precision, so a useful chunk ranked low costs more
   than one ranked high.
+
+The five `depth-v2` metrics are judged rather than derived — one structured
+call per answer returns a 0-1 score and a one-sentence rationale each, and the
+rationale is persisted in the same `details` shape, so the Answers panel
+explains a depth score the way the drawer explains a RAGAS one.
 
 Scores are computed *from* these intermediates rather than captured alongside
 them, so a breakdown can never disagree with the number above it. Evaluations
@@ -834,6 +1048,106 @@ columns call an LLM once per question (cached per question, so a repeat is free
 and returns the identical retrieval), and the contextual columns read the index
 `index-contextual` built. Both sweeps lead with the same `semantic` baseline, so
 their deltas can be read side by side.
+
+**Held-out critique eval.** `eval-critique` measures the claim the rest of the
+project rests on: *can the distilled corpus reach a named expert's conclusions
+without having read that expert.* One video — a resume teardown — is held out of
+**every** retrieval path, the system reviews a document with the remaining
+corpus, and its findings are scored against the criteria that expert applies:
+
+```bash
+uv run python -m src.cli eval-critique                              # baseline: the summary-filtered chunk dump
+uv run python -m src.cli eval-critique --setups rag_llm_filtered,rag_llm   # compare setups, baseline first
+uv run python -m src.cli eval-critique --setups rag_llm_filtered,rubric_packs  # chunk dump vs the rubric-driven reviewer
+uv run python -m src.cli eval-critique --repeats 7                  # more matcher votes, narrower spread
+```
+
+The setups the harness knows: `rag_llm_filtered` (the summary-filtered chunk
+dump, and the baseline every other row is subtracted from), `rag_conflict_aware`
+(the same retrieval with both sides of a known disagreement appended), and
+`rubric_packs` — the rubric-driven reviewer, which runs **no retrieval at review
+time** and instead walks the shipped expert packs rubric by rubric. Only rubrics
+it failed the document on, against a named section, become findings; a pack
+turned wholesale into findings is the padding attack `KNOWN_GAP_attack2.md`
+documents, not a review. The panel prints each row's recall gap against the
+baseline and marks it "within noise" when the gap is smaller than the matcher's
+own range — the comparison is published whichever way it falls.
+
+The ground truth is `src/evals/critique_dataset.json`: the general, checkable
+rules behind the reviewer's specific criticisms ("release-cadence claims need
+numbers", not "this bullet is vague"), each with the timestamp and verbatim
+quote it came from. Every quote is verified against the transcript before a run
+starts, so the dataset has to pass the bar it sets.
+
+Four metrics, reported side by side with **no composite** — they trade against
+each other, and a blend is what lets a run look better while getting worse:
+
+| metric | what it counts |
+| --- | --- |
+| `criteria_recall` | held-out criteria the system reached, counting only findings backed by corpus evidence **no other finding also claims** and **that finding's own reasoning retrieved** |
+| `evidence_precision` | findings resting on that exclusive, own-retrieval evidence |
+| `provenance` | cited timestamps whose quoted words really are in the transcript |
+| `contested_coverage` | of the disagreements the corpus contains **and this run had both sides of in context**, how many the findings named instead of averaging away — `—` when the context held none |
+
+**The grounding gate, and which arms it can grade.** Requiring exclusive
+evidence killed one padding attack; it did not kill the one that gives each
+recited finding its *own distinct* real chunk, which scored `evidence_precision
+1.000` and a recall ceiling of 0.526 against the baseline's 0.364 and 0.158. So
+since 2026-08-11 a citation grounds a finding only when the chunk it resolves to
+is one **that finding's own reasoning retrieved** (`grounding_gate:
+retrieval_provenance`, recorded on every cell and every run). A rubric knows this
+— it is distilled from one pack unit — so every pack arm keeps its published
+numbers unchanged. A chunk-dump critique does not: one call, one shared pool,
+every finding out of it. Those arms are now **ungraded** (`—`, not `0.000`) on
+`criteria_recall` and `evidence_precision`, with `criteria_recall_ungated` kept
+beside them so the published series stays readable. What the gate still does not
+catch, and what `criteria_recall` certifies today, is in
+`src/evals/KNOWN_GAP_attack2.md`.
+
+A run also carries **`fabricated_citations`** at the top level: cited quotes
+that are not in the transcript at the timestamp cited. This is not a metric, it
+is an incident log, and it exists because one fired. A baseline run of this
+harness cited a fluent, correctly-attributed sentence — *"skill is not equal to
+subject. In your skill section in resume don't write things like machine
+learning or statistics under skills"* — that **the speaker never said**; it
+matched the transcript at that timestamp at 0.41 and a `difflib` ratio caught it
+with nobody reading anything. That is the failure this whole project is built to
+prevent, caught live and in public. The run it came from was regenerated rather
+than committed, because a committed artifact must not fail the repo's own
+standing provenance gate — but a single `resolved: false` buried in the eighth
+element of a nested array is how an incident like that stops being visible, so
+it is now hoisted to the top of the run and onto the card.
+
+Three of the four are pure string and id arithmetic — no judge, no API key.
+Criteria matching is semantic and could not be made deterministic (the local
+bi-encoder cannot tell a restatement of a rule from a different rule about the
+same subject), so it is an LLM call repeated five times and resolved by
+per-criterion majority vote; the run reports the **spread across those repeats**
+beside the score, and the pairing is cached under `.yt-agent/critique_cache/` so
+a re-run over an unchanged matrix is free and returns the identical number. Cost
+is two calls per setup plus the vote — cheap enough to re-run rather than cite.
+
+Exclusion is enforced on all four retrieval surfaces (vector `$nin`, the BM25
+pool the context provider fetches itself, the summary router that picks which
+videos are searched at all, and the graph's Cypher), and then **checked again
+afterwards** by a scan for the held-out video across every retrieved chunk id and
+every citation. That count is a field in the run file, so the guarantee is read
+out of committed JSON rather than taken on trust; `tests/evals/test_committed_runs.py`
+re-derives it in CI with no corpus and no key. The results render in the
+workbench **Experiments** tab, where expanding the row lists every criterion —
+reached or missed — with a link into the held-out video at the second it was
+said.
+
+The vote itself is published too, because a recall of `0.000` has two entirely
+different causes and the score cannot tell them apart. Any row whose matcher
+paired a criterion on some repeats and lost the majority says **“N pairings
+outvoted”** beside the number, before anything is expanded; the expanded row
+carries a **matcher ballots** section listing, for every criterion at least one
+repeat paired, what each repeat voted, what consensus did with it, and — for a
+non-baseline arm — what the baseline's matcher made of that same criterion. On
+the committed `rubric_packs` arm that is the whole story of its zero: two of
+five repeats paired `c05` and `c16` with pack rubrics and `None` took the other
+three, while the baseline's looser phrasing took `c05` unanimously.
 
 `--top-k N` overrides the final chunk count each configuration retrieves
 (default `YT_AGENT_RAG_TOP_K`). The committed results render in the workbench
@@ -899,6 +1213,18 @@ Force a full transcript refresh and rebuild chunks:
 ```bash
 uv run python -m src.cli index-rag "$url" --refresh
 ```
+
+A refresh **replaces** the video's chunks rather than upserting over them. Chunk
+ids are positional (`chunk:<video>:<n>`), so re-chunking a video to a smaller
+count used to overwrite `0…n-1` and leave the previous run's tail behind —
+still indexed, still retrievable, still answering with text no longer in the
+transcript. `index-rag` now prints `Removed stale chunks: …` when a re-index
+drops any, and silence means nothing was dropped. A rebuild that produces *zero*
+chunks is treated as a suspect fetch and leaves the existing index alone;
+removing a video is an explicit operation, not a side effect of re-indexing it.
+`index-contextual` mirrors the same rule for the parallel contextual collection
+(a full pass replaces, a `--max-chunks` smoke pass upserts, because it reads
+only a prefix of the corpus).
 
 Bulk-index the most recent videos from a YouTube channel via Supadata discovery:
 
@@ -1048,6 +1374,16 @@ uv run python -m src.cli rag-ask "$question" --rag_agent --max-iterations 8
 
 The agent inherits `--url`, `--filter-transcripts`, and `--top-k` for every retrieval call; only the query string changes per iteration.
 
+**Citation numbering runs on across the whole answer.** Each tool call used to
+format its own results from `[1]`, so a three-retrieval answer contained three
+different chunks all labelled `[1]` and a reader following a citation could not
+tell which was meant. One `ChunkLabeller` per answer now assigns each distinct
+chunk a number the first time it is seen and returns the same number on every
+later sighting, so a label names exactly one chunk and a chunk carries exactly
+one label even when two overlapping queries both retrieve it. Because the
+labeller and the context merge deduplicate on the same key in the same order,
+`[n]` is also the *n*-th chunk of the merged context.
+
 Agentic RAG flags (`--rag_llm`, `--rag_agent`, and `--graph_rag` are mutually exclusive):
 
 - `--rag_agent` — use the agentic LangGraph RAG agent (`rag_agent`) instead of the pipeline agent (`rag_llm`).
@@ -1102,6 +1438,243 @@ sort on `upload_date`. Communities are detected with Leiden (igraph) and
 summarized up-front (Full GraphRAG — the whole-corpus bill is cents). Python
 deps: `neo4j` (the Bolt driver) and `python-igraph` (Leiden), both installed
 by `uv sync`.
+
+**Cross-video themes (RAPTOR level 2).**
+
+```bash
+uv run python -m src.cli index-themes             # cluster every chunk embedding, then 1 LLM call per theme
+uv run python -m src.cli index-themes --dry-run   # cluster and print the numbers only — no LLM calls, nothing written
+uv run python -m src.cli index-themes --excerpts 8   # fewer excerpts per summarization call
+```
+
+The corpus already had level 0 (chunks) and level 1 (one summary per video).
+Level 1 can never say anything a single video does not, because its unit *is*
+the video. `index-themes` adds level 2: it clusters the **stored** chunk
+embeddings — nothing is re-embedded, so clustering is free — across every video
+at once, then spends exactly one DeepSeek call per cluster to name the theme.
+
+Following RAPTOR: PCA, then a Gaussian mixture whose component count is chosen
+by BIC, with soft assignment (a chunk can belong to two themes), done twice —
+once globally, then again inside each global cluster, which is what turns a
+handful of subject-sized blobs into themes at a readable grain. Everything is
+seeded and the chunk order is fixed before fitting, so the same corpus produces
+the same theme layer on a re-run. Output is one derived JSON artifact at
+`.yt-agent/themes.json` (`YT_AGENT_THEME_PATH`) holding chunk **ids** only —
+member text and timestamps are hydrated from the chunk collection on read, so a
+re-chunked corpus can never leave stale quotes in the file.
+
+`--dry-run` is worth knowing: the numbers that decide whether this layer earns
+its place — how many themes there are and how many span more than one video —
+are settled by the clustering alone, so they can be checked before any LLM call
+is paid for. On the 53-video / 1329-chunk corpus it reports 30 themes, 24 of
+them spanning 2+ videos (widest: 17 videos / 13 creators), all 53 videos
+covered — including the three property videos that have chunks but no per-video
+summary, and are therefore invisible to level 1 entirely.
+
+**Disagreements (the conflict layer).**
+
+```bash
+uv run python -m src.cli index-conflicts                # probes, then three adjudications per candidate pair
+uv run python -m src.cli index-conflicts --dry-run      # candidate pairs only — deterministic, no LLM calls
+uv run python -m src.cli index-conflicts --probes-only  # calibrate the adjudicator before paying for the sweep
+uv run python -m src.cli index-conflicts --probe-repeats 3      # turn each probe's tick into a rate
+uv run python -m src.cli index-conflicts --adjudicate-repeats 5 # more looks per pair; must stay odd
+uv run python -m src.cli index-conflicts --resume-key aug11    # cache each (pair, look) so a kill resumes
+```
+
+Every other layer here pushes the corpus towards *one* answer: retrieval picks
+the closest chunks, a theme gets one summary, the chat tab produces one
+paragraph. Where two creators genuinely disagree, all three blend them — and the
+blend reads fluently while hiding that a choice was made on the reader's behalf.
+This layer finds those disagreements and keeps them apart. A conflict has two
+sides, an **axis** (the one question the two answer differently) and, by
+construction, no winner field for anything downstream to render.
+
+The test that decides what counts is **"could one person hold all of these
+views?"** If yes it is complementary detail — two people describing different
+parts of the same elephant — and dressing it as a conflict is a lie about the
+corpus. The failure mode here is not missing a conflict, it is *inventing* one,
+because a reader who has not watched the videos cannot detect a manufactured
+disagreement and it would poison every downstream use of the layer. So the
+adjudicator is prompted to default to complementary and must state the single
+question the two sides answer differently before it may say conflict, and five
+**calibration probes** ship inside the artifact: two planted contradictions that
+must surface and three complementary pairs that must not, including two that are
+deliberately about the same subject — the shape a bi-encoder ranks first and a
+lazy adjudicator calls a fight.
+
+**The judge does not agree with itself, so it is asked nine times.** Every
+corpus pair is adjudicated `--adjudicate-repeats` times (9 by default, odd so a
+strict majority always exists) and carries only on that majority; the tally
+ships on the record and on the card, so 6/9 and 9/9 are visibly different
+claims. This is the single most important thing in the layer and it was missing
+from the first build: the *probes* were repeated — the docstring for `run_probes`
+has always said "a single pass proves nothing about the next one" — while every
+card that shipped rested on one draw. Re-running that build's four cards three
+times each drew **1/3, 2/3, 3/3, 1/3**: three of the four were coin flips near
+the threshold and only one reproduced. The calibration strip had been certifying
+a stability the cards were never tested for.
+
+**More looks shrink that error; they cannot remove it.** Two voted builds a few
+hours apart, with identical code, identical settings and — candidate generation
+being deterministic and the claim set unchanged at 6196 — the **same 478 pairs**,
+returned **4 disagreements and then 2**, with two cards moving 3/3 to 0/3. That
+was not corpus drift: the corpus did grow between them, from 1372 to 1460
+chunks, but the added chunks had no cached extraction and so contributed no
+claims and no pairs. It was the judge.
+
+An earlier version of this section claimed that spread was **irreducible** —
+that the run-to-run error on the count fell only from 1.1 at three looks to 0.7
+at twenty-one, so paying for more looks was near-pointless. **That claim is
+withdrawn.** It came from plugging `p̂ = votes/3` into the majority probability,
+and at three looks that estimator can only place a pair at 0, 1/3, 2/3 or 1 —
+the two ends contribute no variance, so the curve collapses to
+`0.4382 * sqrt(pairs that split)` whatever the corpus is. In simulation,
+three-look data reports the *same* 4.3× fall from r=3 to r=45 whether the truth
+genuinely plateaus (1.3×) or collapses to nothing (a factor of 10⁸). It could
+not have distinguished those cases, so it was never evidence for either. Nine
+looks can distinguish them — the same simulation recovers 76×, 3.9× and 2.0× —
+which is the substantive reason to pay for them.
+
+**Measured at nine looks, the spread falls but does not collapse: 1.90 at three,
+1.37 at nine, 1.01 at twenty-one, 0.77 at forty-five — a 2.5× fall.** Against
+the calibration above that is the *wide ambiguous band* case: this corpus holds
+a real population of pairs the adjudicator genuinely cannot settle (20 of 710
+sit between 2/9 and 7/9), not a handful of coin flips and not a spread that
+vanishes with spending. So more looks do help — the earlier "irreducible" claim
+was wrong — but they help slowly, and no affordable repeat count reduces the
+error on the count below about ±1. The model-free version agrees: splitting this
+run's nine looks into three disjoint three-look sub-runs yields **7, 6 and 10**
+disagreements from identical data.
+
+**Both of those figures are lower bounds.** The modelled spread and the
+model-free sub-runs are computed from a single run's draws, so each measures how
+far the count moves when the judge is asked again *inside one build*; neither can
+see anything that differs between builds. The 4-then-2 pair says something does.
+Under the independent-looks model both estimators assume, one card going 3/3 and
+then 0/3 has probability `p³(1−p)³`, at most `1/64`, so two cards doing it is
+about `2×10⁻⁴` — an observation that unlikely under a model is evidence against
+the model, not a run of bad luck. What it points at is a between-run component —
+judge version, serving stack, or state carried across builds — that repeating
+inside one run cannot sample. So `1.90 → 0.77` is a floor under the spread a
+reader comparing two artifacts cares about, not an estimate of it. Measuring
+that one means building twice and matching the two `vote_ledger`s pair by pair,
+which is the other thing the ledger is on the record for.
+
+One metric to distrust: `verdict_agreement` (0.814 here) counts *any* pair whose
+verdicts differed, and of the 132 that did, **99 flapped only between
+`complementary` and `unrelated`** — verdicts that can never change the count.
+Only 33 ever crossed the conflict boundary. The `vote_ledger` makes that
+computable; the agreement figure alone badly overstates how unstable the count
+is. Nine also does two things three cannot: at three
+looks the smallest majority (2/3) *is* the firm band, so a certainty and a coin
+flip are the same number, while at nine a pair the judge is sure of clears 6/9
+essentially always and a coin flip clears it a quarter of the time; and nine
+splits into three disjoint groups of three, so **one run reports what three
+independent three-look builds of the same data would have said**. That is the
+4-then-2 discrepancy measured inside a single run rather than across two.
+
+So the count ships as a distribution, not a number. `firm_conflicts` is what the
+layer is actually asserting, `undecided_pairs` counts the pairs sitting where
+the majority rule is a coin toss, `count_sd_estimate` is the modelled spread,
+`vote_histogram` is the shape the count was drawn from, and
+`subsample_counts_at_3` is the directly measured version of the same thing. The
+view prints the headline as `N ± sd` with the firm subset beside it, and every
+card carries how many looks backed it. The artifact also pins the **corpus it
+was taken over** — video count, chunk count and a digest over chunk id and text
+— because this corpus grew 1372 → 1460 → 1736 chunks in a single afternoon from
+ingests outside this layer, and two counts taken hours apart are only comparable
+if the population underneath them held still.
+
+Two further gates exist because of what got through without them. A quote must
+be a **statement**, not a question (`states_a_position`): a card once shipped on
+*"like what is a technology free domain model?"* — eight words, resolving at
+1.0, stating nothing, from a speaker who does hold the position but not in that
+span. And `MIN_QUOTE_WORDS` is 10 rather than 8, because eight is short enough
+for a fragment to clear it by accident.
+
+**Axes and facts are different objects.** "Should you keep a skills section?"
+has two defensible answers and belongs in two equal columns; "how long does a
+recruiter spend on a resume?" has one, and 6 seconds against 20 seconds is not a
+matter of perspective. `Conflict.kind` separates them and the view renders a
+factual contradiction with a warning rather than even-handed framing. Neither
+names a winner — this layer can check a claim against the corpus and not against
+the world.
+
+Candidates are generated over **claims** (one declarative sentence each, from
+the cached GraphRAG extractions), not chunks or communities. Negation barely
+moves a bi-encoder, which is a liability everywhere else in this repo and
+exactly the property a conflict finder wants from its candidate generator. Pairs
+are cross-video and, by default, cross-**channel** (named for what it measures:
+a guest in a cold-open montage is attributed to the channel owner, so "different
+creators" would be a stronger claim than the field supports); capped at two per
+chunk and
+twelve per video pair, because the highest-cosine pairs in this corpus are
+*restatements* — six creators saying "keep your resume to one page" produced 24
+of the top 40 candidates on the first sweep — and without the cap one popular
+piece of advice takes the whole budget.
+
+Nothing model-supplied is trusted for identity. The adjudicator returns a quote;
+`verbatim_span` then locates it **inside the stored chunk text** and the quote
+that ships is the corpus's own words, cut from the store. That matters here for
+a specific reason: this corpus's ASR renders "write skew" as "right skew"
+throughout, and a model quoting from understanding rather than from the page
+silently corrects it and produces a quote that resolves against nothing.
+
+Two mechanisms stop the count being gamed by emitting more. A chunk backs **at
+most one** conflict, so two conflicts resting on the same pair of chunks are the
+same conflict said twice and the second is dropped — the count is bounded by how
+much distinct transcript the corpus holds, not by how talkative the adjudicator
+is. And the headline ratio is a **precision**, conflicts over candidates
+*adjudicated*, so widening the net drives it down; there is deliberately no
+metric here that rises when more candidates are proposed.
+
+Output is one derived JSON artifact at `.yt-agent/conflicts.json`
+(`YT_AGENT_CONFLICT_PATH`), served by `GET /api/conflicts` and rendered by the
+**Disagreements** sub-tab under RAG Pipeline. On the **71-video / 1792-chunk**
+corpus (digest `00813df8fadc5f4f`, every chunk carrying a cached extraction):
+8599 claims, **710 candidate pairs** — the whole eligible pool, with
+`--max-candidates` raised to 1000 so the budget stays above it and nothing is
+excluded by spend — × 9 looks = **6390 adjudications**, yielding **7
+disagreements, 6 of them firm**, across 13 channels and 13 videos, every quote
+resolving at 100% against the store, zero call failures. Precision 0.0099. 675
+pairs were complementary or unrelated on every one of nine looks, 27 more drew a
+conflict verdict that did not carry, and **nothing was dropped for an unstated
+axis, an unresolvable quote or a quote that was not a statement**.
+
+The cards span the corpus rather than one corner of it: resume body font size
+(9/9), skills-section placement (8/9), keywords against full-sentence
+qualifications (7/9, factual), whether "non-functional requirements" is a useful
+category (7/9), applying to postings against targeting companies directly
+(7/9), Brisbane's vacancy rate (6/9, factual), and one split card at 5/9 on
+whether "what is the most annoying part of your job" is a good project-finding
+question.
+
+**What moved the count from 2 to 7 was coverage, not tuning.** The previous
+build ran over 59 videos with 6 of them contributing no claims at all, because
+they had no cached GraphRAG extraction — and those 6 were the 2026 job-search
+and LLM-evaluation talks, which is exactly where contradictory advice lives.
+Backfilling extractions (plain JSON keyed on chunk id plus text hash, written by
+`GraphExtractor`, needing **no Neo4j** — unlike full `index-graph`, whose extra
+step upserts into the graph) took the pool from 6196 claims / 478 pairs to 8599
+/ 710. The adjudicator, the prompt, the firm threshold and `max_per_chunk` are
+all unchanged. The tell that this is real signal rather than a wider net is
+`conflict_precision`, which is conflicts over pairs *adjudicated* and so falls
+when the net widens: it went **up**, 0.004 → 0.0099. The added material is
+denser in genuine disagreement than the material that was already there.
+
+A nine-look sweep is thousands of calls over more than an hour, and the artifact
+is written only at the end — three earlier attempts died with nothing to show,
+two killed part-way (at 4400/4896 and 1550/6390 calls) and one blocked by a
+`402 Insufficient Balance`. `--resume-key NAME` now caches every *(pair, look)*
+so a killed sweep resumes instead of restarting. **The look index is part of the
+cache key**, and that is the whole design: keyed on the pair alone, one verdict
+would be served to all nine looks and the vote would silently collapse to
+unanimous — the failure this layer exists to prevent. Reuse a key to resume a
+run; use a **new** key to measure again, since replaying the first run's answers
+would manufacture agreement between two runs that never independently happened.
+A failed call is never cached, so a provider outage cannot be pinned into the
+record as a verdict.
 
 **Contextual Retrieval index.**
 
@@ -1159,7 +1732,10 @@ RAGAS sub-calls per metric, per engine, per question — so re-running
 engines that were already there. Each `(engine, question)` cell is cached
 under a fingerprint of the question plus the exact answering/judging
 configuration (`src/evals/matrix_cache.py`): the answer model, embedding
-model, retrieval mode, `top_k`, rerank config, and the judge model + RAGAS
+model, retrieval mode, `top_k`, rerank config, **a digest of the corpus itself**
+(the video-id set plus the chunk count — a RAG score is a function of what the
+store contained, so a cell scored before an ingestion is not a valid answer for
+the same question after one), and the judge model + RAGAS
 version — plus the settings the answering engine itself reads, scoped to the
 engines that read them (the recursion budget for `rag_llm_recursive`, the
 iteration cap for `rag_agent`, retrieval breadth for all of them), so tuning
@@ -1177,8 +1753,8 @@ uv run python -m src.cli eval-matrix --no-judge --no-reference-metrics  # determ
 ```
 
 A **cell** is one `(setup, question)` pair, and it is the expensive unit: every
-cell costs an answer call plus the judge's several sub-calls, so six setups over
-twenty questions is 120 cells and roughly 16 LLM calls each. `--questions`
+cell costs an answer call plus the judge's several sub-calls, so seven setups
+over twenty questions is 140 cells and roughly 16 LLM calls each. `--questions`
 trades coverage for turnaround by naming the sample to score; the ids land in
 the run's `question_ids`, because a sampled run is a *different measurement*
 from a whole-set one and comparing the two without knowing the sample is how
@@ -1216,6 +1792,104 @@ starting a competing one, since two concurrent sweeps would contend on the
 one cell cache and stand up a second agent/judge stack against one Chroma
 path.
 
+#### 4d. Rejudging a run under a different rubric (`depth-v2`)
+
+The three RAGAS metrics all measure **grounding**, so the `ragas-v1` composite
+(their mean) has a blind spot: a faithful one-chunk restatement scores near
+1.0, while an answer that synthesises four creators can score lower. Nothing in
+that composite rewards depth, so the judge cannot see the quality this corpus
+exists to produce.
+
+`depth-v2` is a second rubric, live alongside the first. It keeps the same
+grounding metrics at **40%** of the composite and spends the other **60%** on
+five LLM-judged depth metrics:
+
+| group | metric | weight | what it asks |
+| --- | --- | --- | --- |
+| grounding (40%) | `faithfulness` | 20% | is the answer supported by the retrieved chunks? |
+| | `context_precision` | 10% | were the retrieved chunks useful, in rank order? |
+| | `answer_relevancy` | 10% | does it address the question asked? |
+| depth (60%) | `insight_depth` | 20% | does it synthesise across sources, or restate one? |
+| | `specificity` | 15% | named schemes, figures and dates, or generic advice? |
+| | `coverage` | 10% | how much of what the context offers does it use? |
+| | `evidence_breadth` | 10% | how many distinct sources/speakers, attributed? |
+| | `calibration` | 5% | does confidence match the evidence behind it? |
+
+The composite is the weighted sum, then a **hard cap**: if `faithfulness < 0.6`
+the composite is capped at `0.5`. Depth cannot rescue an ungrounded answer.
+
+Two facts are recorded separately, because collapsing them hides the worst
+answers. `grounding_floor_breached` is true whenever faithfulness came in below
+the floor **or could not be scored at all**; `cap_applied` is true only where
+the cap actually *lowered* the number. An answer with faithfulness 0.00 breaches
+the floor but already scores under the cap, so a `capped` badge alone would mean
+"ungrounded *and* otherwise good" while the flatly ungrounded answer beside it
+looked clean. The UI badges both, and `cap_reason` / `grounding_reason` state
+which in a sentence.
+
+An **unverifiable** faithfulness is a breach, not a gap. Every other metric
+renormalises out of the composite when its judge call fails — that is missing
+data, not a zero — but faithfulness is the metric the cap keys on, so
+renormalising it away would remove the score *and* the check on it, letting an
+answer whose grounding call errored composite to 1.00 with the cap structurally
+unable to fire. It is capped with an honest reason instead.
+
+The five depth metrics come from **one structured call per answer** (not five),
+each returning a 0–1 score and a one-sentence rationale that is persisted in the
+same `details` shape the RAGAS metrics use — so the Answers panel can explain
+every score.
+
+Judging is independent of generation, so a new rubric does not need the matrix
+re-run. `rejudge` reads a committed run, **reuses its stored answers and its
+stored faithfulness / answer_relevancy / context_precision**, judges only the
+five new metrics, and commits a second run:
+
+```bash
+uv run python -m src.cli rejudge --run matrix-20260729-025133 --rubric depth-v2
+uv run python -m src.cli rejudge --run matrix-20260729-025133 --max-workers 2   # gentler on the endpoint
+```
+
+`--max-workers` defaults to **4**, measured rather than guessed: 4 workers
+cleared 80 cells cleanly, while 6–8 way concurrency against this endpoint
+collapsed to no completions at all for ~15 minutes. Raise it only against a
+provider you have measured yourself.
+
+Reusing the stored grounding scores is deliberate. The point of the second run
+is a *ranking comparison* — depth-v2 against the ragas-v1 run it came from — and
+re-judging grounding would move those three numbers by judge nondeterminism
+alone, making any ranking change unattributable. The new run records
+`rejudged_from`, so the pair is always traceable. Contexts are not stored on a
+committed cell, so they are resolved back out of the chunk store by
+`retrieved_chunk_ids`; each cell records how many resolved
+(`contexts_resolved` / `contexts_expected`), and the Answers panel says
+**partial context** on any cell judged against fewer chunks than it retrieved.
+
+A cell the rubric **cannot** cover — an empty answer, an errored cell — is not
+carried through at the composite it already had. That number was computed under
+the source run's rubric, and averaging a ragas-v1 composite into a depth-v2
+leaderboard silently mixes two scales in one mean. Such a cell is marked
+`rejudged: false`, its composite is cleared so every consumer counts it as
+unjudged under this rubric, its old value is kept as `source_composite`, and the
+run records `rejudged_cells` / `skipped_cells` so the Scoreboard can state the
+coverage behind its averages.
+
+The Scoreboard's run picker labels every run with its rubric
+(`… · 5 questions · 6 setups · depth-v2`), so switching between the two runs
+compares rankings under the two rubrics over identical answers. Under a
+depth-v2 run the tab grows a **Rubric** panel — eight metric rows banded into
+`grounding (40%)` and `depth (60%)`, each showing its weight — `capped` and
+`ungrounded` badges on any leaderboard row whose answers hit the cap or breached
+the floor, and, on expanding a cell in the Answers panel, the cap or grounding
+reason, any partial-context warning, and every depth rationale as readable text.
+A `ragas-v1` run renders its three metrics exactly as before.
+
+**Read the ranking with its provenance.** When the answering model is also a
+judge, the Scoreboard says so above the table and in the provenance bar: the
+whole leaderboard is then self-assessment rather than an independent verdict.
+Set `YT_AGENT_JUDGE_MODEL` (and the matching key/base-url) to a different
+provider and re-run before treating it as a result. The provenance bar names
+**both** judges, since the depth judge produces 60% of a depth-v2 composite.
+
 `scripts/run_matrix_chunked.py` used to resume from a bespoke JSONL
 checkpoint (`.yt-agent/matrix_checkpoint.jsonl`) before the cell cache
 existed. `scripts/migrate_matrix_checkpoint.py` is the one-time, re-runnable
@@ -1227,6 +1901,368 @@ current settings), so switching over cost nothing already paid for:
 uv run python scripts/migrate_matrix_checkpoint.py            # migrate legacy checkpoint rows into the cache
 uv run python scripts/migrate_matrix_checkpoint.py --dry-run  # report only
 ```
+
+#### 4e. Expert rubric packs (`build-packs`, `score-packs`)
+
+A **rubric pack** is a standing list of review criteria this corpus's creators
+agree on, each one carrying the transcript words it came from. The four packs
+are declared in `experts/packs.json` — `resume-design`, `job-search`,
+`system-design`, `app-architecture` — and each is built from the corpus rather
+than written by hand:
+
+* **Membership is routed, not curated.** A pack's `routing_text` is embedded and
+  matched against the per-video summary index by exactly the call a live
+  question makes, so membership is reproducible and reviewable next to a
+  retrieval trace. A human can still pin a video in or out; the decision lives
+  in `experts/<topic>/manifest.json` and is reapplied by the next build.
+* **Criteria come from theme members, not theme summaries.** A theme summary
+  reads more cross-creator than its cluster is, because the excerpt sampler
+  round-robins one chunk per video. Rubrics are written from the excerpts.
+* **A unit has to clear a creator floor.** A theme or community whose chunks
+  are 80% one channel is that channel's lecture with corroborating visitors;
+  it is kept in the gap log with its reason rather than used or deleted. The
+  floor counts *creators over chunks*, because a theme can span four videos and
+  still be one podcast talking.
+* **The property videos are excluded at the router.** The five Australian
+  property/tax videos stay indexed and answerable in chat but are removed from
+  the summary store membership routes through, so a property rubric is never a
+  candidate. `pack_statistics` re-checks by video id, which would still catch a
+  leak if the exclusion argument were deleted.
+
+```bash
+uv run python -m src.cli build-packs --dry-run          # route + assemble units, no LLM calls
+uv run python -m src.cli build-packs                    # all four packs, three arms each
+uv run python -m src.cli build-packs --topic job-search --units 6
+uv run python -m src.cli score-packs --topic resume-design   # D2, writes experts/ablation.json
+```
+
+Every pack is built three ways, and each arm spends the **same** number of
+source units (capped to the smaller *eligible* pool), so a bigger pack cannot
+win the comparison by being bigger:
+
+| arm | source units |
+| --- | --- |
+| `raptor` | cross-video theme clusters only |
+| `communities` | Leiden communities over the entity graph, filtered to ≥5 entities |
+| `merged` | the two pools interleaved, best-first |
+
+`--ship` picks which arm lands in `experts/<topic>/pack.json`, the one the app
+renders (default `merged`). Every per-unit LLM call is cached by its own
+excerpt text, so rebuilding an unchanged corpus reproduces the identical pack
+rather than re-rolling it — which is what makes "which rules changed when the
+corpus grew" a question `git diff` answers.
+
+`score-packs` is **D2**: it puts each arm's rubrics through the held-out
+critique harness (`src/evals/critique.py`) as findings, so the three arms are
+scored by the same instrument a live critique is, against an expert video no
+pack was allowed to see. The comparison renders in the app beside the pack.
+
+**Browsing a pack.** *Experiments* → the **Expert pack** panel. Pick a topic,
+read the criteria, click one to open its evidence — every quote carries the
+creator who said it and a link to the second they said it at. Under the rules:
+the three arms as built, the **`deep-r1` → `deep-r2` diff** for a topic the
+deep-research loop has been run for (4f) — every added rule naming the gap that
+asked for it, with the one-shot control's own addition count on the same line —
+the D2 rows where a run exists, the membership table (hand-overridable), and the
+gap log of source units that produced no rule.
+
+#### 4f. The deep-research build loop (`deep-research`)
+
+`build-packs` writes a pack in one pass from the corpus's own clusters.
+`deep-research` writes the same pack the slow way, as an agent loop:
+
+* a **planner** decomposes the topic into sub-questions, one LLM call;
+* an **executor** answers each one — dense retrieval over the pack's routed
+  member videos, then the *same* rubric extraction call `build-packs` uses;
+* a **gap critic** reads the round-1 criteria and names what a reviewer still
+  cannot check, writing a retrieval query for each hole;
+* a **publisher** folds the answers to those gaps into a second version,
+  deduped against round 1 at the same cosine threshold the arms use.
+
+```bash
+uv run python -m src.cli deep-research --topic resume-design           # build + report
+uv run python -m src.cli deep-research --topic resume-design --score   # + held-out table
+uv run python -m src.cli deep-research --topic resume-design --score-only
+uv run python -m src.cli deep-research --topic resume-design --frontier --score  # 4g
+```
+
+It writes three packs and one report:
+
+| arm | probes | what it is |
+| --- | --- | --- |
+| `deep-r1` | the plan's first 6 | round one |
+| `deep-oneshot` | the plan's first 10 | **the control** — same budget, no critic |
+| `deep-r2` | those 6 plus 4 the critic asked for | round two |
+
+`--frontier` adds two more (`§ 4g`) without rebuilding these.
+
+`deep-oneshot` is the point. The planner is asked for all ten sub-questions in
+one call and told to order them most-important-first, so the control is a strict
+superset of round one and spends *exactly* the executor budget round two spends
+on *exactly* the same opening probes. The two arms differ in one thing — where
+the last four questions came from — and round two's only extra spend over the
+control is the single critic call. Every executor call is the same prompt, the
+same twelve-excerpt budget and the same server-side citation reconciliation as a
+cluster-arm call, so a pack this loop writes is an ordinary `ExpertPack` and goes
+through the same held-out scorer.
+
+Two diagnostics travel with the report, because a round that appends is *shaped*
+like the padding attack `criteria_recall` is open to
+(`src/evals/KNOWN_GAP_attack2.md`):
+
+* **gap closure** — did any rule admitted from a gap's own probe land closer to
+  the critic's words than a rule round one already had? On the resume-design
+  run the answer is **no, for all four gaps**, under both anchorings tried. The
+  critic named real holes (contact details, employment dates, typos, a projects
+  section); the corpus has little on them, so each probe retrieved the nearest
+  thing it *does* discuss and the extractor wrote another ATS-and-tailoring rule.
+* **restatement audit** — every added rule's nearest surviving rule and the
+  cosine between them. Four of ten sat within 0.1 of the dedupe threshold
+  (0.859, 0.833, 0.822, 0.811): the same rule in different words, admitted
+  because the threshold is a cliff and these landed under it.
+
+Neither one filters anything. A threshold tuned in this module would make the
+loop's own numbers a function of a knob the loop owns; the honest instrument
+shows the near-misses and lets a reader judge.
+
+Planner and critic calls are cached by their exact prompt, exactly as per-unit
+rubric calls are, so rerunning an unchanged loop reproduces the identical plan
+and the identical gaps — which is what makes "round two added the rubric the
+critic asked for" a claim somebody can re-check rather than a story about one
+lucky run.
+
+**Scoring it.** `--score` (or `--score-only`) puts all three arms *and the
+hand-built `merged` pack* through the held-out critique harness (`§ 6c`), folds
+the table into `research.json`, and commits the run to `evals/runs/` as an
+ordinary `critique-eval` snapshot — so the loop's rows land in the Critique panel
+next to every other held-out run rather than only inside the artifact that is
+arguing for them. The matcher is the shipped one: five repeats resolved by
+per-criterion majority vote, cached on the exact matrix it resolved.
+
+The committed run is
+`evals/runs/critique-15rTnqKBlO8-20260810-093357.json`, held out
+`15rTnqKBlO8`, 19 of 24 criteria applicable, 0 leaks, 0 fabricated citations:
+
+| arm | `criteria_recall` | spread | `evidence_precision` | `provenance` |
+| --- | --- | --- | --- | --- |
+| `merged` (hand-built v1) | 0.263 | 0.211–0.368 | **0.824** | 1.000 |
+| `deep-r1` | 0.368 | 0.316–0.421 | 0.812 | 1.000 |
+| `deep-oneshot` (control) | 0.263 | 0.263–0.316 | 0.615 | 1.000 |
+| `deep-r2` (the loop) | 0.368 | 0.263–0.474 | 0.769 | 1.000 |
+
+`contested_coverage` is `None` for every arm: a pack is not a retrieval run, so
+no conflict had both of its chunks in context. Every number in this table
+survives the retrieval-provenance gate unchanged — all 165 citations resolve
+inside their own rubric's unit — but read the recall column with the caveat in
+`src/evals/KNOWN_GAP_attack2.md` attached: it certifies "reached the conclusion
+**and** cited something that resolves **and** which this finding's own
+distillation had in front of it", not "the corpus produced this insight", and
+every one of these leads sits inside its own spread.
+
+The one number in that table that needs **no LLM matcher at all** is
+`evidence_precision`, and on the resume-design run it is where the arms actually
+separate:
+
+| arm | findings | grounded | `evidence_precision` | citations resolved | distinct chunks |
+| --- | --- | --- | --- | --- | --- |
+| `merged` (hand-built v1) | 17 | 14 | 0.824 | 30/30 | 23 |
+| `deep-r1` | 16 | 13 | 0.812 | 32/32 | 22 |
+| `deep-oneshot` (control) | 26 | 16 | **0.615** | 51/51 | 31 |
+| `deep-r2` (the loop) | 26 | 20 | **0.769** | 52/52 | 34 |
+
+The control and the loop produce the *same* number of findings on the *same*
+executor budget from the *same* six opening probes. The one-shot's four extra
+plan probes retrieved passages the first six had already used, so ten of its
+twenty-six findings own no chunk exclusively; the critic's four probes went
+somewhere else, and only six of the loop's do. That gap is pure string and set
+arithmetic — `check_citation` plus `ground_findings` — with no judge anywhere in
+it, which makes it the most robust thing this slice measured. It is a real
+separation, not a collapse: the control still grounds 16 of 26.
+
+Neither arm beats the hand-built pack on it. `merged` grounds 14 of 17 at 0.824
+and stays the leader — decisively, since `evidence_precision` has no matcher and
+therefore no spread to hide inside. **This loop did not beat the hand build**;
+`§ 4g` is the round that does, and it starts from the mechanical reason this one
+did not.
+
+**Which corpus these were measured on.** The arms were built at corpus digest
+`e1b17b35cb7190cf` (1372 chunks, 56 videos); ingestion continued, and the run
+above resolved its citations against `03f0763b5a511f57` (1460 chunks, 59
+videos). The run file records both under `config.scoring_corpus_digest` and
+`config.scored_on_build_corpus`, and the Build report says so on screen, because
+a score measured on a corpus that has moved has to say which one it was. Every
+arm was built at the *same* digest, so the comparison between them is unaffected.
+The number that would show the drift biting is `provenance`, and it is 1.000
+across the board — **165 of 165 stored citations still resolved**, none
+fabricated. The resolver matches on `(video_id, timestamp span ±20s)` and then on
+the quoted words (`chunk_text_from_records` → `check_citation`), never on a chunk
+index, so a re-chunk that shifted boundaries would surface as a failed
+resolution rather than as a silent mismatch.
+
+#### 4g. The frontier round (`deep-research --frontier`)
+
+The loop above beats its own first round and **loses to the hand build**. The
+mechanism was measured, not guessed:
+
+* of `deep-r2`'s ten added rules, **four cite chunks the shipped pack already
+  cites**, and the no-critic control rediscovers at exactly the same rate,
+  **four of ten**. The loop was not searching better than no loop; it was
+  searching more;
+* the member corpus is **182 chunks**. Round one's six probes put **72** of them
+  in front of the model, and every round-two probe drew between five and twelve
+  of its eighteen passages back out of those same 72;
+* meanwhile the shipped pack's units span **174 of the 182** and distil 23 of
+  them. There is a great deal of ground a second round could add, and nothing in
+  the loop was pointing at it.
+
+`--frontier` is the attempt to point at it. It does not rebuild round one — it
+reads `deep-r1` back off disk, so the arm is nested inside the same plan as the
+loop and the control rather than being a fourth draw — and it changes three
+things, each a rule about what is *forbidden*:
+
+1. **The critic is told where its own probes have not read.** It still sees the
+   round-1 criteria and the plan's facets and nothing else of the content: no
+   evidence, no transcript, nothing from the held-out expert. What it gains is a
+   coverage table — the member videos, their titles, and how many of each one's
+   passages round one retrieved. Video titles are not a new information class in
+   this loop; `PLAN_SYSTEM_PROMPT` already hands the planner that exact list. The
+   critic is being told what the loop already knew about itself, which is the one
+   thing it could not previously tell: whether a hole is missing from the *pack*
+   or missing from the *corpus*.
+2. **A round-two probe may not retrieve into ground round one already read.**
+   Round one's 72 retrieved chunks are struck from the candidate set. Free,
+   deterministic, computed from the loop's own output; not a threshold, and
+   nothing in it to tune.
+3. **A rule is admitted only if it rests on a passage no admitted rule rests
+   on.** The existing dedupe compares *wordings* at a cosine cliff, and the
+   shadow under that cliff is documented above — six of round two's ten additions
+   sat between 0.744 and 0.859 against a 0.86 threshold and were kept. Evidence
+   identity has no cliff.
+
+It writes two more packs, both on the **same corpus digest the committed arms
+were built at** (`e1b17b35cb7190cf`, 1372 chunks, 56 videos) — reproduced from
+the live store by fingerprint, not assumed, because ingestion has since carried
+the corpus past 1700 chunks and an arm built on a bigger one is not comparable
+with the pack it has to beat:
+
+| arm | what it is | LLM calls |
+| --- | --- | --- |
+| `deep-frontier` | round 1 + 4 probes from the coverage-aware critic, retrieved off round 1's ground, admitted on evidence novelty | 1 planner + 6 executor + 1 critic + 4 executor |
+| `deep-r2-admit` | **the ablation** — `deep-r2` with the admission rule and *nothing* else changed | none — no probe is re-run |
+
+`deep-r2-admit` exists because change (3) mirrors the shape of the scorer's own
+exclusivity rule, so any `evidence_precision` it buys is partly bought by
+construction and a reader has to be able to subtract it. On this run that
+subtraction takes the **whole** of both point estimates — see the scores below.
+One thing does bound the concern rather than argue it away:
+
+* **The rule is not a handicap applied to one side only.** Run over `merged`'s
+  seventeen rules it refuses **nothing** — every rule the hand build ships
+  already rests on a passage of its own. (It is not vacuous in general: the same
+  rule would refuse three of `raptor`'s eighteen and one of `communities`'.)
+
+What it does **not** bound, and an earlier draft of this file wrongly claimed it
+did, is recall: dropping rules can move `criteria_recall` upward through the
+matcher's one-to-one pairing. See the scores below for the measurement and the
+retraction.
+
+**Rediscovery against the shipped pack**, the number the whole slice turns on,
+measured on cited chunk ids rather than wording:
+
+| arm | added | rediscovered | rate |
+| --- | --- | --- | --- |
+| `deep-oneshot` (no critic) | 10 | 4 | 40% |
+| `deep-r2` (the loop) | 10 | 4 | 40% |
+| `deep-r2-admit` | 8 | 4 | 50% |
+| `deep-frontier` | 8 | **2** | **25%** |
+
+Two more deterministic readings move the same way. Every frontier probe drew
+**0 of its 18** passages from ground round one had read, by construction. And
+the restatement audit — every added rule's nearest surviving rule — tops out at
+**0.727** against the 0.86 dedupe threshold, with nothing inside 0.1 of it;
+`deep-r2`'s own additions had six of ten between 0.744 and 0.859. Gap closure
+also moves, from 0 of 4 to 1 of 4, which is a small number said plainly rather
+than a result.
+
+The three rules the admission step refused in the frontier round are worth
+reading, because they are the failure this slice was built to attack, caught in
+the act: *"Tailor the resume to each job posting…"*, *"Use a single-column,
+ATS-friendly layout…"*, *"Remove sections that don't help a hiring decision…"* —
+three probes about contact blocks, typos and file formats, each drifting back to
+ATS and tailoring on passages an admitted rule already stood on.
+
+**Scored.** Same held-out video, same 5-repeat majority-vote matcher, same
+corpus for every arm; the new arms are scored *beside* the old ones, not instead
+of them. `evals/runs/critique-15rTnqKBlO8-20260811-025343.json`, 0 leaks, 0
+fabricated citations, all 261 citations resolving inside their own rubric's
+unit:
+
+| arm | `criteria_recall` | spread | `evidence_precision` | findings | quotes |
+| --- | --- | --- | --- | --- | --- |
+| `merged` (hand-built v1) | 0.263 | 0.211–0.368 | 0.824 | 14/17 | 30 |
+| `deep-r1` | 0.368 | 0.316–0.421 | 0.812 | 13/16 | 32 |
+| `deep-oneshot` (control) | 0.263 | 0.263–0.316 | 0.615 | 16/26 | 51 |
+| `deep-r2` (the loop) | 0.368 | 0.263–0.474 | 0.769 | 20/26 | 52 |
+| `deep-r2-admit` (ablation) | 0.421 | 0.316–0.474 | 0.875 | 21/24 | 48 |
+| **`deep-frontier`** | **0.421** | **0.421–0.474** | **0.875** | 21/24 | 48 |
+
+**This is the first arm to clear the hand build.** Its worst of five matcher
+runs (0.421) sits above `merged`'s best (0.368), so the two ranges are disjoint
+— which is the bar the V3 fix set and the bar `deep-r2` failed, its 0.263 floor
+landing on `merged`'s point estimate. On `evidence_precision`, which has no
+model anywhere in its path and therefore no spread to hide inside, it leads
+0.875 to 0.824.
+
+The honest one-line summary is not the flattering one: **a free filter got the
+pack over the line on the point estimates; the two expensive changes got it over
+the line on the spread.** Four things say why, and every one of them cuts
+against the arm:
+
+* **`deep-r2-admit` reaches the *identical* set of eight applicable criteria for
+  no LLM call at all.** The coverage-aware critic and the frontier retrieval
+  bought **zero** additional applicable criteria over the free ablation. Their
+  entire contribution is the floor: 0.421 against 0.316.
+* **The run's own verdict says "tied".** `winner()` ranks arms against the
+  *runner-up*, and with two loop arms level it reports a tie and says nothing
+  about the pack they were built to beat. That is why `against_baseline()` in
+  `src/evals/pack_ablation.py` now computes the arm-vs-baseline pair under the
+  same clear-the-other-side's-maximum rule and **commits it into the run file** —
+  it used to exist only at render time, which meant a reader of
+  `evals/runs/*.json` saw nothing but "tied".
+* **The margin is one criterion in nineteen — 0.053, on a score that moves in
+  steps of 0.053.** One repeat either way and the ranges touch.
+* **Dropping rules is not a reliable way to buy recall, but it is not an
+  impossible one.** An earlier draft of this section claimed the admission rule
+  *could not* move recall because dropping rules only removes chances to match.
+  That was wrong: `deep-r2-admit` is a strict subset of `deep-r2` — the same
+  rules minus `r5201` and `r5202` — and scores higher. The mechanism is not
+  grounding (`r0401` is grounded on the same chunk in all four deep arms) but
+  `enforce_one_to_one`: a criterion is paired with at most one finding, so
+  thinning the pool removes competitors. `c22` had been going to an *ungrounded*
+  rule in `deep-r1` and to nothing at all in `deep-r2`; with two rules out of the
+  way it lands on the grounded `r0401`. The move sits well inside the matcher's
+  own spread, so recall was not *bought* here — but the impossibility claim was
+  false and it was the defence of the admission rule, so it is retracted rather
+  than softened. What the rule still cannot do is manufacture new ground.
+
+`contested_coverage` is still `None` for every arm: a pack is not a retrieval
+run, so no conflict had both of its chunks in context. That remains the honest
+gap — distillation flattens disagreement, and none of these arms says anything
+the corpus argues about.
+
+**Reading the report.** *Experiments* → the **Build report** panel, under the
+Expert pack panel. It opens with the gap critic's findings verbatim, each with
+the probe it produced, the rules that came back, and whether the gap closed;
+then — when a frontier round has been run — the frontier section, which leads
+with the rediscovery table beside the arms it has to beat rather than with its
+own scores, and states the arm-against-baseline pair (read out of the run file,
+not derived in the browser) with the one-criterion margin spelled out;
+then the rounds with their deltas and the control beside them, the frontier
+round among them — open a round's
+**probes added** count to read the sub-questions it actually asked and where each
+came from (`plan` or `gap:gNN`) — the held-out scores with finding and quote
+counts next to every number, the restatement audit, the v1 → v2 rubric diff, and
+the call budget per arm.
 
 #### 5. Compare and evaluate
 
@@ -1276,7 +2312,8 @@ src/
                  #   RRF fusion, cross-encoder reranking, chunk similarity graph, and the
                  #   GraphRAG store/extraction/build (graph_store, graph_extract,
                  #   graph_pipeline, communities, graph_models) plus the read-side views
-                 #   the workbench and graph ranking share (graph_view)
+                 #   the workbench and graph ranking share (graph_view) and the
+                 #   corpus-wide question detector the summary filter reads (question_scope)
   agents/        # Full-transcript agent and RAG agents (single-hop, recursive, agentic,
                  #   GraphRAG) with follow-up query rewriting for conversational history;
                  #   prompts.py is the live prompt registry the System Design tab reads
@@ -1287,16 +2324,19 @@ src/
                  #   matrix sweep (matrix_runner.py, matrix_runs.py)
   chat/          # Setup registry + runner (which also assembles each answer's persisted
                  #   execution trace), shared chat history, static chat.html viewer
-  evals/         # Demo/evaluation scripts, RAGAS judge, golden set, IR metrics,
-                 #   ablation harness, regression runs, the head-to-head matrix (matrix.py),
-                 #   graph-extraction quality check (graph_extraction.py)
+  evals/         # Demo/evaluation scripts, RAGAS judge + the depth-v2 rubric and its
+                 #   depth judge (judge.py), golden set, IR metrics, ablation harness,
+                 #   regression runs, the head-to-head matrix (matrix.py), rubric
+                 #   re-scoring of a committed run (rejudge.py), graph-extraction
+                 #   quality check (graph_extraction.py)
   dashboard/     # Local HTML dashboards for reviewing indexed RAG state
 evals/runs/      # Committed eval snapshots (ablation + golden + matrix runs); ablation
                  #   and golden runs are gated in CI, matrix runs are not
 docs/            # Process docs, e.g. growing the golden set
-scripts/         # One-off maintenance (chunk-metadata backfill, legacy matrix-checkpoint
-                 #   migration), the golden-candidate drafting scaffold, and the
-                 #   cache-resumable matrix driver (run_matrix_chunked.py)
+scripts/         # One-off maintenance (chunk-metadata backfill, stored-citation
+                 #   chunk_index repair, legacy matrix-checkpoint migration), the
+                 #   golden-candidate drafting scaffold, and the cache-resumable
+                 #   matrix driver (run_matrix_chunked.py)
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
@@ -1518,6 +2558,22 @@ External Supadata, DeepSeek/LangChain, and embedding calls are mocked in automat
 CI (`.github/workflows/ci.yml`) runs the same lint/type/test steps, the frontend
 typecheck and build, and a deterministic eval-regression gate that re-scores the
 committed snapshots in `evals/runs/` (see `evals/runs/README.md`).
+
+### Slice status
+
+The s11 build plan ships as ten vertical slices (V0–V8, plus V4b). Each is
+reviewed by an independent evaluator who records a committed
+`demo/validate/artifacts/<slice>/verdict.json` — the builder never marks its own
+slice passed. `demo/validate/STATUS.md` reconciles the plan against those
+verdicts and is **generated, not hand-maintained**:
+
+```bash
+PYTHONPATH=. uv run python -m demo.validate.status
+```
+
+A slice with code but no verdict is reported `UNVALIDATED`, not done: the plan's
+standing rule is that a hypothesis which cannot be seen in the frontend fails
+review however many automated gates passed.
 
 ### Agent Work
 

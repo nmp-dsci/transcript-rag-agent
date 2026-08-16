@@ -1,0 +1,19 @@
+1
+00:00:02,207 --> 00:00:13,176
+The best career advice is locked in hour-long videos. You can't search it and you can't cite it. So I built something that can.
+
+2
+00:00:13,176 --> 00:00:28,377
+One corpus, six ways to answer over it, and one judge scoring all six on the same labelled questions. Here's what that looks like running.
+
+3
+00:00:28,377 --> 00:00:46,393
+Ask how to structure a resume summary. Every claim carries a source you can open. This answer is self-graded — same model judges its own output, so read 0.87 as a hint, not proof.
+
+4
+00:00:46,393 --> 00:01:01,634
+Six engines, same labelled questions, one RAGAS judge — faithfulness, recall, precision, latency, and token spend, all lined up in this tagged run.
+
+5
+00:01:01,634 --> 00:01:18,946
+Judged head to head on five questions — too few to crown a winner on a one-point margin. What is decisive is cost: the agentic loop burns eight times the tokens for no measured gain.

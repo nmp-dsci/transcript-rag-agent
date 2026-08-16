@@ -32,3 +32,19 @@ def test_question_prompt_includes_question_transcript_and_video_id() -> None:
 
 def test_system_prompt_contains_grounding_rule() -> None:
     assert "Use only the transcript as evidence" in SYSTEM_PROMPT
+
+
+def test_the_review_prompt_scopes_absence_claims_to_what_was_inspected() -> None:
+    """A nav bar, a footer, or an unfetched linked page may hold the thing the
+    review is about to call missing."""
+    from src.agents.prompts import DOC_REVIEW_SYSTEM_PROMPT
+
+    assert "Scope every absence to what you actually inspected" in DOC_REVIEW_SYSTEM_PROMPT
+    assert "was not fetched" in DOC_REVIEW_SYSTEM_PROMPT
+
+
+def test_the_review_user_prompt_does_not_tell_the_model_to_ignore_the_document() -> None:
+    from src.agents.prompts import DOC_REVIEW_USER_PROMPT
+
+    assert "only the retrieved" not in DOC_REVIEW_USER_PROMPT
+    assert "[§N]" in DOC_REVIEW_USER_PROMPT

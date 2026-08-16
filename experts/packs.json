@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "excluded_video_ids": [
+    "7m27Go3K1d0",
+    "AdRL6tKu3Gk",
+    "Bw58mV015z4",
+    "ZiEGOgTC56Y",
+    "gXf7fRvuaXA"
+  ],
+  "exclusion_reason": "The five Australian property/tax videos (181 chunks) stay indexed and answerable in chat, but are removed from the summary index every pack's membership is routed through. A property or land-tax rubric appearing in a job-search pack is visible leakage, and filtering after the fact would only hide it later in the pipeline. Three of the five (7m27Go3K1d0, Bw58mV015z4, ZiEGOgTC56Y) also have no stored per-video summary and so are invisible to the router anyway — which is a coincidence of the corpus, not the exclusion working, and is why the other two are named here explicitly.",
+  "held_out_video_ids": [
+    "15rTnqKBlO8"
+  ],
+  "held_out_reason": "The resume teardown src/evals/critique.py holds out. Excluded from every pack uniformly rather than from the resume packs only, so the pack a reader browses and the pack the D2 ablation scores are the same artifact rather than two builds that could differ.",
+  "packs": [
+    {
+      "topic": "resume-design",
+      "name": "Resume design",
+      "artifact": "resume",
+      "blurb": "What a technical resume has to do on the page before anyone reads it closely.",
+      "routing_text": "How should a software engineer or data scientist write their resume? Bullet points, professional summary, page length, formatting and layout, ATS keyword matching, quantified impact and metrics, tailoring a CV to one job description, and what a recruiter looks for in the seconds they spend skimming it."
+    },
+    {
+      "topic": "job-search",
+      "name": "Job search",
+      "artifact": "job search"
+    ,
+      "blurb": "Everything around the resume: profile, outreach, projects, interviews.",
+      "routing_text": "How do you actually get interviews and land a tech job? Optimising a LinkedIn profile, headline, about and featured sections, getting found by recruiters, networking and outreach messages, referrals, portfolio and project work, applying, preparing for interviews, mock interviews, behavioural and STAR answers."
+    },
+    {
+      "topic": "system-design",
+      "name": "System design",
+      "artifact": "system design",
+      "blurb": "Distributed-systems decisions and the tradeoffs the speakers refuse to skip.",
+      "routing_text": "Designing large scale distributed systems: database sharding and partitioning, caching strategies and invalidation, replication, consistency and availability tradeoffs, transactions and isolation levels, distributed message queues, REST API design, latency, throughput and capacity estimation in a system design interview."
+    },
+    {
+      "topic": "app-architecture",
+      "name": "App architecture",
+      "artifact": "codebase",
+      "blurb": "How to cut an application into modules that survive contact with a team.",
+      "routing_text": "Structuring an application codebase: modular monoliths versus microservices, module and service boundaries, vertical slices, hexagonal ports and adapters, clean and onion architecture, domain driven design, coupling and cohesion, encapsulation, and keeping business logic out of the web framework."
+    }
+  ]
+}

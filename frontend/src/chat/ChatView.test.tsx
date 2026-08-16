@@ -2,8 +2,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AskRequest, Corpus, Entry, SetupSpec, Video } from '../api/types';
-import { ChatView } from './ChatView';
+import type {
+  AskRequest,
+  Corpus,
+  Entry,
+  ReviewedDocument,
+  SetupSpec,
+  Video,
+} from '../api/types';
+import { ChatView, documentForEntry } from './ChatView';
 
 // jsdom has no layout engine, so the thread's scroll-to-bottom effect needs a stub.
 Element.prototype.scrollIntoView = vi.fn();
@@ -203,6 +210,43 @@ describe('ChatView document follow-up', () => {
     expect(request.document_entry_id).toBe('doc-e1');
     expect(request.entry_id).toBeUndefined();
   });
+
+  it('recombines the reloaded page with how much of it this question read', async () => {
+    // The store knows the page; only the entry knows which sections the answer
+    // was given, so a reloaded review must not claim more than it read.
+    document.mockReset();
+    document.mockResolvedValue({
+      id: 'doc1',
+      url: 'https://example.com/cv',
+      requested_url: 'https://example.com/cv',
+      title: 'A resume',
+      truncated: false,
+      fetched_at: '2026-07-21T00:00:00+00:00',
+      sections: [
+        { index: 0, heading: 'Summary', text: 'A summary.' },
+        { index: 1, heading: 'Experience', text: 'Led a team of six.' },
+        { index: 2, heading: 'Education', text: 'BSc computer science.' },
+      ],
+    });
+    const entry: Entry = {
+      id: 'doc-e2',
+      question: 'review my cv',
+      url: null,
+      asked_at: '2026-07-21T00:00:00+00:00',
+      document_id: 'doc1',
+      document_detail: '2 of 3 sections selected by BM25',
+      document_sections_selected: [0, 1],
+      answers: [],
+    };
+
+    view({ history: [entry] });
+    await userEvent.click(screen.getByText('review my cv').closest('button')!);
+
+    await waitFor(() =>
+      expect(screen.getByText('2 of 3 sections selected by BM25')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('not reviewed')).toBeInTheDocument();
+  });
 });
 
 describe('ChatView pending scope', () => {
@@ -235,5 +279,145 @@ describe('ChatView pending scope', () => {
     await waitFor(() =>
       expect((screen.getByLabelText('Channel scope') as HTMLSelectElement).value).toBe('c1'),
     );
+  });
+});
+
+describe('ChatView document cache', () => {
+  it('reuses the cached page across conversations without reusing its selection', async () => {
+    // The real cache path. Selecting the first conversation fills `documents`
+    // for doc1; selecting the second finds the id already cached and skips the
+    // fetch. A per-document merge would therefore show the first entry's
+    // selection line on the second entry's card.
+    document.mockReset();
+    document.mockResolvedValue({
+      id: 'doc1',
+      url: 'https://example.com/cv',
+      requested_url: 'https://example.com/cv',
+      title: 'A resume',
+      truncated: false,
+      fetched_at: '2026-08-09T00:00:00+00:00',
+      sections: [
+        { index: 0, heading: 'Summary', text: 'A summary.' },
+        { index: 1, heading: 'Experience', text: 'Led a team of six.' },
+        { index: 2, heading: 'Education', text: 'BSc computer science.' },
+      ],
+    });
+    const base = {
+      url: null,
+      asked_at: '2026-08-09T00:00:00+00:00',
+      answers: [],
+      document_id: 'doc1',
+    };
+    const narrowed: Entry = {
+      ...base,
+      id: 'doc-e1',
+      question: 'is my experience section strong?',
+      document_detail: '2 of 3 sections selected by BM25',
+      document_sections_selected: [0, 1],
+    };
+    const whole: Entry = {
+      ...base,
+      id: 'doc-e2',
+      question: 'review my whole cv',
+      document_detail: 'whole document — all 3 sections in context',
+      document_sections_selected: [0, 1, 2],
+    };
+
+    view({ history: [narrowed, whole] });
+
+    await userEvent.click(
+      screen.getByText('is my experience section strong?').closest('button')!,
+    );
+    await waitFor(() =>
+      expect(screen.getByText('2 of 3 sections selected by BM25')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('not reviewed')).toBeInTheDocument();
+    expect(document).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getByText('review my whole cv').closest('button')!);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('whole document — all 3 sections in context'),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByText('2 of 3 sections selected by BM25')).not.toBeInTheDocument();
+    expect(screen.queryByText('not reviewed')).not.toBeInTheDocument();
+    // The page itself was fetched once and reused, which is what made the bug
+    // possible in the first place.
+    expect(document).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('documentForEntry', () => {
+  const page: ReviewedDocument = {
+    id: 'doc1',
+    url: 'https://example.com/cv',
+    requested_url: 'https://example.com/cv',
+    title: 'A resume',
+    truncated: false,
+    fetched_at: '2026-08-09T00:00:00+00:00',
+    sections: [
+      { index: 0, heading: 'Summary', text: 'A summary.' },
+      { index: 1, heading: 'Experience', text: 'Led a team of six.' },
+      { index: 2, heading: 'Education', text: 'BSc computer science.' },
+    ],
+  };
+
+  function entry(overrides: Partial<Entry>): Entry {
+    return {
+      id: 'e',
+      question: 'review my cv',
+      url: null,
+      asked_at: '2026-08-09T00:00:00+00:00',
+      answers: [],
+      document_id: 'doc1',
+      ...overrides,
+    };
+  }
+
+  it('wears the entry own selection, not the cache one', () => {
+    const narrowed = documentForEntry(
+      entry({ id: 'e1', document_detail: '2 of 3 by BM25', document_sections_selected: [0, 1] }),
+      { doc1: page },
+    );
+
+    expect(narrowed?.detail).toBe('2 of 3 by BM25');
+    expect(narrowed?.sections_selected).toEqual([0, 1]);
+    expect(narrowed?.narrowed).toBe(true);
+  });
+
+  it('gives two entries on the same document their own selection lines', () => {
+    // The bug this replaces: the cache was filled once per document id, so the
+    // first conversation's selection was frozen onto every later one.
+    const documents = { doc1: page };
+    const first = documentForEntry(
+      entry({ id: 'e1', document_detail: '2 of 3 by BM25', document_sections_selected: [0, 1] }),
+      documents,
+    );
+    const second = documentForEntry(
+      entry({
+        id: 'e2',
+        document_detail: 'whole document — all 3 sections in context',
+        document_sections_selected: [0, 1, 2],
+      }),
+      documents,
+    );
+
+    expect(first?.detail).toBe('2 of 3 by BM25');
+    expect(second?.detail).toBe('whole document — all 3 sections in context');
+    expect(first?.narrowed).toBe(true);
+    expect(second?.narrowed).toBe(false);
+  });
+
+  it('leaves the cached page alone for entries that recorded no selection', () => {
+    const older = documentForEntry(entry({ id: 'e3' }), { doc1: page });
+
+    expect(older).toBe(page);
+  });
+
+  it('has no card when the document is not in the cache', () => {
+    expect(documentForEntry(entry({ id: 'e4' }), {})).toBeNull();
+    expect(documentForEntry(entry({ id: 'e5', document_id: null }), { doc1: page })).toBeNull();
   });
 });

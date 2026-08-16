@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s10 — Case study, narrated walkthrough &amp; site write-up</title>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #0e1116; --panel: #12161d; --panel2: #1c2330; --panel3: #161b22;
+    --border: #252b35; --border2: #2b3442;
+    --text: #e6edf3; --text2: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --accent: #2f81f7; --accent2: #79b8ff; --accent-dim: #132339; --accent-border: #1f4a7a;
+    --good: #3fb950; --good-dim: #173a2b; --good-border: #1f5937;
+    --warn: #d29922; --warn-dim: #3a2e12; --warn-border: #5c451a;
+    --bad: #f85149; --bad-dim: #3d1d1f; --bad-border: #6b2a2c;
+    --purple: #a371f7; --purple-dim: #271947; --purple-border: #3d2a63;
+    --on-accent: #0b1220; --btn-hover: #232b38; --accent-hover: #4b93f8;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eaeef2; --panel3: #f6f8fa;
+    --border: #d1d9e0; --border2: #bcc4cc;
+    --text: #1f2328; --text2: #424a53; --muted: #59636e; --dim: #818b98;
+    --accent: #0969da; --accent2: #0550ae; --accent-dim: #ddf4ff; --accent-border: #b6e3ff;
+    --good: #1a7f37; --good-dim: #dafbe1; --good-border: #aceebb;
+    --warn: #9a6700; --warn-dim: #fff8c5; --warn-border: #d4a72c;
+    --bad: #cf222e; --bad-dim: #ffebe9; --bad-border: #ffcecb;
+    --purple: #8250df; --purple-dim: #fbefff; --purple-border: #e3c6ff;
+    --on-accent: #ffffff; --btn-hover: #eef2f6; --accent-hover: #0860ca;
+  }
+  * { box-sizing: border-box; }
+  *, *::before, *::after { min-width: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.6 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 40px 24px 140px;
+  }
+  h1 { font-size: 27px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 52px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14.5px; margin: 0 0 8px; color: var(--text); }
+  h4 { font-size: 12.5px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  p { color: var(--text2); }
+  .lede { color: var(--muted); font-size: 15px; max-width: 880px; }
+  code { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; overflow-wrap: anywhere; }
+  a { color: var(--accent2); }
+  ul, ol { padding-left: 20px; }
+  li { color: var(--text2); margin: 3px 0; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 2px 7px; font: 600 10.5px var(--mono); white-space: nowrap; }
+  .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
+  .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+  .badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
+  .badge.purple { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+  .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+  @media (max-width: 900px) { .grid3 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 640px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 7px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-family: var(--mono); font-size: 11.5px; white-space: nowrap; }
+  td.est { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; color: var(--accent2); }
+  td.best { color: var(--good); font-weight: 600; }
+  tr.total td { border-top: 2px solid var(--border2); color: var(--text); font-weight: 600; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .tablewrap table { min-width: 560px; }
+
+  .statrow { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+  @media (max-width: 860px) { .statrow { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; text-align: center; padding: 14px 10px; }
+  .stat .v { font: 700 20px var(--mono); color: var(--text); }
+  .stat .l { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+  .stat.hero { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-dim), var(--panel) 55%); }
+  .stat.hero .v { color: var(--accent2); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: var(--text2); margin: 14px 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout.risk { border-left-color: var(--bad); background: var(--bad-dim); }
+  .callout.good { border-left-color: var(--good); background: var(--good-dim); }
+  .callout b { color: var(--text); }
+
+  .mermaid-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; overflow-x: auto; }
+  .mermaid { display: flex; justify-content: center; min-width: 560px; }
+
+  /* scene list */
+  .scene { display: flex; gap: 14px; padding: 13px 0; border-top: 1px solid var(--border); }
+  .scene:first-child { border-top: none; }
+  .scene .n { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font: 700 11px var(--mono); color: var(--muted); }
+  .scene .body { flex: 1 1 auto; }
+  .scene .shot { font-size: 12.5px; color: var(--text); font-weight: 600; }
+  .scene .vo { font-size: 12.5px; color: var(--text2); font-style: italic; border-left: 2px solid var(--accent-border); padding-left: 10px; margin: 6px 0 0; }
+  .scene .meta { font-size: 11px; color: var(--dim); font-family: var(--mono); margin-top: 5px; }
+
+  /* roadmap rank cards */
+  .rank { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px 17px; margin: 12px 0; }
+  .rank.top { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-dim), var(--panel) 34%); }
+  .rank .rh { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 5px; }
+  .rank .rn { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font: 700 11px var(--mono); color: var(--muted); }
+  .rank.top .rn { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .rank .rh b { font-size: 13.5px; }
+  .rank .sp { flex: 1 1 auto; }
+  .rank p { font-size: 12.5px; margin: 6px 0 0; }
+
+  /* decision forms */
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .decision .q { font-size: 13.5px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  .decision .qsub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .decision label.opt2 { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border2); border-radius: 8px; margin-bottom: 7px; cursor: pointer; background: var(--panel2); transition: border-color .12s; }
+  .decision label.opt2:hover { border-color: var(--accent-border); }
+  .decision label.opt2 input { margin-top: 3px; flex: 0 0 auto; }
+  .decision label.opt2 .otext b { font-size: 12.5px; color: var(--text); }
+  .decision label.opt2 .otext span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .decision .queuebar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .decision button.q-submit { background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 7px 14px; font: 600 12px var(--mono); cursor: pointer; }
+  .decision button.q-submit:hover { background: var(--accent-hover); }
+  .decision.is-queued { border-color: var(--good-border); }
+  .decision.is-queued .queue-note { color: var(--good); }
+  .queue-note { font-size: 11.5px; color: var(--dim); }
+
+  .fileref { font-family: var(--mono); font-size: 11.5px; color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 4px; padding: 1px 6px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .toc a { font-size: 11.5px; font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 14px; padding: 4px 11px; color: var(--text2); text-decoration: none; }
+  .toc a:hover { border-color: var(--accent-border); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<h1>Case study, narrated walkthrough &amp; site write-up</h1>
+<p class="lede">
+  Priority-one task: turn what's already been built and measured into the two artifacts a reviewer
+  actually encounters — a <b>narrated video</b> anyone can watch to understand the product, and a
+  <b>written case study</b> that lands the findings. Mirrors the
+  <span class="fileref">floor-plan-reviewer</span> pattern (Playwright + Deepgram Aura TTS + burned
+  captions + SRT), links from the repo readme, and updates the existing
+  <span class="fileref">_projects/transcript-rag.md</span> page — which is currently
+  <b>two generations out of date</b>.
+</p>
+<div class="toc">
+  <a href="#story">The story</a>
+  <a href="#problem">Problem &amp; impact</a>
+  <a href="#numbers">The numbers</a>
+  <a href="#video">Video plan</a>
+  <a href="#script">Narration script</a>
+  <a href="#loop">Adversarial loop</a>
+  <a href="#site">Site write-up</a>
+  <a href="#sizing">Sizing</a>
+  <a href="#roadmap">Product roadmap</a>
+  <a href="#decisions">Decisions</a>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="story">The story — what this is actually about</h2>
+
+<div class="callout good">
+  <b>The real hook, in your own words:</b> <i>"I have found the transcript really useful to distil
+  YouTube transcripts for resume guidance."</i> That is the story — not "I built a RAG app." A person
+  with a genuine problem (what do I actually do to my resume?) found the answer buried across a dozen
+  hour-long career videos, and built the thing that extracts it. Everything measured downstream exists
+  to answer <i>does this actually work, or does it just look like it works?</i>
+</div>
+
+<div class="grid3">
+  <div class="panel">
+    <h4>Act 1 · The itch</h4>
+    <p style="font-size:12.5px">Expert advice lives in hours of video. You cannot search it, cannot
+      compare two experts, and cannot cite it. Watching is the only interface, and it does not scale.</p>
+  </div>
+  <div class="panel">
+    <h4>Act 2 · The build</h4>
+    <p style="font-size:12.5px">Six answer paths over one corpus — single-hop, recursive, agentic,
+      GraphRAG, HyDE, contextual — plus document review, so you can point it at your own resume and get
+      feedback grounded in what the experts actually said.</p>
+  </div>
+  <div class="panel">
+    <h4>Act 3 · The proof</h4>
+    <p style="font-size:12.5px">Advice you cannot check is just vibes. So every answer carries a
+      timestamped citation, and every answer path is measured on the same labelled questions by the
+      same judge — including the <b>three that lost</b>, published rather than buried.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <b>The line the whole case study hangs on:</b> <i>"Paste your resume and it tells you what to change
+  — and every piece of advice is a citation back to the exact second of the video an actual
+  practitioner said it. The corpus supplies the criteria; your document supplies what gets
+  critiqued."</i> That is the thing nothing else does. Everything else in this artifact exists to
+  prove the advice is real rather than plausible.
+</div>
+
+<div class="callout" style="margin-top:10px">
+  <b>Supporting beat, not the headline:</b> <i>"I implemented three techniques the field is excited
+  about — HyDE, multi-query, and Anthropic's Contextual Retrieval. On my corpus, all three lost to
+  plain hybrid search. Here is the measurement, and here is the mechanism."</i> This is still the
+  strongest credibility signal in the work — but it answers <i>can I trust this engineer?</i>, not
+  <i>why would I use this?</i>. It earns its place in the middle of the story, not the opening.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="problem">The problem, the user, and the impact claim</h2>
+<div class="grid2">
+  <div class="panel">
+    <h4>Problem</h4>
+    <p style="font-size:12.5px">
+      The best practical guidance on a niche — resumes and ATS, property tax changes, AI coding
+      workflows — is published as long-form video by practitioners, not as documentation. It is
+      unsearchable, uncitable, and contradicts itself across creators. You cannot ask it a question,
+      and you certainly cannot ask it about <i>your</i> document.
+    </p>
+  </div>
+  <div class="panel">
+    <h4>What it does about it</h4>
+    <p style="font-size:12.5px">
+      Indexes a corpus of transcripts, then answers questions over it with timestamped citations back
+      to the exact moment in the exact video — so every claim is checkable. Paste a URL (your resume,
+      your LinkedIn) and it reviews that document <i>against</i> the corpus: your document supplies
+      what is critiqued, the transcripts supply the criteria, cited separately.
+    </p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <b>Impact claim — keep it honest.</b> This is a personal-scale research instrument, not a product
+  with users. The defensible claim is about <i>engineering rigour and a working tool for its author</i>,
+  not adoption. Say "I use it to distil career guidance from 26 videos" — true and concrete — and never
+  imply traction that does not exist. A reviewer who smells inflation discounts everything else.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="numbers">The numbers the case study is built on</h2>
+<p style="font-size:12.5px; color:var(--muted)">
+  All committed under <span class="fileref">evals/runs/</span> and reproducible — nothing here needs
+  new engineering to write up.
+</p>
+
+<div class="statrow">
+  <div class="stat hero"><div class="v">8 × 20</div><div class="l">retrieval configs × labelled questions</div></div>
+  <div class="stat hero"><div class="v">6</div><div class="l">answer paths judged head to head</div></div>
+  <div class="stat"><div class="v">1,215</div><div class="l">tests, plus a CI eval gate</div></div>
+  <div class="stat"><div class="v">546</div><div class="l">chunks · 26 videos · 3 domains</div></div>
+</div>
+
+<h4 style="margin-top:22px">Finding 1 — the cross-encoder helps a bi-encoder ranking and hurts a fused one</h4>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>pair (differs only by reranking)</th><th class="num">recall@3</th><th class="num">recall@5</th><th class="num">recall@10</th><th class="num">MRR</th><th class="num">NDCG@10</th></tr></thead>
+    <tbody>
+      <tr><td>semantic → +rerank</td><td class="num best">+0.058</td><td class="num best">+0.052</td><td class="num">+0.008</td><td class="num best">+0.052</td><td class="num best">+0.036</td></tr>
+      <tr><td>hybrid → +rerank</td><td class="num">+0.012</td><td class="num">+0.018</td><td class="num" style="color:var(--bad)">−0.061</td><td class="num" style="color:var(--bad)">−0.079</td><td class="num" style="color:var(--bad)">−0.040</td></tr>
+    </tbody>
+  </table>
+</div>
+<p style="font-size:12.5px">
+  The mechanism is the story: a bi-encoder never sees query and chunk together, so a model that scores
+  the pair jointly adds real signal. But RRF fusion has <i>already</i> reordered using a second
+  retriever's opinion — and the cross-encoder discards that ensemble judgement for its own. This
+  comparison did not exist until the sweep was extended with a <code>semantic+rerank</code> column;
+  before that, the shipped configuration was not even being measured.
+</p>
+
+<h4 style="margin-top:22px">Finding 2 — three fashionable techniques, all net-negative here</h4>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>setup</th><th class="num">composite</th><th class="num">latency</th><th class="num">context tokens</th><th>read</th></tr></thead>
+    <tbody>
+      <tr><td>rag_llm (single-hop)</td><td class="num best">0.738</td><td class="num">32s</td><td class="num">3,109</td><td>the baseline that wins</td></tr>
+      <tr><td>rag_agent (agentic)</td><td class="num">0.735</td><td class="num">50s</td><td class="num">25,886</td><td>8× the tokens, no quality win</td></tr>
+      <tr><td>graph_rag</td><td class="num">0.734</td><td class="num best">17s</td><td class="num">3,926</td><td>same quality, a third the latency</td></tr>
+      <tr><td>rag_llm_recursive</td><td class="num">0.618</td><td class="num">68s</td><td class="num">11,948</td><td>slowest, worse</td></tr>
+      <tr><td>rag_llm_hyde</td><td class="num">0.617</td><td class="num">36s</td><td class="num">3,114</td><td>best recall@1, worst video_recall</td></tr>
+      <tr><td>rag_llm_contextual</td><td class="num">0.572</td><td class="num">28s</td><td class="num">3,075</td><td>sharper top, weaker depth</td></tr>
+    </tbody>
+  </table>
+</div>
+<p style="font-size:12.5px">
+  Two sub-findings worth calling out in the write-up: <b>rag_llm leads on composite but won zero
+  individual contests</b> — consistently good, never best, which is exactly why both average and
+  win-rate are reported. And <b>HyDE's best-recall@1 and worst-video_recall come from the same
+  mechanism</b>: a confident invented probe retrieves confidently from the wrong video.
+</p>
+
+<div class="callout">
+  <b>Also worth a paragraph:</b> the two bugs the discipline caught — a missing LLM read timeout that
+  hung judged runs at 0% CPU on an open socket (fixed at all five call sites), and a readme claim about
+  reranking that the data flatly contradicted once the isolation column existed. "My own eval harness
+  caught my own wrong claim" is a strong story.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="video">Video plan — mirroring floor-plan-reviewer</h2>
+
+<div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart LR
+  A["record_walkthrough.py<br/>Playwright drives the real app"] --> B["narration.py<br/>Deepgram Aura TTS"]
+  B --> C["burned caption bar<br/>+ scene pacing"]
+  C --> D["walkthrough.webm<br/>silent cut"]
+  D --> E["ffmpeg mix<br/>audio + video"]
+  E --> F["walkthrough.mp4"]
+  C --> G["walkthrough.srt"]
+  F --> H["repo readme + site page"]
+  G --> H
+</pre>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="panel">
+    <h4>Reused verbatim from the sibling</h4>
+    <p style="font-size:12.5px">
+      <span class="fileref">app/demo/narration.py</span> is generic — TTS synthesis, caption bar,
+      scene pacing, SRT export, ffmpeg audio mix. Copy it into
+      <code>demo/narration.py</code> here and change nothing but the caption bar's accent colour.
+      Same voice (<code>aura-2-hyperion-en</code>, Australian), same
+      <code>DEEPGRAM_API_KEY</code>, same graceful captions-only fallback when the key is absent.
+    </p>
+  </div>
+  <div class="panel">
+    <h4>Written fresh for this app</h4>
+    <p style="font-size:12.5px">
+      Two artefacts: <code>demo/slides.html</code> — a self-contained title deck in the app's own
+      theme, scrolled through on camera — and <code>demo/record_walkthrough.py</code>, driving the
+      real workbench across its five tabs. The hard part is not the code; it is
+      <b>scripting a route that tells the story in ~2½ minutes</b> without dead air while a live
+      LLM answers.
+    </p>
+  </div>
+</div>
+
+<div class="callout good" style="margin-top:14px">
+  <b>New — the video opens on two title slides, not the app.</b> A cold open on a UI makes a viewer
+  work out what they are looking at. Two slides first, scrolled rather than cut, so the whole video
+  reads as one continuous take:
+  <div class="grid2" style="margin-top:10px">
+    <div class="panel">
+      <h4>Slide 1 · Itch → Build → Proof</h4>
+      <p style="font-size:12.5px">The three-act spine as three columns, revealed by the scroll. This
+        is the only place the argument is stated abstractly; everything after it is demonstration.</p>
+    </div>
+    <div class="panel">
+      <h4>Slide 2 · Agent architecture</h4>
+      <p style="font-size:12.5px">The six answer paths over one corpus, plus the judge — the same
+        Mermaid graph as the System Design tab, so the diagram the viewer is shown up front is the
+        one they can click through at the end.</p>
+    </div>
+  </div>
+  Built as one <code>demo/slides.html</code> page served from the same origin, so Playwright records
+  it with the identical browser context, viewport and recorder — no second pipeline, no cut.
+</div>
+
+<div class="callout warn">
+  <b>Live-LLM pacing is the one real risk.</b> A real answer takes 17–68 s depending on the path —
+  far too long to hold on screen. Mitigation: script the demo to ask a question whose answer is
+  <i>already in the committed chat history</i>, so the Chat tab renders instantly with its persisted
+  trace, and narrate over the trace rather than over a spinner. One genuinely live call, on the
+  fastest path (graph_rag, ~17 s), covered by narration that explains what is happening while it runs.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="script">Narration script — 11 scenes, ~2:35</h2>
+<p style="font-size:12.5px; color:var(--muted)">
+  One spoken line per scene, burned as the caption and written to the SRT — the single-source-of-truth
+  pattern from the sibling. Scenes S1–S2 are the title deck; 1–9 are the app. Draft copy below;
+  annotate any line to rewrite it.
+</p>
+
+<div class="panel">
+  <div class="scene">
+    <div class="n">S1</div>
+    <div class="body">
+      <div class="shot">slides.html — three columns scroll up: Itch · Build · Proof</div>
+      <p class="vo">"The best career advice is locked in hour-long videos. You can't search it, can't
+        compare two experts, and can't cite it. So I built something that can."</p>
+      <div class="meta">~11 s · slow scroll reveal, one column at a time</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">S2</div>
+    <div class="body">
+      <div class="shot">slides.html — architecture graph scrolls into frame</div>
+      <p class="vo">"One corpus, six ways to answer over it, and one judge scoring all six on the
+        same labelled questions. Here's what that looks like running."</p>
+      <div class="meta">~10 s · hold on the graph, then scroll into the app</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">1</div>
+    <div class="body">
+      <div class="shot">Chat tab — corpus loaded, empty composer</div>
+      <p class="vo">"Transcript RAG. Thirty-five YouTube videos from career, property and AI-coding
+        experts — seven hundred and fifteen chunks — turned into something you can actually ask."</p>
+      <div class="meta">~9 s · static shot, no interaction · <b>read the live counts off the app
+        header at record time</b> — the corpus grew 26→35 videos and 546→715 chunks while this plan
+        sat open, and the spoken number must match what is on screen</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">2</div>
+    <div class="body">
+      <div class="shot">Ask a resume question — answer renders from history with citations</div>
+      <p class="vo">"Ask it what makes a resume ATS-friendly. The answer cites the exact moment in the
+        exact video, so every claim is checkable — this is the problem I actually built it to solve."</p>
+      <div class="meta">~11 s · pre-warmed entry, instant render · <b>the hook scene</b></div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">3</div>
+    <div class="body">
+      <div class="shot">Expand the persisted answer trace</div>
+      <p class="vo">"Every answer keeps its execution trace — the retrieval, the rerank, the LLM call,
+        with chunk IDs and timings. It survives a reload, so nothing here is a black box."</p>
+      <div class="meta">~10 s · click the trace disclosure</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">4</div>
+    <div class="body">
+      <div class="shot">Paste a resume URL — document card renders, review answer</div>
+      <p class="vo">"Paste a URL and it reviews that document against the corpus. Your resume supplies
+        what is critiqued; the transcripts supply the criteria — and the two are cited separately."</p>
+      <div class="meta">~12 s · document card + sectioned §-citations · <b>the differentiator</b></div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">5</div>
+    <div class="body">
+      <div class="shot">Compare tab — six setups answering the same question side by side</div>
+      <p class="vo">"The same question, six different retrieval architectures — single-hop, recursive,
+        agentic, GraphRAG, HyDE and contextual retrieval — all answering side by side."</p>
+      <div class="meta">~11 s · one live call on graph_rag while narrating</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">6</div>
+    <div class="body">
+      <div class="shot">Experiments tab — the 8-config ablation table</div>
+      <p class="vo">"Eight retrieval configurations swept over twenty hand-labelled questions. Ordered
+        as pairs that differ by exactly one thing, so a delta means something."</p>
+      <div class="meta">~10 s · scroll the ablation card</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">7</div>
+    <div class="body">
+      <div class="shot">Zoom the semantic/hybrid rerank pairs</div>
+      <p class="vo">"Here's the finding. Reranking a bi-encoder ranking improves everything. Reranking
+        a fused ranking makes it worse — fusion already reordered, and the cross-encoder throws that
+        away."</p>
+      <div class="meta">~13 s · <b>the money scene</b> — hold on the two delta rows</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">8</div>
+    <div class="body">
+      <div class="shot">Scoreboard — six setups ranked, cost and latency columns</div>
+      <p class="vo">"Judged head to head. Plain single-hop wins on quality; GraphRAG matches it at a
+        third of the latency; the agentic loop spends eight times the tokens for nothing. HyDE and
+        contextual retrieval both lost — and I published that."</p>
+      <div class="meta">~15 s · hold on the composite + token columns</div>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="n">9</div>
+    <div class="body">
+      <div class="shot">System Design tab — the click-through architecture graph</div>
+      <p class="vo">"Every path, store and prompt is documented from the running code, not a diagram
+        that drifts. Ask a question, check the citation, measure the architecture. That's the loop."</p>
+      <div class="meta">~12 s · click one node to open its prompt panel, then fade</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="loop">Adversarial refinement loop — build, score, rebuild</h2>
+<p class="lede">
+  Not one shot. The recorder produces a take, a separate adversarial reviewer scores it out of 10
+  against a rubric, and anything under <b>8</b> goes back to the generator with specific fixes. Max
+  <b>5</b> rounds. The loop keeps the <i>best-scoring</i> take, never simply the last one.
+</p>
+
+<div class="callout good">
+  <b>I proved the reviewer mechanism before planning around it.</b> Using the sibling's committed
+  <code>product_tour.mp4</code>: parsed its SRT (11 caption blocks), extracted one frame at each
+  caption's midpoint via <code>ffmpeg -ss</code> (~150 KB each), and read the frame back as an image.
+  Three things came out of that test, and they set the whole design:
+  <ul style="font-size:12.5px; margin:8px 0 0 18px; line-height:1.65">
+    <li><b>On-screen text is legible</b> at the recorded viewport — so "can a viewer read this?" is a
+      real, checkable question, not a guess.</li>
+    <li><b>Spoken claims can be checked against pixels.</b> The narration said <i>"nine hundred a week
+      today, twelve-sixty proposed"</i>; the header read <code>$900/wk → $1260/wk</code>. Verified.
+      This is the single highest-value check in the rubric — it is exactly what would have caught our
+      own stale <i>"26 videos, 546 chunks"</i> line.</li>
+    <li><b>It caught a real defect in the sibling video:</b> the caption bar sits at
+      <code>top:80%</code> and overlaps the plan canvas mid-content. That is a production bug a human
+      reviewer skims past and a frame-by-frame reviewer cannot.</li>
+  </ul>
+</div>
+
+<div class="mermaid-wrap" style="margin-top:14px">
+<pre class="mermaid">
+flowchart TD
+  P["script.json<br/>versioned scene list"] --> G["generator<br/>record_walkthrough.py"]
+  G --> V["take_N.mp4 + .srt"]
+  V --> X["extract_frames.py<br/>one frame per caption midpoint"]
+  X --> D["deterministic checks<br/>no LLM — caption fit, dead air, drift"]
+  D --> R["adversarial reviewer<br/>frames + SRT + mission + rubric"]
+  R --> S{"score >= 8?"}
+  S -- yes --> W["ship: walkthrough.mp4"]
+  S -- "no, round &lt; 5" --> F["must_fix[] -> patch script.json"]
+  F --> G
+  S -- "no, round = 5" --> B["ship best-scoring take<br/>+ publish the scorecard"]
+</pre>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="panel">
+    <h4>How the reviewer actually sees a video</h4>
+    <p style="font-size:12.5px">
+      It does not stream video. It receives <b>one keyframe per narrated scene</b>, sampled at the
+      midpoint of each SRT caption, plus the full SRT text with timings. Eleven scenes means eleven
+      images — enough to judge composition, legibility and claim-accuracy, small enough to fit one
+      context. Motion is the one thing this cannot see, which is why the deterministic pass below
+      owns timing instead.
+    </p>
+  </div>
+  <div class="panel">
+    <h4>Deterministic checks run first (no LLM)</h4>
+    <p style="font-size:12.5px">
+      Cheap, objective failures should never cost a model call: every scene has a caption; no caption
+      exceeds the bar's two-line budget; no gap over 2.5 s without narration; audio duration within
+      1 s of video; SRT block count equals scene count; no <code>error</code>/<code>failed</code> text
+      visible in any frame. Any failure short-circuits to a rebuild <b>without</b> consuming a review
+      round.
+    </p>
+  </div>
+</div>
+
+<h3 style="margin-top:20px; font-size:14px">The rubric — six dimensions, weighted</h3>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>dimension</th><th>weight</th><th>the adversarial question</th></tr></thead>
+    <tbody>
+      <tr><td><b>Claim integrity</b></td><td class="num best">×3</td><td>Does every spoken number match what is on screen in that frame? Any unverifiable claim caps the whole score at 6.</td></tr>
+      <tr><td><b>Hook</b></td><td class="num">×2</td><td>By 20 s, does a viewer know what this does <i>for them</i>? Slides S1–S2 have to earn their place.</td></tr>
+      <tr><td><b>Legibility</b></td><td class="num">×2</td><td>Is every element the narration refers to actually readable, unobscured, and on screen when named?</td></tr>
+      <tr><td><b>Pacing</b></td><td class="num">×1</td><td>Dead air, rushed cuts, or a caption gone before it can be read.</td></tr>
+      <tr><td><b>Arc</b></td><td class="num">×1</td><td>Does it land Itch → Build → Proof, or is it a feature tour?</td></tr>
+      <tr><td><b>Production</b></td><td class="num">×1</td><td>Spinners, empty states, dev artefacts, overlapping chrome, stale corpus counts.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="panel">
+    <h4>Configuring the reviewer to be genuinely adversarial</h4>
+    <p style="font-size:12.5px">
+      A reviewer that wants to be helpful scores everything an 8. Four settings prevent that:
+    </p>
+    <ul style="font-size:12.5px; margin:6px 0 0 18px; line-height:1.65">
+      <li><b>Prosecutorial prompt</b> — "find the strongest reason a hiring engineer would dismiss
+        this," not "review this video."</li>
+      <li><b>Evidence required</b> — every criticism must cite a scene number and quote the frame or
+        caption. Uncitable criticisms are dropped before scoring.</li>
+      <li><b>No memory of its own scores</b> — each round reviews the take cold, with the previous
+        round's <i>fixes</i> but not its <i>grade</i>, so scores cannot drift upward by anchoring.</li>
+      <li><b>Weighted mean, hard cap</b> — one failed claim-integrity check caps the total at 6
+        regardless of the other five dimensions. A beautiful video that says something untrue fails.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <h4>Why the generator is a data file, not a prompt</h4>
+    <p style="font-size:12.5px">
+      Feedback has to change something <i>reproducible</i>. So the scene list lives in
+      <code>demo/script.json</code> — shot, selector, narration line, hold duration, per scene — and
+      the reviewer's <code>must_fix[]</code> is applied as a patch to that file. Re-recording is then
+      deterministic and diffable: you can see exactly what round 3 changed versus round 2, and the
+      final video is reproducible from a committed artefact rather than from a conversation.
+    </p>
+  </div>
+</div>
+
+<div class="callout warn" style="margin-top:14px">
+  <b>Cost and honesty controls.</b> Each round is one recording (~3 min wall clock, Deepgram TTS only
+  re-synthesises <i>changed</i> lines since the cache is keyed on text) plus one review call with ~11
+  images. Five rounds is the ceiling, not the target — the loop exits the moment it clears 8. Every
+  round's score and verdict is written to <code>demo/artifacts/review_log.json</code> and
+  <b>committed</b>: if the final video shipped at 7.4 after five rounds, that number is in the repo.
+  A refinement loop whose failures are invisible is just a slower one-shot.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="site">Site write-up — updating <code>_projects/transcript-rag.md</code></h2>
+<div class="callout risk">
+  <b>The existing page is two generations stale.</b> It describes three answer paths (single-hop /
+  recursive / agentic), a headline metric of <code>6.1× fewer tokens at 0.93 similarity</code>, and a
+  stack with no Neo4j. Since then the project gained GraphRAG, HyDE, contextual retrieval, document
+  review, the eval matrix and the CI gate. Anyone comparing the page to the repo today sees a
+  mismatch — this is a correctness fix, not just a polish.
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>field</th><th>current</th><th>proposed</th></tr></thead>
+    <tbody>
+      <tr><td><code>metric</code></td><td>6.1×</td><td><b>35</b> — practitioners your resume is reviewed against <span class="badge plain">pending decision 2</span></td></tr>
+      <tr><td><code>metric_label</code></td><td>fewer tokens at 0.93 answer similarity</td><td>practitioners cited, every claim timestamped to the second</td></tr>
+      <tr><td><code>summary</code></td><td>three paths, token comparison</td><td>Paste your resume and get advice back that cites the exact second a practitioner said it — over six retrieval architectures measured head to head</td></tr>
+      <tr><td><code>stack</code></td><td>LangChain, Chroma, MiniLM, DeepSeek, FastAPI, MLflow</td><td>+ Neo4j GraphRAG, cross-encoder rerank, RAGAS, React 19</td></tr>
+      <tr><td><code>media.walkthrough</code></td><td><i>absent</i> — renders "video coming"</td><td><code>/assets/video/transcript-rag/walkthrough.mp4</code></td></tr>
+      <tr><td><code>media.poster</code></td><td><i>absent</i></td><td>Scoreboard or Experiments still</td></tr>
+      <tr><td><code>evidence</code></td><td>architecture.svg + a comparison dashboard</td><td>+ ablation table still, scoreboard still, document-review card still</td></tr>
+      <tr><td>body prose</td><td>3-path narrative</td><td>rewritten around the two findings above</td></tr>
+    </tbody>
+  </table>
+</div>
+<p style="font-size:12.5px; margin-top:10px">
+  The layout already supports everything needed — <span class="fileref">_layouts/project.html</span>
+  renders <code>media.walkthrough</code> as a <code>&lt;video controls&gt;</code> with a poster, and
+  the sibling commits its 2.8 MB MP4 straight into <code>assets/video/</code>. No new site plumbing.
+</p>
+
+<!-- ============================================================ -->
+<h2 id="sizing">Sizing — 2.5 to 3.5 days</h2>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>task</th><th>est</th><th>notes</th></tr></thead>
+    <tbody>
+      <tr><td>Port <code>narration.py</code> from the sibling</td><td class="est"><span class="badge good">done</span></td><td>Ported, recoloured, lint + import verified; Playwright added as a <code>demo</code> group</td></tr>
+      <tr><td>Build <code>demo/slides.html</code> title deck</td><td class="est">2–3 h</td><td>Two slides in the app's theme, scroll-driven so it records as one take</td></tr>
+      <tr><td>Write <code>demo/script.json</code> + recorder</td><td class="est">6–8 h</td><td>Eleven scenes; the scene list is data so the loop can patch it</td></tr>
+      <tr><td>Pre-warm demo state</td><td class="est">1–2 h</td><td>Seed the history entry + document so scenes 2 and 4 render instantly</td></tr>
+      <tr><td><b>Adversarial loop harness</b></td><td class="est">5–7 h</td><td>Frame extraction, deterministic checks, reviewer prompt + rubric, patch-and-rerecord driver, review log</td></tr>
+      <tr><td>Run the loop</td><td class="est">2–4 h</td><td>Up to 5 rounds × (~3 min record + one review); mostly waiting, not working</td></tr>
+      <tr><td>Independent-judge rerun</td><td class="est">1 h</td><td><code>YT_AGENT_JUDGE_MODEL</code> + cached 5-question matrix — preempts the self-grading critique</td></tr>
+      <tr><td>Charts for the write-up</td><td class="est">2–3 h</td><td>recall@k by config · composite vs tokens scatter</td></tr>
+      <tr><td>Case study prose</td><td class="est">4–6 h</td><td>The long pole; the two findings plus the two caught bugs</td></tr>
+      <tr><td>Readme restructure + video link</td><td class="est">1–2 h</td><td>Lead with the video and the findings above the fold</td></tr>
+      <tr><td>Site page rewrite + assets</td><td class="est">2–3 h</td><td>Front-matter, prose, MP4 + stills into <code>assets/</code></td></tr>
+      <tr class="total"><td>Total</td><td class="est">26–38 h</td><td>3.5–5 days · the loop and title deck add ~7–14 h over the one-shot plan</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="callout good">
+  <b>Dependency check — all verified on this machine, nothing outstanding.</b>
+  <code>DEEPGRAM_API_KEY</code> present in <span class="fileref">floor-plan-reviewer/app/.env</span>
+  (copy the line into this repo's <code>.env</code> for a narrated take; without it the recorder still
+  produces a captioned silent video). <code>ffmpeg</code> and <code>ffprobe</code> on PATH. Playwright
+  Chromium 151 launches. <code>demo/narration.py</code> ported and lint-clean; Playwright added as a
+  <code>demo</code> dependency group so it stays out of the runtime and dev installs.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="roadmap">Product roadmap — ranked by resume impact</h2>
+<p style="font-size:12.5px; color:var(--muted)">
+  What goes in the write-up's "what's next" section, and what actually gets built after this task.
+</p>
+
+<div class="rank top">
+  <div class="rh"><span class="rn">1</span><b>Deploy behind an auth gate</b><span class="sp"></span>
+    <span class="badge good">very high</span><span class="badge acc">2–4 days</span></div>
+  <p>A URL answers "is this real" in a way no repo can. Google OAuth as a <i>gate, not accounts</i>;
+    demo-mode history so the shared git-tracked file is never written; hard daily spend cap. The
+    case study gains a "try it live" link — which is why it ranks first after this task.</p>
+</div>
+
+<div class="rank">
+  <div class="rh"><span class="rn">2</span><b>Distilled expert agents</b><span class="sp"></span>
+    <span class="badge acc">high</span><span class="badge acc">1–2 weeks</span></div>
+  <p>Cluster the corpus, distil each cluster into a cited knowledge card, route questions to the right
+    expert. The only remaining idea that adds a <i>different kind</i> of signal — offline compilation,
+    versioned artifacts, a router — plus a score-vs-corpus-size learning curve almost nobody produces.
+    Spec is already written: <span class="fileref">.lavish/s08_expert-agents-plan.html</span>.</p>
+</div>
+
+<div class="rank">
+  <div class="rh"><span class="rn">3</span><b>Trends over time</b><span class="sp"></span>
+    <span class="badge acc">medium-high</span><span class="badge acc">3–5 days</span></div>
+  <p>The one you named, and it is closer than it looks: the GraphRAG <code>temporal</code> route
+    already builds dated claim timelines from <code>upload_date</code>, and the recency-weighting
+    design from s08 already exists on paper. "How did expert consensus on X shift over 18 months" is a
+    genuinely product-shaped question that no competitor chatbot answers — and it is a strong demo.</p>
+</div>
+
+<div class="rank">
+  <div class="rh"><span class="rn">4</span><b>Corpus expansion + a second vertical</b><span class="sp"></span>
+    <span class="badge plain">medium</span><span class="badge acc">2–3 days</span></div>
+  <p>26 videos is thin for the career expert (6 source videos). Doubling the corpus makes every
+    finding sturdier and is the precondition for the expert-agents learning curve to say anything.
+    Low glamour, high leverage — and mostly compute, not engineering.</p>
+</div>
+
+<div class="rank">
+  <div class="rh"><span class="rn">5</span><b>Deep research mode</b><span class="sp"></span>
+    <span class="badge plain">medium-low</span><span class="badge acc">~1 week</span></div>
+  <p>Becoming commodity — every framework ships a tutorial, and the agentic ReAct and recursive paths
+    it would extend already exist here. The only differentiating version is <i>evaluating</i> long-form
+    research: citation precision, rubric-scored reports. Real work, modest delta. Backlog unless a
+    target role names it.</p>
+</div>
+
+<div class="rank">
+  <div class="rh"><span class="rn">6</span><b>Multi-tenant SaaS</b><span class="sp"></span>
+    <span class="badge bad">low</span><span class="badge warn">weeks</span></div>
+  <p>User accounts, per-user corpora, billing. Weeks of undifferentiated plumbing that signals nothing
+    about AI engineering. <b>Explicitly not recommended</b> — the case study gets a short "what
+    production multi-tenancy would require" section instead. The analysis is the signal.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="decisions">Decisions — queue your answers back</h2>
+<p style="font-size:12.5px; color:var(--muted)">Pick and queue; nothing sends until you click. Annotate any narration line or table row you want changed.</p>
+
+<div class="decision" id="d1">
+  <div class="q">1 · Approve the video plan and script?</div>
+  <div class="qsub">Eleven scenes (2 title slides + 9 app), ~2:35, then refined by the adversarial loop until it clears 8/10.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'video-plan', {
+    approve: 'approve the 11-scene script (2 slides + 9 app) as drafted and start building the slides, recorder and loop harness',
+    shorter: 'cut it to ~60-75 seconds — keep the two slides, the hook and the document review, drop the trace and System Design scenes',
+    'all-live': 'record every scene against live LLM calls even though it runs longer, so nothing is pre-warmed',
+    rewrite: 'hold — I will annotate the narration lines I want rewritten first'
+  })">
+    <label class="opt2"><input type="radio" name="video-plan" value="approve" checked>
+      <span class="otext"><b>Approve as drafted (recommended)</b><span>Eleven scenes, ~2:35 — the two title slides carry the argument so the app scenes can just demonstrate.</span></span></label>
+    <label class="opt2"><input type="radio" name="video-plan" value="shorter">
+      <span class="otext"><b>Cut to ~60–75 s</b><span>Hook + document review + the two findings only. Higher completion rate, less depth.</span></span></label>
+    <label class="opt2"><input type="radio" name="video-plan" value="all-live">
+      <span class="otext"><b>All scenes fully live</b><span>Most honest, but 3–4 minutes with visible waiting — I would not recommend it.</span></span></label>
+    <label class="opt2"><input type="radio" name="video-plan" value="rewrite">
+      <span class="otext"><b>Hold — rewrite lines first</b><span>Annotate the scenes above and I will redraft before any code.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d2">
+  <div class="q">2 · Headline metric for the site card?</div>
+  <div class="qsub">This is the big number on the project card and the first thing scanned on the site.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'metric', {
+    'capability': 'your resume, reviewed against 35 practitioners — every claim timestamp-cited (capability framing)',
+    'configs': '8 x 20 — retrieval configs measured on a labelled golden set (rigour framing)',
+    'keep': 'keep 6.1x fewer tokens at 0.93 similarity (the concrete efficiency result)',
+    'negative': '3 of 3 — fashionable techniques measured and rejected (the contrarian framing)'
+  })">
+    <label class="opt2"><input type="radio" name="metric" value="capability" checked>
+      <span class="otext"><b>"Your resume, reviewed against 35 practitioners — every claim timestamp-cited" (recommended)</b><span>Follows your steer that the <i>use</i> is the interesting bit. Leads with what it does for a reader; the rigour numbers still sit one scroll below.</span></span></label>
+    <label class="opt2"><input type="radio" name="metric" value="configs">
+      <span class="otext"><b>"8 × 20" — configs × labelled questions</b><span>Leads with measurement discipline. Strong for an engineering audience, but answers "can I trust it?" before "why care?".</span></span></label>
+    <label class="opt2"><input type="radio" name="metric" value="keep">
+      <span class="otext"><b>Keep "6.1×"</b><span>Concrete and still true, but it's the oldest finding and undersells everything since.</span></span></label>
+    <label class="opt2"><input type="radio" name="metric" value="negative">
+      <span class="otext"><b>"3 of 3 rejected"</b><span>Memorable and unusual — but risks reading as a negative headline out of context.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d3">
+  <div class="q">3 · Where does the long-form case study live?</div>
+  <div class="qsub">The site page is short-form by design; the full narrative with charts needs a home.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'case-study-home', {
+    'repo-docs': 'a docs/case-study.md in the repo, linked from the readme and the site page',
+    'site-only': 'expand the site project page itself and skip a separate long-form doc',
+    'both': 'both — full version in repo docs, condensed version on the site page'
+  })">
+    <label class="opt2"><input type="radio" name="case-study-home" value="both" checked>
+      <span class="otext"><b>Both (recommended)</b><span>Full narrative + charts in <code>docs/case-study.md</code>; the site page condenses and links to it.</span></span></label>
+    <label class="opt2"><input type="radio" name="case-study-home" value="repo-docs">
+      <span class="otext"><b>Repo only</b><span>One source of truth, but the site page stays thin.</span></span></label>
+    <label class="opt2"><input type="radio" name="case-study-home" value="site-only">
+      <span class="otext"><b>Site only</b><span>Best for non-technical readers; the repo readme then has to carry it alone.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d4">
+  <div class="q">4 · How hard should the adversarial gate bite?</div>
+  <div class="qsub">You specified 8/10 over max 5 rounds. The question is what happens when round 5 still falls short.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'loop-gate', {
+    'ship-best': 'threshold 8, max 5 rounds — ship the best-scoring take and commit the scorecard showing it fell short',
+    'escalate': 'threshold 8, max 5 rounds — stop and hand me the scorecard rather than shipping anything under 8',
+    'stricter': 'raise the bar to 9 and accept it will usually spend all 5 rounds',
+    'looser': 'drop to 7 — get something shipped in 2 or 3 rounds and iterate later'
+  })">
+    <label class="opt2"><input type="radio" name="loop-gate" value="ship-best" checked>
+      <span class="otext"><b>Ship best take, publish the score (recommended)</b><span>Matches how the rest of this project handles negative results: the number goes in the repo either way.</span></span></label>
+    <label class="opt2"><input type="radio" name="loop-gate" value="escalate">
+      <span class="otext"><b>Stop and escalate to me</b><span>Nothing under 8 gets published; you decide the fix. Safest, but the loop can end with no video.</span></span></label>
+    <label class="opt2"><input type="radio" name="loop-gate" value="stricter">
+      <span class="otext"><b>Raise to 9/10</b><span>Near-certain to burn all five rounds. Real risk the reviewer starts inventing objections to justify the gap.</span></span></label>
+    <label class="opt2"><input type="radio" name="loop-gate" value="looser">
+      <span class="otext"><b>Drop to 7/10</b><span>Ships fastest, but 7 is roughly "competent and forgettable" — below the bar this artifact exists to clear.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d5">
+  <div class="q">5 · Deepgram key — confirmed available, just confirming the voice</div>
+  <div class="qsub">I checked: the key is in <code>floor-plan-reviewer/app/.env</code>, ffmpeg and Chromium both work. Only the voice choice is open.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'deepgram', {
+    same: 'same voice as the sibling (aura-2-hyperion-en, Australian) so the portfolio sounds consistent',
+    different: 'pick a different Aura voice so the two projects are distinguishable',
+    silent: 'captions-only for now, add voice later'
+  })">
+    <label class="opt2"><input type="radio" name="deepgram" value="same" checked>
+      <span class="otext"><b>Same voice as floor-plan (recommended)</b><span>A consistent narrator across the portfolio reads as one body of work.</span></span></label>
+    <label class="opt2"><input type="radio" name="deepgram" value="different">
+      <span class="otext"><b>Different Aura voice</b><span>Distinguishable, at the cost of portfolio coherence.</span></span></label>
+    <label class="opt2"><input type="radio" name="deepgram" value="silent">
+      <span class="otext"><b>Captions only for now</b><span>Degrades gracefully; voice can be added by re-running.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0]*fa + bg[0]*ba*(1-fa)) / a,
+      (fg[1]*fa + bg[1]*ba*(1-fa)) / a,
+      (fg[2]*fa + bg[2]*ba*(1-fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBg = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBg = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0,0,0,0];
+    const [r,g,b,a] = compositeRgba(bodyBg, rootBg);
+    if (a > 0) return (0.2126*r + 0.7152*g + 0.0722*b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (!rendering) void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (e) { console.error("Mermaid render failed:", e); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener("transitionend", ({ propertyName }) => { if (propertyName === "background-color") queueRender(); }, true);
+  darkQuery.addEventListener("change", queueRender);
+</script>
+
+<script>
+  function submitDecision(form, question, labels) {
+    const data = new FormData(form);
+    const answer = data.get(question);
+    const prompt = 'Decision — ' + question + ': ' + labels[answer];
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt(prompt, {
+        tag: 'decision',
+        text: question + ': ' + answer,
+        element: form,
+        queueKey: question,
+        data: { question, answer }
+      });
+      form.closest('.decision').classList.add('is-queued');
+      const note = form.querySelector('.queue-note');
+      if (note) note.textContent = 'queued — will send with the rest';
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+</script>
+
+</body>
+</html>

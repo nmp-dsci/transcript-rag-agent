@@ -1,0 +1,25 @@
+{
+  "key": "p02-length:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.8886,
+    "context_precision": 1.0,
+    "insight_depth": 0.1,
+    "specificity": 0.2,
+    "coverage": 0.2,
+    "evidence_breadth": 0.1,
+    "calibration": 0.6
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9629
+  },
+  "depth_v2": {
+    "composite": 0.4989,
+    "uncapped": 0.4989,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 5
+}

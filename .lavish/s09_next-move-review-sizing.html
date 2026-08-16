@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>s09 — Next move: review &amp; sizing</title>
+<style>
+  :root, :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #0e1116; --panel: #12161d; --panel2: #1c2330; --panel3: #161b22;
+    --border: #252b35; --border2: #2b3442;
+    --text: #e6edf3; --text2: #c9d1d9; --muted: #8b949e; --dim: #6e7681;
+    --accent: #2f81f7; --accent2: #79b8ff; --accent-dim: #132339; --accent-border: #1f4a7a;
+    --good: #3fb950; --good-dim: #173a2b; --good-border: #1f5937;
+    --warn: #d29922; --warn-dim: #3a2e12; --warn-border: #5c451a;
+    --bad: #f85149; --bad-dim: #3d1d1f; --bad-border: #6b2a2c;
+    --purple: #a371f7; --purple-dim: #271947; --purple-border: #3d2a63;
+    --on-accent: #0b1220; --btn-hover: #232b38; --accent-hover: #4b93f8;
+    --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #f6f8fa; --panel: #ffffff; --panel2: #eaeef2; --panel3: #f6f8fa;
+    --border: #d1d9e0; --border2: #bcc4cc;
+    --text: #1f2328; --text2: #424a53; --muted: #59636e; --dim: #818b98;
+    --accent: #0969da; --accent2: #0550ae; --accent-dim: #ddf4ff; --accent-border: #b6e3ff;
+    --good: #1a7f37; --good-dim: #dafbe1; --good-border: #aceebb;
+    --warn: #9a6700; --warn-dim: #fff8c5; --warn-border: #d4a72c;
+    --bad: #cf222e; --bad-dim: #ffebe9; --bad-border: #ffcecb;
+    --purple: #8250df; --purple-dim: #fbefff; --purple-border: #e3c6ff;
+    --on-accent: #ffffff; --btn-hover: #eef2f6; --accent-hover: #0860ca;
+  }
+  * { box-sizing: border-box; }
+  *, *::before, *::after { min-width: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.6 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 1180px; margin: 0 auto; padding: 40px 24px 140px;
+  }
+  h1 { font-size: 27px; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 14.5px; margin: 0 0 8px; color: var(--text); }
+  h4 { font-size: 12.5px; margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  p { color: var(--text2); }
+  .lede { color: var(--muted); font-size: 15px; max-width: 880px; }
+  code { font-family: var(--mono); background: var(--panel2); border: 1px solid var(--border2); border-radius: 4px; padding: 1px 5px; font-size: 12.5px; overflow-wrap: anywhere; }
+  a { color: var(--accent2); }
+  ul, ol { padding-left: 20px; }
+  li { color: var(--text2); margin: 3px 0; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 2px 7px; font: 600 10.5px var(--mono); white-space: nowrap; }
+  .badge.good { background: var(--good-dim); color: var(--good); border: 1px solid var(--good-border); }
+  .badge.acc { background: var(--accent-dim); color: var(--accent2); border: 1px solid var(--accent-border); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-border); }
+  .badge.bad { background: var(--bad-dim); color: var(--bad); border: 1px solid var(--bad-border); }
+  .badge.purple { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+  .badge.plain { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font: 600 10.5px var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 7px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  tr:last-child td { border-bottom: none; }
+  td.est { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; color: var(--accent2); }
+  tr.total td { border-top: 2px solid var(--border2); color: var(--text); font-weight: 600; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .tablewrap table { min-width: 520px; }
+
+  .statrow { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+  @media (max-width: 860px) { .statrow { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; text-align: center; padding: 14px 10px; }
+  .stat .v { font: 700 21px var(--mono); color: var(--text); }
+  .stat .l { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .stat.gap { border-color: var(--warn-border); background: linear-gradient(180deg, var(--warn-dim), var(--panel) 55%); }
+  .stat.gap .v { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: var(--text2); margin: 14px 0; }
+  .callout.warn { border-left-color: var(--warn); background: var(--warn-dim); }
+  .callout.risk { border-left-color: var(--bad); background: var(--bad-dim); }
+  .callout b { color: var(--text); }
+
+  /* ranked option cards */
+  .opt { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 17px 19px; margin: 16px 0; }
+  .opt.rec { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-dim), var(--panel) 32%); }
+  .opt .ohead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .opt .rank { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--panel2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font: 700 12px var(--mono); color: var(--muted); }
+  .opt.rec .rank { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .opt .ohead b { font-size: 14.5px; }
+  .opt .ohead .spacer { flex: 1 1 auto; }
+  .opt p.why { font-size: 12.5px; margin: 8px 0 10px; }
+  .opt .risk { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .opt .risk b { color: var(--warn); }
+
+  .mermaid-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; overflow-x: auto; }
+  .mermaid { display: flex; justify-content: center; min-width: 560px; }
+
+  .seq { display: flex; flex-direction: column; margin: 6px 0 0; }
+  .seq .n { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .seq .n:first-child { border-top: none; }
+  .seq .n .wk { flex: 0 0 auto; font: 700 11px var(--mono); color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 5px; padding: 3px 8px; height: fit-content; white-space: nowrap; }
+  .seq .n .why { color: var(--dim); font-size: 12px; }
+
+  /* decision forms */
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .decision .q { font-size: 13.5px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  .decision .qsub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .decision label.opt2 { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border: 1px solid var(--border2); border-radius: 8px; margin-bottom: 7px; cursor: pointer; background: var(--panel2); transition: border-color .12s; }
+  .decision label.opt2:hover { border-color: var(--accent-border); }
+  .decision label.opt2 input { margin-top: 3px; flex: 0 0 auto; }
+  .decision label.opt2 .otext b { font-size: 12.5px; color: var(--text); }
+  .decision label.opt2 .otext span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .decision .queuebar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .decision button.q-submit { background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px; padding: 7px 14px; font: 600 12px var(--mono); cursor: pointer; }
+  .decision button.q-submit:hover { background: var(--accent-hover); }
+  .decision.is-queued { border-color: var(--good-border); }
+  .decision.is-queued .queue-note { color: var(--good); }
+  .queue-note { font-size: 11.5px; color: var(--dim); }
+
+  .fileref { font-family: var(--mono); font-size: 11.5px; color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 4px; padding: 1px 6px; }
+</style>
+</head>
+<body>
+
+<h1>Next move — review &amp; sizing</h1>
+<p class="lede">
+  The goal is a portfolio that reads as <b>senior / principal AI engineer</b>. The thesis of this review:
+  with six answer paths, an 8-config retrieval ablation, a judged head-to-head matrix, a CI eval gate and
+  1,200+ tests, <i>"can build RAG"</i> is already proven beyond doubt. What the project has zero of is a
+  <b>URL</b> and a <b>narrative</b> — the two artifacts a reviewer actually encounters. Every option below
+  is sized at task level and ranked by resume impact, not by how interesting it is to build.
+</p>
+
+<div class="statrow">
+  <div class="stat"><div class="v">6</div><div class="l">answer paths shipped &amp; measured</div></div>
+  <div class="stat"><div class="v">8 × 6</div><div class="l">ablation configs × judged matrix setups</div></div>
+  <div class="stat"><div class="v">1,215</div><div class="l">tests (927 py + 288 fe) + CI eval gate</div></div>
+  <div class="stat gap"><div class="v">0 / 0</div><div class="l">deployed URLs / published write-ups — the gap</div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Impact vs effort, at a glance</h2>
+<div class="mermaid-wrap">
+<pre class="mermaid">
+quadrantChart
+  title Resume impact vs effort
+  x-axis "Low effort" --> "High effort"
+  y-axis "Low impact" --> "High impact"
+  quadrant-1 "Schedule next"
+  quadrant-2 "Do first"
+  quadrant-3 "Fold in"
+  quadrant-4 "Backlog"
+  "1 Case study": [0.14, 0.95]
+  "2 Deploy + harden": [0.34, 0.88]
+  "3 Expert agents P1-2": [0.72, 0.7]
+  "4 Eval pack": [0.18, 0.42]
+  "5 Deep research": [0.62, 0.3]
+</pre>
+</div>
+<p style="font-size:12.5px; color:var(--muted); margin-top:8px">
+  Reading: #1 and #2 are the "do first" pair — highest impact per day, and together they form the
+  reviewer-facing package. #3 is real but scheduled, #4 folds into #1, #5 is backlog.
+</p>
+
+<!-- ============================================================ -->
+<h2>The five options, sized</h2>
+
+<div class="opt rec">
+  <div class="ohead">
+    <span class="rank">1</span><b>Case-study write-up</b>
+    <span class="spacer"></span>
+    <span class="badge good">impact: very high</span>
+    <span class="badge acc">1.5–2 days</span>
+    <span class="badge plain">risk: low</span>
+  </div>
+  <p class="why">
+    Reviewers spend ~90 seconds on a repo. A narrative with real numbers — <i>"I implemented HyDE and
+    Contextual Retrieval; both <b>lost</b> to plain hybrid, and here's the mechanism"</i> — is a
+    principal-level artifact almost nobody has, because almost nobody publishes negatives. Ranked #1 in
+    the s07 plan and deferred three times in favor of building. Every number already exists in
+    <span class="fileref">evals/runs/</span>; this is writing, not engineering.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>task</th><th>est</th><th>notes</th></tr></thead>
+      <tbody>
+        <tr><td>Harvest numbers from committed runs</td><td class="est">2–3 h</td><td>8-config ablation, 6-setup matrix, cost/latency columns — all in <code>evals/runs/*.json</code></td></tr>
+        <tr><td>Narrative draft</td><td class="est">4–6 h</td><td>Architecture → the bi/cross-encoder isolation finding → the honest negatives → what I'd do differently</td></tr>
+        <tr><td>Charts</td><td class="est">2–3 h</td><td>recall@k by config, composite by setup, latency-vs-quality scatter</td></tr>
+        <tr><td>Independent-judge rerun <span class="badge plain">option 4 folded in</span></td><td class="est">~1 h</td><td>One env var (<code>YT_AGENT_JUDGE_MODEL</code>) + 5-question matrix rerun — preempts the self-grading critique, the first thing a sophisticated reviewer pokes</td></tr>
+        <tr><td>Publish</td><td class="est">1–2 h</td><td>README top section + blog/LinkedIn post, linked from resume</td></tr>
+        <tr class="total"><td>Total</td><td class="est">~12–15 h</td><td>1.5–2 days · no dependencies · unblocked today</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="opt rec">
+  <div class="ohead">
+    <span class="rank">2</span><b>Deploy + harden — a 20-seat, budget-metered demo</b>
+    <span class="spacer"></span>
+    <span class="badge good">impact: very high</span>
+    <span class="badge acc">3–5 days</span>
+    <span class="badge warn">risk: medium</span>
+  </div>
+  <p class="why">
+    A URL on the resume answers <i>"is this real."</i> The senior-level move is what you <b>don't</b>
+    build: a <b>≤20-account allowlist with per-user LLM budgets</b>, not a signup funnel — no Cognito,
+    no user DB beyond the ledger, no billing. Cost is bounded by construction rather than by hoping,
+    and the metering itself is a demonstrable engineering artifact: <i>"here is how I stopped a public
+    LLM app from being a blank cheque"</i> is a better interview story than the deploy. The app is
+    single-tenant by construction (<code>chat_history.json</code> is a shared, git-tracked file; the
+    document store and matrix runner are global singletons) — deploy demo mode around that and
+    <i>document</i> the multi-tenant gap in the case study rather than spending three weeks closing it.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>task</th><th>est</th><th>notes</th></tr></thead>
+      <tbody>
+        <tr><td>Demo mode: runtime history dir</td><td class="est">2–3 h</td><td>History/doc writes go to a runtime dir, never the tracked file</td></tr>
+        <tr><td>Neo4j password required</td><td class="est">1 h</td><td>Kill the <code>yt-agent-graph</code> default — the deliberately-deferred finding; it's due now</td></tr>
+        <tr><td><b>Allowlist — hard cap of 20 users</b></td><td class="est">2–3 h</td><td>A committed allowlist of ≤20 Google accounts; the 21st sign-in is refused at the auth callback. Bounds worst-case spend by <i>construction</i>, before any budget logic runs</td></tr>
+        <tr><td><b>Per-user LLM budget, tracked</b></td><td class="est">4–5 h</td><td>Every LLM call attributed to a user id and metered — per-user daily cap <i>and</i> a global daily ceiling, both fail-closed. A small persisted ledger (user, day, calls, est. tokens, est. cost) so spend is <i>observable</i>, not just capped</td></tr>
+        <tr><td>Per-IP rate limits</td><td class="est">1–2 h</td><td>slowapi — throttles burst abuse; the budget handles sustained cost</td></tr>
+        <tr><td>Usage panel (admin)</td><td class="est">2 h</td><td>Per-user spend today / this month, and who is near their cap. Makes the cost story demonstrable in the demo itself</td></tr>
+        <tr><td>Request caps, CORS, secrets</td><td class="est">2 h</td><td>Body-size limits; secrets via env/secret manager, out of <code>~/.env</code></td></tr>
+        <tr><td>Auth gate</td><td class="est">3–5 h</td><td>Google OAuth (authlib) — now required rather than optional, since the allowlist and per-user budget both need an identity to key on. Cloudflare Access no longer sufficient on its own</td></tr>
+        <tr><td>Containerize the app</td><td class="est">3–4 h</td><td>compose already runs Neo4j; add the app image (models need ~1–2 GB warm RAM)</td></tr>
+        <tr><td>Host + deploy pipeline</td><td class="est">3–8 h</td><td>Fly/Railway ≈ 3 h fastest URL · AWS (Lightsail/EC2 + GH Actions) ≈ +1 day, buys the resume keyword</td></tr>
+        <tr><td>Smoke tests + runbook</td><td class="est">2 h</td><td>Health checks, a "what to do when spend cap trips" note</td></tr>
+        <tr class="total"><td>Total</td><td class="est">~24–38 h</td><td>3–5 days · one always-on small box — cold-starting the model stack rules out serverless</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout good" style="margin-top:12px">
+    <b>Cost is bounded three ways, deliberately layered.</b> A ≤20-account allowlist caps
+    <i>who</i> can spend at all (structural, no logic to fail); a tracked per-user daily budget caps
+    <i>how much each one can</i>; a global daily ceiling caps the total even if every user maxes out.
+    Worst case is arithmetic you can state in advance — 20 × per-user cap — rather than a number you
+    discover on a bill. All three fail closed: on any doubt the request is refused, never allowed
+    through unmetered.
+  </div>
+  <p class="risk"><b>Risks:</b> a metering bug that under-counts is the failure mode that matters — meter <i>before</i> the call, not after the response, so a timeout or crash still consumes budget · public SSRF surface — already guarded in <span class="fileref">src/documents/fetch.py</span>, worth a line in the write-up · shared demo state if demo mode is skipped.</p>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <span class="rank">3</span><b>Distilled expert agents — Phases 1–2 + learning curve</b>
+    <span class="spacer"></span>
+    <span class="badge acc">impact: high</span>
+    <span class="badge acc">1–2 weeks</span>
+    <span class="badge warn">risk: medium</span>
+  </div>
+  <p class="why">
+    Yes, it still makes sense — it is the only option that reads as <b>product/systems thinking</b> rather
+    than another retrieval variant: offline batch compilation, versioned knowledge artifacts, a router,
+    and the score-vs-corpus-size learning curve is a genuinely uncommon artifact. But it is a feature, and
+    feature #7 ranks below a URL and a write-up. Spec already exists:
+    <span class="fileref">.lavish/s08_expert-agents-plan.html</span>.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>task</th><th>est</th><th>notes</th></tr></thead>
+      <tbody>
+        <tr><td>P1: scoped-retrieval experts + eval <code>scope</code> dimension</td><td class="est">2–3 d</td><td>Zero new indexing — channel-set scoping + matrix axis</td></tr>
+        <tr><td>P2: distillation job + variants B–D</td><td class="est">4–6 d</td><td><code>src/experts/</code> package, <code>index-experts</code> CLI, knowledge cards w/ recency weighting</td></tr>
+        <tr><td>Learning-curve experiment</td><td class="est">1–2 d</td><td>Career expert at 3 / 6 / 9 source videos, same golden questions</td></tr>
+        <tr class="total"><td>Total</td><td class="est">7–11 d</td><td>After #1–2 · router + chat UI (P3–5) deferred further</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="risk"><b>Risk:</b> on a 26-video corpus, distillation may <i>lose</i> to scoped live RAG — the HyDE/contextual results suggest exactly that is possible. A measured negative is still a good case-study chapter, but go in expecting it.</p>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <span class="rank">4</span><b>Eval credibility pack</b>
+    <span class="spacer"></span>
+    <span class="badge plain">impact: medium</span>
+    <span class="badge acc">1–2 days</span>
+    <span class="badge plain">risk: low</span>
+  </div>
+  <p class="why">
+    Independent judge (one env var + rerun), bootstrap CIs on the scoreboard, golden set 20 → 40. Real,
+    but it polishes an existing strength rather than closing a gap — so it is <b>folded into #1</b> (the
+    judge rerun) and the rest is a background task, not a standalone project.
+  </p>
+</div>
+
+<div class="opt">
+  <div class="ohead">
+    <span class="rank">5</span><b>Deep research mode</b>
+    <span class="spacer"></span>
+    <span class="badge plain">impact: medium-low</span>
+    <span class="badge acc">~1 week</span>
+    <span class="badge warn">risk: medium</span>
+  </div>
+  <p class="why">
+    On-trend but rapidly becoming commodity — every framework ships a tutorial, and this repo already has
+    the agentic ReAct loop and recursive multi-hop paths a research mode would extend. The only
+    differentiating version is <i>evaluating</i> long-form research (citation precision, rubric scoring of
+    reports), which is real work for a modest resume delta. <b>Backlog</b> unless a target role explicitly
+    emphasizes agentic research.
+  </p>
+</div>
+
+<div class="callout warn">
+  <b>What NOT to build, explicitly:</b> user accounts, multi-tenancy, per-user billing, Cognito, a
+  serverless rewrite. Weeks of undifferentiated product plumbing that signals nothing about AI
+  engineering. The case study gets a short <i>"what production multi-tenancy would require"</i> section
+  instead — the analysis is the signal, not the implementation.
+</div>
+
+<!-- ============================================================ -->
+<h2>Recommended sequence</h2>
+<div class="panel">
+  <div class="seq">
+    <div class="n"><span class="wk">WK 1</span><div><b>Case study + independent-judge rerun + quick hardening</b><br><span class="why">Write-up drafted and published; Neo4j password, rate limit and spend cap land as one small PR.</span></div></div>
+    <div class="n"><span class="wk">WK 2</span><div><b>Deploy behind the auth gate</b><br><span class="why">One box, demo mode, URL onto resume/LinkedIn. Case study gains a "try it live" link.</span></div></div>
+    <div class="n"><span class="wk">WK 3–4</span><div><b>Expert agents P1–2 + learning curve</b><br><span class="why">Per the s08 spec; case-study addendum with the learning-curve chart, win or lose.</span></div></div>
+    <div class="n"><span class="wk">LATER</span><div><b>Deep research</b> — backlog<br><span class="why">Revisit only against a specific role's emphasis.</span></div></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>Decisions — queue your answers back</h2>
+<p style="font-size:12.5px; color:var(--muted)">Pick and queue; nothing is sent until you click. Annotate any card above to challenge its sizing.</p>
+
+<div class="decision" id="d1">
+  <div class="q">1 · Approve the sequence?</div>
+  <div class="qsub">Case study → deploy → experts is the recommendation; the main alternative is flipping the first two.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'sequence', {
+    approve: 'the recommended sequence — case study wk1, deploy wk2, experts wk3-4, deep research backlog',
+    'deploy-first': 'deploy first, then write the case study against the live URL',
+    hold: 'hold — I will annotate the cards I want re-sized or re-ranked'
+  })">
+    <label class="opt2"><input type="radio" name="sequence" value="approve" checked>
+      <span class="otext"><b>Approve as recommended</b><span>Write-up first — it's unblocked today and the deploy then ships with its story attached.</span></span></label>
+    <label class="opt2"><input type="radio" name="sequence" value="deploy-first">
+      <span class="otext"><b>Deploy first</b><span>URL sooner; the write-up follows against the live app.</span></span></label>
+    <label class="opt2"><input type="radio" name="sequence" value="hold">
+      <span class="otext"><b>Hold — changes first</b><span>Annotate the option cards you want re-sized before anything starts.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d2">
+  <div class="q">2 · Deployment host?</div>
+  <div class="qsub">Both are one always-on small box; the difference is a day of work versus a resume keyword.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'host', {
+    aws: 'AWS — Lightsail or single EC2 + docker-compose + GitHub Actions deploy (+~1 day, buys the AWS keyword)',
+    paas: 'Fly.io or Railway — fastest URL, least ops',
+    defer: 'defer the host choice until the deploy week starts'
+  })">
+    <label class="opt2"><input type="radio" name="host" value="aws" checked>
+      <span class="otext"><b>AWS (recommended, matches your framing)</b><span>Lightsail/EC2 + compose + GH Actions. ~1 extra day; "deployed on AWS" is a JD keyword you said you want.</span></span></label>
+    <label class="opt2"><input type="radio" name="host" value="paas">
+      <span class="otext"><b>Fly.io / Railway</b><span>URL in an afternoon; fine if speed beats the keyword.</span></span></label>
+    <label class="opt2"><input type="radio" name="host" value="defer">
+      <span class="otext"><b>Decide later</b><span>Locks nothing; the hardening tasks are host-agnostic.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d3">
+  <div class="q">3 · Per-user budget — what's the cap?</div>
+  <div class="qsub">
+    Auth is now settled as <b>Google OAuth</b> — the ≤20-account allowlist and per-user metering both
+    need an identity to key on, so Cloudflare Access alone no longer covers it. The open question is
+    the number.
+  </div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'budget', {
+    'calls-40': 'per-user cap of ~40 LLM calls/day plus a global daily ceiling — generous for a demo, worst case 20 users x 40 calls',
+    'calls-15': 'tighter: ~15 LLM calls/user/day — enough to try every answer path once, minimal worst case',
+    'dollar': 'meter in estimated dollars rather than calls, with a per-user daily dollar cap I set',
+    'decide-later': 'decide the number during the deploy week once real per-answer costs are measured'
+  })">
+    <label class="opt2"><input type="radio" name="budget" value="calls-40" checked>
+      <span class="otext"><b>~40 calls/user/day + global ceiling (recommended)</b><span>Enough to explore all six paths and a doc review; worst case is 20 × 40 and knowable up front.</span></span></label>
+    <label class="opt2"><input type="radio" name="budget" value="calls-15">
+      <span class="otext"><b>~15 calls/user/day</b><span>Tightest sensible demo budget — one pass through the app. Lowest risk, may frustrate a curious reviewer.</span></span></label>
+    <label class="opt2"><input type="radio" name="budget" value="dollar">
+      <span class="otext"><b>Meter in dollars, not calls</b><span>Truer to actual cost (paths differ 8× in tokens), slightly more work to estimate per call.</span></span></label>
+    <label class="opt2"><input type="radio" name="budget" value="decide-later">
+      <span class="otext"><b>Set the number during deploy week</b><span>Build the metering now, calibrate the cap against measured per-answer cost.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<div class="decision" id="d4">
+  <div class="q">4 · After the deploy ships?</div>
+  <div class="qsub">Confirms what wk 3–4 is — or whether to stop building and start applying.</div>
+  <form onsubmit="event.preventDefault(); submitDecision(this, 'after-deploy', {
+    experts: 'expert agents Phases 1-2 + learning curve, per the s08 plan',
+    research: 'deep research mode instead, with report-level eval as the differentiator',
+    stop: 'stop building — the case study + URL is the package; spend the time applying and interviewing'
+  })">
+    <label class="opt2"><input type="radio" name="after-deploy" value="experts" checked>
+      <span class="otext"><b>Expert agents P1–2 (recommended)</b><span>The one remaining idea that adds a *different kind* of signal — product/systems thinking.</span></span></label>
+    <label class="opt2"><input type="radio" name="after-deploy" value="research">
+      <span class="otext"><b>Deep research instead</b><span>Only defensible with the long-form eval work attached.</span></span></label>
+    <label class="opt2"><input type="radio" name="after-deploy" value="stop">
+      <span class="otext"><b>Stop and apply</b><span>A legitimate call — the marginal feature may be worth less than the interview reps.</span></span></label>
+    <div class="queuebar"><button type="submit" class="q-submit">Queue this answer</button><span class="queue-note">not sent until you click</span></div>
+  </form>
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(fg, bg) {
+    const fa = fg[3] / 255, ba = bg[3] / 255;
+    const a = fa + ba * (1 - fa);
+    if (a === 0) return [0, 0, 0, 0];
+    return [
+      (fg[0]*fa + bg[0]*ba*(1-fa)) / a,
+      (fg[1]*fa + bg[1]*ba*(1-fa)) / a,
+      (fg[2]*fa + bg[2]*ba*(1-fa)) / a,
+      a * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBg = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBg = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0,0,0,0];
+    const [r,g,b,a] = compositeRgba(bodyBg, rootBg);
+    if (a > 0) return (0.2126*r + 0.7152*g + 0.0722*b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (!rendering) void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.textContent = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (e) { console.error("Mermaid render failed:", e); return; }
+        applied = theme;
+      }
+    } finally {
+      rendering = false;
+      if (queued) queueRender();
+    }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  document.addEventListener("change", queueRender, true);
+  document.addEventListener("transitionend", ({ propertyName }) => { if (propertyName === "background-color") queueRender(); }, true);
+  darkQuery.addEventListener("change", queueRender);
+</script>
+
+<script>
+  function submitDecision(form, question, labels) {
+    const data = new FormData(form);
+    const answer = data.get(question);
+    const prompt = 'Decision — ' + question + ': ' + labels[answer];
+    if (window.lavish && window.lavish.queuePrompt) {
+      window.lavish.queuePrompt(prompt, {
+        tag: 'decision',
+        text: question + ': ' + answer,
+        element: form,
+        queueKey: question,
+        data: { question, answer }
+      });
+      form.closest('.decision').classList.add('is-queued');
+      const note = form.querySelector('.queue-note');
+      if (note) note.textContent = 'queued — will send with the rest';
+    } else {
+      alert('Open this page via lavish-axi to queue answers back to the agent.');
+    }
+  }
+</script>
+
+</body>
+</html>

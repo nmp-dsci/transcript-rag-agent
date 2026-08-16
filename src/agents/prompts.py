@@ -249,6 +249,20 @@ def build_rag_question_prompt(question: str, history: list[str] | None = None) -
     return f"{build_history_prompt(history)}\n\n{prompt}"
 
 
+def build_doc_review_prompt(question: str, history: list[str] | None = None) -> str:
+    """The answering prompt for a question that came with a document.
+
+    A separate template rather than a flag on the RAG one, because the two say
+    opposite things: ``RAG_QUESTION_USER_PROMPT`` instructs the model to answer
+    "using only the retrieved transcript chunks", which is exactly the wrong
+    instruction when the subject of the answer is the user's own document.
+    """
+    prompt = DOC_REVIEW_USER_PROMPT.format(question=question.replace('"', '\\"'))
+    if not history:
+        return prompt
+    return f"{build_history_prompt(history)}\n\n{prompt}"
+
+
 # Kept small on purpose: prior turns are context for resolving references like
 # "that" or "the second one", not extra evidence. Only retrieved chunks are
 # evidence, and blurring that line is how ungrounded answers get cited.
@@ -496,14 +510,166 @@ Rules:
 - Never state or imply that the document contains something it does not. If you
   cannot find a thing, say it is absent — that is often the most useful
   feedback.
+- Scope every absence to what you actually inspected, and say which scope that
+  is. You were given the text of specific sections of one page: you can say "no
+  Skills section appears on this page" or "none of the project cards [§3]-[§8]
+  links to code", but not "there is no Skills section" or "there are no code
+  links" — a nav bar, a footer, or a linked page you were not given may hold the
+  thing you are calling missing. Name the linked page when one is plausibly
+  where it lives ("an About page is linked in [§1] and was not fetched").
 - If the context says the document was cut short or only partly shown, say so
   before drawing conclusions about what is missing from it.
+- If the context warns that the corpus may hold no criteria for this kind of
+  document, open by saying so plainly, and for each point say whether the chunk
+  you are citing is really about this kind of document or is the nearest thing
+  the corpus had. Advice written for a resume does not become advice about a
+  wedding invitation by being the closest match to one.
 - Where the corpus offers no guidance on something you want to advise about,
   give the advice and say it is your own, uncited. Do not attach a [N] citation
   to a recommendation the chunks do not make.
 - Propose follow-up subtopics the same way you would for any question: where
   the corpus guidance is thin on something this document needs.
 """
+
+DOC_REVIEW_USER_PROMPT = """Review the document above, answering the user's request about it.
+
+Ground every point twice:
+- in the DOCUMENT, with a [§N] marker naming the section you are talking about,
+  and a short quoted phrase from it where you are proposing a change;
+- in the RETRIEVED TRANSCRIPT CHUNKS, with a [N] citation for the recommendation
+  or standard that makes it a change worth making.
+
+Cite sections one at a time — [§2] [§4], never "[§2]-[§8]". A point that names no
+section is advice about documents in general, not a review of this one; drop it
+or attach it to the section it applies to.
+
+Where the corpus says nothing about a point you still want to make, make it and
+say the advice is your own. Do not attach a [N] to a chunk that does not
+recommend it.
+
+Return JSON with this exact shape:
+{{
+  "question": "{question}",
+  "answer": "the review, citing [§N] for the document and [N] for the corpus",
+  "references": [
+    {{
+      "label": "[1]",
+      "source_url": "https://www.youtube.com/watch?v=...",
+      "timestamp_url": "https://www.youtube.com/watch?v=...&t=593s",
+      "start_seconds": 593.36,
+      "end_seconds": 665.44,
+      "chunk_index": 10,
+      "video_id": "..."
+    }}
+  ],
+  "answer_confidence": 0.0,
+  "followups_requested": false,
+  "subtopics": [
+    {{
+      "topic": "short subtopic name",
+      "rationale": "what this document needs that the corpus chunks are thin on",
+      "followup_query": "focused retrieval query, not a paraphrase of the original question",
+      "confidence": 0.0
+    }}
+  ]
+}}
+
+``references`` describes transcript chunks only — one entry per [N] you cited.
+Document sections are cited inline as [§N] and never appear in ``references``.
+
+The user's request:
+{question}
+"""
+
+RUBRIC_REVIEW_SYSTEM_PROMPT = """You apply a fixed list of review rubrics to one document, and return a verdict for every rubric.
+
+You are given two things:
+
+1. THE RUBRICS — numbered by id (r0101, r0203, ...). Each is a criterion and the
+   check that decides it. This list is the whole job. You did not choose it, you
+   cannot add to it, and you must not judge the document against anything that
+   is not on it.
+2. THE DOCUMENT — the user's page, split into numbered sections marked [§1],
+   [§2] and so on. This is the only source of what the document says.
+
+Return exactly one verdict per rubric id, and only for ids on the list.
+
+The verdicts:
+- "fail" — the check applies to this document and the document does not satisfy
+  it. Say what is wrong, name the section, quote the phrase.
+- "pass" — the check applies and the document satisfies it. Say what satisfies
+  it and name the section.
+- "n-a" — the check cannot be applied to a document of this kind at all. Most
+  packs contain rules written for a different artifact, and marking those "n-a"
+  is the correct answer, not a cop-out. Use it when the rubric is about
+  something this kind of document does not have.
+
+Rules:
+- Every "fail" must name at least one section in `sections`. A failure you
+  cannot attach to a section is advice about documents in general, and it will
+  be discarded. If a rubric fails because something is *absent*, name the
+  section where it should have been.
+- Scope every absence to what you were actually given. You have the text of
+  specific sections of one page: "no Skills section appears in the sections I
+  was given" is a finding; "there is no Skills section" is not, because a nav
+  bar, a footer or a linked page you were not given may hold it.
+- Do not soften a fail into an n-a because the document is a different kind of
+  thing than the rubric expected, when the rubric's underlying check still has
+  something to bite on. "Quantify the outcome" applies to a project card as much
+  as to a resume bullet. "Keep it to one page" does not apply to a website.
+- Never invent a rubric id. Never merge two rubrics into one verdict.
+- Do not quote or cite the transcripts. You are not given them, and every
+  citation is attached afterwards from the rubric's own recorded evidence.
+
+Severity applies to failures only, and describes this document's failure rather
+than the rule's importance:
+- "blocker" — a reader making a decision about this person would be stopped or
+  misled by it.
+- "major" — it measurably weakens the document for its purpose.
+- "minor" — worth fixing, costs little to leave.
+"""
+
+RUBRIC_REVIEW_USER_PROMPT = """Judge the document above against every rubric in the list, one verdict each.
+
+Work rubric by rubric, in the order given. For each one: decide whether the
+check can be applied to a document of this kind at all; if it can, decide
+whether this document satisfies it; write what you found.
+
+Return JSON with this exact shape and nothing else:
+{{
+  "verdicts": [
+    {{
+      "rubric_id": "r0101",
+      "verdict": "fail",
+      "severity": "major",
+      "sections": [3, 5],
+      "finding": "what this document does about this rubric, quoting the phrase"
+    }}
+  ]
+}}
+
+`sections` are the [§N] numbers as printed above the document text, as integers.
+`severity` is "blocker", "major" or "minor" on a failure, and omitted otherwise.
+`finding` is one or two sentences. On a pass, say what satisfies the check. On
+an n-a, say what the rubric is about that this document does not have.
+
+Return one entry for every rubric id in the list — {rubric_count} of them.
+"""
+
+
+def build_rubric_review_prompt(document_context: str, rubrics_block: str, rubric_count: int) -> str:
+    """The user turn for one pack's review call: the document, then the rules.
+
+    Document first and rubrics second, deliberately. The instruction the model
+    has to still be holding when it starts writing is "one verdict per rubric,
+    in this order", and the last thing it read is the thing it follows.
+    """
+    return (
+        f"{document_context}\n\n"
+        f"RUBRICS ({rubric_count})\n{rubrics_block}\n\n"
+        f"{RUBRIC_REVIEW_USER_PROMPT.format(rubric_count=rubric_count)}"
+    )
+
 
 CHUNK_CONTEXT_SYSTEM_PROMPT = """You situate one transcript chunk inside its video, for retrieval.
 
@@ -747,6 +913,27 @@ PROMPT_REGISTRY: list[dict[str, object]] = [
         "role": "system",
         "template_vars": [],
         "text": DOC_REVIEW_SYSTEM_PROMPT,
+    },
+    {
+        "name": "DOC_REVIEW_USER_PROMPT",
+        "system": "doc_review",
+        "role": "user_template",
+        "template_vars": ["question"],
+        "text": DOC_REVIEW_USER_PROMPT,
+    },
+    {
+        "name": "RUBRIC_REVIEW_SYSTEM_PROMPT",
+        "system": "doc_review",
+        "role": "system",
+        "template_vars": [],
+        "text": RUBRIC_REVIEW_SYSTEM_PROMPT,
+    },
+    {
+        "name": "RUBRIC_REVIEW_USER_PROMPT",
+        "system": "doc_review",
+        "role": "user_template",
+        "template_vars": ["rubric_count"],
+        "text": RUBRIC_REVIEW_USER_PROMPT,
     },
     {
         "name": "CHUNK_CONTEXT_USER_PROMPT",

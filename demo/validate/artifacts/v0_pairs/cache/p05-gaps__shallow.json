@@ -1,0 +1,25 @@
+{
+  "key": "p05-gaps:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.7671,
+    "context_precision": 1.0,
+    "insight_depth": 0.0,
+    "specificity": 1.0,
+    "coverage": 0.8,
+    "evidence_breadth": 0.0,
+    "calibration": 0.9
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9224
+  },
+  "depth_v2": {
+    "composite": 0.6517,
+    "uncapped": 0.6517,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 4
+}

@@ -1,0 +1,180 @@
+{
+  "topic": "job-search",
+  "name": "Job search",
+  "routing_text": "How do you actually get interviews and land a tech job? Optimising a LinkedIn profile, headline, about and featured sections, getting found by recruiters, networking and outreach messages, referrals, portfolio and project work, applying, preparing for interviews, mock interviews, behavioural and STAR answers.",
+  "updated_at": "2026-08-10T10:11:48.534737+00:00",
+  "overrides": {},
+  "provenance": {
+    "corpus_digest": "e1b17b35cb7190cf",
+    "chunk_count": 1372,
+    "video_count": 56,
+    "theme_generated_at": "2026-08-10T00:22:21.813165+00:00",
+    "theme_count": 30,
+    "graph_cache_digest": "b3edae8f87405fcb",
+    "graph_extractions": 1329,
+    "excluded_video_ids": [
+      "7m27Go3K1d0",
+      "AdRL6tKu3Gk",
+      "Bw58mV015z4",
+      "ZiEGOgTC56Y",
+      "gXf7fRvuaXA"
+    ],
+    "held_out_video_ids": [
+      "15rTnqKBlO8"
+    ],
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "rubric_model": "deepseek-v4-flash",
+    "units_budget": 8,
+    "excerpts_per_unit": 12,
+    "max_rubrics_per_unit": 3,
+    "routing_top_k": 14,
+    "routing_min_score": 0.25,
+    "community_min_entities": 5,
+    "notes": []
+  },
+  "members": [
+    {
+      "video_id": "ozwmlFencJI",
+      "title": "Copy This Linkedin Strategy, It'll Blow Up Your Inbox With Recruiters",
+      "channel_name": "Stefan Masnikovic",
+      "score": 0.7082,
+      "routed": true,
+      "override": null,
+      "chunk_count": 12
+    },
+    {
+      "video_id": "hNzpEeU3a4I",
+      "title": "How to Set Up Your LinkedIn Profile (Ultimate Guide)",
+      "channel_name": "Kevin Stratvert",
+      "score": 0.6768,
+      "routed": true,
+      "override": null,
+      "chunk_count": 18
+    },
+    {
+      "video_id": "dQ6RNltrXro",
+      "title": "How I Optimized my LinkedIn Profile and Got 20+ Interview Calls",
+      "channel_name": "Ashish Pratap Singh",
+      "score": 0.6696,
+      "routed": true,
+      "override": null,
+      "chunk_count": 10
+    },
+    {
+      "video_id": "qfL4K_afFRE",
+      "title": "FREE LinkedIn Optimization Course: How to Optimize Every Section of Your Profile",
+      "channel_name": "Greg Langstaff",
+      "score": 0.6403,
+      "routed": true,
+      "override": null,
+      "chunk_count": 28
+    },
+    {
+      "video_id": "hKpY693YUo8",
+      "title": "If I Were Looking For A Tech Job in 2026",
+      "channel_name": "A Life Engineered",
+      "score": 0.5608,
+      "routed": true,
+      "override": null,
+      "chunk_count": 14
+    },
+    {
+      "video_id": "KuXPeGH_Vag",
+      "title": "How to Get a Job in 2026",
+      "channel_name": "Greg Langstaff",
+      "score": 0.5292,
+      "routed": true,
+      "override": null,
+      "chunk_count": 14
+    },
+    {
+      "video_id": "MGjXraYMbhQ",
+      "title": "How to Optimize Your Profile for LinkedIn's New AI Algorithm",
+      "channel_name": "HubSpot Marketing",
+      "score": 0.5244,
+      "routed": true,
+      "override": null,
+      "chunk_count": 15
+    },
+    {
+      "video_id": "usA6Iw_oZHI",
+      "title": "How to Land a Tech Job in 90 Days in 2026",
+      "channel_name": "Symon\u00e9 B. Tech",
+      "score": 0.5227,
+      "routed": true,
+      "override": null,
+      "chunk_count": 13
+    },
+    {
+      "video_id": "FpW8aiJPvts",
+      "title": "This Simple RESUME got me 5 Machine Learning Interviews",
+      "channel_name": "Boris Meinardus",
+      "score": 0.515,
+      "routed": true,
+      "override": null,
+      "chunk_count": 10
+    },
+    {
+      "video_id": "5gLVxMKeSGM",
+      "title": "How to Write a Winning Tech Resume | Resume Tips from a Software Engineer & Career Coach",
+      "channel_name": "Anthony D. Mays",
+      "score": 0.4955,
+      "routed": true,
+      "override": null,
+      "chunk_count": 27
+    },
+    {
+      "video_id": "RDjwaXnToes",
+      "title": "Ex-Google Recruiter Explains: 6 LinkedIn Mistakes Keeping You In Your Sh*y Job (You Probably Do It)",
+      "channel_name": "Farah Sharghi",
+      "score": 0.4935,
+      "routed": true,
+      "override": null,
+      "chunk_count": 7
+    },
+    {
+      "video_id": "fD0E57QYSPk",
+      "title": "How to make a Dev resume that actually gets you hired",
+      "channel_name": "Anthony Sistilli",
+      "score": 0.4773,
+      "routed": true,
+      "override": null,
+      "chunk_count": 22
+    },
+    {
+      "video_id": "w5S6vKgjeRY",
+      "title": "How To (Actually) Get a New Job in 2026",
+      "channel_name": "AdviceWithErin",
+      "score": 0.4479,
+      "routed": true,
+      "override": null,
+      "chunk_count": 16
+    },
+    {
+      "video_id": "_MT4SgfQ8QY",
+      "title": "Engineering Resume Hack (from Big Tech Hiring Manager)",
+      "channel_name": "Jean Lee",
+      "score": 0.4418,
+      "routed": true,
+      "override": null,
+      "chunk_count": 9
+    }
+  ],
+  "arms": {
+    "raptor": {
+      "rubrics": 16,
+      "gaps": 7,
+      "multi_creator_share": 0.8125
+    },
+    "communities": {
+      "rubrics": 18,
+      "gaps": 7,
+      "multi_creator_share": 0.5556
+    },
+    "merged": {
+      "rubrics": 17,
+      "gaps": 7,
+      "multi_creator_share": 0.7059
+    }
+  }
+}

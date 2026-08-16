@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from src.agents.models import RagTranscriptAnswer
@@ -964,7 +966,194 @@ def test_a_baseline_only_session_never_builds_a_variant(settings) -> None:
     [
         ("rag_llm_hyde", "--query-transform hyde"),
         ("rag_llm_contextual", "--contextual"),
+        ("rag_llm_filtered", "--filter-transcripts"),
     ],
 )
 def test_a_variant_reports_the_flag_that_reproduces_it(key, expected) -> None:
     assert expected in command_for(key)
+
+
+def test_the_filtered_setup_asks_for_the_summary_filter(settings) -> None:
+    """The gap this setup closes: nothing else ever set ``filter_transcripts``."""
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm_filtered", "how do I prepare for interviews?")
+
+    assert agent.requests[-1].filter_transcripts is True
+    assert agent.requests[-1].transcript_filter_top_k == settings.transcript_filter_top_k
+    assert agent.requests[-1].transcript_filter_min_score == settings.transcript_filter_min_score
+
+
+def test_the_unfiltered_setup_is_the_same_call_without_the_filter(settings) -> None:
+    """The two setups have to differ on this axis and no other, or the
+    score gap between them is not attributable to the filter."""
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm_filtered", "how do I prepare for interviews?")
+    runner.run("rag_llm", "how do I prepare for interviews?")
+
+    filtered, baseline = agent.requests
+    assert filtered.filter_transcripts is True
+    assert baseline.filter_transcripts is False
+    assert filtered.model_dump(exclude={"filter_transcripts"}) == baseline.model_dump(
+        exclude={"filter_transcripts"}
+    )
+
+
+def test_the_filtered_setup_answers_over_the_baseline_retrieval_stack(settings) -> None:
+    """A per-request filter, not a second index: same provider, same models."""
+    runner = RagSetupRunner(settings, provider=FakeProvider())
+
+    assert runner.provider_for("rag_llm_filtered") is runner.provider_for("rag_llm")
+
+
+def test_an_explicit_scope_filter_survives_an_unfiltered_setup(settings) -> None:
+    """``--filter-transcripts`` on a plain run is still the caller's request."""
+    from src.chat.setups import AskScope
+
+    agent = FakeRagLlm()
+    runner = _runner(settings, rag_llm=agent)
+
+    runner.run("rag_llm", "question", scope=AskScope(filter_transcripts=True))
+
+    assert agent.requests[-1].filter_transcripts is True
+
+
+def test_the_coverage_warning_is_readable_rather_than_clipped(settings) -> None:
+    """It renders on the wrapping note line; ``detail`` is ellipsised at about
+    a quarter of this warning's length, which hid the half that says what to do."""
+    from src.chat.setups import AskScope
+
+    warning = (
+        "This document does not match a kind the corpus has criteria for "
+        "(resume, portfolio, professional profile, cover letter). The retrieved "
+        "chunks are the closest the corpus holds, which may be advice about a "
+        "different kind of document entirely — say so rather than applying it."
+    )
+    runner = _runner(settings, rag_llm=FakeRagLlm())
+
+    result = runner.run("rag_llm", "review this", scope=AskScope(coverage_warning=warning))
+
+    step = result.trace[0]
+    assert step["label"] == "Corpus coverage"
+    assert step["note"] == warning
+    assert len(step["detail"]) < 70
+
+
+# ── the rubric-review setup ───────────────────────────────────────────────
+
+
+class FakeRubricReviewer:
+    """Stands in for ``RubricReviewAgent``, returning a fixed review."""
+
+    def __init__(self) -> None:
+        self.calls: list = []
+
+    def review(self, document, selection, **kwargs):
+        from src.agents.models import TraceStep
+        from src.agents.rubric_review_agent import RubricReviewResult
+        from src.documents.rubric_review import (
+            PackOutcome,
+            RubricReview,
+            RubricVerdict,
+            VerdictEvidence,
+        )
+
+        self.calls.append((document, selection))
+        review = RubricReview(
+            document_id=document.id,
+            document_url=document.url,
+            document_kind="portfolio",
+            verdicts=[
+                RubricVerdict(
+                    rubric_id="r0101",
+                    topic="resume-design",
+                    pack_name="Resume design",
+                    criterion="Quantify the outcome.",
+                    check="If a bullet has no number, fail.",
+                    why="Recruiters skim for numbers.",
+                    unit_title="Quantified impact",
+                    creators=["A Recruiter"],
+                    verdict="fail",
+                    severity="major",
+                    finding="the third card has no number",
+                    sections=[2],
+                    evidence=[
+                        VerdictEvidence(
+                            video_id="vid1",
+                            chunk_id="chunk:vid1:2",
+                            quote="say the number",
+                            channel_name="A Recruiter",
+                            title="How to write it",
+                            start_seconds=60.0,
+                            url="https://www.youtube.com/watch?v=vid1&t=61s",
+                        )
+                    ],
+                )
+            ],
+            packs=[
+                PackOutcome(
+                    topic="resume-design", name="Resume design", artifact="resume", rubrics=1
+                )
+            ],
+        )
+        return RubricReviewResult(review, [TraceStep(phase="route", label="Load rubric packs")], 1)
+
+
+def _resolved_document():
+    from src.documents.models import Document, DocumentSection
+    from src.documents.review import select_sections
+
+    document = Document(
+        id="doc:1",
+        url="https://example.com",
+        requested_url="https://example.com",
+        sections=[
+            DocumentSection(index=index, heading=f"H{index}", text="body") for index in range(3)
+        ],
+    )
+    return SimpleNamespace(document=document, selection=select_sections(document, "review this"))
+
+
+def test_the_rubric_setup_carries_its_verdicts_beside_the_prose(settings) -> None:
+    """The panel renders from data, so the answer text cannot disagree with it."""
+    from src.chat.setups import AskScope
+
+    reviewer = FakeRubricReviewer()
+    runner = RagSetupRunner(settings, provider=None)
+    runner._rubric_reviewer = reviewer
+
+    result = runner.run(
+        "rubric_review",
+        "review this: https://example.com",
+        scope=AskScope(review_document=_resolved_document()),
+    )
+
+    assert result.error is None
+    assert result.rubric_review is not None
+    assert result.rubric_review["stats"]["with_id_and_timestamp"] == 1
+    assert "**r0101**" in result.answer
+    assert result.references[0]["timestamp_url"] == "https://www.youtube.com/watch?v=vid1&t=61s"
+    assert result.llm_calls == 1
+    # No retrieval ran, and the count says so rather than borrowing the field.
+    assert result.chunk_count == 0
+
+
+def test_the_rubric_setup_refuses_a_question_with_no_document(settings) -> None:
+    runner = RagSetupRunner(settings, provider=None)
+    runner._rubric_reviewer = FakeRubricReviewer()
+
+    result = runner.run("rubric_review", "what is agentic RAG?")
+
+    assert result.error is not None
+    assert "attached document" in result.error
+
+
+def test_the_rubric_setup_reports_a_command_that_actually_runs(settings) -> None:
+    """There is no ``rag-ask`` flag for it, so it must not print one."""
+    command = command_for("rubric_review")
+
+    assert "rag-ask" not in command
+    assert "rubric_review" in command

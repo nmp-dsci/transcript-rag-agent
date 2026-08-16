@@ -193,3 +193,65 @@ def test_a_stored_document_can_be_read_back_for_a_card_after_reload(docs: Docs) 
 def test_an_unknown_document_is_a_404_not_a_crash(docs: Docs) -> None:
     """A cleared store means the card is absent; the conversation still reads."""
     assert docs.client.get("/api/documents/doc:nope").status_code == 404
+
+
+# ── what the corpus is searched with ──────────────────────────────────────────
+
+
+def test_the_url_is_not_what_the_corpus_is_searched_with(docs: Docs) -> None:
+    """A URL matches no transcript and dilutes the words that would."""
+    docs.ask(f"is my experience section strong enough? {URL}")
+
+    scope = docs.runner.scopes[-1]
+    assert scope.retrieval_query == "is my experience section strong enough?"
+
+
+def test_a_bare_url_retrieves_the_criteria_for_the_documents_kind(docs: Docs) -> None:
+    """Not what the document is about: a portfolio's headings are its project
+    names, and searching for those returns nothing about reviewing a portfolio.
+    RESUME names Experience and Education, so it is judged by resume criteria."""
+    from src.documents.review import REVIEW_INTENT_QUERIES
+
+    docs.ask(f"review this: {URL}")
+
+    scope = docs.runner.scopes[-1]
+    assert URL not in (scope.retrieval_query or "")
+    assert scope.retrieval_query == REVIEW_INTENT_QUERIES["resume"]
+
+
+def test_an_ordinary_question_keeps_retrieving_on_itself(docs: Docs) -> None:
+    docs.ask("what are the tax changes?")
+
+    assert docs.runner.scopes[-1].retrieval_query is None
+
+
+# ── how much of the document was read, after a reload ─────────────────────────
+
+
+def test_the_entry_records_how_much_of_the_document_was_read(docs: Docs) -> None:
+    events = docs.ask(f"feedback on {URL}")
+
+    entry = events[-1][1]
+    assert "whole document" in entry["document_detail"]
+    assert entry["document_sections_selected"] == [0, 1]
+
+
+def test_the_selection_survives_a_reload_of_the_history(docs: Docs) -> None:
+    """The stored document has no idea which question narrowed it; the entry does."""
+    events = docs.ask(f"feedback on {URL}")
+    live_detail = _events_of(events, "document")[0]["detail"]
+
+    entry = docs.client.get("/api/history").json()["conversations"][-1]
+
+    assert entry["document_detail"] == live_detail
+    assert (
+        entry["document_sections_selected"]
+        == _events_of(events, "document")[0]["sections_selected"]
+    )
+
+
+def test_an_ordinary_question_records_no_selection(docs: Docs) -> None:
+    events = docs.ask("what are the tax changes?")
+
+    assert events[-1][1]["document_detail"] is None
+    assert events[-1][1]["document_sections_selected"] is None

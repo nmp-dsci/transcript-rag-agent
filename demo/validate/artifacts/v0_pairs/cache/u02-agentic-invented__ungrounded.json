@@ -1,0 +1,25 @@
+{
+  "key": "u02-agentic-invented:ungrounded",
+  "scores": {
+    "faithfulness": 0.0455,
+    "answer_relevancy": 0.3786,
+    "context_precision": 0.4167,
+    "insight_depth": 0.7,
+    "specificity": 1.0,
+    "coverage": 0.4,
+    "evidence_breadth": 0.5,
+    "calibration": 0.0
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.2803
+  },
+  "depth_v2": {
+    "composite": 0.4686,
+    "uncapped": 0.4686,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 4
+}

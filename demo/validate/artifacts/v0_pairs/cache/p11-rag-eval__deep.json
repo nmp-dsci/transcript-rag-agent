@@ -1,0 +1,25 @@
+{
+  "key": "p11-rag-eval:deep",
+  "scores": {
+    "faithfulness": 0.7647,
+    "answer_relevancy": 0.7942,
+    "context_precision": 1.0,
+    "insight_depth": 0.8,
+    "specificity": 0.9,
+    "coverage": 0.7,
+    "evidence_breadth": 0.9,
+    "calibration": 0.6
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.853
+  },
+  "depth_v2": {
+    "composite": 0.8174,
+    "uncapped": 0.8174,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 3
+}

@@ -1,0 +1,25 @@
+{
+  "key": "p12-llmops:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.7125,
+    "context_precision": 1.0,
+    "insight_depth": 0.0,
+    "specificity": 0.3,
+    "coverage": 0.1,
+    "evidence_breadth": 0.1,
+    "calibration": 0.5
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9042
+  },
+  "depth_v2": {
+    "composite": 0.4613,
+    "uncapped": 0.4613,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 4
+}

@@ -1,0 +1,189 @@
+{
+  "slice_id": "v8_loop",
+  "passed": true,
+  "attempt": 2,
+  "supersedes": "attempt 1 (2026-08-10, clause 1 FAIL on arm deep-r2) — kept in `history` below",
+  "clauses": {
+    "clause_1_loop_beats_hand_built": "PASS",
+    "clause_2_round_2_adds_what_the_critic_asked_for": "PASS",
+    "clause_3_report_renders_each_round_delta": "PASS"
+  },
+  "started_at": "2026-08-11T14:45:00+00:00",
+  "duration_s": 0.0,
+  "url": "http://127.0.0.1:8021",
+  "run": "evals/runs/critique-15rTnqKBlO8-20260811-025343.json",
+  "arm_under_test": "deep-frontier",
+  "checks": [
+    {
+      "name": "integrity: the bundle being judged is the bundle that was built",
+      "passed": true,
+      "detail": "The served asset is /assets/index-DC5ijKw3.js — NOT the index-S8nzILcC.js named in the re-validation brief; another agent rebuilt the frontend at 14:41 while this evaluation was being set up, so the brief's hash was already stale. Refetched in-page with cache:'reload': 459136 bytes, sha256 e16540f3029c53789e4dcca53bb9e6ad25366dbf6129af6a9f40681dce4ebced, byte-identical to frontend/dist/assets/index-DC5ijKw3.js on disk. `find frontend/src -newer <bundle>` returns nothing, so no source file postdates the build, and ResearchPanel.tsx (13:03) — which carries the frontier UI — is inside it. Pinned by hash, not by grepping for a marker.",
+      "shot": null
+    },
+    {
+      "name": "integrity: no console output on a fresh load of the Experiments tab",
+      "passed": true,
+      "detail": "console tracking attached, then location.reload(); zero messages of any level, no pageerror, across 21 rendered tables.",
+      "shot": null
+    },
+    {
+      "name": "integrity: every old arm's numbers are unchanged from attempt 1",
+      "passed": true,
+      "detail": "merged 0.2632/0.8235 (14/17, 30/30), deep-r1 0.3684/0.8125, deep-oneshot 0.2632/0.6154, deep-r2 0.3684/0.7692 — identical to critique-...-20260810-093357 despite the new run declaring grounding_gate 'retrieval_provenance' and a larger scoring corpus (7fda94b90029639f, 1792 chunks, up from 1460). So the baseline was not moved under the new arm.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "integrity: the new grounding gate is applied to every arm and exempts none",
+      "passed": true,
+      "detail": "All six cells carry the same key set. gradable=True and grounding_gate_applied='retrieval_provenance' on all six; ungradable_reason null on all six; findings_with_provenance equals findings_total on all six (17/17, 16/16, 26/26, 26/26, 24/24, 24/24); citations_off_retrieval 0 everywhere. Critically, criteria_recall_ungated and evidence_precision_ungated equal the gated figures for EVERY arm — so GATE_PROVENANCE is real, applied, and gradable, but it bit nothing in this run. It therefore neither helps nor handicaps deep-frontier, and the attempt-1 and attempt-2 numbers stay on one basis. This is option 2 of src/evals/KNOWN_GAP_attack2.md, and that doc is honestly restated to 'partly closed'.",
+      "shot": null
+    },
+    {
+      "name": "integrity: 261/261 citations resolve, none off-retrieval",
+      "passed": true,
+      "detail": "VERIFIED. The claimed 261 is the run-wide total, not one arm's: 30+32+51+52+48+48 = 261 across the six arms, citations_resolved == citations_total on each, citations_off_retrieval 0 on each. deep-frontier's own share is 48/48.",
+      "shot": null
+    },
+
+    {
+      "name": "clause 1: deep-frontier is a fair arm — same plan, same round 1, same budget",
+      "passed": true,
+      "detail": "All three verified independently. (a) Inheritance: all 16 of deep-r1's rubrics appear in deep-frontier and are byte-identical under json.dumps(sort_keys=True) — 16/16, zero differing. (b) Budget: the rendered Call budget table gives deep-frontier 1 planner / 10 executor / 1 critic = 12 total LLM calls, exactly deep-r2's, against deep-oneshot's 11. (c) Frontier retrieval did what it claims: research.json frontier.probe_overlap shows all four round-2 probes drew 18 chunks each with from_round_one_ground = 0, against round_one_read = 72 of 182 member chunks struck.",
+      "shot": "09_frontier_rediscovery_and_readout.jpg"
+    },
+    {
+      "name": "clause 1: criteria_recall — the loop clears the hand build, ranges disjoint",
+      "passed": true,
+      "detail": "PASS, and independently recomputed rather than read off the panel. I rebuilt each arm's five per-repeat scores from cell.match_runs by counting applicable criteria (19, from critique_dataset applies_to) paired to grounded findings; every reported spread reproduced exactly. deep-frontier: [0.4737, 0.4737, 0.4211, 0.4211, 0.4211], min 0.4211. merged: [0.2105, 0.2105, 0.2632, 0.3684, 0.2632], max 0.3684. 5 of 5 frontier repeats sit above 5 of 5 merged repeats — disjoint, which is the bar deep-r2 failed in attempt 1 when its floor landed exactly on merged's point estimate. Point estimates 0.4211 vs 0.2632. CAVEAT ON MARGIN: the gap between frontier's floor and merged's ceiling is 0.0527 — exactly one criterion out of 19. One matcher repeat falling the other way in either arm would make the ranges touch. Five repeats of one matcher, on one held-out video, one artifact, one build draw per arm.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "clause 1: evidence_precision — the metric that failed attempt 1 now leads",
+      "passed": true,
+      "detail": "PASS. deep-frontier 0.875 (21/24 grounded) against merged 0.824 (14/17). This is the metric that failed the slice last time (deep-r2 0.769 < 0.824) and it is the one that decides it now. It has no model in its path — verified again at critique.py: grounded/total via ground_findings over check_citation, plus the new _own_retrieval provenance test, all deterministic. The panel's badge has been corrected since attempt 1: it now reads 'no model in its path' rather than the unearned 'decisive · leader clears the runner-up's own spread' I reported, which was firing off runner_max being None. That defect is fixed.",
+      "shot": "09_frontier_rediscovery_and_readout.jpg"
+    },
+    {
+      "name": "clause 1: provenance and contested_coverage do not go backwards",
+      "passed": true,
+      "detail": "provenance 1.000 on deep-frontier and on merged — tied, not lost. contested_coverage None on both (no detected conflict had both chunks in any arm's context), so it is unscoreable rather than a loss, and the panel now renders 'not scored / no scored arm' rather than the misleading 'inside scorer noise' it showed in attempt 1.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "clause 1: all four V3 metrics clear the hand build — the standard set in attempt 1",
+      "passed": true,
+      "detail": "The standard I set failing attempt 1 was that '>= on the V3 metrics' means all four of src.evals.critique.CRITIQUE_METRICS, because critique.py refuses to publish a composite precisely so a loss cannot be averaged away. Applying that same standard: criteria_recall 0.4211 >= 0.2632 (and disjoint), evidence_precision 0.875 >= 0.8235, provenance 1.000 >= 1.000, contested_coverage unscoreable in both. Four for four, with no metric moving backwards. Attempt 1 failed on exactly one of these; attempt 2 loses none.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "clause 1: the 'against the hand build' readout is a fair reading of the gate",
+      "passed": true,
+      "detail": "ACCEPTED AS FAIR, with a placement caveit. Fair because: (a) it applies the identical rule winner() uses for `decisive` and that the V3 fix set — clear the other side's maximum — which is the exact rule I applied when failing deep-r2, so it is not invented for this attempt; (b) winner() structurally cannot answer the gate, since it ranks leader against runner-up and here two loop arms tie, so it reports 'tied' and says nothing about merged — a real gap, not a dodge; (c) it takes the most conservative form available, this arm's MIN against the baseline's MAX; (d) it is not rigged to pass — the same component renders 'ranges overlap / the two ranges cross, so neither arm is credited with a lead' when they do, which is what deep-r2-admit would show; (e) every input is committed data, and I recomputed its arithmetic from cell.match_runs without using the component. CAVEAT: it is a React component (ResearchPanel.tsx AgainstTheHandBuild), computed at render time. It is not in the committed run JSON, not in winner(), and not reachable by the eval harness — a reader of evals/runs/*.json sees only 'tied'. The pass is therefore true, verifiable, and displayed, but it is not recorded in the artifact the repo treats as the record.",
+      "shot": "09_frontier_rediscovery_and_readout.jpg"
+    },
+    {
+      "name": "clause 1 caveat 2a: the admission rule is not an asymmetric handicap",
+      "passed": true,
+      "detail": "VERIFIED INDEPENDENTLY, and the builder's figures are exactly right. I re-implemented admit_novel_evidence from src/rag/deep_research.py:1763 in a standalone script and ran it over the shipped packs with an empty prior: merged 17 rules -> 17 admitted, 0 refused; raptor 18 -> 15, 3 refused (r0502, r0601, r0602); communities 18 -> 17, 1 refused (r0403); pack 17 -> 17, 0 refused. So the rule is strictest on raptor, mild on communities, and refuses NOTHING on merged — the very baseline deep-frontier is competing against. It is not tuned to handicap the hand build; if anything it is the most lenient there. The app renders this too: 'would refuse 0 — every rule the hand build ships already rests on a passage of its own'.",
+      "shot": "11_frontier_diff_per_rule_rediscovery.jpg"
+    },
+    {
+      "name": "clause 1 caveat 2b: 'recall cannot be bought by dropping rules' is FALSE as stated",
+      "passed": false,
+      "detail": "THE ONE CLAIM THAT DOES NOT SURVIVE. src/rag/deep_research.py:1619-1620 asserts 'The claim that cannot be bought this way is criteria_recall: dropping rules can only ever remove chances to match.' The project's own data falsifies it. deep-r2-admit is deep-r2 with two rules removed and NOTHING else changed — a strict subset — and its recall is HIGHER: 0.3684 -> 0.4211, seven applicable criteria counted -> eight. The mechanism is visible and is not the exclusivity gate: r0401 is grounded with the same exclusive chunk (chunk:fD0E57QYSPk:15) in all four deep arms, so grounding did not change. What changed is the matcher's one-to-one assignment. In deep-r2, c22 was matched to nothing at all; in deep-r1 it was matched to r0602 and discarded as ungrounded; in the two thinned arms it landed on r0401. Fewer candidate findings means less competition for a criterion, so thinning a pack can hand a criterion to a grounded survivor. HOW MUCH THIS MATTERS: the magnitude is inside the noise — deep-r2's own repeat median is 0.4211, the same as admit's point estimate — so this is not evidence that recall WAS bought, and it does not touch deep-frontier's disjointness against merged, which is measured 5/5 against 5/5. But the defence is stated as an impossibility and it is not one. It should read 'dropping rules is not a reliable way to buy recall', not 'cannot'. Recorded as a failed check because it is a claim the build makes in its own source and the data contradicts it; it does not fail clause 1, whose comparison is frontier against merged.",
+      "shot": null
+    },
+    {
+      "name": "clause 1 caveat 3: what the critic and frontier retrieval bought is the spread, and only the spread",
+      "passed": true,
+      "detail": "The builder's third caveat is accurate and, if anything, understated. deep-frontier and deep-r2-admit reach the IDENTICAL set of eight applicable criteria — c02, c04, c05, c09, c13, c14, c16, c22 — and tie on every scored figure: recall 0.4211, evidence_precision 0.875, provenance 1.000, 21/24 grounded, 48/48 quotes. The single criterion frontier counts that admit does not is c18, which is not applicable and therefore scores nothing. So the coverage-aware critic plus frontier retrieval bought ZERO additional applicable criteria over an ablation that costs no LLM call at all. Their only measured difference is repeat stability: admit's floor is 0.3158 and overlaps merged's 0.3684 ceiling; frontier's floor is 0.4211 and does not. That is a real difference and it is the whole of the difference. A reader should understand the pass as 'the pack got more consistently matchable', not 'the pack found more'.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "clause 1: the c22 claim is FALSE — deep-frontier is not the only pack to reach it, and no frontier rule reaches it",
+      "passed": false,
+      "detail": "THE CLAIM FLAGGED AS 'STRONGEST EVIDENCE IF TRUE' DOES NOT SURVIVE, on two counts. (1) deep-r2-admit reaches c22 as well — both arms count it, so deep-frontier is not the only pack in the project to reach it, and the arm that ties it costs no extra call. (2) More seriously, NEITHER reaches it via a frontier rule. In both arms c22 is matched to r0401 — 'Tailor the resume to the job description so the target role title and its hard-skill keywords appear in the top sections and skills list' — which is an INHERITED ROUND-1 rubric, byte-identical in deep-r1, deep-r2, deep-r2-admit and deep-frontier. It was grounded and available in every one of those arms and simply went unmatched in deep-r1 and deep-r2. So 'the frontier round reached a criterion no committed arm had ever reached' is not what happened: the matcher paired an existing rule with c22 once the candidate pool was thinned. This is the same mechanism as caveat 2b and it is the clearest single instance of it. GOOD NEWS: this claim appears NOWHERE in the shipped UI — I searched the rendered page for 'c22', 'persona', 'only pack', 'only arm', 'never reached', 'no committed arm' and found none of them. The overclaim is in the builder's report to the evaluator, not in the product.",
+      "shot": null
+    },
+
+    {
+      "name": "clause 2: every frontier addition traces rubric -> probe -> gap",
+      "passed": true,
+      "detail": "8 of 8. r6101, r6102, r6103 <- probe:p61 <- gap:g01; r6201 <- probe:p62 <- gap:g02; r6301, r6303 <- probe:p63 <- gap:g03; r6402, r6403 <- probe:p64 <- gap:g04. Every one carries 2 creators and 2 quotes. The four coverage-aware gaps are distinct from attempt 1's and the critic's isolation is still stated on the page: it sees round-1 criteria plus a per-video read-count table and video titles the planner already had, and never a transcript.",
+      "shot": "11_frontier_diff_per_rule_rediscovery.jpg"
+    },
+    {
+      "name": "clause 2: the frontier round targets the gaps the old loop missed",
+      "passed": true,
+      "detail": "A real improvement over attempt 1, where I recorded that three of four gaps (contact info, dates, typos) produced no rule about their own subject and only r5403 was new ground. This round: r6402 IS a contact-block rule ('full name, email, phone number, and at least city/state'), r6103 and r6303 ARE date/chronology rules ('reverse chronological order and date each job with months, not just years'; 'add a one-line explanation for any short stint or gap'), r6102 covers location and link hygiene. Six of the eight are flagged 'new ground — no shipped rule cites any chunk this one cites'. gap_closure now reads 1 of 4 closed (g03) against 0 of 4 in attempt 1 — modest, and the page still explains the closure test is deliberately weak.",
+      "shot": "11_frontier_diff_per_rule_rediscovery.jpg"
+    },
+    {
+      "name": "clause 2: the restatement audit clears the dedupe threshold with room",
+      "passed": true,
+      "detail": "VERIFIED. deep-frontier's eight additions sit at cosine 0.205, 0.263, 0.341, 0.491, 0.507, 0.587, 0.660, 0.727 to their nearest surviving round-1 rule, against a 0.86 dedupe threshold. Maximum 0.727; ZERO within 0.1 of the threshold. Attempt 1's deep-r2 had six of ten between 0.744 and 0.859, one of which (r5203) survived by 0.001. The shadow under the cosine cliff that I flagged in attempt 1 is gone for this arm.",
+      "shot": null
+    },
+    {
+      "name": "clause 2: rediscovery against the shipped pack is halved, and rendered per rule",
+      "passed": true,
+      "detail": "VERIFIED, and this is the direct fix to the finding I filed in attempt 1 — that the loop's one novel rule was already in the shipped merged pack, cited from the same chunk, and that nothing in the UI let a reader see it. The rendered table now reads deep-frontier 8 added / 2 rediscovered / 25%, deep-r2-admit 8/4/50%, deep-r2 10/4/40%, deep-oneshot 10/4/40% — so the loop now rediscovers at half the rate of the no-critic control instead of exactly matching it. And every addition in the diff carries its own badge: 'rediscovered — the shipped pack already covers this from the same chunk (r0603)' on r6101 and '(r0503)' on r6402, 'new ground — no shipped rule cites any chunk this one cites' on the other six. That is precisely the 'was this already in the shipped pack' column I recommended, measured on cited chunk ids rather than on wording.",
+      "shot": "11_frontier_diff_per_rule_rediscovery.jpg"
+    },
+
+    {
+      "name": "clause 3: the frontier round's delta is rendered",
+      "passed": true,
+      "detail": "The frontier section renders 'deep-r1 -> deep-frontier: 8 added, 16 kept' with each added rule marked '+', and the rediscovery table renders ADDED = 8 for the arm. The Call budget table renders the arm's 1/10/1/12 against deep-r2's 1/10/1/12 and deep-oneshot's 1/10/0/11, so the reader can see the frontier round's only extra spend over the control is the single critic call. The original Rounds table (deep-r1 '—', deep-oneshot '+10', deep-r2 '+10' against round 1) is unchanged and still correct.",
+      "shot": "11_frontier_diff_per_rule_rediscovery.jpg"
+    },
+    {
+      "name": "clause 3: minor — deep-frontier is absent from the delta-vs-round-1 Rounds table",
+      "passed": true,
+      "detail": "Recorded as a blemish, not a failure. The 'Δ VS ROUND 1' Rounds table still lists only deep-r1, deep-oneshot and deep-r2; deep-frontier is not a row in it, so its +8 is not rendered in the one table whose column header promises per-round deltas. It IS rendered twice elsewhere (the frontier diff header and the rediscovery table's ADDED column), so no reader is left unable to see what the round added, and the clause asks that the report render each round's delta rather than that one particular table do it. Adding the frontier row there would make the page consistent.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    },
+    {
+      "name": "the panel does not overclaim: winner() still says 'tied' and the page shows it",
+      "passed": true,
+      "detail": "Both readings are on screen at once. The winner strip under the six-arm table renders 'CRITERIA_RECALL deep-frontier · tied · two or more arms scored the same', the same for EVIDENCE_PRECISION and PROVENANCE, and 'CONTESTED_COVERAGE — · not scored · no scored arm'. The against-the-hand-build readout renders 'ranges disjoint' separately and says exactly what it means: \"this arm's worst of 5 matcher runs (0.421) sits above merged's best (0.368)\". A reader is told both that the arm ties its own free ablation and that it clears the hand build, which is the honest pair. deep-r2-admit is rendered immediately above deep-frontier in the scored table, so the tie is unmissable rather than buried.",
+      "shot": "10_six_arms_scored_tied_verdict.jpg"
+    }
+  ],
+  "history": {
+    "attempt_1": {
+      "date": "2026-08-10",
+      "run": "evals/runs/critique-15rTnqKBlO8-20260810-093357.json",
+      "arm_under_test": "deep-r2",
+      "result": "clause 1 FAIL, clauses 2 and 3 PASS; 24 of 26 checks passed",
+      "why_it_failed": "deep-r2's recall lead over merged was not separated (spreads overlapped over [0.263, 0.368], deep-r2's floor equal to merged's point estimate), and evidence_precision moved the wrong way, 0.769 against 0.824. Under the standard that '>= on the V3 metrics' means all four, one metric lost is the clause lost.",
+      "findings_filed_and_their_fate": [
+        "The loop's one novel rule (r5403) was already in the shipped merged pack (r0403/r0503) and cited the same chunk, and nothing in the UI let a reader see it -> FIXED: rediscovery is now measured on cited chunk ids, rendered per arm and per rule, and deep-frontier halves it to 2/8.",
+        "The 'decisive' badge on evidence_precision fired off runner_max being None and its reason string described a comparison never performed -> FIXED: the badge now reads 'tied'/'not scored', and the evidence_precision readout says 'no model in its path'.",
+        "Six of deep-r2's ten additions sat within 0.1 of the dedupe threshold, one surviving by 0.001 -> ADDRESSED: deep-frontier's additions top out at 0.727 with none within 0.1.",
+        "Three of four gaps produced no rule about their own subject -> ADDRESSED: the coverage-aware critic's four gaps produce contact-block, date and chronology rules."
+      ]
+    }
+  },
+  "notes": [
+    "PLAIN ANSWER: this is a PASS. All three clauses now pass. Clause 1 is carried by deep-frontier reaching or beating the hand-built merged pack on all four V3 metrics — criteria_recall 0.421 vs 0.263 with the two arms' five-repeat ranges fully disjoint, evidence_precision 0.875 vs 0.824, provenance tied at 1.000, contested_coverage unscoreable in both — which is the same standard, applied the same way, that failed attempt 1. Two of the builder's supporting claims are false and are recorded as failed checks; neither of them is load-bearing for the clause, and I have said why below rather than letting a pass absorb them.",
+
+    "WHAT ACTUALLY CHANGED, STATED PRECISELY. Attempt 1 failed because the loop's added rules diluted grounding: deep-r2 grew the pack from 16 to 26 rules and evidence_precision fell from 0.813 to 0.769, below the hand build's 0.824. Attempt 2 does not add better rules so much as it stops adding bad ones — 24 rules instead of 26, 21 grounded instead of 20. The single change that does the work is the evidence-novelty admission rule, and the run proves it: deep-r2-admit, which is deep-r2 with that rule and no new LLM call, already reaches 0.4211 / 0.875 and ties deep-frontier on every scored figure and on the exact set of applicable criteria reached. The coverage-aware critic and the frontier retrieval add nothing to the point estimates. What they add is repeat stability — admit's recall floor is 0.3158 and still overlaps merged, frontier's is 0.4211 and does not — and that stability is the entire reason clause 1 passes rather than ties. So the honest one-line summary is: a free filter got the pack over the line on the point estimates, and the two expensive changes got it over the line on the spread.",
+
+    "IS THE 'AGAINST THE HAND BUILD' READOUT FAIR, OR BUILT TO PASS? Fair, on the substance. It applies the rule I applied when I failed deep-r2 — clear the other side's maximum — in its most conservative form, my worst against your best; it fills a gap winner() structurally cannot fill, since winner() compares leader to runner-up and two loop arms tie here; it renders 'ranges overlap' honestly when the ranges cross; and every input is committed data whose arithmetic I reproduced from cell.match_runs without touching the component. What is weak is not the rule but its home: it is a React component computed at render time, absent from the committed run JSON, absent from winner(), and unreachable by the eval harness. Anyone reading evals/runs/critique-15rTnqKBlO8-20260811-025343.json sees only 'tied' on all three scoreable metrics. A pass that exists only in the browser is a weaker artifact than one recorded in the run file, and the fix is small: compute the baseline pair in pack_ablation.py beside winner() and commit it.",
+
+    "THE CLAIM THAT DOES NOT SURVIVE, AND WHY IT DOES NOT SINK THE PASS. src/rag/deep_research.py states that criteria_recall 'cannot be bought this way' because 'dropping rules can only ever remove chances to match'. That is false, and the counterexample is in the same run: deep-r2-admit is a strict subset of deep-r2 — same rules minus two — and scores HIGHER, 0.3684 -> 0.4211, seven applicable criteria -> eight. The mechanism is not the exclusivity gate (r0401 is grounded on the same exclusive chunk in every deep arm) but the matcher's one-to-one assignment: thinning the candidate pool reduces competition for a criterion, and c22 — unmatched in deep-r2, matched to an ungrounded rule in deep-r1 — lands on grounded r0401 in both thinned arms. The magnitude sits inside the matcher noise (deep-r2's own repeat median is already 0.4211), so this is not evidence that recall was bought; it is evidence that the impossibility claim is wrong. It should be restated as 'dropping rules is not a reliable way to buy recall'. It does not sink clause 1 because the clause compares deep-frontier against merged, not against deep-r2, and that comparison is 5/5 repeats disjoint.",
+
+    "THE c22 CLAIM IS WRONG ON BOTH COUNTS, AND IT WAS THE CLAIM MOST WORTH CHECKING. Presented as the strongest evidence if true — deep-frontier the only pack in the project to reach 'aim the document at one clear role persona'. It is not the only pack: deep-r2-admit reaches c22 as well. And neither reaches it through anything the frontier round built. In both arms c22 is matched to r0401, a round-1 rubric that is byte-identical across deep-r1, deep-r2, deep-r2-admit and deep-frontier, that was grounded and available in all of them, and that simply went unmatched in the two unthinned arms. So the correct statement is not 'the loop reached a criterion nothing had reached' but 'thinning the pack let the matcher pair an existing rule with a criterion it had previously left on the floor'. The mitigating fact, and it is a real one: this claim is nowhere in the shipped app. I searched the rendered page for c22, 'persona', 'only pack', 'only arm', 'never reached' and 'no committed arm' and found none. The product does not make the claim; the report to the evaluator did.",
+
+    "WHAT I VERIFIED BY RE-IMPLEMENTATION RATHER THAN BY READING. (a) Every arm's five per-repeat recall scores, rebuilt from cell.match_runs and the dataset's applicable set — all six reported spreads reproduced exactly, so the disjointness claim rests on numbers I derived myself. (b) admit_novel_evidence, re-implemented standalone and run over the shipped packs: merged 0 refused, raptor 3, communities 1, pack 0 — the builder's asymmetry defence is exactly right, and the rule is most lenient on the baseline it competes against. (c) The 261/261 citation figure, summed across arms. (d) deep-frontier's inheritance of deep-r1, compared byte-for-byte. (e) Which applicable criteria each arm counts, and which finding each was matched to — which is how the c22 and admission findings were reached.",
+
+    "THE METRIC'S CEILING STILL APPLIES. src/evals/KNOWN_GAP_attack2.md is now 'partly closed': GATE_PROVENANCE lands option 2, requiring a cited chunk to be one the finding's own reasoning retrieved, and it is applied to all six arms here. But option 1 — an entailment check that the chunk supports the finding attached to it — is still open, so criteria_recall still certifies 'reached the conclusion and cited something that resolves and that it retrieved', not 'the corpus produced this insight'. Weight evidence_precision accordingly, which is what this verdict does: it is the deterministic metric, it failed the slice last time, and it leads now.",
+
+    "ENVIRONMENT: chromium.launch() still times out after 180s on this machine, so demo/validate/v8_loop.py could not be executed through Playwright. Every UI assertion above was executed as the equivalent DOM query against the running app in an already-open Chrome at http://127.0.0.1:8021, in a tab created for this re-validation. The server on 8021 was not restarted and no second instance was needed. Slices v2, v3, v4, v4b and attempt 1 of v8 recorded the same constraint the same way.",
+
+    "SCOPE: only demo/validate/v8_loop.py and files under demo/validate/artifacts/v8_loop/ were written. src/rag/conflicts.py, frontend/src/pipeline/DisagreementsView.tsx, src/evals/pack_ablation.py, frontend/src/experiments/CritiquePanel.tsx and the matrix runner were not modified. src/rag/deep_research.py, src/evals/critique.py, src/evals/pack_ablation.py and frontend/src/experiments/ResearchPanel.tsx were read only, to check the admission rule, the grounding gate and the readout. Nothing was fixed. No git state was altered, no commit, add, stash or checkout. The frontend was rebuilt by another agent during this window; that is recorded in the bundle check rather than acted on.",
+
+    "VIEWPORT: screenshots 09-11 were taken at 1372x870 and 1098x696 as the window changed under concurrent use; the right-hand columns of the wider tables are clipped in some frames. No check above depends on a screenshot's framing — every assertion is a DOM query or a recomputation from the committed run — but this verdict again makes no claim about how the build report lays out at any given width."
+  ]
+}

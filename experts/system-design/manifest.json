@@ -1,0 +1,180 @@
+{
+  "topic": "system-design",
+  "name": "System design",
+  "routing_text": "Designing large scale distributed systems: database sharding and partitioning, caching strategies and invalidation, replication, consistency and availability tradeoffs, transactions and isolation levels, distributed message queues, REST API design, latency, throughput and capacity estimation in a system design interview.",
+  "updated_at": "2026-08-10T04:54:46.101818+00:00",
+  "overrides": {},
+  "provenance": {
+    "corpus_digest": "e1b17b35cb7190cf",
+    "chunk_count": 1372,
+    "video_count": 56,
+    "theme_generated_at": "2026-08-10T00:22:21.813165+00:00",
+    "theme_count": 30,
+    "graph_cache_digest": "b3edae8f87405fcb",
+    "graph_extractions": 1329,
+    "excluded_video_ids": [
+      "7m27Go3K1d0",
+      "AdRL6tKu3Gk",
+      "Bw58mV015z4",
+      "ZiEGOgTC56Y",
+      "gXf7fRvuaXA"
+    ],
+    "held_out_video_ids": [
+      "15rTnqKBlO8"
+    ],
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "rubric_model": "deepseek-v4-flash",
+    "units_budget": 8,
+    "excerpts_per_unit": 12,
+    "max_rubrics_per_unit": 3,
+    "routing_top_k": 14,
+    "routing_min_score": 0.25,
+    "community_min_entities": 5,
+    "notes": []
+  },
+  "members": [
+    {
+      "video_id": "iJLL-KPqBpM",
+      "title": "System Design Interview - Distributed Message Queue",
+      "channel_name": "System Design Interview",
+      "score": 0.7138,
+      "routed": true,
+      "override": null,
+      "chunk_count": 25
+    },
+    {
+      "video_id": "wXvljefXyEo",
+      "title": "Database Sharding and Partitioning",
+      "channel_name": "Arpit Bhayani",
+      "score": 0.6662,
+      "routed": true,
+      "override": null,
+      "chunk_count": 23
+    },
+    {
+      "video_id": "L521gizea4s",
+      "title": "Sharding in System Design Interviews w/ Meta Staff Engineer",
+      "channel_name": "Hello Interview",
+      "score": 0.5813,
+      "routed": true,
+      "override": null,
+      "chunk_count": 33
+    },
+    {
+      "video_id": "m4q7VkgDWrM",
+      "title": "Data Consistency and Tradeoffs in Distributed Systems",
+      "channel_name": "Gaurav Sen",
+      "score": 0.5564,
+      "routed": true,
+      "override": null,
+      "chunk_count": 23
+    },
+    {
+      "video_id": "5ZjhNTM8XU8",
+      "title": "\"Transactions: myths, surprises and opportunities\" by Martin Kleppmann",
+      "channel_name": "Strange Loop Conference",
+      "score": 0.497,
+      "routed": true,
+      "override": null,
+      "chunk_count": 36
+    },
+    {
+      "video_id": "1NngTUYPdpI",
+      "title": "Caching in System Design Interviews w/ Meta Staff Engineer",
+      "channel_name": "Hello Interview",
+      "score": 0.4341,
+      "routed": true,
+      "override": null,
+      "chunk_count": 33
+    },
+    {
+      "video_id": "uFGJVQvR59A",
+      "title": "Everything you need to know about REST",
+      "channel_name": "Arpit Bhayani",
+      "score": 0.4219,
+      "routed": true,
+      "override": null,
+      "chunk_count": 21
+    },
+    {
+      "video_id": "1jvxxa7tdjw",
+      "title": "Exploring MLOps and LLMOps: Architectures and Best Practices",
+      "channel_name": "Databricks",
+      "score": 0.4107,
+      "routed": true,
+      "override": null,
+      "chunk_count": 64
+    },
+    {
+      "video_id": "KTy4rqgPOjg",
+      "title": "Balancing Coupling in Software Design - Vlad Khononov - DDD Europe 2023",
+      "channel_name": "Domain-Driven Design Europe",
+      "score": 0.3535,
+      "routed": true,
+      "override": null,
+      "chunk_count": 36
+    },
+    {
+      "video_id": "fc6_NtD9soI",
+      "title": "Modularizing the Monolith - Jimmy Bogard - NDC Oslo 2024",
+      "channel_name": "NDC Conferences",
+      "score": 0.3535,
+      "routed": true,
+      "override": null,
+      "chunk_count": 54
+    },
+    {
+      "video_id": "cvPEiPt7HXo",
+      "title": "Large Language Model Operations (LLMOps) Explained",
+      "channel_name": "IBM Technology",
+      "score": 0.3379,
+      "routed": true,
+      "override": null,
+      "chunk_count": 6
+    },
+    {
+      "video_id": "4qfsmE11Ejo",
+      "title": "Modular Monoliths and Other Facepalms - Kevlin Henney - NDC London 2026",
+      "channel_name": "NDC Conferences",
+      "score": 0.3086,
+      "routed": true,
+      "override": null,
+      "chunk_count": 63
+    },
+    {
+      "video_id": "5OjqD-ow8GE",
+      "title": "Modular Monoliths \u2022 Simon Brown \u2022 GOTO 2018",
+      "channel_name": "GOTO Conferences",
+      "score": 0.2874,
+      "routed": true,
+      "override": null,
+      "chunk_count": 39
+    },
+    {
+      "video_id": "FU5_kpTAVDo",
+      "title": "Agentic Engineering, explained by a 10x developer",
+      "channel_name": "David Ondrej",
+      "score": 0.2758,
+      "routed": true,
+      "override": null,
+      "chunk_count": 45
+    }
+  ],
+  "arms": {
+    "raptor": {
+      "rubrics": 15,
+      "gaps": 29,
+      "multi_creator_share": 0.4
+    },
+    "communities": {
+      "rubrics": 15,
+      "gaps": 29,
+      "multi_creator_share": 0.6
+    },
+    "merged": {
+      "rubrics": 15,
+      "gaps": 29,
+      "multi_creator_share": 0.4667
+    }
+  }
+}

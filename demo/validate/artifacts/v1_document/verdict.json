@@ -1,0 +1,246 @@
+{
+  "slice_id": "v1_document",
+  "passed": true,
+  "started_at": "2026-08-09T09:30:00.908359+00:00",
+  "duration_s": 7.52,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "history rail lists the worded review",
+      "passed": true,
+      "detail": "rail entries containing 'Review my portfolio site': 1",
+      "shot": "01_history_rail_lists_the_worded_review.png"
+    },
+    {
+      "name": "history rail lists the bare URL review",
+      "passed": true,
+      "detail": "rail entries containing 'review this: https://nmp-dsci.github.io/': 1",
+      "shot": null
+    },
+    {
+      "name": "worded: conversation opens on click",
+      "passed": true,
+      "detail": "clicked: True",
+      "shot": null
+    },
+    {
+      "name": "worded: a document card renders above the answer",
+      "passed": true,
+      "detail": "1 document card(s)",
+      "shot": "02_worded:_a_document_card_renders_above_th.png"
+    },
+    {
+      "name": "worded: card states which sections were in context",
+      "passed": true,
+      "detail": "selection line present: 'whole document \u2014 all 9 sections in context'",
+      "shot": null
+    },
+    {
+      "name": "worded: card names the reviewed page",
+      "passed": true,
+      "detail": "card head: ['DOCUMENT', 'Work \u00b7 Nathan Phillips', 'nmp-dsci.github.io \u2197']",
+      "shot": null
+    },
+    {
+      "name": "worded: card numbers every section \u00a71..\u00a79",
+      "passed": true,
+      "detail": "9 numbered sections, first='\u00a71'",
+      "shot": null
+    },
+    {
+      "name": "worded: the trace shows the query the corpus was searched with",
+      "passed": true,
+      "detail": "130 characters of query rendered: 'Review my portfolio site against what the corpus says about presenting engineering work to hiring managers \u2014 w'",
+      "shot": "03_worded:_the_trace_shows_the_query_the_co.png"
+    },
+    {
+      "name": "worded: the query wraps rather than being clipped to one line",
+      "passed": true,
+      "detail": "the element's content fits the box it is drawn in",
+      "shot": null
+    },
+    {
+      "name": "worded: no URL was embedded in the corpus query",
+      "passed": true,
+      "detail": "url tokens in query: False",
+      "shot": null
+    },
+    {
+      "name": "worded: answer cites document sections by number",
+      "passed": true,
+      "detail": "missing markers: none",
+      "shot": "04_worded:_answer_cites_document_sections_b.png"
+    },
+    {
+      "name": "worded: section citations render as chips, not raw text",
+      "passed": true,
+      "detail": "39 \u00a7-chips; unrendered '[\u00a7' in text: False",
+      "shot": null
+    },
+    {
+      "name": "worded: answer quotes phrases that exist only on the reviewed page",
+      "passed": true,
+      "detail": "missing: none",
+      "shot": null
+    },
+    {
+      "name": "worded: answer offers a Sources disclosure",
+      "passed": true,
+      "detail": "",
+      "shot": null
+    },
+    {
+      "name": "worded: Sources expands to one row per citation",
+      "passed": true,
+      "detail": "'Sources (9)' -> 9 rows",
+      "shot": "05_worded:_Sources_expands_to_one_row_per_c.png"
+    },
+    {
+      "name": "worded: every corpus citation carries a timestamp",
+      "passed": true,
+      "detail": "9 of 9 rows show 'open at <time>' \u2014 e.g. ['5:46', '5:20', '0:00']",
+      "shot": null
+    },
+    {
+      "name": "worded: every citation resolves to a video at that moment",
+      "passed": true,
+      "detail": "9 rows link to watch?v=\u2026&t=\u2026s",
+      "shot": null
+    },
+    {
+      "name": "worded: citations span more than one video",
+      "passed": true,
+      "detail": "8 distinct videos cited: ['15rTnqKBlO8', 'UxVM1xDBdt4', '_MT4SgfQ8QY', 'by8wrrXW3So', 'dQ6RNltrXro', 'fD0E57QYSPk', 'ozwmlFencJI', 'uC-FmLvw1u0']",
+      "shot": null
+    },
+    {
+      "name": "worded: one answer carries both document sections and corpus timestamps",
+      "passed": true,
+      "detail": "3 section markers checked, 9 corpus citations",
+      "shot": "06_worded:_one_answer_carries_both_document.png"
+    },
+    {
+      "name": "bare URL: conversation opens on click",
+      "passed": true,
+      "detail": "clicked: True",
+      "shot": null
+    },
+    {
+      "name": "bare URL: a document card renders above the answer",
+      "passed": true,
+      "detail": "1 document card(s)",
+      "shot": "07_bare_URL:_a_document_card_renders_above_.png"
+    },
+    {
+      "name": "bare URL: card states which sections were in context",
+      "passed": true,
+      "detail": "selection line present: 'whole document \u2014 all 9 sections in context'",
+      "shot": null
+    },
+    {
+      "name": "bare URL: card names the reviewed page",
+      "passed": true,
+      "detail": "card head: ['DOCUMENT', 'Work \u00b7 Nathan Phillips', 'nmp-dsci.github.io \u2197']",
+      "shot": null
+    },
+    {
+      "name": "bare URL: card numbers every section \u00a71..\u00a79",
+      "passed": true,
+      "detail": "9 numbered sections, first='\u00a71'",
+      "shot": null
+    },
+    {
+      "name": "bare URL: the trace shows the query the corpus was searched with",
+      "passed": true,
+      "detail": "220 characters of query rendered: 'how to present engineering projects on a personal portfolio site so recruiters and hiring managers take them s'",
+      "shot": "08_bare_URL:_the_trace_shows_the_query_the_.png"
+    },
+    {
+      "name": "bare URL: the query wraps rather than being clipped to one line",
+      "passed": true,
+      "detail": "the element's content fits the box it is drawn in",
+      "shot": null
+    },
+    {
+      "name": "bare URL: no URL was embedded in the corpus query",
+      "passed": true,
+      "detail": "url tokens in query: False",
+      "shot": null
+    },
+    {
+      "name": "bare URL: answer cites document sections by number",
+      "passed": true,
+      "detail": "missing markers: none",
+      "shot": "09_bare_URL:_answer_cites_document_sections.png"
+    },
+    {
+      "name": "bare URL: section citations render as chips, not raw text",
+      "passed": true,
+      "detail": "40 \u00a7-chips; unrendered '[\u00a7' in text: False",
+      "shot": null
+    },
+    {
+      "name": "bare URL: answer quotes phrases that exist only on the reviewed page",
+      "passed": true,
+      "detail": "missing: none",
+      "shot": null
+    },
+    {
+      "name": "bare URL: answer offers a Sources disclosure",
+      "passed": true,
+      "detail": "",
+      "shot": null
+    },
+    {
+      "name": "bare URL: Sources expands to one row per citation",
+      "passed": true,
+      "detail": "'Sources (7)' -> 7 rows",
+      "shot": "10_bare_URL:_Sources_expands_to_one_row_per.png"
+    },
+    {
+      "name": "bare URL: every corpus citation carries a timestamp",
+      "passed": true,
+      "detail": "7 of 7 rows show 'open at <time>' \u2014 e.g. ['8:41', '5:20', '8:42']",
+      "shot": null
+    },
+    {
+      "name": "bare URL: every citation resolves to a video at that moment",
+      "passed": true,
+      "detail": "7 rows link to watch?v=\u2026&t=\u2026s",
+      "shot": null
+    },
+    {
+      "name": "bare URL: citations span more than one video",
+      "passed": true,
+      "detail": "7 distinct videos cited: ['15rTnqKBlO8', 'FpW8aiJPvts', 'UxVM1xDBdt4', 'ZqqzBCg6IGU', 'dQ6RNltrXro', 'fD0E57QYSPk', 'uC-FmLvw1u0']",
+      "shot": null
+    },
+    {
+      "name": "bare URL: one answer carries both document sections and corpus timestamps",
+      "passed": true,
+      "detail": "3 section markers checked, 7 corpus citations",
+      "shot": "11_bare_URL:_one_answer_carries_both_docume.png"
+    },
+    {
+      "name": "both reviews of the same page get their own card",
+      "passed": true,
+      "detail": "each card states its own selection with the page cached from the other",
+      "shot": null
+    },
+    {
+      "name": "a bare URL is not searched with the words the user typed",
+      "passed": true,
+      "detail": "worded and bare-URL queries differ: 'how to present engineering projects on a personal portfolio site so recruiters and hiring '",
+      "shot": null
+    },
+    {
+      "name": "a bare URL searches for review criteria, not for the page's subject",
+      "passed": true,
+      "detail": "criteria words missing from the query: none",
+      "shot": "12_a_bare_URL_searches_for_review_criteria,.png"
+    }
+  ],
+  "notes": [
+    "Section markers and corpus citations are visually distinct: \u00a7N chips carry no link because the section is on the page above; [n] chips link out to the video."
+  ]
+}

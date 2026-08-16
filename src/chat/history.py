@@ -61,6 +61,13 @@ class ChatAnswer:
     # Ordered execution steps (serialized TraceSteps) for this answer. Empty on
     # entries written before tracing existed; the UI only renders it when set.
     trace: list[dict[str, Any]] = field(default_factory=list)
+    # Per-rubric verdicts, on answers produced by the rubric reviewer. Unlike
+    # the reviewed document itself this is safe to commit: it names rubric ids,
+    # verdicts and the corpus timestamps behind them, and quotes the *creator*
+    # rather than the user's page. The finding text can name a section, so it
+    # carries whatever phrase the reviewer quoted — which is the same exposure
+    # the answer prose already has.
+    rubric_review: dict[str, Any] | None = None
 
     @classmethod
     def from_result(cls, result: SetupResult) -> "ChatAnswer":
@@ -86,6 +93,7 @@ class ChatAnswer:
             retrieval_mode=result.retrieval_mode,
             followups=list(result.followups),
             trace=list(result.trace),
+            rubric_review=result.rubric_review,
         )
 
 
@@ -102,6 +110,15 @@ class ChatEntry:
     # the gitignored document store: this file is committed, and someone
     # reviewing their own resume should not have it land in a tracked file.
     document_id: str | None = None
+    # How much of that document the answer actually read — the one-line detail
+    # ("whole document — all 9 sections in context") and the section indices it
+    # covered. These are *about* the document rather than *from* it: no page
+    # text, so nothing private lands in this committed file, and a reloaded
+    # conversation can still say a review of 6 of 40 sections was not a review
+    # of the document. ``None`` on entries written before this existed, and on
+    # every ordinary question.
+    document_detail: str | None = None
+    document_sections_selected: list[int] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -117,6 +134,8 @@ class ChatEntry:
                 ChatAnswer(**_known_answer_fields(answer)) for answer in data.get("answers", [])
             ],
             document_id=data.get("document_id"),
+            document_detail=data.get("document_detail"),
+            document_sections_selected=data.get("document_sections_selected"),
         )
 
 
@@ -146,6 +165,8 @@ def build_entry(
     url: str | None = None,
     now: datetime | None = None,
     document_id: str | None = None,
+    document_detail: str | None = None,
+    document_sections_selected: list[int] | None = None,
 ) -> ChatEntry:
     moment = now or datetime.now(timezone.utc)
     return ChatEntry(
@@ -155,6 +176,8 @@ def build_entry(
         asked_at=moment.isoformat(),
         answers=[ChatAnswer.from_result(result) for result in results],
         document_id=document_id,
+        document_detail=document_detail,
+        document_sections_selected=document_sections_selected,
     )
 
 

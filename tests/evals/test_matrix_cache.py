@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import dataclasses
 
+import pytest
+
 from src.config import Settings
 from src.evals.golden import GoldenEntry
 from src.evals.matrix_cache import (
     _ENGINE_SETTINGS,
+    _FILTERED_SETUPS,
     _SETTINGS_DEFAULTS,
+    behavior_material,
     cell_fingerprint,
+    corpus_digest,
+    corpus_digest_for,
+    corpus_stats_for,
     load_cell,
     save_cell,
 )
@@ -251,3 +258,264 @@ def test_retrieval_breadth_still_reaches_the_new_vector_variants() -> None:
 
     for setup in ("rag_llm_hyde", "rag_llm_contextual"):
         assert cell_fingerprint(setup, e, settings) != cell_fingerprint(setup, e, wider)
+
+
+def test_holding_out_a_video_changes_the_fingerprint():
+    """A full-corpus cell must never answer for a held-out one.
+
+    Same question, same engine, same judge — the only difference is that one
+    run could see the video and the other could not, which is precisely the
+    difference the held-out experiment measures. Sharing a cache entry between
+    them produces a number that looks fine and means nothing.
+    """
+    settings = FakeSettings()
+    e = entry()
+    full = cell_fingerprint("rag_llm_filtered", e, settings)
+    held_out = cell_fingerprint("rag_llm_filtered", e, settings, exclude_video_ids=["15rTnqKBlO8"])
+    other = cell_fingerprint("rag_llm_filtered", e, settings, exclude_video_ids=["3pFRqPqzBCM"])
+
+    assert full != held_out
+    assert held_out != other
+
+
+def test_an_empty_exclusion_leaves_the_fingerprint_untouched():
+    """Cells scored before held-out runs existed must stay valid."""
+    settings = FakeSettings()
+    e = entry()
+
+    assert cell_fingerprint("rag_llm", e, settings) == cell_fingerprint(
+        "rag_llm", e, settings, exclude_video_ids=[]
+    )
+
+
+# --- corpus identity -----------------------------------------------------
+
+
+def test_ingesting_videos_changes_the_fingerprint():
+    """The defect this exists to prevent.
+
+    A ``rag_llm`` baseline scored over 38 videos and a ``rag_llm_filtered`` arm
+    scored over 53 differ in the corpus and in nothing else this material
+    tracked, so the cache handed back the stale arm and the comparison read as
+    filtered-vs-unfiltered when it was actually old-corpus-vs-new.
+    """
+    settings = FakeSettings()
+    e = entry()
+    before = cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(["a", "b"], 40))
+    after = cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(["a", "b", "c"], 60))
+
+    assert before != after
+
+
+def test_rechunking_the_same_videos_changes_the_fingerprint():
+    """Same videos, different chunking: the retrieved units are not the same."""
+    same_videos = ["a", "b"]
+    settings = FakeSettings()
+    e = entry()
+
+    assert corpus_digest(same_videos, 40) != corpus_digest(same_videos, 80)
+    assert cell_fingerprint(
+        "rag_llm", e, settings, corpus=corpus_digest(same_videos, 40)
+    ) != cell_fingerprint("rag_llm", e, settings, corpus=corpus_digest(same_videos, 80))
+
+
+def test_corpus_digest_ignores_video_order_and_duplicates():
+    """It identifies the corpus, not the order one bulk read happened to return."""
+    assert corpus_digest(["b", "a", "a"], 10) == corpus_digest(["a", "b"], 10)
+
+
+def test_an_unknown_corpus_is_omitted_so_unit_tests_need_no_store():
+    """``None`` means "not supplied", and only tests supply nothing."""
+    settings = FakeSettings()
+    e = entry()
+
+    assert cell_fingerprint("rag_llm", e, settings) == cell_fingerprint(
+        "rag_llm", e, settings, corpus=None
+    )
+    assert cell_fingerprint("rag_llm", e, settings) != cell_fingerprint(
+        "rag_llm", e, settings, corpus=corpus_digest(["a"], 1)
+    )
+
+
+def test_corpus_digest_for_reads_a_store_in_one_call():
+    class FakeCollection:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, include):
+            self.calls += 1
+            return {"metadatas": [{"video_id": "a"}, {"video_id": "b"}, {"video_id": "a"}]}
+
+    class FakeStore:
+        def __init__(self):
+            self.collection = FakeCollection()
+
+    store = FakeStore()
+    assert corpus_digest_for(store) == corpus_digest(["a", "b"], 3)
+    assert store.collection.calls == 1
+
+
+def test_corpus_stats_for_counts_videos_and_chunks_in_the_same_read():
+    """The sizes a reader needs, from the read the digest already pays for.
+
+    Distinct videos, not rows: the store holds one row per chunk, so counting
+    rows would report the chunk count twice and call one of them a video count.
+    """
+
+    class FakeCollection:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, include):
+            self.calls += 1
+            return {"metadatas": [{"video_id": "a"}, {"video_id": "b"}, {"video_id": "a"}]}
+
+    class FakeStore:
+        def __init__(self):
+            self.collection = FakeCollection()
+
+    store = FakeStore()
+    digest, videos, chunks = corpus_stats_for(store)
+    assert (digest, videos, chunks) == (corpus_digest(["a", "b"], 3), 2, 3)
+    assert store.collection.calls == 1
+
+
+# --- retrieval behaviour that moves no config field --------------------------
+
+
+def corpus_wide_entry(**overrides) -> GoldenEntry:
+    """A golden entry the corpus-wide detector fires on."""
+    base = dict(
+        id="g010",
+        question="What are the main themes across this corpus of videos?",
+        reference_answer="Career preparation, property, and system design.",
+        expected_video_ids=[],
+        expected_chunk_ids=[],
+        domain="career",
+        question_type="global",
+    )
+    base.update(overrides)
+    return entry(**base)
+
+
+def test_changing_the_corpus_wide_behaviour_invalidates_the_cells_it_moves():
+    """The defect this exists to prevent, one level up from task #58.
+
+    ``top_k`` became a budget rather than a cap, so a corpus-wide question now
+    routes to every video above ``min_score``. No configuration field moves —
+    the decision is derived from the question at query time — so without this
+    the six cells scored under the capped behaviour come back from the cache and
+    are averaged into one column with fourteen post-change locals.
+    """
+    settings = FakeSettings()
+    e = corpus_wide_entry()
+
+    capped = cell_fingerprint("rag_llm_filtered", e, settings, retrieval_behavior="capped")
+    budget = cell_fingerprint("rag_llm_filtered", e, settings, retrieval_behavior="budget")
+
+    assert capped != budget
+
+
+def test_the_diversity_switch_is_a_different_behaviour_again():
+    """Turning it on changes what a corpus-wide answer is built from, and it is
+    not a ``Settings`` field either — so the cache has to hear about it."""
+    settings = FakeSettings()
+    e = corpus_wide_entry()
+
+    assert cell_fingerprint(
+        "rag_llm_filtered", e, settings, retrieval_behavior="budget"
+    ) != cell_fingerprint("rag_llm_filtered", e, settings, retrieval_behavior="budget+diversity")
+
+
+def test_only_the_cells_the_behaviour_can_reach_are_invalidated():
+    """Adding a behaviour version must be a decision, not a demolition.
+
+    Six cells of a forty-cell run, not forty: a setup that never runs the
+    summary filter cannot be moved by a change to what the filter does.
+    """
+    settings = FakeSettings()
+    e = corpus_wide_entry()
+
+    for setup in ("rag_llm", "rag_llm_hyde", "rag_llm_contextual", "graph_rag", "rag_agent"):
+        assert cell_fingerprint(setup, e, settings, retrieval_behavior="budget") == (
+            cell_fingerprint(setup, e, settings, retrieval_behavior="capped")
+        )
+
+
+def test_a_question_the_detector_does_not_fire_on_keeps_its_cached_cell():
+    """Fourteen of the twenty golden questions are untouched by this change, and
+    re-scoring them would cost tokens to reproduce identical numbers."""
+    settings = FakeSettings()
+    local = entry(question="How do I make my resume ATS-friendly?")
+
+    assert cell_fingerprint(
+        "rag_llm_filtered", local, settings, retrieval_behavior="budget"
+    ) == cell_fingerprint("rag_llm_filtered", local, settings, retrieval_behavior="capped")
+
+
+def test_absence_has_exactly_one_meaning():
+    """It is omitted from the material in three cases, and all three mean the
+    same thing: *this cell behaves as the cache's untracked history did*.
+
+    That is what makes ``capped`` reuse a pre-existing cell rather than
+    re-score it — the pre-change arm of an A/B costs nothing — while leaving no
+    reading under which a *changed* behaviour is mistaken for an absent one.
+    """
+    corpus_wide = corpus_wide_entry().question
+    local = "How do I make my resume ATS-friendly?"
+
+    assert behavior_material("rag_llm_filtered", corpus_wide, "capped") is None
+    assert behavior_material("rag_llm", corpus_wide, "budget") is None
+    assert behavior_material("rag_llm_filtered", local, "budget") is None
+    assert behavior_material("rag_llm_filtered", corpus_wide, "budget") == "budget"
+
+
+def test_the_shipped_default_is_what_a_default_provider_implements():
+    """The default must track the code, not a literal somebody typed once."""
+    from src.rag.context import MultiTranscriptRagContextProvider
+
+    provider = MultiTranscriptRagContextProvider(raw_store=object(), chunk_store=object())
+    settings = FakeSettings()
+    e = corpus_wide_entry()
+
+    assert cell_fingerprint("rag_llm_filtered", e, settings) == cell_fingerprint(
+        "rag_llm_filtered", e, settings, retrieval_behavior=provider.retrieval_behavior
+    )
+
+
+def test_an_unrecognised_behaviour_raises_rather_than_hashing():
+    """Failing closed. A name nobody registered is a behaviour nobody wrote
+    down, and hashing it would mint a fingerprint that quietly never hits."""
+    settings = FakeSettings()
+
+    with pytest.raises(ValueError, match="unknown retrieval behavior"):
+        cell_fingerprint("rag_llm_filtered", corpus_wide_entry(), settings, retrieval_behavior="v9")
+
+    with pytest.raises(ValueError, match="unknown retrieval behavior"):
+        cell_fingerprint("rag_llm", entry(), settings, retrieval_behavior="")
+
+
+def test_every_setup_that_runs_the_summary_filter_is_covered():
+    """Scoping the behaviour to one setup is only safe while one setup filters.
+
+    Derived from the setup registry rather than restated, so adding a second
+    filtered setup fails here instead of silently reusing its stale cells.
+    """
+    from src.chat.setups import SETUP_SPECS
+
+    filtered = {spec.key for spec in SETUP_SPECS if spec.filter_transcripts}
+
+    assert filtered == set(_FILTERED_SETUPS)
+
+
+def test_every_derivable_behaviour_name_is_accepted():
+    """A provider must never be able to report a name the fingerprint rejects."""
+    from src.rag.question_scope import corpus_wide_behavior
+
+    settings = FakeSettings()
+    for lifted in (True, False):
+        for cap in (0, 2):
+            name = corpus_wide_behavior(cap_lifted=lifted, max_chunks_per_video=cap)
+            cell_fingerprint(
+                "rag_llm_filtered", corpus_wide_entry(), settings, retrieval_behavior=name
+            )

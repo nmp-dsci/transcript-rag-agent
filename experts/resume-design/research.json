@@ -1,0 +1,2580 @@
+{
+  "kind": "deep-research",
+  "topic": "resume-design",
+  "name": "Resume design",
+  "artifact": "resume",
+  "generated_at": "2026-08-10T06:14:53.547584+00:00",
+  "corpus_digest": "e1b17b35cb7190cf",
+  "chunk_count": 1372,
+  "model": "deepseek-v4-flash",
+  "members": 14,
+  "excluded_video_ids": [
+    "7m27Go3K1d0",
+    "AdRL6tKu3Gk",
+    "Bw58mV015z4",
+    "ZiEGOgTC56Y",
+    "gXf7fRvuaXA"
+  ],
+  "held_out_video_ids": [
+    "15rTnqKBlO8"
+  ],
+  "settings": {
+    "round_one_probes": 6,
+    "gap_probes": 4,
+    "retrieval_pool": 18,
+    "excerpts_per_unit": 12,
+    "max_rubrics_per_unit": 3
+  },
+  "plan": [
+    {
+      "probe_id": "p01",
+      "facet": "Recruiter skimming behavior",
+      "question": "What do recruiters actually look for in the first few seconds they spend skimming a resume?",
+      "why": "Everything else on the resume should be organized around surviving that initial scan, so this is the highest-leverage facet.",
+      "origin": "plan",
+      "rank": 1
+    },
+    {
+      "probe_id": "p02",
+      "facet": "Professional summary",
+      "question": "How do I write a professional summary that hooks the reader and doesn't sound like a generic filler paragraph?",
+      "why": "The summary is often the first section read, so it needs to quickly communicate who you are and why you're a fit.",
+      "origin": "plan",
+      "rank": 2
+    },
+    {
+      "probe_id": "p03",
+      "facet": "Quantified impact",
+      "question": "How can I show measurable results and metrics for the work I've done, even if I don't have obvious numbers?",
+      "why": "Hiring managers trust concrete outcomes over vague descriptions, so quantifying impact is a core differentiator.",
+      "origin": "plan",
+      "rank": 3
+    },
+    {
+      "probe_id": "p04",
+      "facet": "Bullet point writing",
+      "question": "How do I phrase bullet points so they sound like real engineering achievements instead of a list of job duties?",
+      "why": "The experience section lives or dies by bullet points, and the wording determines whether your contributions feel significant.",
+      "origin": "plan",
+      "rank": 4
+    },
+    {
+      "probe_id": "p05",
+      "facet": "ATS keyword matching",
+      "question": "How do I make sure my resume gets through an applicant tracking system and doesn't get filtered out before a human sees it?",
+      "why": "Many applications are screened by software first, so keyword placement and formatting compatibility are essential.",
+      "origin": "plan",
+      "rank": 5
+    },
+    {
+      "probe_id": "p06",
+      "facet": "Tailoring to a job description",
+      "question": "How much should I customize my resume for a specific job description, and exactly what parts should change?",
+      "why": "A one-size-fits-all resume misses the signals a particular role is asking for, while targeted tailoring dramatically improves fit.",
+      "origin": "plan",
+      "rank": 6
+    },
+    {
+      "probe_id": "p07",
+      "facet": "Formatting and layout",
+      "question": "What layout, section order, and visual formatting make a tech resume easy to read and professionally clean?",
+      "why": "Readability and visual hierarchy affect both the human eye and ATS parsers, so layout is a practical mechanical concern.",
+      "origin": "plan",
+      "rank": 7
+    },
+    {
+      "probe_id": "p08",
+      "facet": "Page length",
+      "question": "How long should a software engineer or data scientist resume be, and when is it okay to go to two pages?",
+      "why": "Page length decisions signal judgment about relevance and experience level, and getting it wrong can hurt the first impression.",
+      "origin": "plan",
+      "rank": 8
+    },
+    {
+      "probe_id": "p09",
+      "facet": "Technical skills listing",
+      "question": "How should I list programming languages, tools, and frameworks so a recruiter can see my stack at a glance?",
+      "why": "A scannable skills section helps quickly match your technical background against the role's requirements.",
+      "origin": "plan",
+      "rank": 9
+    },
+    {
+      "probe_id": "p10",
+      "facet": "Data science and ML role differences",
+      "question": "If I'm targeting data science or machine learning roles, what should my resume show that a general software resume wouldn't?",
+      "why": "Data and AI roles value different signals, like model outcomes and domain depth, so this facet clarifies role-specific emphasis.",
+      "origin": "plan",
+      "rank": 10
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "g01",
+      "missing": "No criterion requires the resume to include name and contact information (email, phone, LinkedIn/GitHub) or checks that they are present and professional.",
+      "why": "A recruiter cannot reach an applicant without contact info; this is the first thing a skimming reviewer looks for, and none of the existing criteria mention it.",
+      "probe": "What contact information should be on a resume and where should it go?"
+    },
+    {
+      "gap_id": "g02",
+      "missing": "No criterion requires dates for each role or checks that employment history is in reverse chronological order with no unexplained gaps.",
+      "why": "Reviewers need to know recency and tenure; a resume without dates cannot be skimmed for career progression, and none of the existing page/summary/keyword rules cover this.",
+      "probe": "How should employment dates and gaps be presented on a resume?"
+    },
+    {
+      "gap_id": "g03",
+      "missing": "No criterion checks spelling, grammar, punctuation, or typo-level polish on the actual text.",
+      "why": "Typos and grammar errors are an immediate red flag for recruiters, and even a well-keyworded, quantified resume fails if it looks careless; none of the criteria evaluate language quality.",
+      "probe": "How do typos and grammar mistakes affect a resume and what should you proofread?"
+    },
+    {
+      "gap_id": "g04",
+      "missing": "No criterion requires or checks for a projects/portfolio section or links to code, GitHub, or a personal site for technical roles.",
+      "why": "For software engineers and data scientists, evidence of real projects is often as important as work history, but the pack only mentions Projects in passing and gives no way to judge whether such evidence exists.",
+      "probe": "Should a software engineer or data scientist include projects, GitHub links, or a portfolio on their resume?"
+    }
+  ],
+  "gap_closure": [
+    {
+      "gap_id": "g01",
+      "missing": "No criterion requires the resume to include name and contact information (email, phone, LinkedIn/GitHub) or checks that they are present and professional.",
+      "probe": "What contact information should be on a resume and where should it go?",
+      "rules_from_this_probe": 2,
+      "best_new_rubric_id": "r5103",
+      "best_new_criterion": "Tailor the resume to the specific job posting: include its key skills and terminology in the skills section and work them into the bullet points.",
+      "best_new_cosine": 0.4678,
+      "round_one_best_cosine": 0.5419,
+      "closed": false
+    },
+    {
+      "gap_id": "g02",
+      "missing": "No criterion requires dates for each role or checks that employment history is in reverse chronological order with no unexplained gaps.",
+      "probe": "How should employment dates and gaps be presented on a resume?",
+      "rules_from_this_probe": 3,
+      "best_new_rubric_id": "r5201",
+      "best_new_criterion": "Mirror the job description's required keywords and tech stack in the resume before submitting it.",
+      "best_new_cosine": 0.2434,
+      "round_one_best_cosine": 0.327,
+      "closed": false
+    },
+    {
+      "gap_id": "g03",
+      "missing": "No criterion checks spelling, grammar, punctuation, or typo-level polish on the actual text.",
+      "probe": "How do typos and grammar mistakes affect a resume and what should you proofread?",
+      "rules_from_this_probe": 2,
+      "best_new_rubric_id": "r5301",
+      "best_new_criterion": "Keep the resume formatting ATS-safe: one column, standard font, saved as PDF, with no images, tables, columns, headers, footers, emojis, colors, or custom templates.",
+      "best_new_cosine": 0.2266,
+      "round_one_best_cosine": 0.2431,
+      "closed": false
+    },
+    {
+      "gap_id": "g04",
+      "missing": "No criterion requires or checks for a projects/portfolio section or links to code, GitHub, or a personal site for technical roles.",
+      "probe": "Should a software engineer or data scientist include projects, GitHub links, or a portfolio on their resume?",
+      "rules_from_this_probe": 3,
+      "best_new_rubric_id": "r5403",
+      "best_new_criterion": "Link only to GitHub, portfolio, or blog pages that are live, updated, and professionally organized; never link a dead or sloppy repo.",
+      "best_new_cosine": 0.4323,
+      "round_one_best_cosine": 0.4395,
+      "closed": false
+    }
+  ],
+  "restatements": [
+    {
+      "rubric_id": "r5102",
+      "criterion": "Use ATS-safe, plain formatting: a single-column layout with no photos, graphics, charts, icons, or decorative custom templates.",
+      "unit_id": "probe:p51",
+      "nearest_prior_id": "r0601",
+      "nearest_prior_criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+      "nearest_prior_cosine": 0.494,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5103",
+      "criterion": "Tailor the resume to the specific job posting: include its key skills and terminology in the skills section and work them into the bullet points.",
+      "unit_id": "probe:p51",
+      "nearest_prior_id": "r0602",
+      "nearest_prior_criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+      "nearest_prior_cosine": 0.8334,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5201",
+      "criterion": "Mirror the job description's required keywords and tech stack in the resume before submitting it.",
+      "unit_id": "probe:p52",
+      "nearest_prior_id": "r0602",
+      "nearest_prior_criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+      "nearest_prior_cosine": 0.7776,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5202",
+      "criterion": "Keep the resume ATS-parseable: use a single-column layout and standard section headings, and avoid tables, images, or graphics.",
+      "unit_id": "probe:p52",
+      "nearest_prior_id": "r0601",
+      "nearest_prior_criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+      "nearest_prior_cosine": 0.811,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5203",
+      "criterion": "Open with a professional summary that states who you are, your years of experience, your work environment, and a specific accomplishment by the second sentence.",
+      "unit_id": "probe:p52",
+      "nearest_prior_id": "r0403",
+      "nearest_prior_criterion": "Open with a professional summary that names the target role, states your experience level, and brags about a specific accomplishment by the second sentence.",
+      "nearest_prior_cosine": 0.8587,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5301",
+      "criterion": "Keep the resume formatting ATS-safe: one column, standard font, saved as PDF, with no images, tables, columns, headers, footers, emojis, colors, or custom templates.",
+      "unit_id": "probe:p53",
+      "nearest_prior_id": "r0601",
+      "nearest_prior_criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+      "nearest_prior_cosine": 0.7439,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5303",
+      "criterion": "Tailor the resume to each job description by mirroring the exact keywords and required technology stack of the posting.",
+      "unit_id": "probe:p53",
+      "nearest_prior_id": "r0602",
+      "nearest_prior_criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+      "nearest_prior_cosine": 0.822,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5401",
+      "criterion": "Keep the skills section specialized and prove each listed skill in work or project bullets rather than only in a keyword list.",
+      "unit_id": "probe:p54",
+      "nearest_prior_id": "r0401",
+      "nearest_prior_criterion": "Tailor the resume to the job description so the target role title and its hard-skill keywords appear in the top sections and skills list.",
+      "nearest_prior_cosine": 0.6136,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5402",
+      "criterion": "Write each experience/project bullet with the action, the reason, and the result \u2014 not just a task or technology list.",
+      "unit_id": "probe:p54",
+      "nearest_prior_id": "r0303",
+      "nearest_prior_criterion": "For each experience bullet, state the method, reason, and result, not just the task.",
+      "nearest_prior_cosine": 0.7908,
+      "dedupe_threshold": 0.86
+    },
+    {
+      "rubric_id": "r5403",
+      "criterion": "Link only to GitHub, portfolio, or blog pages that are live, updated, and professionally organized; never link a dead or sloppy repo.",
+      "unit_id": "probe:p54",
+      "nearest_prior_id": "r0102",
+      "nearest_prior_criterion": "Include only content that is relevant to the target role, with no hobbies, OS basics, or other fluff.",
+      "nearest_prior_cosine": 0.3005,
+      "dedupe_threshold": 0.86
+    }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "arm": "deep-r1",
+      "label": "round 1 \u2014 the plan's opening probes",
+      "caused_by": "planner",
+      "probes": [
+        {
+          "probe": {
+            "probe_id": "p01",
+            "facet": "Recruiter skimming behavior",
+            "question": "What do recruiters actually look for in the first few seconds they spend skimming a resume?",
+            "why": "Everything else on the resume should be organized around surviving that initial scan, so this is the highest-leverage facet.",
+            "origin": "plan",
+            "rank": 1
+          },
+          "unit_id": "probe:p01",
+          "chunks": 18,
+          "videos": 8,
+          "creator_count": 8,
+          "top_creator": "Farah Sharghi",
+          "top_creator_share": 0.2222,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0101",
+            "r0102",
+            "r0103"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p02",
+            "facet": "Professional summary",
+            "question": "How do I write a professional summary that hooks the reader and doesn't sound like a generic filler paragraph?",
+            "why": "The summary is often the first section read, so it needs to quickly communicate who you are and why you're a fit.",
+            "origin": "plan",
+            "rank": 2
+          },
+          "unit_id": "probe:p02",
+          "chunks": 18,
+          "videos": 5,
+          "creator_count": 3,
+          "top_creator": "Greg Langstaff",
+          "top_creator_share": 0.6667,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0201",
+            "r0202",
+            "r0203"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p03",
+            "facet": "Quantified impact",
+            "question": "How can I show measurable results and metrics for the work I've done, even if I don't have obvious numbers?",
+            "why": "Hiring managers trust concrete outcomes over vague descriptions, so quantifying impact is a core differentiator.",
+            "origin": "plan",
+            "rank": 3
+          },
+          "unit_id": "probe:p03",
+          "chunks": 18,
+          "videos": 7,
+          "creator_count": 6,
+          "top_creator": "Anthony D. Mays",
+          "top_creator_share": 0.5,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0301",
+            "r0302",
+            "r0303"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p04",
+            "facet": "Bullet point writing",
+            "question": "How do I phrase bullet points so they sound like real engineering achievements instead of a list of job duties?",
+            "why": "The experience section lives or dies by bullet points, and the wording determines whether your contributions feel significant.",
+            "origin": "plan",
+            "rank": 4
+          },
+          "unit_id": "probe:p04",
+          "chunks": 18,
+          "videos": 6,
+          "creator_count": 3,
+          "top_creator": "Anthony D. Mays",
+          "top_creator_share": 0.4444,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0401",
+            "r0402",
+            "r0403"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p05",
+            "facet": "ATS keyword matching",
+            "question": "How do I make sure my resume gets through an applicant tracking system and doesn't get filtered out before a human sees it?",
+            "why": "Many applications are screened by software first, so keyword placement and formatting compatibility are essential.",
+            "origin": "plan",
+            "rank": 5
+          },
+          "unit_id": "probe:p05",
+          "chunks": 18,
+          "videos": 8,
+          "creator_count": 8,
+          "top_creator": "Jash Radia",
+          "top_creator_share": 0.3333,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0501",
+            "r0502",
+            "r0503"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p06",
+            "facet": "Tailoring to a job description",
+            "question": "How much should I customize my resume for a specific job description, and exactly what parts should change?",
+            "why": "A one-size-fits-all resume misses the signals a particular role is asking for, while targeted tailoring dramatically improves fit.",
+            "origin": "plan",
+            "rank": 6
+          },
+          "unit_id": "probe:p06",
+          "chunks": 18,
+          "videos": 7,
+          "creator_count": 6,
+          "top_creator": "Anthony Sistilli",
+          "top_creator_share": 0.3333,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r0601",
+            "r0602",
+            "r0603"
+          ],
+          "reason": "",
+          "spent_call": true
+        }
+      ],
+      "executor_calls": 6,
+      "planner_calls": 1,
+      "critic_calls": 0,
+      "rubrics": 16,
+      "citations": 32,
+      "multi_creator_share": 0.8125,
+      "deduped_against_previous": 2,
+      "added_rubric_ids": [
+        "r0101",
+        "r0102",
+        "r0103",
+        "r0201",
+        "r0202",
+        "r0301",
+        "r0302",
+        "r0303",
+        "r0401",
+        "r0402",
+        "r0403",
+        "r0501",
+        "r0503",
+        "r0601",
+        "r0602",
+        "r0603"
+      ]
+    },
+    {
+      "round": 2,
+      "arm": "deep-r2",
+      "label": "round 2 \u2014 the gap critic's probes",
+      "caused_by": "gap critic reading deep-r1",
+      "probes": [
+        {
+          "probe": {
+            "probe_id": "p51",
+            "facet": "No criterion requires the resume to include name and contact information (email,",
+            "question": "What contact information should be on a resume and where should it go?",
+            "why": "A recruiter cannot reach an applicant without contact info; this is the first thing a skimming reviewer looks for, and none of the existing criteria mention it.",
+            "origin": "gap:g01",
+            "rank": 51
+          },
+          "unit_id": "probe:p51",
+          "chunks": 18,
+          "videos": 6,
+          "creator_count": 5,
+          "top_creator": "Jash Radia",
+          "top_creator_share": 0.3333,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r5101",
+            "r5102",
+            "r5103"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p52",
+            "facet": "No criterion requires dates for each role or checks that employment history is i",
+            "question": "How should employment dates and gaps be presented on a resume?",
+            "why": "Reviewers need to know recency and tenure; a resume without dates cannot be skimmed for career progression, and none of the existing page/summary/keyword rules cover this.",
+            "origin": "gap:g02",
+            "rank": 52
+          },
+          "unit_id": "probe:p52",
+          "chunks": 18,
+          "videos": 8,
+          "creator_count": 6,
+          "top_creator": "Anthony D. Mays",
+          "top_creator_share": 0.2778,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r5201",
+            "r5202",
+            "r5203"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p53",
+            "facet": "No criterion checks spelling, grammar, punctuation, or typo-level polish on the ",
+            "question": "How do typos and grammar mistakes affect a resume and what should you proofread?",
+            "why": "Typos and grammar errors are an immediate red flag for recruiters, and even a well-keyworded, quantified resume fails if it looks careless; none of the criteria evaluate language quality.",
+            "origin": "gap:g03",
+            "rank": 53
+          },
+          "unit_id": "probe:p53",
+          "chunks": 18,
+          "videos": 8,
+          "creator_count": 6,
+          "top_creator": "Greg Langstaff",
+          "top_creator_share": 0.3333,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r5301",
+            "r5302",
+            "r5303"
+          ],
+          "reason": "",
+          "spent_call": true
+        },
+        {
+          "probe": {
+            "probe_id": "p54",
+            "facet": "No criterion requires or checks for a projects/portfolio section or links to cod",
+            "question": "Should a software engineer or data scientist include projects, GitHub links, or a portfolio on their resume?",
+            "why": "For software engineers and data scientists, evidence of real projects is often as important as work history, but the pack only mentions Projects in passing and gives no way to judge whether such evidence exists.",
+            "origin": "gap:g04",
+            "rank": 54
+          },
+          "unit_id": "probe:p54",
+          "chunks": 18,
+          "videos": 6,
+          "creator_count": 6,
+          "top_creator": "Anthony Sistilli",
+          "top_creator_share": 0.3889,
+          "eligible": true,
+          "reject_reason": "",
+          "rubric_ids": [
+            "r5401",
+            "r5402",
+            "r5403"
+          ],
+          "reason": "",
+          "spent_call": true
+        }
+      ],
+      "executor_calls": 4,
+      "planner_calls": 0,
+      "critic_calls": 1,
+      "rubrics": 26,
+      "citations": 52,
+      "multi_creator_share": 0.8462,
+      "deduped_against_previous": 2,
+      "added_rubric_ids": [
+        "r5102",
+        "r5103",
+        "r5201",
+        "r5202",
+        "r5203",
+        "r5301",
+        "r5303",
+        "r5401",
+        "r5402",
+        "r5403"
+      ]
+    }
+  ],
+  "control": {
+    "round": 2,
+    "arm": "deep-oneshot",
+    "label": "control \u2014 the same plan continued, no critic",
+    "caused_by": "planner",
+    "probes": [
+      {
+        "probe": {
+          "probe_id": "p07",
+          "facet": "Formatting and layout",
+          "question": "What layout, section order, and visual formatting make a tech resume easy to read and professionally clean?",
+          "why": "Readability and visual hierarchy affect both the human eye and ATS parsers, so layout is a practical mechanical concern.",
+          "origin": "plan",
+          "rank": 7
+        },
+        "unit_id": "probe:p07",
+        "chunks": 18,
+        "videos": 7,
+        "creator_count": 5,
+        "top_creator": "Greg Langstaff",
+        "top_creator_share": 0.3333,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r0701",
+          "r0702",
+          "r0703"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p08",
+          "facet": "Page length",
+          "question": "How long should a software engineer or data scientist resume be, and when is it okay to go to two pages?",
+          "why": "Page length decisions signal judgment about relevance and experience level, and getting it wrong can hurt the first impression.",
+          "origin": "plan",
+          "rank": 8
+        },
+        "unit_id": "probe:p08",
+        "chunks": 18,
+        "videos": 5,
+        "creator_count": 5,
+        "top_creator": "Anthony Sistilli",
+        "top_creator_share": 0.3333,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r0801",
+          "r0802",
+          "r0803"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p09",
+          "facet": "Technical skills listing",
+          "question": "How should I list programming languages, tools, and frameworks so a recruiter can see my stack at a glance?",
+          "why": "A scannable skills section helps quickly match your technical background against the role's requirements.",
+          "origin": "plan",
+          "rank": 9
+        },
+        "unit_id": "probe:p09",
+        "chunks": 18,
+        "videos": 5,
+        "creator_count": 5,
+        "top_creator": "Headless Headhunter",
+        "top_creator_share": 0.4444,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r0901",
+          "r0902",
+          "r0903"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p10",
+          "facet": "Data science and ML role differences",
+          "question": "If I'm targeting data science or machine learning roles, what should my resume show that a general software resume wouldn't?",
+          "why": "Data and AI roles value different signals, like model outcomes and domain depth, so this facet clarifies role-specific emphasis.",
+          "origin": "plan",
+          "rank": 10
+        },
+        "unit_id": "probe:p10",
+        "chunks": 18,
+        "videos": 5,
+        "creator_count": 5,
+        "top_creator": "Anthony D. Mays",
+        "top_creator_share": 0.5556,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r1001",
+          "r1002",
+          "r1003"
+        ],
+        "reason": "",
+        "spent_call": true
+      }
+    ],
+    "executor_calls": 4,
+    "planner_calls": 0,
+    "critic_calls": 0,
+    "rubrics": 26,
+    "citations": 51,
+    "multi_creator_share": 0.8462,
+    "deduped_against_previous": 2,
+    "added_rubric_ids": [
+      "r0701",
+      "r0702",
+      "r0802",
+      "r0803",
+      "r0901",
+      "r0902",
+      "r0903",
+      "r1001",
+      "r1002",
+      "r1003"
+    ]
+  },
+  "diff": {
+    "before_arm": "deep-r1",
+    "after_arm": "deep-r2",
+    "kept": [
+      {
+        "rubric_id": "r0101",
+        "criterion": "Keep the resume to one page.",
+        "check": "Count the pages in the submitted PDF or printout; fail if it exceeds one page.",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Boris Meinardus",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0102",
+        "criterion": "Include only content that is relevant to the target role, with no hobbies, OS basics, or other fluff.",
+        "check": "Scan for banned categories\u2014hobbies, obvious software literacy like Mac OS or Windows, and unrelated education\u2014and fail if any such item appears on the resume.",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Boris Meinardus",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0103",
+        "criterion": "Write every experience bullet as a full sentence that states what you did, how you did it, and the result.",
+        "check": "For each bullet under Experience, identify an action verb, a method or context, and an outcome; fail any bullet that is a generic duty with no result, such as \"handled various operational duties over five years.\"",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Farah Sharghi",
+          "Headless Headhunter"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0201",
+        "criterion": "Rewrite the professional summary for each application so it names the specific role, stack, and experience the job posting asks for.",
+        "check": "Compare the summary to the target job description; flag it if it is generic boilerplate, contains no skill or technology from the posting, or is longer than one to two sentences.",
+        "unit_id": "probe:p02",
+        "creators": [
+          "Anthony D. Mays",
+          "Anthony Sistilli"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0202",
+        "criterion": "Back up every claim in the summary and experience bullets with a concrete fact: a number, a percentage, a dollar amount, or a specific accomplishment from a previous role.",
+        "check": "Highlight all claims of skill, experience, or quality; for each, require an adjacent numeral or a reference to a specific previous result; flag any statement that only describes responsibilities or enthusiasm.",
+        "unit_id": "probe:p02",
+        "creators": [
+          "Anthony D. Mays",
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0301",
+        "criterion": "Quantify every outcome you claim with a concrete number.",
+        "check": "Read each experience bullet and the professional summary; any bullet that claims an outcome\u2014improved performance, reduced cost, built a system\u2014must contain a numeral (score, percentage, count, or amount).",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Boris Meinardus",
+          "Headless Headhunter",
+          "Stefan Masnikovic"
+        ],
+        "citations": 3
+      },
+      {
+        "rubric_id": "r0302",
+        "criterion": "Match the resume to the job description by reflecting its repeated keywords.",
+        "check": "Use the find shortcut to count keywords in the job description, group them into soft skills, technical skills, and product qualities, then look for corresponding terms in the resume; a keyword that appears repeatedly in the job description but has no match in the resume fails.",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Anthony D. Mays"
+        ],
+        "citations": 1
+      },
+      {
+        "rubric_id": "r0303",
+        "criterion": "For each experience bullet, state the method, reason, and result, not just the task.",
+        "check": "Flag any bullet that names only a deliverable or duty (built dashboards, worked on X) and tells the reader nothing about how it was done, why it was done, or what it produced.",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Headless Headhunter",
+          "Stefan Masnikovic"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0401",
+        "criterion": "Tailor the resume to the job description so the target role title and its hard-skill keywords appear in the top sections and skills list.",
+        "check": "Compare the resume against the job description; fail if the exact or near-exact target job title is missing from the header or summary, or if any required hard skill from the job description is absent from the skills section.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Anthony D. Mays",
+          "Anthony Sistilli"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0402",
+        "criterion": "Write every experience bullet as an action-oriented accomplishment with a concrete result, not a generic responsibility.",
+        "check": "For each role, flag any bullet that describes a duty without an action verb and a measurable outcome; fail the resume if a single responsibility-only bullet appears in the experience section.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0403",
+        "criterion": "Open with a professional summary that names the target role, states your experience level, and brags about a specific accomplishment by the second sentence.",
+        "check": "Read the first section; fail if it is only an objective statement, if the role title is not matched, if experience years/environments are absent, or if the first two sentences contain no concrete accomplishment.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Anthony Sistilli",
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0501",
+        "criterion": "Use the same keywords from the job description in your resume so the ATS matches it to the role.",
+        "check": "Compare the target job description's required skills/tools against the resume; pass only if every required keyword from the posting appears somewhere in the resume.",
+        "unit_id": "probe:p05",
+        "creators": [
+          "Greg Langstaff",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0503",
+        "criterion": "Give the last 5-7 years of experience the most space; compress older roles to at most two or three relevant bullet points.",
+        "check": "For every role that ended more than seven years ago, count the bullet points; fail if any such role has more than three bullet points or is given as much space as recent experience.",
+        "unit_id": "probe:p05",
+        "creators": [
+          "Farah Sharghi"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0601",
+        "criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+        "check": "Reject if the resume has a multi-column layout, a table, an image, a graphic, a text box, or a decorative font; accept only simple left-to-right text in a standard font.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Jash Radia",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0602",
+        "criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+        "check": "Compare the job description's required technologies and repeated keywords against the resume; if any required skill is absent or represented only by a different stack, fail.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0603",
+        "criterion": "Write each experience bullet as a quantified accomplishment, not a list of duties.",
+        "check": "For every bullet under Experience and Projects, verify that it names a concrete result with a number or an explicit outcome; bullets that only describe responsibilities fail.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      }
+    ],
+    "added": [
+      {
+        "rubric_id": "r5102",
+        "criterion": "Use ATS-safe, plain formatting: a single-column layout with no photos, graphics, charts, icons, or decorative custom templates.",
+        "check": "Open the submitted file and look for embedded images, skill bars, sparklines, two-column layouts, and custom template graphics; fail if any are present.",
+        "unit_id": "probe:p51",
+        "creators": [
+          "Anthony Sistilli",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5103",
+        "criterion": "Tailor the resume to the specific job posting: include its key skills and terminology in the skills section and work them into the bullet points.",
+        "check": "Generate a list of 25 keywords from the job posting (hard skills, job tasks, technology, equipment), then check that each required skill or term appears in the skills section and at least once in a bullet point; fail if the posting's core skills are missing from the bullets.",
+        "unit_id": "probe:p51",
+        "creators": [
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5201",
+        "criterion": "Mirror the job description's required keywords and tech stack in the resume before submitting it.",
+        "check": "Place the target job description next to the resume and compare required skills and tools; fail the resume if a core requirement is absent or the resume leads with a different stack than the posting.",
+        "unit_id": "probe:p52",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5202",
+        "criterion": "Keep the resume ATS-parseable: use a single-column layout and standard section headings, and avoid tables, images, or graphics.",
+        "check": "Inspect the layout and headings; fail the resume if it uses multiple columns, tables, images, or graphics, or if section headings are not standard terms such as Experience or Skills.",
+        "unit_id": "probe:p52",
+        "creators": [
+          "Jash Radia",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5203",
+        "criterion": "Open with a professional summary that states who you are, your years of experience, your work environment, and a specific accomplishment by the second sentence.",
+        "check": "Read the first section below your contact info; fail if there is no summary, if the first two sentences omit role, years, or environment, or if no concrete accomplishment appears by the second sentence.",
+        "unit_id": "probe:p52",
+        "creators": [
+          "Anthony D. Mays",
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5301",
+        "criterion": "Keep the resume formatting ATS-safe: one column, standard font, saved as PDF, with no images, tables, columns, headers, footers, emojis, colors, or custom templates.",
+        "check": "Open the submitted PDF or file and scan it; fail if you see a two-column or multi-column layout, image, table, header/footer, emoji, color highlight, decorative/nonstandard font, or custom-designed template.",
+        "unit_id": "probe:p53",
+        "creators": [
+          "Anthony Sistilli",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5303",
+        "criterion": "Tailor the resume to each job description by mirroring the exact keywords and required technology stack of the posting.",
+        "check": "List the required skills and tools from the job posting; fail if any core required tool or keyword is absent from the resume, or if the resume's tech stack contradicts the posting.",
+        "unit_id": "probe:p53",
+        "creators": [
+          "Greg Langstaff",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5401",
+        "criterion": "Keep the skills section specialized and prove each listed skill in work or project bullets rather than only in a keyword list.",
+        "check": "Compare the skills section to the job description and to the rest of the resume; fail if it contains generic or unrelated skills, or if any listed skill never appears in a work or project bullet.",
+        "unit_id": "probe:p54",
+        "creators": [
+          "Anthony Sistilli",
+          "Headless Headhunter"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5402",
+        "criterion": "Write each experience/project bullet with the action, the reason, and the result \u2014 not just a task or technology list.",
+        "check": "For every work or project bullet, locate what was done, why/how it was done, and the outcome; fail any bullet that stops at 'built X' or 'used React'.",
+        "unit_id": "probe:p54",
+        "creators": [
+          "Headless Headhunter",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r5403",
+        "criterion": "Link only to GitHub, portfolio, or blog pages that are live, updated, and professionally organized; never link a dead or sloppy repo.",
+        "check": "Open every linked URL on the resume; fail if any link errors or loads an outdated app, or if a GitHub repo lacks a README, requirements, clean structure, or exposes env files/API keys.",
+        "unit_id": "probe:p54",
+        "creators": [
+          "Anthony Sistilli",
+          "Concepts of AI (Akash Gupta)"
+        ],
+        "citations": 2
+      }
+    ],
+    "removed": []
+  },
+  "control_diff": {
+    "before_arm": "deep-r1",
+    "after_arm": "deep-oneshot",
+    "kept": [
+      {
+        "rubric_id": "r0101",
+        "criterion": "Keep the resume to one page.",
+        "check": "Count the pages in the submitted PDF or printout; fail if it exceeds one page.",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Boris Meinardus",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0102",
+        "criterion": "Include only content that is relevant to the target role, with no hobbies, OS basics, or other fluff.",
+        "check": "Scan for banned categories\u2014hobbies, obvious software literacy like Mac OS or Windows, and unrelated education\u2014and fail if any such item appears on the resume.",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Boris Meinardus",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0103",
+        "criterion": "Write every experience bullet as a full sentence that states what you did, how you did it, and the result.",
+        "check": "For each bullet under Experience, identify an action verb, a method or context, and an outcome; fail any bullet that is a generic duty with no result, such as \"handled various operational duties over five years.\"",
+        "unit_id": "probe:p01",
+        "creators": [
+          "Farah Sharghi",
+          "Headless Headhunter"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0201",
+        "criterion": "Rewrite the professional summary for each application so it names the specific role, stack, and experience the job posting asks for.",
+        "check": "Compare the summary to the target job description; flag it if it is generic boilerplate, contains no skill or technology from the posting, or is longer than one to two sentences.",
+        "unit_id": "probe:p02",
+        "creators": [
+          "Anthony D. Mays",
+          "Anthony Sistilli"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0202",
+        "criterion": "Back up every claim in the summary and experience bullets with a concrete fact: a number, a percentage, a dollar amount, or a specific accomplishment from a previous role.",
+        "check": "Highlight all claims of skill, experience, or quality; for each, require an adjacent numeral or a reference to a specific previous result; flag any statement that only describes responsibilities or enthusiasm.",
+        "unit_id": "probe:p02",
+        "creators": [
+          "Anthony D. Mays",
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0301",
+        "criterion": "Quantify every outcome you claim with a concrete number.",
+        "check": "Read each experience bullet and the professional summary; any bullet that claims an outcome\u2014improved performance, reduced cost, built a system\u2014must contain a numeral (score, percentage, count, or amount).",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Boris Meinardus",
+          "Headless Headhunter",
+          "Stefan Masnikovic"
+        ],
+        "citations": 3
+      },
+      {
+        "rubric_id": "r0302",
+        "criterion": "Match the resume to the job description by reflecting its repeated keywords.",
+        "check": "Use the find shortcut to count keywords in the job description, group them into soft skills, technical skills, and product qualities, then look for corresponding terms in the resume; a keyword that appears repeatedly in the job description but has no match in the resume fails.",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Anthony D. Mays"
+        ],
+        "citations": 1
+      },
+      {
+        "rubric_id": "r0303",
+        "criterion": "For each experience bullet, state the method, reason, and result, not just the task.",
+        "check": "Flag any bullet that names only a deliverable or duty (built dashboards, worked on X) and tells the reader nothing about how it was done, why it was done, or what it produced.",
+        "unit_id": "probe:p03",
+        "creators": [
+          "Headless Headhunter",
+          "Stefan Masnikovic"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0401",
+        "criterion": "Tailor the resume to the job description so the target role title and its hard-skill keywords appear in the top sections and skills list.",
+        "check": "Compare the resume against the job description; fail if the exact or near-exact target job title is missing from the header or summary, or if any required hard skill from the job description is absent from the skills section.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Anthony D. Mays",
+          "Anthony Sistilli"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0402",
+        "criterion": "Write every experience bullet as an action-oriented accomplishment with a concrete result, not a generic responsibility.",
+        "check": "For each role, flag any bullet that describes a duty without an action verb and a measurable outcome; fail the resume if a single responsibility-only bullet appears in the experience section.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0403",
+        "criterion": "Open with a professional summary that names the target role, states your experience level, and brags about a specific accomplishment by the second sentence.",
+        "check": "Read the first section; fail if it is only an objective statement, if the role title is not matched, if experience years/environments are absent, or if the first two sentences contain no concrete accomplishment.",
+        "unit_id": "probe:p04",
+        "creators": [
+          "Anthony Sistilli",
+          "Greg Langstaff"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0501",
+        "criterion": "Use the same keywords from the job description in your resume so the ATS matches it to the role.",
+        "check": "Compare the target job description's required skills/tools against the resume; pass only if every required keyword from the posting appears somewhere in the resume.",
+        "unit_id": "probe:p05",
+        "creators": [
+          "Greg Langstaff",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0503",
+        "criterion": "Give the last 5-7 years of experience the most space; compress older roles to at most two or three relevant bullet points.",
+        "check": "For every role that ended more than seven years ago, count the bullet points; fail if any such role has more than three bullet points or is given as much space as recent experience.",
+        "unit_id": "probe:p05",
+        "creators": [
+          "Farah Sharghi"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0601",
+        "criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+        "check": "Reject if the resume has a multi-column layout, a table, an image, a graphic, a text box, or a decorative font; accept only simple left-to-right text in a standard font.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Jash Radia",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0602",
+        "criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+        "check": "Compare the job description's required technologies and repeated keywords against the resume; if any required skill is absent or represented only by a different stack, fail.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0603",
+        "criterion": "Write each experience bullet as a quantified accomplishment, not a list of duties.",
+        "check": "For every bullet under Experience and Projects, verify that it names a concrete result with a number or an explicit outcome; bullets that only describe responsibilities fail.",
+        "unit_id": "probe:p06",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      }
+    ],
+    "added": [
+      {
+        "rubric_id": "r0701",
+        "criterion": "Mirror the job description's required skills and keywords in your resume.",
+        "check": "Compare the job description against the resume; for every core skill or requirement the candidate has, that phrase or a close synonym appears in the resume, and fail if any core requirement is missing.",
+        "unit_id": "probe:p07",
+        "creators": [
+          "Anthony D. Mays",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0702",
+        "criterion": "Format the resume as a single-column document with a standard font and no images, colors, headers, footers, or emojis.",
+        "check": "Inspect the source file and rendered resume for multi-column layouts, graphics, color/highlights, headers/footers, or emojis; fail on any of these, and flag non-standard fonts or body text outside 10-12 points.",
+        "unit_id": "probe:p07",
+        "creators": [
+          "Jean Lee"
+        ],
+        "citations": 1
+      },
+      {
+        "rubric_id": "r0802",
+        "criterion": "Use plain, single-column, ATS-friendly formatting with no images, graphics, tables, columns, headers, footers, colors, highlights, or emojis.",
+        "check": "Scan the document for those elements and confirm the layout is one column and reads line by line; if any of the forbidden elements appear, fail it as non-ATS-friendly.",
+        "unit_id": "probe:p08",
+        "creators": [
+          "Jash Radia",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0803",
+        "criterion": "Tailor every skill and experience bullet to the target job description, keeping only relevant keywords and removing unrelated information.",
+        "check": "Compare the resume's skills and technologies against the job description; each listed item must map to a stated requirement or clearly support the target role, and irrelevant content is a failure.",
+        "unit_id": "probe:p08",
+        "creators": [
+          "Anthony D. Mays",
+          "Jean Lee"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0901",
+        "criterion": "Include the target job description's required technical skills in your experience bullets, not only in a skills section.",
+        "check": "Compare the resume with the job description; count the required technical skills that appear in the experience bullets. Pass if at least 75% appear there.",
+        "unit_id": "probe:p09",
+        "creators": [
+          "Boris Meinardus",
+          "Headless Headhunter"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0902",
+        "criterion": "Write a one-to-two-sentence summary that states your relevant stack and background instead of generic buzzwords.",
+        "check": "Read the summary; fail if it runs longer than two sentences, contains unqualified filler words like 'motivated', 'skilled', 'passionate', or 'rockstar', or names no specific technologies or outcomes.",
+        "unit_id": "probe:p09",
+        "creators": [
+          "Anthony Sistilli",
+          "Ashish Pratap Singh"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r0903",
+        "criterion": "Prove every claimed technical skill with a concrete, contextual experience bullet instead of a bare keyword.",
+        "check": "For each technology or skill claimed, locate a bullet that names the technology and says what was built or done with it. Fail if a skill appears only in a skills list or in a vague phrase like 'built a dataset' with no follow-up.",
+        "unit_id": "probe:p09",
+        "creators": [
+          "Boris Meinardus",
+          "Headless Headhunter"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r1001",
+        "criterion": "Tailor the resume to the target job description by reusing its keywords in the summary and skills sections.",
+        "check": "Hold the job description next to the resume and search the summary and skills sections for each required skill, tool, or title; fail if any key term from the job description is missing.",
+        "unit_id": "probe:p10",
+        "creators": [
+          "Anthony D. Mays",
+          "Anthony Sistilli"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r1002",
+        "criterion": "Write every experience bullet as an impact statement tied to money, time, or productivity, not as a list of duties.",
+        "check": "For each bullet in the Experience section, identify a quantified business result (money made or saved, time saved, productivity increased); fail if any bullet only restates a responsibility.",
+        "unit_id": "probe:p10",
+        "creators": [
+          "Anthony D. Mays",
+          "Jash Radia"
+        ],
+        "citations": 2
+      },
+      {
+        "rubric_id": "r1003",
+        "criterion": "Keep the skills section specialized: only list skills relevant to the target role and actually used, not generic or obvious tools.",
+        "check": "Go through every line of the skills section and mark each entry as generic (e.g., Mac OS, Windows) or unrelated to the target role; fail if any marked entry is present.",
+        "unit_id": "probe:p10",
+        "creators": [
+          "Anthony Sistilli",
+          "Boris Meinardus"
+        ],
+        "citations": 2
+      }
+    ],
+    "removed": []
+  },
+  "budget": [
+    {
+      "arm": "deep-r1",
+      "label": "round 1 \u2014 the plan's opening probes",
+      "planner_calls": 1,
+      "critic_calls": 0,
+      "executor_calls": 6,
+      "probes_budgeted": 6,
+      "total_llm_calls": 7,
+      "rubrics": 16,
+      "citations": 32
+    },
+    {
+      "arm": "deep-oneshot",
+      "label": "control \u2014 the same plan continued, no critic",
+      "planner_calls": 1,
+      "critic_calls": 0,
+      "executor_calls": 10,
+      "probes_budgeted": 10,
+      "total_llm_calls": 11,
+      "rubrics": 26,
+      "citations": 51
+    },
+    {
+      "arm": "deep-r2",
+      "label": "round 2 \u2014 the gap critic's probes",
+      "planner_calls": 1,
+      "critic_calls": 1,
+      "executor_calls": 10,
+      "probes_budgeted": 10,
+      "total_llm_calls": 12,
+      "rubrics": 26,
+      "citations": 52
+    },
+    {
+      "arm": "deep-frontier",
+      "label": "frontier round \u2014 a coverage-aware critic, off round 1's ground",
+      "planner_calls": 1,
+      "critic_calls": 1,
+      "executor_calls": 10,
+      "probes_budgeted": 10,
+      "total_llm_calls": 12,
+      "rubrics": 24,
+      "citations": 48
+    },
+    {
+      "arm": "deep-r2-admit",
+      "label": "ablation \u2014 deep-r2, evidence-novelty admission only, no new call",
+      "planner_calls": 1,
+      "critic_calls": 1,
+      "executor_calls": 10,
+      "probes_budgeted": 10,
+      "total_llm_calls": 12,
+      "rubrics": 24,
+      "citations": 48
+    }
+  ],
+  "arms": {
+    "deep-r1": {
+      "rubrics": 16,
+      "citations": 32,
+      "multi_creator_share": 0.8125,
+      "executor_calls": 6,
+      "rubrics_deduped": 2,
+      "gaps": 0
+    },
+    "deep-oneshot": {
+      "rubrics": 26,
+      "citations": 51,
+      "multi_creator_share": 0.8462,
+      "executor_calls": 10,
+      "rubrics_deduped": 2,
+      "gaps": 0
+    },
+    "deep-r2": {
+      "rubrics": 26,
+      "citations": 52,
+      "multi_creator_share": 0.8462,
+      "executor_calls": 10,
+      "rubrics_deduped": 2,
+      "gaps": 0
+    }
+  },
+  "scores": {
+    "generated_at": "2026-08-11T02:53:43.895361+00:00",
+    "run_id": "critique-15rTnqKBlO8-20260811-025343",
+    "metrics": [
+      "criteria_recall",
+      "evidence_precision",
+      "provenance",
+      "contested_coverage"
+    ],
+    "baseline": "merged",
+    "held_out_title": "You asked me to roast your AI resumes.. so I did.",
+    "held_out_video_id": "15rTnqKBlO8",
+    "criteria_total": 24,
+    "criteria_applicable": 19,
+    "match_repeats": 5,
+    "build_corpus_digest": "e1b17b35cb7190cf",
+    "scoring_corpus_digest": "7fda94b90029639f",
+    "scoring_chunk_count": 1792,
+    "scored_on_build_corpus": false,
+    "rows": [
+      {
+        "arm": "merged",
+        "scores": {
+          "criteria_recall": 0.2632,
+          "evidence_precision": 0.8235,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.2105,
+          "criteria_recall_median": 0.2632,
+          "criteria_recall_max": 0.3684
+        },
+        "findings_total": 17,
+        "findings_grounded": 14,
+        "citations_total": 30,
+        "citations_resolved": 30,
+        "criteria_matched": 5,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.2667,
+        "executor_calls": null,
+        "unit_budget": 6,
+        "held_out_leaks": 0
+      },
+      {
+        "arm": "deep-r1",
+        "scores": {
+          "criteria_recall": 0.3684,
+          "evidence_precision": 0.8125,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.3158,
+          "criteria_recall_median": 0.3684,
+          "criteria_recall_max": 0.4211
+        },
+        "findings_total": 16,
+        "findings_grounded": 13,
+        "citations_total": 32,
+        "citations_resolved": 32,
+        "criteria_matched": 7,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.4667,
+        "executor_calls": 6,
+        "unit_budget": 6,
+        "held_out_leaks": 0
+      },
+      {
+        "arm": "deep-oneshot",
+        "scores": {
+          "criteria_recall": 0.2632,
+          "evidence_precision": 0.6154,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.2632,
+          "criteria_recall_median": 0.2632,
+          "criteria_recall_max": 0.3158
+        },
+        "findings_total": 26,
+        "findings_grounded": 16,
+        "citations_total": 51,
+        "citations_resolved": 51,
+        "criteria_matched": 5,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.2667,
+        "executor_calls": 10,
+        "unit_budget": 10,
+        "held_out_leaks": 0
+      },
+      {
+        "arm": "deep-r2",
+        "scores": {
+          "criteria_recall": 0.3684,
+          "evidence_precision": 0.7692,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.2632,
+          "criteria_recall_median": 0.4211,
+          "criteria_recall_max": 0.4737
+        },
+        "findings_total": 26,
+        "findings_grounded": 20,
+        "citations_total": 52,
+        "citations_resolved": 52,
+        "criteria_matched": 7,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.4667,
+        "executor_calls": 10,
+        "unit_budget": 10,
+        "held_out_leaks": 0
+      },
+      {
+        "arm": "deep-r2-admit",
+        "scores": {
+          "criteria_recall": 0.4211,
+          "evidence_precision": 0.875,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.3158,
+          "criteria_recall_median": 0.4211,
+          "criteria_recall_max": 0.4737
+        },
+        "findings_total": 24,
+        "findings_grounded": 21,
+        "citations_total": 48,
+        "citations_resolved": 48,
+        "criteria_matched": 8,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.5333,
+        "executor_calls": 10,
+        "unit_budget": 10,
+        "held_out_leaks": 0
+      },
+      {
+        "arm": "deep-frontier",
+        "scores": {
+          "criteria_recall": 0.4211,
+          "evidence_precision": 0.875,
+          "provenance": 1.0,
+          "contested_coverage": null
+        },
+        "score_spread": {
+          "criteria_recall_min": 0.4211,
+          "criteria_recall_median": 0.4211,
+          "criteria_recall_max": 0.4737
+        },
+        "findings_total": 24,
+        "findings_grounded": 21,
+        "citations_total": 48,
+        "citations_resolved": 48,
+        "criteria_matched": 8,
+        "criteria_applicable": 19,
+        "criteria_recall_grouped": 0.5333,
+        "executor_calls": 10,
+        "unit_budget": 10,
+        "held_out_leaks": 0
+      }
+    ],
+    "verdicts": {
+      "criteria_recall": {
+        "metric": "criteria_recall",
+        "leader": "deep-frontier",
+        "value": 0.4211,
+        "tied": [
+          "deep-frontier",
+          "deep-r2-admit"
+        ],
+        "runner_up_max": 0.4737,
+        "decisive": false,
+        "basis": "tied",
+        "reason": "two or more arms scored the same"
+      },
+      "evidence_precision": {
+        "metric": "evidence_precision",
+        "leader": "deep-frontier",
+        "value": 0.875,
+        "tied": [
+          "deep-frontier",
+          "deep-r2-admit"
+        ],
+        "runner_up_max": null,
+        "decisive": false,
+        "basis": "tied",
+        "reason": "two or more arms scored the same"
+      },
+      "provenance": {
+        "metric": "provenance",
+        "leader": "deep-frontier",
+        "value": 1.0,
+        "tied": [
+          "deep-frontier",
+          "deep-oneshot",
+          "deep-r1",
+          "deep-r2",
+          "deep-r2-admit",
+          "merged"
+        ],
+        "runner_up_max": null,
+        "decisive": false,
+        "basis": "tied",
+        "reason": "two or more arms scored the same"
+      },
+      "contested_coverage": {
+        "metric": "contested_coverage",
+        "leader": null,
+        "decisive": false,
+        "basis": "no-scored-arm",
+        "reason": "no scored arm"
+      }
+    }
+  },
+  "frontier": {
+    "generated_at": "2026-08-11T03:02:47.575545+00:00",
+    "arm": "deep-frontier",
+    "admission_arm": "deep-r2-admit",
+    "model": "deepseek-v4-flash",
+    "corpus_digest": "e1b17b35cb7190cf",
+    "chunk_count": 1372,
+    "video_count": 56,
+    "member_videos": 14,
+    "member_chunks": 182,
+    "round_one_read": 72,
+    "settings": {
+      "gap_probes": 4,
+      "retrieval_pool": 18,
+      "excluded_chunks": 72,
+      "prompt_version": "v1"
+    },
+    "coverage": [
+      {
+        "video_id": "by8wrrXW3So",
+        "title": "What AI Engineer JOBS Need on a Resume | Recruiter Reviews Resume",
+        "channel_name": "Headless Headhunter",
+        "chunks": 25,
+        "read": 4
+      },
+      {
+        "video_id": "fD0E57QYSPk",
+        "title": "How to make a Dev resume that actually gets you hired",
+        "channel_name": "Anthony Sistilli",
+        "chunks": 22,
+        "read": 11
+      },
+      {
+        "video_id": "5gLVxMKeSGM",
+        "title": "How to Write a Winning Tech Resume | Resume Tips from a Software Engineer & Career Coach",
+        "channel_name": "Anthony D. Mays",
+        "chunks": 27,
+        "read": 17
+      },
+      {
+        "video_id": "KuXPeGH_Vag",
+        "title": "How to Get a Job in 2026",
+        "channel_name": "Greg Langstaff",
+        "chunks": 14,
+        "read": 4
+      },
+      {
+        "video_id": "dQ6RNltrXro",
+        "title": "How I Optimized my LinkedIn Profile and Got 20+ Interview Calls",
+        "channel_name": "Ashish Pratap Singh",
+        "chunks": 10,
+        "read": 0
+      },
+      {
+        "video_id": "ozwmlFencJI",
+        "title": "Copy This Linkedin Strategy, It'll Blow Up Your Inbox With Recruiters",
+        "channel_name": "Stefan Masnikovic",
+        "chunks": 12,
+        "read": 2
+      },
+      {
+        "video_id": "3pFRqPqzBCM",
+        "title": "I Reviewed 100 Data Resumes. Here's What Gets You Hired!",
+        "channel_name": "Jash Radia",
+        "chunks": 14,
+        "read": 6
+      },
+      {
+        "video_id": "owIP4Qr39BY",
+        "title": "Write a Better Resume - Step-by-Step Resume Upgrade (by a Professional Resume Writer)",
+        "channel_name": "Greg Langstaff",
+        "chunks": 14,
+        "read": 6
+      },
+      {
+        "video_id": "FpW8aiJPvts",
+        "title": "This Simple RESUME got me 5 Machine Learning Interviews",
+        "channel_name": "Boris Meinardus",
+        "chunks": 10,
+        "read": 3
+      },
+      {
+        "video_id": "ZqqzBCg6IGU",
+        "title": "Straight From Industry Insiders-AI/ML Resume Tips Nobody Shares",
+        "channel_name": "Concepts of AI (Akash Gupta)",
+        "chunks": 6,
+        "read": 1
+      },
+      {
+        "video_id": "eGmZZFJ-8PY",
+        "title": "Ex-Google Recruiter Explains: 6 R\u00e9sum\u00e9 Secrets That Get You Hired",
+        "channel_name": "Farah Sharghi",
+        "chunks": 10,
+        "read": 5
+      },
+      {
+        "video_id": "_MT4SgfQ8QY",
+        "title": "Engineering Resume Hack (from Big Tech Hiring Manager)",
+        "channel_name": "Jean Lee",
+        "chunks": 9,
+        "read": 5
+      },
+      {
+        "video_id": "012UjJeZY2k",
+        "title": "FREE ATS-Friendly Resume Template (and instructions on how to use it)",
+        "channel_name": "Greg Langstaff",
+        "chunks": 4,
+        "read": 3
+      },
+      {
+        "video_id": "QPUmFKboiqY",
+        "title": "Write the Perfect Professional Summary\u00a0for Your Resume!",
+        "channel_name": "Greg Langstaff",
+        "chunks": 5,
+        "read": 5
+      }
+    ],
+    "gaps": [
+      {
+        "gap_id": "g01",
+        "missing": "No criterion requires the resume to include contact information or links (email, phone, LinkedIn, GitHub/portfolio).",
+        "why": "Every existing check assumes the reader can already reach the candidate; a one-page, keyword-perfect resume with no email, phone, or profile links still passes the entire pack.",
+        "probe": "What contact information should I put at the top of my resume alongside my name?"
+      },
+      {
+        "gap_id": "g02",
+        "missing": "No criterion checks spelling, grammar, or punctuation.",
+        "why": "The current checks evaluate content, keywords, and layout but never language mechanics, so misspellings and broken grammar\u2014automatic red flags for many recruiters\u2014are invisible to the reviewer.",
+        "probe": "What happens if my resume has a typo or a grammar mistake?"
+      },
+      {
+        "gap_id": "g03",
+        "missing": "No criterion requires work experience to be presented as a dated, reverse-chronological timeline.",
+        "why": "r0503 talks about older roles vs. recent roles, but nothing forces the resume to show employment dates or put the most recent role first, so the reviewer cannot verify career progression, gaps, or which roles deserve emphasis.",
+        "probe": "Do I need to include dates for each job and list my experience in reverse chronological order?"
+      },
+      {
+        "gap_id": "g04",
+        "missing": "No criterion checks the resume's file format or filename.",
+        "why": "r0601 governs the layout inside the document but never the delivered file; an ATS-breaking .docx or a file named resume_FINAL(2) passes even though the content itself is well formatted.",
+        "probe": "What file format should I submit my resume in and what should I name the file?"
+      }
+    ],
+    "probes": [
+      {
+        "probe": {
+          "probe_id": "p61",
+          "facet": "No criterion requires the resume to include contact information or links (email,",
+          "question": "What contact information should I put at the top of my resume alongside my name?",
+          "why": "Every existing check assumes the reader can already reach the candidate; a one-page, keyword-perfect resume with no email, phone, or profile links still passes the entire pack.",
+          "origin": "gap:g01",
+          "rank": 61
+        },
+        "unit_id": "probe:p61",
+        "chunks": 18,
+        "videos": 6,
+        "creator_count": 5,
+        "top_creator": "Greg Langstaff",
+        "top_creator_share": 0.3333,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r6101",
+          "r6102",
+          "r6103"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p62",
+          "facet": "No criterion checks spelling, grammar, or punctuation.",
+          "question": "What happens if my resume has a typo or a grammar mistake?",
+          "why": "The current checks evaluate content, keywords, and layout but never language mechanics, so misspellings and broken grammar\u2014automatic red flags for many recruiters\u2014are invisible to the reviewer.",
+          "origin": "gap:g02",
+          "rank": 62
+        },
+        "unit_id": "probe:p62",
+        "chunks": 18,
+        "videos": 8,
+        "creator_count": 8,
+        "top_creator": "Greg Langstaff",
+        "top_creator_share": 0.1667,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r6201",
+          "r6202",
+          "r6203"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p63",
+          "facet": "No criterion requires work experience to be presented as a dated, reverse-chrono",
+          "question": "Do I need to include dates for each job and list my experience in reverse chronological order?",
+          "why": "r0503 talks about older roles vs. recent roles, but nothing forces the resume to show employment dates or put the most recent role first, so the reviewer cannot verify career progression, gaps, or which roles deserve emphasis.",
+          "origin": "gap:g03",
+          "rank": 63
+        },
+        "unit_id": "probe:p63",
+        "chunks": 18,
+        "videos": 10,
+        "creator_count": 9,
+        "top_creator": "Jash Radia",
+        "top_creator_share": 0.2222,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r6301",
+          "r6302",
+          "r6303"
+        ],
+        "reason": "",
+        "spent_call": true
+      },
+      {
+        "probe": {
+          "probe_id": "p64",
+          "facet": "No criterion checks the resume's file format or filename.",
+          "question": "What file format should I submit my resume in and what should I name the file?",
+          "why": "r0601 governs the layout inside the document but never the delivered file; an ATS-breaking .docx or a file named resume_FINAL(2) passes even though the content itself is well formatted.",
+          "origin": "gap:g04",
+          "rank": 64
+        },
+        "unit_id": "probe:p64",
+        "chunks": 18,
+        "videos": 9,
+        "creator_count": 7,
+        "top_creator": "Greg Langstaff",
+        "top_creator_share": 0.2778,
+        "eligible": true,
+        "reject_reason": "",
+        "rubric_ids": [
+          "r6401",
+          "r6402",
+          "r6403"
+        ],
+        "reason": "",
+        "spent_call": true
+      }
+    ],
+    "probe_overlap": [
+      {
+        "unit_id": "probe:p61",
+        "chunks": 18,
+        "from_round_one_ground": 0
+      },
+      {
+        "unit_id": "probe:p62",
+        "chunks": 18,
+        "from_round_one_ground": 0
+      },
+      {
+        "unit_id": "probe:p63",
+        "chunks": 18,
+        "from_round_one_ground": 0
+      },
+      {
+        "unit_id": "probe:p64",
+        "chunks": 18,
+        "from_round_one_ground": 0
+      }
+    ],
+    "refused": [
+      {
+        "rubric_id": "r6202",
+        "criterion": "Tailor the resume to each job posting by mirroring its wording and including the required tech stack, instead of sending one generic resume.",
+        "unit_id": "probe:p62",
+        "chunk_ids": [
+          "chunk:3pFRqPqzBCM:6",
+          "chunk:eGmZZFJ-8PY:4"
+        ],
+        "already_rested_on_by": [
+          "r6201"
+        ]
+      },
+      {
+        "rubric_id": "r6302",
+        "criterion": "Remove sections and decorations that don't help a hiring decision: objective statements, hobbies, references, photos, skill-rating bars, and Udemy-style certificates.",
+        "unit_id": "probe:p63",
+        "chunk_ids": [
+          "chunk:3pFRqPqzBCM:3",
+          "chunk:5gLVxMKeSGM:5"
+        ],
+        "already_rested_on_by": [
+          "r6101",
+          "r6301"
+        ]
+      },
+      {
+        "rubric_id": "r6401",
+        "criterion": "Use a single-column, ATS-friendly layout: no custom templates with images, charts, tables, columns, headers, footers, emojis, symbols, colors, or highlights.",
+        "unit_id": "probe:p64",
+        "chunk_ids": [
+          "chunk:_MT4SgfQ8QY:4",
+          "chunk:fD0E57QYSPk:3"
+        ],
+        "already_rested_on_by": [
+          "r6203"
+        ]
+      }
+    ],
+    "admission_on_shipped": {
+      "arm": "merged",
+      "rubrics": 17,
+      "would_refuse": 0,
+      "refused_ids": []
+    },
+    "deduped_against_previous": [
+      "r6203"
+    ],
+    "diff": {
+      "before_arm": "deep-r1",
+      "after_arm": "deep-frontier",
+      "kept": [
+        {
+          "rubric_id": "r0101",
+          "criterion": "Keep the resume to one page.",
+          "check": "Count the pages in the submitted PDF or printout; fail if it exceeds one page.",
+          "unit_id": "probe:p01",
+          "creators": [
+            "Boris Meinardus",
+            "Jean Lee"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0102",
+          "criterion": "Include only content that is relevant to the target role, with no hobbies, OS basics, or other fluff.",
+          "check": "Scan for banned categories\u2014hobbies, obvious software literacy like Mac OS or Windows, and unrelated education\u2014and fail if any such item appears on the resume.",
+          "unit_id": "probe:p01",
+          "creators": [
+            "Boris Meinardus",
+            "Jean Lee"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0103",
+          "criterion": "Write every experience bullet as a full sentence that states what you did, how you did it, and the result.",
+          "check": "For each bullet under Experience, identify an action verb, a method or context, and an outcome; fail any bullet that is a generic duty with no result, such as \"handled various operational duties over five years.\"",
+          "unit_id": "probe:p01",
+          "creators": [
+            "Farah Sharghi",
+            "Headless Headhunter"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0201",
+          "criterion": "Rewrite the professional summary for each application so it names the specific role, stack, and experience the job posting asks for.",
+          "check": "Compare the summary to the target job description; flag it if it is generic boilerplate, contains no skill or technology from the posting, or is longer than one to two sentences.",
+          "unit_id": "probe:p02",
+          "creators": [
+            "Anthony D. Mays",
+            "Anthony Sistilli"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0202",
+          "criterion": "Back up every claim in the summary and experience bullets with a concrete fact: a number, a percentage, a dollar amount, or a specific accomplishment from a previous role.",
+          "check": "Highlight all claims of skill, experience, or quality; for each, require an adjacent numeral or a reference to a specific previous result; flag any statement that only describes responsibilities or enthusiasm.",
+          "unit_id": "probe:p02",
+          "creators": [
+            "Anthony D. Mays",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0301",
+          "criterion": "Quantify every outcome you claim with a concrete number.",
+          "check": "Read each experience bullet and the professional summary; any bullet that claims an outcome\u2014improved performance, reduced cost, built a system\u2014must contain a numeral (score, percentage, count, or amount).",
+          "unit_id": "probe:p03",
+          "creators": [
+            "Boris Meinardus",
+            "Headless Headhunter",
+            "Stefan Masnikovic"
+          ],
+          "citations": 3
+        },
+        {
+          "rubric_id": "r0302",
+          "criterion": "Match the resume to the job description by reflecting its repeated keywords.",
+          "check": "Use the find shortcut to count keywords in the job description, group them into soft skills, technical skills, and product qualities, then look for corresponding terms in the resume; a keyword that appears repeatedly in the job description but has no match in the resume fails.",
+          "unit_id": "probe:p03",
+          "creators": [
+            "Anthony D. Mays"
+          ],
+          "citations": 1
+        },
+        {
+          "rubric_id": "r0303",
+          "criterion": "For each experience bullet, state the method, reason, and result, not just the task.",
+          "check": "Flag any bullet that names only a deliverable or duty (built dashboards, worked on X) and tells the reader nothing about how it was done, why it was done, or what it produced.",
+          "unit_id": "probe:p03",
+          "creators": [
+            "Headless Headhunter",
+            "Stefan Masnikovic"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0401",
+          "criterion": "Tailor the resume to the job description so the target role title and its hard-skill keywords appear in the top sections and skills list.",
+          "check": "Compare the resume against the job description; fail if the exact or near-exact target job title is missing from the header or summary, or if any required hard skill from the job description is absent from the skills section.",
+          "unit_id": "probe:p04",
+          "creators": [
+            "Anthony D. Mays",
+            "Anthony Sistilli"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0402",
+          "criterion": "Write every experience bullet as an action-oriented accomplishment with a concrete result, not a generic responsibility.",
+          "check": "For each role, flag any bullet that describes a duty without an action verb and a measurable outcome; fail the resume if a single responsibility-only bullet appears in the experience section.",
+          "unit_id": "probe:p04",
+          "creators": [
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0403",
+          "criterion": "Open with a professional summary that names the target role, states your experience level, and brags about a specific accomplishment by the second sentence.",
+          "check": "Read the first section; fail if it is only an objective statement, if the role title is not matched, if experience years/environments are absent, or if the first two sentences contain no concrete accomplishment.",
+          "unit_id": "probe:p04",
+          "creators": [
+            "Anthony Sistilli",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0501",
+          "criterion": "Use the same keywords from the job description in your resume so the ATS matches it to the role.",
+          "check": "Compare the target job description's required skills/tools against the resume; pass only if every required keyword from the posting appears somewhere in the resume.",
+          "unit_id": "probe:p05",
+          "creators": [
+            "Greg Langstaff",
+            "Jash Radia"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0503",
+          "criterion": "Give the last 5-7 years of experience the most space; compress older roles to at most two or three relevant bullet points.",
+          "check": "For every role that ended more than seven years ago, count the bullet points; fail if any such role has more than three bullet points or is given as much space as recent experience.",
+          "unit_id": "probe:p05",
+          "creators": [
+            "Farah Sharghi"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0601",
+          "criterion": "Format the resume for ATS parsing: use a single column, no tables/images/graphics, and a basic font like Ariel or Times New Roman.",
+          "check": "Reject if the resume has a multi-column layout, a table, an image, a graphic, a text box, or a decorative font; accept only simple left-to-right text in a standard font.",
+          "unit_id": "probe:p06",
+          "creators": [
+            "Jash Radia",
+            "Jean Lee"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0602",
+          "criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+          "check": "Compare the job description's required technologies and repeated keywords against the resume; if any required skill is absent or represented only by a different stack, fail.",
+          "unit_id": "probe:p06",
+          "creators": [
+            "Anthony D. Mays",
+            "Jash Radia"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r0603",
+          "criterion": "Write each experience bullet as a quantified accomplishment, not a list of duties.",
+          "check": "For every bullet under Experience and Projects, verify that it names a concrete result with a number or an explicit outcome; bullets that only describe responsibilities fail.",
+          "unit_id": "probe:p06",
+          "creators": [
+            "Anthony D. Mays",
+            "Jash Radia"
+          ],
+          "citations": 2
+        }
+      ],
+      "added": [
+        {
+          "rubric_id": "r6101",
+          "criterion": "Use a professional summary section instead of an objective statement.",
+          "check": "Scan the top of the resume for a 'Professional Summary' or 'Summary' heading and confirm there is no 'Objective' or 'Objective Statement' heading anywhere on the page.",
+          "unit_id": "probe:p61",
+          "creators": [
+            "Greg Langstaff",
+            "Jash Radia"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6102",
+          "criterion": "Put your location as city and state only, never a street address, and keep any LinkedIn or GitHub hyperlinks short and clean.",
+          "check": "Find the location in the header and fail if a street address appears. Check that LinkedIn/GitHub links display as concise link text and do not run as long raw URLs across the layout.",
+          "unit_id": "probe:p61",
+          "creators": [
+            "Anthony Sistilli",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6103",
+          "criterion": "Order all work and education entries in reverse chronological order and date each job with months, not just years.",
+          "check": "Verify the most recent role is listed first, then older roles follow; confirm degrees and certifications run from most recent to oldest. Reject any job date written only as a year or a year range without months.",
+          "unit_id": "probe:p61",
+          "creators": [
+            "Anthony D. Mays",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6201",
+          "criterion": "Quantify the impact in every experience bullet with a concrete number \u2014 a percentage, count, currency figure, or time reduction \u2014 rather than just listing the duty.",
+          "check": "Read each experience bullet. If a bullet contains no numeric metric and only states a responsibility or technology used, mark it as a violation.",
+          "unit_id": "probe:p62",
+          "creators": [
+            "Farah Sharghi",
+            "Jash Radia"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6301",
+          "criterion": "Write every experience or project bullet as an impact statement \u2014 an outcome that made or saved money, saved time, or increased productivity \u2014 rather than a list of duties or technologies.",
+          "check": "Read each bullet in the Experience and Projects sections. Flag any bullet that only describes a task, tool, or responsibility and does not name a result or metric (money, time, productivity, performance target, user count).",
+          "unit_id": "probe:p63",
+          "creators": [
+            "Anthony D. Mays",
+            "Boris Meinardus"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6303",
+          "criterion": "Date every role with both month and year, and add a one-line explanation for any short stint or gap.",
+          "check": "Check each position's date line for a month plus year (for example 'March 2022 to May 2022'). For any role lasting less than 3 months or any career break, look for a brief reason in the work experience or summary.",
+          "unit_id": "probe:p63",
+          "creators": [
+            "Farah Sharghi",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6402",
+          "criterion": "Lead with a complete contact block: full name, email, phone number, and at least city/state; if you are relocating, state the target location and date.",
+          "check": "Look at the top of the resume for the required contact items. Fail if city/state is missing. If the resume signals relocation or out-of-state remote work, require an explicit target location and date such as 'Moving to X by Y date'; otherwise fail.",
+          "unit_id": "probe:p64",
+          "creators": [
+            "Anthony D. Mays",
+            "Headless Headhunter"
+          ],
+          "citations": 2
+        },
+        {
+          "rubric_id": "r6403",
+          "criterion": "Write every experience/project bullet as an impact statement, not a duty list: start with a strong action verb, name the business result, and include numbers wherever possible.",
+          "check": "For each bullet under experience/projects, confirm it begins with a concrete verb and states an outcome such as money saved, revenue made, time saved, productivity gained, or customers served. Fail bullets that only restate responsibilities or technologies. Then count bullets in each role that contain a number or percentage: fail the role if none do.",
+          "unit_id": "probe:p64",
+          "creators": [
+            "Anthony D. Mays",
+            "Greg Langstaff"
+          ],
+          "citations": 2
+        }
+      ],
+      "removed": []
+    },
+    "rediscovery": {
+      "deep-frontier": {
+        "shipped_arm": "merged",
+        "added": 8,
+        "rediscovered": 2,
+        "rate": 0.25,
+        "rows": [
+          {
+            "rubric_id": "r6101",
+            "criterion": "Use a professional summary section instead of an objective statement.",
+            "already_in_shipped": [
+              "r0603"
+            ]
+          },
+          {
+            "rubric_id": "r6102",
+            "criterion": "Put your location as city and state only, never a street address, and keep any LinkedIn or GitHub hyperlinks short and clean.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r6103",
+            "criterion": "Order all work and education entries in reverse chronological order and date each job with months, not just years.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r6201",
+            "criterion": "Quantify the impact in every experience bullet with a concrete number \u2014 a percentage, count, currency figure, or time reduction \u2014 rather than just listing the duty.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r6301",
+            "criterion": "Write every experience or project bullet as an impact statement \u2014 an outcome that made or saved money, saved time, or increased productivity \u2014 rather than a list of duties or technologies.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r6303",
+            "criterion": "Date every role with both month and year, and add a one-line explanation for any short stint or gap.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r6402",
+            "criterion": "Lead with a complete contact block: full name, email, phone number, and at least city/state; if you are relocating, state the target location and date.",
+            "already_in_shipped": [
+              "r0503"
+            ]
+          },
+          {
+            "rubric_id": "r6403",
+            "criterion": "Write every experience/project bullet as an impact statement, not a duty list: start with a strong action verb, name the business result, and include numbers wherever possible.",
+            "already_in_shipped": []
+          }
+        ]
+      },
+      "deep-r2-admit": {
+        "shipped_arm": "merged",
+        "added": 8,
+        "rediscovered": 4,
+        "rate": 0.5,
+        "rows": [
+          {
+            "rubric_id": "r5102",
+            "criterion": "Use ATS-safe, plain formatting: a single-column layout with no photos, graphics, charts, icons, or decorative custom templates.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5103",
+            "criterion": "Tailor the resume to the specific job posting: include its key skills and terminology in the skills section and work them into the bullet points.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5203",
+            "criterion": "Open with a professional summary that states who you are, your years of experience, your work environment, and a specific accomplishment by the second sentence.",
+            "already_in_shipped": [
+              "r0503"
+            ]
+          },
+          {
+            "rubric_id": "r5301",
+            "criterion": "Keep the resume formatting ATS-safe: one column, standard font, saved as PDF, with no images, tables, columns, headers, footers, emojis, colors, or custom templates.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5303",
+            "criterion": "Tailor the resume to each job description by mirroring the exact keywords and required technology stack of the posting.",
+            "already_in_shipped": [
+              "r0601"
+            ]
+          },
+          {
+            "rubric_id": "r5401",
+            "criterion": "Keep the skills section specialized and prove each listed skill in work or project bullets rather than only in a keyword list.",
+            "already_in_shipped": [
+              "r0201",
+              "r0401",
+              "r0601"
+            ]
+          },
+          {
+            "rubric_id": "r5402",
+            "criterion": "Write each experience/project bullet with the action, the reason, and the result \u2014 not just a task or technology list.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5403",
+            "criterion": "Link only to GitHub, portfolio, or blog pages that are live, updated, and professionally organized; never link a dead or sloppy repo.",
+            "already_in_shipped": [
+              "r0102",
+              "r0403"
+            ]
+          }
+        ]
+      },
+      "deep-r2": {
+        "shipped_arm": "merged",
+        "added": 10,
+        "rediscovered": 4,
+        "rate": 0.4,
+        "rows": [
+          {
+            "rubric_id": "r5102",
+            "criterion": "Use ATS-safe, plain formatting: a single-column layout with no photos, graphics, charts, icons, or decorative custom templates.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5103",
+            "criterion": "Tailor the resume to the specific job posting: include its key skills and terminology in the skills section and work them into the bullet points.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5201",
+            "criterion": "Mirror the job description's required keywords and tech stack in the resume before submitting it.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5202",
+            "criterion": "Keep the resume ATS-parseable: use a single-column layout and standard section headings, and avoid tables, images, or graphics.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5203",
+            "criterion": "Open with a professional summary that states who you are, your years of experience, your work environment, and a specific accomplishment by the second sentence.",
+            "already_in_shipped": [
+              "r0503"
+            ]
+          },
+          {
+            "rubric_id": "r5301",
+            "criterion": "Keep the resume formatting ATS-safe: one column, standard font, saved as PDF, with no images, tables, columns, headers, footers, emojis, colors, or custom templates.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5303",
+            "criterion": "Tailor the resume to each job description by mirroring the exact keywords and required technology stack of the posting.",
+            "already_in_shipped": [
+              "r0601"
+            ]
+          },
+          {
+            "rubric_id": "r5401",
+            "criterion": "Keep the skills section specialized and prove each listed skill in work or project bullets rather than only in a keyword list.",
+            "already_in_shipped": [
+              "r0201",
+              "r0401",
+              "r0601"
+            ]
+          },
+          {
+            "rubric_id": "r5402",
+            "criterion": "Write each experience/project bullet with the action, the reason, and the result \u2014 not just a task or technology list.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r5403",
+            "criterion": "Link only to GitHub, portfolio, or blog pages that are live, updated, and professionally organized; never link a dead or sloppy repo.",
+            "already_in_shipped": [
+              "r0102",
+              "r0403"
+            ]
+          }
+        ]
+      },
+      "deep-oneshot": {
+        "shipped_arm": "merged",
+        "added": 10,
+        "rediscovered": 4,
+        "rate": 0.4,
+        "rows": [
+          {
+            "rubric_id": "r0701",
+            "criterion": "Mirror the job description's required skills and keywords in your resume.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r0702",
+            "criterion": "Format the resume as a single-column document with a standard font and no images, colors, headers, footers, or emojis.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r0802",
+            "criterion": "Use plain, single-column, ATS-friendly formatting with no images, graphics, tables, columns, headers, footers, colors, highlights, or emojis.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r0803",
+            "criterion": "Tailor every skill and experience bullet to the target job description, keeping only relevant keywords and removing unrelated information.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r0901",
+            "criterion": "Include the target job description's required technical skills in your experience bullets, not only in a skills section.",
+            "already_in_shipped": [
+              "r0102",
+              "r0201",
+              "r0401",
+              "r0601"
+            ]
+          },
+          {
+            "rubric_id": "r0902",
+            "criterion": "Write a one-to-two-sentence summary that states your relevant stack and background instead of generic buzzwords.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r0903",
+            "criterion": "Prove every claimed technical skill with a concrete, contextual experience bullet instead of a bare keyword.",
+            "already_in_shipped": [
+              "r0102"
+            ]
+          },
+          {
+            "rubric_id": "r1001",
+            "criterion": "Tailor the resume to the target job description by reusing its keywords in the summary and skills sections.",
+            "already_in_shipped": []
+          },
+          {
+            "rubric_id": "r1002",
+            "criterion": "Write every experience bullet as an impact statement tied to money, time, or productivity, not as a list of duties.",
+            "already_in_shipped": [
+              "r0602"
+            ]
+          },
+          {
+            "rubric_id": "r1003",
+            "criterion": "Keep the skills section specialized: only list skills relevant to the target role and actually used, not generic or obvious tools.",
+            "already_in_shipped": [
+              "r0203"
+            ]
+          }
+        ]
+      }
+    },
+    "gap_closure": [
+      {
+        "gap_id": "g01",
+        "missing": "No criterion requires the resume to include contact information or links (email, phone, LinkedIn, GitHub/portfolio).",
+        "probe": "What contact information should I put at the top of my resume alongside my name?",
+        "rules_from_this_probe": 3,
+        "best_new_rubric_id": "r6102",
+        "best_new_criterion": "Put your location as city and state only, never a street address, and keep any LinkedIn or GitHub hyperlinks short and clean.",
+        "best_new_cosine": 0.2943,
+        "round_one_best_cosine": 0.5264,
+        "closed": false
+      },
+      {
+        "gap_id": "g02",
+        "missing": "No criterion checks spelling, grammar, or punctuation.",
+        "probe": "What happens if my resume has a typo or a grammar mistake?",
+        "rules_from_this_probe": 1,
+        "best_new_rubric_id": "r6201",
+        "best_new_criterion": "Quantify the impact in every experience bullet with a concrete number \u2014 a percentage, count, currency figure, or time reduction \u2014 rather than just listing the duty.",
+        "best_new_cosine": 0.1032,
+        "round_one_best_cosine": 0.2462,
+        "closed": false
+      },
+      {
+        "gap_id": "g03",
+        "missing": "No criterion requires work experience to be presented as a dated, reverse-chronological timeline.",
+        "probe": "Do I need to include dates for each job and list my experience in reverse chronological order?",
+        "rules_from_this_probe": 2,
+        "best_new_rubric_id": "r6303",
+        "best_new_criterion": "Date every role with both month and year, and add a one-line explanation for any short stint or gap.",
+        "best_new_cosine": 0.3724,
+        "round_one_best_cosine": 0.3437,
+        "closed": true
+      },
+      {
+        "gap_id": "g04",
+        "missing": "No criterion checks the resume's file format or filename.",
+        "probe": "What file format should I submit my resume in and what should I name the file?",
+        "rules_from_this_probe": 2,
+        "best_new_rubric_id": "r6403",
+        "best_new_criterion": "Write every experience/project bullet as an impact statement, not a duty list: start with a strong action verb, name the business result, and include numbers wherever possible.",
+        "best_new_cosine": 0.1392,
+        "round_one_best_cosine": 0.4227,
+        "closed": false
+      }
+    ],
+    "restatements": [
+      {
+        "rubric_id": "r6101",
+        "criterion": "Use a professional summary section instead of an objective statement.",
+        "unit_id": "probe:p61",
+        "nearest_prior_id": "r0201",
+        "nearest_prior_criterion": "Rewrite the professional summary for each application so it names the specific role, stack, and experience the job posting asks for.",
+        "nearest_prior_cosine": 0.5066,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6102",
+        "criterion": "Put your location as city and state only, never a street address, and keep any LinkedIn or GitHub hyperlinks short and clean.",
+        "unit_id": "probe:p61",
+        "nearest_prior_id": "r0101",
+        "nearest_prior_criterion": "Keep the resume to one page.",
+        "nearest_prior_cosine": 0.2628,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6103",
+        "criterion": "Order all work and education entries in reverse chronological order and date each job with months, not just years.",
+        "unit_id": "probe:p61",
+        "nearest_prior_id": "r0302",
+        "nearest_prior_criterion": "Match the resume to the job description by reflecting its repeated keywords.",
+        "nearest_prior_cosine": 0.3408,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6201",
+        "criterion": "Quantify the impact in every experience bullet with a concrete number \u2014 a percentage, count, currency figure, or time reduction \u2014 rather than just listing the duty.",
+        "unit_id": "probe:p62",
+        "nearest_prior_id": "r0202",
+        "nearest_prior_criterion": "Back up every claim in the summary and experience bullets with a concrete fact: a number, a percentage, a dollar amount, or a specific accomplishment from a previous role.",
+        "nearest_prior_cosine": 0.5874,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6301",
+        "criterion": "Write every experience or project bullet as an impact statement \u2014 an outcome that made or saved money, saved time, or increased productivity \u2014 rather than a list of duties or technologies.",
+        "unit_id": "probe:p63",
+        "nearest_prior_id": "r0402",
+        "nearest_prior_criterion": "Write every experience bullet as an action-oriented accomplishment with a concrete result, not a generic responsibility.",
+        "nearest_prior_cosine": 0.6602,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6303",
+        "criterion": "Date every role with both month and year, and add a one-line explanation for any short stint or gap.",
+        "unit_id": "probe:p63",
+        "nearest_prior_id": "r0503",
+        "nearest_prior_criterion": "Give the last 5-7 years of experience the most space; compress older roles to at most two or three relevant bullet points.",
+        "nearest_prior_cosine": 0.4912,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6402",
+        "criterion": "Lead with a complete contact block: full name, email, phone number, and at least city/state; if you are relocating, state the target location and date.",
+        "unit_id": "probe:p64",
+        "nearest_prior_id": "r0602",
+        "nearest_prior_criterion": "Tailor the resume to the target job description by including its required skills, keywords, and tech stack in the skills and experience sections.",
+        "nearest_prior_cosine": 0.2055,
+        "dedupe_threshold": 0.86
+      },
+      {
+        "rubric_id": "r6403",
+        "criterion": "Write every experience/project bullet as an impact statement, not a duty list: start with a strong action verb, name the business result, and include numbers wherever possible.",
+        "unit_id": "probe:p64",
+        "nearest_prior_id": "r0603",
+        "nearest_prior_criterion": "Write each experience bullet as a quantified accomplishment, not a list of duties.",
+        "nearest_prior_cosine": 0.7265,
+        "dedupe_threshold": 0.86
+      }
+    ],
+    "budget": [
+      {
+        "arm": "deep-frontier",
+        "label": "frontier round \u2014 a coverage-aware critic, off round 1's ground",
+        "planner_calls": 1,
+        "critic_calls": 1,
+        "executor_calls": 10,
+        "probes_budgeted": 10,
+        "total_llm_calls": 12,
+        "rubrics": 24,
+        "citations": 48
+      },
+      {
+        "arm": "deep-r2-admit",
+        "label": "ablation \u2014 deep-r2, evidence-novelty admission only, no new call",
+        "planner_calls": 1,
+        "critic_calls": 1,
+        "executor_calls": 10,
+        "probes_budgeted": 10,
+        "total_llm_calls": 12,
+        "rubrics": 24,
+        "citations": 48
+      }
+    ]
+  }
+}

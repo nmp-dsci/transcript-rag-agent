@@ -30,6 +30,7 @@ from src.agents.prompts import (
     DOC_REVIEW_SYSTEM_PROMPT,
     RECURSIVE_SYNTHESIS_SYSTEM_PROMPT,
     RAG_SYSTEM_PROMPT,
+    build_doc_review_prompt,
     build_rag_question_prompt,
     build_rewrite_prompt,
     build_recursive_synthesis_prompt,
@@ -153,7 +154,14 @@ class RagTranscriptAgent:
         the subject lives in the previous turn rather than in the query. With no
         history this returns the question untouched and costs no LLM call; the
         answering prompt always receives the user's original wording either way.
+
+        A caller-supplied ``retrieval_query`` wins outright and skips the rewrite
+        call: it is set when the caller already knows something about the query
+        the agent does not — for a document review, which parts of the message
+        are a URL rather than a topic.
         """
+        if request.retrieval_query:
+            return request.retrieval_query
         if not request.history:
             return request.question
         started = time.monotonic()
@@ -195,7 +203,9 @@ class RagTranscriptAgent:
             request.history,
             document_context=request.document_context,
         )
-        references = first.references or _fallback_references(first.answer, retrieval.context)
+        references = reconcile_references(
+            first.references, retrieval.context.retrieved_chunks or []
+        ) or _fallback_references(first.answer, retrieval.context)
         return RagTranscriptAnswer(
             question=request.question,
             answer=first.answer,
@@ -231,7 +241,9 @@ class RagTranscriptAgent:
             pass_label="first retrieval",
         )
         first = self._invoke_first_pass(request.question, retrieval.context_text, request.history)
-        first_references = first.references or _fallback_references(first.answer, retrieval.context)
+        first_references = reconcile_references(
+            first.references, retrieval.context.retrieved_chunks or []
+        ) or _fallback_references(first.answer, retrieval.context)
         proposed_count = len(first.subtopics)
         if (
             max_depth == 0
@@ -371,13 +383,24 @@ class RagTranscriptAgent:
                 executed_count=executed_count,
             )
         stages.append(RecursionStage(name="final_synthesis", llm_calls=1, retrievals=0))
+        # Same rule as the first pass, applied to the synthesis's own citations:
+        # a preserved `[2]` resolves against the first retrieval, a `[s1.3]`
+        # against that subtopic's own chunks. Validation above already proved
+        # every label is in range; this makes the metadata beside it true.
+        chunks_by_subtopic = {item.subtopic_index: item.chunks for item in executed}
         references = _sort_references(
             [
-                *synthesis.preserved_references,
+                *reconcile_references(
+                    synthesis.preserved_references, retrieval.context.retrieved_chunks or []
+                ),
                 *[
                     reference
                     for answer in synthesis.subtopic_answers
-                    for reference in answer.references
+                    for reference in reconcile_references(
+                        answer.references,
+                        chunks_by_subtopic.get(answer.subtopic_index, []),
+                        label_of=lambda index, s=answer.subtopic_index: f"[s{s}.{index}]",
+                    )
                 ],
             ]
         )
@@ -449,14 +472,21 @@ class RagTranscriptAgent:
         """One answer call, over the corpus alone or over a document too.
 
         A document changes what the call *is*: the corpus stops being the
-        subject and becomes the source of criteria, so the system prompt
-        changes with it rather than leaving the model to infer the shift from
-        an extra block of text.
+        subject and becomes the source of criteria, so both prompts change with
+        it rather than leaving the model to infer the shift from an extra block
+        of text. The user template has to change too — the RAG one instructs the
+        model to answer "using only the retrieved transcript chunks", which
+        would tell it to ignore the very document it is reviewing.
         """
+        reviewing = bool(document_context)
         content = self._invoke(
-            system_prompt=DOC_REVIEW_SYSTEM_PROMPT if document_context else RAG_SYSTEM_PROMPT,
+            system_prompt=DOC_REVIEW_SYSTEM_PROMPT if reviewing else RAG_SYSTEM_PROMPT,
             context_text=context_text,
-            user_prompt=build_rag_question_prompt(question, history),
+            user_prompt=(
+                build_doc_review_prompt(question, history)
+                if reviewing
+                else build_rag_question_prompt(question, history)
+            ),
             document_context=document_context,
         )
         try:
@@ -556,6 +586,73 @@ class RagTranscriptAgent:
         return str(content)
 
 
+def _reference_for_chunk(label: str, chunk) -> RagAnswerReference:
+    """One citation, every field read off the chunk it points at."""
+    return RagAnswerReference(
+        label=label,
+        source_url=chunk.source_url,
+        timestamp_url=youtube_timestamp_url(str(chunk.source_url), chunk.start_seconds),
+        start_seconds=chunk.start_seconds,
+        end_seconds=chunk.end_seconds,
+        chunk_index=chunk.chunk_index,
+        video_id=chunk.video_id,
+    )
+
+
+def _label_number(label: str) -> int | None:
+    """The position a citation label points at within its own chunk list.
+
+    Two label shapes, and the difference matters: ``[2]`` is the second chunk of
+    the first-pass retrieval, while ``[s1.2]`` is the second chunk *of subtopic
+    1* — so the number to read is the one after the dot, not the first digit in
+    the string.
+    """
+    subtopic = re.match(r"\s*\[s(\d+)\.(\d+)\]", label or "")
+    if subtopic:
+        return int(subtopic.group(2))
+    numeric = re.match(r"\s*\[(\d+)\]", label or "")
+    return int(numeric.group(1)) if numeric else None
+
+
+def reconcile_references(
+    references: list[RagAnswerReference],
+    chunks: list,
+    *,
+    label_of=lambda index: f"[{index}]",
+) -> list[RagAnswerReference]:
+    """Re-derive every citation's metadata from the chunk its label points at.
+
+    The model chooses *which* chunk to cite; it does not get to say what that
+    chunk is. Retrieved chunks are numbered ``[1]``, ``[2]`` … in the order they
+    were put into the context, so the label is the only part of a model-supplied
+    reference that carries information — the url, timestamp and ``chunk_index``
+    beside it are the model writing down what it thinks it read, and it is
+    routinely wrong about ``chunk_index`` in particular.
+
+    That mattered little while nothing displayed the field, and matters a great
+    deal now: every downstream feature that quotes a citation's evidence, or
+    attributes a score to the chunk that earned it, is resolving these numbers
+    against the store. A citation has to point at a real chunk or not exist.
+
+    A label with no number, or one past the end of the retrieved list, is
+    dropped rather than repaired: the model cited something that was never
+    retrieved, and inventing a target for it would be the same failure one layer
+    down. Duplicate labels collapse to their first occurrence.
+    """
+    resolved: list[RagAnswerReference] = []
+    seen: set[str] = set()
+    for reference in references:
+        number = _label_number(reference.label)
+        if number is None or not 1 <= number <= len(chunks):
+            continue
+        label = label_of(number)
+        if label in seen:
+            continue
+        seen.add(label)
+        resolved.append(_reference_for_chunk(label, chunks[number - 1]))
+    return resolved
+
+
 def _fallback_references(answer_text: str, context: TranscriptContext) -> list[RagAnswerReference]:
     cited = {int(match) for match in re.findall(r"\[(\d+)\]", answer_text) if match.isdigit()}
     chunks = context.retrieved_chunks or []
@@ -566,18 +663,7 @@ def _fallback_references(answer_text: str, context: TranscriptContext) -> list[R
         chunk_index = label_index - 1
         if chunk_index < 0 or chunk_index >= len(chunks):
             continue
-        chunk = chunks[chunk_index]
-        references.append(
-            RagAnswerReference(
-                label=f"[{label_index}]",
-                source_url=chunk.source_url,
-                timestamp_url=youtube_timestamp_url(str(chunk.source_url), chunk.start_seconds),
-                start_seconds=chunk.start_seconds,
-                end_seconds=chunk.end_seconds,
-                chunk_index=chunk.chunk_index,
-                video_id=chunk.video_id,
-            )
-        )
+        references.append(_reference_for_chunk(f"[{label_index}]", chunks[chunk_index]))
     return references
 
 

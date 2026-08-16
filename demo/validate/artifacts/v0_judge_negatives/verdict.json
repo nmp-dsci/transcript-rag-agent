@@ -1,0 +1,52 @@
+{
+  "slice_id": "v0_judge_negatives",
+  "passed": true,
+  "started_at": "2026-08-09T07:40:48.645497+00:00",
+  "duration_s": 6.39,
+  "url": "http://127.0.0.1:8022",
+  "checks": [
+    {
+      "name": "control: the self-graded run does show the banner",
+      "passed": true,
+      "detail": "banner present on the run whose judge matches its answer model",
+      "shot": null
+    },
+    {
+      "name": "an independently-judged run shows no self-graded banner",
+      "passed": true,
+      "detail": "'self-graded' absent",
+      "shot": "01_an_independently-judged_run_shows_no_sel.png"
+    },
+    {
+      "name": "provenance names the independent judge instead",
+      "passed": true,
+      "detail": "provenance reads: 'judge gpt-5-mini depth judge gpt-5-mini ragas 0.4.3 embeddings sentence-transformers/all-MiniLM-L6-v2 metrics faithfulness \u00b7 context_precision \u00b7 answer_relevancy \u00b7 insight_depth \u00b7 specificity \u00b7 covera'",
+      "shot": null
+    },
+    {
+      "name": "the leaderboard still ranks under the independent judge",
+      "passed": true,
+      "detail": "4 setup rows rendered",
+      "shot": null
+    },
+    {
+      "name": "a mixed-rubric run warns that its composites are not on one scale",
+      "passed": true,
+      "detail": "'mixed rubrics' banner present",
+      "shot": "02_a_mixed-rubric_run_warns_that_its_compos.png"
+    },
+    {
+      "name": "the warning names both rubrics and says the ranking is unusable",
+      "passed": true,
+      "detail": "banner names both rubrics and calls the ranking unusable",
+      "shot": null
+    },
+    {
+      "name": "a mixed run falls back to the three metrics every record has",
+      "passed": true,
+      "detail": "3 metric rows under a mixed run",
+      "shot": null
+    }
+  ],
+  "notes": []
+}

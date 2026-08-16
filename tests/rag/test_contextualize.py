@@ -44,15 +44,29 @@ class BrokenLlm:
 
 
 class FakeStore:
-    def __init__(self, chunks: list[TranscriptChunk] | None = None) -> None:
+    def __init__(
+        self,
+        chunks: list[TranscriptChunk] | None = None,
+        stale: dict[str, list[str]] | None = None,
+    ) -> None:
         self.chunks = chunks or []
         self.upserted: list[TranscriptChunk] = []
+        #: ``video_id -> chunk ids already stored that the write will not cover``,
+        #: i.e. the tail a shrinking re-chunk left behind in this mirror.
+        self.stale = stale or {}
+        self.replaced: list[str] = []
 
     def all_chunks(self) -> list[TranscriptChunk]:
         return list(self.chunks)
 
     def upsert_chunks(self, chunks: list[TranscriptChunk]) -> None:
         self.upserted.extend(chunks)
+
+    def replace_chunks(self, video_id: str, chunks: list[TranscriptChunk]) -> list[str]:
+        self.upserted.extend(chunks)
+        removed = self.stale.pop(video_id, [])
+        self.replaced.extend(removed)
+        return removed
 
 
 # ── the situating call ────────────────────────────────────────────────────────
@@ -265,3 +279,29 @@ def test_two_empty_responses_are_reported_as_a_failure() -> None:
 
     assert result.error == "empty context"
     assert result.context == ""
+
+
+def test_a_full_pass_drops_contextual_chunks_the_baseline_no_longer_has() -> None:
+    """The contextual index is a mirror; a stale tail here is a chunk the
+    contextual arm of an ablation can retrieve and the baseline arm cannot."""
+    source = FakeStore([_chunk(index) for index in range(3)])
+    target = FakeStore(stale={"video": ["chunk:video:3", "chunk:video:4"]})
+
+    result = build_contextual_index(source, target, ChunkContextualizer(FakeLlm()))
+
+    assert target.replaced == ["chunk:video:3", "chunk:video:4"]
+    assert result.removed == 2
+    assert "2 stale removed" in result.summary()
+
+
+def test_a_max_chunks_pass_never_deletes_from_the_mirror() -> None:
+    """It reads a prefix, so its last video is partial — replacing would delete
+    real chunks on the strength of a truncation."""
+    source = FakeStore([_chunk(index) for index in range(5)])
+    target = FakeStore(stale={"video": ["chunk:video:4"]})
+
+    result = build_contextual_index(source, target, ChunkContextualizer(FakeLlm()), max_chunks=2)
+
+    assert target.replaced == []
+    assert result.removed == 0
+    assert len(target.upserted) == 2

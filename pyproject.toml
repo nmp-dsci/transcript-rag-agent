@@ -39,6 +39,16 @@ dev = [
     "pytest>=9.0.3",
     "ruff>=0.15.22",
 ]
+# Only the walkthrough recorder and its reviewer need these, so they stay out of
+# the runtime and dev sets: `uv sync --group demo` when recording the video.
+# `anthropic` is here rather than in the app because the adversarial reviewer
+# needs a *vision* model to look at frames — the DeepSeek models the app answers
+# with are text-only, so the review loop cannot reuse the app's LLM client.
+demo = [
+    "playwright>=1.49",
+    "anthropic>=0.40",
+    "claude-agent-sdk>=0.2.131",
+]
 
 [tool.ruff]
 # 100 cols matches the repo's TypeScript house style (Prettier printWidth: 100).
@@ -70,4 +80,6 @@ files = [
     "src/rag/fusion.py",
     "src/rag/bm25.py",
     "src/rag/context.py",
+    "src/rag/conflicts.py",
+    "src/rag/question_scope.py",
 ]

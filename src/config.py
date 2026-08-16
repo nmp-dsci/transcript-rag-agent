@@ -29,6 +29,12 @@ class Settings:
     contextual_chunk_collection: str = "transcript_chunks_contextual"
     transcript_summary_collection: str = "transcript_summaries"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # Torch device for the embedding model. Defaults to CPU because
+    # sentence-transformers' own auto-selection picks MPS on Apple Silicon,
+    # where the first embed call hangs indefinitely inside the Metal driver
+    # and takes the whole uvicorn process with it. Set "mps" or "cuda" to
+    # opt back into a GPU where one actually works.
+    embedding_device: str = "cpu"
     rag_top_k: int = 10
     transcript_filter_top_k: int = 5
     transcript_filter_min_score: float = 0.25
@@ -87,6 +93,15 @@ class Settings:
     # deleting either only costs the calls to regenerate it.
     query_cache_dir: Path | None = None
     context_cache_dir: Path | None = None
+    # RAPTOR level 2: the cross-video theme layer, written by `index-themes`.
+    # A single derived JSON artifact — deleting it only costs the clustering
+    # (free) plus one LLM call per theme to rebuild.
+    theme_path: Path = Path(".yt-agent/themes.json")
+    # The disagreement layer, written by `index-conflicts`. Also derived, but
+    # unlike the theme artifact it is rebuilt from the *cached* GraphRAG claim
+    # extractions plus one adjudication call per candidate pair — deleting it
+    # costs those calls and nothing else.
+    conflict_path: Path = Path(".yt-agent/conflicts.json")
 
 
 def _project_root() -> Path:
@@ -214,6 +229,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         embedding_model=os.environ.get(
             "YT_AGENT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
         ),
+        embedding_device=os.environ.get("YT_AGENT_EMBEDDING_DEVICE", "cpu"),
         rag_top_k=_int_env("YT_AGENT_RAG_TOP_K", 10),
         transcript_filter_top_k=_int_env("YT_AGENT_TRANSCRIPT_FILTER_TOP_K", 5),
         transcript_filter_min_score=_float_env("YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE", 0.25),
@@ -257,5 +273,11 @@ def load_settings(require_keys: bool = True) -> Settings:
         ),
         context_cache_dir=_resolve_project_path(
             os.environ.get("YT_AGENT_CONTEXT_CACHE_PATH", ".yt-agent/context_cache")
+        ),
+        theme_path=_resolve_project_path(
+            os.environ.get("YT_AGENT_THEME_PATH", ".yt-agent/themes.json")
+        ),
+        conflict_path=_resolve_project_path(
+            os.environ.get("YT_AGENT_CONFLICT_PATH", ".yt-agent/conflicts.json")
         ),
     )

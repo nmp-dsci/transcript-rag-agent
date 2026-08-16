@@ -1,0 +1,237 @@
+{
+  "_doc": "The scene list, as data rather than code, so the adversarial reviewer's must_fix[] can be applied as a diffable patch and any take is reproducible from a committed artefact. record_walkthrough.py reads this; nothing else defines the video.",
+  "version": 1,
+  "target_seconds": [
+    60,
+    75
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "base_url": "http://127.0.0.1:8021",
+  "slides_url": "file://{demo_dir}/slides.html",
+  "scenes": [
+    {
+      "key": "s1",
+      "shot": "Title deck \u2014 Itch / Build / Proof, cross-creator claim hidden (unpaid promise, no scene shows two creators contradicting each other)",
+      "vo": "The best career advice is locked in hour-long videos. You can't search it and you can't cite it. So I built something that can.",
+      "hold_ms": 10000,
+      "actions": [
+        {
+          "do": "goto",
+          "url": "{slides_url}#s1"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        },
+        {
+          "do": "hide",
+          "selector": ".sub"
+        }
+      ]
+    },
+    {
+      "key": "s2",
+      "shot": "Title deck \u2014 architecture, scrolled into frame",
+      "vo": "One corpus, six ways to answer over it, one judge scoring all six on the same questions. Here's that architecture.",
+      "hold_ms": 9000,
+      "actions": [
+        {
+          "do": "scroll_to",
+          "selector": "#s2"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        }
+      ]
+    },
+    {
+      "key": "ask",
+      "shot": "Chat \u2014 resume question answered with timestamped citations, stale scope line hidden, self-grading opened into its own panel instead of a small pill",
+      "vo": "Ask how to structure a resume summary \u2014 every claim links to an open source. Open the Faithful metric: it scores 0.94, and says plainly the model judged its own answer.",
+      "hold_ms": 14000,
+      "actions": [
+        {
+          "do": "goto",
+          "url": "{base_url}/#chat"
+        },
+        {
+          "do": "wait",
+          "ms": 1200
+        },
+        {
+          "do": "hide",
+          "selector": ".topstat"
+        },
+        {
+          "do": "click_text",
+          "selector": ".rentry",
+          "text": "structure my resume"
+        },
+        {
+          "do": "wait",
+          "ms": 1200
+        },
+        {
+          "do": "hide",
+          "selector": ".rentry"
+        },
+        {
+          "do": "click",
+          "selector": "details.refs > summary"
+        },
+        {
+          "do": "wait",
+          "ms": 800
+        },
+        {
+          "do": "scroll_to",
+          "selector": "details.refs"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        },
+        {
+          "do": "hide",
+          "selector": ".microlabel[role='status']"
+        },
+        {
+          "do": "click_text",
+          "selector": ".metric",
+          "text": "Faithful"
+        },
+        {
+          "do": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "key": "document",
+      "shot": "Chat \u2014 document card (whole document, all 9 sections) + review answer citing document sections and corpus timestamps",
+      "vo": "Point it at your own page and it reviews that document against the corpus. Your document supplies what gets critiqued; the transcripts supply the criteria, cited separately.",
+      "hold_ms": 13000,
+      "actions": [
+        {
+          "_why": "The ask scene hides .rentry with an inline style; reloading the route restores the rail so this scene can pick its own conversation.",
+          "do": "goto",
+          "url": "{base_url}/#chat"
+        },
+        {
+          "do": "wait",
+          "ms": 1200
+        },
+        {
+          "do": "hide",
+          "selector": ".topstat"
+        },
+        {
+          "do": "click_text",
+          "selector": ".rentry",
+          "text": "Review my portfolio site"
+        },
+        {
+          "do": "wait",
+          "ms": 1200
+        },
+        {
+          "do": "hide",
+          "selector": ".rentry"
+        },
+        {
+          "do": "scroll_to",
+          "selector": ".doccard"
+        },
+        {
+          "do": "wait",
+          "ms": 1200
+        },
+        {
+          "_why": "The trace carries the retrieval query — the criteria the corpus was searched for, not the words typed. It is what makes the citations checkable.",
+          "do": "click",
+          "selector": "details.trace > summary"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        },
+        {
+          "do": "click",
+          "selector": "details.refs > summary"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        }
+      ]
+    },
+    {
+      "key": "ablation",
+      "shot": "Experiments \u2014 head-to-head matrix, engines x question types; narration now names both tagged runs visible in frame instead of claiming one",
+      "vo": "Six engines, one RAGAS judge, same questions. Two tagged runs sit here \u2014 five questions and twenty. Scene five draws from the five-question run, 061607.",
+      "hold_ms": 11000,
+      "actions": [
+        {
+          "do": "goto",
+          "url": "{base_url}/#experiments"
+        },
+        {
+          "do": "wait",
+          "ms": 1800
+        },
+        {
+          "do": "hide",
+          "selector": ".topstat"
+        },
+        {
+          "do": "scroll_to",
+          "selector": ".panel:nth-of-type(2)"
+        },
+        {
+          "do": "wait",
+          "ms": 1600
+        }
+      ]
+    },
+    {
+      "key": "scoreboard",
+      "shot": "Scoreboard \u2014 six setups ranked, then the efficiency chart scrolled fully clear of the caption",
+      "vo": "Judged on the five-question run \u2014 too close to crown a winner on a one-point margin. What's decisive: the agentic loop burns eight times the tokens for no measured gain.",
+      "hold_ms": 15000,
+      "actions": [
+        {
+          "do": "goto",
+          "url": "{base_url}/#board"
+        },
+        {
+          "do": "wait",
+          "ms": 1800
+        },
+        {
+          "do": "hide",
+          "selector": ".topstat"
+        },
+        {
+          "do": "hide",
+          "selector": ".panel:last-of-type"
+        },
+        {
+          "do": "wait",
+          "ms": 500
+        },
+        {
+          "do": "scroll_to",
+          "selector": ".panel"
+        },
+        {
+          "do": "wait",
+          "ms": 900
+        }
+      ]
+    }
+  ]
+}

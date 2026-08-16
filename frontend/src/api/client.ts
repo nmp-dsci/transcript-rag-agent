@@ -7,7 +7,9 @@ import type {
   AskRequest,
   ChunkGraph,
   ChunkList,
+  ConflictList,
   Corpus,
+  CritiqueRunDetail,
   Entry,
   EntityDetail,
   Evaluation,
@@ -18,13 +20,18 @@ import type {
   IngestionJob,
   KnowledgeGraph,
   MatrixJob,
+  PackDetail,
+  PackList,
   Prompts,
   RankMode,
   Rankings,
+  ResearchReport,
   ReviewedDocument,
   Scoreboard,
   SetupSpec,
   SystemDesign,
+  ThemeDetail,
+  ThemeList,
   VideoChunkEnrichment,
 } from "./types";
 
@@ -97,6 +104,12 @@ export const api = {
 
   experiments: () => getJson<Experiments>("/api/experiments"),
 
+  /** The full held-out critique run behind one row, fetched only on expand. */
+  critiqueRun: (runId: string) =>
+    getJson<CritiqueRunDetail>(
+      `/api/experiments/critique/${encodeURIComponent(runId)}`,
+    ),
+
   /** Start a judged eval matrix. Returns the run already in flight, if any. */
   startMatrixRun: (setups: string[] = []) =>
     postJson<MatrixJob>("/api/eval/matrix", { setups }),
@@ -113,6 +126,29 @@ export const api = {
     },
     signal?: AbortSignal,
   ) => getStream("/api/eval/matrix/stream", handlers, signal),
+  /** Every declared expert rubric pack, with its shipped arm's numbers. */
+  packs: () => getJson<PackList>("/api/packs"),
+
+  /** One pack's rubrics, evidence, membership, gaps and D2 ablation rows. */
+  pack: (topic: string) =>
+    getJson<PackDetail>(`/api/packs/${encodeURIComponent(topic)}`),
+
+  /** The deep-research build report for one pack: the plan, the gap critic's
+   *  findings, each round's delta and the v1 → v2 rubric diff. `null` when no
+   *  loop has been run for that topic. */
+  packResearch: (topic: string) =>
+    getJson<ResearchReport | null>(
+      `/api/packs/${encodeURIComponent(topic)}/research`,
+    ),
+
+  /** Pin a video in (`true`) or out (`false`) of a pack, or hand it back to
+   *  the router (`null`). Recorded in the manifest; applied at the next build. */
+  setPackMember: (topic: string, videoId: string, included: boolean | null) =>
+    postJson<{ topic: string; overrides: Record<string, boolean>; applies: string }>(
+      `/api/packs/${encodeURIComponent(topic)}/members/${encodeURIComponent(videoId)}`,
+      { included },
+    ),
+
   prompts: () => getJson<Prompts>("/api/prompts"),
   systemDesign: () => getJson<SystemDesign>("/api/system-design"),
 
@@ -190,6 +226,21 @@ export const api = {
     },
     signal?: AbortSignal,
   ) => getStream("/api/index/queue/stream", handlers, signal),
+
+  /** Cross-video themes (RAPTOR level 2), without their member lists. */
+  themes: () => getJson<ThemeList>("/api/themes"),
+  /** One theme's members, grouped by video, with text and timestamps. */
+  theme: (themeId: string) =>
+    getJson<ThemeDetail>(`/api/themes/${encodeURIComponent(themeId)}`),
+
+  /**
+   * Every detected disagreement, with both sides and the calibration probes.
+   *
+   * One call, not a list plus details: an axis rendered before its two quotes
+   * had loaded would read as a verdict, which is the one thing this layer must
+   * never show.
+   */
+  conflicts: () => getJson<ConflictList>("/api/conflicts"),
 
   chunkGraph: (
     opts: {

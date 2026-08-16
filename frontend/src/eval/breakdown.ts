@@ -10,8 +10,20 @@
 
 import type { Evaluation, EvaluationDetails } from '../api/types';
 
-/** Below this many judged questions an average is a hint, not a verdict. */
+/**
+ * At or below this many judged questions an average is a hint, not a verdict.
+ *
+ * Inclusive on purpose. A strict `<` let a run of exactly 5 sit on the
+ * boundary and escape the warning entirely — and a 5-question run is precisely
+ * the size where one bad answer moves the average several points, so it is the
+ * case the badge exists for rather than an exception to it.
+ */
 export const LOW_N = 5;
+
+/** Whether an average over `n` judged questions is too thin to rank on. */
+export function isLowN(n: number): boolean {
+  return n <= LOW_N;
+}
 
 export interface PrecisionStep {
   rank: number;

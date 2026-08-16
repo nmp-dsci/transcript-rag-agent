@@ -26,6 +26,7 @@ from typing import Any, Callable
 from src.config import Settings
 from src.evals.golden import GoldenEntry, evaluate_entry, load_golden
 from src.evals.ir_metrics import IR_METRIC_NAMES
+from src.evals.judge import DEPTH_METRIC_NAMES
 
 #: Runs are committed to source control (unlike the gitignored ``.yt-agent/``) so a
 #: reviewer can open the numbers a config change produced and the CI eval gate can
@@ -38,6 +39,9 @@ QUALITY_METRICS = [
     "faithfulness",
     "answer_relevancy",
     "context_precision",
+    # Only present on runs judged under depth-v2; absent elsewhere, where they
+    # drop out of the averages rather than showing up as gaps.
+    *DEPTH_METRIC_NAMES,
     "context_recall",
     "video_recall",
     *IR_METRIC_NAMES,

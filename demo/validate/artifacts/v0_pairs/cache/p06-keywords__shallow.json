@@ -1,0 +1,25 @@
+{
+  "key": "p06-keywords:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9007,
+    "context_precision": 1.0,
+    "insight_depth": 0.0,
+    "specificity": 0.0,
+    "coverage": 0.2,
+    "evidence_breadth": 0.0,
+    "calibration": 0.2
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.9669
+  },
+  "depth_v2": {
+    "composite": 0.4201,
+    "uncapped": 0.4201,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 6
+}

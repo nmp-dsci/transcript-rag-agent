@@ -1,0 +1,25 @@
+{
+  "key": "p01-ats:deep",
+  "scores": {
+    "faithfulness": 0.7,
+    "answer_relevancy": 0.7892,
+    "context_precision": 1.0,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 0.7,
+    "evidence_breadth": 1.0,
+    "calibration": 1.0
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.8297
+  },
+  "depth_v2": {
+    "composite": 0.8889,
+    "uncapped": 0.8889,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 5
+}

@@ -1,0 +1,25 @@
+{
+  "key": "p07-linkedin:deep",
+  "scores": {
+    "faithfulness": 0.6364,
+    "answer_relevancy": 0.5168,
+    "context_precision": 0.71,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 0.6,
+    "evidence_breadth": 1.0,
+    "calibration": 0.8
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.6211
+  },
+  "depth_v2": {
+    "composite": 0.8,
+    "uncapped": 0.8,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 6
+}

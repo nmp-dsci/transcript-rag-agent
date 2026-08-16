@@ -91,7 +91,29 @@ def test_load_matrix_runs_is_newest_first_and_ignores_other_kinds(tmp_path: Path
     descriptor = describe_matrix_run(runs[0])
     assert descriptor["setups"] == ["rag_llm", "rag_agent"]
     assert descriptor["judged"] is True
-    assert set(descriptor) == {"run_id", "created_at", "setups", "entry_count", "judged"}
+    assert set(descriptor) == {
+        "run_id",
+        "created_at",
+        "setups",
+        "entry_count",
+        "judged",
+        "rubric_version",
+        "rejudged_from",
+        "rejudged_cells",
+        "skipped_cells",
+        "corpus",
+        "corpus_videos",
+        "corpus_chunks",
+    }
+    # A run committed before rubrics were named is read as the original one.
+    assert descriptor["rubric_version"] == "ragas-v1"
+    # …and one committed before corpus identity entered the fingerprint carries
+    # None, not a default. The picker renders that as *unknown*, never as "the
+    # same corpus" — a reader who reads absence as agreement would compare two
+    # runs whose relationship was never established.
+    assert descriptor["corpus"] is None
+    assert descriptor["corpus_videos"] is None
+    assert descriptor["corpus_chunks"] is None
 
 
 def test_load_matrix_runs_reparses_only_when_the_directory_changes(
@@ -165,3 +187,21 @@ def test_matrix_questions_marks_unjudged_and_errored_cells() -> None:
     assert setups["rag_llm"]["judged"] is False
     assert setups["rag_llm"]["composite"] is None
     assert setups["rag_agent"]["error"] == "timeout"
+
+
+def test_matrix_questions_carry_the_graded_answer_and_its_cost() -> None:
+    """A composite is only auditable next to the text that earned it."""
+    by_key = {setup["key"]: setup for setup in matrix_questions(matrix_run())[0]["setups"]}
+    assert by_key["rag_llm"]["answer"] == "answer for g001"
+    assert by_key["rag_llm"]["model"] == "deepseek-v4"
+    assert by_key["rag_llm"]["elapsed_seconds"] == 10.0
+    assert by_key["rag_llm"]["token_estimate"] == 100
+    assert by_key["rag_llm"]["chunk_count"] == 1
+
+
+def test_matrix_questions_answer_defaults_to_empty_for_a_failed_cell() -> None:
+    run = matrix_run(setups={"rag_llm": [cell("g001", composite=None, error="timeout")]})
+    run["runs"]["rag_llm"]["entries"][0]["answer"] = None
+    setup = matrix_questions(run)[0]["setups"][0]
+    assert setup["answer"] == ""
+    assert setup["chunk_count"] == 1

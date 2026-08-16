@@ -7,7 +7,8 @@ agents import — plus the one prompt that lives outside that module
 constants directly, the tab cannot drift from what the engines actually send.
 
 RAGAS judge prompts live inside the ``ragas`` library rather than this repo,
-so they are represented by a link-out note instead of duplicated text.
+so they are represented by a link-out note instead of duplicated text. The
+``depth-v2`` rubric's depth prompt *is* ours, so it is served like any other.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.agents.prompts import PROMPT_REGISTRY
+from src.evals.judge import DEPTH_JUDGE_SYSTEM_PROMPT, DEPTH_JUDGE_USER_PROMPT
 from src.rag.summaries import SUMMARY_SYSTEM_PROMPT
 
 #: Tab grouping metadata, in display order.
@@ -60,6 +62,13 @@ SYSTEMS: list[dict[str, str]] = [
         "criteria, and the two are cited differently.",
     },
     {
+        "key": "depth_judge",
+        "title": "Depth judge — the depth-v2 rubric",
+        "description": "The five depth metrics (insight, specificity, coverage, "
+        "evidence breadth, calibration) that make up 60% of a depth-v2 "
+        "composite, scored in one structured call per answer.",
+    },
+    {
         "key": "retrieval_variants",
         "title": "Retrieval variants — HyDE, multi-query, contextual",
         "description": "The prompts that change what gets embedded rather than "
@@ -78,12 +87,31 @@ _EXTRA_PROMPTS: list[dict[str, Any]] = [
         "text": SUMMARY_SYSTEM_PROMPT,
         "module": "src/rag/summaries.py",
     },
+    {
+        "name": "DEPTH_JUDGE_SYSTEM_PROMPT",
+        "system": "depth_judge",
+        "role": "system",
+        "template_vars": [],
+        "text": DEPTH_JUDGE_SYSTEM_PROMPT,
+        "module": "src/evals/judge.py",
+    },
+    {
+        "name": "DEPTH_JUDGE_USER_PROMPT",
+        "system": "depth_judge",
+        "role": "user_template",
+        "template_vars": ["question", "context_count", "contexts_block", "answer"],
+        "text": DEPTH_JUDGE_USER_PROMPT,
+        "module": "src/evals/judge.py",
+    },
 ]
 
 _NOTES = [
     "RAGAS judge prompts (faithfulness, answer relevancy, context precision) "
     "live inside the ragas library, not this repo — see "
-    "https://github.com/explodinggradients/ragas."
+    "https://github.com/explodinggradients/ragas.",
+    "The depth-v2 rubric's five depth metrics are judged by this repo's own "
+    "prompt, shown above — one structured call per answer, scored 0-1 with a "
+    "one-sentence reason each.",
 ]
 
 #: Fields PromptsView.tsx reads off every prompt entry. Validated at load time

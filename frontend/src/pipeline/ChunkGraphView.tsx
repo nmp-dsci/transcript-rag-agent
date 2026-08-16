@@ -2,13 +2,12 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../api/client';
 import type { ChunkGraph, GraphEdge, GraphNode } from '../api/types';
-import { fmtSeconds } from '../answers/render';
+import { fmtSeconds, videoTimestampUrl } from '../answers/render';
 import {
   type Point,
   VIEW_H,
   VIEW_W,
   channelLegend,
-  chunkTimestampUrl,
   colourMap,
   edgeOpacity,
   nodeRadius,
@@ -215,7 +214,7 @@ export function ChunkGraphView() {
   const pick = useCallback((id: string) => setPinned((current) => (current === id ? null : id)), []);
 
   const stats = graph?.stats;
-  const link = focus ? chunkTimestampUrl(focus.source_url, focus.start_seconds) : null;
+  const link = focus ? videoTimestampUrl(focus.source_url, focus.start_seconds) : null;
 
   return (
     <div className="graph">

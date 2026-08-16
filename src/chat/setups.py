@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 
 from src.agents.models import (
@@ -53,6 +53,24 @@ class SetupSpec:
     query_transform: str | None = None
     #: Retrieve from the Contextual Retrieval index instead of the baseline one.
     contextual: bool = False
+    #: Route the question to whole videos by per-video summary before any chunk
+    #: is searched (see :meth:`TranscriptSummaryStore.query_relevant_transcripts`).
+    #: Unlike the two axes above this is a *request* setting, not a different
+    #: stack — which is why it does not appear in ``retrieval`` below: the
+    #: filtered setup shares the baseline's provider, models and index, and
+    #: differs only in the videos that provider is allowed to search.
+    filter_transcripts: bool = False
+    #: The setup reviews an attached document and has nothing to say without
+    #: one. Declared here rather than special-cased at the API, so the list of
+    #: setups a document-less question may run is derived from the setups
+    #: themselves — the alternative is a key name spelled into a filter in
+    #: ``/api/ask``, which is how the next such setup gets forgotten.
+    document_only: bool = False
+    #: The setup threads an attached document into its answer. Setups without
+    #: this ignore ``document_context`` entirely and would answer from the
+    #: corpus alone — a corpus answer dressed as a review — so a question that
+    #: carries a document runs only these.
+    document_capable: bool = False
 
     @property
     def retrieval(self) -> str:
@@ -72,6 +90,7 @@ SETUP_SPECS: list[SetupSpec] = [
         key="rag_llm",
         title="rag_llm (single-hop)",
         description=("One retrieval across all indexed transcripts, then a single LLM answer."),
+        document_capable=True,
     ),
     SetupSpec(
         key="rag_llm_recursive",
@@ -117,10 +136,39 @@ SETUP_SPECS: list[SetupSpec] = [
         ),
         contextual=True,
     ),
+    SetupSpec(
+        key="rag_llm_filtered",
+        title="rag_llm (summary-filtered)",
+        description=(
+            "Single-hop, but the question is routed to whole videos by their "
+            "per-video summary first and only those videos' chunks are "
+            "searched — the corpus-side half of the retrieval lab."
+        ),
+        filter_transcripts=True,
+    ),
+    SetupSpec(
+        key="rubric_review",
+        title="rubric_review (expert packs)",
+        description=(
+            "Reviews a shared document against the shipped rubric packs — one "
+            "verdict per rubric, each carrying its rubric id and the timestamp "
+            "the creator said it. Only answers when a document is attached."
+        ),
+        document_only=True,
+        document_capable=True,
+    ),
 ]
 
 SETUP_KEYS: list[str] = [spec.key for spec in SETUP_SPECS]
 _SPECS_BY_KEY: dict[str, SetupSpec] = {spec.key: spec for spec in SETUP_SPECS}
+
+#: The setups a question with a document attached is allowed to run, in menu
+#: order. Everything else silently ignores the document and answers from the
+#: corpus, which reads as a review of a page nobody opened.
+DOCUMENT_SETUP_KEYS: list[str] = [spec.key for spec in SETUP_SPECS if spec.document_capable]
+
+#: The setups that have nothing to answer without one.
+DOCUMENT_ONLY_SETUP_KEYS: list[str] = [spec.key for spec in SETUP_SPECS if spec.document_only]
 
 
 def setup_spec(key: str) -> SetupSpec:
@@ -145,6 +193,22 @@ class AskScope:
     # Unlike the fields above it does not narrow retrieval — it changes what
     # the answer is *about*, which is why only the single-hop path accepts it.
     document_context: str | None = None
+    # Overrides what the corpus is searched with, leaving the answering prompt
+    # on the user's own wording. Set alongside ``document_context`` so the URL
+    # in "review https://... for me" is not what gets embedded.
+    retrieval_query: str | None = None
+    # Set when the corpus may hold no criteria for what is being reviewed. It
+    # becomes the first step of the trace, because retrieval will return its ten
+    # best chunks either way and nothing else in the trace distinguishes "these
+    # are the criteria" from "these are the closest thing the corpus has".
+    coverage_warning: str | None = None
+    # The resolved document itself, for the setups that judge it rather than
+    # retrieve about it. ``document_context`` is the formatted string the
+    # answering prompt takes; the rubric reviewer needs the sections and their
+    # indices back to validate which ones a verdict may name, and rebuilding
+    # them by parsing the string is how the two drift apart.
+    # Typed loosely to keep this module free of a src.documents import.
+    review_document: Any | None = None
 
 
 @dataclass
@@ -185,6 +249,12 @@ class SetupResult:
     # actually did — route decisions, retrievals with chunk ids, rerank passes,
     # LLM calls — persisted so the trace survives beyond the live SSE stream.
     trace: list[dict[str, Any]] = field(default_factory=list)
+    # The per-rubric verdicts, when this setup judged a document against the
+    # packs. Carried beside the prose rather than parsed out of it: the panel
+    # needs the verdict, the severity and the rubric's own evidence as data, and
+    # a UI that re-derives them from markdown is a UI that can disagree with the
+    # review it is displaying. ``None`` on every other setup.
+    rubric_review: dict[str, Any] | None = None
 
 
 def select_setups(raw: str) -> list[str]:
@@ -215,7 +285,20 @@ def select_setups(raw: str) -> list[str]:
 
 
 def command_for(key: str, url: str | None = None) -> str:
-    """Reconstruct the equivalent ``rag-ask`` command for display and history."""
+    """Reconstruct the equivalent command for display and history.
+
+    ``rag-ask`` for every setup that has a CLI flag, and the HTTP call for the
+    one that does not. ``rubric_review`` reviews an attached document and takes
+    no question-only path, so there is no ``rag-ask`` invocation that reproduces
+    it — printing one anyway would put a command in the UI that exits 2.
+    """
+    if key == "rubric_review":
+        return (
+            "curl -N -X POST http://127.0.0.1:8021/api/ask "
+            "-H 'content-type: application/json' "
+            '-d \'{"question": "review this: <document url>", '
+            '"setups": ["rubric_review"]}\''
+        )
     url_flag = f' --url "{url}"' if url else ""
     flags = {
         "rag_llm": "--rag_llm",
@@ -224,6 +307,7 @@ def command_for(key: str, url: str | None = None) -> str:
         "graph_rag": "--graph_rag",
         "rag_llm_hyde": "--rag_llm --query-transform hyde",
         "rag_llm_contextual": "--rag_llm --contextual",
+        "rag_llm_filtered": "--rag_llm --filter-transcripts",
     }[key]
     return f'uv run python -m src.cli rag-ask "$question" {flags}{url_flag}'
 
@@ -254,6 +338,7 @@ class RagSetupRunner:
         self._rag_llm_agents: dict[str, RagTranscriptAgent] = {}
         self._rag_agent: RagAgent | None = None
         self._graph_rag_agent = None  # GraphRagAgent, built lazily (needs Neo4j)
+        self._rubric_reviewer = None  # RubricReviewAgent, built lazily (reads experts/)
 
     @property
     def provider(self) -> MultiTranscriptRagContextProvider:
@@ -377,12 +462,21 @@ class RagSetupRunner:
             self._graph_rag_agent = GraphRagAgent.from_settings(self._settings, self._provider)
         return self._graph_rag_agent
 
+    def _rubric(self):
+        if self._rubric_reviewer is None:
+            from src.agents.rubric_review_agent import RubricReviewAgent
+
+            self._rubric_reviewer = RubricReviewAgent.from_settings(self._settings)
+        return self._rubric_reviewer
+
     def _agent_for(self, key: str) -> Any:
         """The (cached) agent one setup answers with."""
         if key == "rag_agent":
             return self._agentic()
         if key == "graph_rag":
             return self._graph()
+        if key == "rubric_review":
+            return self._rubric()
         return self._rag_llm(key)
 
     def run_many(
@@ -423,7 +517,7 @@ class RagSetupRunner:
         """
         spec = setup_spec(key)
         effective_top_k = top_k or self._settings.rag_top_k
-        scope = scope or AskScope()
+        scope = _scope_for(spec, scope)
         model = self._settings.deepseek_model
         started = time.monotonic()
         # Bound before the call that can raise, so the failure path can persist
@@ -463,6 +557,8 @@ class RagSetupRunner:
                     scope=scope,
                     trace=_agent_event_steps(events, agent.last_iteration_count, model),
                 )
+            if key == "rubric_review":
+                return self._run_rubric_review(spec, agent, url, scope, on_agent_event, started)
             if key == "graph_rag":
                 answer = agent.answer(self._request(question, url, effective_top_k, scope))
                 return self._build_result(
@@ -525,6 +621,89 @@ class RagSetupRunner:
                 trace=[step.model_dump(mode="json") for step in partial],
             )
 
+    def _run_rubric_review(
+        self,
+        spec: SetupSpec,
+        agent: Any,
+        url: str | None,
+        scope: "AskScope",
+        on_agent_event: AgentEventFn | None,
+        started: float,
+    ) -> SetupResult:
+        """Judge the pinned document against the packs, as one setup's answer.
+
+        Nothing about a question reaches this. The setup answers "what do the
+        packs say about this document", and the question the user typed is
+        already the thing that resolved the document — letting it also steer the
+        review would put the two out of step, so a rubric that fails fails
+        whether or not the message mentioned it.
+        """
+        resolved = scope.review_document
+        if resolved is None:
+            raise ValueError(
+                "rubric_review reviews an attached document and there is none in "
+                "this message. Share a URL to review, or pick another setup."
+            )
+        progress: ProgressFn | None = None
+        if on_agent_event is not None:
+            emit = on_agent_event
+            counter = {"n": 0}
+
+            def report(message: str) -> None:
+                counter["n"] += 1
+                emit(
+                    AgentProgressEvent(
+                        iteration=counter["n"],
+                        event_type="retrieval_start",
+                        query=message,
+                    )
+                )
+
+            progress = report
+        result = agent.review(
+            resolved.document,
+            resolved.selection,
+            **({"on_progress": progress} if progress else {}),
+        )
+        if on_agent_event is not None:
+            for index, pack in enumerate(result.review.packs, start=1):
+                on_agent_event(
+                    AgentProgressEvent(
+                        iteration=index,
+                        event_type="retrieval_complete",
+                        query=f"{pack.name} — {pack.rubrics} rubrics",
+                        chunk_count=pack.rubrics,
+                        unit="verdicts",
+                    )
+                )
+        stats = result.review.stats
+        return SetupResult(
+            key=spec.key,
+            title=spec.title,
+            command=command_for(spec.key, url),
+            answer=result.answer,
+            references=list(result.references),
+            token_estimate=estimate_tokens(result.answer),
+            # Not a retrieval path: nothing was chunked, and reporting a chunk
+            # count of zero beside a review that read four packs is more honest
+            # than borrowing the field for rubrics.
+            chunk_count=0,
+            llm_calls=result.llm_calls,
+            elapsed_seconds=round(time.monotonic() - started, 2),
+            model=self._settings.deepseek_model,
+            channel_id=scope.channel_id,
+            retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
+            trace=[step.model_dump(mode="json") for step in _with_coverage(result.trace, scope)],
+            rubric_review=result.review.to_dict(),
+            error=(
+                "; ".join(
+                    f"{pack.name}: {pack.error}" for pack in result.review.packs if pack.error
+                )
+                if stats["packs_failed"] == stats["packs_used"]
+                else None
+            ),
+        )
+
     def _request(self, question, url, top_k, scope: "AskScope", **extra):
         return RagQuestionRequest(
             question=question,
@@ -537,6 +716,7 @@ class RagSetupRunner:
             transcript_filter_min_score=self._settings.transcript_filter_min_score,
             history=list(scope.history),
             document_context=scope.document_context,
+            retrieval_query=scope.retrieval_query,
             **extra,
         )
 
@@ -615,8 +795,49 @@ class RagSetupRunner:
             channel_id=scope.channel_id,
             retrieval_mode=scope.retrieval_mode or self._settings.retrieval_mode,
             followups=_followups_to_dicts(getattr(answer, "subtopics", [])),
-            trace=[step.model_dump(mode="json") for step in (trace or [])],
+            trace=[step.model_dump(mode="json") for step in _with_coverage(trace, scope)],
         )
+
+
+def _scope_for(spec: SetupSpec, scope: "AskScope | None") -> "AskScope":
+    """The scope one setup answers under: the caller's, plus what the setup *is*.
+
+    A setup declares its retrieval configuration and the runner is what applies
+    it — otherwise ``filter_transcripts`` is a capability that exists on every
+    layer of the request path and is switched on by nothing, which is what it
+    was until this setup existed. The caller's own scope is never overridden
+    downwards: asking for the filter and running a setup that is defined by it
+    are the same request.
+    """
+    scope = scope or AskScope()
+    if spec.filter_transcripts and not scope.filter_transcripts:
+        return replace(scope, filter_transcripts=True)
+    return scope
+
+
+def _with_coverage(trace: list | None, scope: "AskScope") -> list:
+    """The trace, led by a coverage warning when the scope carries one.
+
+    First rather than last: it qualifies every retrieval step below it, and a
+    caveat printed after the evidence has already been read is not a caveat.
+
+    The warning itself goes in ``note``, not ``detail``: the trace row clips at
+    roughly a quarter of it, and the quarter that survives is the half that
+    says there is a problem rather than the half that says what to do about it.
+    ``detail`` keeps a summary short enough to survive the clipping.
+    """
+    steps = list(trace or [])
+    if not scope.coverage_warning:
+        return steps
+    return [
+        TraceStep(
+            phase="route",
+            label="Corpus coverage",
+            detail="the corpus may hold no criteria for this document",
+            note=scope.coverage_warning,
+        ),
+        *steps,
+    ]
 
 
 def _clear_per_answer_state(agent: Any) -> None:

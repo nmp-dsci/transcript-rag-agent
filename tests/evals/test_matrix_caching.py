@@ -38,11 +38,33 @@ class FakeSettings:
     judge_samples: int = 1
 
 
+class FakeCorpus:
+    """The corpus a fake runner retrieves from.
+
+    ``run_matrix`` digests this into cache identity, because a cell scored
+    before an ingestion is not a valid answer for the same question after one.
+    A runner that exposes no corpus cannot be fingerprinted, so the fakes model
+    the same contract the real ``RagSetupRunner`` does.
+    """
+
+    def __init__(self, video_ids=("v1", "v2"), chunks=2) -> None:
+        self._metadatas = [{"video_id": video_ids[i % len(video_ids)]} for i in range(chunks)]
+
+    def get(self, include=None):
+        return {"metadatas": self._metadatas}
+
+
+class FakeProvider:
+    def __init__(self, corpus=None) -> None:
+        self.chunk_store = type("Store", (), {"collection": corpus or FakeCorpus()})()
+
+
 class CountingRunner:
     """A fake RagSetupRunner: records every call, answers deterministically."""
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
+        self.provider = FakeProvider()
 
     def run(self, key: str, question: str, *, top_k=None, scope=None) -> SetupResult:
         self.calls.append((key, question))
@@ -147,6 +169,7 @@ def test_a_failed_cell_is_not_cached_and_retries_next_run(tmp_path) -> None:
 
         def __init__(self) -> None:
             self.attempts = 0
+            self.provider = FakeProvider()
 
         def run(self, key, question, *, top_k=None, scope=None):
             self.attempts += 1
@@ -201,6 +224,33 @@ def test_a_run_records_which_questions_it_scored_not_just_how_many(tmp_path) -> 
 
     assert result["entry_count"] == 2
     assert result["question_ids"] == ["g001", "g007"]
+
+
+def test_a_run_records_the_size_of_the_corpus_it_scored_over(tmp_path) -> None:
+    """The digest says *whether* the corpus moved; the sizes say how far.
+
+    This slice was measured on three corpora in one day (59/1460 → 67/1736 →
+    71/1792) and every move invalidated the whole cache. A reader holding two
+    runs side by side should not have to re-derive the corpus from a hash to
+    find out which one a number belongs to.
+    """
+    result = run_matrix(
+        CountingRunner(),
+        FakeSettings(),
+        setups=["rag_llm"],
+        entries=entries(),
+        cache_dir=tmp_path,
+    )
+
+    config = result["config"]
+    assert config["corpus_videos"] == 2
+    assert config["corpus_chunks"] == 2
+    # The digest still identifies the corpus; the counts describe it.
+    assert config["corpus"] and isinstance(config["corpus"], str)
+    # The pre-filter's knobs travel with the run that used them: ``top_k`` is a
+    # floor a corpus-wide question lifts, so a reader needs to see what it was.
+    assert config["transcript_filter_top_k"] == 5
+    assert config["transcript_filter_min_score"] == 0.25
 
 
 def test_scoping_to_a_sample_only_answers_that_sample(tmp_path) -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -122,12 +123,12 @@ class SuperdataTranscriptFetcher:
         segments: list[TranscriptSegment] = []
 
         if isinstance(content, str):
-            raw_text = content.strip()
+            raw_text = _unescape_entities(content).strip()
         elif isinstance(content, list):
             for item in content:
                 if not isinstance(item, dict):
                     continue
-                text = str(item.get("text", "")).strip()
+                text = _unescape_entities(str(item.get("text", ""))).strip()
                 if not text:
                     continue
                 offset_ms = item.get("offset")
@@ -208,6 +209,23 @@ class SuperdataTranscriptFetcher:
             segments=segments,
             fetched_at=datetime.now(timezone.utc),
         )
+
+
+def _unescape_entities(value: str, max_passes: int = 2) -> str:
+    """Decode HTML entities Supadata sometimes leaves in caption text.
+
+    Some caption tracks come back singly escaped (``&#39;``) and some doubly
+    escaped (``&amp;#39;``), which lands verbatim in the chunk text and then in
+    any evidence quoted back to a user. Decoding is applied at most twice —
+    enough for the observed double escaping, bounded so a transcript that
+    genuinely says "&amp;" is not unwound past what was encoded.
+    """
+    for _ in range(max_passes):
+        decoded = html.unescape(value)
+        if decoded == value:
+            break
+        value = decoded
+    return value
 
 
 def _nested(data: dict[str, Any], parent: str, child: str) -> Any:

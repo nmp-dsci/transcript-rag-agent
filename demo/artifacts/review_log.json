@@ -1,0 +1,60 @@
+[
+  {
+    "round": 1,
+    "take": "take_01",
+    "checked_at": "2026-08-06T08:53:01+00:00",
+    "deterministic": {
+      "passed": true,
+      "failures": []
+    },
+    "score": 4.8,
+    "verdict": {
+      "scores": {
+        "claim_integrity": 3,
+        "hook": 6,
+        "legibility": 5,
+        "pacing": 6,
+        "arc": 6,
+        "production": 5
+      },
+      "total": 4.8,
+      "capped": true,
+      "cap_reason": "Scene 3 narration states 'The composite reads 0.87' but no such number exists anywhere in the scene 3 frame. Zoomed inspection of the frame shows the only numeric score visible is 'Faithful 0.94' in the top-right 'HOW THIS WAS SCORED' panel, and the left-side RAGAS EVAL bars for FAITHFUL/RELEVANT/PRECISION are unlabeled progress bars with no printed values at all. A spoken number central to the video's 'Proof' claim cannot be confirmed against its own frame's pixels, so total is capped at 6.0 per the claim-integrity rule.",
+      "must_fix": [
+        {
+          "scene": 3,
+          "problem": "Headline metric is unverifiable in its own frame.",
+          "evidence": "Narration: 'The composite reads 0.87.' Frame shows only 'HOW THIS WAS SCORED | Faithful | 0.94' in the top-right panel; the RAGAS EVAL block's FAITHFUL/RELEVANT/PRECISION bars carry no numeric labels at all. No '0.87' or 'composite' figure appears anywhere on screen.",
+          "fix": "Print the actual composite score on screen (e.g. in the chat header or next to the RAGAS EVAL bars) before narrating it, or change the line to cite the number that is actually visible (0.94 Faithful)."
+        },
+        {
+          "scene": 2,
+          "problem": "Narrated as live execution but the frame is a static diagram that self-admits it isn't a running capture.",
+          "evidence": "Narration: 'Here's what that looks like running.' On-screen caption in the same frame reads: 'Same diagram you can click through in the System Design tab \u2014 generated from the running code, not drawn by hand.' This is a static architecture card, not footage of the system executing.",
+          "fix": "Cut to an actual screen recording of the pipeline executing, or drop the word 'running' from the narration since the visual is a generated diagram, not live output."
+        },
+        {
+          "scene": 4,
+          "problem": "Caption bar sits on top of the exact row needed to confirm the '20 questions' run shares the same six engines.",
+          "evidence": "Caption text 'Six engines, one RAGAS judge, same questions. Two tagged runs sit here \u2014 five questions and twenty...' overlaps the second matrix's column-header row (RAG_LLM / RAG_LLM_RECURSIVE / RAG_AGENT / GRAPH_RAG for matrix-20260729-025133), squeezing it against the blue divider line.",
+          "fix": "Add vertical spacing or move the caption band so the 20-question matrix's engine-header row is fully clear before the caption covers lower rows."
+        },
+        {
+          "scene": 5,
+          "problem": "Caption bar truncates the metric-definition cards it sits on top of.",
+          "evidence": "The 'Faithfulness' card's lead-in text is hidden behind the caption band, leaving only the fragment 'Low means the model asserted things the transcripts never said \u2014 hallucination.' visible below it; 'Answer relevancy' card is cut mid-formula ('questions) x (0 if noncommittal else 1)').",
+          "fix": "Reflow the caption above the card row or crop the visible UI so on-screen text isn't sliced by the caption chrome."
+        },
+        {
+          "scene": 5,
+          "problem": "Run identifier spoken in narration is not present anywhere in this scene's own frame.",
+          "evidence": "Narration: 'Judged on the five-question run, 061607...' The visible Efficiency table only shows 'n=5' per row; no text string '061607' or any run-id badge appears in the scene 5 frame \u2014 it's only inferable by recalling scene 4.",
+          "fix": "Carry a persistent run-id label into the Scoreboard/Efficiency view so each scene's spoken identifiers are confirmable from that scene's own pixels."
+        }
+      ],
+      "verdict": "Dismiss: the one number the whole 'Proof' act hinges on \u2014 composite 0.87 \u2014 never appears in the frame that speaks it; the only score on screen is a different metric (Faithful 0.94). For a pitch built entirely on 'every claim cites its exact source,' the demo fails its own standard in its own centerpiece scene.",
+      "provider": "claude-sdk",
+      "model": "claude-sonnet-5"
+    }
+  }
+]

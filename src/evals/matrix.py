@@ -28,8 +28,16 @@ from typing import Any, Callable
 
 from src.config import Settings
 from src.evals.golden import GoldenEntry, load_golden
-from src.evals.matrix_cache import DEFAULT_CACHE_DIR, cell_fingerprint, load_cell, save_cell
+from src.evals.judge import DEPTH_METRIC_NAMES
+from src.evals.matrix_cache import (
+    DEFAULT_CACHE_DIR,
+    cell_fingerprint,
+    corpus_stats_for,
+    load_cell,
+    save_cell,
+)
 from src.evals.regression import run_golden_eval
+from src.rag.question_scope import DEFAULT_CORPUS_WIDE_BEHAVIOR
 
 #: Every comparable setup, because the Scoreboard ranks the *newest* committed
 #: run: a default that left the retrieval variants out would drop them off the
@@ -42,15 +50,20 @@ DEFAULT_MATRIX_SETUPS = [
     "graph_rag",
     "rag_llm_hyde",
     "rag_llm_contextual",
+    "rag_llm_filtered",
 ]
 
 #: The pivot rows. A subset of QUALITY_METRICS plus the ops columns — the
 #: matrix is a comparison surface, so it shows the metrics that differ by
 #: engine, not every raw number (the per-setup runs keep those).
+#: The depth metrics only exist on a run rejudged under ``depth-v2``; on every
+#: other run they are simply absent and drop out of the pivot, so listing them
+#: here costs a ragas-v1 run nothing.
 MATRIX_METRICS = [
     "faithfulness",
     "answer_relevancy",
     "context_precision",
+    *DEPTH_METRIC_NAMES,
     "answer_correctness",
     "answer_similarity",
     "llm_context_recall",
@@ -88,6 +101,27 @@ def config_snapshot(
         or settings.deepseek_model,
         "judge_samples": settings.judge_samples,
         "ragas_version": ragas_version,
+        # The summary pre-filter's two knobs. They shape only ``rag_llm_filtered``
+        # and are already in its cells' fingerprints, but a reader comparing two
+        # filtered columns needs to see them without recomputing a hash — and
+        # ``top_k`` in particular is now a *budget* that a corpus-wide question
+        # lifts (see :mod:`src.rag.question_scope`), so the recorded 5 is the
+        # floor a run used, not the cap every question was held to.
+        # ``getattr`` rather than attribute access for the same reason
+        # ``_engine_material`` uses it: a settings object that predates a field
+        # should record the shipped default, not raise.
+        "transcript_filter_top_k": getattr(settings, "transcript_filter_top_k", 5),
+        "transcript_filter_min_score": getattr(settings, "transcript_filter_min_score", 0.25),
+        # The corpus-wide *behaviour* those two knobs are read under, which no
+        # other field in this block records: a question the detector fires on
+        # ignores the cap above entirely. Hashed into the affected cells'
+        # fingerprints too (see :func:`~src.evals.matrix_cache.behavior_material`),
+        # but recorded here as well because a fingerprint tells a *cache* two
+        # runs differ and tells a *reader* nothing. This run's providers are
+        # built from settings alone, so the shipped default is what they
+        # implement; a harness that constructs a provider by hand records that
+        # provider's ``retrieval_behavior`` instead.
+        "retrieval_behavior": DEFAULT_CORPUS_WIDE_BEHAVIOR,
     }
 
 
@@ -138,7 +172,18 @@ def run_matrix(
     cache_misses = 0
     cells_done = 0
     cells_total = len(setups) * len(entries)
+    # Once per run, not once per cell: it is one bulk metadata read, and every
+    # cell in this run retrieves from the same corpus by definition.
+    corpus, corpus_videos, corpus_chunks = corpus_stats_for(runner.provider.chunk_store)
     config = config_snapshot(settings, top_k=top_k, judge=judge, ragas_version=ragas_version_str)
+    # Recorded, not merely hashed: a reader comparing two committed runs needs to
+    # see that the corpus moved, and a digest in the config is what says so. The
+    # sizes ride along because the digest alone cannot say *how far* it moved —
+    # "59/1460 → 71/1792" is a fact a reader can weigh, "1bdb1971 → dceb228d" is
+    # only a fact they can check.
+    config["corpus"] = corpus
+    config["corpus_videos"] = corpus_videos
+    config["corpus_chunks"] = corpus_chunks
 
     def report_cell(setup: str, entry_id: str, cached: bool) -> None:
         if on_cell is not None:
@@ -166,6 +211,7 @@ def run_matrix(
                 judge_samples=judge_samples,
                 ragas_version=ragas_version_str,
                 reference_scored=reference_fns is not None,
+                corpus=corpus,
             )
             cached = None if refresh else load_cell(fingerprint, cache_dir)
             if cached is not None:
@@ -199,7 +245,7 @@ def run_matrix(
             "setup": setup,
             "config": config,
             "entries": entry_results,
-            "summary": _summarize_dicts(entry_results),
+            "summary": summarize_cells(entry_results),
         }
 
     return {
@@ -224,7 +270,7 @@ def run_matrix(
     }
 
 
-def _summarize_dicts(entry_dicts: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_cells(entry_dicts: list[dict[str, Any]]) -> dict[str, Any]:
     """:func:`~src.evals.regression.summarize`, from the plain dicts a cached
     or freshly-scored cell is stored as, rather than ``EntryResult`` objects."""
     from src.evals.regression import EntryResult, summarize

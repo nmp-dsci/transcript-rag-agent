@@ -84,4 +84,29 @@ describe('DocumentCard', () => {
 
     expect(screen.getAllByText(/example\.com/).length).toBeGreaterThan(0);
   });
+
+  it('states how much of the document the answer above it read', () => {
+    render(
+      <DocumentCard
+        document={doc({ detail: 'fetched — whole document — all 3 sections in context' })}
+      />,
+    );
+
+    expect(
+      screen.getByText('fetched — whole document — all 3 sections in context'),
+    ).toBeInTheDocument();
+  });
+
+  it('states the selection even when the server did not send one', () => {
+    render(<DocumentCard document={doc()} />);
+
+    expect(screen.getByText(/whole document — all 3 sections in context/)).toBeInTheDocument();
+  });
+
+  it('never claims a whole-document review of a narrowed selection', () => {
+    render(<DocumentCard document={doc({ sections_selected: [1], narrowed: true })} />);
+
+    expect(screen.queryByText(/whole document/)).not.toBeInTheDocument();
+    expect(screen.getByText('1 of 3 sections selected for this question')).toBeInTheDocument();
+  });
 });

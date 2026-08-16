@@ -484,3 +484,176 @@ def test_the_document_answer_comes_back_through_the_normal_contract() -> None:
 
     assert answer.answer == "Rewrite [§1]."
     assert answer.question == "any feedback?"
+
+
+def test_a_document_changes_the_user_prompt_too() -> None:
+    """The RAG template says "using only the retrieved transcript chunks",
+    which is the wrong instruction when the subject is the user's document."""
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(RagQuestionRequest(question="any feedback?", document_context=DOC_CONTEXT))
+
+    user_prompt = str(llm.messages[-1].content)
+    assert "only the retrieved" not in user_prompt
+    assert "[§N]" in user_prompt
+
+
+def test_no_document_keeps_the_ordinary_rag_user_prompt() -> None:
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(RagQuestionRequest(question="what changed?"))
+
+    assert "only the retrieved" in str(llm.messages[-1].content)
+
+
+def test_a_caller_supplied_retrieval_query_is_what_the_corpus_sees() -> None:
+    """The URL in "review https://... for me" must not be what gets embedded."""
+    provider = FakeProvider()
+    agent = RagTranscriptAgent(FakeLlm(_answer_json()), provider)
+
+    agent.answer(
+        RagQuestionRequest(
+            question="review https://example.com/cv for me",
+            document_context=DOC_CONTEXT,
+            retrieval_query="review for me resume experience",
+        )
+    )
+
+    assert provider.calls[0][0] == "review for me resume experience"
+
+
+def test_the_answering_prompt_still_gets_the_users_own_wording() -> None:
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(
+        RagQuestionRequest(
+            question="review https://example.com/cv for me",
+            document_context=DOC_CONTEXT,
+            retrieval_query="resume experience section",
+        )
+    )
+
+    assert "review https://example.com/cv for me" in str(llm.messages[-1].content)
+
+
+def test_a_retrieval_query_override_costs_no_rewrite_call() -> None:
+    """The caller already knows the query; asking the model again would be a
+    second LLM call charged for nothing."""
+    llm = FakeLlm(_answer_json())
+    agent = RagTranscriptAgent(llm, FakeProvider())
+
+    agent.answer(
+        RagQuestionRequest(
+            question="and the education section?",
+            history=["earlier turn"],
+            document_context=DOC_CONTEXT,
+            retrieval_query="education section resume",
+        )
+    )
+
+    assert agent.last_rewrite is None
+    assert len(llm.calls) == 1
+
+
+# ── citation metadata is derived, never taken from the model ──────────────────
+
+
+def _answer_json_with_references(answer: str, references: list) -> str:
+    import json
+
+    return json.dumps(
+        {
+            "answer": answer,
+            "references": references,
+            "answer_confidence": 0.8,
+            "followups_requested": False,
+            "subtopics": [],
+        }
+    )
+
+
+def test_a_citations_metadata_comes_from_the_chunk_not_the_model() -> None:
+    """The model picks which chunk to cite; it does not get to say what it is."""
+    invented = [
+        {
+            "label": "[1]",
+            "source_url": "https://www.youtube.com/watch?v=WRONG",
+            "timestamp_url": "https://www.youtube.com/watch?v=WRONG&t=999s",
+            "start_seconds": 999.0,
+            "end_seconds": 1000.0,
+            "chunk_index": 42,
+            "video_id": "WRONG",
+        }
+    ]
+    provider = FakeProvider()
+    agent = RagTranscriptAgent(
+        FakeLlm(_answer_json_with_references("Point [1].", invented)), provider
+    )
+
+    answer = agent.answer(RagQuestionRequest(question="what changed?"))
+
+    chunk = agent.last_context.retrieved_chunks[0]
+    reference = answer.references[0]
+    assert reference.label == "[1]"
+    assert reference.chunk_index == chunk.chunk_index
+    assert reference.video_id == chunk.video_id
+    assert reference.start_seconds == chunk.start_seconds
+
+
+def test_a_citation_of_a_chunk_that_was_never_retrieved_is_dropped() -> None:
+    """Repairing it would be the same invention one layer down."""
+    out_of_range = [{"label": "[99]", "video_id": "x", "source_url": "https://y", "chunk_index": 0}]
+    agent = RagTranscriptAgent(
+        FakeLlm(_answer_json_with_references("Point [99].", out_of_range)), FakeProvider()
+    )
+
+    answer = agent.answer(RagQuestionRequest(question="what changed?"))
+
+    assert all(reference.label != "[99]" for reference in answer.references)
+
+
+def test_duplicate_labels_collapse_to_one_citation() -> None:
+    duplicated = [
+        {"label": "[1]", "video_id": "a", "source_url": "https://a", "chunk_index": 0},
+        {"label": "[1]", "video_id": "b", "source_url": "https://b", "chunk_index": 7},
+    ]
+    agent = RagTranscriptAgent(
+        FakeLlm(_answer_json_with_references("Point [1].", duplicated)), FakeProvider()
+    )
+
+    answer = agent.answer(RagQuestionRequest(question="what changed?"))
+
+    assert [reference.label for reference in answer.references] == ["[1]"]
+
+
+def test_a_subtopic_label_resolves_within_its_own_subtopic() -> None:
+    """[s1.2] is the second chunk of subtopic 1, not the first chunk overall."""
+    from src.agents.models import RagAnswerReference
+    from src.agents.rag_transcript_agent import reconcile_references
+
+    class Chunk:
+        def __init__(self, index: int) -> None:
+            self.source_url = "https://www.youtube.com/watch?v=vid"
+            self.start_seconds = float(index * 10)
+            self.end_seconds = float(index * 10 + 5)
+            self.chunk_index = index
+            self.video_id = "vid"
+
+    chunks = [Chunk(0), Chunk(1), Chunk(2)]
+    model_refs = [
+        RagAnswerReference(
+            label="[s1.2]",
+            source_url="https://www.youtube.com/watch?v=wrong",
+            timestamp_url="https://www.youtube.com/watch?v=wrong&t=999s",
+            video_id="wrong",
+            chunk_index=99,
+        )
+    ]
+
+    resolved = reconcile_references(model_refs, chunks, label_of=lambda index: f"[s1.{index}]")
+
+    assert [reference.label for reference in resolved] == ["[s1.2]"]
+    assert resolved[0].chunk_index == 1

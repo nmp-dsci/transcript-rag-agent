@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>transcript·lab — V0–V8 frontend walkthrough</title>
+<style>
+/* Ported from frontend/src/theme.css — the app's own Instrument design system,
+   so this review page reads like the app it reviews. */
+:root, :root[data-theme='dark']{
+  color-scheme:dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme='dark']){
+    color-scheme:light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#eed888;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffc1bc;
+  }
+}
+:root[data-theme='light']{
+  color-scheme:light;
+  --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+  --border:#d1d9e0; --border2:#bcc4cc;
+  --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+  --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+  --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+  --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#eed888;
+  --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffc1bc;
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:44px 22px 100px}
+h1{font-size:1.9rem;margin:0 0 6px;letter-spacing:-.02em;line-height:1.2}
+h2{font-size:1.3rem;margin:0;letter-spacing:-.01em}
+p{margin:0 0 12px;color:var(--text2)}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.85em;background:var(--panel2);
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;word-break:break-word}
+.kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.lede{color:var(--muted);max-width:76ch}
+.appurl{display:inline-block;font-family:var(--mono);font-size:.85rem;
+  background:var(--accent-dim);border:1px solid var(--accent-border);
+  border-radius:6px;padding:3px 10px;color:var(--accent2);text-decoration:none}
+
+.scoreband{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:10px;margin:24px 0 8px}
+.sb{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 15px}
+.sb b{display:block;font-size:1.6rem;line-height:1.15;font-family:var(--mono)}
+.sb span{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.sb.ok b{color:var(--good)} .sb.warn b{color:var(--warn)} .sb.accent b{color:var(--accent2)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;margin:20px 0 8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th{background:var(--panel2);text-align:left;padding:9px 13px;font-weight:600;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+  border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);white-space:nowrap;color:var(--text)}
+
+.pill{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:2px 8px;
+  border-radius:999px;border:1px solid;white-space:nowrap;font-weight:600}
+.pill.ok{color:var(--good);border-color:var(--good-border);background:var(--good-dim)}
+.pill.warn{color:var(--warn);border-color:var(--warn-border);background:var(--warn-dim)}
+.pill.info{color:var(--accent2);border-color:var(--accent-border);background:var(--accent-dim)}
+.pill.none{color:var(--dim);border-color:var(--border);background:var(--panel2)}
+
+.slice{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:20px 22px;margin:26px 0}
+.slice-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:4px}
+.slice-id{font-family:var(--mono);font-weight:700;font-size:.95rem;color:var(--accent2);
+  background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:6px;padding:2px 9px}
+.hyp{border-left:3px solid var(--accent-border);background:var(--panel3);
+  border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;color:var(--muted);font-size:.92rem}
+.hyp b{color:var(--text2)}
+.where{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 4px;
+  font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.where .crumb{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;color:var(--text)}
+.where .sep{color:var(--dim)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px}
+.col{background:var(--panel3);border:1px solid var(--border);border-radius:10px;padding:13px 16px;min-width:0}
+.col h4{margin:0 0 8px;font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:600}
+ul{margin:0;padding-left:19px;color:var(--text2)}
+li{margin:0 0 7px}
+li:last-child{margin-bottom:0}
+.check li{list-style:none;position:relative;padding-left:4px}
+.check li::before{content:'▢';position:absolute;left:-17px;color:var(--accent);font-size:.9em}
+.caveat{border:1px solid var(--warn-border);background:var(--warn-dim);
+  border-radius:10px;padding:11px 15px;margin-top:14px;font-size:.9rem;color:var(--text2)}
+.caveat b{color:var(--warn)}
+.files{margin-top:12px;font-size:.8rem;color:var(--dim);line-height:1.9}
+.toc-note{font-size:.85rem;color:var(--dim);margin-top:6px}
+h2.divider{margin:52px 0 4px;padding-top:22px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kicker">transcript·lab · s11 build · frontend review guide</div>
+<h1>V0–V8: every frontend change, and where to see it</h1>
+<p class="lede">All ten slices passed independent evaluation and are committed
+(<code>5666b01</code>). This page is the review tour: each section says where the change
+lives in the running app, what shipped in the UI, and what the evaluator checked — so you
+can re-check it yourself. The app is running at
+<a class="appurl" href="http://127.0.0.1:8010/" target="_blank">http://127.0.0.1:8010</a></p>
+
+<div class="scoreband">
+  <div class="sb ok"><b>8</b><span>passed clean</span></div>
+  <div class="sb warn"><b>2</b><span>passed · caveat</span></div>
+  <div class="sb accent"><b>373</b><span>evaluator checks</span></div>
+  <div class="sb accent"><b>92</b><span>videos indexed</span></div>
+  <div class="sb accent"><b>7,722</b><span>frontend lines added</span></div>
+</div>
+<p class="toc-note">Evidence: <code>demo/validate/artifacts/&lt;slice&gt;/verdict.json</code>,
+each written by an independent evaluator, never the builder. States below mirror the generated
+<code>demo/validate/STATUS.md</code>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Slice</th><th>Deliverable</th><th>Where in the app</th><th>State</th><th>Checks</th></tr></thead>
+<tbody>
+<tr><td class="mono"><a href="#v0">V0</a></td><td>Depth-aware judge v2</td><td>Scoreboard</td><td><span class="pill ok">passed</span></td><td class="mono">36/36</td></tr>
+<tr><td class="mono"><a href="#v1">V1</a></td><td>Document review, grounded twice</td><td>Chat</td><td><span class="pill ok">passed</span></td><td class="mono">39/39</td></tr>
+<tr><td class="mono"><a href="#v2">V2</a></td><td>Summary pre-filter as a setup</td><td>Scoreboard</td><td><span class="pill ok">passed</span></td><td class="mono">37/37</td></tr>
+<tr><td class="mono"><a href="#v3">V3</a></td><td>Held-out critique harness</td><td>Experiments</td><td><span class="pill warn">passed · caveat</span></td><td class="mono">33/33</td></tr>
+<tr><td class="mono"><a href="#v4">V4</a></td><td>Cross-video theme layer</td><td>RAG Pipeline → Themes</td><td><span class="pill ok">passed</span></td><td class="mono">24/24</td></tr>
+<tr><td class="mono"><a href="#v4b">V4b</a></td><td>Two new topics ingested</td><td>everywhere (corpus)</td><td><span class="pill ok">passed</span></td><td class="mono">42/42</td></tr>
+<tr><td class="mono"><a href="#v5">V5</a></td><td>Rubric packs in the app</td><td>Experiments</td><td><span class="pill ok">passed</span></td><td class="mono">37/37</td></tr>
+<tr><td class="mono"><a href="#v6">V6</a></td><td>Rubric-driven reviewer</td><td>Chat</td><td><span class="pill ok">passed</span></td><td class="mono">40/40</td></tr>
+<tr><td class="mono"><a href="#v7">V7</a></td><td>Disagreements view</td><td>RAG Pipeline → Disagreements</td><td><span class="pill warn">passed · caveat</span></td><td class="mono">65/65</td></tr>
+<tr><td class="mono"><a href="#v8">V8</a></td><td>Deep-research build loop</td><td>Experiments</td><td><span class="pill ok">passed</span></td><td class="mono">20/22</td></tr>
+</tbody></table></div>
+
+<!-- ══════════════════════ V0 ══════════════════════ -->
+<div class="slice" id="v0">
+<div class="slice-head"><span class="slice-id">V0</span><h2>The judge can now see depth</h2>
+<span class="pill ok">36/36</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#board" target="_blank">Scoreboard</a></span></div>
+<div class="hyp"><b>Hypothesis:</b> answers that synthesise several creators should outrank
+faithful restatements of one chunk — the setup ranking should <b>change</b> under a rubric
+that scores depth, not just grounding.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li>Eight metric columns, each carrying its composite weight in the header
+(FAITHFUL 20% · PRECISION 10% · RELEVANT 10% · INSIGHT 20% · SPECIFIC 15% · COVERAGE 10%…) — the old three-metric grounding-only composite is gone.</li>
+<li>The red <b>self-graded banner</b> naming the confound when the answer model also judged.</li>
+<li>A footnote explaining why one row shows <code>n=19</code> of 20 rather than silently averaging.</li>
+<li>Metric explainer popovers (<code>MetricExplainer</code>) for every new depth metric.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>The ranking moved for a checkable reason: <code>rag_agent</code> takes first on insight
+(0.78 vs 0.46); <code>graph_rag</code> drops to third on evidence breadth 0.20 — it answers off a single subgraph.</li>
+<li>Weights in the column headers sum to 100%, and the composite matches them.</li>
+<li>The flip reproduced under an independent OpenAI judge (ρ = τ = +1.00 across all four setups) — harsher, but same order.</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>scoreboard/ScoreboardView.tsx</code> · <code>eval/metrics.ts</code> · <code>eval/explainers.ts</code> · <code>eval/MetricExplainer.tsx</code></div>
+</div>
+
+<!-- ══════════════════════ V1 ══════════════════════ -->
+<div class="slice" id="v1">
+<div class="slice-head"><span class="slice-id">V1</span><h2>Document review, grounded twice</h2>
+<span class="pill ok">39/39</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#chat" target="_blank">Chat</a></span>
+<span class="sep">→</span><span class="crumb">history rail → “review this: &lt;url&gt;” entry</span></div>
+<div class="hyp"><b>Hypothesis:</b> a review must reference <b>specific document sections</b> and
+<b>specific expert timestamps</b> in the same answer. Feedback that could have been written
+without reading the document fails.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li><b>Document card</b> in the history rail: “fetched — whole document — all 9 sections in
+context”, listing §1–§9 so you can see exactly what the reviewer read.</li>
+<li>In the answer: <b>amber §-chips</b> (§2 §4 §6) pointing at your document, <b>numeric
+chips</b> at corpus timestamps — interleaved in the same sentence.</li>
+<li><b>Sources (9)</b> expands to the nine video moments behind the advice.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Claims that require having read the page: §4 “Data Pilot” flagged as the only card with
+no hero number; “10,250” spotted as an orphan stat that appears only in the §2 hero.</li>
+<li>The retrieval fix behind it: querying by the document's <i>kind</i> instead of its subject
+took relevant chunks from 0/30 to 29/30 (your headings are project names — subject-matching fetched agentic-engineering talks).</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>chat/DocumentCard.tsx</code> · <code>chat/AnswerTrace.tsx</code> · <code>answers/render.ts</code> (§-chip rendering)</div>
+</div>
+
+<!-- ══════════════════════ V2 ══════════════════════ -->
+<div class="slice" id="v2">
+<div class="slice-head"><span class="slice-id">V2</span><h2>Summary pre-filter as a comparable setup</h2>
+<span class="pill ok">37/37</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#board" target="_blank">Scoreboard</a></span>
+<span class="sep">→</span><span class="crumb">setup × answer model rows</span></div>
+<div class="hyp"><b>Hypothesis:</b> routing a question through per-video summaries before chunk
+retrieval should be a <b>scored row on the Scoreboard</b>, not a code path — otherwise its
+value is unfalsifiable.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li>The <code>rag_llm (summary-filtered)</code> row beside <code>rag_llm (single-hop)</code>,
+judged over the same 20 golden questions from a committed matrix run.</li>
+<li><b>CorpusNote</b> (new): a corpus-fingerprint banner naming exactly which corpus the rows
+were scored on (<code>dceb228d</code> · 71 videos · 1792 chunks) and warning when the indexed
+corpus has moved since — “a column that appears in both runs is not a like-for-like comparison”.</li>
+<li>Win-rate column: summary-filtered takes 12/20 questions head-to-head, composite tied at 0.79.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Both rows show <code>n=20 of 20 answers</code> against the same run selector.</li>
+<li>The CorpusNote correctly flags that today's indexed corpus (92 videos) differs from the
+scored one — the header counts and the note disagree on purpose.</li>
+<li>Engine-version caveat is linked: two runs' identically-named columns can be different engines (<code>evals/runs/README.md</code>).</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>scoreboard/CorpusNote.tsx</code> · <code>scoreboard/corpus.ts</code> · <code>scoreboard/ScoreboardView.tsx</code> · <code>scoreboard/AnswersPanel.tsx</code></div>
+</div>
+
+<!-- ══════════════════════ V3 ══════════════════════ -->
+<div class="slice" id="v3">
+<div class="slice-head"><span class="slice-id">V3</span><h2>Critique quality became a number — then the number was hardened</h2>
+<span class="pill warn">33/33 · caveat</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#experiments" target="_blank">Experiments</a></span>
+<span class="sep">→</span><span class="crumb">Critique eval panel</span></div>
+<div class="hyp"><b>Hypothesis:</b> until this panel renders, “better than chunk-dumping” is
+unfalsifiable. A resume-teardown video is held out of every retrieval path; recall is how many
+of that expert's criteria the system reached <b>without ever seeing the video they came from</b>.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li>The green <b>held-out absent · 0 leaks</b> chip, the held-out video named.</li>
+<li>Four metrics with <b>no composite</b>: criteria_recall, evidence_precision, provenance, contested coverage — they trade against each other by design.</li>
+<li><b>GATE_PROVENANCE rendering:</b> retrieval arms (<code>rag_llm_filtered</code>,
+<code>rag_conflict_aware</code>) now show <b>“not measured”</b> over their ungated figure
+instead of a certified score, and deltas against them are dropped, not subtracted.</li>
+<li>Per-repeat spread shown on matcher-dependent metrics rather than a bare point estimate.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>The distinct-chunk attack is dead: reciting criteria with one distinct real chunk each
+previously scored precision 1.000 / recall 0.526 vs the honest 0.364 / 0.158 — now grounds nothing.</li>
+<li>Every committed run was rescored in place with zero model calls; no score moved, no within-run ranking flipped.</li>
+<li>Ungraded cells read <code>None</code>, not zero — “not measured” is the honest word.</li>
+</ul></div>
+</div>
+<div class="caveat"><b>Open caveat:</b> the relevance question itself. A chunk the finding
+really did retrieve, cited for a rule it does not support, still passes — only an entailment
+check (one judged call per citation) reaches it. V5, V6 and V8 are all scored on this metric.
+Also: the verdict names 3 superseded run files no longer on disk. See
+<code>src/evals/KNOWN_GAP_attack2.md</code>.</div>
+<div class="files">frontend: <code>experiments/CritiquePanel.tsx</code> (+590 lines) · <code>experiments/styles.ts</code></div>
+</div>
+
+<!-- ══════════════════════ V4 ══════════════════════ -->
+<div class="slice" id="v4">
+<div class="slice-head"><span class="slice-id">V4</span><h2>Cross-video themes</h2>
+<span class="pill ok">24/24</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#pipeline" target="_blank">RAG Pipeline</a></span>
+<span class="sep">→</span><span class="crumb">Themes sub-tab</span></div>
+<div class="hyp"><b>Hypothesis:</b> themes that span videos should be a browsable layer — each
+theme names its member videos and every claim links back to a source timestamp.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li>New <b>Themes</b> sub-tab (<code>ThemesView</code>, 263 lines): theme cards with member
+counts, expanding to per-video claims.</li>
+<li>Every claim carries a <b>timestamp link into the source video</b> — the check that
+previously failed (23/24: link offset didn't match the displayed clock) now passes; the
+offset and the rendered clock agree.</li>
+<li>Served from committed artifacts via <code>GET /api/themes</code> — 30 themes over the corpus, 24 spanning multiple videos.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Open a theme → click a claim's timestamp → the video opens at that moment, matching the clock shown on the row.</li>
+<li>Single-video themes are visually distinct from genuine cross-video ones.</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>pipeline/ThemesView.tsx</code> · <code>pipeline/PipelineView.tsx</code> (sub-tab) · <code>pipeline/styles.ts</code></div>
+</div>
+
+<!-- ══════════════════════ V4b ══════════════════════ -->
+<div class="slice" id="v4b">
+<div class="slice-head"><span class="slice-id">V4b</span><h2>Two empty topics, ingested</h2>
+<span class="pill ok">42/42</span></div>
+<div class="where"><span class="crumb">header corpus count</span><span class="sep">·</span>
+<span class="crumb"><a href="http://127.0.0.1:8010/#pipeline" target="_blank">RAG Pipeline → Corpus</a></span></div>
+<div class="hyp"><b>Hypothesis:</b> the system-design and app-architecture topics existed as
+labels with zero videos behind them. Rubric packs for those topics (V5) are meaningless until
+the corpus actually covers them.</div>
+<div class="cols">
+<div class="col"><h4>What shipped</h4><ul>
+<li>Corpus grew <b>38 → 92 videos</b> (2485 chunks, 56 channels) — the header pill and the
+Pipeline corpus tree both reflect it.</li>
+<li>Not a frontend change per se, but every view downstream re-renders over the larger corpus:
+themes recount, knowledge graph re-derives, scoreboard's CorpusNote flags the fingerprint move.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Header reads 92 videos · 2485 chunks.</li>
+<li>Pipeline → Corpus &amp; retrieval shows the system-design and app-architecture channels populated.</li>
+</ul></div>
+</div>
+</div>
+
+<!-- ══════════════════════ V5 ══════════════════════ -->
+<div class="slice" id="v5">
+<div class="slice-head"><span class="slice-id">V5</span><h2>Rubric packs, visible in the app</h2>
+<span class="pill ok">37/37</span><span class="pill none">reduced independence disclosed</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#experiments" target="_blank">Experiments</a></span>
+<span class="sep">→</span><span class="crumb">Pack panel</span></div>
+<div class="hyp"><b>Hypothesis:</b> distilled expert rubric packs should be inspectable
+artifacts in the app — every rubric traceable to the pack unit and chunks it was distilled
+from — not JSON on disk.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li><b>PackPanel</b> (858 lines): all four topic packs — resume-design, job-search,
+system-design, app-architecture — rendered from <code>experts/</code>, independent of any
+committed eval run.</li>
+<li>Per-rubric provenance: the unit it came from and that unit's chunk ids — the same
+provenance V3's gate scores against.</li>
+<li>The <b>D2 three-way ablation</b>: raptor vs communities vs merged, precision
+0.667 / 0.778 / 0.824, merged leading — with per-arm recall spread.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Each pack's rubric count and multi-creator share match the committed <code>experts/&lt;topic&gt;/</code> files.</li>
+<li>Ablation numbers match <code>experts/ablation.json</code> — the panel reads the artifact, it doesn't recompute.</li>
+<li>The verdict's “reduced independence” rider: part of that verdict wasn't written at arm's length — read its scope before treating the tally as fully independent.</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>experiments/PackPanel.tsx</code> · api: <code>src/api/packs.py</code></div>
+</div>
+
+<!-- ══════════════════════ V6 ══════════════════════ -->
+<div class="slice" id="v6">
+<div class="slice-head"><span class="slice-id">V6</span><h2>The rubric-driven reviewer in Chat</h2>
+<span class="pill ok">40/40</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#chat" target="_blank">Chat</a></span>
+<span class="sep">→</span><span class="crumb">review a document → rubric reviewer setup</span></div>
+<div class="hyp"><b>Hypothesis:</b> reviewing a document against a distilled rubric pack should
+produce <b>per-rubric verdicts</b> — each rule named, judged, and cited — reviewable side by
+side with the chunk-dump review of the same page.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li><b>RubricVerdicts</b> (249 lines) inside the message bubble: one row per rubric —
+pass / fail / not-applicable, with the rubric's own citation behind it.</li>
+<li>Document-capable setups only: for a document entry, the compare button offers exactly the
+setups that actually thread the page into their call — the rubric reviewer and the chunk-dump
+review, side by side in one bubble.</li>
+<li>Agent trace lines wrap instead of clipping (<code>AgentTrace</code>).</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>Run <code>review this: &lt;url&gt;</code> and compare: the rubric review names rules; the chunk-dump review free-associates.</li>
+<li>Verdicts cite the rubric's pack unit, not arbitrary corpus chunks.</li>
+<li>Honest framing on the eval side: <code>rubric_packs</code> scored 0.000 recall on the held-out set and its old 0.158 baseline is now ungraded — the panel does not restate it as a measured baseline.</li>
+</ul></div>
+</div>
+<div class="files">frontend: <code>chat/RubricVerdicts.tsx</code> · <code>chat/ChatView.tsx</code> · <code>chat/MessageBubble.tsx</code> · agents: <code>src/agents/rubric_review_agent.py</code></div>
+</div>
+
+<!-- ══════════════════════ V7 ══════════════════════ -->
+<div class="slice" id="v7">
+<div class="slice-head"><span class="slice-id">V7</span><h2>Disagreements as a first-class view</h2>
+<span class="pill warn">65/65 · caveat</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#pipeline" target="_blank">RAG Pipeline</a></span>
+<span class="sep">→</span><span class="crumb">Disagreements sub-tab</span></div>
+<div class="hyp"><b>Hypothesis:</b> where creators genuinely disagree should be a browsable
+layer — each card two positions with their videos and timestamps — and the layer should state
+its own reliability rather than perform confidence.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li><b>DisagreementsView</b> (545 lines): conflict cards, each holding both positions with
+source links, built by <code>index-conflicts</code> and served from <code>GET /api/conflicts</code>.</li>
+<li><b>Honesty chrome</b> — the notable part: a warn chip beside the count
+(“spread not recorded — nearer 2 ± 1 than exactly 2”), card chips in <i>grey</i> reading
+“agreed 3/3 looks — the most 3 can show”, and a self-agreement chip that no longer calls
+itself an error bar.</li>
+<li>The fallback retires automatically on a build that records its own spread — verified against a 9-look artifact on a second instance.</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>2 cards render; the warn chip is present and readable in both themes.</li>
+<li>Both positions on a card resolve to real videos at the stated timestamps.</li>
+<li>No chip anywhere overstates: nothing green claims reliability the 3-look measurement can't support.</li>
+</ul></div>
+</div>
+<div class="caveat"><b>Open caveat:</b> the count (2) is short of the plan's ≥3 gate — the one
+soft spot in a 65-check verdict. Reliability is the deeper issue: two builds over an identical
+candidate pool returned 4 cards then 2, with two cards moving 3/3 → 0/3. Also unaddressed:
+<code>corpus_fingerprint</code> is computed but never forwarded by <code>list_conflicts</code>,
+so a reader can't see which corpus the count was measured over.</div>
+<div class="files">frontend: <code>pipeline/DisagreementsView.tsx</code> · rag: <code>src/rag/conflicts.py</code></div>
+</div>
+
+<!-- ══════════════════════ V8 ══════════════════════ -->
+<div class="slice" id="v8">
+<div class="slice-head"><span class="slice-id">V8</span><h2>The deep-research build loop</h2>
+<span class="pill ok">20/22</span></div>
+<div class="where"><span class="crumb"><a href="http://127.0.0.1:8010/#experiments" target="_blank">Experiments</a></span>
+<span class="sep">→</span><span class="crumb">Deep research panel</span></div>
+<div class="hyp"><b>Hypothesis:</b> an automated plan → probe → critique loop should build a
+rubric pack that <b>beats the hand-built merged pack</b> on the held-out critique eval, under
+the same call budget — and the report should render each round's delta.</div>
+<div class="cols">
+<div class="col"><h4>What shipped in the UI</h4><ul>
+<li><b>ResearchPanel</b> (1,002 lines): the build report — plan, per-round probes, a
+<b>call-budget table</b> (deep-frontier: 1 planner / 10 executor / 1 critic = 12 calls,
+exactly the hand-built round's), and per-round rubric deltas.</li>
+<li>The <b>frontier round</b> readout: a coverage table of member videos and how much of each
+round 1 actually read; round-2 probes barred from re-retrieving round-1 ground
+(all four probes: 18 chunks each, 0 from round-1 ground).</li>
+<li>Six arms scored side by side; the evidence_precision badge corrected to
+“no model in its path” (the earlier wording overclaimed).</li>
+</ul></div>
+<div class="col"><h4>What to verify</h4><ul class="check">
+<li>deep-frontier beats merged with disjoint ranges: recall 5/5 repeats above merged's 5/5
+(0.4211 floor vs 0.3684 ceiling) — but the margin is one criterion in nineteen; treat it as
+a narrow win, not a landslide.</li>
+<li>evidence_precision 0.875 vs 0.824 — the deterministic metric that failed attempt 1 now leads.</li>
+<li>Old arms' numbers unchanged from attempt 1 — the baseline wasn't moved under the new arm.</li>
+</ul></div>
+</div>
+<div class="caveat"><b>The two failed checks — documentation, not UI:</b> the builder's report
+claimed “recall cannot be bought by dropping rules” (falsified by <code>deep-r2-admit</code>:
+a strict subset scoring <i>higher</i>, 0.3684 → 0.4211, via the one-to-one matcher freeing
+criterion c22) and “only deep-frontier reaches c22, via a frontier rule” (it's an inherited
+round-1 rule, and deep-r2-admit reaches it too). Neither claim appears in the shipped UI —
+the evaluator searched the rendered page for them and found none — and
+<code>deep_research.py</code> now documents the correction in its own comments.</div>
+<div class="files">frontend: <code>experiments/ResearchPanel.tsx</code> · rag: <code>src/rag/deep_research.py</code></div>
+</div>
+
+<!-- ══════════════════════ cross-cutting ══════════════════════ -->
+<h2 class="divider">Cross-cutting changes you'll notice everywhere</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Change</th><th>Where</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Corpus fingerprint plumbed through run metadata</td><td class="mono">scoreboard/corpus.ts</td>
+<td>A RAG score is meaningless without the corpus it retrieved from; runs scored on different corpora refuse to read as comparable.</td></tr>
+<tr><td>913 lines of new API types</td><td class="mono">api/types.ts</td>
+<td>Packs, research reports, conflicts, rubric verdicts — every new surface is typed end to end; <code>tsc --noEmit</code> is the frontend's gate.</td></tr>
+<tr><td>Shared experiment styles</td><td class="mono">experiments/styles.ts · pipeline/styles.ts · theme.css</td>
+<td>Chips (ok / warn / not-measured), spread bars and provenance rows share one vocabulary across Critique, Pack and Research panels.</td></tr>
+<tr><td>Trace lines wrap</td><td class="mono">chat/AgentTrace.tsx</td>
+<td>Long agent-step lines wrapped instead of clipping — small, but it's how you audit V6/V8 runs.</td></tr>
+</tbody></table></div>
+
+<p class="toc-note" style="margin-top:28px">Review flow suggestion: Scoreboard first
+(V0 · V2), then Experiments top to bottom (V5 packs → V8 research → V3 critique), then
+Pipeline (V4 themes → V7 disagreements), and finish in Chat with a live
+<code>review this: &lt;url&gt;</code> to see V1 + V6 fire together. Annotate anything here
+and I'll pick it up.</p>
+
+</div>
+</body>
+</html>

@@ -17,6 +17,8 @@ interface Iteration {
   iteration: number;
   query: string;
   chunkCount: number | null;
+  /** What `chunkCount` counts. Not every path on this channel counts chunks. */
+  unit: string;
 }
 
 function toIterations(steps: AgentStep[]): Iteration[] {
@@ -31,6 +33,7 @@ function toIterations(steps: AgentStep[]): Iteration[] {
         step.event_type === 'retrieval_complete'
           ? (step.chunk_count ?? 0)
           : (existing?.chunkCount ?? null),
+      unit: step.unit ?? existing?.unit ?? 'chunks',
     });
   }
   return [...byIteration.values()].sort((a, b) => a.iteration - b.iteration);
@@ -51,7 +54,7 @@ export function AgentTrace({ steps, running }: Props) {
           <span className="n">[{item.iteration}]</span>
           <span className="q">{item.query || 'retrieving…'}</span>
           <span className="c">
-            {item.chunkCount == null ? 'searching…' : `${item.chunkCount} chunks`}
+            {item.chunkCount == null ? 'searching…' : `${item.chunkCount} ${item.unit}`}
           </span>
         </div>
       ))}

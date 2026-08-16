@@ -1,0 +1,25 @@
+{
+  "key": "p08-agent-share:deep",
+  "scores": {
+    "faithfulness": 0.6731,
+    "answer_relevancy": 0.4693,
+    "context_precision": 1.0,
+    "insight_depth": 1.0,
+    "specificity": 1.0,
+    "coverage": 0.9,
+    "evidence_breadth": 1.0,
+    "calibration": 0.5
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.7141
+  },
+  "depth_v2": {
+    "composite": 0.8466,
+    "uncapped": 0.8466,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 4
+}

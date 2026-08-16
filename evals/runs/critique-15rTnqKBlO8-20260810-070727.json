@@ -1,0 +1,2187 @@
+{
+  "run_id": "critique-15rTnqKBlO8-20260810-070727",
+  "created_at": "2026-08-10T07:07:27.760951+00:00",
+  "kind": "critique-eval",
+  "held_out_video_id": "15rTnqKBlO8",
+  "held_out_title": "You asked me to roast your AI resumes.. so I did.",
+  "artifact_id": "doc:f52b88d70b35b908",
+  "artifact_url": "https://nmp-dsci.github.io/",
+  "artifact_kind": "portfolio",
+  "criteria_total": 24,
+  "criteria_applicable": 19,
+  "metrics": [
+    "criteria_recall",
+    "evidence_precision",
+    "provenance",
+    "contested_coverage"
+  ],
+  "baseline": "rag_llm_filtered",
+  "match_repeats": 5,
+  "exclusion_version": "v1",
+  "criteria_groups": 15,
+  "held_out_leaks": 0,
+  "fabricated_citations": 0,
+  "config": {
+    "grounding_gate": "retrieval_provenance",
+    "exclusion_version": "v1",
+    "answer_model": "deepseek-v4-flash",
+    "conflicts_available": 3,
+    "conflict_inject_limit": 2,
+    "matcher": "llm",
+    "matcher_model": "deepseek-v4-flash",
+    "matcher_version": "v2-vote5",
+    "match_repeats": 5,
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "retrieval_mode": "semantic",
+    "top_k": 10,
+    "rerank_enabled": true,
+    "transcript_filter_top_k": 5,
+    "transcript_filter_min_score": 0.25,
+    "corpus_note": "3 of 53 videos have no stored summary, so the summary-filtered setup routes over 50 videos before the held-out one is removed",
+    "rescored_matcher": "replayed-votes",
+    "rescore_note": "re-scored from this run's own stored findings and matcher votes \u2014 no model calls. Replaying under the gate the run published under reproduces every published score exactly, which is what makes any difference here attributable to the gate alone; criteria_recall_ungated and evidence_precision_ungated are the figures this run published",
+    "rescored_from": "critique-15rTnqKBlO8-20260810-070727",
+    "rescored_gate_from": "exclusive_evidence"
+  },
+  "cells": [
+    {
+      "setup": "rag_llm_filtered",
+      "scores": {
+        "criteria_recall": null,
+        "evidence_precision": null,
+        "provenance": 1.0,
+        "contested_coverage": null
+      },
+      "score_spread": {
+        "criteria_recall_min": null,
+        "criteria_recall_median": null,
+        "criteria_recall_max": null
+      },
+      "match_repeats": 5,
+      "criteria_recall_all": null,
+      "criteria_recall_grouped": null,
+      "criteria_groups": 15,
+      "findings_total": 7,
+      "findings_grounded": 4,
+      "findings_sharing_evidence": 3,
+      "citations_total": 10,
+      "citations_resolved": 10,
+      "criteria_applicable": 19,
+      "criteria_matched": 2,
+      "criteria_matched_ungrounded": 0,
+      "fabricated_citations": [],
+      "conflicts_in_context": 0,
+      "conflicts_named": 0,
+      "conflicts": [],
+      "self_declared_contested": 0,
+      "held_out_leaks": 0,
+      "held_out_leak_ids": [],
+      "retrieved_chunk_ids": [
+        "chunk:fD0E57QYSPk:16",
+        "chunk:fD0E57QYSPk:10",
+        "chunk:FpW8aiJPvts:5",
+        "chunk:fD0E57QYSPk:21",
+        "chunk:dQ6RNltrXro:6",
+        "chunk:fD0E57QYSPk:18",
+        "chunk:fD0E57QYSPk:20",
+        "chunk:ZqqzBCg6IGU:1",
+        "chunk:fD0E57QYSPk:17",
+        "chunk:ZqqzBCg6IGU:2"
+      ],
+      "retrieved_video_ids": [
+        "FpW8aiJPvts",
+        "ZqqzBCg6IGU",
+        "dQ6RNltrXro",
+        "fD0E57QYSPk"
+      ],
+      "elapsed_seconds": 59.26,
+      "token_estimate": 3927,
+      "error": null,
+      "matches": [
+        {
+          "id": "c01",
+          "criterion": "A resume should fit on a single page, even for an engineer with more than ten years of experience.",
+          "quote": "you want to keep your resume to just a single page",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 57.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "Page count is a resume mechanic; a scrolling website has no equivalent.",
+          "group": "c01",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c02",
+          "criterion": "Cut or reorder experience that is irrelevant to the role being targeted, instead of listing everything you have ever done.",
+          "quote": "shuffle your experience around to make it make the most sense for the job application",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 90.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c02",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c03",
+          "criterion": "Work should show clear individual ownership of what was built, not merely participation in a team that built it.",
+          "quote": "there's clear ownership of the projects. It's not just about building something with a team",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 90.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c03",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c04",
+          "criterion": "Keep the opening summary to two or three lines and do not restate there what the body of the document already proves.",
+          "quote": "reduce their professional summary to just two to three lines",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 150.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c04",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c05",
+          "criterion": "Put explicit numbers on claims of scale or reliability rather than leaving the reader to take the claim on trust.",
+          "quote": "be a little bit more explicit about how many releases there actually were",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 179.24,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c05",
+          "matched": true,
+          "finding_id": "f02",
+          "finding_criterion": "Quantify contributions with concrete metrics and outcomes.",
+          "score": 1.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": true
+        },
+        {
+          "id": "c06",
+          "criterion": "There must be a visible career narrative that leads from the previous roles into the role now being applied for.",
+          "quote": "there is no clear story that leads this person into AI engineering",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 210.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c06",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c07",
+          "criterion": "Build one flagship project in the target domain that bridges the existing professional experience to the job being sought.",
+          "quote": "they don't have their own North Star project to showcase in the resume, there isn't a clear bridge",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 270.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_bridge_project",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c08",
+          "criterion": "Limit any one role to about three bullet points, however long that role lasted.",
+          "quote": "limit the bullet points here to a maximum of three",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 390.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "About the bullet list under an employment entry, which a project portfolio does not have.",
+          "group": "c08",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c09",
+          "criterion": "Compress older roles to one or two lines rather than removing them, so the years of experience still show without consuming space.",
+          "quote": "you can optimize one or two lines in each of these sections and just keep them brief",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 390.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c09",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c10",
+          "criterion": "Drop courses and credentials that add nothing for the target role, because the skill should be evident from the work instead.",
+          "quote": "I don't know what the added value is of this online course on training great tech leaders",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 450.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c10",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c11",
+          "criterion": "Do not carry a separate skills list that repeats what the described work already demonstrates.",
+          "quote": "remove the skill section altogether because your skills will be very obvious from the work experience itself",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 450.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_skills_selfevident",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c12",
+          "criterion": "Include links to your profiles and code so a reader can independently check that the projects are real.",
+          "quote": "links to LinkedIn, GitHub and actually a way to check out the validity of the projects mentioned",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 555.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_verifiable_links",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c13",
+          "criterion": "Cut vague competence claims that could be said of anyone in the role and that the employment history already implies.",
+          "quote": "these kinds of fluffy sentences are really just a waste of the potential recruiter's attention",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 555.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c13",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c14",
+          "criterion": "A recruiter gives the document twenty to thirty seconds, so the most convincing material has to be reachable immediately.",
+          "quote": "You really want to make sure that they get to the meat of your resume as soon as possible",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 615.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_lead_with_strength",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c15",
+          "criterion": "Order the document so the strongest project sits at the very top, above any list of technologies.",
+          "quote": "put your top project, your North Star project, at the very top",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 615.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_lead_with_strength",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c16",
+          "criterion": "Describe a project concretely enough that the underlying skills are self-evident, instead of asserting the skills separately.",
+          "quote": "skills like being able to build scalable solutions will be obvious from the project description alone",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 675.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_skills_selfevident",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 0.8,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c17",
+          "criterion": "Check the document for stale statements left over from an earlier version, such as naming the wrong target role.",
+          "quote": "I assume that this is kind of from a previous version of the resume, but double-check these kinds of things",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 675.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c17",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c18",
+          "criterion": "Keep the document in a plain-text source format such as LaTeX or markdown so it can be machine-checked before each application.",
+          "quote": "resume should be written in a format like LaTeX or a markdown file",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 730.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "A reviewer of a published site sees only the rendered output, so there is no source document for them to judge. (The earlier reason given here \u2014 that a website has no plain-text source \u2014 was simply wrong for a GitHub Pages site.)",
+          "group": "c18",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c19",
+          "criterion": "Reframe the earlier career as the foundation the target-domain work is built on, rather than as unrelated prior history.",
+          "quote": "reframed where the data infrastructure fundamentals that this person has is a foundation for the AI pipelines",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 730.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_bridge_project",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c20",
+          "criterion": "Keep the education section to a single line once you have been working for years.",
+          "quote": "the education section is very slim here. It's just a single line",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 850.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "The portfolio has no education section to keep to a line.",
+          "group": "c20",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c21",
+          "criterion": "Put certifications inside the experience they apply to and deep-link the proof, instead of listing them on their own line.",
+          "quote": "add a deep link to a certification platform where it shows the proof that you got that certification",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 900.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "About where certifications sit inside an employment history; the portfolio lists no certifications.",
+          "group": "c21",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c22",
+          "criterion": "Aim the whole document at one clear role persona and build everything else around it.",
+          "quote": "You want to aim for one clear role persona and build the rest of your resume around that",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 960.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c22",
+          "matched": true,
+          "finding_id": "f05",
+          "finding_criterion": "Present a focused specialism instead of spreading across too many different areas.",
+          "score": 1.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": true
+        },
+        {
+          "id": "c23",
+          "criterion": "Cut corporate jargon and reduce the volume of prose, because too much text crowds out the actual evidence.",
+          "quote": "there's a lot of corporate jargon because essentially we are trained to use corporate jargon",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 1020.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c23",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c24",
+          "criterion": "Every project mentioned should carry a link to the artifact itself so a reader can verify it exists.",
+          "quote": "none of them have an embedded link to a GitHub page",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 1020.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_verifiable_links",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        }
+      ],
+      "match_runs": [
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": null,
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": null
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": null,
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": null
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": "f06",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": null
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": null,
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": null
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": null,
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": null
+        }
+      ],
+      "findings": [
+        {
+          "id": "f01",
+          "criterion": "Include your location on resumes and portfolio pages so recruiters can quickly assess fit.",
+          "detail": "The portfolio identifies Nathan Phillips and his title but does not show a city, state, country or any other location indicator, despite the page being the primary application-facing profile.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 522.8,
+              "quote": "this is one of the most important things a recruiter is going to look for in your application"
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "add your role and location"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 522.8,
+              "quote": "this is one of the most important things a recruiter is going to look for in your application",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:10",
+              "shared": false,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "add your role and location",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:dQ6RNltrXro:6",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:fD0E57QYSPk:10"
+          ]
+        },
+        {
+          "id": "f02",
+          "criterion": "Quantify contributions with concrete metrics and outcomes.",
+          "detail": "The portfolio leads with numbers (9/9, 77.1%, 10,250 predictions, 6.1x) and each project states a metric, directly matching the advice to quantify impact.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 847.5,
+              "quote": "quantifiable numbers for every single thing you've done at a company"
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "quantify your contributions by using metrics and data to Showcase your impact"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 847.5,
+              "quote": "quantifiable numbers for every single thing you've done at a company",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:16",
+              "shared": false,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "quantify your contributions by using metrics and data to Showcase your impact",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:dQ6RNltrXro:6",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:fD0E57QYSPk:16"
+          ]
+        },
+        {
+          "id": "f03",
+          "criterion": "Link to detailed project write-ups or case studies, not just code repositories.",
+          "detail": "Every selected system includes a 'Case study \u2192' link, following the recommended pattern of making project understanding easy for a recruiter rather than forcing them to read code.",
+          "citations": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "writing an accompanying blog post to the project just makes understanding your experience and skills much easier"
+            },
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "writing an accompanying blog post to the project just makes understanding your experience and skills much easier",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:FpW8aiJPvts:5",
+              "shared": true,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:1",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:ZqqzBCg6IGU:1"
+          ]
+        },
+        {
+          "id": "f04",
+          "criterion": "Prefer intuitive metrics and explain technical scores that a recruiter may not know.",
+          "detail": "Most metrics are intuitive counts and percentages, but '84.5% best answer F1' and '0.93 answer parity' are used without plain-language explanation, which is the kind of metric the expert warns can be lost on a recruiter.",
+          "citations": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:FpW8aiJPvts:5",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f05",
+          "criterion": "Present a focused specialism instead of spreading across too many different areas.",
+          "detail": "The portfolio spans agents, RAG, multi-agent, data, data-viz, and a GAN-inspired coding harness; even within an AI focus, this breadth risks watering down the positioning.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "not specializing in too many different things it'll sort of water your application down"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "not specializing in too many different things it'll sort of water your application down",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:20",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:fD0E57QYSPk:20"
+          ]
+        },
+        {
+          "id": "f06",
+          "criterion": "List concrete tools and how you apply them, not abstract subject labels only.",
+          "detail": "The page highlights categories like 'agentic systems' and 'RAG pipelines' but has no skills section showing concrete technologies such as Python libraries, deployment tools, or cloud services; some tools only appear inside project descriptions.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "Write how you apply that knowledge. You can write like Python having numpy pandas and psychic libraries deployment using flask and fast API cloud using AWS EC2 and S3."
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "Write how you apply that knowledge. You can write like Python having numpy pandas and psychic libraries deployment using flask and fast API cloud using AWS EC2 and S3.",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:2",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f07",
+          "criterion": "Keep formatting clean and free of typos because small presentation details signal professionalism.",
+          "detail": "The visible portfolio is visually clean, consistently aligned, and contains no obvious typos, satisfying the formatting advice.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:2",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        }
+      ],
+      "answer": "{\"findings\":[\n  {\n    \"id\":\"f01\",\n    \"criterion\":\"Include your location on resumes and portfolio pages so recruiters can quickly assess fit.\",\n    \"detail\":\"The portfolio identifies Nathan Phillips and his title but does not show a city, state, country or any other location indicator, despite the page being the primary application-facing profile.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"fD0E57QYSPk\",\"start_seconds\":522.8,\"quote\":\"this is one of the most important things a recruiter is going to look for in your application\"},\n      {\"video_id\":\"dQ6RNltrXro\",\"start_seconds\":320.3,\"quote\":\"add your role and location\"}\n    ]\n  },\n  {\n    \"id\":\"f02\",\n    \"criterion\":\"Quantify contributions with concrete metrics and outcomes.\",\n    \"detail\":\"The portfolio leads with numbers (9/9, 77.1%, 10,250 predictions, 6.1x) and each project states a metric, directly matching the advice to quantify impact.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"fD0E57QYSPk\",\"start_seconds\":847.5,\"quote\":\"quantifiable numbers for every single thing you've done at a company\"},\n      {\"video_id\":\"dQ6RNltrXro\",\"start_seconds\":320.3,\"quote\":\"quantify your contributions by using metrics and data to Showcase your impact\"}\n    ]\n  },\n  {\n    \"id\":\"f03\",\n    \"criterion\":\"Link to detailed project write-ups or case studies, not just code repositories.\",\n    \"detail\":\"Every selected system includes a 'Case study \u2192' link, following the recommended pattern of making project understanding easy for a recruiter rather than forcing them to read code.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"FpW8aiJPvts\",\"start_seconds\":333.7,\"quote\":\"writing an accompanying blog post to the project just makes understanding your experience and skills much easier\"},\n      {\"video_id\":\"ZqqzBCg6IGU\",\"start_seconds\":70.1,\"quote\":\"Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges\"}\n    ]\n  },\n  {\n    \"id\":\"f04\",\n    \"criterion\":\"Prefer intuitive metrics and explain technical scores that a recruiter may not know.\",\n    \"detail\":\"Most metrics are intuitive counts and percentages, but '84.5% best answer F1' and '0.93 answer parity' are used without plain-language explanation, which is the kind of metric the expert warns can be lost on a recruiter.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"FpW8aiJPvts\",\"start_seconds\":333.7,\"quote\":\"a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is\"}\n    ]\n  },\n  {\n    \"id\":\"f05\",\n    \"criterion\":\"Present a focused specialism instead of spreading across too many different areas.\",\n    \"detail\":\"The portfolio spans agents, RAG, multi-agent, data, data-viz, and a GAN-inspired coding harness; even within an AI focus, this breadth risks watering down the positioning.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"fD0E57QYSPk\",\"start_seconds\":1061.5,\"quote\":\"not specializing in too many different things it'll sort of water your application down\"}\n    ]\n  },\n  {\n    \"id\":\"f06\",\n    \"criterion\":\"List concrete tools and how you apply them, not abstract subject labels only.\",\n    \"detail\":\"The page highlights categories like 'agentic systems' and 'RAG pipelines' but has no skills section showing concrete technologies such as Python libraries, deployment tools, or cloud services; some tools only appear inside project descriptions.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"ZqqzBCg6IGU\",\"start_seconds\":140.6,\"quote\":\"Write how you apply that knowledge. You can write like Python having numpy pandas and psychic libraries deployment using flask and fast API cloud using AWS EC2 and S3.\"}\n    ]\n  },\n  {\n    \"id\":\"f07\",\n    \"criterion\":\"Keep formatting clean and free of typos because small presentation details signal professionalism.\",\n    \"detail\":\"The visible portfolio is visually clean, consistently aligned, and contains no obvious typos, satisfying the formatting advice.\",\n    \"contested\":false,\n    \"citations\":[\n      {\"video_id\":\"ZqqzBCg6IGU\",\"start_seconds\":140.6,\"quote\":\"avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional\"}\n    ]\n  }\n]}",
+      "trace": [
+        {
+          "phase": "filter",
+          "label": "Retrieve review criteria",
+          "detail": "10 chunks from 4 videos \u2014 15rTnqKBlO8 excluded from every store"
+        },
+        {
+          "phase": "read",
+          "label": "Read the document",
+          "detail": "whole document \u2014 all 9 sections in context"
+        }
+      ],
+      "criteria_recall_ungated": 0.1053,
+      "evidence_precision_ungated": 0.5714,
+      "grounding_gate": "retrieval_provenance",
+      "grounding_gate_applied": "exclusive_evidence",
+      "gradable": false,
+      "ungradable_reason": "7 of 7 findings record no per-finding retrieval, so this arm cannot be graded under the retrieval-provenance gate: what each finding retrieved is the whole shared pool, and a gate against the pool passes the padding attack the pool was used to mount",
+      "findings_with_provenance": 0,
+      "provenance_distinct_sets": 0,
+      "citations_off_retrieval": 0
+    },
+    {
+      "setup": "rag_conflict_aware",
+      "scores": {
+        "criteria_recall": null,
+        "evidence_precision": null,
+        "provenance": 1.0,
+        "contested_coverage": 0.0
+      },
+      "score_spread": {
+        "criteria_recall_min": null,
+        "criteria_recall_median": null,
+        "criteria_recall_max": null
+      },
+      "match_repeats": 5,
+      "criteria_recall_all": null,
+      "criteria_recall_grouped": null,
+      "criteria_groups": 15,
+      "findings_total": 11,
+      "findings_grounded": 6,
+      "findings_sharing_evidence": 5,
+      "citations_total": 16,
+      "citations_resolved": 16,
+      "criteria_applicable": 19,
+      "criteria_matched": 2,
+      "criteria_matched_ungrounded": 2,
+      "fabricated_citations": [],
+      "conflicts_in_context": 2,
+      "conflicts_named": 0,
+      "conflicts": [
+        {
+          "conflict_id": "conflict:2",
+          "axis": "What font size should the body text of a resume be?",
+          "video_ids": [
+            "_MT4SgfQ8QY",
+            "owIP4Qr39BY"
+          ],
+          "chunk_ids": [
+            "chunk:_MT4SgfQ8QY:5",
+            "chunk:owIP4Qr39BY:10"
+          ],
+          "named_by": []
+        },
+        {
+          "conflict_id": "conflict:3",
+          "axis": "How long does a recruiter spend reviewing your resume before moving on?",
+          "video_ids": [
+            "3pFRqPqzBCM",
+            "by8wrrXW3So"
+          ],
+          "chunk_ids": [
+            "chunk:3pFRqPqzBCM:2",
+            "chunk:by8wrrXW3So:16"
+          ],
+          "named_by": []
+        }
+      ],
+      "self_declared_contested": 0,
+      "held_out_leaks": 0,
+      "held_out_leak_ids": [],
+      "retrieved_chunk_ids": [
+        "chunk:fD0E57QYSPk:16",
+        "chunk:fD0E57QYSPk:10",
+        "chunk:FpW8aiJPvts:5",
+        "chunk:fD0E57QYSPk:21",
+        "chunk:dQ6RNltrXro:6",
+        "chunk:fD0E57QYSPk:18",
+        "chunk:fD0E57QYSPk:20",
+        "chunk:ZqqzBCg6IGU:1",
+        "chunk:fD0E57QYSPk:17",
+        "chunk:ZqqzBCg6IGU:2",
+        "chunk:3pFRqPqzBCM:2",
+        "chunk:_MT4SgfQ8QY:5",
+        "chunk:by8wrrXW3So:16",
+        "chunk:owIP4Qr39BY:10"
+      ],
+      "retrieved_video_ids": [
+        "3pFRqPqzBCM",
+        "FpW8aiJPvts",
+        "ZqqzBCg6IGU",
+        "_MT4SgfQ8QY",
+        "by8wrrXW3So",
+        "dQ6RNltrXro",
+        "fD0E57QYSPk",
+        "owIP4Qr39BY"
+      ],
+      "elapsed_seconds": 102.29,
+      "token_estimate": 5251,
+      "error": null,
+      "matches": [
+        {
+          "id": "c01",
+          "criterion": "A resume should fit on a single page, even for an engineer with more than ten years of experience.",
+          "quote": "you want to keep your resume to just a single page",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 57.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "Page count is a resume mechanic; a scrolling website has no equivalent.",
+          "group": "c01",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c02",
+          "criterion": "Cut or reorder experience that is irrelevant to the role being targeted, instead of listing everything you have ever done.",
+          "quote": "shuffle your experience around to make it make the most sense for the job application",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 90.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c02",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c03",
+          "criterion": "Work should show clear individual ownership of what was built, not merely participation in a team that built it.",
+          "quote": "there's clear ownership of the projects. It's not just about building something with a team",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 90.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c03",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c04",
+          "criterion": "Keep the opening summary to two or three lines and do not restate there what the body of the document already proves.",
+          "quote": "reduce their professional summary to just two to three lines",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 150.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c04",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c05",
+          "criterion": "Put explicit numbers on claims of scale or reliability rather than leaving the reader to take the claim on trust.",
+          "quote": "be a little bit more explicit about how many releases there actually were",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 179.24,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c05",
+          "matched": true,
+          "finding_id": "f02",
+          "finding_criterion": "Quantify major achievements with concrete numbers, including before/after or success-rate style metrics.",
+          "score": 1.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": true
+        },
+        {
+          "id": "c06",
+          "criterion": "There must be a visible career narrative that leads from the previous roles into the role now being applied for.",
+          "quote": "there is no clear story that leads this person into AI engineering",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 210.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c06",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c07",
+          "criterion": "Build one flagship project in the target domain that bridges the existing professional experience to the job being sought.",
+          "quote": "they don't have their own North Star project to showcase in the resume, there isn't a clear bridge",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 270.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_bridge_project",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c08",
+          "criterion": "Limit any one role to about three bullet points, however long that role lasted.",
+          "quote": "limit the bullet points here to a maximum of three",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 390.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "About the bullet list under an employment entry, which a project portfolio does not have.",
+          "group": "c08",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c09",
+          "criterion": "Compress older roles to one or two lines rather than removing them, so the years of experience still show without consuming space.",
+          "quote": "you can optimize one or two lines in each of these sections and just keep them brief",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 390.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c09",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c10",
+          "criterion": "Drop courses and credentials that add nothing for the target role, because the skill should be evident from the work instead.",
+          "quote": "I don't know what the added value is of this online course on training great tech leaders",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 450.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c10",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c11",
+          "criterion": "Do not carry a separate skills list that repeats what the described work already demonstrates.",
+          "quote": "remove the skill section altogether because your skills will be very obvious from the work experience itself",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 450.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_skills_selfevident",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c12",
+          "criterion": "Include links to your profiles and code so a reader can independently check that the projects are real.",
+          "quote": "links to LinkedIn, GitHub and actually a way to check out the validity of the projects mentioned",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 555.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_verifiable_links",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c13",
+          "criterion": "Cut vague competence claims that could be said of anyone in the role and that the employment history already implies.",
+          "quote": "these kinds of fluffy sentences are really just a waste of the potential recruiter's attention",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 555.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c13",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 0.8,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c14",
+          "criterion": "A recruiter gives the document twenty to thirty seconds, so the most convincing material has to be reachable immediately.",
+          "quote": "You really want to make sure that they get to the meat of your resume as soon as possible",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 615.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_lead_with_strength",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c15",
+          "criterion": "Order the document so the strongest project sits at the very top, above any list of technologies.",
+          "quote": "put your top project, your North Star project, at the very top",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 615.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_lead_with_strength",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c16",
+          "criterion": "Describe a project concretely enough that the underlying skills are self-evident, instead of asserting the skills separately.",
+          "quote": "skills like being able to build scalable solutions will be obvious from the project description alone",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 675.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_skills_selfevident",
+          "matched": true,
+          "finding_id": "f08",
+          "finding_criterion": "Explain each project like a product: state the problem, the technology, the challenges, and what you learned.",
+          "score": 0.8,
+          "why": null,
+          "agreement": 0.8,
+          "ungrounded": true,
+          "counted": false
+        },
+        {
+          "id": "c17",
+          "criterion": "Check the document for stale statements left over from an earlier version, such as naming the wrong target role.",
+          "quote": "I assume that this is kind of from a previous version of the resume, but double-check these kinds of things",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 675.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c17",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c18",
+          "criterion": "Keep the document in a plain-text source format such as LaTeX or markdown so it can be machine-checked before each application.",
+          "quote": "resume should be written in a format like LaTeX or a markdown file",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 730.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "A reviewer of a published site sees only the rendered output, so there is no source document for them to judge. (The earlier reason given here \u2014 that a website has no plain-text source \u2014 was simply wrong for a GitHub Pages site.)",
+          "group": "c18",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c19",
+          "criterion": "Reframe the earlier career as the foundation the target-domain work is built on, rather than as unrelated prior history.",
+          "quote": "reframed where the data infrastructure fundamentals that this person has is a foundation for the AI pipelines",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 730.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_bridge_project",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c20",
+          "criterion": "Keep the education section to a single line once you have been working for years.",
+          "quote": "the education section is very slim here. It's just a single line",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 850.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "The portfolio has no education section to keep to a line.",
+          "group": "c20",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c21",
+          "criterion": "Put certifications inside the experience they apply to and deep-link the proof, instead of listing them on their own line.",
+          "quote": "add a deep link to a certification platform where it shows the proof that you got that certification",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 900.0,
+          "applies_to": [
+            "resume"
+          ],
+          "note": "About where certifications sit inside an employment history; the portfolio lists no certifications.",
+          "group": "c21",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c22",
+          "criterion": "Aim the whole document at one clear role persona and build everything else around it.",
+          "quote": "You want to aim for one clear role persona and build the rest of your resume around that",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 960.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c22",
+          "matched": true,
+          "finding_id": "f05",
+          "finding_criterion": "Keep the document razor-focused on one target job title and one clear specialisation.",
+          "score": 1.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": false,
+          "counted": true
+        },
+        {
+          "id": "c23",
+          "criterion": "Cut corporate jargon and reduce the volume of prose, because too much text crowds out the actual evidence.",
+          "quote": "there's a lot of corporate jargon because essentially we are trained to use corporate jargon",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 1020.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "c23",
+          "matched": false,
+          "finding_id": null,
+          "finding_criterion": null,
+          "score": 0.0,
+          "why": null,
+          "agreement": 0.6,
+          "ungrounded": false,
+          "counted": false
+        },
+        {
+          "id": "c24",
+          "criterion": "Every project mentioned should carry a link to the artifact itself so a reader can verify it exists.",
+          "quote": "none of them have an embedded link to a GitHub page",
+          "video_id": "15rTnqKBlO8",
+          "start_seconds": 1020.0,
+          "applies_to": [
+            "resume",
+            "portfolio"
+          ],
+          "note": null,
+          "group": "g_verifiable_links",
+          "matched": true,
+          "finding_id": "f04",
+          "finding_criterion": "Attach a live, professional link to every serious project, such as a GitHub repo, live site, or case study.",
+          "score": 1.0,
+          "why": null,
+          "agreement": 1.0,
+          "ungrounded": true,
+          "counted": false
+        }
+      ],
+      "match_runs": [
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": "f08",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": "f04"
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": "f08",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": "f03",
+          "c24": "f04"
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": "f08",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": "f03",
+          "c24": "f04"
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": "f06",
+          "c14": null,
+          "c15": null,
+          "c16": "f08",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": "f04"
+        },
+        {
+          "c01": null,
+          "c02": null,
+          "c03": null,
+          "c04": null,
+          "c05": "f02",
+          "c06": null,
+          "c07": null,
+          "c08": null,
+          "c09": null,
+          "c10": null,
+          "c11": null,
+          "c12": null,
+          "c13": null,
+          "c14": null,
+          "c15": null,
+          "c16": "f06",
+          "c17": null,
+          "c18": null,
+          "c19": null,
+          "c20": null,
+          "c21": null,
+          "c22": "f05",
+          "c23": null,
+          "c24": "f04"
+        }
+      ],
+      "findings": [
+        {
+          "id": "f01",
+          "criterion": "Include the applicant's location in the header or contact block, since recruiters treat it as one of the most important fields.",
+          "detail": "The page opens with name, title, GitHub and LinkedIn, but no city or country appears anywhere in the header or body.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 522.8,
+              "quote": "another big thing that is lacking here is his location this is one of the most important things a recruiter is going to look for in your application"
+            },
+            {
+              "video_id": "3pFRqPqzBCM",
+              "start_seconds": 115.2,
+              "quote": "Add LinkedIn, GitHub, location, no photo, no graphics, no tagline."
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 522.8,
+              "quote": "another big thing that is lacking here is his location this is one of the most important things a recruiter is going to look for in your application",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:10",
+              "shared": false,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "3pFRqPqzBCM",
+              "start_seconds": 115.2,
+              "quote": "Add LinkedIn, GitHub, location, no photo, no graphics, no tagline.",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:3pFRqPqzBCM:2",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:3pFRqPqzBCM:2",
+            "chunk:fD0E57QYSPk:10"
+          ]
+        },
+        {
+          "id": "f02",
+          "criterion": "Quantify major achievements with concrete numbers, including before/after or success-rate style metrics.",
+          "detail": "The portfolio leads with quantified results ('9/9 red-team attacks stopped', '77.1% eval-verified accuracy, up from 73.0%', '10,250 predictions scored', '6.1\u00d7 fewer tokens at 0.93 answer parity') and each project card carries its own number.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 847.5,
+              "quote": "you have somehow quantifiable numbers for every single thing you've done at a company"
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "quantify your contributions by using metrics and data to Showcase your impact"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 847.5,
+              "quote": "you have somehow quantifiable numbers for every single thing you've done at a company",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:16",
+              "shared": true,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "dQ6RNltrXro",
+              "start_seconds": 320.3,
+              "quote": "quantify your contributions by using metrics and data to Showcase your impact",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:dQ6RNltrXro:6",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:dQ6RNltrXro:6"
+          ]
+        },
+        {
+          "id": "f03",
+          "criterion": "Prefer intuitive metrics over jargon-heavy ones like F1, or explain the metric so a recruiter understands it.",
+          "detail": "The CUAD Legal Agent card uses '84.5% best answer F1' without defining what F1 measures, which is the kind of non-intuitive metric this advice cautions against.",
+          "citations": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "many metrics are also more intuitive for the recruiter a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "FpW8aiJPvts",
+              "start_seconds": 333.7,
+              "quote": "many metrics are also more intuitive for the recruiter a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:FpW8aiJPvts:5",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:FpW8aiJPvts:5"
+          ]
+        },
+        {
+          "id": "f04",
+          "criterion": "Attach a live, professional link to every serious project, such as a GitHub repo, live site, or case study.",
+          "detail": "Every project card links to a 'Case study \u2192' page, and the site provides GitHub and LinkedIn links in the header and footer, matching the 'prove them' advice rather than only naming projects.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "Attach a GitHub link for every serious project you have done and please make it look professional"
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "if you have any links to anything that might be live like a GitHub repo or the actual website that you worked on that is a huge bonus point"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "Attach a GitHub link for every serious project you have done and please make it look professional",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:1",
+              "shared": true,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "if you have any links to anything that might be live like a GitHub repo or the actual website that you worked on that is a huge bonus point",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:16",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f05",
+          "criterion": "Keep the document razor-focused on one target job title and one clear specialisation.",
+          "detail": "The site is titled 'applied-ai', the headline says 'Applied AI Engineer', and every project/filter (Agents, RAG, Multi-agent, Data) reinforces that single specialty.",
+          "citations": [
+            {
+              "video_id": "by8wrrXW3So",
+              "start_seconds": 1047.5,
+              "quote": "You need to be razor focused on the job title that you want."
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "not specializing in too many different things it'll sort of water your application down"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "by8wrrXW3So",
+              "start_seconds": 1047.5,
+              "quote": "You need to be razor focused on the job title that you want.",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:by8wrrXW3So:16",
+              "shared": false,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "not specializing in too many different things it'll sort of water your application down",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:20",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:by8wrrXW3So:16"
+          ]
+        },
+        {
+          "id": "f06",
+          "criterion": "Describe skills as applied tools and technologies, not as generic academic subject names.",
+          "detail": "The site names concrete tools and methods throughout (AWS App Runner, Slack bot, SQL, ETL, sha256 manifests, D3, GAN) instead of listing generic labels like 'Machine Learning'.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "In your skill section in resume don't write things like machine learning or statistics under skills that is knowledge not a skill. Write how you apply that knowledge."
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "In your skill section in resume don't write things like machine learning or statistics under skills that is knowledge not a skill. Write how you apply that knowledge.",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:2",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f07",
+          "criterion": "Use the actual keywords from the target job description in the summary and skills areas.",
+          "detail": "The page is rich in target keywords for applied AI roles: agentic systems, RAG pipelines, eval harnesses, red-team, SQL, AWS, and data.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "making sure that you use the actual keywords that you think are important from the job in the actual description of your summary and maybe your skills"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 1061.5,
+              "quote": "making sure that you use the actual keywords that you think are important from the job in the actual description of your summary and maybe your skills",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:20",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f08",
+          "criterion": "Explain each project like a product: state the problem, the technology, the challenges, and what you learned.",
+          "detail": "The project cards are framed as case studies with outcomes, and the CUAD Legal Agent card explicitly reports the 'honest finding \u2014 full context won', showing challenge/learning rather than homework-style completion.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "explain your project like a product, not like a homework. Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges."
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 70.1,
+              "quote": "explain your project like a product, not like a homework. Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges.",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:1",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        },
+        {
+          "id": "f09",
+          "criterion": "Use standardized, consistent date formatting and show the timeline of work so recruiters can judge recency.",
+          "detail": "The project cards and 'Earlier work' section do not display dates or any most-recent-first ordering, so a recruiter cannot tell when the work was done.",
+          "citations": [
+            {
+              "video_id": "_MT4SgfQ8QY",
+              "start_seconds": 310.6,
+              "quote": "I notice is the standardized date format"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "_MT4SgfQ8QY",
+              "start_seconds": 310.6,
+              "quote": "I notice is the standardized date format",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:_MT4SgfQ8QY:5",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:_MT4SgfQ8QY:5"
+          ]
+        },
+        {
+          "id": "f10",
+          "criterion": "Include an education section with GPA, relevant coursework, and notable activities when applicable.",
+          "detail": "The landing page contains no visible education section; if the linked About page does not provide one, it omits a section these experts consistently expect.",
+          "citations": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "if your GPA is pretty good you want to add your education and your GPA"
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "you can also add relevant course work which I guess could be cool"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "if your GPA is pretty good you want to add your education and your GPA",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:17",
+              "shared": false,
+              "off_retrieval": false
+            },
+            {
+              "video_id": "fD0E57QYSPk",
+              "start_seconds": 900.9,
+              "quote": "you can also add relevant course work which I guess could be cool",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:fD0E57QYSPk:17",
+              "shared": false,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": true,
+          "exclusive_chunk_ids": [
+            "chunk:fD0E57QYSPk:17"
+          ]
+        },
+        {
+          "id": "f11",
+          "criterion": "Proofread the finished document and check spacing and formatting, because small errors read as unprofessional.",
+          "detail": "The landing page contains visible spacing typos: '9/9red-team attacks stopped at the guardrail gate' and '6.1\u00d7fewer tokens at 0.93 answer parity' are missing spaces after the number/symbol.",
+          "citations": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional"
+            }
+          ],
+          "contested": false,
+          "retrieved_chunk_ids": null,
+          "citation_checks": [
+            {
+              "video_id": "ZqqzBCg6IGU",
+              "start_seconds": 140.6,
+              "quote": "avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional",
+              "resolved": true,
+              "reason": "ok",
+              "ratio": 1.0,
+              "chunk_id": "chunk:ZqqzBCg6IGU:2",
+              "shared": true,
+              "off_retrieval": false
+            }
+          ],
+          "grounded": false,
+          "exclusive_chunk_ids": []
+        }
+      ],
+      "answer": "{\"findings\": [\n  {\n    \"id\": \"f01\",\n    \"criterion\": \"Include the applicant's location in the header or contact block, since recruiters treat it as one of the most important fields.\",\n    \"detail\": \"The page opens with name, title, GitHub and LinkedIn, but no city or country appears anywhere in the header or body.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 522.8, \"quote\": \"another big thing that is lacking here is his location this is one of the most important things a recruiter is going to look for in your application\"},\n      {\"video_id\": \"3pFRqPqzBCM\", \"start_seconds\": 115.2, \"quote\": \"Add LinkedIn, GitHub, location, no photo, no graphics, no tagline.\"}\n    ]\n  },\n  {\n    \"id\": \"f02\",\n    \"criterion\": \"Quantify major achievements with concrete numbers, including before/after or success-rate style metrics.\",\n    \"detail\": \"The portfolio leads with quantified results ('9/9 red-team attacks stopped', '77.1% eval-verified accuracy, up from 73.0%', '10,250 predictions scored', '6.1\u00d7 fewer tokens at 0.93 answer parity') and each project card carries its own number.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 847.5, \"quote\": \"you have somehow quantifiable numbers for every single thing you've done at a company\"},\n      {\"video_id\": \"dQ6RNltrXro\", \"start_seconds\": 320.3, \"quote\": \"quantify your contributions by using metrics and data to Showcase your impact\"}\n    ]\n  },\n  {\n    \"id\": \"f03\",\n    \"criterion\": \"Prefer intuitive metrics over jargon-heavy ones like F1, or explain the metric so a recruiter understands it.\",\n    \"detail\": \"The CUAD Legal Agent card uses '84.5% best answer F1' without defining what F1 measures, which is the kind of non-intuitive metric this advice cautions against.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"FpW8aiJPvts\", \"start_seconds\": 333.7, \"quote\": \"many metrics are also more intuitive for the recruiter a success rate of 95% is very intuitive an F1 score of 39 is perhaps not that intuitive if he doesn't know what that is\"}\n    ]\n  },\n  {\n    \"id\": \"f04\",\n    \"criterion\": \"Attach a live, professional link to every serious project, such as a GitHub repo, live site, or case study.\",\n    \"detail\": \"Every project card links to a 'Case study \u2192' page, and the site provides GitHub and LinkedIn links in the header and footer, matching the 'prove them' advice rather than only naming projects.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"ZqqzBCg6IGU\", \"start_seconds\": 70.1, \"quote\": \"Attach a GitHub link for every serious project you have done and please make it look professional\"},\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 900.9, \"quote\": \"if you have any links to anything that might be live like a GitHub repo or the actual website that you worked on that is a huge bonus point\"}\n    ]\n  },\n  {\n    \"id\": \"f05\",\n    \"criterion\": \"Keep the document razor-focused on one target job title and one clear specialisation.\",\n    \"detail\": \"The site is titled 'applied-ai', the headline says 'Applied AI Engineer', and every project/filter (Agents, RAG, Multi-agent, Data) reinforces that single specialty.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"by8wrrXW3So\", \"start_seconds\": 1047.5, \"quote\": \"You need to be razor focused on the job title that you want.\"},\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 1061.5, \"quote\": \"not specializing in too many different things it'll sort of water your application down\"}\n    ]\n  },\n  {\n    \"id\": \"f06\",\n    \"criterion\": \"Describe skills as applied tools and technologies, not as generic academic subject names.\",\n    \"detail\": \"The site names concrete tools and methods throughout (AWS App Runner, Slack bot, SQL, ETL, sha256 manifests, D3, GAN) instead of listing generic labels like 'Machine Learning'.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"ZqqzBCg6IGU\", \"start_seconds\": 140.6, \"quote\": \"In your skill section in resume don't write things like machine learning or statistics under skills that is knowledge not a skill. Write how you apply that knowledge.\"}\n    ]\n  },\n  {\n    \"id\": \"f07\",\n    \"criterion\": \"Use the actual keywords from the target job description in the summary and skills areas.\",\n    \"detail\": \"The page is rich in target keywords for applied AI roles: agentic systems, RAG pipelines, eval harnesses, red-team, SQL, AWS, and data.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 1061.5, \"quote\": \"making sure that you use the actual keywords that you think are important from the job in the actual description of your summary and maybe your skills\"}\n    ]\n  },\n  {\n    \"id\": \"f08\",\n    \"criterion\": \"Explain each project like a product: state the problem, the technology, the challenges, and what you learned.\",\n    \"detail\": \"The project cards are framed as case studies with outcomes, and the CUAD Legal Agent card explicitly reports the 'honest finding \u2014 full context won', showing challenge/learning rather than homework-style completion.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"ZqqzBCg6IGU\", \"start_seconds\": 70.1, \"quote\": \"explain your project like a product, not like a homework. Every project should have a one-page report or drive PDF link in your resume which should have what problem did you solve in this project, what text you used, what challenges did you face and what did you learn from those challenges.\"}\n    ]\n  },\n  {\n    \"id\": \"f09\",\n    \"criterion\": \"Use standardized, consistent date formatting and show the timeline of work so recruiters can judge recency.\",\n    \"detail\": \"The project cards and 'Earlier work' section do not display dates or any most-recent-first ordering, so a recruiter cannot tell when the work was done.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"_MT4SgfQ8QY\", \"start_seconds\": 310.6, \"quote\": \"I notice is the standardized date format\"}\n    ]\n  },\n  {\n    \"id\": \"f10\",\n    \"criterion\": \"Include an education section with GPA, relevant coursework, and notable activities when applicable.\",\n    \"detail\": \"The landing page contains no visible education section; if the linked About page does not provide one, it omits a section these experts consistently expect.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 900.9, \"quote\": \"if your GPA is pretty good you want to add your education and your GPA\"},\n      {\"video_id\": \"fD0E57QYSPk\", \"start_seconds\": 900.9, \"quote\": \"you can also add relevant course work which I guess could be cool\"}\n    ]\n  },\n  {\n    \"id\": \"f11\",\n    \"criterion\": \"Proofread the finished document and check spacing and formatting, because small errors read as unprofessional.\",\n    \"detail\": \"The landing page contains visible spacing typos: '9/9red-team attacks stopped at the guardrail gate' and '6.1\u00d7fewer tokens at 0.93 answer parity' are missing spaces after the number/symbol.\",\n    \"contested\": false,\n    \"citations\": [\n      {\"video_id\": \"ZqqzBCg6IGU\", \"start_seconds\": 140.6, \"quote\": \"avoid the messy alignment, random fund sizes, grammatical mistakes. These are small things but they scream unprofessional\"}\n    ]\n  }\n]}",
+      "trace": [
+        {
+          "phase": "retrieve",
+          "label": "Retrieve review criteria",
+          "detail": "14 chunks from 8 videos \u2014 15rTnqKBlO8 excluded from every store"
+        },
+        {
+          "phase": "merge",
+          "label": "Add both sides of known disagreements",
+          "detail": "4 chunks appended from the conflict layer \u2014 2 disagreement(s), both sides each"
+        },
+        {
+          "phase": "read",
+          "label": "Read the document",
+          "detail": "whole document \u2014 all 9 sections in context"
+        }
+      ],
+      "criteria_recall_ungated": 0.1053,
+      "evidence_precision_ungated": 0.5455,
+      "grounding_gate": "retrieval_provenance",
+      "grounding_gate_applied": "exclusive_evidence",
+      "gradable": false,
+      "ungradable_reason": "11 of 11 findings record no per-finding retrieval, so this arm cannot be graded under the retrieval-provenance gate: what each finding retrieved is the whole shared pool, and a gate against the pool passes the padding attack the pool was used to mount",
+      "findings_with_provenance": 0,
+      "provenance_distinct_sets": 0,
+      "citations_off_retrieval": 0
+    }
+  ],
+  "grounding_gate": "retrieval_provenance",
+  "ungraded_cells": [
+    "rag_conflict_aware",
+    "rag_llm_filtered"
+  ],
+  "rescored_at": "2026-08-10T23:13:24.056126+00:00"
+}

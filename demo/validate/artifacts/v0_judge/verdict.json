@@ -1,0 +1,189 @@
+{
+  "slice_id": "v0_judge",
+  "passed": true,
+  "started_at": "2026-08-09T07:44:12.427530+00:00",
+  "duration_s": 9.84,
+  "url": "http://127.0.0.1:8021",
+  "checks": [
+    {
+      "name": "depth-v2 run offered in the run selector",
+      "passed": true,
+      "detail": "selector options: 'newest run\\nmatrix-20260809-071818-depth-v2 \u00b7 20 questions \u00b7 4 setups \u00b7 depth-v2\\nmatrix-20260729-061607 \u00b7 5 questions \u00b7 6 setups \u00b7 ragas-v1\\nmatrix-20260729-025133 \u00b7 20 questions \u00b7 4 setups \u00b7 ragas-v1\\nmatrix-20260727-232225 \u00b7 5 questions \u00b7 4 setups \u00b7 ragas-v1\\nmatrix-20260727-015519 \u00b7 14 questions \u00b7 4 '",
+      "shot": null
+    },
+    {
+      "name": "run label names its rubric",
+      "passed": true,
+      "detail": "selected option reads 'matrix-20260809-071818-depth-v2 \u00b7 20 questions \u00b7 4 setups \u00b7 depth-v2'",
+      "shot": "01_run_label_names_its_rubric.png"
+    },
+    {
+      "name": "rubric table lists 8 metric rows",
+      "passed": true,
+      "detail": "8 rows: ['Faithful', 'Precision', 'Relevant', 'Insight', 'Specific', 'Coverage', 'Breadth', 'Calibrated']",
+      "shot": null
+    },
+    {
+      "name": "3 grounding + 5 depth metrics named",
+      "passed": true,
+      "detail": "all 8 present",
+      "shot": null
+    },
+    {
+      "name": "metrics banded into grounding and depth with band weights",
+      "passed": true,
+      "detail": "grounding 40% / depth 60% bands visible",
+      "shot": null
+    },
+    {
+      "name": "each metric carries its own weight",
+      "passed": true,
+      "detail": "weights rendered in the rubric table: ['20%', '15%', '10%', '5%']",
+      "shot": "02_each_metric_carries_its_own_weight.png"
+    },
+    {
+      "name": "composite formula stated on the page",
+      "passed": true,
+      "detail": "found: 'capped at 0.5 when faithfulness < 0.6'",
+      "shot": null
+    },
+    {
+      "name": "leaderboard renders a ranking under depth-v2",
+      "passed": true,
+      "detail": "order: ['rag_agent (agentic)', 'rag_llm (single-hop)', 'rag_llm (recursive)', 'graph_rag (knowledge graph)']",
+      "shot": null
+    },
+    {
+      "name": "self-grading is disclosed above the leaderboard",
+      "passed": true,
+      "detail": "self-graded banner present",
+      "shot": "03_self-grading_is_disclosed_above_the_lead.png"
+    },
+    {
+      "name": "both judges are named in provenance, not just the grounding one",
+      "passed": true,
+      "detail": "provenance bar reads: 'judge deepseek-v4-flash depth judge deepseek-v4-flash ragas 0.4.3 embeddings sentence-transformers/all-MiniLM-L6-v2 metrics faithfulness \u00b7 context_precision \u00b7 answer_relevancy \u00b7 insight_depth \u00b7 specificity \u00b7 coverage \u00b7 evidence_breadth \u00b7 calibration composite weighted sum \u2014 grounding 40%, depth 60%;'",
+      "shot": null
+    },
+    {
+      "name": "the n=20 run is not badged thin",
+      "passed": true,
+      "detail": "'thin' present: False; n values: ['n=19', 'n=20', 'n=20', 'n=20']",
+      "shot": null
+    },
+    {
+      "name": "a capped answer is visible in the Answers panel",
+      "passed": true,
+      "detail": "3 row(s) carry a 'capped' badge",
+      "shot": null
+    },
+    {
+      "name": "cap reason is readable page text, not a tooltip",
+      "passed": true,
+      "detail": "expanded cell reads: 'How do I set up Herder, and what app do I run it in? rag_llm (single-hop) 0.50 capped 21.49s 3144 10 To set up Herder, add it to your Homebrew configuration (e.g., in configuration.nix), create a configuration file at config.toml with desired key binds, create a symbolic link for the config directory, and rebuild your Nix configuration. After that, launch Herder inside a terminal emulator such as '",
+      "shot": "04_cap_reason_is_readable_page_text,_not_a_.png"
+    },
+    {
+      "name": "capped cell shows the score it was capped from",
+      "passed": true,
+      "detail": "cap line present: True",
+      "shot": null
+    },
+    {
+      "name": "depth metrics carry per-answer rationales",
+      "passed": true,
+      "detail": "rationale labels present: ['Insight', 'Specific', 'Coverage', 'Breadth', 'Calibrated']",
+      "shot": null
+    },
+    {
+      "name": "an ungrounded-but-uncapped answer is marked as such",
+      "passed": true,
+      "detail": "1 row(s) carry an 'ungrounded' badge",
+      "shot": null
+    },
+    {
+      "name": "the ungrounded reason is readable page text",
+      "passed": true,
+      "detail": "expanded cell reads: \"How did the property channels' stance on the budget's tax changes evolve across June 2026? rag_llm (recursive) 0.04 ungrounded 39.1s 9668 17 The provided transcript chunks do not contain any information about property channels' stance on the budget's tax changes evolving across June 2026. ## Subtopic 1: Property channel corrections to budget misconceptions i\"",
+      "shot": "05_the_ungrounded_reason_is_readable_page_t.png"
+    },
+    {
+      "name": "'ungrounded' is distinguishable from 'capped' on the page",
+      "passed": true,
+      "detail": "the cell states the cap changed nothing",
+      "shot": null
+    },
+    {
+      "name": "the un-rescored cell is shown rather than silently dropped",
+      "passed": true,
+      "detail": "'not rescored' present: True",
+      "shot": null
+    },
+    {
+      "name": "exactly the one un-rescored cell is marked",
+      "passed": true,
+      "detail": "1 row(s) marked 'not rescored'",
+      "shot": "06_exactly_the_one_un-rescored_cell_is_mark.png"
+    },
+    {
+      "name": "the partially-resolved cell can be filtered to",
+      "passed": true,
+      "detail": "1 row(s) after filtering to g010 x graph_rag",
+      "shot": null
+    },
+    {
+      "name": "the partial-context cell says how much context it was judged on",
+      "passed": true,
+      "detail": "reads: 'partial context Judged on 24 of 36 retrieved chunks \u2014 the rest could not be resolved from the chunk store, so coverage and evidence breadth were assessed against less than this answer actually saw. Insight 0.40 \u2014 It orga'",
+      "shot": "07_the_partial-context_cell_says_how_much_c.png"
+    },
+    {
+      "name": "a single-rubric run shows no mixed-rubric warning",
+      "passed": true,
+      "detail": "no mixed-rubric banner, as expected for a depth-v2-only run",
+      "shot": null
+    },
+    {
+      "name": "the pre-depth run is still selectable and labelled ragas-v1",
+      "passed": true,
+      "detail": "selected option reads 'matrix-20260729-025133 \u00b7 20 questions \u00b7 4 setups \u00b7 ragas-v1'",
+      "shot": null
+    },
+    {
+      "name": "ragas-v1 renders its 3 metrics",
+      "passed": true,
+      "detail": "3 rows: ['Faithful', 'Relevant', 'Precision']",
+      "shot": "08_ragas-v1_renders_its_3_metrics.png"
+    },
+    {
+      "name": "no depth column leaks into the ragas-v1 view",
+      "passed": true,
+      "detail": "depth metrics present under ragas-v1: []",
+      "shot": null
+    },
+    {
+      "name": "the two rankings are read from the same setups",
+      "passed": true,
+      "detail": "ragas-v1 setups ['graph_rag (knowledge graph)', 'rag_agent (agentic)', 'rag_llm (recursive)', 'rag_llm (single-hop)'] vs depth-v2 ['graph_rag (knowledge graph)', 'rag_agent (agentic)', 'rag_llm (recursive)', 'rag_llm (single-hop)']",
+      "shot": null
+    },
+    {
+      "name": "depth-v2 ranks the setups differently from ragas-v1",
+      "passed": true,
+      "detail": "ragas-v1: ['rag_llm (single-hop)', 'rag_agent (agentic)', 'rag_llm (recursive)', 'graph_rag (knowledge graph)'] | depth-v2: ['rag_agent (agentic)', 'rag_llm (single-hop)', 'rag_llm (recursive)', 'graph_rag (knowledge graph)']",
+      "shot": "09_depth-v2_ranks_the_setups_differently_fr.png"
+    },
+    {
+      "name": "a run of exactly 5 judged questions is badged thin",
+      "passed": true,
+      "detail": "n values ['n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5', 'n=5']; 'thin' present: True",
+      "shot": "10_a_run_of_exactly_5_judged_questions_is_b.png"
+    }
+  ],
+  "notes": [
+    "partial context has no collapsed-row badge (0 found before expanding): unlike capped/ungrounded/not-rescored it is reachable only by expanding that exact cell.",
+    "ragas-v1 ranking as rendered: ['rag_llm (single-hop)', 'rag_agent (agentic)', 'rag_llm (recursive)', 'graph_rag (knowledge graph)']",
+    "depth-v2 ranking as rendered: ['rag_agent (agentic)', 'rag_llm (single-hop)', 'rag_llm (recursive)', 'graph_rag (knowledge graph)']",
+    "matrix-20260809-071818-depth-v2 covers 20 questions over 4 setups, rejudged from matrix-20260729-025133; above the app's low-sample threshold, so the ranking is not marked thin."
+  ]
+}

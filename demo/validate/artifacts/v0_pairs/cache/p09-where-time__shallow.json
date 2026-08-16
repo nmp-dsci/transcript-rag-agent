@@ -1,0 +1,25 @@
+{
+  "key": "p09-where-time:shallow",
+  "scores": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.5123,
+    "context_precision": 0.9167,
+    "insight_depth": 0.0,
+    "specificity": 0.6,
+    "coverage": 0.1,
+    "evidence_breadth": 0.0,
+    "calibration": 0.8
+  },
+  "grounding_error": null,
+  "depth_error": null,
+  "ragas_v1": {
+    "composite": 0.8097
+  },
+  "depth_v2": {
+    "composite": 0.4829,
+    "uncapped": 0.4829,
+    "cap_applied": false,
+    "cap_reason": null
+  },
+  "context_count": 5
+}

@@ -1,0 +1,308 @@
+{
+  "slice_id": "v2_filter",
+  "passed": true,
+  "started_at": "2026-08-11T04:28:00+00:00",
+  "duration_s": 1340.0,
+  "url": "http://127.0.0.1:8021",
+  "driver": "Chrome via claude-in-chrome MCP; every assertion executed as the DOM query the script performs",
+  "viewport": "window.innerWidth 1328 x innerHeight 842",
+  "bundle_sha256": "e16540f3029c53789e4dcca53bb9e6ad25366dbf6129af6a9f40681dce4ebced",
+  "bundle_asset": "index-DC5ijKw3.js (459136 bytes), pinned before the first assertion of the final pass and again after the last; identical both times and identical to frontend/dist/assets/index-DC5ijKw3.js on disk. A REBUILD LANDED MID-EVALUATION — see the bundle note; the earlier bundle index-S8nzILcC.js (445636→454574 bytes, sha 82f9a3635551bb57258ab8b2370959c7d9d3d9fbc7d61c0a621249a78cc854d1) was discarded and every assertion re-executed.",
+  "run_under_test": "matrix-20260811-023531 (20 questions, 2 setups, ragas-v1, corpus dceb228df01f7418 / 71 videos / 1792 chunks) for the un-pinned Scoreboard checks; matrix-20260809-071818-depth-v2 (20 questions, 4 setups, depth-v2) for the five folded-in badge checks, now pinned by the script rather than inherited; matrix-29990101-000003-floor on the 8023 fixture instance for the three rounding checks",
+  "script_amended": "demo/validate/v2_filter.py — folded_in_scoreboard_fixes() now names its run (FOLDED_IN_RUN) via a new select_matrix_run() helper instead of reading whatever 'newest run' resolves to. One check added; see the amendment and replay notes.",
+  "checks": [
+    {
+      "name": "the answer is labelled with the setup that produced it",
+      "passed": true,
+      "detail": "setup chip reads 'rag_llm (summary-filtered)' on the resume conversation replayed from the history rail (q-20260810-090624-b9d2, rail entry 'How do I make my resume ATS-friendly? · unjudged · 1 ans · 10/08/2026, 19:06:24', the first ATS match in rail order and so the one open_conversation() would click). See notes: the live send was not re-executed this pass.",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the trace shows a Summary filter step",
+      "passed": true,
+      "detail": "step labelled 'Summary filter' present; the trace's 4 steps are FILTER Summary filter / RETRIEVE Retrieve candidates (semantic search over 5 filtered videos — 30 candidates) / RERANK Cross-encoder rerank (kept top 10) / LLM Answer",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the routing step is marked as a filter phase",
+      "passed": true,
+      "detail": "phase chip innerText 'FILTER'; the script's case-folded comparison phase.lower() == 'filter' evaluates True",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the step says how many videos it kept",
+      "passed": true,
+      "detail": "FILTER Summary filter 5 videos matched by per-video summary (top 5, min score 0.25) 4762ms",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the matched videos are listed, not just counted",
+      "passed": true,
+      "detail": "a wrapping note line follows the step",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the list is labelled as the videos it routed to",
+      "passed": true,
+      "detail": "label innerText 'VIDEOS' (.trace-query-label is uppercased in CSS); compared case-folded",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the matched-video list renders in full, not clipped",
+      "passed": true,
+      "detail": "392 chars laid out in 730x48px (content 730x48px, 4 line box(es), white-space:normal) — no overflow in either axis and no nowrap",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: the list wraps onto more than one line",
+      "passed": true,
+      "detail": "4 line boxes counted with Range.getClientRects over a 48px client height",
+      "shot": null
+    },
+    {
+      "name": "live resume ask: every listed video carries its id and match score",
+      "passed": true,
+      "detail": "5 video ids and 5 entries: FREE ATS-Friendly Resume Template (012UjJeZY2k) 0.73 · How to make a Dev resume that actually gets you hired (fD0E57QYSPk) 0.63 · Write a Better Resume (owIP4Qr39BY) 0.54 · How to Get a Job in 2026 (KuXPeGH_Vag) 0.50 · Engineering Resume Hack (_MT4SgfQ8QY) 0.49",
+      "shot": null
+    },
+    {
+      "name": "a resume question routes to no property or system-design video",
+      "passed": true,
+      "detail": "routed to ['012UjJeZY2k', 'KuXPeGH_Vag', '_MT4SgfQ8QY', 'fD0E57QYSPk', 'owIP4Qr39BY']; off-genre among them: none. All twelve OFF_GENRE ids are still in the live 71-video corpus, so this check is not passing vacuously — verified against /api/corpus, which is provenance for the check rather than evidence for a UI claim.",
+      "shot": null
+    },
+    {
+      "name": "the history rail holds a question answered by both arms",
+      "passed": true,
+      "detail": "opened 'How should I prepare for behavioural interview questions?': True",
+      "shot": null
+    },
+    {
+      "name": "both arms of the question are offered as tabs on one answer",
+      "passed": true,
+      "detail": "tabs: ['rag_llm (single-hop)', 'rag_llm (summary-filtered)']",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the trace shows a Summary filter step",
+      "passed": true,
+      "detail": "step labelled 'Summary filter' present on the summary-filtered tab; steps are FILTER Summary filter / RETRIEVE semantic search over 3 filtered videos — 30 candidates / RERANK kept top 10 / LLM Answer",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the routing step is marked as a filter phase",
+      "passed": true,
+      "detail": "phase chip innerText 'FILTER'; case-folded comparison True",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the step says how many videos it kept",
+      "passed": true,
+      "detail": "FILTER Summary filter 3 videos matched by per-video summary (top 5, min score 0.25) 57ms",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the matched videos are listed, not just counted",
+      "passed": true,
+      "detail": "a wrapping note line follows the step",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the list is labelled as the videos it routed to",
+      "passed": true,
+      "detail": "label innerText 'VIDEOS'",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the matched-video list renders in full, not clipped",
+      "passed": true,
+      "detail": "282 chars laid out in 730x36px (content 730x36px, 3 line box(es), white-space:normal)",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: the list wraps onto more than one line",
+      "passed": true,
+      "detail": "3 line boxes in 36px of client height, counted with Range.getClientRects",
+      "shot": null
+    },
+    {
+      "name": "committed interview question: every listed video carries its id and match score",
+      "passed": true,
+      "detail": "3 video ids and 3 entries: Job Interview Simulation (5kxPMauR4fs) 0.32 · What AI Engineer JOBS Need on a Resume (by8wrrXW3So) 0.28 · My Entire Job Search Process (uC-FmLvw1u0) 0.27",
+      "shot": null
+    },
+    {
+      "name": "an interview question routes to no property or system-design video",
+      "passed": true,
+      "detail": "routed to ['5kxPMauR4fs', 'by8wrrXW3So', 'uC-FmLvw1u0']; off-genre among them: none",
+      "shot": null
+    },
+    {
+      "name": "the review of an unclassifiable page is in the history",
+      "passed": true,
+      "detail": "opened 'review this: https://en.wikipedia.org/wiki/Sourdough': True",
+      "shot": null
+    },
+    {
+      "name": "the corpus-coverage caveat is on the page, not only in a tooltip",
+      "passed": true,
+      "detail": "caveat rendered as trace text; it is the only .trace-note in that trace",
+      "shot": null
+    },
+    {
+      "name": "the caveat is labelled as a warning rather than as more description",
+      "passed": true,
+      "detail": "label innerText 'WARNING'",
+      "shot": null
+    },
+    {
+      "name": "the 273-character coverage caveat renders in full on a wrapping line",
+      "passed": true,
+      "detail": "273 chars laid out in 724x36px (content 724x36px, 3 line box(es), white-space:normal)",
+      "shot": null
+    },
+    {
+      "name": "the 273-character coverage caveat renders in full on a wrapping line — and the text is complete",
+      "passed": true,
+      "detail": "rendered 273 of 273 expected characters; the sentence ends '… say so rather than applying it.' on screen",
+      "shot": null
+    },
+    {
+      "name": "the summary-filtered setup is selectable on the Scoreboard",
+      "passed": true,
+      "detail": "setup filter offers ['all setups', 'rag_llm (single-hop)', 'rag_llm (summary-filtered)'] under the picker's default 'newest run', which resolves to matrix-20260811-023531 (Answers (40))",
+      "shot": null
+    },
+    {
+      "name": "selecting it shows its graded cells",
+      "passed": true,
+      "detail": "20 rows under rag_llm (summary-filtered), every row carrying a numeric composite",
+      "shot": null
+    },
+    {
+      "name": "one question shows the filtered setup's cell beside the baseline's",
+      "passed": true,
+      "detail": "'How do I make my resume ATS-friendly?' renders both arms answered on one screen: rag_llm (single-hop) 0.90 / 59.19s / 3121 tokens / 10 chunks and rag_llm (summary-filtered) 0.93 / 53.67s / 3116 tokens / 10 chunks",
+      "shot": null
+    },
+    {
+      "name": "the folded-in badge checks read the run that holds their conditions",
+      "passed": true,
+      "detail": "matrix-20260809-071818-depth-v2: the run picker reads 'matrix-20260809-071818-depth-v2'; the Answers panel moves from 40 rows to 80. NEW CHECK, added by this evaluation — see the amendment note. It is the difference between a stale script and a broken feature being reported as the same thing.",
+      "shot": null
+    },
+    {
+      "name": "a partially-judged cell says so on its collapsed row",
+      "passed": true,
+      "detail": "1 'partial context' badge visible with every row collapsed, on the graph_rag (knowledge graph) row of 'What are the main themes across this corpus of videos?' (4 rows, badges rendered: ['capped', 'partial context'])",
+      "shot": null
+    },
+    {
+      "name": "the badge states how much context the judge actually saw",
+      "passed": true,
+      "detail": "badge title: 'judged on 24 of 36 retrieved chunks'",
+      "shot": null
+    },
+    {
+      "name": "the un-rescored cell explains itself with nothing expanded",
+      "passed": true,
+      "detail": "explanation present: True ('could not be scored under this run'); expanded panels open: 0",
+      "shot": null
+    },
+    {
+      "name": "and it names the reason it was skipped",
+      "passed": true,
+      "detail": "reason rendered: True — 'no answer to grade'",
+      "shot": null
+    },
+    {
+      "name": "the cell that carries it has no Expand button to hide behind",
+      "passed": true,
+      "detail": "3 Expand buttons across 4 rows; row by row, rag_llm (single-hop) yes / rag_llm (recursive) yes / rag_agent (agentic) NO / graph_rag (knowledge graph) yes — the agentic row is the one carrying the explanation",
+      "shot": null
+    },
+    {
+      "name": "a capped cell states the faithfulness it was capped for",
+      "passed": true,
+      "detail": "cap reason rendered on the page (fixture instance on port 8023, run matrix-29990101-000003-floor, question 'How do I set up Herder, and what app do I run it in?')",
+      "shot": null
+    },
+    {
+      "name": "no cap reason prints a number that is not below the floor it names",
+      "passed": true,
+      "detail": "reasons rendered: [('0.5999', '0.6')]; self-contradicting: none",
+      "shot": null
+    },
+    {
+      "name": "a 0.5999 faithfulness renders at the precision its claim needs",
+      "passed": true,
+      "detail": "reads 'faithfulness 0.5999 below 0.6'; 'faithfulness 0.60 below 0.6' does not appear anywhere on the page",
+      "shot": null
+    }
+  ],
+  "replay": [
+    {
+      "state": "D — the defect, reproduced. The script AS IT STOOD: no pin, picker on its 'newest run' default (matrix-20260811-023531, 2 setups).",
+      "built_by": "data — the real app on 8021, untouched. Nothing mutated.",
+      "outcome": "ALL FIVE FALSE. check1 '0 partial context badge(s)' (2 rows, no badges of any kind); check2 absent (guarded by badge count); check3 'explanation present: false'; check4 'reason rendered: false'; check5 '2 Expand buttons across 2 rows' — fails on 2 < 2. Not one of them is a regression: the run has no graph_rag row and no rag_agent row, so nothing on screen should be wearing those badges. This is the previous evaluator's finding, independently reproduced."
+    },
+    {
+      "state": "A — the fix, pinned run present and correct.",
+      "built_by": "data — the same app on 8021, run picker set to matrix-20260809-071818-depth-v2 by the amended helper.",
+      "outcome": "guard PASS ('the run picker reads matrix-20260809-071818-depth-v2', Answers 40 → 80 rows) and ALL FIVE PASS, at the same values the previous verdict recorded: 1 badge collapsed, title 'judged on 24 of 36 retrieved chunks', explanation present with 0 expanded panels, 'no answer to grade', 3 Expand across 4 rows."
+    },
+    {
+      "state": "B1 — the concealment check1 exists to catch: the partial-context badge rendered only inside the expanded panel, never on the collapsed row (the pre-fix render).",
+      "built_by": "DOM — the badge node removed from the row. No data route exists: which element the badge renders in is a property of AnswersPanel.tsx, and reproducing the pre-fix component would mean rebuilding a bundle another agent owns.",
+      "outcome": "check1 STILL FAILS — \"0 'partial context' badge(s) visible with every row collapsed\". Restored by re-rendering the table through the question filter; badge count back to 1."
+    },
+    {
+      "state": "B1b — the badge survives but stops saying how much context the judge saw (title reduced to a bare label).",
+      "built_by": "DOM — title attribute overwritten with 'partially judged', then restored.",
+      "outcome": "check2 STILL FAILS — the /judged on \\d+ of \\d+ retrieved chunks/ predicate is False on 'partially judged'. Restored title verified back to 'judged on 24 of 36 retrieved chunks' and check2 True again."
+    },
+    {
+      "state": "B2 — the exact pre-fix defect for the skip reason: the explanation has no path to the page at all, because the Expand button (and with it CellJudgement) never renders for a cell with no answer text.",
+      "built_by": "DOM — the p.capwhy NotRescored paragraph removed from the row.",
+      "outcome": "check3 STILL FAILS ('explanation present: false') and check4 STILL FAILS ('reason rendered: false'). check5 correctly stays PASS — it is a different claim. Restored and re-verified."
+    },
+    {
+      "state": "C — the concealment check3's second clause exists to catch: the explanation is on the page, but only inside an expanded panel.",
+      "built_by": "DOM — the same paragraph moved into a .cellwhy container.",
+      "outcome": "check3 STILL FAILS — 'explanation present: true; expanded panels open: 1'. This is the state a naive 'is the text present?' check would pass, which is why the clause is conjunctive."
+    },
+    {
+      "state": "D2 — the cell gains an Expand button to hide behind.",
+      "built_by": "DOM — a button reading 'Expand' appended to the rag_agent row's last cell.",
+      "outcome": "check5 STILL FAILS — '4 Expand buttons across 4 rows'. Restored to 3 across 4."
+    },
+    {
+      "state": "B(data) — the pinned run id is present and selected, but its two conditions have been removed from the data. This is the rubber-stamp test for the pin itself: does naming a run make the checks pass?",
+      "built_by": "data — a second app instance on port 8025 with runs_dir set to a scratch copy holding a doctored matrix-20260809-071818-depth-v2 (4 partial-context cells given contexts_resolved == contexts_expected; the one rejudged:false cell given rejudged:true, its skip reason dropped and answer text added), plus the two newer runs so 'newest' is still not the pinned run.",
+      "outcome": "guard PASSES ('the run picker reads matrix-20260809-071818-depth-v2', 80 rows) and ALL FOUR FIREABLE CHECKS FAIL: check1 '0 badge(s)' over 4 rows, check2 absent, check3 'explanation present: false', check4 'reason rendered: false', check5 '4 Expand buttons across 4 rows'. Naming the run buys nothing on its own — the conditions have to actually be rendered."
+    },
+    {
+      "state": "E — the pinned run absent from the runs directory entirely, the case that must not read as a pass.",
+      "built_by": "data — a second app instance on port 8026 with runs_dir set to a scratch copy of evals/runs with matrix-20260809-071818-depth-v2 removed (6 matrix runs remaining).",
+      "outcome": "DISTINGUISHABLE FAILURE. The guard check fails with \"matrix-20260809-071818-depth-v2: the run picker has no option for it — it offers 6 run(s): ['matrix-20260811-023531', 'matrix-20260810-110656', 'matrix-20260729-061607', 'matrix-20260729-025133', 'matrix-20260727-232225', 'matrix-20260727-015519']\", the five checks are never evaluated (recorded as absent, per this directory's rule), and the picker is left on its default. Three outcomes are now distinct on the page: five FAILs = the rendering regressed; one FAIL naming the run = the script's fixture is gone; five PASSes = the fixes hold."
+    }
+  ],
+  "notes": [
+    "THIS IS A RE-VALIDATION AND A SCRIPT AMENDMENT, by an evaluator that built nothing in V2 and wrote neither previous verdict. The previous verdict (started 2026-08-11T02:10:44Z) recorded 37/37 and reported — but deliberately did not fix — a latent defect in the script. This pass CONFIRMED that defect from first principles, fixed it, proved the fix bites, and re-ran every check. The count moves 37 → 38 and the reason is exactly one check: the new guard 'the folded-in badge checks read the run that holds their conditions'. No previously-recorded check changed its verdict. As before, the live-send check is absent with reason (next note), so 38 is 38 of 38 evaluated, not 38 of 39.",
+    "THE DIAGNOSIS HELD, AND WAS CONFIRMED RATHER THAN TAKEN ON TRUST. Reading the run documents on disk directly: matrix-20260809-071818-depth-v2 is the only run in evals/runs holding either condition — four graph_rag cells with contexts_resolved 24 of contexts_expected 36, and one rag_agent cell with rejudged:false, rejudge_skipped_reason 'no answer to grade for depth' and no answer text. matrix-20260811-023531 and matrix-20260810-110656 are both 2-setup rag_llm / rag_llm_filtered sweeps with zero cells of either kind, and every older 4-setup run (20260727-015519, 20260727-232225, 20260729-025133, 20260729-061607) has zero as well. So the condition is not merely absent from the newest run, it exists in exactly one place in the repository. Then measured on the page: replay state D reproduces all five reading FALSE under the picker's default, with check5 failing on '2 Expand buttons across 2 rows' precisely as the previous evaluator predicted. The cause the previous evaluator named is the cause.",
+    "HOW THEY ARE PINNED. A module constant FOLDED_IN_RUN = 'matrix-20260809-071818-depth-v2' beside the existing FIXTURE_RUN, and a select_matrix_run(session, run_id) helper that reads the 'Matrix run' combobox's option VALUES, returns (False, why) if the run is not among them, and otherwise selects it, re-opens the Answers panel and confirms the picker settled on it. folded_in_scoreboard_fixes() calls it first, records one check for it, returns early on failure, and restores the picker to 'newest run' (and the question filter to 'all questions') in a finally block so nothing downstream inherits the pin. The five original checks moved unchanged into pinned_scoreboard_fixes(); not one predicate was altered, loosened or re-worded.",
+    "PINNED BY VALUE, NOT BY LABEL — and this evaluation is why. Mid-run, another agent rebuilt the frontend and the run picker's labels changed under me: 'matrix-20260811-023531 · 20 questions · 2 setups · ragas-v1' became '… · ragas-v1 · corpus dceb228d (71 videos · 1792 chunks)', and depth-v2 gained '· no corpus recorded'. A pin matched on label text would have broken within the hour of being written. select_option(run_id) targets the option's value, which is the run id, and it kept working across the rebuild. The same reasoning is why the check is a guard rather than a bare select: run ids are data, and data goes away.",
+    "WHY A MISSING RUN IS A FAILURE AND NOT A SKIP. A check whose fixture has vanished has not passed — it has stopped being evaluated, and the verdict has to say so out loud or it is claiming evidence it does not have. So the guard is a real check and its failure fails the slice, while the five it protects are simply not run (this directory's existing convention: 'a guarded check that never fired is recorded as absent, with the reason'). What that buys is a legible difference between the two things a reader must never confuse: five FAILs means the rendering regressed; one FAIL naming a missing run means the script is stale. Before this change those two produced identical output.",
+    "THE REPLAY IS IN THE 'replay' FIELD ABOVE, nine states, and it is the part of this verdict that matters. Summarised: the un-pinned script fails all five with nothing wrong (state D); the pinned script passes all five (A); each of the four concealments the checks were written to catch still FAILS under the pin (B1, B1b, B2, C, D2) — including the exact pre-fix defect, an explanation with no path to the page; the pin alone buys nothing, because a run with the right id but the conditions edited out of it fails all four fireable checks (B-data, port 8025); and a missing run produces one named failure rather than five spurious ones or a silent pass (E, port 8026). States built from data are marked as such; every DOM mutation is one with no data route, because which element a badge renders in is a property of the compiled component and this evaluator does not rebuild a bundle another agent is editing.",
+    "ONE CHECK IS ABSENT, STATED RATHER THAN SILENTLY DROPPED: 'a resume question answers under the summary-filtered setup' — the script's live send of RESUME_QUESTION through the Chat composer. It is the only assertion in the file that costs a model call and this evaluation was scoped to zero, so it was NOT re-executed. Everything downstream of it was measured against the conversation the 2026-08-10 evaluation's live ask left in the rail (q-20260810-090624-b9d2, chip 'rag_llm (summary-filtered)'): the setup chip, all eight trace assertions and the off-genre check ran against that rendered DOM and passed. What is unproven this pass, and only this, is that a send issued today completes.",
+    "ENVIRONMENT: chromium.launch() still times out on this machine (wedged macOS XPC service), so demo/validate/v2_filter.py could not be executed through Playwright — it would fail in harness.py before any assertion ran. Every assertion, and every replay state, was executed instead as the equivalent DOM query against the running app in a Chrome tab created for this evaluation. The predicates were transcribed verbatim from the script (including the amended helper's option-value scan and early return) and evaluated over the extracted DOM state, so what is recorded is the script's logic deciding rather than a paraphrase of it.",
+    "BUNDLE PINNED BOTH ENDS, AND A REBUILD LANDED IN BETWEEN — handled by re-running, not by mixing. The first pass was taken against index-S8nzILcC.js (sha 82f9a363…4d1). While the replay instances were being served, another agent rebuilt: index.html began naming index-DC5ijKw3.js, 459136 bytes, sha e16540f3029c53789e4dcca53bb9e6ad25366dbf6129af6a9f40681dce4ebced, byte-identical to frontend/dist/assets/index-DC5ijKw3.js on disk (frontend/dist mtime 14:41 local). Rather than report observations spanning two builds, EVERY assertion in this verdict was re-executed from the top against the new bundle, and the bundle was re-pinned after the last one: unchanged. The 8025 and 8026 replay instances serve the same frontend/dist and were also on index-DC5ijKw3.js. index.html was fetched cache-bypassed from '/' — a no-store fetch of '/index.html' returns the API's 22-byte 404 body, confirmed again this pass.",
+    "AUDIT — EVERYTHING ELSE IN THIS SCRIPT THAT DEPENDS ON DATA IT DOES NOT NAME. (1) scoreboard_checks() reads the picker's 'newest run' default and needs that run to contain the rag_llm_filtered setup and the ATS question. It is the same shape of dependency and it has already misfired once: the 2026-08-10 verdict records 'selecting it shows its graded cells' as absent because the option was not in that day's newest run. DELIBERATELY NOT PINNED, and the reasoning is in the code: those three checks assert what a reader sees on opening the tab, so the default view IS the thing under test — pinning them would let the Scoreboard stop offering the filtered arm to a reader while the check kept passing against a run from August. That is the opposite trade-off from the badge checks, which assert that a rendering is correct given rare data. If a future run drops the filtered setup those three will fail loudly, which is the intended behaviour, and the detail string already prints the offered options so the cause is legible. (2) The Chat checks depend on three specific conversations surviving in dashboard/chat_history.json; each is already guarded by its own check ('the history rail holds a question answered by both arms', 'the review of an unclassifiable page is in the history'), so a deletion produces a named failure rather than a confusing one — the pattern this fix has now extended to the Scoreboard. Note the rail is ordered newest-first and open_conversation() takes the first text match, so if the live ask runs, the ATS conversation it reads is the fresh one, not q-20260810-090624-b9d2. (3) floor_rounding_checks() pins its run correctly but reaches its question through label_containing(), which silently returns the needle when no option matches; select_option would then raise and the whole script would abort through harness.py's 'script completed' check. Loud, but it aborts the run rather than failing one check — worth converting to the same guard if anyone touches that function. The fixture is committed, so the risk is low today. (4) PROPERTY_VIDEOS and SYSTEM_DESIGN_VIDEOS are hand-maintained id lists, and 'routed to no off-genre video' passes when the intersection is empty — which is also what a STALE list produces. Checked rather than assumed: all twelve ids are still present in the live 71-video corpus, so the check is not vacuous today. But the corpus has grown 59 → 71 during these evaluations and any newly-ingested property or system-design video is not in either set, so this check can only get weaker with time. It cannot be pinned the way a run can; it needs re-deriving from the corpus, which is a larger change than this task and is left named rather than done. (5) Pre-existing and untouched: `json` and `shutil` are imported and unused, and three code blocks are not ruff-format clean. All five predate this amendment — verified by running ruff over `git show HEAD:demo/validate/v2_filter.py` — and none are in the added code.",
+    "RESIDUE AND RESTRAINT, declared. Three second instances were started and all three were stopped: 8025 (state_b, doctored copy) and 8026 (state_c, pinned run removed) over scratch directories outside the repo, and 8023 (the script's own fixtures/ directory) for the three rounding checks. All three ports are free again and 8021 answered 200 before, between and after; the shared app on 8021 was NOT restarted. evals/runs holds 15 json files before and after and nothing in it was read-modify-written — the doctored depth-v2 exists only in the scratch copy. No question was asked, no ingest or index ran, so this evaluation added no conversation to the history rail and did not move the corpus digest (the masthead still reads '71 videos · 1792 chunks', digest dceb228df01f7418, the one the judged run names). The only files written are demo/validate/v2_filter.py and this verdict, both of which this evaluator owns. No other verdict was touched.",
+    "Layout: window.innerWidth was 1328px, so no check here turned on a narrower breakpoint and this verdict makes no layout claim below that width. The wrap measurements (730px and 724px content boxes, 4/3/3 line boxes) are unchanged from the previous verdict.",
+    "PROVENANCE HAZARD, flagged for whoever commits next, and it is worse than the previous verdict's version of it. (a) demo/validate/artifacts/v2_filter/ is UNTRACKED — no V2 verdict has ever been committed, while 37 files under demo/validate/artifacts/ are tracked and every other slice's verdict is among them. By this directory's own rule that a passing claim survives in the repo with its evidence, V2 is the one slice whose 37/37 and now 38/38 exist only on this disk. (b) matrix-20260811-023531.json and matrix-20260810-110656.json are still untracked in evals/runs; 'committed run' in this app means 'written to the runs directory', not 'committed to git', and the run three of these checks are measured against is in the first sense only. The run this verdict pins, matrix-20260809-071818-depth-v2, IS tracked — which is a large part of why it is a safe thing to pin.",
+    "A READER DIFFING demo/validate/v2_filter.py AGAINST HEAD SEES MORE THAN THIS PASS'S WORK. The working tree already carried the previous evaluator's uncommitted repairs — the Range.getClientRects line-box count replacing a parseFloat of a 'normal' line-height, the case-folded phase comparison, and the answers_table() scoping that keeps '.qpanel tbody' off the collapsed Questions panel. Those are theirs. This pass added: the FOLDED_IN_RUN constant, the answers_panel()/open_answers_panel()/select_matrix_run() helpers, the guard and finally-block in folded_in_scoreboard_fixes(), the split of its body into pinned_scoreboard_fixes(), and the docstring paragraph explaining the pin. All three of the earlier repairs were re-confirmed effective in the DOM this pass (phase 'FILTER' folding to 'filter'; 4, 3 and 3 line boxes rather than a NaN-derived 0; the Questions panel still mounting first and still shipping collapsed).",
+    "started_at and duration_s are wall-clock approximations to the minute. The harness normally timestamps them and the harness could not run; every other number in this file was read off a page or off disk.",
+    "One second opinion carried forward, re-checked and confirmed: the committed baseline arm of the interview question still cites sources from only career videos, so the script's docstring claim that the unfiltered answer 'pulls chunks out of three system-design talks' remains unsupported by what renders. It weakens the side-by-side as a demonstration, it is not a check, and it changes no count. The previous verdict's larger scrutiny finding — that the Scoreboard cannot distinguish two runs produced under different filter regimes — is that evaluator's argued judgement and is left standing as recorded; this pass neither re-litigated nor re-verified it, except to note that the run picker now prints each run's corpus digest and size, which is a partial answer to it that arrived in today's rebuild."
+  ]
+}

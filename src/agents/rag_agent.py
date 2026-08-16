@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from dataclasses import replace
 from typing import Callable, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -24,9 +26,14 @@ from src.agents.prompts import AGENTIC_RAG_SYSTEM_PROMPT
 from src.agents.rag_transcript_agent import (
     _fallback_references,
     _json_object,
+    _reference_for_chunk,
 )
 from src.config import Settings
-from src.rag.context import MultiTranscriptRagContextProvider
+from src.rag.context import (
+    ChunkLabeller,
+    MultiTranscriptRagContextProvider,
+    format_retrieved_chunks_with_references,
+)
 from src.rag.embeddings import HuggingFaceEmbeddingModel
 from src.rag.indexing import RagIndexer
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
@@ -229,8 +236,15 @@ class RagAgent:
         ``filter_transcripts`` from the request; only ``query`` varies per call.
         Every retrieved ``TranscriptContext`` is appended to ``retrieved_contexts``
         so the union can be assembled once the loop exits.
+
+        One :class:`ChunkLabeller` is created here and shared by every tool call
+        in this run, so citation numbers run on across the whole answer instead
+        of restarting at ``[1]`` per retrieval. It is per-request rather than
+        per-agent because the numbering belongs to one answer: a second question
+        must start from ``[1]`` again.
         """
         retrieved_contexts: list[TranscriptContext] = []
+        labeller = ChunkLabeller()
         source_url = str(request.source_url) if request.source_url else None
         top_k = request.top_k
         filter_transcripts = request.filter_transcripts
@@ -261,6 +275,19 @@ class RagAgent:
                 transcript_filter_min_score=transcript_filter_min_score,
                 channel_id=channel_id,
                 retrieval_mode=retrieval_mode,
+            )
+            # Renumber before anything reads the text. ``get_context`` numbers
+            # each retrieval from [1] — correct for a single-shot caller, wrong
+            # here — and the relabelled text has to replace the original on the
+            # context object too, because ``_merge_contexts`` concatenates these
+            # strings into the record the judge and the UI read. Two copies of
+            # the context under two numbering schemes is the same ambiguity
+            # again, one layer down.
+            context = replace(
+                context,
+                context_text=format_retrieved_chunks_with_references(
+                    context.retrieved_chunks or [], labeller
+                ),
             )
             retrieved_contexts.append(context)
             return context.context_text or ""
@@ -325,7 +352,9 @@ class RagAgent:
             data = _json_object(content)
             data.setdefault("question", request.question)
             answer_text = str(data.get("answer", content)).strip()
-            references = _parse_references(data.get("references"))
+            references = reconcile_agent_references(
+                _parse_references(data.get("references")), context.retrieved_chunks or []
+            )
             if not references:
                 references = _fallback_references(answer_text, context)
             return RagTranscriptAnswer(
@@ -374,6 +403,77 @@ def _parse_references(raw) -> list[RagAnswerReference]:
         except ValidationError:
             continue
     return references
+
+
+#: How far a model-reported start time may sit from a chunk's real one and still
+#: be the same chunk. The model never sees ``start_seconds``: it sees
+#: ``time=09:53-11:05`` in the chunk header, so a faithful echo is the truncated
+#: whole second, at most one second below the real value. Two seconds is that
+#: with margin, and far tighter than the ~70s a chunk spans — so it can never
+#: reach the neighbouring chunk.
+MAX_START_DRIFT_SECONDS = 2.0
+
+_TIMESTAMP_PARAM = re.compile(r"[?&]t=(\d+)s?")
+
+
+def _claimed_start(reference: RagAnswerReference) -> float | None:
+    """When the model says this citation starts, by whichever route it wrote it.
+
+    ``timestamp_url`` is preferred over ``start_seconds`` because it is the
+    field the model can *copy*: the chunk header hands it a whole URL ending
+    ``&t=593s``, whereas ``start_seconds`` has to be derived from the mm:ss it
+    was shown, and a derived number is a guessed number.
+    """
+    match = _TIMESTAMP_PARAM.search(str(reference.timestamp_url or ""))
+    if match:
+        return float(match.group(1))
+    return reference.start_seconds
+
+
+def reconcile_agent_references(
+    references: list[RagAnswerReference],
+    chunks: list,
+) -> list[RagAnswerReference]:
+    """Resolve the agent's citations to real chunks by identity, not by position.
+
+    Labels are now globally unique across an answer (see
+    :class:`~src.rag.context.ChunkLabeller`), so ``[3]`` does name one chunk and
+    a positional lookup into the merged context would be defensible. This still
+    does not do one. Identity matching is strictly stronger: it also catches the
+    model citing a label it was never shown, which positional resolution would
+    silently turn into a plausible-looking citation of whatever sits at that
+    index.
+
+    What a reference is matched on is what the chunk header shows —
+    ``video=<id>`` and a timestamp URL — because those are the fields the model
+    can *copy* rather than derive. Every field is then re-derived from the chunk
+    that matched. ``chunk_index`` in particular appears nowhere the model can see
+    it, which is exactly why it was the field the model got wrong.
+
+    A citation that matches nothing retrieved is dropped. The model cited
+    something that was never in front of it, and attaching that label to the
+    nearest plausible chunk would turn a visible error into an invisible one.
+    """
+    by_video: dict[str, list] = {}
+    for chunk in chunks:
+        by_video.setdefault(str(chunk.video_id), []).append(chunk)
+
+    resolved: list[RagAnswerReference] = []
+    seen: set[str] = set()
+    for reference in references:
+        candidates = by_video.get(str(reference.video_id or ""), [])
+        start = _claimed_start(reference)
+        if not candidates or start is None:
+            continue
+        best = min(candidates, key=lambda chunk: abs(chunk.start_seconds - start))
+        if abs(best.start_seconds - start) > MAX_START_DRIFT_SECONDS:
+            continue
+        label = reference.label
+        if label in seen:
+            continue
+        seen.add(label)
+        resolved.append(_reference_for_chunk(label, best))
+    return resolved
 
 
 def _chunk_key(chunk) -> tuple[str, int]:

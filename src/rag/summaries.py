@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, Sequence
 
 import chromadb
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -28,8 +28,7 @@ generic filler. Return only JSON in this shape:
 
 
 class ChatModel(Protocol):
-    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object:
-        ...
+    def invoke(self, messages: list[SystemMessage | HumanMessage]) -> object: ...
 
 
 class TranscriptSummaryGenerator:
@@ -44,9 +43,7 @@ class TranscriptSummaryGenerator:
         self.max_transcript_chars = max_transcript_chars
 
     def summarize(self, raw_document: RawTranscriptDocument) -> str:
-        transcript_text = " ".join(
-            segment.text for segment in raw_document.segments
-        ).strip()
+        transcript_text = " ".join(segment.text for segment in raw_document.segments).strip()
         if len(transcript_text) > self.max_transcript_chars:
             half = self.max_transcript_chars // 2
             transcript_text = f"{transcript_text[:half]}\n...\n{transcript_text[-half:]}"
@@ -74,6 +71,7 @@ class TranscriptSummaryStore:
         embedding_model_name: str,
         raw_store: RawTranscriptStore | None = None,
         collection_name: str | None = None,
+        exclude_video_ids: Sequence[str] | None = None,
     ) -> None:
         self.path = Path(path)
         self.path.mkdir(parents=True, exist_ok=True)
@@ -83,6 +81,13 @@ class TranscriptSummaryStore:
         self.collection_name = collection_name or self.collection_name
         self.client = chromadb.PersistentClient(path=str(self.path))
         self.collection = self.client.get_or_create_collection(self.collection_name)
+        #: Videos the router must never route to — the summary-side half of
+        #: :attr:`~src.rag.storage.TranscriptChunkStore.exclude_video_ids`. The
+        #: summary filter chooses *which videos* get searched at all, so a held-out
+        #: video excluded from the chunk store but not from here would still route
+        #: the question to itself and then find nothing, quietly costing the run a
+        #: slot of its top_k.
+        self.exclude_video_ids: list[str] = sorted(dict.fromkeys(exclude_video_ids or []))
 
     def upsert_summary(self, record: TranscriptSummaryRecord) -> None:
         self.collection.upsert(
@@ -185,6 +190,14 @@ class TranscriptSummaryStore:
             )
         )
 
+    def count(self) -> int:
+        """How many summarised videos this store could route to.
+
+        The upper bound on "no cap": a filter allowed to keep every video above
+        the score threshold can never keep more than this.
+        """
+        return max(self.collection.count() - len(self.exclude_video_ids), 0)
+
     def query_relevant_transcripts(
         self,
         question: str,
@@ -194,7 +207,14 @@ class TranscriptSummaryStore:
         embedding = self.embedding_model.embed_query(question)
         result = self.collection.query(
             query_embeddings=[embedding],
-            n_results=top_k,
+            # Held-out summaries are dropped below rather than filtered in the
+            # query, because the summary metadata a held-out run needs to match
+            # on is the same ``video_id`` the record is keyed by and the filter
+            # would have to be maintained in two shapes. Over-fetching by
+            # exactly the number excluded keeps the caller's ``top_k`` intact:
+            # without it, holding out the single best-matching video would
+            # return four videos where every other run returns five.
+            n_results=top_k + len(self.exclude_video_ids),
             # Relevance is scored below with cosine_similarity over the returned
             # embeddings, so Chroma's own distances are never read.
             include=["documents", "metadatas", "embeddings"],
@@ -206,6 +226,8 @@ class TranscriptSummaryStore:
         summaries: list[RetrievedTranscriptSummary] = []
         for index, document in enumerate(documents):
             metadata = metadatas[index] or {}
+            if str(metadata.get("video_id", "")) in self.exclude_video_ids:
+                continue
             embedding_value = embeddings[index] if index < len(embeddings) else []
             if hasattr(embedding_value, "tolist"):
                 embedding_value = embedding_value.tolist()
@@ -219,7 +241,7 @@ class TranscriptSummaryStore:
                     score=score,
                 )
             )
-        return summaries
+        return summaries[:top_k]
 
 
 def _record_from_raw(

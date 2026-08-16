@@ -40,6 +40,44 @@ def test_normalizes_supadata_text_response() -> None:
     assert transcript.segments == []
 
 
+def test_decodes_html_entities_in_segment_text() -> None:
+    """Some caption tracks arrive doubly escaped; the stored text must be plain.
+
+    Observed on a real ingest (Kevlin Henney, ``4qfsmE11Ejo``): every
+    apostrophe came back as ``&amp;#39;``, which otherwise survives chunking
+    and shows up in quoted evidence.
+    """
+    fetcher = SuperdataTranscriptFetcher("key")
+
+    transcript = fetcher._normalize_response(
+        url="https://www.youtube.com/watch?v=3hk7nO_q0a8",
+        video_id="3hk7nO_q0a8",
+        data={
+            "content": [
+                {"text": "that&amp;#39;s the case", "offset": 0, "duration": 1000},
+                {"text": "it&#39;s &quot;fine&quot;", "offset": 1000, "duration": 1000},
+            ],
+            "lang": "en",
+        },
+    )
+
+    assert transcript.segments[0].text == "that's the case"
+    assert transcript.segments[1].text == 'it\'s "fine"'
+    assert transcript.raw_text == 'that\'s the case it\'s "fine"'
+
+
+def test_decodes_html_entities_in_plain_text_response() -> None:
+    fetcher = SuperdataTranscriptFetcher("key")
+
+    transcript = fetcher._normalize_response(
+        url="https://www.youtube.com/watch?v=3hk7nO_q0a8",
+        video_id="3hk7nO_q0a8",
+        data={"content": "you&amp;#39;re done", "lang": "en"},
+    )
+
+    assert transcript.raw_text == "you're done"
+
+
 def test_normalizes_supadata_metadata_response() -> None:
     fetcher = SuperdataTranscriptFetcher("key")
 
