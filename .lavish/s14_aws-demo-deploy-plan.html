@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>transcript·lab — AWS demo deployment plan</title>
+<style>
+/* Ported from frontend/src/theme.css — the app's Instrument design system. */
+:root, :root[data-theme='dark']{
+  color-scheme:dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme='dark']){
+    color-scheme:light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#eed888;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffc1bc;
+  }
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:44px 22px 100px}
+h1{font-size:1.85rem;margin:0 0 6px;letter-spacing:-.02em;line-height:1.2}
+h2{font-size:1.3rem;margin:48px 0 8px;letter-spacing:-.01em;padding-top:20px;border-top:1px solid var(--border)}
+h3{font-size:1rem;margin:22px 0 6px}
+p{margin:0 0 12px;color:var(--text2)}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.85em;background:var(--panel2);
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;word-break:break-word}
+pre{background:var(--panel3);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:.8rem;
+  line-height:1.55;color:var(--text2);margin:10px 0 16px}
+pre code{background:none;border:none;padding:0}
+.kicker{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.lede{color:var(--muted);max-width:78ch}
+.pill{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:2px 8px;
+  border-radius:999px;border:1px solid;white-space:nowrap;font-weight:600;vertical-align:middle}
+.pill.ok{color:var(--good);border-color:var(--good-border);background:var(--good-dim)}
+.pill.warn{color:var(--warn);border-color:var(--warn-border);background:var(--warn-dim)}
+.pill.bad{color:var(--bad);border-color:var(--bad-border);background:var(--bad-dim)}
+.pill.info{color:var(--accent2);border-color:var(--accent-border);background:var(--accent-dim)}
+.pill.none{color:var(--dim);border-color:var(--border);background:var(--panel2)}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;margin:16px 0;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th{background:var(--panel2);text-align:left;padding:9px 13px;font-weight:600;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+  border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);white-space:nowrap;color:var(--text)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;margin:16px 0}
+.card h3{margin-top:0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:14px 0}
+.cols>.card{margin:0;min-width:0}
+.callout{border-left:3px solid var(--accent-border);background:var(--panel3);
+  border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;color:var(--muted);font-size:.92rem}
+.callout b{color:var(--text2)}
+.risk{border:1px solid var(--warn-border);background:var(--warn-dim);
+  border-radius:10px;padding:11px 15px;margin:10px 0;font-size:.9rem;color:var(--text2)}
+.risk b{color:var(--warn)}
+ul{margin:0 0 12px;padding-left:20px;color:var(--text2)}
+li{margin:0 0 7px}
+.mermaid{display:flex;justify-content:center;background:var(--panel);
+  border:1px solid var(--border);border-radius:12px;padding:18px;margin:16px 0;overflow-x:auto}
+.rec{border:1px solid var(--good-border);border-radius:12px}
+.opt-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+form.q{background:var(--panel);border:1px solid var(--accent-border);border-radius:12px;
+  padding:16px 18px;margin:14px 0}
+form.q h3{margin:0 0 4px}
+form.q .qsub{margin-top:10px}
+form.q label{display:block;padding:7px 10px;border:1px solid var(--border);
+  border-radius:8px;margin:6px 0;cursor:pointer;color:var(--text2)}
+form.q label:hover{background:var(--panel2)}
+form.q input[type=radio]{margin-right:8px;accent-color:var(--accent)}
+form.q button{font-family:var(--sans);font-size:.85rem;font-weight:600;
+  background:var(--accent-dim);color:var(--accent2);border:1px solid var(--accent-border);
+  border-radius:8px;padding:6px 14px;cursor:pointer}
+form.q button:hover{filter:brightness(1.15)}
+form.q .qnote{font-size:.8rem;color:var(--dim);margin:2px 0 0}
+.steps{counter-reset:step;list-style:none;padding:0}
+.steps li{counter-increment:step;position:relative;padding:0 0 4px 40px;margin:0 0 10px}
+.steps li::before{content:counter(step);position:absolute;left:0;top:1px;
+  width:26px;height:26px;border-radius:50%;background:var(--accent-dim);
+  border:1px solid var(--accent-border);color:var(--accent2);font-family:var(--mono);
+  font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.small{font-size:.83rem;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kicker">transcript·lab · deployment plan · modelled on data-qa-agent (s12)</div>
+<h1>Ship the RAG walkthrough to AWS — demo-only prod, full-power dev</h1>
+<p class="lede">Put the finished V0–V8 build in front of people: a public URL where anyone can
+browse the RAG pipeline, the scored results, and the existing Q&amp;A — with <b>no LLM calls,
+no ingestion, no login</b> — while your local/dev environment keeps every capability.
+Analytics tell you who landed, what they explored, and whether they came back.
+CI/CD mirrors the <code>data-qa-agent</code> pattern you already run: GitHub Actions → OIDC →
+Terraform → build → deploy → smoke test.</p>
+
+<h2>Current state → target</h2>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Today</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td class="mono">runtime</td><td>Local only: <code>uv run python -m src.cli serve</code> on a laptop port</td>
+<td>Public HTTPS URL on AWS, always up, auto-deployed from <code>main</code></td></tr>
+<tr><td class="mono">capability</td><td>Everything live: ask, judge, index, eval runs (DeepSeek + Supadata keys)</td>
+<td><b>Prod:</b> read-only demo, zero API keys present · <b>Dev/local:</b> unchanged, full capability</td></tr>
+<tr><td class="mono">data</td><td>Chroma at <code>.yt-agent/chroma</code> (148 MB) + committed artifacts (evals/runs 3.3 MB, experts 1.7 MB, chat history)</td>
+<td>Same data, <b>frozen</b> — baked into the image at build time; no ingestion path exists in prod</td></tr>
+<tr><td class="mono">visibility</td><td>None</td><td>Landing, per-tab pageviews, session depth, retention curves</td></tr>
+</tbody></table></div>
+
+<div class="callout"><b>What a demo visitor gets:</b> the Chat tab replaying the real judged
+Q&amp;A conversations (citations, traces, scores — everything already recorded), the RAG
+Pipeline tab (corpus, chunk graph, knowledge graph, themes, disagreements), and the
+Scoreboard (matrix runs, rubric, provenance). All of it is served from committed artifacts and
+the frozen Chroma index — <b>none of it needs a model</b>.</div>
+
+<h2>Architecture</h2>
+<pre class="mermaid">
+flowchart TB
+  subgraph gh["GitHub — nmp-dsci/transcript-rag-agent"]
+    mainbr["push to main"] --> ci["ci.yml — lint / type / test / eval gate"]
+    ci --> deploy["deploy-aws.yml — OIDC, no stored keys"]
+  end
+  subgraph aws["AWS ap-southeast-2"]
+    ecr["ECR — demo image<br/>app + frontend dist + chroma snapshot"]
+    ar["App Runner — yt-agent-demo<br/>0.25 vCPU / 0.5 GB · DEMO_MODE=1 · no secrets"]
+    tf["Terraform state — S3, reused tfstate bucket"]
+    ecr -->|"latest tag auto-deploy"| ar
+  end
+  deploy -->|"docker build+push"| ecr
+  deploy -->|"terraform apply"| tf
+  deploy -->|"smoke test: health mode=demo"| ar
+  visitor(("visitor")) -->|"HTTPS"| ar
+  ar -.->|"client-side events: pageviews, retention"| ph["PostHog Cloud — free tier"]
+</pre>
+<p class="small">One container, one service, no database, no VPC wiring, no Secrets Manager
+entries — the demo has no secrets to hold. This is deliberately a fraction of data-qa-agent's
+footprint (no Aurora, no ECS jobs, no separate frontend bucket: FastAPI already serves
+<code>frontend/dist</code>).</p>
+
+<h2>Decision 1 — how prod is hosted <span class="pill ok">decided: A</span></h2>
+<div class="callout"><b>Decided:</b> Option A — App Runner container, demo-gated. Option B stays on record below as a later cost optimisation.</div>
+<div class="cols">
+<div class="card rec">
+  <div class="opt-head"><h3>A · App Runner container, demo-gated</h3><span class="pill ok">recommended</span></div>
+  <p>Ship the <b>same FastAPI app</b> with <code>YT_AGENT_DEMO_MODE=1</code>. The real API
+  answers every read route from the baked-in Chroma + artifacts; a middleware refuses
+  everything else. Frontend reads the demo flag from <code>/api/health</code> and renders
+  the demo chrome.</p>
+  <ul>
+    <li><b>Build cost:</b> small — one env flag, one middleware, frontend demo chrome. No new render paths.</li>
+    <li><b>Run cost:</b> ≈ <b>$5–9/mo</b> (0.5 GB provisioned ≈ $2.6/mo idle + vCPU when active + ECR storage).</li>
+    <li><b>Fidelity:</b> the demo <i>is</i> the app — graphs, themes, drill-downs all live.</li>
+  </ul>
+</div>
+<div class="card">
+  <div class="opt-head"><h3>B · Fully static snapshot on S3 + CloudFront</h3><span class="pill none">cheaper, more work</span></div>
+  <p>An export script crawls every GET endpoint into JSON files; S3 serves them at the same
+  <code>/api/*</code> paths behind CloudFront.</p>
+  <ul>
+    <li><b>Build cost:</b> larger — an exporter to maintain, SSE/streaming paths need shims, any endpoint with query params needs enumeration.</li>
+    <li><b>Run cost:</b> near <b>$0/mo</b>.</li>
+    <li><b>Risk:</b> every new view needs exporter work — it will drift from the app.</li>
+  </ul>
+  <p class="small">Good future cost-optimisation once the demo stabilises; not the first move.</p>
+</div>
+</div>
+
+
+
+<h2>The demo gate — deny by default</h2>
+<p>One switch, enforced <b>server-side</b>; the frontend only mirrors it. Nothing in prod
+depends on the UI hiding a button.</p>
+<div class="cols">
+<div class="card">
+<h3>Backend — <code>YT_AGENT_DEMO_MODE</code></h3>
+<ul>
+<li><b>Method gate:</b> middleware returns <code>403 {"detail":"demo"}</code> for every
+non-GET request. That kills <code>/api/ask</code>, <code>/api/judge</code>,
+<code>/api/index*</code>, <code>/api/eval/matrix</code>, <code>/api/rank</code>,
+<code>/api/chunk-graph</code> recompute, pack mutation — the complete write/LLM surface.</li>
+<li><b>GET blocklist:</b> the two GETs that do work rather than read are also refused:
+<code>/api/eval/matrix/stream</code> and <code>/api/index/queue/stream</code>.</li>
+<li><b>No secrets in the environment at all</b> — even a gate bug can't call DeepSeek or
+Supadata with keys that don't exist. The SSRF-sensitive document fetch (V1) is off with the
+rest of the POST surface.</li>
+<li><code>/api/health</code> gains <code>"mode": "demo"</code> — the frontend's single
+source of truth, and the smoke test's assertion.</li>
+</ul>
+</div>
+<div class="card">
+<h3>Frontend — demo chrome</h3>
+<ul>
+<li>Tabs in prod: <b>Chat · RAG Pipeline · Scoreboard · Experiments (read-only)</b>; System Design hidden.</li>
+<li>Chat: composer replaced by a banner — <i>“Demo replay — these are real judged
+conversations; asking new questions is disabled.”</i> History rail, traces, citations,
+scores all work as-is.</li>
+<li>Run/refresh/index buttons hidden; anything that would POST renders as a
+<span class="pill none">demo</span> chip instead.</li>
+<li>Landing: default to a curated conversation open in Chat, so the first paint shows the
+product, not an empty box.</li>
+</ul>
+</div>
+</div>
+<div class="callout"><b>Dev stays whole:</b> the flag defaults off. Local
+<code>serve</code>, evals, ingestion, and the full Experiments tab are untouched — dev and
+prod run the same commit, differing only in environment.</div>
+
+<h2>Decision 2 — analytics <span class="pill ok">decided: PostHog Cloud</span></h2>
+<div class="callout"><b>Decided:</b> PostHog Cloud, free tier — prod-only capture, cookieless, hash-route pageviews, retention cohorts from the built-in dashboard.</div>
+<div class="callout"><b>Constraint the app imposes:</b> tabs are <b>hash routes</b>
+(<code>#chat</code>, <code>#pipeline</code>, <code>#board</code>) — server logs see one URL
+for the whole visit, so CloudFront-log analytics can't answer “which pages did they visit.”
+Pageview capture must be client-side, listening to <code>hashchange</code>.</div>
+<div class="tablewrap"><table>
+<thead><tr><th>Option</th><th>Landing / pages / retention</th><th>Setup</th><th>Cost</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td class="mono">PostHog Cloud</td><td>All three built in — retention &amp; funnel charts, anonymous visitor IDs, no login needed</td>
+<td>Snippet in <code>index.html</code> + ~10-line hash-route pageview hook; cookieless mode avoids consent-banner work</td>
+<td>Free ≤ 1M events/mo</td><td><span class="pill ok">recommended</span></td></tr>
+<tr><td class="mono">Umami Cloud</td><td>Landing + pages yes; retention is weaker (returning-visitor % rather than cohort curves)</td>
+<td>Snippet + manual hash tracking</td><td>Free ≤ 100k events/mo</td><td><span class="pill none">lighter, fewer answers</span></td></tr>
+<tr><td class="mono">CloudFront logs + Athena</td><td>Landing only — hash routes invisible; retention needs hand-rolled SQL over IPs</td>
+<td>Terraform + Athena tables</td><td>~$1/mo</td><td><span class="pill bad">can't answer the question</span></td></tr>
+</tbody></table></div>
+<p class="small">Wire-up either way: capture <code>$pageview</code> on load + every
+<code>hashchange</code> with the tab name as the path, and let the provider's dashboard do
+sessions/retention. No custom backend, no PII, no login.</p>
+<div class="callout"><b>Does PostHog work for both dev and prod? Yes.</b> The snippet reads the
+mode from <code>/api/health</code> and the same code path serves both — the only question is
+what dev should <i>send</i>. Default in this plan: <b>prod-only</b> (init when
+<code>mode === "demo"</code>), so your own dev browsing never pollutes visitor/retention
+numbers. If you also want dev telemetry, the standard pattern is one PostHog
+<b>project per environment</b> (a second free API key, env-injected at build), keeping the two
+datasets separate. Recommendation: start prod-only; add a dev project later only if you find
+yourself wanting it — it's a one-line env change, not a re-architecture.</div>
+
+
+
+<h2>Decision 3 — what prod shows <span class="pill ok">decided: portfolio scope</span></h2>
+<div class="callout"><b>Decided:</b> prod shows <b>Chat · RAG Pipeline · Scoreboard · Experiments (read-only)</b> — the Experiments tab renders the committed critique eval, rubric packs and deep-research report, with every run/refresh control replaced by the demo chip. System Design stays dev-only.</div>
+
+
+<h2>CI/CD — the data-qa-agent pattern, shrunk</h2>
+<ol class="steps">
+<li><b>Bootstrap (once, local):</b> reuse the existing account's GitHub-OIDC provider; add a
+<code>yt-agent-deploy</code> role scoped to this repo, and a state key in the existing
+tfstate bucket (or a small new one). No long-lived AWS keys in GitHub. <span class="small">Access
+verified: a live SSO session on <code>089783391188</code> (AdministratorAccess) exists on this
+machine via the <code>data-qa</code> / <code>AdministratorAccess-089783391188</code> profiles —
+bootstrap can run as soon as the plan is approved.</span></li>
+<li><b><code>ci.yml</code> (exists):</b> lint · mypy · pytest · frontend type/test/build ·
+eval-regression gate — unchanged, still the merge gate.</li>
+<li><b><code>deploy-aws.yml</code> (new, on push to <code>main</code>):</b> assume OIDC role
+→ <code>docker build</code> the demo image — multi-stage: <code>npm run build</code>, then a
+slim Python layer with <code>src/</code>, <code>frontend/dist</code>, committed artifacts,
+and the <b>Chroma snapshot copied in at build time</b> (versioned with the code, ~150 MB
+layer) → push to ECR → <code>terraform apply</code> → wait for App Runner deploy.</li>
+<li><b>Smoke test the live URL:</b> <code>/api/health</code> says <code>mode: demo</code>;
+<code>/api/corpus</code> returns 92 videos; a <code>POST /api/ask</code> gets <b>403</b>;
+the React shell serves. A red smoke fails the workflow.</li>
+<li><b>Rollback:</b> re-run the workflow from the previous commit (image is rebuilt from
+that commit's code + data — fully deterministic), or App Runner's previous-image redeploy.</li>
+</ol>
+<div class="callout"><b>Why bake Chroma into the image instead of S3-at-boot:</b> the index
+is part of what a commit demonstrates — the corpus fingerprint on the Scoreboard must match
+the data the API serves. One artifact, one version, no boot-time sync to fail, cold starts
+stay fast. At 148 MB it's well inside sensible image size; revisit only if the corpus grows
+several-fold.</div>
+
+<h2>Terraform layout &amp; monthly cost</h2>
+<div class="cols">
+<div class="card">
+<h3><code>infra/terraform/</code></h3>
+<ul>
+<li><code>bootstrap/</code> — OIDC role + state key <span class="small">(local state, run once)</span></li>
+<li><code>demo/</code> — ECR repo, App Runner service (env: <code>YT_AGENT_DEMO_MODE=1</code>,
+<code>YT_AGENT_EMBEDDING_DEVICE=cpu</code>), CloudWatch alarm on 5xx, budget alarm</li>
+<li>No VPC, no DB, no Secrets Manager, no CloudFront (App Runner TLS URL is enough; add a
+custom domain later with one resource)</li>
+</ul>
+</div>
+<div class="card">
+<h3>Cost, steady state</h3>
+<div class="tablewrap"><table>
+<tbody>
+<tr><td>App Runner provisioned 0.5 GB</td><td class="mono">≈ $2.6/mo</td></tr>
+<tr><td>App Runner active vCPU (light traffic)</td><td class="mono">≈ $1–5/mo</td></tr>
+<tr><td>ECR storage (few image versions)</td><td class="mono">≈ $0.5/mo</td></tr>
+<tr><td>PostHog / Umami free tier</td><td class="mono">$0</td></tr>
+<tr><td><b>Total</b></td><td class="mono"><b>≈ $5–9/mo</b></td></tr>
+</tbody></table></div>
+<p class="small">data-qa-agent for scale: its Aurora+ECS+CloudFront stack exists because it
+has a live database and jobs. This demo has neither.</p>
+</div>
+</div>
+
+<h2>Delivery — four slices, each with a visible gate</h2>
+<p class="small">Same discipline as V0–V8: a slice that can't be seen working isn't done.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Slice</th><th>Deliverable</th><th>Acceptance gate (what you can see)</th></tr></thead>
+<tbody>
+<tr><td class="mono">D0</td><td>Demo gate — backend flag + middleware + tests; frontend demo chrome</td>
+<td>Local <code>YT_AGENT_DEMO_MODE=1 serve</code>: POSTs 403, composer shows the demo banner,
+tabs limited; flag off → everything back. Tests assert both.</td></tr>
+<tr><td class="mono">D1</td><td>Demo image — multi-stage Dockerfile with dist + artifacts + Chroma</td>
+<td><code>docker run</code> locally with <b>no env file and no keys</b>: corpus 92 videos,
+chat replays, graphs render, health says demo.</td></tr>
+<tr><td class="mono">D2</td><td>Infra + pipeline — bootstrap, <code>demo/</code> module, <code>deploy-aws.yml</code>, smoke script</td>
+<td>Merge to <code>main</code> → green workflow → public URL serves the demo; smoke test
+output in the run log; a deliberate POST from your laptop gets 403.</td></tr>
+<tr><td class="mono">D3</td><td>Analytics — snippet gated to demo mode, hash-route pageviews</td>
+<td>Provider dashboard shows your own visit: landing event, tab-change pageviews, a second
+visit next day appears in the retention chart. Dev serves send zero events.</td></tr>
+</tbody></table></div>
+
+<h2>Risks &amp; open edges</h2>
+<div class="risk"><b>Gate coverage is the security boundary.</b> No login means the 403
+middleware and the absent keys are the whole story. Mitigation is layered: deny-by-default on
+method (not a hand-kept route list), no secrets in the environment, and a smoke test that
+probes the gate on every deploy.</div>
+<div class="risk"><b>Torch/sentence-transformers in the image.</b> The demo never embeds, but
+imports may pull heavy deps into the image (and RAM at boot). D1 checks the image runs in
+0.5 GB; if it doesn't, lazy-import the embedding path in demo mode or bump to 1 GB (+$2.6/mo)
+— decide on evidence, not up front.</div>
+<div class="risk"><b>Scraping/abuse of a keyless public API.</b> Read-only data is already
+public in the repo, so exposure is low; App Runner gives basic request throttling
+(<code>max_concurrency</code>), and the budget alarm catches runaway traffic cost.</div>
+<div class="risk"><b>Analytics + privacy.</b> Cookieless/anonymous mode keeps the demo out of
+consent-banner territory in most jurisdictions; retention then relies on the provider's
+anonymous-visitor heuristics — good enough for a portfolio signal, not audit-grade.</div>
+
+<h2>Not in scope (explicitly)</h2>
+<ul>
+<li>No custom domain / CloudFront (one Terraform resource later if wanted).</li>
+<li>No prod ingestion, eval runs, or admin surface — dev is where the corpus grows; shipping
+new data = merging a commit with an updated Chroma snapshot.</li>
+<li>No login/user accounts — analytics are anonymous by design.</li>
+<li>No Neo4j in prod — the knowledge-graph view serves from committed artifacts; anything
+that would need a live graph DB stays dev-only.</li>
+</ul>
+
+<p class="small" style="margin-top:30px">All three decisions are locked: <b>A · App Runner</b> — <b>PostHog Cloud</b> — <b>portfolio tab scope</b>. AWS access from this machine is confirmed (SSO session on account 089783391188, admin role, ap-southeast-2 — the same account data-qa-agent deploys to). Next: D0, the demo gate.</p>
+
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color){paint.clearRect(0,0,1,1);paint.fillStyle="#000";paint.fillStyle=color;paint.fillRect(0,0,1,1);return paint.getImageData(0,0,1,1).data;}
+  function compositeRgba(f,b){const fa=f[3]/255,ba=b[3]/255,a=fa+ba*(1-fa);if(a===0)return[0,0,0,0];
+    return[(f[0]*fa+b[0]*ba*(1-fa))/a,(f[1]*fa+b[1]*ba*(1-fa))/a,(f[2]*fa+b[2]*ba*(1-fa))/a,a*255];}
+  function pageIsDark(){const root=document.documentElement;
+    const rb=toRgba(getComputedStyle(root).backgroundColor);
+    const bb=document.body?toRgba(getComputedStyle(document.body).backgroundColor):[0,0,0,0];
+    const [r,g,b,a]=compositeRgba(bb,rb);
+    if(a>0){return (0.2126*r+0.7152*g+0.0722*b)/255<0.5;}
+    const cs=getComputedStyle(root).colorScheme;
+    if(cs.includes("dark")&&!cs.includes("light"))return true;
+    if(cs.includes("light")&&!cs.includes("dark"))return false;
+    return darkQuery.matches;}
+  const diagrams=[...document.querySelectorAll(".mermaid")].map((el)=>({el,src:el.textContent}));
+  let applied,rendering=false,queued=false;
+  function queueRender(){queued=true;if(rendering)return;void render();}
+  async function render(){rendering=true;try{while(queued){queued=false;
+    const theme=pageIsDark()?"dark":"default";if(theme===applied)continue;
+    mermaid.initialize({startOnLoad:false,theme,securityLevel:"strict"});
+    for(const {el,src} of diagrams){el.removeAttribute("data-processed");el.textContent=src;}
+    try{await mermaid.run({nodes:diagrams.map((d)=>d.el)});}
+    catch(e){console.error("Mermaid render failed:",e);return;}
+    applied=theme;}}finally{rendering=false;if(queued)queueRender();}}
+  if(document.readyState==="complete")queueRender();
+  else window.addEventListener("load",queueRender,{once:true});
+  const mo=new MutationObserver(queueRender);
+  for(const el of [document.documentElement,document.body]){if(!el)continue;
+    mo.observe(el,{attributes:true,attributeFilter:["data-theme","class","style"]});}
+  darkQuery.addEventListener("change",queueRender);
+</script>
+</body>
+</html>

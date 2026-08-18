@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../api/client';
+import { useDemo } from '../demo';
 import type {
   PackAblation,
   PackAblationBasis,
@@ -133,6 +134,8 @@ function MembershipTable({ detail, onOverride }: {
   detail: PackDetail;
   onOverride: (videoId: string, included: boolean | null) => void;
 }) {
+  // Overrides POST a refused route in demo mode; membership stays readable.
+  const demo = useDemo();
   const members: PackMember[] = detail.members ?? [];
   if (members.length === 0) return null;
   const silent = members.filter((member) => member.in_units === false).length;
@@ -196,27 +199,33 @@ function MembershipTable({ detail, onOverride }: {
                     ) : null}
                   </td>
                   <td className="pk-pin">
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => onOverride(member.video_id, true)}
-                    >
-                      in
-                    </button>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => onOverride(member.video_id, false)}
-                    >
-                      out
-                    </button>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => onOverride(member.video_id, null)}
-                    >
-                      auto
-                    </button>
+                    {demo ? (
+                      <span className="pk-badge">demo</span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => onOverride(member.video_id, true)}
+                        >
+                          in
+                        </button>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => onOverride(member.video_id, false)}
+                        >
+                          out
+                        </button>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => onOverride(member.video_id, null)}
+                        >
+                          auto
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               );

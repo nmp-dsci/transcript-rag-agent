@@ -24,10 +24,11 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     StreamingResponse,
 )
@@ -504,6 +505,35 @@ def create_app(
 
     app = FastAPI(title="Transcript RAG Evaluation Workbench", version="0.2.0")
 
+    if resolved.demo_mode:
+        # The public deployment's security boundary, so deny-by-default on
+        # *method* rather than a hand-kept route list: every non-GET is
+        # refused, which covers ask/judge/index/eval/rank/pack mutation and
+        # any POST added later without this file being touched. Two carve-outs:
+        #
+        # * ``POST /api/chunk-graph`` builds its layout from stored vectors
+        #   alone (no model, no write), and the Chunk graph sub-tab cannot
+        #   render without it — allowed, but the endpoint itself refuses the
+        #   query overlay in demo mode (that path loads the embedding stack).
+        # * The two GETs that *do* work rather than read — the matrix and
+        #   ingestion live streams — are refused despite being GETs.
+        #
+        # The container carries no provider keys, so even a gap here has no
+        # LLM to reach; this gate exists so the app also *says* no cleanly.
+        demo_blocked_gets = {"/api/eval/matrix/stream", "/api/index/queue/stream"}
+        demo_allowed_posts = {"/api/chunk-graph"}
+
+        @app.middleware("http")
+        async def demo_gate(request: Request, call_next: Any) -> Any:
+            path = request.url.path
+            allowed = (
+                request.method in ("GET", "HEAD")
+                and path not in demo_blocked_gets
+            ) or (request.method == "POST" and path in demo_allowed_posts)
+            if not allowed:
+                return JSONResponse(status_code=403, content={"detail": "demo"})
+            return await call_next(request)
+
     def get_runner() -> RagSetupRunner:
         with locks["runner"]:
             if "runner" not in holders:
@@ -548,6 +578,7 @@ def create_app(
     def health() -> dict:
         return {
             "status": "ok",
+            "mode": "demo" if resolved.demo_mode else "full",
             "runner_loaded": loaded("runner"),
             "judge_loaded": loaded("judge"),
             "judge_model": judge_model_name,
@@ -818,6 +849,11 @@ def create_app(
         extracted from the same chunk."""
         from src.rag.graph_view import chunk_enrichment_for_video
 
+        videos = _graph_snapshot("video_chunks.json")
+        if videos is not None:
+            # An unenriched video is an empty enrichment, not an error — the
+            # live store answers the same way.
+            return videos.get(video_id) or {"chunks": {}}
         try:
             return chunk_enrichment_for_video(get_graph_store(), video_id)
         except Exception as exc:
@@ -1099,6 +1135,12 @@ def create_app(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         query = (payload.query or "").strip()
         if query:
+            if resolved.demo_mode:
+                # The only reason this POST is allowed through the demo gate
+                # is the model-free structure build above; the query overlay
+                # loads the embedding stack, which the demo container neither
+                # needs nor budgets for.
+                raise HTTPException(status_code=403, detail="demo")
             embedding = get_runner().provider.chunk_store.embedding_model.embed_query(query)
             try:
                 nearest = nearest_chunks(records, embedding, payload.top_k)
@@ -1110,6 +1152,21 @@ def create_app(
             graph = {**graph, "query": {"text": query, "nearest": nearest}}
         return graph
 
+    def _graph_snapshot(name: str) -> Any | None:
+        """A file from the exported knowledge-graph snapshot, or ``None``.
+
+        Demo mode has no Neo4j to reach, so the three knowledge-graph GETs
+        serve the JSON that ``scripts/export_graph_snapshot.py`` wrote from
+        the dev graph instead. Outside demo mode the live store answers, and
+        the snapshot — however stale — is never consulted.
+        """
+        if not resolved.demo_mode or resolved.graph_snapshot_dir is None:
+            return None
+        path = resolved.graph_snapshot_dir / name
+        if not path.is_file():
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
+
     @app.get("/api/graph/knowledge")
     def knowledge_graph() -> dict:
         """The GraphRAG entity graph: nodes placed by topology (Fruchterman-
@@ -1120,6 +1177,9 @@ def create_app(
         """
         from src.rag.graph_view import build_knowledge_graph
 
+        snapshot = _graph_snapshot("knowledge.json")
+        if snapshot is not None:
+            return snapshot
         try:
             return build_knowledge_graph(get_graph_store())
         except Exception as exc:
@@ -1137,6 +1197,12 @@ def create_app(
         """One entity's metadata plus its dated claim timeline."""
         from src.rag.graph_view import entity_claims
 
+        entities = _graph_snapshot("entities.json")
+        if entities is not None:
+            found = entities.get(entity_id)
+            if found is None:
+                raise HTTPException(status_code=404, detail=f"Unknown entity: {entity_id}")
+            return found
         try:
             result = entity_claims(get_graph_store(), entity_id)
         except Exception as exc:
