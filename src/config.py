@@ -58,6 +58,11 @@ class Settings:
     # set YT_AGENT_RERANK_ENABLED=false to retrieve without it.
     rerank_enabled: bool = True
     rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Demo mode: the public read-only deployment. The API refuses every
+    # mutating/LLM route (403), no provider keys are required or expected in
+    # the environment, and the frontend renders its demo chrome off
+    # /api/health's "mode" field. Dev is unaffected — the flag defaults off.
+    demo_mode: bool = False
     # Adjacent chunks pasted around each hit so answers stop cutting off
     # mid-thought. 0 disables neighbour expansion.
     neighbor_span: int = 0
@@ -88,6 +93,10 @@ class Settings:
     neo4j_user: str = "neo4j"
     neo4j_password: str = "yt-agent-graph"
     graph_cache_dir: Path | None = None
+    # Where scripts/export_graph_snapshot.py writes the knowledge graph as
+    # JSON, and where demo mode serves it from instead of a live Neo4j. The
+    # demo container ships this snapshot; a graph DB never runs there.
+    graph_snapshot_dir: Path | None = None
     # Disk caches for the LLM passes the retrieval variants make: one expansion
     # per question, one situating sentence per chunk. Both are derived state —
     # deleting either only costs the calls to regenerate it.
@@ -180,6 +189,12 @@ def _query_transform_env(name: str) -> str | None:
 
 
 def load_settings(require_keys: bool = True) -> Settings:
+    # Demo mode is read before the env file: the demo container ships no env
+    # file and no keys, and that absence must not be an error there.
+    demo_mode = _bool_env(os.environ.get("YT_AGENT_DEMO_MODE"), default=False)
+    if demo_mode:
+        require_keys = False
+
     env_path = Path(os.environ.get("YT_AGENT_ENV_PATH", "~/.env")).expanduser()
     if env_path.exists():
         load_dotenv(env_path, override=False)
@@ -247,6 +262,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         retrieval_mode=_retrieval_mode_env("YT_AGENT_RETRIEVAL_MODE", "semantic"),
         retrieval_candidates=_int_env("YT_AGENT_RETRIEVAL_CANDIDATES", 30),
         rerank_enabled=_bool_env(os.environ.get("YT_AGENT_RERANK_ENABLED"), default=True),
+        demo_mode=demo_mode,
         rerank_model=os.environ.get(
             "YT_AGENT_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"
         ),
@@ -267,6 +283,9 @@ def load_settings(require_keys: bool = True) -> Settings:
         neo4j_password=os.environ.get("NEO4J_PASSWORD", "yt-agent-graph"),
         graph_cache_dir=_resolve_project_path(
             os.environ.get("YT_AGENT_GRAPH_CACHE_PATH", ".yt-agent/graph_cache")
+        ),
+        graph_snapshot_dir=_resolve_project_path(
+            os.environ.get("YT_AGENT_GRAPH_SNAPSHOT_PATH", ".yt-agent/graph_snapshot")
         ),
         query_cache_dir=_resolve_project_path(
             os.environ.get("YT_AGENT_QUERY_CACHE_PATH", ".yt-agent/query_cache")

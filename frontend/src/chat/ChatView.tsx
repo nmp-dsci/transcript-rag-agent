@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api } from '../api/client';
+import { useDemo } from '../demo';
 import type {
   AgentStep,
   Answer,
@@ -118,6 +119,19 @@ export function ChatView({
   const bottom = useRef<HTMLDivElement>(null);
 
   const busy = live !== null;
+  // Server-enforced (mutating routes 403); here it swaps the composer for a
+  // replay banner and drops the judge/compare/follow-up controls that would
+  // only ever hit refused routes.
+  const demo = useDemo();
+
+  // Demo landing: open the newest replay instead of an empty composer-less
+  // page, so the first paint shows a real judged conversation.
+  useEffect(() => {
+    const newest = history[0];
+    if (demo && thread.length === 0 && newest) {
+      setThread([newest]);
+    }
+  }, [demo, history, thread.length]);
   const selectedId = thread.length ? (thread[thread.length - 1]?.id ?? null) : null;
 
   useEffect(() => {
@@ -458,7 +472,17 @@ export function ChatView({
       <div className="stage">
         <div className="thread">
           <div className="thread-inner">
-            {empty ? (
+            {empty && demo ? (
+              <div className="empty">
+                <h2>Browse the recorded Q&amp;A</h2>
+                <p>
+                  Pick a conversation from the rail on the left — every answer
+                  was produced against the indexed corpus and judged with
+                  RAGAS, and replays here with its citations and traces.
+                </p>
+              </div>
+            ) : null}
+            {empty && !demo ? (
               <div className="empty">
                 <h2>Ask the transcripts anything</h2>
                 <p>
@@ -506,14 +530,14 @@ export function ChatView({
                   question={entry.question}
                   answers={entry.answers}
                   running={[]}
-                  onAskFollowup={askFollowup}
+                  onAskFollowup={demo ? undefined : askFollowup}
                   onOpenSection={(index) =>
                     setOpenSections((current) => ({ ...current, [entry.id]: index }))
                   }
                   judging={judgingId === entry.id}
                   busy={busy}
-                  onJudge={() => void judge(entry.id)}
-                  onCompare={() => compare(entry)}
+                  onJudge={demo ? undefined : () => void judge(entry.id)}
+                  onCompare={demo ? undefined : () => compare(entry)}
                   traces={traces[entry.id]}
                   remainingSetups={missingSetups(entry).length}
                 />
@@ -539,17 +563,27 @@ export function ChatView({
           </div>
         </div>
 
-        <Composer
-          setups={setups}
-          corpus={corpus}
-          busy={busy}
-          scope={scope}
-          onScopeChange={setScope}
-          defaultSetup={defaultSetup}
-          onDefaultSetupChange={setDefaultSetup}
-          onAsk={(options) => void run(options)}
-          onCancel={() => abort.current?.abort()}
-        />
+        {demo ? (
+          <div className="demobar" role="note">
+            <span className="demobar-chip">demo</span>
+            <span>
+              Demo replay — these are real judged conversations from the dev
+              corpus. Asking new questions is disabled on this deployment.
+            </span>
+          </div>
+        ) : (
+          <Composer
+            setups={setups}
+            corpus={corpus}
+            busy={busy}
+            scope={scope}
+            onScopeChange={setScope}
+            defaultSetup={defaultSetup}
+            onDefaultSetupChange={setDefaultSetup}
+            onAsk={(options) => void run(options)}
+            onCancel={() => abort.current?.abort()}
+          />
+        )}
         <div className="sr-only" role="status" aria-live="polite">
           {status}
         </div>

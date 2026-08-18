@@ -280,6 +280,9 @@ export interface ReviewedDocument {
 
 export interface Health {
   status: string;
+  /** "demo" on the public read-only deployment, "full" everywhere else.
+   * Optional so the UI degrades to full behaviour against an older server. */
+  mode?: "demo" | "full";
   runner_loaded: boolean;
   judge_loaded: boolean;
   judge_model: string;

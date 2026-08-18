@@ -1,0 +1,17 @@
+# The demo image COPYs an explicit list (see Dockerfile); this keeps the
+# build context small and makes sure nothing secret can leak into a layer.
+*
+!frontend/
+frontend/node_modules/
+frontend/dist/
+!src/
+!pyproject.toml
+!uv.lock
+!dashboard/chat_history.json
+!evals/runs/
+!experts/
+!.yt-agent/chroma/
+!.yt-agent/graph_snapshot/
+!.yt-agent/themes.json
+!.yt-agent/conflicts.json
+!.yt-agent/documents/

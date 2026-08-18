@@ -9,6 +9,7 @@ import type {
 } from '../api/types';
 import { CritiquePanel } from './CritiquePanel';
 import { MatrixRunPanel } from './MatrixRunPanel';
+import { useDemo } from '../demo';
 import { PackPanel } from './PackPanel';
 import { ResearchPanel } from './ResearchPanel';
 import { useExperimentStyles } from './styles';
@@ -297,6 +298,9 @@ function GoldenRuns({ runs }: { runs: GoldenRunSummary[] }) {
 }
 
 export function ExperimentsView() {
+  // Starting a matrix run is a refused route in demo mode; reading committed
+  // runs (everything below the panel) is the whole point of the tab there.
+  const demo = useDemo();
   useExperimentStyles();
   const [data, setData] = useState<Experiments | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -335,7 +339,7 @@ export function ExperimentsView() {
           Every number here is reproducible from a snapshot a reviewer can open in the repo.
         </p>
 
-        <MatrixRunPanel onRunFinished={() => void load()} />
+        {!demo && <MatrixRunPanel onRunFinished={() => void load()} />}
 
         {/* Reads experts/ rather than evals/runs/, so it renders whether or not
             any eval run is committed — and it loads independently of the

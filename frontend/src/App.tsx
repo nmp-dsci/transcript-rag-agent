@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { startAnalytics } from './analytics';
 import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
+import { DemoContext } from './demo';
 import { SystemDesignView } from './design/SystemDesignView';
 import { ExperimentsView } from './experiments/ExperimentsView';
 import { Logo } from './Logo';
@@ -44,8 +46,11 @@ export function App() {
 
   const refreshHealth = useCallback(async () => {
     try {
-      setHealth(await api.health());
+      const next = await api.health();
+      setHealth(next);
       setOffline(false);
+      // No-op unless the server says demo AND a key was baked in at build.
+      startAnalytics(next.mode);
     } catch {
       setOffline(true);
     }
@@ -104,6 +109,12 @@ export function App() {
     ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks · `
     : '';
 
+  // Server-decided; the server also enforces it (mutating routes 403), so
+  // this only controls which chrome renders. System Design stays dev-only.
+  const demo = health?.mode === 'demo';
+  const visibleTabs = demo ? TABS.filter(({ id }) => id !== 'design') : TABS;
+  const activeTab = demo && tab === 'design' ? 'chat' : tab;
+
   return (
     <div className="app">
       <header className="topbar">
@@ -114,12 +125,12 @@ export function App() {
           </span>
         </span>
         <nav className="nav" aria-label="Views">
-          {TABS.map(({ id, label }) => (
+          {visibleTabs.map(({ id, label }) => (
             <button
               key={id}
               type="button"
-              className={tab === id ? 'on' : ''}
-              aria-current={tab === id ? 'page' : undefined}
+              className={activeTab === id ? 'on' : ''}
+              aria-current={activeTab === id ? 'page' : undefined}
               onClick={() => selectTab(id)}
             >
               {label}
@@ -131,11 +142,13 @@ export function App() {
           <span>
             {offline
               ? 'server unreachable'
-              : health
-                ? `${corpusBit}judge ${health.judge_model}${
-                    health.runner_loaded ? ' · stack loaded' : ' · stack cold'
-                  }`
-                : 'connecting…'}
+              : demo
+                ? `${corpusBit}demo replay`
+                : health
+                  ? `${corpusBit}judge ${health.judge_model}${
+                      health.runner_loaded ? ' · stack loaded' : ' · stack cold'
+                    }`
+                  : 'connecting…'}
           </span>
           <button
             type="button"
@@ -150,7 +163,8 @@ export function App() {
       </header>
 
       <main className="views">
-        {tab === 'chat' && (
+        <DemoContext.Provider value={demo}>
+        {activeTab === 'chat' && (
           <ChatView
             setups={setups}
             history={history}
@@ -161,7 +175,7 @@ export function App() {
             onScopeConsumed={() => setPendingScope(null)}
           />
         )}
-        {tab === 'pipeline' && (
+        {activeTab === 'pipeline' && (
           <PipelineView
             corpus={corpus}
             onCorpusChange={refreshCorpus}
@@ -169,9 +183,10 @@ export function App() {
             embeddingModel={health?.embedding_model ?? null}
           />
         )}
-        {tab === 'board' && <ScoreboardView />}
-        {tab === 'experiments' && <ExperimentsView />}
-        {tab === 'design' && <SystemDesignView />}
+        {activeTab === 'board' && <ScoreboardView />}
+        {activeTab === 'experiments' && <ExperimentsView />}
+        {activeTab === 'design' && !demo && <SystemDesignView />}
+        </DemoContext.Provider>
       </main>
     </div>
   );

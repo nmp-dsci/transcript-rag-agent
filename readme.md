@@ -138,6 +138,42 @@ uv run pytest -q                                          # 700+ Python tests
 cd frontend && npm test                                   # frontend tests
 ```
 
+## Demo deployment (AWS)
+
+The public deployment is the same app in **demo mode**: read-only, no LLM
+calls, no login, no ingestion — visitors browse the RAG pipeline, the judged
+results, and the recorded Q&A. `YT_AGENT_DEMO_MODE=1` makes the server refuse
+every mutating route with `403 {"detail": "demo"}` (deny-by-default on method,
+plus the two working GET streams), requires no API keys, and reports
+`"mode": "demo"` in `/api/health`; the frontend reads that flag and renders
+the demo chrome (no composer, no run buttons, no System Design tab). Dev is
+untouched — the flag defaults off.
+
+```bash
+YT_AGENT_DEMO_MODE=1 uv run python -m src.cli serve    # demo mode locally
+docker build -t yt-agent-demo . && docker run --rm -p 8080:8080 yt-agent-demo
+```
+
+The image bakes in everything the read routes serve — `frontend/dist`, the
+Chroma index, the committed eval runs and packs, the chat history, and the
+knowledge-graph snapshot (`scripts/export_graph_snapshot.py`, run with Neo4j
+up; demo mode serves its JSON instead of a live graph).
+
+**Deploying:** merge to `main` runs `.github/workflows/deploy-aws.yml`
+(GitHub OIDC, no stored keys): pull the non-git data from S3
+(`scripts/upload_demo_data.sh` syncs it after re-indexing) → build/push the
+linux/amd64 image to ECR → `terraform apply` (`infra/terraform/demo/`: one
+App Runner service, 0.5 vCPU / 1 GB, auto-deploy on `:latest`) → wait →
+`scripts/demo_smoke.sh`, which fails the deploy unless the live URL says
+`mode: demo`, serves the corpus, and 403s a POST. First-time setup is
+`infra/terraform/bootstrap/` (CI role + demo-data bucket), run locally once.
+
+**Analytics:** PostHog, three-way gated — server says demo, a
+`VITE_POSTHOG_KEY` was baked in at build (repo variable `POSTHOG_KEY`;
+blank ships analytics off), and init runs once. Hash-route pageviews carry
+the tab name; localStorage persistence, no cookies, no autocapture. Dev
+serves send nothing by construction.
+
 ## What's inside
 
 - **Retrieval:** segment-aware chunking, local dense embeddings (Chroma), BM25,

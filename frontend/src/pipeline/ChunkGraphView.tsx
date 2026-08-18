@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../api/client';
+import { useDemo } from '../demo';
 import type { ChunkGraph, GraphEdge, GraphNode } from '../api/types';
 import { fmtSeconds, videoTimestampUrl } from '../answers/render';
 import {
@@ -122,6 +123,9 @@ export function ChunkGraphView() {
   const [k, setK] = useState(6);
   const [minSimilarity, setMinSimilarity] = useState(0.55);
   const [query, setQuery] = useState('');
+  // The structure build is allowed in demo mode (model-free); the query
+  // overlay is refused server-side, so the search box does not render there.
+  const demo = useDemo();
   const [graph, setGraph] = useState<ChunkGraph | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,16 +226,18 @@ export function ChunkGraphView() {
         <span className="microlabel" style={{ color: 'var(--accent2)' }}>
           chunk graph
         </span>
-        <input
-          type="search"
-          value={query}
-          placeholder="Highlight a query's retrieval neighbourhood…"
-          aria-label="Graph query"
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') void load(query);
-          }}
-        />
+        {!demo && (
+          <input
+            type="search"
+            value={query}
+            placeholder="Highlight a query's retrieval neighbourhood…"
+            aria-label="Graph query"
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void load(query);
+            }}
+          />
+        )}
         <label className="toggle">
           k
           <input

@@ -9,6 +9,7 @@ import { CorpusTree, type SortKey } from "./CorpusTree";
 import { IndexPanel } from "./IndexPanel";
 import { KnowledgeGraphView } from "./KnowledgeGraphView";
 import { RetrievalLab } from "./RetrievalLab";
+import { useDemo } from "../demo";
 import { ThemesView } from "./ThemesView";
 import { VideoDetail } from "./VideoDetail";
 import { type TreeFilter, applyFilter } from "./insights";
@@ -41,6 +42,9 @@ export function PipelineView({
   onAskAbout,
   embeddingModel,
 }: Props) {
+  // Ingestion and the retrieval lab drive refused routes in demo mode, so
+  // they are not rendered there; browsing (tree, graphs, themes) is untouched.
+  const demo = useDemo();
   const [sub, setSub] = useState<SubTab>("corpus");
   // The graph fetches on mount, so once opened it stays mounted and is merely
   // hidden — switching sub-tabs must not rebuild a 281-node projection.
@@ -149,10 +153,10 @@ export function PipelineView({
         </div>
       </CorpusSummary>
 
-      <IndexPanel onIndexed={onCorpusChange} onViewVideo={viewIndexedVideo} />
+      {!demo && <IndexPanel onIndexed={onCorpusChange} onViewVideo={viewIndexedVideo} />}
 
       <div className="pipe-pane" hidden={sub !== "corpus"}>
-        <RetrievalLab
+        {!demo && <RetrievalLab
           scopeVideoId={selectedVideo}
           scopeLabel={
             video
@@ -165,7 +169,7 @@ export function PipelineView({
               : null
           }
           onSelectChunk={selectChunk}
-        />
+        />}
 
         <div className="libbody">
           {allVideos.length === 0 ? (
@@ -212,7 +216,7 @@ export function PipelineView({
                 video={video}
                 chunks={selectedVideo ? chunks[selectedVideo] : undefined}
                 selectedChunk={selectedChunk}
-                onAskAbout={onAskAbout}
+                onAskAbout={demo ? undefined : onAskAbout}
               />
             </>
           )}

@@ -631,3 +631,18 @@ tr.legacyrow td { opacity: 0.6; }
   margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border2);
   font: 11px var(--mono); color: var(--bad); line-height: 1.5;
 }
+
+/* ── Demo mode ──────────────────────────────────────────────────────────
+   The public deployment's replay banner, rendered where the composer would
+   be. Mutations are refused server-side; this is the visible half. */
+.demobar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--border); background: var(--panel);
+  padding: 14px 16px; justify-content: center;
+  font-size: 13px; color: var(--muted);
+}
+.demobar-chip {
+  font: 600 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent2); background: var(--accent-dim);
+  border: 1px solid var(--accent-border); border-radius: 999px; padding: 2px 9px;
+}

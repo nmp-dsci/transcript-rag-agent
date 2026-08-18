@@ -8,7 +8,8 @@ interface Props {
   video: Video | null;
   chunks: Chunk[] | undefined;
   selectedChunk: number | null;
-  onAskAbout: (url: string) => void;
+  /** Absent in demo mode — asking is disabled there, so no button renders. */
+  onAskAbout?: (url: string) => void;
 }
 
 function timestampUrl(video: Video, chunk: Chunk): string | null {
@@ -72,7 +73,7 @@ export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props)
         ) : null}
         <span className="t">{video.title || video.video_id}</span>
         <span className="m">{meta}</span>
-        {video.source_url ? (
+        {video.source_url && onAskAbout ? (
           <button
             type="button"
             className="btn sm"
