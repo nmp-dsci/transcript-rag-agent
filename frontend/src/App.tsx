@@ -5,6 +5,7 @@ import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
 import { DemoContext } from './demo';
+import { Landing } from './landing/Landing';
 import { SystemDesignView } from './design/SystemDesignView';
 import { ExperimentsView } from './experiments/ExperimentsView';
 import { Logo } from './Logo';
@@ -31,8 +32,22 @@ function tabFromHash(): Tab {
   return TABS.some((tab) => tab.id === hash) ? (hash as Tab) : 'chat';
 }
 
+/** The landing shows on a plain visit (no deep link) once per session — in
+ * both demo and dev. A shared #board / #pipeline link still lands exactly
+ * where it points, and #landing brings the page back on purpose. */
+export function shouldShowLanding(hash: string, entered: boolean): boolean {
+  const clean = hash.replace('#', '');
+  if (clean === 'landing') return true;
+  return !entered && clean === '';
+}
+
+const ENTERED_KEY = 'tl-entered';
+
 export function App() {
   const [tab, setTab] = useState<Tab>(tabFromHash);
+  const [showLanding, setShowLanding] = useState(() =>
+    shouldShowLanding(window.location.hash, sessionStorage.getItem(ENTERED_KEY) === '1'),
+  );
   const [setups, setSetups] = useState<SetupSpec[]>([]);
   const [history, setHistory] = useState<Entry[]>([]);
   const [corpus, setCorpus] = useState<Corpus | null>(null);
@@ -94,6 +109,12 @@ export function App() {
     setTab(next);
   };
 
+  const enterApp = () => {
+    sessionStorage.setItem(ENTERED_KEY, '1');
+    setShowLanding(false);
+    selectTab('chat');
+  };
+
   const askAbout = (url: string) => {
     setPendingScope(url);
     selectTab('chat');
@@ -114,6 +135,12 @@ export function App() {
   const demo = health?.mode === 'demo';
   const visibleTabs = demo ? TABS.filter(({ id }) => id !== 'design') : TABS;
   const activeTab = demo && tab === 'design' ? 'chat' : tab;
+
+  if (showLanding) {
+    // The shell's data effects have already fired, so the corpus loads while
+    // the visitor reads — entry lands on a warm app (Data Pilot's pre-warm).
+    return <Landing corpus={corpus} demo={health ? demo : null} onEnter={enterApp} />;
+  }
 
   return (
     <div className="app">

@@ -43,6 +43,14 @@ export function startAnalytics(mode: string | undefined): void {
   window.addEventListener('hashchange', pageview);
 }
 
+/** A named product event (landing funnel etc.). Silently a no-op until
+ * `startAnalytics` has opened its gates, so callers never need to know
+ * whether analytics is live. */
+export function captureEvent(name: string, properties?: Record<string, unknown>): void {
+  if (!started) return;
+  posthog.capture(name, properties);
+}
+
 /** Test seam: reset the once-only latch. */
 export function resetAnalyticsForTest(): void {
   started = false;
