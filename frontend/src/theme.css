@@ -646,3 +646,71 @@ tr.legacyrow td { opacity: 0.6; }
   color: var(--accent2); background: var(--accent-dim);
   border: 1px solid var(--accent-border); border-radius: 999px; padding: 2px 9px;
 }
+
+/* ── Landing page ───────────────────────────────────────────────────────
+   The front door: full-viewport narrative card, shown once per session
+   (see shouldShowLanding in App.tsx). Same layout the plan mocked. */
+.landing {
+  min-height: 100vh; overflow-y: auto; text-align: center;
+  padding: 56px 28px 44px;
+  background:
+    radial-gradient(1100px 500px at 70% -10%, var(--accent-dim) 0%, transparent 60%),
+    var(--bg);
+}
+.l-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border: 1px solid var(--accent-border);
+  border-radius: 16px; background: var(--panel); margin-bottom: 14px;
+}
+.l-title { font-size: 2.2rem; letter-spacing: -0.02em; margin: 0; color: var(--text); }
+.l-title em { font-style: normal; color: var(--accent2); }
+.l-tag { color: var(--muted); margin: 6px 0 14px; font-size: 1.02rem; }
+.l-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
+.l-chip {
+  font: 600 10.5px var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px;
+}
+.l-chip.on { color: var(--good); background: var(--good-dim); border: 1px solid var(--good-border); }
+.l-chip.demo { color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); }
+.l-enter {
+  font: 600 15px var(--sans, inherit); color: var(--on-accent, #fff); background: var(--accent);
+  border: none; border-radius: 10px; padding: 12px 34px; cursor: pointer; letter-spacing: 0.01em;
+}
+.l-enter:hover { background: var(--accent-hover, var(--accent)); }
+.l-fine { font-size: 0.78rem; color: var(--dim); margin-top: 10px; min-height: 1.2em; }
+.l-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px; max-width: 960px; margin: 34px auto 0; text-align: left;
+}
+.l-bene { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+.l-step {
+  font: 700 10px var(--mono); letter-spacing: 0.1em; color: var(--accent2);
+  background: var(--accent-dim); border: 1px solid var(--accent-border);
+  border-radius: 5px; padding: 2px 7px; display: inline-block; margin-bottom: 8px;
+}
+.l-bene h4 { margin: 0 0 5px; font-size: 0.95rem; color: var(--text); }
+.l-bene p { font-size: 0.82rem; color: var(--muted); margin: 0 0 10px; line-height: 1.5; }
+.l-visual {
+  background: var(--panel3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font: 10.5px var(--mono); color: var(--dim); line-height: 1.7;
+  overflow-wrap: break-word;
+}
+.l-visual b { color: var(--accent2); font-weight: 600; }
+.l-visual .g { color: var(--good); }
+.l-visual .w { color: var(--warn); }
+.l-bar {
+  display: inline-block; height: 5px; border-radius: 3px; background: var(--accent);
+  vertical-align: middle; margin-right: 5px;
+}
+.l-qs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; max-width: 900px; margin: 26px auto 0; }
+.l-q {
+  font-size: 0.8rem; color: var(--text2); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 999px; padding: 5px 13px;
+}
+.l-metrics {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px; max-width: 820px; margin: 30px auto 0;
+}
+.l-metric { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; min-width: 0; }
+.l-metric b { display: block; font: 700 1.25rem var(--mono); color: var(--accent2); }
+.l-metric span { font-size: 0.7rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.07em; }
