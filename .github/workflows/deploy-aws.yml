@@ -35,6 +35,11 @@ jobs:
           role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # ubuntu-latest no longer preinstalls terraform.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # wrapper breaks `terraform output -raw`
+
       - name: Pull demo data (Chroma index, graph snapshot)
         run: |
           aws s3 sync "s3://$DEMO_DATA_BUCKET/.yt-agent/chroma" .yt-agent/chroma
