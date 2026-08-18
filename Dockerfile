@@ -18,6 +18,12 @@
 # ── Stage 1: frontend bundle ────────────────────────────────────────────
 FROM node:22-alpine AS frontend
 WORKDIR /build
+# PostHog is baked in at build time (Vite inlines import.meta.env). Leave
+# the args empty to ship without analytics — the app no-ops on a blank key.
+ARG VITE_POSTHOG_KEY=""
+ARG VITE_POSTHOG_HOST=""
+ENV VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
+    VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./

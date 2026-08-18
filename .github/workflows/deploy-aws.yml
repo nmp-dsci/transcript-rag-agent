@@ -1,0 +1,81 @@
+name: Deploy (AWS demo)
+
+# Merging to main is the push-button deploy: pull the non-git data from S3,
+# build+push the demo image (App Runner auto-deploys :latest), reconcile
+# Terraform, then smoke-test the live URL. Auth is GitHub OIDC into the
+# yt-agent-github-deploy role — no stored AWS keys.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC token for AWS
+  contents: read
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-2
+  DEPLOY_ROLE_ARN: arn:aws:iam::089783391188:role/yt-agent-github-deploy
+  DEMO_DATA_BUCKET: yt-agent-demo-data-089783391188
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Pull demo data (Chroma index, graph snapshot)
+        run: |
+          aws s3 sync "s3://$DEMO_DATA_BUCKET/.yt-agent/chroma" .yt-agent/chroma
+          aws s3 sync "s3://$DEMO_DATA_BUCKET/.yt-agent/graph_snapshot" .yt-agent/graph_snapshot
+          aws s3 sync "s3://$DEMO_DATA_BUCKET/.yt-agent/documents" .yt-agent/documents
+          aws s3 cp "s3://$DEMO_DATA_BUCKET/.yt-agent/themes.json" .yt-agent/themes.json
+          aws s3 cp "s3://$DEMO_DATA_BUCKET/.yt-agent/conflicts.json" .yt-agent/conflicts.json
+
+      - name: Terraform apply (ECR before first push)
+        working-directory: infra/terraform/demo
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve -target=aws_ecr_repository.demo
+
+      - name: Build & push demo image (linux/amd64)
+        env:
+          # Repo variable (Settings → Variables). Blank = no analytics baked
+          # in; the frontend no-ops on a blank key. Publishable, not secret.
+          POSTHOG_KEY: ${{ vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+        run: ./scripts/aws_build_push.sh
+
+      - name: Terraform apply (full)
+        working-directory: infra/terraform/demo
+        run: terraform apply -input=false -auto-approve
+
+      - name: Wait for App Runner deployment
+        run: |
+          ARN=$(aws apprunner list-services --query "ServiceSummaryList[?ServiceName=='yt-agent-demo'].ServiceArn" --output text)
+          echo "service: $ARN"
+          for i in $(seq 1 60); do
+            STATUS=$(aws apprunner describe-service --service-arn "$ARN" --query "Service.Status" --output text)
+            echo "status: $STATUS"
+            [ "$STATUS" = "RUNNING" ] && exit 0
+            [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "DELETE_FAILED" ] && exit 1
+            sleep 20
+          done
+          echo "timed out waiting for RUNNING" >&2
+          exit 1
+
+      - name: Smoke test the live URL
+        run: |
+          URL=$(terraform -chdir=infra/terraform/demo output -raw service_url)
+          ./scripts/demo_smoke.sh "$URL"

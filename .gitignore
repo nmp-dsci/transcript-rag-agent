@@ -18,3 +18,9 @@ opensrc/*/
 frontend/dist/
 frontend/node_modules/
 frontend/*.tsbuildinfo
+
+# Terraform: provider binaries and local/bootstrap state never belong in git.
+# Lock files DO get committed (provider pinning).
+.terraform/
+*.tfstate
+*.tfstate.*

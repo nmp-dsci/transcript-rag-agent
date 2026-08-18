@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { startAnalytics } from './analytics';
 import { api } from './api/client';
 import type { Corpus, Entry, Health, SetupSpec } from './api/types';
 import { ChatView } from './chat/ChatView';
@@ -45,8 +46,11 @@ export function App() {
 
   const refreshHealth = useCallback(async () => {
     try {
-      setHealth(await api.health());
+      const next = await api.health();
+      setHealth(next);
       setOffline(false);
+      // No-op unless the server says demo AND a key was baked in at build.
+      startAnalytics(next.mode);
     } catch {
       setOffline(true);
     }
