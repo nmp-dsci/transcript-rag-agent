@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -155,17 +157,46 @@ def write_dashboard(
             output_dir=output.parent / "chunk_space",
             refresh_projection=False,
         )
-    output.write_text(
-        render_html(
-            rows,
-            settings,
-            filter_test_question,
-            filter_test_rows,
-            ingestion_runs=runs,
-            chunk_space=chunk_space,
-        ),
-        encoding="utf-8",
+    html = render_html(
+        rows,
+        settings,
+        filter_test_question,
+        filter_test_rows,
+        ingestion_runs=runs,
+        chunk_space=chunk_space,
     )
+    # Written via a temp file and an atomic rename rather than in place.
+    # Every index run ends by refreshing this one file, so with concurrent
+    # ingestion workers two runs can be writing it at the same moment — and a
+    # plain ``write_text`` from two threads interleaves into invalid HTML that
+    # neither run notices. ``os.replace`` is atomic on POSIX and Windows, so a
+    # reader sees either the old file or the new one, never a torn one, and
+    # last-writer-wins is the correct outcome here: both runs render the same
+    # collections, so the later render is the more current.
+    #
+    # The temp file is created alongside the target so the rename stays on one
+    # filesystem, which is what makes it atomic.
+    handle = tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=output.parent,
+        prefix=f".{output.name}.",
+        suffix=".tmp",
+        delete=False,
+    )
+    try:
+        with handle:
+            handle.write(html)
+        # tempfile creates at 0600. Left alone, an atomic-write refactor would
+        # quietly make a previously world-readable dashboard owner-only, so
+        # restore the umask-derived mode a plain write would have produced.
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(handle.name, 0o666 & ~umask)
+        os.replace(handle.name, output)
+    except BaseException:
+        Path(handle.name).unlink(missing_ok=True)
+        raise
 
 
 def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:

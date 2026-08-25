@@ -303,8 +303,29 @@ export interface Video {
   upload_date: string | null;
   view_count: number | null;
   summary: string | null;
+  /** Enrichment state, recorded on the document rather than inferred from
+   * whether `summary` happens to be set — which could never distinguish a
+   * video nobody had summarised yet from one whose provider returned 402. */
+  summary_status: EnrichmentState;
+  /** Which generator wrote `summary`: `description` (the creator's own
+   * YouTube blurb, no LLM) or `llm`. Null on anything indexed before the
+   * field existed. A corpus mixing both is worth surfacing — the summary
+   * embeddings share one vector space. */
+  summary_source: string | null;
+  graph_status: EnrichmentState;
   fetched_at: string | null;
   chunk_count: number;
+}
+
+/** `pending` nothing has run · `done` succeeded · `failed` attempted and raised. */
+export type EnrichmentState = "pending" | "done" | "failed";
+
+/** What still needs enriching corpus-wide (GET /api/enrichment). */
+export interface EnrichmentSummary {
+  summary_pending: string[];
+  graph_pending: string[];
+  needs_llm: boolean;
+  total_videos: number;
 }
 
 export interface Channel {
@@ -1277,7 +1298,10 @@ export interface IndexResult {
 /** One queued/running/finished ingestion job (GET/POST /api/index/queue). */
 export interface IngestionJob {
   id: string;
-  mode: "video" | "channel";
+  /** `enrichment` jobs index nothing — they catch the knowledge graph up on
+   * videos already in the corpus, through the same queue so they share its
+   * workers, progress broadcasting and failure isolation. */
+  mode: "video" | "channel" | "enrichment";
   target: string;
   latest: number | null;
   status: "queued" | "running" | "done" | "error";
@@ -1285,7 +1309,19 @@ export interface IngestionJob {
   message: string | null;
   result: IndexResult | null;
   error: string | null;
+  /** 1-based position of `stage` among the core indexing stages. Reported as
+   * each stage actually begins, so "3 / 4" is a fact about where the run is
+   * rather than a guess made before any work started. */
+  stage_index: number | null;
+  stage_total: number;
+  /** Only set on `enrichment` jobs: the videos being caught up. */
+  enrich_video_ids?: string[];
 }
+
+/** The stages of a core index, in order. Enrichment is deliberately not among
+ * them: the summary is written during `embed` from the video description, and
+ * graph extraction is a separate job. */
+export const CORE_STAGES = ['discover', 'fetch', 'chunk', 'embed'] as const;
 
 /* ── Expert rubric packs (GET /api/packs) ────────────────────────────────
    A pack is a JSON file under experts/ that `build-packs` wrote. The panel

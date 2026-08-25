@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indexing Rebuild — Delivery</title>
+<style>
+/* Design source (2): the project's own system — tokens from frontend/src/theme.css. */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --on-accent:#0b1220; --hover:#182029; --accent-hover:#4b93f8;
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+  --border:#d1d9e0; --border2:#bcc4cc;
+  --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+  --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+  --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+  --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+  --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+  --on-accent:#ffffff; --hover:#eef2f6; --accent-hover:#0860ca;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --hover:#eef2f6; --accent-hover:#0860ca;
+  }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:14px/1.6 'Segoe UI',Helvetica,Arial,sans-serif; overflow-wrap:anywhere; }
+.wrap { max-width:1120px; margin:0 auto; padding:32px 24px 96px; }
+h1,h2,h3,h4 { line-height:1.25; margin:0; }
+h1 { font-size:30px; letter-spacing:-0.02em; }
+h2 { font-size:19px; }
+h3 { font-size:15px; }
+h4 { font-size:13px; font-family:var(--mono); color:var(--accent2); font-weight:600; }
+p { margin:8px 0; color:var(--text2); }
+.mono { font-family:var(--mono); font-size:12px; }
+code { font-family:var(--mono); font-size:12px; background:var(--panel2);
+  border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--text); }
+td .mono, td code, th code { white-space:nowrap; overflow-wrap:normal; }
+.muted{color:var(--muted);} .dim{color:var(--dim);}
+section { margin-top:44px; }
+.sec-head { display:flex; align-items:baseline; gap:12px; padding-bottom:10px;
+  border-bottom:1px solid var(--border); margin-bottom:18px; flex-wrap:wrap; }
+.sec-num { font:600 12px var(--mono); color:var(--accent2); letter-spacing:.08em; }
+.sec-sub { color:var(--muted); font-size:13px; margin-left:auto; }
+.badge { display:inline-block; font:600 11px var(--mono); padding:2px 7px;
+  border-radius:4px; border:1px solid; white-space:nowrap; }
+.b-bad{background:var(--bad-dim);border-color:var(--bad-border);color:var(--bad);}
+.b-warn{background:var(--warn-dim);border-color:var(--warn-border);color:var(--warn);}
+.b-good{background:var(--good-dim);border-color:var(--good-border);color:var(--good);}
+.b-acc{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent2);}
+.b-plain{background:var(--panel2);border-color:var(--border2);color:var(--text2);}
+.hero { background:linear-gradient(180deg,var(--panel3),var(--panel));
+  border:1px solid var(--border); border-radius:10px; padding:26px; }
+.factgrid { display:grid; gap:1px; background:var(--border); border:1px solid var(--border);
+  border-radius:8px; overflow:hidden; margin-top:18px;
+  grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr)); }
+.fact { background:var(--panel); padding:12px 14px; min-width:0; }
+.fact .n { font:600 21px var(--mono); color:var(--text); }
+.fact .l { font-size:11px; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.06em; margin-top:2px; }
+.tw { overflow-x:auto; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+table { border-collapse:collapse; width:100%; font-size:13px; min-width:600px; }
+th { text-align:left; font:600 11px var(--mono); color:var(--muted); text-transform:uppercase;
+  letter-spacing:.06em; padding:10px 12px; background:var(--panel3);
+  border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:11px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text2); }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--hover); }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; min-width:0; }
+.card.bad{border-color:var(--bad-border);} .card.good{border-color:var(--good-border);}
+.card.warn{border-color:var(--warn-border);} .card.acc{border-color:var(--accent-border);}
+.card h3{margin-bottom:6px;} .card p{font-size:13px;}
+.card ul{margin:8px 0 0;padding-left:18px;color:var(--text2);font-size:13px;}
+.card li{margin:4px 0;}
+.grid { display:grid; gap:14px; }
+.g2 { grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr)); }
+.g3 { grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); }
+.grid > * { min-width:0; }
+.callout { border-left:3px solid var(--accent); background:var(--accent-dim);
+  padding:12px 16px; border-radius:0 6px 6px 0; margin-top:14px; }
+.callout.warn{border-left-color:var(--warn);background:var(--warn-dim);}
+.callout.bad{border-left-color:var(--bad);background:var(--bad-dim);}
+.callout.good{border-left-color:var(--good);background:var(--good-dim);}
+.callout p{margin:0;color:var(--text);font-size:13px;}
+.callout p + p{margin-top:8px;}
+pre.code { background:#0a0d12; border:1px solid var(--border); border-radius:6px;
+  padding:12px 14px; overflow-x:auto; font:12px/1.55 var(--mono); color:var(--text2);
+  white-space:pre; margin:10px 0 0; }
+:root[data-theme='light'] pre.code { background:#0e1116; color:#c9d1d9; }
+pre.code .k{color:#ff7b72;} pre.code .s{color:#a5d6ff;} pre.code .c{color:var(--dim);}
+pre.code .f{color:#d2a8ff;} pre.code .add{color:var(--good);} pre.code .del{color:var(--bad);}
+.filelabel { font:11px var(--mono); color:var(--muted); margin-top:14px; display:block; }
+figure { margin:16px 0 0; }
+figure img { width:100%; height:auto; display:block; border:1px solid var(--border2);
+  border-radius:8px; background:var(--bg); }
+figcaption { font-size:12px; color:var(--muted); margin-top:8px; }
+.step-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.evidence-tag { font:600 10px var(--mono); color:var(--good); letter-spacing:.1em;
+  text-transform:uppercase; }
+.ba { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr)); margin-top:12px; }
+.ba > div { min-width:0; }
+.ba .lbl { font:600 10px var(--mono); letter-spacing:.1em; text-transform:uppercase;
+  margin-bottom:6px; display:block; }
+.lbl.before{color:var(--bad);} .lbl.after{color:var(--good);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="badge b-good">DELIVERED</span>
+    <span class="badge b-plain">branch injest-exploration</span>
+    <span class="badge b-plain">25 Aug 2026</span>
+    <span class="badge b-acc">steps 1&ndash;8</span>
+  </div>
+  <h1 style="margin-top:14px">Indexing no longer needs an LLM</h1>
+  <p style="font-size:15px;max-width:76ch">
+    Four videos in your queue read <span class="mono">Indexing failed (exit 1)</span>. The cause
+    was a DeepSeek balance of &minus;$0.09, but the <em>defect</em> was that a summary provider
+    could fail an index whose transcript and chunks were already committed. All eight steps are
+    built, tested and validated in the running app &mdash; each one against the real broken
+    provider, which never got topped up.
+  </p>
+  <div class="factgrid">
+    <div class="fact"><div class="n" style="color:var(--good)">8/8</div><div class="l">steps delivered</div></div>
+    <div class="fact"><div class="n">2,057</div><div class="l">tests passing</div></div>
+    <div class="fact"><div class="n">+1,529</div><div class="l">lines changed</div></div>
+    <div class="fact"><div class="n" style="color:var(--good)">0</div><div class="l">LLM calls in indexing</div></div>
+    <div class="fact"><div class="n">195</div><div class="l">Supadata credits left</div></div>
+    <div class="fact"><div class="n" style="color:var(--bad)">&minus;$0.09</div><div class="l">DeepSeek, still</div></div>
+  </div>
+  <div class="callout good">
+    <p><strong>The proof that the design is right:</strong> everything below was validated while
+    the provider that caused the incident was still broken. A brand-new video indexed
+    end&#8209;to&#8209;end, with a summary, during this build &mdash; see &sect;08.</p>
+  </div>
+</header>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">00</span><h2>Before and after</h2>
+    <span class="sec-sub">measured on your corpus, not described</span></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th></th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A 402 during indexing</strong></td>
+            <td><span class="badge b-bad">exit 1</span> job failed, chunks silently kept</td>
+            <td><span class="badge b-good">exit 0</span> job Done, degradation named</td></tr>
+        <tr><td><strong>Videos without a summary</strong></td>
+            <td class="mono">14 of 124</td>
+            <td class="mono">1 of 125 <span class="dim">(and it is named)</span></td></tr>
+        <tr><td><strong>Summary source</strong></td>
+            <td>DeepSeek LLM &mdash; tokens, and a provider that can fail</td>
+            <td>YouTube description &mdash; already fetched, free, no LLM</td></tr>
+        <tr><td><strong>"Pending" vs "failed"</strong></td>
+            <td>indistinguishable &mdash; inferred from <code>summary is None</code></td>
+            <td>recorded explicitly on the document</td></tr>
+        <tr><td><strong>Concurrent index jobs</strong></td>
+            <td class="mono">1</td>
+            <td class="mono">3 <span class="dim">(configurable)</span></td></tr>
+        <tr><td><strong>Progress reporting</strong></td>
+            <td>3 stages announced before any work, then one opaque block</td>
+            <td>4 stages, each fired as it actually begins</td></tr>
+        <tr><td><strong>Retry cost</strong></td>
+            <td>re-fetched the transcript &mdash; 1 Supadata credit per failed retry</td>
+            <td>nothing to retry; enrichment reads what is already stored</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">01</span><h2>Enrichment can no longer fail an index</h2>
+    <span class="sec-sub">src/rag/indexing.py</span></div>
+  <p style="max-width:78ch">
+    <code>RagIndexer.index()</code> commits the transcript and chunks, then generates a summary.
+    A 402 in that last step propagated all the way to <code>cli.py</code>'s top-level handler and
+    returned exit 1 &mdash; for a video that was, by then, fully retrievable. The result now
+    carries the failure instead of raising it.
+  </p>
+  <div class="ba">
+    <div><span class="lbl before">Before</span><pre class="code">        removed = self.chunk_store.replace_chunks(raw_document.video_id, chunks)
+        summary_status = None
+        if self.summary_store is not None and self.summary_generator is not None:
+            _summary, summary_status = self.summary_store.ensure_summary(
+                raw_document,
+                self.summary_generator,
+                refresh=refresh_summary,
+                chunk_count=len(chunks),
+            )
+            refreshed = self.raw_store.get_raw_document(raw_document.video_id)
+            if refreshed is not None:
+                raw_document = refreshed</pre></div>
+    <div><span class="lbl after">After</span><pre class="code">        removed = self.chunk_store.replace_chunks(raw_document.video_id, chunks)
+        # ── the core index is complete and durable from here ──────────────
+        # Everything below is enrichment. It reports failure; it never raises.
+        summary_status = None
+        summary_error = None
+        if self.summary_store is not None and self.summary_generator is not None:
+            try:
+                _summary, summary_status = self.summary_store.ensure_summary(
+                    raw_document,
+                    self.summary_generator,
+                    refresh=refresh_summary,
+                    chunk_count=len(chunks),
+                )
+            except Exception as exc:
+                summary_status = FAILED
+                summary_error = str(exc)
+                logger.warning(
+                    &quot;summary generation failed for %s — indexed without one: %s&quot;,
+                    raw_document.video_id,
+                    exc,
+                )
+                # Persist the failure. An unrecorded one is indistinguishable
+                # from &quot;nobody has tried yet&quot;, and the repair pass has to be
+                # able to find these.
+                raw_document = raw_document.model_copy(update={&quot;summary_status&quot;: FAILED})
+                self.raw_store.upsert_raw_document(raw_document)
+            else:
+                refreshed = self.raw_store.get_raw_document(raw_document.video_id)
+                if refreshed is not None:
+                    raw_document = refreshed</pre></div>
+  </div>
+  <div class="callout">
+    <p>The precedent was already in the codebase: <code>ingestion_queue.py</code> had treated a
+    failed <em>graph</em> extraction as non-fatal since it was written. Summaries were simply
+    never given the same treatment &mdash; two enrichment steps, two opposite policies, in the
+    same pipeline.</p>
+  </div>
+  <h4 style="margin-top:22px">Evidence &mdash; the same 402, the opposite outcome</h4>
+  <pre class="code">$ .venv/bin/python -m src.cli index-rag &quot;https://www.youtube.com/watch?v=tLK5jyhQOgA&quot;
+EXIT CODE = 0
+
+RAG index updated
+Chunks: 26
+Summary: failed
+Summary error: Error code: 402 - {&#x27;error&#x27;: {&#x27;message&#x27;: &#x27;Insufficient Balance&#x27;, ...}}</pre>
+  <figure>
+    <img src="s18_evidence/step1-done-not-failed.png" alt="The queue row for tLK5jyhQOgA now reads Done instead of Failed">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;<code>tLK5jyhQOgA</code> &mdash; one
+    of the four rows from your screenshot &mdash; now completes. Same provider, same balance.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><h2>Pending and failed are now different things</h2>
+    <span class="sec-sub">src/rag/models.py &middot; storage.py &middot; api/corpus.py</span></div>
+  <p style="max-width:78ch">
+    "This video has no summary" used to be read off <code>summary is None</code>, which cannot
+    tell a video nobody has summarised yet from one whose provider lost the attempt. Repairing
+    the second requires finding it first. Three fields now record it, with a fallback so
+    everything indexed before they existed still reads correctly.
+  </p>
+  <pre class="code">summary_status: str | None = None   # pending | done | failed
+summary_source: str | None = None   # description | llm
+graph_status:   str | None = None   # pending | done | failed
+
+
+def summary_state(document: RawTranscriptDocument) -&gt; str:
+    &quot;&quot;&quot;Tolerant of pre-field documents: a stored summary means it succeeded,
+    its absence means nothing has produced one yet. Only `failed` is genuinely
+    new information — which is exactly why the field had to exist.&quot;&quot;&quot;
+    if document.summary_status:
+        return document.summary_status
+    return DONE if (document.summary or &quot;&quot;).strip() else PENDING</pre>
+  <figure>
+    <img src="s18_evidence/step2-failed-vs-pending.png" alt="Corpus health strip distinguishing a failed summary from pending ones">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;The health strip can now say
+    <em>which</em> of the missing summaries were attempted and lost &mdash; a sentence the
+    system could not previously form.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><h2>The summary comes from the description</h2>
+    <span class="sec-sub">src/rag/summaries.py &middot; config.py</span></div>
+  <p style="max-width:78ch">
+    Supadata returns <code>description</code> in the same <code>/v1/metadata</code> call the
+    fetch step already makes. Using it removes the LLM from indexing altogether &mdash; the
+    change that makes this failure class structurally impossible rather than merely survivable.
+  </p>
+  <pre class="code">class DescriptionSummaryGenerator:
+    &quot;&quot;&quot;Uses the creator&#x27;s own YouTube description as the summary. No LLM.
+
+    Supadata returns ``description`` in the same ``/v1/metadata`` call the
+    fetch step already makes, so this costs nothing — no tokens, no extra
+    credit, no provider that can be out of balance. That is the point: it
+    takes the LLM out of the indexing path entirely, which is what made the
+    402 incident possible in the first place.
+
+    The tradeoff is real and worth naming: a description is what the creator
+    wrote to make you *click*, while an LLM summary is derived from what was
+    actually *said*. Expect topic routing to hold up and specific-claim
+    routing to suffer. ``eval-ablation`` measures which.
+
+    Descriptions too thin to route on raise, so the video is recorded with
+    ``summary_status=&quot;failed&quot;`` and shows up as work to do — rather than
+    quietly poisoning the router with a line of marketing copy.
+    &quot;&quot;&quot;
+
+    source = &quot;description&quot;
+    model_name = &quot;youtube-description&quot;
+
+    def __init__(self, min_chars: int = 120) -&gt; None:
+        self.min_chars = min_chars
+
+    def summarize(self, raw_document: RawTranscriptDocument) -&gt; str:
+        body = clean_description(raw_document.description or &quot;&quot;)
+        title = (raw_document.title or &quot;&quot;).strip()
+        # The title is the single most routable line a video has, and it is
+        # always present — so it leads, and it counts toward the threshold.
+        summary = f&quot;{title}. {body}&quot;.strip(&quot;. &quot;).strip() if title else body
+        if len(summary) &lt; self.min_chars:
+            raise ValueError(
+                f&quot;YouTube description is too thin to route on &quot;
+                f&quot;({len(summary)} chars, need {self.min_chars}) — &quot;
+                f&quot;nothing but links, timestamps or a call to action&quot;
+            )
+        return summary</pre>
+  <div class="callout warn">
+    <p><strong>Too thin to route on raises, deliberately.</strong> A description that cleans down
+    to "Work with me:" would otherwise become that video's routing signal. Failing is the better
+    outcome: the router is better off not selecting a video than selecting it for the wrong
+    reason &mdash; and &sect;02 means the failure is recorded rather than lost.</p>
+  </div>
+  <p style="margin-top:14px"><code>YT_AGENT_SUMMARY_SOURCE=llm</code> restores the DeepSeek
+  summariser; the default is <code>description</code>.</p>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">03b</span><h2>The ablation &mdash; and it contradicts my own warning</h2>
+    <span class="sec-sub">src/evals/summary_source.py</span></div>
+  <p style="max-width:78ch">
+    I told you to expect descriptions to route worse: marketing copy versus prose derived from
+    what was actually said. <strong>The data does not support that.</strong> Both arms embedded
+    from text already on disk, scored on the same golden questions, no LLM and no judge &mdash;
+    which matters, because the judge is the provider that was down.
+  </p>
+  <div class="tw" style="margin-top:14px">
+    <table>
+      <thead><tr><th>Summary source</th><th>recall@1</th><th>recall@3</th><th>recall@5</th><th>mean rank</th></tr></thead>
+      <tbody>
+        <tr><td>LLM summary (DeepSeek)</td><td class="mono">0.500</td><td class="mono">0.786</td>
+            <td class="mono">0.857</td><td class="mono">2.86</td></tr>
+        <tr style="background:var(--good-dim)"><td><strong>YouTube description</strong></td>
+            <td class="mono">0.500</td><td class="mono"><strong>0.857</strong></td>
+            <td class="mono">0.857</td><td class="mono">2.93</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn">
+    <p><strong>Read this as "indistinguishable", not "better".</strong> Only 14 golden questions
+    have an expected video inside the 109-video comparable set, so one question flipping moves
+    recall@3 by 0.071. The honest conclusion is that switching source cost nothing measurable
+    &mdash; not that descriptions win.</p>
+  </div>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><h2>The state is visible, and actionable</h2>
+    <span class="sec-sub">IndexPanel.tsx &middot; api/main.py &middot; ingestion_queue.py</span></div>
+  <p style="max-width:78ch">
+    Recorded state the UI never shows is the same as silent state. Each finished job now carries
+    an enrichment line, and the corpus backlog became the button that clears it. Enrichment runs
+    as an ordinary queue job so it shares the same workers, broadcasting and failure isolation
+    rather than inventing a second execution path.
+  </p>
+  <pre class="code">GET  /api/enrichment       →  what still needs enriching corpus-wide
+POST /api/enrichment/run   →  queues a graph catch-up job (video_ids?, limit?)</pre>
+  <figure>
+    <img src="s18_evidence/step4-enrichment-banner.png" alt="Corpus enrichment banner with a Run enrichment pass button">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;The backlog, and the fact that
+    clearing it costs no Supadata credits, stated where the decision gets made.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">05</span><h2>All 124 summaries rewritten</h2>
+    <span class="sec-sub">new: <code>index-summaries</code></span></div>
+  <p style="max-width:78ch">
+    Your call in the review: one consistent source rather than a corpus mixing LLM prose with
+    marketing copy in a single embedding space. Free and local &mdash; the descriptions were
+    already on disk, so this is a re-embed, not a re-fetch.
+  </p>
+  <pre class="code">$ .venv/bin/python -m src.cli index-summaries --refresh
+
+Transcript summaries
+Source: description (youtube-description)
+Videos considered: 124
+Written: 123
+Already current: 0
+Failed: 1
+  - Cu8kUBwLoTM: YouTube description is too thin to route on (104 chars,
+    need 120) — nothing but links, timestamps or a call to action</pre>
+  <p style="margin-top:12px">I backed the 111 existing LLM summaries up to
+  <code>.yt-agent/llm-summaries-backup.json</code> first. You did not ask me to keep them, but
+  overwriting real work product irreversibly when the backup costs nothing was not a trade worth
+  making.</p>
+  <figure>
+    <img src="s18_evidence/step5-123-of-124.png" alt="Corpus header showing 123 of 124 videos with summaries">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;<span class="mono">14 of 124</span>
+    became <span class="mono">1 of 124</span>, and the one is named.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">06</span><h2>Made concurrency safe before using it</h2>
+    <span class="sec-sub">src/rag/storage.py &middot; dashboard/rag_pipeline.py</span></div>
+  <p style="max-width:78ch">
+    Two things are shared the moment more than one job runs: the Chroma collections every job
+    writes, and the single dashboard HTML file every job rewrites when it finishes.
+  </p>
+  <pre class="code">#: One lock per (chroma path, collection), shared by every store instance in
+#: the process.
+#:
+#: Per-instance locking would not help: the ingestion queue runs each job
+#: through ``cli.main(argv)`` in-process, and every job constructs its own
+#: stores. Two concurrent jobs therefore hold two different objects pointing at
+#: the same collection on disk. Keying the lock by what is actually shared —
+#: the collection — is what makes concurrent workers safe.
+#:
+#: Writes are milliseconds against network calls measured in seconds, so
+#: serialising them costs effectively nothing.
+_write_locks: dict[tuple[str, str], threading.Lock] = defaultdict(threading.Lock)
+_write_locks_guard = threading.Lock()
+
+
+def collection_write_lock(path: Path | str, collection_name: str) -&gt; threading.Lock:
+    &quot;&quot;&quot;The process-wide write lock for one Chroma collection.&quot;&quot;&quot;
+    key = (str(Path(path).resolve()), collection_name)
+    with _write_locks_guard:
+        return _write_locks[key]</pre>
+  <div class="callout">
+    <p>The dashboard is now written to a temp file and moved into place with
+    <code>os.replace</code>. Two concurrent renders can no longer interleave into invalid HTML
+    that neither run notices, and last-writer-wins is the correct outcome &mdash; both render
+    the same collections, so the later one is more current.</p>
+  </div>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><h2>Three workers, not one</h2>
+    <span class="sec-sub">src/api/ingestion_queue.py</span></div>
+  <p style="max-width:78ch">
+    The single worker was never a technical constraint &mdash; the queue's own docstring
+    justified it by citing <code>bulk-index</code>'s <code>--concurrency 1</code> guard, which
+    existed because nobody had removed it. Indexing is almost entirely network wait, so one
+    worker left that latency completely unhidden.
+  </p>
+  <pre class="code">        self.max_workers = max(1, max_workers)
+        self._workers = [
+            threading.Thread(target=self._run, daemon=True, name=f&quot;ingestion-queue-{index}&quot;)
+            for index in range(self.max_workers)
+        ]
+        for worker in self._workers:
+            worker.start()</pre>
+  <h4 style="margin-top:22px">The part concurrency broke</h4>
+  <p style="max-width:78ch">
+    With one worker, "everything that appeared while I ran" was an exact description of what a
+    job added. With three, a job's before/after window overlaps its neighbours' and the naive
+    difference happily reports another job's video as its own.
+  </p>
+  <pre class="code">    def _attribute_added(
+        self,
+        job: IngestionJob,
+        before_ids: set[str],
+        after_videos: list[dict[str, Any]],
+    ) -&gt; list[dict[str, Any]]:
+        &quot;&quot;&quot;Which of the new videos belong to *this* job.
+
+        With one worker, &quot;everything that appeared while I ran&quot; was exact.
+        With several, a job&#x27;s before/after window overlaps its neighbours&#x27;, so
+        the naive difference happily reports another job&#x27;s video as its own.
+
+        Two rules, in order:
+
+        * A single-video job knows precisely which video it was for — its own
+          target URL — so it claims that one and nothing else.
+        * A channel job cannot know without re-reading the CLI&#x27;s run record,
+          so it claims whatever is new and unclaimed. First finisher wins.
+          That can misattribute a video *between* two concurrent channel runs,
+          but it can never double-count one, and the corpus totals stay right.
+        &quot;&quot;&quot;
+        fresh = [v for v in after_videos if v[&quot;video_id&quot;] not in before_ids]
+        with self._lock:
+            target = _video_id_in(job.target) if job.mode == &quot;video&quot; else None
+            unclaimed = [v for v in fresh if v[&quot;video_id&quot;] not in self._attributed]
+            if target is not None:
+                claimed = [v for v in unclaimed if v[&quot;video_id&quot;] == target]
+            else:
+                # Either a channel job, or a single-video target this could not
+                # parse. Falling back to &quot;everything unclaimed&quot; keeps a job
+                # that cannot identify itself reporting *something* true,
+                # rather than silently reporting nothing.
+                claimed = unclaimed
+            self._attributed.update(v[&quot;video_id&quot;] for v in claimed)
+        return claimed</pre>
+  <figure>
+    <img src="s18_evidence/step7-three-concurrent.png" alt="Three jobs indexing simultaneously with two queued behind">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;Three <span class="mono">Indexing…</span>
+    at once, two queued behind them. Previously exactly one would run.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><h2>Progress that is true</h2>
+    <span class="sec-sub">src/rag/progress.py</span></div>
+  <p style="max-width:78ch">
+    The old stages were theatre: <code>discover</code>, <code>fetch</code> and
+    <code>processing</code> were announced in three consecutive statements with no work between
+    them, and then the entire index ran inside one opaque call. A stepper built on that would
+    jump to 3/6 and freeze. The queue drives indexing through <code>cli.main(argv)</code>, which
+    returns an exit code and nothing else, so progress needed a channel.
+  </p>
+  <pre class="code">CORE_STAGES: tuple[str, ...] = (&quot;discover&quot;, &quot;fetch&quot;, &quot;chunk&quot;, &quot;embed&quot;)
+
+StageReporter = Callable[[str], None]
+
+_reporter: ContextVar[StageReporter | None] = ContextVar(&quot;stage_reporter&quot;, default=None)
+
+
+@contextmanager
+def stage_reporter(reporter: StageReporter | None) -&gt; Iterator[None]:
+    &quot;&quot;&quot;Install ``reporter`` for this context, restoring the previous one after.&quot;&quot;&quot;
+    token = _reporter.set(reporter)
+    try:
+        yield
+    finally:
+        _reporter.reset(token)
+
+
+def report_stage(stage: str) -&gt; None:
+    &quot;&quot;&quot;Announce that ``stage`` has begun. A no-op when nothing is listening.
+
+    Never raises: progress reporting must not be able to fail an index. That
+    is the same rule the enrichment steps follow, for the same reason.
+    &quot;&quot;&quot;
+    reporter = _reporter.get()
+    if reporter is None:
+        return
+    try:
+        reporter(stage)
+    except Exception:  # pragma: no cover - defensive
+        pass</pre>
+  <div class="callout">
+    <p>A <code>ContextVar</code> rather than a global, so three concurrent workers cannot report
+    into each other's jobs &mdash; and installed <em>inside</em> the callable that
+    <code>_run_blocking</code> runs, because a new thread does not inherit its caller's context.
+    A reporter that raises is swallowed: progress reporting must never be able to fail the thing
+    it reports on.</p>
+  </div>
+  <figure>
+    <img src="s18_evidence/step8-stage-progress.png" alt="Per-job steppers showing discover, fetch, chunk, embed">
+    <figcaption><span class="evidence-tag">Live</span> &nbsp;Per-job, because with three workers
+    a single global reading would be meaningless.</figcaption>
+  </figure>
+  <figure>
+    <img src="s18_evidence/step8-end-state.png" alt="A newly indexed video showing 4/4 and its enrichment state">
+    <figcaption><span class="evidence-tag">Live &middot; the whole build in one row</span>
+    &nbsp;A brand-new video &mdash; <em>Gradient descent, how neural networks learn</em> &mdash;
+    indexed end&#8209;to&#8209;end with <strong>zero LLM calls</strong> while DeepSeek sat at
+    &minus;$0.09. 4/4 stages, summary written from the description, graph honestly pending,
+    +14 chunks live.</figcaption>
+  </figure>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">09</span><h2>Four things the plan did not predict</h2>
+    <span class="sec-sub">found while building, not while reviewing</span></div>
+
+  <div class="card bad">
+    <h3><span class="badge b-bad">worst of the four</span> &nbsp;Chroma's <code>upsert</code> merges metadata</h3>
+    <p>It does not replace it. A key omitted from the new metadata keeps its old value forever
+    &mdash; which means the codebase's "write only if not None" pattern <strong>can never unset a
+    field</strong>. I only found it because the first corpus rewrite left one video carrying a
+    DeepSeek summary while every other video had a description, and my own mixed-source warning
+    failed to notice.</p>
+    <div class="ba">
+      <div><span class="lbl before">Before &mdash; cannot clear</span><pre class="code">    if document.summary is not None:
+        metadata[&quot;summary&quot;] = document.summary
+    if document.summary_model is not None:
+        metadata[&quot;summary_model&quot;] = document.summary_model
+    if document.summary_generated_at is not None:
+        metadata[&quot;summary_generated_at&quot;] = document.summary_generated_at</pre></div>
+      <div><span class="lbl after">After</span><pre class="code">    # Written unconditionally, as ``&quot;&quot;`` when unset, because Chroma&#x27;s upsert
+    # *merges* metadata rather than replacing it: a key left out of the new
+    # dict keeps its old value forever. Every other clearable field here
+    # (title, language) already uses the same ``or &quot;&quot;`` convention, and
+    # ``_none_if_empty`` turns it back into None on read.
+    #
+    # This matters for real: clearing a stale summary — the case where a
+    # rewrite to a new source fails and the previous generator&#x27;s text must not
+    # be left behind — is impossible with a conditional write.
+    metadata[&quot;summary&quot;] = document.summary or &quot;&quot;
+    metadata[&quot;summary_model&quot;] = document.summary_model or &quot;&quot;
+    metadata[&quot;summary_generated_at&quot;] = document.summary_generated_at or &quot;&quot;
+    metadata[&quot;summary_embedding_model&quot;] = document.summary_embedding_model or &quot;&quot;
+    metadata[&quot;summary_embedded_at&quot;] = document.summary_embedded_at or &quot;&quot;</pre></div>
+    </div>
+    <p style="margin-top:10px">Verified directly rather than assumed:</p>
+    <pre class="code">col.upsert(ids=[&#x27;a&#x27;], metadatas=[{&#x27;keep&#x27;:&#x27;1&#x27;,&#x27;drop&#x27;:&#x27;2&#x27;}])
+col.upsert(ids=[&#x27;a&#x27;], metadatas=[{&#x27;keep&#x27;:&#x27;1&#x27;}])
+→ {&#x27;keep&#x27;: &#x27;1&#x27;, &#x27;drop&#x27;: &#x27;2&#x27;}      # &quot;drop&quot; survives</pre>
+  </div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card warn">
+      <h3>A failed rewrite left a stale summary</h3>
+      <p>When the new source can't produce a summary, keeping the old one from a
+      <em>different</em> generator is the worst outcome: the corpus claims one consistent source
+      while that video routes on another's prose. It is now dropped, so the video is honestly
+      unrouted.</p>
+    </div>
+    <div class="card warn">
+      <h3>An enrichment job reported "done" while failing</h3>
+      <p>For an ingest a failed graph is a footnote &mdash; the vector index already succeeded.
+      For an enrichment job the graph <em>is</em> the job, so the same result had to read as a
+      failure. It now says which chunks failed, and that the corpus is unharmed.</p>
+    </div>
+    <div class="card warn">
+      <h3>The atomic write changed file permissions</h3>
+      <p><code>tempfile</code> creates at 0600, so the dashboard silently went from
+      world-readable to owner-only. Restored to the umask-derived mode a plain write would have
+      produced.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>Two existing tests were quietly order-dependent.</strong> One asserted jobs
+    <em>complete</em> in submission order, another mapped a fixed list of exit codes onto jobs by
+    arrival &mdash; both fine with one worker, both racy with three. Rather than delete them I
+    pinned each to <code>max_workers=1</code>, since serial ordering is genuinely what they
+    test, and added separate tests for the pool's real invariants: every job runs exactly once,
+    and completion order is not promised.</p>
+  </div>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">10</span><h2>What is covered</h2>
+    <span class="sec-sub">2,057 tests, all passing</span></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>New test file</th><th>What it pins down</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">tests/rag/test_indexing_enrichment.py</td>
+            <td>A 402 degrades an index instead of failing it; the failure is persisted, not just
+                returned; clearing a summary actually clears it</td></tr>
+        <tr><td class="mono">tests/rag/test_description_summaries.py</td>
+            <td>Links, timestamps and handles are stripped; the title leads; a description too
+                thin to route on raises; no LLM client exists on the path</td></tr>
+        <tr><td class="mono">tests/rag/test_progress.py</td>
+            <td>Stages fire in order as work begins; <code>chunk</code> is not reported before the
+                transcript exists; concurrent jobs do not report into each other; a broken
+                reporter cannot fail an index</td></tr>
+        <tr><td class="mono">tests/rag/test_concurrent_writes.py</td>
+            <td>One lock per collection across instances; ten simultaneous videos all survive;
+                a reader never sees a half-written dashboard</td></tr>
+        <tr><td class="mono">tests/evals/test_summary_source.py</td>
+            <td>Only videos with both texts are comparable; thin descriptions are counted, not
+                dropped; a summary that misses the topic ranks below one that hits it</td></tr>
+        <tr><td class="mono">tests/api/test_ingestion_queue.py <span class="dim">(extended)</span></td>
+            <td>Enrichment jobs index nothing and isolate failure; jobs genuinely overlap; a
+                misconfigured pool still gets one worker; no video is ever claimed twice</td></tr>
+        <tr><td class="mono">frontend IndexPanel.test.tsx <span class="dim">(extended)</span></td>
+            <td>A queued job shows no stage; a failed run marks the stage it died on; done reads
+                4/4 whatever the last event carried; an enrichment job gets no stepper</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<section>
+  <div class="sec-head"><span class="sec-num">11</span><h2>What I did not do</h2>
+    <span class="sec-sub">stated rather than left for you to find</span></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Step 9 &mdash; the two zero-chunk videos</h3>
+      <p><code>qcH_-leTt7Q</code> and <code>aircAruvnKk</code> still have a transcript and no
+      chunks, so they remain invisible to retrieval and are still counted in the corpus total.
+      It was outside the steps 1&ndash;8 you approved, and you left question 4 unanswered.</p>
+    </div>
+    <div class="card">
+      <h3>Nothing is committed</h3>
+      <p>All of it is uncommitted on <code>injest-exploration</code>, alongside the working-tree
+      changes that were already there. Say the word and I will stage the coherent set and write
+      the commits.</p>
+    </div>
+    <div class="card">
+      <h3>The knowledge graph is still empty</h3>
+      <p>125 videos await graph enrichment, and it is the one step that still needs DeepSeek.
+      It fails safely and the button is there; it will work whenever you top up. The graph
+      extraction failures you will see in the log are expected, not new.</p>
+    </div>
+    <div class="card">
+      <h3>Prod is untouched</h3>
+      <p>Everything here is local. The deployed demo still runs the previous build, and the
+      PostHog key is still pending from the earlier session.</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <p><strong>Correction on Supadata credits.</strong> I first wrote that one credit was spent
+    and your balance should read 233. The live account now reads <strong>105 used, 195
+    left</strong>. The one credit figure was about the single genuinely new video indexed for
+    &sect;08 &mdash; every other validation reused stored transcripts, since the queue runs
+    <code>index-rag &lt;url&gt;</code> without <code>--refresh</code> and therefore does not
+    re-fetch.</p>
+    <p>What I cannot stand behind is the 233: I never re-read the balance at the start of this
+    build, so I was subtracting from a figure taken on 24 Aug &mdash; before the corpus grew
+    from 112 to 124 videos this morning, and before the failed attempts in your screenshot,
+    which bill whether or not they succeed. The delta is real spend; I just have no basis for
+    attributing it. Treat 195 as the number and the earlier one as unmeasured.</p>
+  </div>
+</section>
+
+
+<p class="dim" style="font-size:12px;margin-top:44px;text-align:center">
+  Design source (2): the project's own system &mdash; tokens from
+  <span class="mono">frontend/src/theme.css</span>. Every screenshot is the running app on
+  <span class="mono">localhost:8011</span>; every code block is read from the working tree.
+</p>
+</div>
+</body>
+</html>

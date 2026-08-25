@@ -1,8 +1,8 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { IngestionJob } from '../api/types';
+import type { EnrichmentSummary, IngestionJob } from '../api/types';
 import { IndexPanel } from './IndexPanel';
 import { ingestionJob, video } from './fixtures';
 
@@ -31,7 +31,25 @@ vi.mock('../api/client', () => ({
     enqueueIndex: (payload: unknown) => enqueueIndex(payload),
     subscribeIndexQueue: (handlers: SubscribeHandlers, signal?: AbortSignal) =>
       subscribeIndexQueue(handlers, signal),
+    enrichmentState: () => enrichmentState(),
+    runEnrichment: (payload: unknown) => runEnrichment(payload),
   },
+}));
+
+/** Nothing pending by default, so the enrichment banner stays out of the way
+ * of the tests that are about the queue. Individual tests override it. */
+const enrichmentState = vi.fn(
+  async (): Promise<EnrichmentSummary> => ({
+    summary_pending: [],
+    graph_pending: [],
+    needs_llm: true,
+    total_videos: 0,
+  }),
+);
+const runEnrichment = vi.fn(async (_payload?: unknown) => ({
+  ok: true,
+  started: 0,
+  video_ids: [] as string[],
 }));
 
 /** Stream events arrive outside React's event loop, as they do in the browser. */
@@ -285,5 +303,174 @@ describe('IndexPanel', () => {
       }),
     );
     expect(screen.getByText('https://youtu.be/pre-existing')).toBeInTheDocument();
+  });
+});
+
+describe('enrichment state', () => {
+  /** A job whose videos landed with the graph still pending. */
+  const jobWithPendingGraph = {
+    id: 'j1',
+    mode: 'video' as const,
+    target: 'https://www.youtube.com/watch?v=abc',
+    latest: null,
+    status: 'done' as const,
+    stage: 'done',
+    stage_index: 4,
+    stage_total: 4,
+    message: null,
+    error: null,
+    result: {
+      ok: true,
+      target: 'https://www.youtube.com/watch?v=abc',
+      added_video_count: 1,
+      added_chunk_count: 47,
+      added_videos: [
+        video({
+          video_id: 'abc',
+          summary: 'From the creator description.',
+          summary_status: 'done',
+          summary_source: 'description',
+          graph_status: 'pending',
+        }),
+      ],
+      totals: { videos: 1, chunks: 47, channels: 1 },
+      insights: [],
+      channels: [],
+    },
+  };
+
+  it('says a video is indexed but not yet graphed', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() => handlers.snapshot?.({ jobs: [jobWithPendingGraph] }));
+
+    expect(screen.getByText(/summary · done · description/)).toBeInTheDocument();
+    expect(screen.getByText(/graph · pending/)).toBeInTheDocument();
+    // The reassuring half: the video is usable right now.
+    expect(screen.getByText(/Retrievable now/)).toBeInTheDocument();
+  });
+
+  it('does not claim a source when the summary has not been written', async () => {
+    const pending = {
+      ...jobWithPendingGraph,
+      result: {
+        ...jobWithPendingGraph.result,
+        added_videos: [
+          video({ video_id: 'abc', summary: null, summary_status: 'pending', graph_status: 'pending' }),
+        ],
+      },
+    };
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() => handlers.snapshot?.({ jobs: [pending] }));
+
+    expect(screen.getByText('summary · pending')).toBeInTheDocument();
+  });
+
+  it('offers to clear a backlog, and says it costs no credits', async () => {
+    enrichmentState.mockResolvedValueOnce({
+      summary_pending: [],
+      graph_pending: ['a', 'b', 'c'],
+      needs_llm: true,
+      total_videos: 3,
+    });
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+
+    expect(await screen.findByText(/3 video\(s\) awaiting graph enrichment/)).toBeInTheDocument();
+    expect(screen.getByText(/no Supadata credits/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Run enrichment pass/ }));
+    expect(runEnrichment).toHaveBeenCalled();
+  });
+
+  it('stays out of the way when there is no backlog', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+
+    expect(screen.queryByRole('button', { name: /Run enrichment pass/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('stage progress', () => {
+  const running = (stage: string, stageIndex: number) =>
+    ingestionJob({
+      id: 'run1',
+      status: 'running',
+      stage,
+      stage_index: stageIndex,
+      stage_total: 4,
+      message: 'Chunking on transcript timings …',
+    });
+
+  it('shows how far a run has actually got', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() => handlers.snapshot?.({ jobs: [running('chunk', 3)] }));
+
+    expect(screen.getByText('3 / 4')).toBeInTheDocument();
+    const steps = screen.getByRole('list', { name: 'Indexing stages' });
+    const items = within(steps).getAllByRole('listitem');
+    expect(items.map((li) => li.className.split(' ')[1])).toEqual([
+      'done',
+      'done',
+      'active',
+      'waiting',
+    ]);
+  });
+
+  it('does not pretend a queued job has started a stage', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() => handlers.snapshot?.({ jobs: [ingestionJob({ status: 'queued' })] }));
+
+    expect(screen.queryByRole('list', { name: 'Indexing stages' })).not.toBeInTheDocument();
+  });
+
+  it('marks the stage a failed run died on', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() =>
+      handlers.snapshot?.({
+        jobs: [
+          ingestionJob({
+            status: 'error',
+            stage: 'fetch',
+            stage_index: 2,
+            error: 'Supadata request failed',
+          }),
+        ],
+      }),
+    );
+
+    const items = within(screen.getByRole('list', { name: 'Indexing stages' })).getAllByRole(
+      'listitem',
+    );
+    expect(items[1]?.className).toContain('failed');
+    expect(screen.getByText('Supadata request failed')).toBeInTheDocument();
+  });
+
+  it('reads 4 / 4 once done, whatever stage_index the last event carried', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() =>
+      handlers.snapshot?.({
+        jobs: [ingestionJob({ status: 'done', stage: 'done', stage_index: null })],
+      }),
+    );
+
+    expect(screen.getByText('4 / 4 indexed')).toBeInTheDocument();
+  });
+
+  it('gives an enrichment job no stepper — it runs no indexing stages', async () => {
+    render(<IndexPanel onIndexed={vi.fn()} onViewVideo={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /Index new content/ }));
+    await emit(() =>
+      handlers.snapshot?.({
+        jobs: [ingestionJob({ mode: 'enrichment', status: 'running', stage: 'graph' })],
+      }),
+    );
+
+    expect(screen.queryByRole('list', { name: 'Indexing stages' })).not.toBeInTheDocument();
   });
 });

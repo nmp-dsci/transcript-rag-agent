@@ -54,7 +54,11 @@ from src.rag.ingestion import (
 from src.rag.deep_research import DEFAULT_GAP_PROBES, DEFAULT_ROUND_ONE_PROBES
 from src.rag.packs import PACK_ARMS
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
-from src.rag.summaries import TranscriptSummaryGenerator, TranscriptSummaryStore
+from src.rag.summaries import (
+    DescriptionSummaryGenerator,
+    TranscriptSummaryGenerator,
+    TranscriptSummaryStore,
+)
 from src.transcripts.discovery import (
     SupadataDiscoveryClient,
     discover_channel_videos,
@@ -337,6 +341,31 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Only process the first N chunks (smoke-testing)",
+    )
+
+    index_summaries = subparsers.add_parser(
+        "index-summaries",
+        help=(
+            "Write per-video routing summaries from the configured source "
+            "(YouTube description by default) — reads stored transcripts, so "
+            "it costs no Supadata credits and makes no LLM call"
+        ),
+    )
+    index_summaries.add_argument(
+        "--refresh",
+        action="store_true",
+        help=(
+            "Rewrite summaries that already exist. Needed when changing "
+            "source: a corpus mixing LLM prose with descriptions puts two "
+            "registers in one embedding space and its routing scores stop "
+            "being comparable across videos"
+        ),
+    )
+    index_summaries.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Only process the first N videos (smoke-testing)",
     )
 
     index_contextual = subparsers.add_parser(
@@ -1806,6 +1835,26 @@ def main(argv: list[str] | None = None) -> int:
                         summary_status=result.summary_status,
                         chroma_path=settings.chroma_path,
                         removed_chunk_ids=result.removed_chunk_ids,
+                        summary_error=result.summary_error,
+                    )
+                )
+                dashboard_path = _refresh_rag_pipeline_dashboard(settings)
+                print(f"RAG pipeline dashboard: {dashboard_path}")
+                return 0
+
+            if args.command == "index-summaries":
+                embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
+                summary_store = _build_summary_store(settings, embedding_model, raw_store)
+                if summary_store is None:
+                    print("No summary store is configured.", file=sys.stderr)
+                    return 1
+                print(
+                    _run_index_summaries(
+                        raw_store=raw_store,
+                        summary_store=summary_store,
+                        generator=_build_summary_generator(settings),
+                        refresh=args.refresh,
+                        limit=args.limit,
                     )
                 )
                 dashboard_path = _refresh_rag_pipeline_dashboard(settings)
@@ -2262,6 +2311,7 @@ def _format_index(
     summary_status: str | None,
     chroma_path,
     removed_chunk_ids: list[str] | None = None,
+    summary_error: str | None = None,
 ) -> str:
     lines = [
         "RAG index updated",
@@ -2279,12 +2329,13 @@ def _format_index(
             f"({', '.join(removed_chunk_ids[:5])}"
             f"{', …' if len(removed_chunk_ids) > 5 else ''})"
         )
-    lines.extend(
-        [
-            f"Summary: {summary_status or 'not configured'}",
-            f"Chroma path: {chroma_path}",
-        ]
-    )
+    lines.append(f"Summary: {summary_status or 'not configured'}")
+    # A failed summary is a degraded index, not a failed one — the chunks above
+    # are already retrievable. Say why, so the run is diagnosable without the
+    # server log, but keep the exit code at 0.
+    if summary_error:
+        lines.append(f"Summary error: {summary_error}")
+    lines.append(f"Chroma path: {chroma_path}")
     return "\n".join(lines)
 
 
@@ -2364,6 +2415,84 @@ def _format_rag_answer(
                     lines.append(
                         f"   - video={chunk.video_id} chunk={chunk.chunk_index}: {preview}"
                     )
+    return "\n".join(lines)
+
+
+def _run_index_summaries(
+    *,
+    raw_store,
+    summary_store,
+    generator,
+    refresh: bool,
+    limit: int | None,
+) -> str:
+    """Write every video's routing summary from the configured source.
+
+    Touches no provider: the text it summarises is already on disk, so this
+    is a local re-embed. That is what makes rewriting the whole corpus cheap
+    enough to be the obvious answer when the summary source changes.
+
+    A video whose description is too thin to route on is recorded as
+    ``failed`` rather than indexed with a line of marketing copy — the router
+    is better off not selecting it than selecting it for the wrong reason.
+    """
+    from src.rag.models import FAILED
+
+    source = getattr(generator, "source", "llm")
+    ids = raw_store.collection.get(include=[])["ids"]
+    if limit is not None:
+        ids = ids[:limit]
+
+    written = 0
+    skipped = 0
+    failures: list[tuple[str, str]] = []
+    for raw_id in ids:
+        video_id = raw_id.split(":", 1)[-1]
+        document = raw_store.get_raw_document(video_id)
+        if document is None:
+            continue
+        try:
+            _record, status = summary_store.ensure_summary(
+                document, generator, refresh=refresh
+            )
+        except Exception as exc:
+            failures.append((video_id, str(exc)))
+            stored = raw_store.get_raw_document(video_id)
+            if stored is None:
+                continue
+            update: dict[str, object] = {"summary_status": FAILED}
+            # A rewrite that fails must not leave the *previous* source's
+            # summary in place. Keeping it is the worst of both: the corpus
+            # says one consistent source while this video still routes on
+            # another generator's prose, in the same embedding space. Drop it
+            # so the video is honestly unrouted rather than quietly odd.
+            if refresh and stored.summary and stored.summary_source != source:
+                update |= {
+                    "summary": None,
+                    "summary_model": None,
+                    "summary_embedding": None,
+                    "summary_embedding_model": None,
+                }
+                summary_store.delete_summary(video_id)
+            raw_store.upsert_raw_document(stored.model_copy(update=update))
+            continue
+        if status == "hit":
+            skipped += 1
+        else:
+            written += 1
+
+    lines = [
+        "Transcript summaries",
+        f"Source: {source} ({generator.model_name})",
+        f"Videos considered: {len(ids)}",
+        f"Written: {written}",
+        f"Already current: {skipped}",
+        f"Failed: {len(failures)}",
+    ]
+    # Named, not just counted: these are the videos the router cannot select,
+    # and the reason is per-video.
+    for video_id, error in failures:
+        lines.append(f"  - {video_id}: {error}")
     return "\n".join(lines)
 
 
@@ -2498,10 +2627,19 @@ def _build_summary_store(settings, embedding_model, raw_store):
 
 
 def _build_summary_generator(settings):
-    return TranscriptSummaryGenerator(
-        ChatOpenAI(**chat_model_kwargs(settings)),
-        model_name=settings.deepseek_model,
-    )
+    """The configured summary source.
+
+    Defaults to the creator's YouTube description, which Supadata already
+    returns alongside the transcript — so indexing makes no LLM call at all
+    and cannot fail on a provider balance. ``YT_AGENT_SUMMARY_SOURCE=llm``
+    restores the DeepSeek summariser.
+    """
+    if settings.summary_source == "llm":
+        return TranscriptSummaryGenerator(
+            ChatOpenAI(**chat_model_kwargs(settings)),
+            model_name=settings.deepseek_model,
+        )
+    return DescriptionSummaryGenerator(min_chars=settings.summary_min_chars)
 
 
 def _refresh_rag_pipeline_dashboard(settings) -> Path:

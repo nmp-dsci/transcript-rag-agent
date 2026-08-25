@@ -1,0 +1,25 @@
+{
+  "arms": [
+    {
+      "label": "LLM summary (DeepSeek)",
+      "videos": 109,
+      "questions": 14,
+      "recall@1": 0.5,
+      "recall@3": 0.786,
+      "recall@5": 0.857,
+      "mean_rank": 2.86,
+      "unroutable_videos": 0
+    },
+    {
+      "label": "YouTube description",
+      "videos": 109,
+      "questions": 14,
+      "recall@1": 0.5,
+      "recall@3": 0.857,
+      "recall@5": 0.857,
+      "mean_rank": 2.93,
+      "unroutable_videos": 0
+    }
+  ],
+  "unroutable": 1
+}

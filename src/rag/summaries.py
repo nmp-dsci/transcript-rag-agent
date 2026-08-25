@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol, Sequence
@@ -11,11 +12,12 @@ from pydantic import HttpUrl
 
 from src.rag.embeddings import EmbeddingModel, cosine_similarity
 from src.rag.models import (
+    DONE,
     RawTranscriptDocument,
     RetrievedTranscriptSummary,
     TranscriptSummaryRecord,
 )
-from src.rag.storage import RawTranscriptStore
+from src.rag.storage import RawTranscriptStore, collection_write_lock
 
 
 SUMMARY_SYSTEM_PROMPT = """You summarize YouTube transcripts for RAG filtering.
@@ -32,6 +34,17 @@ class ChatModel(Protocol):
 
 
 class TranscriptSummaryGenerator:
+    """Summarises the transcript with an LLM.
+
+    Costs tokens and can fail on the provider — which is why callers treat it
+    as enrichment. See :class:`DescriptionSummaryGenerator` for the zero-LLM
+    alternative that is now the default.
+    """
+
+    #: Stamped onto the document as ``summary_source`` so a corpus that mixes
+    #: generators is detectable rather than silently inconsistent.
+    source = "llm"
+
     def __init__(
         self,
         llm: ChatModel,
@@ -61,6 +74,68 @@ class TranscriptSummaryGenerator:
         return summary
 
 
+#: Fragments of a YouTube description that carry no routing signal: links the
+#: creator wants clicked, chapter timestamps, and social handles. Stripping
+#: them is what makes the remaining prose comparable to an LLM summary in
+#: length — measured across the live corpus at a 1,207-character median once
+#: these are gone, against 1,140 for the LLM summaries they replace.
+_URL = re.compile(r"https?://\S+|\bwww\.\S+")
+_TIMESTAMP = re.compile(r"\b\d{1,2}:\d{2}(?::\d{2})?\b")
+_HANDLE = re.compile(r"[@#]\w+")
+
+
+def clean_description(description: str) -> str:
+    """The routable prose inside a YouTube description.
+
+    Returns "" when nothing survives, which the caller treats as no usable
+    summary rather than as an empty one.
+    """
+    text = _URL.sub(" ", description)
+    text = _TIMESTAMP.sub(" ", text)
+    text = _HANDLE.sub(" ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+class DescriptionSummaryGenerator:
+    """Uses the creator's own YouTube description as the summary. No LLM.
+
+    Supadata returns ``description`` in the same ``/v1/metadata`` call the
+    fetch step already makes, so this costs nothing — no tokens, no extra
+    credit, no provider that can be out of balance. That is the point: it
+    takes the LLM out of the indexing path entirely, which is what made the
+    402 incident possible in the first place.
+
+    The tradeoff is real and worth naming: a description is what the creator
+    wrote to make you *click*, while an LLM summary is derived from what was
+    actually *said*. Expect topic routing to hold up and specific-claim
+    routing to suffer. ``eval-ablation`` measures which.
+
+    Descriptions too thin to route on raise, so the video is recorded with
+    ``summary_status="failed"`` and shows up as work to do — rather than
+    quietly poisoning the router with a line of marketing copy.
+    """
+
+    source = "description"
+    model_name = "youtube-description"
+
+    def __init__(self, min_chars: int = 120) -> None:
+        self.min_chars = min_chars
+
+    def summarize(self, raw_document: RawTranscriptDocument) -> str:
+        body = clean_description(raw_document.description or "")
+        title = (raw_document.title or "").strip()
+        # The title is the single most routable line a video has, and it is
+        # always present — so it leads, and it counts toward the threshold.
+        summary = f"{title}. {body}".strip(". ").strip() if title else body
+        if len(summary) < self.min_chars:
+            raise ValueError(
+                f"YouTube description is too thin to route on "
+                f"({len(summary)} chars, need {self.min_chars}) — "
+                f"nothing but links, timestamps or a call to action"
+            )
+        return summary
+
+
 class TranscriptSummaryStore:
     collection_name = "transcript_summaries"
 
@@ -81,6 +156,7 @@ class TranscriptSummaryStore:
         self.collection_name = collection_name or self.collection_name
         self.client = chromadb.PersistentClient(path=str(self.path))
         self.collection = self.client.get_or_create_collection(self.collection_name)
+        self.write_lock = collection_write_lock(self.path, self.collection_name)
         #: Videos the router must never route to — the summary-side half of
         #: :attr:`~src.rag.storage.TranscriptChunkStore.exclude_video_ids`. The
         #: summary filter chooses *which videos* get searched at all, so a held-out
@@ -90,12 +166,26 @@ class TranscriptSummaryStore:
         self.exclude_video_ids: list[str] = sorted(dict.fromkeys(exclude_video_ids or []))
 
     def upsert_summary(self, record: TranscriptSummaryRecord) -> None:
+        with self.write_lock:
+            self._upsert_summary_locked(record)
+
+    def _upsert_summary_locked(self, record: TranscriptSummaryRecord) -> None:
         self.collection.upsert(
             ids=[record.summary_id],
             documents=[record.summary],
             embeddings=[record.summary_embedding],
             metadatas=[_summary_metadata(record)],
         )
+
+    def delete_summary(self, video_id: str) -> None:
+        """Drop a video's routing summary.
+
+        Used when a rewrite fails and the stored summary came from a different
+        generator: leaving it would keep the video routable on text the rest of
+        the corpus no longer uses.
+        """
+        with self.write_lock:
+            self.collection.delete(ids=[_summary_id(video_id)])
 
     def get_summary(self, video_id: str) -> TranscriptSummaryRecord | None:
         result = self.collection.get(
@@ -149,6 +239,8 @@ class TranscriptSummaryStore:
         updated = raw_document.model_copy(
             update={
                 "summary": summary,
+                "summary_status": DONE,
+                "summary_source": getattr(generator, "source", "llm"),
                 "summary_model": generator.model_name,
                 "summary_generated_at": now
                 if refresh or not raw_document.summary_generated_at
