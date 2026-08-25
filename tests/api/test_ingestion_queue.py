@@ -116,7 +116,7 @@ def test_a_worker_pool_runs_every_job_exactly_once() -> None:
 def test_completed_job_reports_added_videos_and_totals() -> None:
     before = {"videos": [], "totals": {"videos": 0, "chunks": 0}}
     after = {
-        "videos": [{"video_id": "abc123"}],
+        "videos": [{"video_id": "abc123", "chunk_count": 5}],
         "totals": {"videos": 1, "chunks": 5},
         "insights": ["insight"],
         "channels": ["chan"],
@@ -546,3 +546,27 @@ class TestAddedVideoAttribution:
             [{"video_id": "aaaaaaaaaaa"}],
         )
         assert claimed == []
+
+    def test_added_chunk_count_sums_only_claimed_videos(self) -> None:
+        """The failure this prevents: a job reporting another job's chunks."""
+        queue_ = self._queue()
+        after = [
+            {"video_id": "aaaaaaaaaaa", "chunk_count": 5},
+            {"video_id": "bbbbbbbbbbb", "chunk_count": 9},
+        ]
+        claimed = queue_._attribute_added(
+            self._job("video", "https://youtu.be/aaaaaaaaaaa"), set(), after
+        )
+        added_chunk_count = sum(int(v.get("chunk_count") or 0) for v in claimed)
+        assert added_chunk_count == 5
+
+    def test_added_chunk_count_is_zero_when_nothing_is_claimed(self) -> None:
+        """Re-indexing an existing video claims nothing: "+0 chunks", not a totals delta."""
+        queue_ = self._queue()
+        claimed = queue_._attribute_added(
+            self._job("video", "https://youtu.be/aaaaaaaaaaa"),
+            {"aaaaaaaaaaa"},
+            [{"video_id": "aaaaaaaaaaa", "chunk_count": 5}],
+        )
+        added_chunk_count = sum(int(v.get("chunk_count") or 0) for v in claimed)
+        assert added_chunk_count == 0

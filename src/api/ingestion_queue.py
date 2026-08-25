@@ -254,10 +254,7 @@ class IngestionQueue:
                 "target": job.target,
                 "added_videos": added,
                 "added_video_count": len(added),
-                "added_chunk_count": (
-                    after.get("totals", {}).get("chunks", 0)
-                    - before.get("totals", {}).get("chunks", 0)
-                ),
+                "added_chunk_count": sum(int(v.get("chunk_count") or 0) for v in added),
                 "totals": after.get("totals", {}),
                 "insights": after.get("insights", []),
                 "channels": after.get("channels", []),
