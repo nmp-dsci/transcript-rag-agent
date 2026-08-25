@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pytest
 
 from src.rag.indexing import RagIndexer
 from src.rag.storage import RawTranscriptStore, TranscriptChunkStore
@@ -60,9 +59,7 @@ class ExplodingGenerator:
     model_name = "deepseek-v4-flash"
 
     def summarize(self, raw_document) -> str:
-        raise RuntimeError(
-            "Error code: 402 - {'error': {'message': 'Insufficient Balance'}}"
-        )
+        raise RuntimeError("Error code: 402 - {'error': {'message': 'Insufficient Balance'}}")
 
 
 def _indexer(tmp_path, generator) -> tuple[RagIndexer, TranscriptChunkStore]:

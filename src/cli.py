@@ -2452,9 +2452,7 @@ def _run_index_summaries(
         if document is None:
             continue
         try:
-            _record, status = summary_store.ensure_summary(
-                document, generator, refresh=refresh
-            )
+            _record, status = summary_store.ensure_summary(document, generator, refresh=refresh)
         except Exception as exc:
             failures.append((video_id, str(exc)))
             stored = raw_store.get_raw_document(video_id)

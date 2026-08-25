@@ -63,8 +63,8 @@ class TestBuildArms:
     def test_only_videos_with_both_texts_are_comparable(self) -> None:
         docs = [
             _doc("a", "An LLM summary about kubernetes.", LONG_KUBE),
-            _doc("b", "An LLM summary about tax.", None),           # no description
-            _doc("c", None, LONG_TAX),                                # no LLM summary
+            _doc("b", "An LLM summary about tax.", None),  # no description
+            _doc("c", None, LONG_TAX),  # no LLM summary
         ]
         llm, description, _ = build_arms(docs)
         assert set(llm) == set(description) == {"a"}

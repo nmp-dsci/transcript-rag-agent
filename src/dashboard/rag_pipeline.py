@@ -203,15 +203,11 @@ def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:
     client = chromadb.PersistentClient(path=str(settings.chroma_path))
     raw_collection = client.get_or_create_collection(settings.raw_transcript_collection)
     chunk_collection = client.get_or_create_collection(settings.chunk_collection)
-    summary_collection = client.get_or_create_collection(
-        settings.transcript_summary_collection
-    )
+    summary_collection = client.get_or_create_collection(settings.transcript_summary_collection)
 
     raw_result = raw_collection.get(include=["documents", "metadatas"])
     chunk_result = chunk_collection.get(include=["documents", "metadatas"])
-    summary_result = summary_collection.get(
-        include=["documents", "metadatas", "embeddings"]
-    )
+    summary_result = summary_collection.get(include=["documents", "metadatas", "embeddings"])
 
     chunks_by_video = _chunks_by_video(chunk_result)
     summaries_by_video = _summaries_by_video(summary_result)
@@ -236,9 +232,7 @@ def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:
             if chunk.get("start_seconds") is not None
         ]
         end_values = [
-            float(chunk["end_seconds"])
-            for chunk in chunks
-            if chunk.get("end_seconds") is not None
+            float(chunk["end_seconds"]) for chunk in chunks if chunk.get("end_seconds") is not None
         ]
         rows.append(
             TranscriptDashboardRow(
@@ -246,8 +240,7 @@ def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:
                 video_id=video_id,
                 source_url=str(metadata.get("source_url", "")),
                 title=_none_if_empty(metadata.get("title")),
-                description=body.get("description")
-                or _none_if_empty(metadata.get("description")),
+                description=body.get("description") or _none_if_empty(metadata.get("description")),
                 channel_name=_none_if_empty(metadata.get("channel_name")),
                 channel_id=_none_if_empty(metadata.get("channel_id")),
                 language=_none_if_empty(metadata.get("language")),
@@ -258,9 +251,7 @@ def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:
                 like_count=_int_or_none(metadata.get("like_count")),
                 thumbnail_url=_none_if_empty(metadata.get("thumbnail_url")),
                 tags=[str(tag) for tag in body.get("tags", [])],
-                transcript_languages=[
-                    str(lang) for lang in body.get("transcript_languages", [])
-                ],
+                transcript_languages=[str(lang) for lang in body.get("transcript_languages", [])],
                 fetched_at=str(metadata.get("fetched_at", "")),
                 segment_count=int(metadata.get("segment_count", len(segments))),
                 transcript_chars=len(transcript_text),
@@ -268,18 +259,14 @@ def collect_pipeline_rows(settings: Settings) -> list[TranscriptDashboardRow]:
                 or _none_if_empty(summary.get("summary")),
                 summary_model=_none_if_empty(metadata.get("summary_model"))
                 or _none_if_empty(summary.get("summary_model")),
-                summary_generated_at=_none_if_empty(
-                    metadata.get("summary_generated_at")
-                )
+                summary_generated_at=_none_if_empty(metadata.get("summary_generated_at"))
                 or _none_if_empty(summary.get("summary_generated_at")),
                 raw_embedding_dim=len(raw_embedding),
                 raw_embedding_preview=_embedding_preview(raw_embedding),
                 summary_embedding=[float(value) for value in summary_embedding],
                 summary_embedding_dim=len(summary_embedding),
                 summary_embedding_preview=_embedding_preview(summary_embedding),
-                summary_embedding_model=_none_if_empty(
-                    metadata.get("summary_embedding_model")
-                )
+                summary_embedding_model=_none_if_empty(metadata.get("summary_embedding_model"))
                 or _none_if_empty(summary.get("summary_embedding_model")),
                 summary_embedded_at=_none_if_empty(metadata.get("summary_embedded_at"))
                 or _none_if_empty(summary.get("summary_embedded_at")),
@@ -305,9 +292,7 @@ def collect_filter_test_rows(
     embedding_model = HuggingFaceEmbeddingModel(settings.embedding_model)
     question_embedding = embedding_model.embed_query(question)
     client = chromadb.PersistentClient(path=str(settings.chroma_path))
-    summary_collection = client.get_or_create_collection(
-        settings.transcript_summary_collection
-    )
+    summary_collection = client.get_or_create_collection(settings.transcript_summary_collection)
     chroma_result = summary_collection.query(
         query_embeddings=[question_embedding],
         n_results=max(len(rows), 1),
@@ -356,9 +341,7 @@ def collect_filter_test_rows(
         if row.passes_threshold:
             selected_video_ids.add(row.video_id)
     return [
-        row.__class__(
-            **{**row.__dict__, "selected_by_chroma": row.video_id in selected_video_ids}
-        )
+        row.__class__(**{**row.__dict__, "selected_by_chroma": row.video_id in selected_video_ids})
         for row in ranked
     ]
 
@@ -372,7 +355,12 @@ def collect_chunk_space_data(
 ) -> dict[str, Any]:
     chunks = _collect_chunk_embeddings(settings, rows)
     if len(chunks) < 2:
-        return {"question": question, "chunks": [], "nearest": [], "message": "At least two embedded chunks are required for PCA."}
+        return {
+            "question": question,
+            "chunks": [],
+            "nearest": [],
+            "message": "At least two embedded chunks are required for PCA.",
+        }
 
     chunk_ids = [chunk["chunk_id"] for chunk in chunks]
     embeddings = np.asarray([chunk["embedding"] for chunk in chunks], dtype=float)
@@ -380,7 +368,9 @@ def collect_chunk_space_data(
     projection = None
     if not refresh_projection and projection_path.exists():
         try:
-            projection = projection_from_json(json.loads(projection_path.read_text(encoding="utf-8")))
+            projection = projection_from_json(
+                json.loads(projection_path.read_text(encoding="utf-8"))
+            )
             if projection.n_chunks != len(chunks):
                 projection = None
         except (OSError, KeyError, ValueError, json.JSONDecodeError):
@@ -450,9 +440,15 @@ def render_html(
 ) -> str:
     filter_test_rows = filter_test_rows or []
     ingestion_runs = ingestion_runs or []
-    chunk_space = chunk_space or {"question": DEFAULT_CHUNK_SPACE_QUESTION, "chunks": [], "nearest": []}
+    chunk_space = chunk_space or {
+        "question": DEFAULT_CHUNK_SPACE_QUESTION,
+        "chunks": [],
+        "nearest": [],
+    }
     ingestion_tab = (
-        ['<button class="tab" id="tab-ingestion" onclick="showTab(\'ingestion\')">Ingestion Runs</button>']
+        [
+            '<button class="tab" id="tab-ingestion" onclick="showTab(\'ingestion\')">Ingestion Runs</button>'
+        ]
         if ingestion_runs
         else []
     )
@@ -570,9 +566,7 @@ def _transcripts_table(rows: list[TranscriptDashboardRow]) -> str:
             "</td>"
             "</tr>"
         )
-    channel_options = "".join(
-        f"<option>{html.escape(channel)}</option>" for channel in channels
-    )
+    channel_options = "".join(f"<option>{html.escape(channel)}</option>" for channel in channels)
     return "\n".join(
         [
             '<div class="filters">',
@@ -606,9 +600,7 @@ def _chunks_table(rows: list[TranscriptDashboardRow]) -> str:
         return "<p>No chunks found.</p>"
     return (
         "<table><thead><tr><th>Video</th><th>Chunk</th><th>Time</th>"
-        "<th>Chars</th><th>Text</th></tr></thead><tbody>"
-        + "".join(chunk_rows)
-        + "</tbody></table>"
+        "<th>Chars</th><th>Text</th></tr></thead><tbody>" + "".join(chunk_rows) + "</tbody></table>"
     )
 
 
@@ -628,9 +620,9 @@ def _ingestion_runs_panel(runs: list[dict[str, Any]]) -> str:
             f"<td>{html.escape(str(run.get('mode', '')))}</td>"
             f"<td>{html.escape(str(run.get('query') or run.get('channel') or ''))}<br>{html.escape(str(run.get('since') or ''))} {html.escape(str(run.get('until') or ''))}</td>"
             f"<td>{html.escape(str(run.get('started_at', '')))}</td>"
-            f"<td class=\"num\">{_duration_between(run.get('started_at'), run.get('completed_at'))}</td>"
+            f'<td class="num">{_duration_between(run.get("started_at"), run.get("completed_at"))}</td>'
             f"<td>{html.escape(str(run.get('status', '')))}</td>"
-            f"<td class=\"num\">{counts}</td>"
+            f'<td class="num">{counts}</td>'
             f"<td>{_candidate_details(candidates)}</td>"
             "</tr>"
         )
@@ -650,7 +642,7 @@ def _candidate_details(candidates: list[dict[str, Any]]) -> str:
         return ""
     body = []
     for candidate in candidates:
-        failed = " class=\"failed\"" if candidate.get("outcome") == "failed" else ""
+        failed = ' class="failed"' if candidate.get("outcome") == "failed" else ""
         body.append(
             f"<tr{failed}>"
             f"<td><code>{html.escape(str(candidate.get('video_id', '')))}</code></td>"
@@ -664,9 +656,7 @@ def _candidate_details(candidates: list[dict[str, Any]]) -> str:
     return (
         "<details><summary>Review candidates</summary><table><thead><tr>"
         "<th>Video</th><th>Outcome</th><th>Title</th><th>Channel</th><th>Published</th><th>Error</th>"
-        "</tr></thead><tbody>"
-        + "".join(body)
-        + "</tbody></table></details>"
+        "</tr></thead><tbody>" + "".join(body) + "</tbody></table></details>"
     )
 
 
@@ -699,7 +689,7 @@ def _nearest_row(item: dict[str, Any], index: int) -> str:
         f'<tr data-chunk-id="{html.escape(str(item.get("chunk_id", "")))}" onclick="highlightChunkPoint(\'{html.escape(str(item.get("chunk_id", "")))}\')">'
         f"<td><code>{html.escape(str(item.get('video_id', '')))}</code></td>"
         f"<td>{_timestamp(item.get('start_seconds'))}</td>"
-        f"<td class=\"num\">{float(item.get('score') or 0):.4f}</td>"
+        f'<td class="num">{float(item.get("score") or 0):.4f}</td>'
         f"<td>{html.escape(_preview(str(item.get('text', ''))))}</td>"
         "</tr>"
     )
@@ -720,8 +710,8 @@ def _filter_test_panel(
             f"<td><code>{html.escape(row.video_id)}</code></td>"
             f"<td>{html.escape(row.title or '')}</td>"
             f"<td>{html.escape(row.channel_name or '')}</td>"
-            f"<td class=\"metric\">{row.cosine_similarity:.4f}</td>"
-            f"<td class=\"metric\">{'' if row.chroma_score is None else f'{row.chroma_score:.4f}'}</td>"
+            f'<td class="metric">{row.cosine_similarity:.4f}</td>'
+            f'<td class="metric">{"" if row.chroma_score is None else f"{row.chroma_score:.4f}"}</td>'
             f"<td>{'yes' if row.passes_threshold else 'no'}</td>"
             f"<td>{'yes' if row.selected_by_chroma else 'no'}</td>"
             f"<td>{html.escape(row.summary or '')}</td>"
@@ -855,9 +845,7 @@ def _details_if_long(value: str, summary: str | None = None, limit: int = 100) -
     preview = _preview(text, limit)
     label = summary or preview
     return (
-        f"<details><summary>{html.escape(label)}</summary>"
-        f"<pre>{html.escape(text)}</pre>"
-        "</details>"
+        f"<details><summary>{html.escape(label)}</summary><pre>{html.escape(text)}</pre></details>"
     )
 
 

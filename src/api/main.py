@@ -492,9 +492,7 @@ def create_app(
         for video_id in video_ids:
             document = store.get_raw_document(video_id)
             if document is not None:
-                store.upsert_raw_document(
-                    document.model_copy(update={"graph_status": state})
-                )
+                store.upsert_raw_document(document.model_copy(update={"graph_status": state}))
 
     def _default_graph_extract_fn(video_ids: list[str]) -> dict[str, Any]:
         """Catch up entities/claims for just-added videos after an ingest.
@@ -578,10 +576,9 @@ def create_app(
         @app.middleware("http")
         async def demo_gate(request: Request, call_next: Any) -> Any:
             path = request.url.path
-            allowed = (
-                request.method in ("GET", "HEAD")
-                and path not in demo_blocked_gets
-            ) or (request.method == "POST" and path in demo_allowed_posts)
+            allowed = (request.method in ("GET", "HEAD") and path not in demo_blocked_gets) or (
+                request.method == "POST" and path in demo_allowed_posts
+            )
             if not allowed:
                 return JSONResponse(status_code=403, content={"detail": "demo"})
             return await call_next(request)
@@ -1356,12 +1353,8 @@ def create_app(
         corpus = corpus_fn()
         videos = corpus.get("videos", [])
         return {
-            "summary_pending": [
-                v["video_id"] for v in videos if v.get("summary_status") != "done"
-            ],
-            "graph_pending": [
-                v["video_id"] for v in videos if v.get("graph_status") != "done"
-            ],
+            "summary_pending": [v["video_id"] for v in videos if v.get("summary_status") != "done"],
+            "graph_pending": [v["video_id"] for v in videos if v.get("graph_status") != "done"],
             "needs_llm": True,
             "total_videos": len(videos),
         }
@@ -1376,9 +1369,7 @@ def create_app(
         """
         corpus = corpus_fn()
         pending = [
-            v["video_id"]
-            for v in corpus.get("videos", [])
-            if v.get("graph_status") != "done"
+            v["video_id"] for v in corpus.get("videos", []) if v.get("graph_status") != "done"
         ]
         if payload.video_ids:
             wanted = set(payload.video_ids)
