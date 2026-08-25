@@ -24,6 +24,9 @@ const EMPTY_VIDEO: Omit<Video, 'video_id'> = {
   upload_date: null,
   view_count: null,
   summary: null,
+  summary_status: "pending",
+  summary_source: null,
+  graph_status: "pending",
   fetched_at: null,
   chunk_count: 0,
 };
@@ -115,6 +118,8 @@ export function ingestionJob(overrides: Partial<IngestionJob> = {}): IngestionJo
     latest: null,
     status: 'queued',
     stage: null,
+    stage_index: null,
+    stage_total: 4,
     message: null,
     result: null,
     error: null,

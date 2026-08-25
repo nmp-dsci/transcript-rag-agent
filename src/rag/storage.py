@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import threading
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
@@ -19,6 +21,27 @@ from src.transcripts.fetcher import SuperdataTranscriptFetcher
 from src.transcripts.models import Transcript
 from src.transcripts.youtube import extract_video_id
 
+#: One lock per (chroma path, collection), shared by every store instance in
+#: the process.
+#:
+#: Per-instance locking would not help: the ingestion queue runs each job
+#: through ``cli.main(argv)`` in-process, and every job constructs its own
+#: stores. Two concurrent jobs therefore hold two different objects pointing at
+#: the same collection on disk. Keying the lock by what is actually shared —
+#: the collection — is what makes concurrent workers safe.
+#:
+#: Writes are milliseconds against network calls measured in seconds, so
+#: serialising them costs effectively nothing.
+_write_locks: dict[tuple[str, str], threading.Lock] = defaultdict(threading.Lock)
+_write_locks_guard = threading.Lock()
+
+
+def collection_write_lock(path: Path | str, collection_name: str) -> threading.Lock:
+    """The process-wide write lock for one Chroma collection."""
+    key = (str(Path(path).resolve()), collection_name)
+    with _write_locks_guard:
+        return _write_locks[key]
+
 
 class RawTranscriptStore:
     collection_name = "raw_transcripts"
@@ -35,13 +58,15 @@ class RawTranscriptStore:
         self.collection_name = collection_name or self.collection_name
         self.client = chromadb.PersistentClient(path=str(self.path))
         self.collection = self.client.get_or_create_collection(self.collection_name)
+        self.write_lock = collection_write_lock(self.path, self.collection_name)
 
     def upsert_raw_document(self, document: RawTranscriptDocument) -> None:
-        self.collection.upsert(
-            ids=[document.transcript_id],
-            documents=[_raw_document_body(document)],
-            metadatas=[_raw_document_metadata(document)],
-        )
+        with self.write_lock:
+            self.collection.upsert(
+                ids=[document.transcript_id],
+                documents=[_raw_document_body(document)],
+                metadatas=[_raw_document_metadata(document)],
+            )
 
     def get_raw_document(self, video_id: str) -> RawTranscriptDocument | None:
         result = self.collection.get(
@@ -84,6 +109,9 @@ class RawTranscriptStore:
             summary_embedding=body.get("summary_embedding"),
             summary_embedding_model=_none_if_empty(metadata.get("summary_embedding_model")),
             summary_embedded_at=_none_if_empty(metadata.get("summary_embedded_at")),
+            summary_status=_none_if_empty(metadata.get("summary_status")),
+            summary_source=_none_if_empty(metadata.get("summary_source")),
+            graph_status=_none_if_empty(metadata.get("graph_status")),
         )
 
     def ensure_raw_document(
@@ -132,6 +160,7 @@ class TranscriptChunkStore:
         self.collection_name = collection_name or self.collection_name
         self.client = chromadb.PersistentClient(path=str(self.path))
         self.collection = self.client.get_or_create_collection(self.collection_name)
+        self.write_lock = collection_write_lock(self.path, self.collection_name)
         #: Videos this store must behave as if it had never indexed. Set for a
         #: held-out evaluation (see :mod:`src.evals.critique`), where the whole
         #: claim being measured is that the system reached an expert's
@@ -176,12 +205,13 @@ class TranscriptChunkStore:
         embeddings = self.embedding_model.embed_documents(
             [chunk.embedding_text for chunk in chunks]
         )
-        self.collection.upsert(
-            ids=[chunk.chunk_id for chunk in chunks],
-            documents=[chunk.text for chunk in chunks],
-            embeddings=embeddings,
-            metadatas=[_chunk_metadata(chunk) for chunk in chunks],
-        )
+        with self.write_lock:
+            self.collection.upsert(
+                ids=[chunk.chunk_id for chunk in chunks],
+                documents=[chunk.text for chunk in chunks],
+                embeddings=embeddings,
+                metadatas=[_chunk_metadata(chunk) for chunk in chunks],
+            )
 
     def chunk_ids_for_video(self, video_id: str) -> list[str]:
         """Every chunk id currently stored for one video, in ascending order."""
@@ -220,7 +250,8 @@ class TranscriptChunkStore:
         self.upsert_chunks(chunks)
         stale = sorted(existing - {chunk.chunk_id for chunk in chunks})
         if stale:
-            self.collection.delete(ids=stale)
+            with self.write_lock:
+                self.collection.delete(ids=stale)
         return stale
 
     def has_chunks(self, video_id: str) -> bool:
@@ -566,16 +597,26 @@ def _raw_document_metadata(document: RawTranscriptDocument) -> dict[str, str | i
         "fetched_at": document.fetched_at,
         "segment_count": len(document.segments),
     }
-    if document.summary is not None:
-        metadata["summary"] = document.summary
-    if document.summary_model is not None:
-        metadata["summary_model"] = document.summary_model
-    if document.summary_generated_at is not None:
-        metadata["summary_generated_at"] = document.summary_generated_at
-    if document.summary_embedding_model is not None:
-        metadata["summary_embedding_model"] = document.summary_embedding_model
-    if document.summary_embedded_at is not None:
-        metadata["summary_embedded_at"] = document.summary_embedded_at
+    # Written unconditionally, as ``""`` when unset, because Chroma's upsert
+    # *merges* metadata rather than replacing it: a key left out of the new
+    # dict keeps its old value forever. Every other clearable field here
+    # (title, language) already uses the same ``or ""`` convention, and
+    # ``_none_if_empty`` turns it back into None on read.
+    #
+    # This matters for real: clearing a stale summary — the case where a
+    # rewrite to a new source fails and the previous generator's text must not
+    # be left behind — is impossible with a conditional write.
+    metadata["summary"] = document.summary or ""
+    metadata["summary_model"] = document.summary_model or ""
+    metadata["summary_generated_at"] = document.summary_generated_at or ""
+    metadata["summary_embedding_model"] = document.summary_embedding_model or ""
+    metadata["summary_embedded_at"] = document.summary_embedded_at or ""
+    if document.summary_status is not None:
+        metadata["summary_status"] = document.summary_status
+    if document.summary_source is not None:
+        metadata["summary_source"] = document.summary_source
+    if document.graph_status is not None:
+        metadata["graph_status"] = document.graph_status
     if document.description is not None:
         metadata["description"] = _truncate_metadata_text(document.description)
     if document.channel_id is not None:

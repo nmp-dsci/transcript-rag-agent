@@ -39,6 +39,9 @@ function video(id: string, title: string, channelId: string | null): Video {
     upload_date: '2026-01-01',
     view_count: 10,
     summary: null,
+    summary_status: "pending",
+    summary_source: null,
+    graph_status: "pending",
     fetched_at: null,
     chunk_count: 20,
   };

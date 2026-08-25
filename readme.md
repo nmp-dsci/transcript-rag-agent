@@ -255,6 +255,9 @@ YT_AGENT_RAG_FOLLOWUP_TOP_K=
 YT_AGENT_RAG_NOVELTY_MIN_CHUNKS=2
 YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS=
 YT_AGENT_RAG_AGENT_MAX_ITERATIONS=10
+YT_AGENT_INGESTION_WORKERS=3
+YT_AGENT_SUMMARY_SOURCE=description
+YT_AGENT_SUMMARY_MIN_CHARS=120
 YT_AGENT_CHUNK_TARGET_CHARS=1200
 YT_AGENT_CHUNK_OVERLAP_CHARS=150
 NEO4J_URI=bolt://localhost:7687
@@ -283,6 +286,8 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 ```
 
 `SUPADATA_API_KEY` is used with the Supadata transcript API. DeepSeek is called through the OpenAI-compatible LangChain client.
+
+`YT_AGENT_INGESTION_WORKERS` (default `3`) caps how many `/api/index/queue` jobs the server runs concurrently — indexing is mostly network wait, so this hides latency without saturating the CPU-bound embedding step. `YT_AGENT_SUMMARY_SOURCE` picks how a video's routing summary is written: `description` (default) uses the creator's own YouTube description that Supadata already returns, with no LLM call and nothing that can fail on a provider balance; `llm` restores the previous DeepSeek summariser. `YT_AGENT_SUMMARY_MIN_CHARS` (default `120`) is the floor a cleaned description must clear before it is indexed as a summary — thinner than that and the video is recorded with `summary_status="failed"` rather than routed on a line of marketing copy.
 
 `YT_AGENT_EMBEDDING_DEVICE` pins the torch device for the embedding model and
 defaults to `cpu`. Left to its own devices, sentence-transformers selects MPS on
@@ -414,7 +419,8 @@ Three boundaries make this a measurement rather than a rewrite:
   chunks whose text changed, and a failed chunk retries rather than being pinned.
 
 **Corpus-side — `--filter-transcripts`.** Route the question to whole *videos*
-before any chunk is searched: each video's LLM-written summary is embedded, the
+before any chunk is searched: each video's summary (the YouTube description by
+default, or LLM-written under `YT_AGENT_SUMMARY_SOURCE=llm`) is embedded, the
 question is matched against those summaries, and only the videos above
 `YT_AGENT_TRANSCRIPT_FILTER_MIN_SCORE` (default 0.25, top
 `YT_AGENT_TRANSCRIPT_FILTER_TOP_K` = 5) have their chunks searched at all. The
@@ -776,18 +782,26 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   embedding, and graph retrieval disagree — a mode that cannot run (e.g. Neo4j
   unreachable) reports "unavailable" instead of failing the whole comparison.
   Indexing lives in a panel here as a **queue**: adding a video or
-  channel never locks the form, so several can be queued back to back — each
-  job runs to completion in submission order (one worker, so a channel run
-  never contends with itself), and every job's live stage is visible in the
-  queue list at once, across every open browser tab, via
-  `GET /api/index/queue/stream`. A job's graph extraction stage runs
-  automatically after its vector index succeeds, keeping the knowledge graph's
-  entities and claims current for newly indexed videos without a manual
-  `index-graph` pass; community detection and summaries are *not* rebuilt per
-  job (that re-summarizes the whole graph via the LLM), so run `index-graph`
-  after a batch of ingests to refresh them. Extraction failure is
-  enrichment-only and is reported in that job's result without failing the
-  (already-successful) vector index. **Chunk graph** renders a
+  channel never locks the form, so several can be queued back to back — three
+  jobs run concurrently by default (`YT_AGENT_INGESTION_WORKERS`, since
+  indexing is mostly network wait), the rest queue behind them, and each job's
+  live stage is visible at once — `1 / 4` through `4 / 4` across discover,
+  fetch, chunk and embed, reported as each stage actually begins rather than
+  guessed up front — across every open browser tab, via
+  `GET /api/index/queue/stream`. The per-video summary is written during
+  `embed` from the creator's own YouTube description (no LLM call, so it
+  cannot fail on a provider); a description too thin to route on is recorded
+  as `summary_status="failed"` rather than indexed, without failing the rest
+  of the (already-successful) vector index. Knowledge-graph enrichment is a
+  separate, later step — it is *not* run automatically after each job, since a
+  job's entities/claims still need a paid LLM provider. The **enrichment
+  banner** above the queue reports the corpus-wide backlog of videos missing a
+  summary or a graph pass (`GET /api/enrichment`) and a button queues a
+  graph catch-up job for the pending videos (`POST /api/enrichment/run`),
+  which reuses the same queue, workers and failure isolation as an ingest;
+  community detection and summaries are *not* rebuilt per video (that
+  re-summarizes the whole graph via the LLM), so run `index-graph` after a
+  batch of ingests to refresh them. **Chunk graph** renders a
   kNN similarity graph of every chunk embedding as an SVG force-style layout,
   colour-coded by channel; typing a query highlights its retrieval
   neighbourhood in place, which is the fastest way to see whether the corpus
@@ -974,9 +988,11 @@ Endpoints (JSON unless noted):
 | `/api/judge` | POST | RAGAS-score an entry's answers (streams SSE; `force` re-judges) |
 | `/api/index` | POST | Index a video (`mode=video`) or channel (`mode=channel`) |
 | `/api/index/stream` | POST | Index with per-stage SSE progress and a summary of what changed |
-| `/api/index/queue` | POST | Queue an index job and return immediately; jobs run one at a time in submission order |
+| `/api/index/queue` | POST | Queue an index job and return immediately; several jobs run concurrently (`YT_AGENT_INGESTION_WORKERS`, default 3) |
 | `/api/index/queue` | GET | Snapshot of every queued, running and finished job |
 | `/api/index/queue/stream` | GET | Live progress for every job at once (SSE, seeded with the current queue) |
+| `/api/enrichment` | GET | Corpus-wide videos still missing a summary or a knowledge-graph pass |
+| `/api/enrichment/run` | POST | Queue a graph catch-up job for pending videos (optional `video_ids`/`limit`) — runs through the same ingestion queue |
 | `/api/chunk-graph` | POST | kNN similarity graph over chunk embeddings; `query` highlights its retrieval neighbourhood |
 | `/api/graph/knowledge` | GET | The GraphRAG entity graph: laid-out entity nodes, relation/co-mention edges, community summaries (503 if Neo4j is unreachable) |
 | `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
@@ -1238,11 +1254,21 @@ Index one YouTube transcript for RAG:
 uv run python -m src.cli index-rag "$url"
 ```
 
-`index-rag` stores raw transcript segments, chunk embeddings, an LLM-generated transcript summary, and a transcript-level summary embedding used for optional summary-first filtering. Regenerate the summary and summary embedding with:
+`index-rag` stores raw transcript segments, chunk embeddings, a per-video transcript summary, and a transcript-level summary embedding used for optional summary-first filtering. The summary comes from the configured `YT_AGENT_SUMMARY_SOURCE` — the creator's own YouTube description by default (no LLM call, so it cannot fail on a provider balance), or the DeepSeek summariser when set to `llm`. A summary failure (e.g. a description too thin to route on) is captured rather than raised: the transcript and chunks above are already indexed and retrievable, `index-rag` still exits `0`, and the result prints `Summary: failed` plus the reason. Regenerate the summary and summary embedding with:
 
 ```bash
 uv run python -m src.cli index-rag "$url" --refresh-summary
 ```
+
+Rewrite every stored summary from the raw transcripts already on disk — no Supadata re-fetch, no LLM call under the default `description` source — with:
+
+```bash
+uv run python -m src.cli index-summaries              # only videos missing a summary
+uv run python -m src.cli index-summaries --refresh     # rewrite every summary, e.g. after changing YT_AGENT_SUMMARY_SOURCE
+uv run python -m src.cli index-summaries --limit 5     # smoke-test on the first 5 videos
+```
+
+Rewriting the whole corpus after a source change matters because summary embeddings share one vector space: mixing an LLM's register with a description's makes similarity scores incomparable across videos. A `--refresh` that fails for a video drops its previous summary rather than leaving it in the old source's register, so the video reads as honestly unrouted instead of quietly inconsistent.
 
 Force a full transcript refresh and rebuild chunks:
 
@@ -2356,8 +2382,9 @@ src/
   api/           # FastAPI workbench: ask/judge/index SSE, corpus, chunks, ranking,
                  #   scoreboard, chunk graph, knowledge graph, committed experiments,
                  #   prompt registry, the System Design graph (system_design.py), the
-                 #   one-worker ingestion queue (ingestion_queue.py), and the in-app
-                 #   matrix sweep (matrix_runner.py, matrix_runs.py)
+                 #   multi-worker ingestion queue (ingestion_queue.py), stage progress
+                 #   reporting (progress.py), and the in-app matrix sweep
+                 #   (matrix_runner.py, matrix_runs.py)
   chat/          # Setup registry + runner (which also assembles each answer's persisted
                  #   execution trace), shared chat history, static chat.html viewer
   evals/         # Demo/evaluation scripts, RAGAS judge + the depth-v2 rubric and its
@@ -2398,7 +2425,7 @@ Canonical storage:
 
 - `raw_transcripts`: timestamped Supadata segment stream.
 - `transcript_chunks`: embedded timestamped transcript chunks.
-- `transcript_summaries`: embedded LLM transcript summaries for optional transcript-level filtering.
+- `transcript_summaries`: embedded per-video transcript summaries (from the YouTube description by default, or an LLM under `YT_AGENT_SUMMARY_SOURCE=llm`) for optional transcript-level filtering.
 
 The legacy `transcripts` collection may exist from earlier prototype work, but current raw and RAG paths use `raw_transcripts` and `transcript_chunks`.
 

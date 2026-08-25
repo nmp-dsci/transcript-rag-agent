@@ -102,6 +102,17 @@ def _default_index_fn(argv: list[str]) -> int:
     return cli.main(argv)
 
 
+class EnrichmentRequest(BaseModel):
+    """Which videos to catch the knowledge graph up on.
+
+    Both fields default to "everything pending", which is the common case —
+    the corpus health strip counts them and this clears them.
+    """
+
+    video_ids: list[str] | None = None
+    limit: int | None = Field(default=None, ge=1)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=1)
     setups: list[str] = Field(default_factory=lambda: list(SETUP_KEYS), min_length=1)
@@ -422,6 +433,7 @@ def create_app(
         "judge": threading.Lock(),
         "graph_store": threading.Lock(),
         "chunk_store": threading.Lock(),
+        "raw_store": threading.Lock(),
     }
     holders: dict[str, Any] = {}
 
@@ -453,6 +465,35 @@ def create_app(
                 )
             return holders["chunk_store"]
 
+    def get_raw_store() -> Any:
+        """Read/write view of the raw transcript collection.
+
+        Only needed to stamp enrichment state back onto documents, so it takes
+        no fetcher — nothing on this path fetches.
+        """
+        with locks["raw_store"]:
+            if "raw_store" not in holders:
+                from src.rag.storage import RawTranscriptStore
+
+                holders["raw_store"] = RawTranscriptStore(
+                    resolved.chroma_path,
+                    collection_name=resolved.raw_transcript_collection,
+                )
+            return holders["raw_store"]
+
+    def _record_graph_state(video_ids: list[str], state: str) -> None:
+        """Persist how graph extraction went, per video.
+
+        Without this the graph half repeats the summary half's original
+        mistake: a failure that leaves no trace is indistinguishable from work
+        nobody has started, so the catch-up pass has nothing to select on.
+        """
+        store = get_raw_store()
+        for video_id in video_ids:
+            document = store.get_raw_document(video_id)
+            if document is not None:
+                store.upsert_raw_document(document.model_copy(update={"graph_status": state}))
+
     def _default_graph_extract_fn(video_ids: list[str]) -> dict[str, Any]:
         """Catch up entities/claims for just-added videos after an ingest.
 
@@ -463,17 +504,26 @@ def create_app(
         from src.rag.graph_pipeline import build_graph
 
         chunks = get_chunk_store().chunks_for_videos(video_ids)
-        stats = build_graph(
-            resolved,
-            chunks,
-            store=get_graph_store(),
-            skip_communities=True,
-        )
-        return {"ok": stats["failed"] == 0, **stats}
+        try:
+            stats = build_graph(
+                resolved,
+                chunks,
+                store=get_graph_store(),
+                skip_communities=True,
+            )
+        except Exception:
+            _record_graph_state(video_ids, "failed")
+            raise
+        ok = stats["failed"] == 0
+        _record_graph_state(video_ids, "done" if ok else "failed")
+        return {"ok": ok, **stats}
 
     graph_extract_fn = graph_extract_fn or _default_graph_extract_fn
     ingestion_queue = IngestionQueue(
-        index_fn=index_fn, corpus_fn=corpus_fn, graph_fn=graph_extract_fn
+        index_fn=index_fn,
+        corpus_fn=corpus_fn,
+        graph_fn=graph_extract_fn,
+        max_workers=resolved.ingestion_workers,
     )
 
     def _default_matrix_run_fn(
@@ -526,10 +576,9 @@ def create_app(
         @app.middleware("http")
         async def demo_gate(request: Request, call_next: Any) -> Any:
             path = request.url.path
-            allowed = (
-                request.method in ("GET", "HEAD")
-                and path not in demo_blocked_gets
-            ) or (request.method == "POST" and path in demo_allowed_posts)
+            allowed = (request.method in ("GET", "HEAD") and path not in demo_blocked_gets) or (
+                request.method == "POST" and path in demo_allowed_posts
+            )
             if not allowed:
                 return JSONResponse(status_code=403, content={"detail": "demo"})
             return await call_next(request)
@@ -1291,6 +1340,46 @@ def create_app(
                 yield _sse("error", {"message": str(exc)})
 
         return StreamingResponse(stream(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+    @app.get("/api/enrichment")
+    def enrichment_state() -> dict:
+        """What still needs enriching, and what it would cost.
+
+        Summaries come from the YouTube description now, so they are written
+        during indexing and are almost never pending. The graph is the only
+        step that still needs a paid provider — which is why it is the only
+        one that can sit in ``pending`` indefinitely.
+        """
+        corpus = corpus_fn()
+        videos = corpus.get("videos", [])
+        return {
+            "summary_pending": [v["video_id"] for v in videos if v.get("summary_status") != "done"],
+            "graph_pending": [v["video_id"] for v in videos if v.get("graph_status") != "done"],
+            "needs_llm": True,
+            "total_videos": len(videos),
+        }
+
+    @app.post("/api/enrichment/run")
+    def run_enrichment(payload: EnrichmentRequest) -> dict:
+        """Catch the graph up on videos that never got one.
+
+        Queued as an ordinary ingestion job so it shares the queue's workers,
+        progress broadcasting and failure isolation rather than inventing a
+        second execution path beside it.
+        """
+        corpus = corpus_fn()
+        pending = [
+            v["video_id"] for v in corpus.get("videos", []) if v.get("graph_status") != "done"
+        ]
+        if payload.video_ids:
+            wanted = set(payload.video_ids)
+            pending = [v for v in pending if v in wanted]
+        if payload.limit is not None:
+            pending = pending[: payload.limit]
+        if not pending:
+            return {"ok": True, "started": 0, "video_ids": []}
+        job = ingestion_queue.enqueue_enrichment(pending)
+        return {"ok": True, "started": len(pending), "video_ids": pending, "job": job.to_dict()}
 
     @app.post("/api/index/queue")
     def enqueue_index(payload: IndexRequest) -> dict:

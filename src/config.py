@@ -45,6 +45,18 @@ class Settings:
     rag_novelty_min_chunks: int = 2
     rag_max_total_followups: int | None = None
     rag_agent_max_iterations: int = 10
+    #: Where a video's routing summary comes from. ``description`` uses the
+    #: creator's own YouTube blurb, which Supadata already returns with the
+    #: metadata — no LLM, no tokens, and nothing in the indexing path that can
+    #: run out of balance. ``llm`` restores the previous DeepSeek summariser.
+    #: Concurrent ingestion jobs. Indexing is mostly network wait, so more
+    #: than one worker hides latency the serial queue exposed in full.
+    ingestion_workers: int = 3
+    summary_source: str = "description"
+    #: Below this many characters a cleaned description is treated as unusable
+    #: rather than indexed as a summary, so a line of marketing copy never
+    #: becomes a video's routing signal.
+    summary_min_chars: int = 120
     chunk_target_chars: int = 1200
     chunk_overlap_chars: int = 150
     # Retrieval strategy. "semantic" is the historical behaviour; "hybrid" fuses
@@ -257,6 +269,9 @@ def load_settings(require_keys: bool = True) -> Settings:
         rag_novelty_min_chunks=_int_env("YT_AGENT_RAG_NOVELTY_MIN_CHUNKS", 2),
         rag_max_total_followups=_optional_int_env("YT_AGENT_RAG_MAX_TOTAL_FOLLOWUPS"),
         rag_agent_max_iterations=_int_env("YT_AGENT_RAG_AGENT_MAX_ITERATIONS", 10),
+        ingestion_workers=_int_env("YT_AGENT_INGESTION_WORKERS", 3),
+        summary_source=(os.environ.get("YT_AGENT_SUMMARY_SOURCE") or "description").lower(),
+        summary_min_chars=_int_env("YT_AGENT_SUMMARY_MIN_CHARS", 120),
         chunk_target_chars=_int_env("YT_AGENT_CHUNK_TARGET_CHARS", 1200),
         chunk_overlap_chars=_int_env("YT_AGENT_CHUNK_OVERLAP_CHARS", 150),
         retrieval_mode=_retrieval_mode_env("YT_AGENT_RETRIEVAL_MODE", "semantic"),

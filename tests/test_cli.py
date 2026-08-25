@@ -107,6 +107,7 @@ class FakeIndexer:
             raw_document = None
             chunks = [object(), object()]
             summary_status = "hit"
+            summary_error = None
             removed_chunk_ids: list[str] = []
 
         return Result()

@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supadata — 234 credits, where they should go</title>
+<style>
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --on-accent:#0b1220; --hover:#182029;
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --hover:#eef2f6;
+  }
+}
+*,*::before,*::after { box-sizing:border-box; }
+:where(.grid,.flex) > * { min-width:0; }
+:where(p,h1,h2,h3,h4,li,td,th,.badge) { overflow-wrap:anywhere; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap { max-width:1120px; margin:0 auto; padding:40px 24px 96px; }
+h1 { font-size:30px; letter-spacing:-.02em; margin:0 0 6px; }
+h2 { font-size:19px; letter-spacing:-.01em; margin:0 0 4px; }
+h3 { font-size:15px; margin:0 0 6px; }
+h4 { font-size:13px; margin:0 0 4px; }
+p { margin:0 0 12px; color:var(--text2); }
+a { color:var(--accent2); }
+code, .mono { font-family:var(--mono); font-size:12.5px; }
+code { background:var(--panel2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--text2); }
+.kicker { font:600 11px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--dim); }
+.sub { color:var(--muted); font-size:13.5px; }
+
+section { margin:0 0 40px; }
+.shead { display:flex; align-items:baseline; gap:12px; padding-bottom:10px; margin-bottom:18px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.shead .n { font:600 12px/1 var(--mono); color:var(--accent2); background:var(--accent-dim); border:1px solid var(--accent-border); border-radius:5px; padding:5px 7px; }
+
+/* hero */
+.hero { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:26px 28px; margin-bottom:36px; }
+.meter { margin-top:20px; }
+.meter .track { height:12px; background:var(--panel2); border:1px solid var(--border2); border-radius:99px; overflow:hidden; display:flex; }
+.meter .used { width:22%; background:var(--muted); }
+.meter .left { flex:1; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+.mrow { display:flex; justify-content:space-between; gap:16px; margin-top:8px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
+.big { font:700 34px/1 var(--mono); color:var(--text); letter-spacing:-.02em; }
+.big small { font:500 13px/1 -apple-system,sans-serif; color:var(--muted); letter-spacing:0; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:9px; overflow:hidden; margin-top:22px; }
+.fact { background:var(--panel3); padding:13px 15px; }
+.fact b { display:block; font:600 16px/1.2 var(--mono); color:var(--text); margin-bottom:3px; }
+.fact span { font-size:11.5px; color:var(--muted); }
+
+/* tables */
+.tw { overflow-x:auto; border:1px solid var(--border); border-radius:9px; background:var(--panel); }
+table { width:100%; border-collapse:collapse; font-size:13.5px; }
+th { text-align:left; font:600 11px/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--dim); padding:11px 14px; border-bottom:1px solid var(--border); background:var(--panel3); white-space:nowrap; }
+td { padding:11px 14px; border-bottom:1px solid var(--border); color:var(--text2); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+td.num { font-family:var(--mono); white-space:nowrap; color:var(--text); }
+td .mono, td code { white-space:nowrap; overflow-wrap:normal; }
+tbody tr:hover { background:var(--hover); }
+
+.badge { display:inline-block; font:600 10.5px/1.4 var(--mono); letter-spacing:.04em; padding:3px 7px; border-radius:5px; white-space:nowrap; border:1px solid; }
+.b-live { color:var(--good); background:var(--good-dim); border-color:var(--good-border); }
+.b-new { color:var(--accent2); background:var(--accent-dim); border-color:var(--accent-border); }
+.b-warn { color:var(--warn); background:var(--warn-dim); border-color:var(--warn-border); }
+.b-bad { color:var(--bad); background:var(--bad-dim); border-color:var(--bad-border); }
+.b-off { color:var(--dim); background:var(--panel2); border-color:var(--border2); }
+
+/* cost lens */
+.lens { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+.lcard { border:1px solid var(--border); border-radius:10px; background:var(--panel); padding:18px 20px; }
+.lcard.cheap { border-left:3px solid var(--good); }
+.lcard.dear { border-left:3px solid var(--bad); }
+.lcard ul { margin:10px 0 0; padding-left:18px; font-size:13px; color:var(--text2); }
+.lcard li { margin-bottom:6px; }
+.lcard li b { color:var(--text); font-family:var(--mono); font-size:12.5px; }
+
+/* options */
+.opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; }
+.opt { border:1px solid var(--border); border-radius:11px; background:var(--panel); display:flex; flex-direction:column; overflow:hidden; }
+.opt.pick { border-color:var(--accent-border); box-shadow:0 0 0 1px var(--accent-border); }
+.opt header { padding:15px 18px 13px; border-bottom:1px solid var(--border); background:var(--panel3); }
+.opt header .tag { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
+.opt header .id { font:700 12px/1 var(--mono); color:var(--accent2); }
+.opt .body { padding:16px 18px; flex:1; }
+.opt .body p { font-size:13.5px; }
+.opt dl { margin:14px 0 0; display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:12.5px; }
+.opt dt { color:var(--dim); font:600 10.5px/1.6 var(--mono); letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+.opt dd { margin:0; color:var(--text2); }
+.opt footer { padding:12px 18px; border-top:1px solid var(--border); background:var(--panel3); display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:12.5px; }
+.cost { font:700 15px/1 var(--mono); color:var(--text); }
+
+.note { border:1px solid var(--border); border-left:3px solid var(--warn); background:var(--panel); border-radius:8px; padding:13px 16px; font-size:13.5px; color:var(--text2); margin:16px 0; }
+.note.good { border-left-color:var(--good); }
+.note.bad { border-left-color:var(--bad); }
+.note b { color:var(--text); }
+
+.mermaid { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; overflow-x:auto; text-align:center; }
+.mermaid svg { max-width:100%; height:auto; display:block; margin:0 auto; }
+.cap { font-size:12px; color:var(--dim); margin-top:8px; }
+
+/* form */
+form.q { border:1px solid var(--border); border-radius:11px; background:var(--panel); padding:20px 22px; margin-bottom:16px; }
+fieldset { border:0; margin:0; padding:0; }
+legend { font:600 13px/1 -apple-system,sans-serif; color:var(--text); padding:0 0 10px; }
+.choices { display:grid; gap:8px; }
+.choice { display:flex; gap:11px; align-items:flex-start; border:1px solid var(--border); background:var(--panel3); border-radius:8px; padding:11px 14px; cursor:pointer; font-size:13.5px; }
+.choice:hover { background:var(--hover); }
+.choice input { margin-top:3px; accent-color:var(--accent); flex:none; }
+.choice b { color:var(--text); }
+.choice span { color:var(--muted); display:block; font-size:12.5px; margin-top:2px; }
+button.send { margin-top:14px; background:var(--accent); color:var(--on-accent); border:1px solid var(--accent); border-radius:7px; padding:9px 16px; font:600 13px/1 -apple-system,sans-serif; cursor:pointer; }
+button.send:hover { background:var(--accent2); }
+textarea { width:100%; background:var(--panel3); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:10px 12px; font:13.5px/1.5 -apple-system,sans-serif; resize:vertical; min-height:70px; }
+footer.end { margin-top:40px; padding-top:16px; border-top:1px solid var(--border); font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hero">
+  <div class="kicker">Supadata · plan review · 2026-08-23</div>
+  <h1>234 credits left. Most of them should buy <em>new source types</em>, not more YouTube.</h1>
+  <p class="sub">Verified live from <code>GET https://api.supadata.ai/v1/me</code> — plan <b>Basic</b>, <b>66 / 300</b> used, org <span class="mono">76872d20…fffdad</span>. Cycle resets <b>11 Sep 2026</b>; unused credits do not roll over.</p>
+
+  <div class="meter">
+    <div class="track"><div class="used"></div><div class="left"></div></div>
+    <div class="mrow"><span>66 used (22%)</span><span>234 remaining · expires in ~19 days</span></div>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><b>107</b><span>videos indexed today</span></div>
+    <div class="fact"><b>2,966</b><span>chunks in Chroma</span></div>
+    <div class="fact"><b>62</b><span>channels — all YouTube</span></div>
+    <div class="fact"><b>1</b><span>source type the pipeline models</span></div>
+    <div class="fact"><b>$5/mo</b><span>Basic · 300 credits · 10 req/s</span></div>
+  </div>
+</div>
+
+<section>
+  <div class="shead"><span class="n">01</span><h2>What your key can actually reach</h2><span class="sub">every endpoint on the Basic plan, and whether this repo uses it</span></div>
+  <p>Nine capabilities are live on your key. The pipeline uses three of them. The unused six are where the remaining budget has leverage — they are the only ones that add <em>new kinds</em> of evidence rather than more of the same.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Endpoint</th><th>What it returns</th><th>Cost</th><th>In this repo</th><th>What it would unlock</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>/v1/transcript</code><br><span class="sub">YouTube</span></td>
+        <td>Timestamped segments + text</td>
+        <td class="num">1 <span class="sub">native</span></td>
+        <td><span class="badge b-live">USED</span><br><span class="sub mono">fetcher.py:38</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/v1/transcript</code><br><span class="sub">TikTok · Instagram · X · Facebook · file URL</span></td>
+        <td>Same shape, other platforms</td>
+        <td class="num">2 / min <span class="sub">generated</span></td>
+        <td><span class="badge b-bad">BLOCKED</span><br><span class="sub">YouTube-only ID parse</span></td>
+        <td><b>Cross-platform corpus.</b> Same advice, different medium — the first genuinely new axis for conflict detection.</td>
+      </tr>
+      <tr>
+        <td><code>/v1/metadata</code></td>
+        <td>Title, author, engagement</td>
+        <td class="num">1</td>
+        <td><span class="badge b-live">USED</span><br><span class="sub mono">fetcher.py:48</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/v1/youtube/search</code></td>
+        <td>Video/channel/playlist IDs, filtered by date, duration, sort</td>
+        <td class="num">1 / page <span class="sub">~20 results</span></td>
+        <td><span class="badge b-live">USED</span><br><span class="sub mono">discovery.py:88</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/v1/youtube/channel</code> · <code>/playlist</code> · <code>/channel/videos</code></td>
+        <td>Channel + playlist metadata and video ID lists</td>
+        <td class="num">1</td>
+        <td><span class="badge b-live">USED</span><br><span class="sub mono">discovery.py:47–54</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/v1/web/scrape</code></td>
+        <td>Page → clean Markdown, plus title, description, outbound links</td>
+        <td class="num">1 / URL</td>
+        <td><span class="badge b-new">UNUSED</span></td>
+        <td><b>Docs and blogs as first-class sources.</b> Cheapest new modality you have.</td>
+      </tr>
+      <tr>
+        <td><code>/v1/web/map</code></td>
+        <td>Every URL on a site</td>
+        <td class="num">1 / site</td>
+        <td><span class="badge b-new">UNUSED</span></td>
+        <td>Scope a crawl before paying for it — one credit to see the whole surface.</td>
+      </tr>
+      <tr>
+        <td><code>/v1/web/crawl</code></td>
+        <td>Whole site → Markdown, async job, paginated</td>
+        <td class="num">1 + 1 / page</td>
+        <td><span class="badge b-new">UNUSED</span></td>
+        <td>Bulk written corpus: an engineering handbook, a docs set, a blog archive.</td>
+      </tr>
+      <tr>
+        <td><code>/v1/extract</code></td>
+        <td>Video → JSON matching <em>your</em> schema (sees and hears the video, not the transcript)</td>
+        <td class="num">5 / min <br><span class="sub">min 5 · 55-min cap</span></td>
+        <td><span class="badge b-new">UNUSED</span></td>
+        <td>Structured facts without an LLM pass of your own — but see §02, this is the expensive one.</td>
+      </tr>
+      <tr>
+        <td><code>/v1/youtube/transcript/translate</code></td>
+        <td>Translated transcript</td>
+        <td class="num">30 / min</td>
+        <td><span class="badge b-off">N/A</span></td>
+        <td><span class="badge b-bad">Out of budget</span> An 8-minute video would consume your entire remaining balance.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="cap">Costs from supadata.ai/pricing and the per-endpoint docs, 23 Aug 2026. Note the trap: an <b>unavailable</b> transcript (HTTP 206) still bills 1 credit, so a failed batch is not free.</p>
+</section>
+
+<section>
+  <div class="shead"><span class="n">02</span><h2>The cost lens: per-item vs per-minute</h2><span class="sub">the single distinction that decides this budget</span></div>
+  <p>Supadata bills two different ways, and the difference is roughly two orders of magnitude. Everything that reads <em>existing</em> text is billed per item. Everything that <em>generates</em> — AI transcription, AI extraction, translation — is billed per minute of media. With 234 credits, per-minute pricing is a rounding error away from spending the lot on one long video.</p>
+
+  <div class="lens">
+    <div class="lcard cheap">
+      <h3>Per-item — spend freely</h3>
+      <p class="sub">234 credits buys a lot of these.</p>
+      <ul>
+        <li><b>1 credit</b> · one YouTube transcript that already has captions</li>
+        <li><b>1 credit</b> · one web page as clean Markdown</li>
+        <li><b>1 credit</b> · one whole-site URL map</li>
+        <li><b>1 credit</b> · one crawled page</li>
+        <li><b>1 credit</b> · a search page of ~20 results</li>
+      </ul>
+    </div>
+    <div class="lcard dear">
+      <h3>Per-minute — spend deliberately</h3>
+      <p class="sub">Budget dies here if you are not counting.</p>
+      <ul>
+        <li><b>2 / min</b> · AI-generated transcript — a 40-min talk = <b>80 credits</b>, a third of your balance</li>
+        <li><b>5 / min</b> · Extract — a 10-min video = <b>50 credits</b> for one JSON object</li>
+        <li><b>30 / min</b> · Translation — effectively unavailable to you</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note good"><b>The non-obvious consequence:</b> short-form video is <em>cheap</em> under per-minute pricing. A 60–90 second TikTok or Reel costs 2–3 credits to transcribe even though no captions exist. Cross-platform expansion is affordable precisely because the clips are short — 15 clips for ~45 credits. Long-form non-YouTube video is not.</div>
+  <div class="note bad"><b>Guard rail worth writing into the code:</b> <code>mode</code> currently defaults to <code>"auto"</code> in <span class="mono">fetcher.py:53</span>, which silently falls back to AI generation. On YouTube that is usually harmless; pointed at a caption-less 45-minute conference talk it is a 90-credit accident with no warning. Any new ingestion path should take an explicit <code>--max-credits</code> ceiling and refuse to exceed it.</div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">03</span><h2>Where the pipeline is YouTube-locked</h2><span class="sub">verified against the working tree, branch <span class="mono">injest-exploration</span></span></div>
+  <p>The system is not source-agnostic today. Three specific places assume YouTube, and the first one is a hard stop rather than a degradation.</p>
+
+  <div class="mermaid">
+flowchart TD
+  A["URL pasted or discovered"] --> B["extract_video_id<br/>transcripts/youtube.py line 10"]
+  B -->|"not a YouTube URL"| X["raises YouTubeUrlError<br/>ingestion stops here"]
+  B -->|"11-char video ID"| C["SuperdataTranscriptFetcher.fetch<br/>v1/transcript plus v1/metadata"]
+  C --> D["Transcript model<br/>video_id, channel_name, segments"]
+  D --> E["Chroma raw_transcripts and transcript_chunks"]
+  E --> F["Graph, themes, conflicts, packs"]
+  F --> G["Frontend cites video_id plus second offset"]
+  class X bad
+  classDef bad fill:#3d1d1f,stroke:#6b2a2c,color:#f85149
+  </div>
+  <p class="cap">Every ingestion path funnels through <code>extract_video_id</code> at <span class="mono">fetcher.py:38</span> before a single API call is made — so a TikTok or blog URL fails before it can cost you a credit. That is a safe failure, but it means <em>no</em> spend option below is a config change.</p>
+
+  <div class="tw" style="margin-top:18px">
+  <table>
+    <thead><tr><th>Assumption</th><th>Where</th><th>Breaks on</th><th>Fix shape</th></tr></thead>
+    <tbody>
+      <tr><td>Every source is an 11-char YouTube ID</td><td class="mono">transcripts/fetcher.py:38<br>transcripts/youtube.py:10</td><td>Any non-YouTube URL — hard raise</td><td>Add <code>source_id</code> + <code>platform</code>; fall back to a URL hash when no native ID exists</td></tr>
+      <tr><td>Provenance is <code>channel_name</code></td><td class="mono">transcripts/models.py:17<br>transcripts/storage.py:48</td><td>A blog has an author and a domain, not a channel</td><td>Rename to <code>author</code> / <code>source_name</code> at the metadata layer; keep the display field</td></tr>
+      <tr><td>A citation is a second offset</td><td class="mono">frontend/src/answers/render.ts</td><td>Web pages have no timestamps</td><td><span class="badge b-live">Already solved</span> <code>DocumentSection.label</code> in <span class="mono">documents/models.py:38</span> models heading-anchored citations — reuse it</td></tr>
+      <tr><td>Conflicts are cross-<em>channel</em></td><td class="mono">cli.py:1114 <code>cross_channel_only</code></td><td>Cross-<em>platform</em> disagreement is the interesting new signal</td><td>Generalise the predicate to "different source", platform included</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note"><b>One quiet win in option C.</b> <span class="mono">documents/fetch.py</span> is a carefully SSRF-bounded fetcher — scheme, address, redirect, size and content-type checks, with a documented DNS-rebinding residual risk. Routing page ingestion through Supadata's <code>/web/scrape</code> means your server stops making outbound fetches to user-supplied URLs at all. That removes the residual risk rather than mitigating it, and it is a defensible line in a portfolio write-up.</div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">04</span><h2>Four ways to spend it</h2><span class="sub">costed against the real 234, with the pipeline work each implies</span></div>
+
+  <div class="opts">
+    <div class="opt">
+      <header>
+        <div class="tag"><span class="id">OPTION A</span><span class="badge b-off">DEEPEN</span></div>
+        <h3>More YouTube, same pipeline</h3>
+      </header>
+      <div class="body">
+        <p>Run <code>bulk-index search</code> and <code>bulk-index channel</code> harder: another 60–80 videos, pushing the corpus past 180.</p>
+        <dl>
+          <dt>Buys</dt><dd>Denser retrieval, better theme clustering, more eval headroom</dd>
+          <dt>Costs</dt><dd>~60 transcripts + ~5 search pages</dd>
+          <dt>Code</dt><dd><b>None.</b> Works today.</dd>
+          <dt>Weakness</dt><dd>Zero new capability. The demo already says "107 videos"; saying 180 changes nothing a reviewer notices.</dd>
+        </dl>
+      </div>
+      <footer><span class="sub">Marginal portfolio value</span><span class="cost">~65</span></footer>
+    </div>
+
+    <div class="opt pick">
+      <header>
+        <div class="tag"><span class="id">OPTION B</span><span class="badge b-new">NEW MODALITY</span><span class="badge b-warn">CODE</span></div>
+        <h3>Short-form cross-platform</h3>
+      </header>
+      <div class="body">
+        <p>Transcribe 15–20 TikTok / Reels / X clips covering the same advice topics already in the corpus — resume tips, system design takes. Then ask the question the corpus cannot answer today: <em>does the 60-second version of this advice contradict the 40-minute version?</em></p>
+        <dl>
+          <dt>Buys</dt><dd>A second medium, and a genuinely new conflict axis: long-form nuance vs short-form absolutism</dd>
+          <dt>Costs</dt><dd>~15 clips × ~1.5 min × 2 credits</dd>
+          <dt>Code</dt><dd>Platform-aware IDs, <code>platform</code> on the model, storage metadata, source chips in the UI</dd>
+          <dt>Risk</dt><dd>Generated transcripts are noisier than captions; clip length must be capped before fetch</dd>
+        </dl>
+      </div>
+      <footer><span class="sub">Highest narrative payoff</span><span class="cost">~45</span></footer>
+    </div>
+
+    <div class="opt pick">
+      <header>
+        <div class="tag"><span class="id">OPTION C</span><span class="badge b-new">NEW MODALITY</span><span class="badge b-warn">CODE</span></div>
+        <h3>Written corpus via scrape + crawl</h3>
+      </header>
+      <div class="body">
+        <p><b>No video involved.</b> This is written material — <code>map</code> two or three authoritative sites for 1 credit each to see their shape, then <code>crawl</code> the sections worth having. An engineering handbook, a docs set, a strong blog archive. Roughly 55 web pages arriving as clean Markdown, with headings intact.</p>
+        <dl>
+          <dt>Buys</dt><dd>Video-vs-text retrieval comparison; written sources are denser and better structured than speech, which will visibly move precision</dd>
+          <dt>Costs</dt><dd>3 maps + 1 crawl job + ~55 pages</dd>
+          <dt>Code</dt><dd>Section-anchored citations (<span class="mono">documents/models.py</span> already fits), a page chunker, a source-type filter in retrieval</dd>
+          <dt>Risk</dt><dd>Respect robots.txt and ToS — pick sources with permissive terms and say so in the write-up</dd>
+        </dl>
+      </div>
+      <footer><span class="sub">Cheapest credits-per-insight</span><span class="cost">~60</span></footer>
+    </div>
+
+    <div class="opt">
+      <header>
+        <div class="tag"><span class="id">OPTION D</span><span class="badge b-new">UNUSED API</span><span class="badge b-bad">PER-MINUTE</span></div>
+        <h3>Extract as a schema baseline</h3>
+      </header>
+      <div class="body">
+        <p>Point <code>/v1/extract</code> at 2 short videos with the same JSON schema your own DeepSeek extraction pass produces — then score the two against each other.</p>
+        <dl>
+          <dt>Buys</dt><dd>An external baseline for your extraction quality. That is an <em>eval</em> result, not a feature: "my pipeline vs a commercial one, measured"</dd>
+          <dt>Costs</dt><dd>2 videos × ~4 min × 5 credits</dd>
+          <dt>Code</dt><dd>A one-off script plus a scoring cell in the existing eval harness</dd>
+          <dt>Risk</dt><dd>40 credits for two data points. Only worth it if the comparison is actually written up.</dd>
+        </dl>
+      </div>
+      <footer><span class="sub">Do last, or not at all</span><span class="cost">~40</span></footer>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">05</span><h2>Recommended allocation</h2><span class="sub">B + C first — they are the only options that change what the system <em>is</em></span></div>
+  <p>The recommendation is not balanced across the four. Option A adds volume to something already demonstrated; D buys two data points at per-minute rates. B and C each add a source type the pipeline has never handled, which is what makes the retrieval comparison, the conflict detection and the demo narrative all get better at once.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Allocation</th><th>What the data actually is</th><th>Spend</th><th>Credits</th><th>Leaves the system with</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-new">1st</span> Option C — web corpus</td><td><b>Not video at all.</b> HTML pages converted to Markdown — docs pages, handbook chapters, blog posts. Prose with headings, no audio, no timestamps.</td><td>3 maps + crawl job + 55 pages</td><td class="num">60</td><td>Text sources, section citations, video-vs-text precision numbers</td></tr>
+      <tr><td><span class="badge b-new">2nd</span> Option B — short-form</td><td><b>Video, but not YouTube.</b> TikTok / Reels / X clips, AI-transcribed because they have no captions. Same timestamped-segment shape as today's data.</td><td>15 clips @ ~1.5 min</td><td class="num">45</td><td>Three platforms, cross-medium conflict detection</td></tr>
+      <tr><td><span class="badge b-off">3rd</span> Option A — YouTube depth</td><td><b>Exactly what you have now.</b> More YouTube transcripts, identical schema.</td><td>60 native transcripts + 5 search pages</td><td class="num">65</td><td>~170 videos, denser themes</td></tr>
+      <tr><td><span class="badge b-warn">4th</span> Option D — Extract baseline</td><td><b>Not a corpus at all.</b> Two JSON objects to score your own extraction against — an eval artifact, not retrievable data.</td><td>2 short videos</td><td class="num">40</td><td>One measured comparison against a commercial extractor</td></tr>
+      <tr><td><b>Reserve</b> — retries, 206 charges, re-fetches</td><td>—</td><td>~10% buffer</td><td class="num">24</td><td>Room to fail without blocking the cycle</td></tr>
+      <tr style="background:var(--accent-dim)"><td><b>Total</b></td><td></td><td></td><td class="num"><b>234</b></td><td><b>Exactly the balance, nothing carried over</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note"><b>Sequencing matters more than the split.</b> C and B both need the same model change — <code>platform</code> / <code>source_id</code> on <code>Transcript</code>, and source-aware metadata in Chroma. Do that refactor once, before spending anything. If you spend first and refactor later, 105 credits of new data land in a schema that cannot describe them and you re-fetch.</div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">06</span><h2>What has to change in the code</h2><span class="sub">shared spine first, then per-option work</span></div>
+  <div class="tw">
+  <table>
+    <thead><tr><th>#</th><th>Change</th><th>Files</th><th>Needed by</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Add <code>platform</code> and <code>source_id</code> to the transcript model; keep <code>video_id</code> as a YouTube-only alias so nothing downstream breaks</td><td class="mono">transcripts/models.py<br>transcripts/storage.py</td><td>B, C</td></tr>
+      <tr><td class="num">2</td><td>Split URL resolution: a <code>SourceRef</code> resolver that recognises YouTube, the other video platforms, and plain pages — replacing the unconditional <code>extract_video_id</code> call</td><td class="mono">transcripts/fetcher.py:38<br>transcripts/youtube.py</td><td>B, C</td></tr>
+      <tr><td class="num">3</td><td>Explicit credit ceiling on every fetch path: estimate before calling, refuse over <code>--max-credits</code>, log actual spend</td><td class="mono">transcripts/fetcher.py<br>cli.py</td><td>B, D</td></tr>
+      <tr><td class="num">4</td><td>Web ingestion client — <code>scrape</code>, <code>map</code>, <code>crawl</code> with the crawl job poller</td><td class="mono">documents/ (new supadata client)</td><td>C</td></tr>
+      <tr><td class="num">5</td><td>Section-anchored citations for text sources instead of second offsets</td><td class="mono">documents/models.py<br>frontend/src/answers/render.ts</td><td>C</td></tr>
+      <tr><td class="num">6</td><td>Generalise conflict adjudication from cross-channel to cross-source</td><td class="mono">cli.py:1114 · rag/conflicts</td><td>B, C</td></tr>
+      <tr><td class="num">7</td><td>Source-type chips + filters in the pipeline and chat views</td><td class="mono">frontend/src/pipeline/ · chat/</td><td>B, C</td></tr>
+      <tr><td class="num">8</td><td>Re-run <code>scripts/upload_demo_data.sh</code> and redeploy — new data does not reach prod otherwise</td><td class="mono">scripts/upload_demo_data.sh</td><td>all</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">07</span><h2>Risks worth naming before spending</h2></div>
+  <div class="lens">
+    <div class="lcard">
+      <h4>Credits are not the real cost</h4>
+      <p class="sub">Re-indexing 105 new sources triggers your own DeepSeek passes — contextual chunking, graph extraction, themes, conflicts. That bill is larger than 234 Supadata credits and is not covered by this plan.</p>
+    </div>
+    <div class="lcard">
+      <h4>The demo container has a 1 GB ceiling</h4>
+      <p class="sub">App Runner is provisioned at 0.5 vCPU / 1 GB against a measured 539 MiB. Doubling the corpus moves both the image size and the resident set; check before merging, not after the smoke test fails.</p>
+    </div>
+    <div class="lcard">
+      <h4>Nineteen days, then the balance is gone</h4>
+      <p class="sub">Credits reset 11 Sep and do not roll over. Unspent is wasted — but so is data landing in a schema that cannot hold it. The refactor is the gate.</p>
+    </div>
+    <div class="lcard">
+      <h4>Scraping has terms attached</h4>
+      <p class="sub">Supadata's own docs say to respect robots.txt and site terms. For a public portfolio, pick sources whose terms permit it and name them in the write-up — the provenance discipline is part of what the project claims.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><span class="n">08</span><h2>Your call</h2><span class="sub">select, then queue — nothing is sent until you press the button</span></div>
+
+  <form class="q" data-lavish-question="allocation" onsubmit="event.preventDefault(); const v=new FormData(event.currentTarget).get('allocation'); if(v) window.lavish.queuePrompt('Supadata spend — use allocation: '+v, {tag:'choice', text:'Allocation: '+v, element:event.currentTarget, data:{question:'allocation', answer:v}});">
+    <fieldset>
+      <legend>How should the 234 credits be split?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="allocation" value="Recommended split — C 60, B 45, A 65, D 40, reserve 24"><span><b>Recommended split</b> — C 60 · B 45 · A 65 · D 40 · reserve 24<span>New modalities first, YouTube depth with what is left over.</span></span></label>
+        <label class="choice"><input type="radio" name="allocation" value="New modalities only — C 100, B 100, reserve 34; skip A and D"><span><b>New modalities only</b> — C 100 · B 100 · reserve 34<span>Skip A and D entirely; go deep on web + short-form.</span></span></label>
+        <label class="choice"><input type="radio" name="allocation" value="One modality done properly — Option C web corpus 200, reserve 34"><span><b>One modality, done properly</b> — C 200 · reserve 34<span>A serious written corpus rather than two shallow ones.</span></span></label>
+        <label class="choice"><input type="radio" name="allocation" value="Hold the credits until the platform/source refactor lands"><span><b>Hold and refactor first</b><span>Land the <code>platform</code>/<code>source_id</code> work, then decide with the schema in place.</span></span></label>
+      </div>
+      <button class="send" type="submit">Queue this answer</button>
+    </fieldset>
+  </form>
+
+  <form class="q" data-lavish-question="build-first" onsubmit="event.preventDefault(); const v=new FormData(event.currentTarget).get('first'); if(v) window.lavish.queuePrompt('Supadata spend — build this first: '+v, {tag:'choice', text:'Build first: '+v, element:event.currentTarget, data:{question:'build-first', answer:v}});">
+    <fieldset>
+      <legend>What should I build first on <span class="mono">injest-exploration</span>?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="first" value="Shared spine: platform/source_id model + SourceRef resolver + credit ceiling (changes 1-3)"><span><b>The shared spine</b> — changes 1–3<span>Model, resolver, credit ceiling. Prerequisite for both B and C. Spends zero credits.</span></span></label>
+        <label class="choice"><input type="radio" name="first" value="Option C: web scrape/map/crawl ingestion client end to end"><span><b>Option C</b> — web ingestion end to end<span>Client, chunker, section citations, UI chips.</span></span></label>
+        <label class="choice"><input type="radio" name="first" value="Option B: short-form cross-platform transcript ingestion"><span><b>Option B</b> — short-form cross-platform<span>TikTok / Reels / X clips with per-clip credit caps.</span></span></label>
+        <label class="choice"><input type="radio" name="first" value="A costed dry run first: map candidate sites and print the exact credit plan before spending"><span><b>A costed dry run</b><span>Spend ~3 credits mapping candidates, print the exact plan, decide after.</span></span></label>
+      </div>
+      <button class="send" type="submit">Queue this answer</button>
+    </fieldset>
+  </form>
+
+  <form class="q" data-lavish-question="sources" onsubmit="event.preventDefault(); const t=event.currentTarget.querySelector('textarea').value.trim(); if(t) window.lavish.queuePrompt('Supadata spend — target sources: '+t, {tag:'note', text:'Sources: '+t, element:event.currentTarget, data:{question:'sources', answer:t}});">
+    <fieldset>
+      <legend>Which sites or creators should the new credits point at?</legend>
+      <p class="sub" style="margin-bottom:10px">I have no visibility into which written sources or short-form creators you consider authoritative — name them and I will cost the exact crawl before spending anything.</p>
+      <textarea placeholder="e.g. a specific engineering handbook, a docs site, three TikTok creators covering resume advice…"></textarea>
+      <button class="send" type="submit">Queue these sources</button>
+    </fieldset>
+  </form>
+</section>
+
+<footer class="end">
+  Verified against branch <span class="mono">injest-exploration</span> @ <span class="mono">7670bf7</span> and live API responses on 23 Aug 2026. Credit balance from <span class="mono">/v1/me</span>; corpus counts from <span class="mono">/api/corpus</span> on the local dev serve. Costs quoted from supadata.ai/pricing and per-endpoint docs — re-check before a large spend, pricing pages move.
+</footer>
+
+</div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const paint = document.createElement("canvas").getContext("2d");
+  function toRgba(color) {
+    paint.clearRect(0, 0, 1, 1);
+    paint.fillStyle = "#000";
+    paint.fillStyle = color;
+    paint.fillRect(0, 0, 1, 1);
+    return paint.getImageData(0, 0, 1, 1).data;
+  }
+  function compositeRgba(foreground, background) {
+    const fa = foreground[3] / 255, ba = background[3] / 255;
+    const alpha = fa + ba * (1 - fa);
+    if (alpha === 0) return [0, 0, 0, 0];
+    return [
+      (foreground[0] * fa + background[0] * ba * (1 - fa)) / alpha,
+      (foreground[1] * fa + background[1] * ba * (1 - fa)) / alpha,
+      (foreground[2] * fa + background[2] * ba * (1 - fa)) / alpha,
+      alpha * 255,
+    ];
+  }
+  function pageIsDark() {
+    const root = document.documentElement;
+    const rootBackground = toRgba(getComputedStyle(root).backgroundColor);
+    const bodyBackground = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0, 0, 0, 0];
+    const [r, g, b, a] = compositeRgba(bodyBackground, rootBackground);
+    if (a > 0) return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+    const cs = getComputedStyle(root).colorScheme;
+    if (cs.includes("dark") && !cs.includes("light")) return true;
+    if (cs.includes("light") && !cs.includes("dark")) return false;
+    return darkQuery.matches;
+  }
+  const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.innerHTML }));
+  let applied, rendering = false, queued = false;
+  function queueRender() { queued = true; if (rendering) return; void render(); }
+  async function render() {
+    rendering = true;
+    try {
+      while (queued) {
+        queued = false;
+        const theme = pageIsDark() ? "dark" : "default";
+        if (theme === applied) continue;
+        mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+        for (const { el, src } of diagrams) { el.removeAttribute("data-processed"); el.innerHTML = src; }
+        try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+        catch (error) { console.error("Mermaid diagram render failed:", error); return; }
+        applied = theme;
+      }
+    } finally { rendering = false; if (queued) queueRender(); }
+  }
+  if (document.readyState === "complete") queueRender();
+  else window.addEventListener("load", queueRender, { once: true });
+  const themeObserver = new MutationObserver(queueRender);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+  }
+  darkQuery.addEventListener("change", queueRender);
+</script>
+</body>
+</html>

@@ -38,6 +38,24 @@ class RawTranscriptDocument(BaseModel):
     summary_embedding: list[float] | None = None
     summary_embedding_model: str | None = None
     summary_embedded_at: str | None = None
+    #: Enrichment state, recorded rather than inferred. Before these existed,
+    #: "this video has no summary" was read off ``summary is None`` — which
+    #: cannot tell a video nobody has summarised yet from one whose summary
+    #: provider returned 402 and lost the attempt. Repairing the second needs
+    #: to find it first.
+    #:
+    #: ``pending`` nothing has run | ``done`` succeeded | ``failed`` attempted
+    #: and raised. ``None`` on documents written before this field existed,
+    #: which read as ``pending`` — see :func:`summary_state`.
+    summary_status: str | None = None
+    #: Which generator wrote :attr:`summary`: ``description`` (the creator's
+    #: own YouTube blurb, no LLM) or ``llm``. A corpus mixing both puts two
+    #: very different registers into one embedding space, so the router's
+    #: similarity scores stop meaning the same thing video to video — worth
+    #: being able to detect.
+    summary_source: str | None = None
+    #: Same three states, for knowledge-graph extraction.
+    graph_status: str | None = None
 
 
 class TranscriptChunk(BaseModel):
@@ -122,3 +140,27 @@ class ContextComparisonResult(BaseModel):
     raw_prompt_tokens_estimate: int
     rag_prompt_tokens_estimate: int
     token_savings_percent: float
+
+
+#: Enrichment states, in the order a video moves through them.
+PENDING = "pending"
+DONE = "done"
+FAILED = "failed"
+
+
+def summary_state(document: RawTranscriptDocument) -> str:
+    """The summary's enrichment state, tolerant of pre-field documents.
+
+    Documents written before ``summary_status`` existed carry ``None``. Those
+    are not unknowable: a stored summary means it succeeded, and its absence
+    means nothing has produced one yet. Only ``failed`` is genuinely new
+    information, which is exactly why the field had to exist.
+    """
+    if document.summary_status:
+        return document.summary_status
+    return DONE if (document.summary or "").strip() else PENDING
+
+
+def graph_state(document: RawTranscriptDocument) -> str:
+    """The graph's enrichment state. Unset means nothing has run yet."""
+    return document.graph_status or PENDING

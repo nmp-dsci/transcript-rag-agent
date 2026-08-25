@@ -17,6 +17,7 @@ import type {
   Health,
   IndexResult,
   IndexStage,
+  EnrichmentSummary,
   IngestionJob,
   KnowledgeGraph,
   MatrixJob,
@@ -213,6 +214,19 @@ export const api = {
     channel?: string;
     latest?: number;
   }) => postJson<IngestionJob>("/api/index/queue", payload),
+
+  /** What still needs enriching corpus-wide. Summaries come from the
+   * YouTube description now, so they are written during indexing — the graph
+   * is the only step that still needs a paid provider, and so the only one
+   * that can sit pending indefinitely. */
+  enrichmentState: () => getJson<EnrichmentSummary>("/api/enrichment"),
+
+  /** Catch the knowledge graph up. Queued like any other job. */
+  runEnrichment: (payload: { video_ids?: string[]; limit?: number } = {}) =>
+    postJson<{ ok: boolean; started: number; video_ids: string[] }>(
+      "/api/enrichment/run",
+      payload,
+    ),
 
   indexQueueSnapshot: () =>
     getJson<{ jobs: IngestionJob[] }>("/api/index/queue").then((r) => r.jobs),

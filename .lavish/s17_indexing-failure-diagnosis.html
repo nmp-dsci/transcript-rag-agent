@@ -1,0 +1,1474 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indexing Failure — Diagnosis & Plan</title>
+<style>
+/* Design source (2): the project's own system. Tokens copied verbatim from
+   frontend/src/theme.css so this page reads as part of transcript-lab. */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442;
+  --text:#e6edf3; --text2:#c9d1d9; --muted:#8b949e; --dim:#6e7681;
+  --accent:#2f81f7; --accent2:#79b8ff; --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --on-accent:#0b1220; --hover:#182029; --btn-hover:#232b38; --accent-hover:#4b93f8;
+  --mono: ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+  --border:#d1d9e0; --border2:#bcc4cc;
+  --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+  --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+  --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+  --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+  --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+  --on-accent:#ffffff; --hover:#eef2f6; --btn-hover:#eef2f6; --accent-hover:#0860ca;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc;
+    --text:#1f2328; --text2:#424a53; --muted:#59636e; --dim:#818b98;
+    --accent:#0969da; --accent2:#0550ae; --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --hover:#eef2f6; --btn-hover:#eef2f6; --accent-hover:#0860ca;
+  }
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:14px/1.6 'Segoe UI',Helvetica,Arial,sans-serif;
+  overflow-wrap:anywhere;
+}
+.wrap { max-width:1120px; margin:0 auto; padding:32px 24px 96px; }
+h1,h2,h3 { line-height:1.25; margin:0; }
+h1 { font-size:30px; letter-spacing:-0.02em; }
+h2 { font-size:19px; letter-spacing:-0.01em; }
+h3 { font-size:15px; }
+p { margin:8px 0; color:var(--text2); }
+.mono { font-family:var(--mono); font-size:12px; }
+code { font-family:var(--mono); font-size:12px; background:var(--panel2);
+  border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--text); }
+td .mono, td code, th code { white-space:nowrap; overflow-wrap:normal; }
+.muted { color:var(--muted); }
+.dim { color:var(--dim); }
+
+section { margin-top:40px; }
+.sec-head { display:flex; align-items:baseline; gap:12px; padding-bottom:10px;
+  border-bottom:1px solid var(--border); margin-bottom:18px; flex-wrap:wrap; }
+.sec-num { font:600 12px var(--mono); color:var(--accent2); letter-spacing:.08em; }
+.sec-sub { color:var(--muted); font-size:13px; margin-left:auto; }
+
+.badge { display:inline-block; font:600 11px var(--mono); padding:2px 7px;
+  border-radius:4px; border:1px solid; white-space:nowrap; }
+.b-bad  { background:var(--bad-dim);  border-color:var(--bad-border);  color:var(--bad); }
+.b-warn { background:var(--warn-dim); border-color:var(--warn-border); color:var(--warn); }
+.b-good { background:var(--good-dim); border-color:var(--good-border); color:var(--good); }
+.b-acc  { background:var(--accent-dim); border-color:var(--accent-border); color:var(--accent2); }
+.b-plain{ background:var(--panel2); border-color:var(--border2); color:var(--text2); }
+
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:18px; }
+.grid { display:grid; gap:14px; }
+.g2 { grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); }
+.g3 { grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); }
+.grid > * { min-width:0; }
+
+/* ── hero ─────────────────────────────────────────────────────────── */
+.hero { background:linear-gradient(180deg,var(--panel3),var(--panel));
+  border:1px solid var(--border); border-radius:10px; padding:26px; }
+.verdict { margin-top:18px; background:var(--bad-dim); border:1px solid var(--bad-border);
+  border-radius:8px; padding:16px 18px; }
+.verdict .k { font:600 11px var(--mono); color:var(--bad); letter-spacing:.08em; }
+.verdict .v { font-size:19px; font-weight:600; color:var(--text); margin-top:6px; }
+.factgrid { display:grid; gap:1px; background:var(--border); border:1px solid var(--border);
+  border-radius:8px; overflow:hidden; margin-top:18px;
+  grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr)); }
+.fact { background:var(--panel); padding:12px 14px; min-width:0; }
+.fact .n { font:600 21px var(--mono); color:var(--text); }
+.fact .l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+
+/* ── tables ───────────────────────────────────────────────────────── */
+.tw { overflow-x:auto; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+table { border-collapse:collapse; width:100%; font-size:13px; min-width:640px; }
+th { text-align:left; font:600 11px var(--mono); color:var(--muted); text-transform:uppercase;
+  letter-spacing:.06em; padding:10px 12px; background:var(--panel3);
+  border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:11px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text2); }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--hover); }
+
+/* ── cards ────────────────────────────────────────────────────────── */
+.card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; min-width:0; }
+.card.bad  { border-color:var(--bad-border); }
+.card.warn { border-color:var(--warn-border); }
+.card.good { border-color:var(--good-border); }
+.card.acc  { border-color:var(--accent-border); }
+.card h3 { margin-bottom:6px; }
+.card p { font-size:13px; }
+.card ul { margin:8px 0 0; padding-left:18px; color:var(--text2); font-size:13px; }
+.card li { margin:4px 0; }
+
+.callout { border-left:3px solid var(--accent); background:var(--accent-dim);
+  padding:12px 16px; border-radius:0 6px 6px 0; margin-top:14px; }
+.callout.warn { border-left-color:var(--warn); background:var(--warn-dim); }
+.callout.bad  { border-left-color:var(--bad);  background:var(--bad-dim); }
+.callout p { margin:0; color:var(--text); font-size:13px; }
+.callout p + p { margin-top:8px; }
+
+pre.log { background:#0a0d12; border:1px solid var(--border); border-radius:6px;
+  padding:12px 14px; overflow-x:auto; font:12px/1.55 var(--mono); color:var(--text2);
+  white-space:pre; margin:12px 0 0; }
+:root[data-theme='light'] pre.log { background:#0e1116; color:#c9d1d9; }
+pre.log .e { color:var(--bad); }
+pre.log .o { color:var(--good); }
+pre.log .c { color:var(--dim); }
+
+/* ── figure ───────────────────────────────────────────────────────── */
+figure { margin:0; }
+figure svg { width:100%; height:auto; display:block; }
+figcaption { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; }
+
+/* ── stage mock ───────────────────────────────────────────────────── */
+.mockwrap { background:var(--bg); border:1px solid var(--border2); border-radius:8px; padding:16px; }
+.mocklabel { font:600 10px var(--mono); color:var(--dim); letter-spacing:.1em;
+  text-transform:uppercase; margin-bottom:10px; }
+.idxq-row { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:12px 14px; }
+.idxq-row.running { border-color:var(--accent-border); }
+.idxq-row + .idxq-row { margin-top:8px; }
+.idxq-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.idxq-target { font:12px var(--mono); color:var(--text); word-break:break-all; }
+.pulse { width:7px; height:7px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 0 0 rgba(47,129,247,.5); animation:pulse 1.8s infinite; flex:none; }
+@keyframes pulse { 70%{box-shadow:0 0 0 7px rgba(47,129,247,0);} 100%{box-shadow:0 0 0 0 rgba(47,129,247,0);} }
+
+.steps { display:flex; align-items:flex-start; gap:0; margin-top:14px; overflow-x:auto; padding-bottom:4px; }
+.step { flex:1 1 0; min-width:78px; text-align:center; position:relative; }
+.step .dot { width:20px; height:20px; border-radius:50%; margin:0 auto 6px;
+  display:grid; place-items:center; font:600 10px var(--mono);
+  border:1.5px solid var(--border2); background:var(--panel2); color:var(--dim); position:relative; z-index:1; }
+.step .nm { font:11px var(--mono); color:var(--dim); }
+.step::before { content:''; position:absolute; top:10px; left:-50%; width:100%;
+  height:1.5px; background:var(--border2); z-index:0; }
+.step:first-child::before { display:none; }
+.step.done .dot { background:var(--good-dim); border-color:var(--good-border); color:var(--good); }
+.step.done .nm { color:var(--text2); }
+.step.done::before { background:var(--good-border); }
+.step.active .dot { background:var(--accent-dim); border-color:var(--accent); color:var(--accent2);
+  box-shadow:0 0 0 3px var(--accent-dim); }
+.step.active .nm { color:var(--accent2); font-weight:600; }
+.step.active::before { background:var(--good-border); }
+.step.failed .dot { background:var(--bad-dim); border-color:var(--bad-border); color:var(--bad); }
+.step.failed .nm { color:var(--bad); font-weight:600; }
+.step.skipped .dot { border-style:dashed; }
+.steprow { display:flex; align-items:baseline; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.stepcount { font:600 11px var(--mono); color:var(--accent2); }
+
+/* ── input forms ──────────────────────────────────────────────────── */
+form.q { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px; min-width:0; }
+form.q h3 { margin-bottom:4px; }
+form.q .opts { display:flex; flex-direction:column; gap:8px; margin:12px 0 14px; }
+form.q label { display:flex; gap:9px; align-items:flex-start; font-size:13px;
+  color:var(--text2); cursor:pointer; padding:9px 11px; border:1px solid var(--border);
+  border-radius:6px; background:var(--panel3); }
+form.q label:hover { background:var(--hover); border-color:var(--border2); }
+form.q input[type=radio],form.q input[type=checkbox] { margin-top:3px; flex:none; accent-color:var(--accent); }
+form.q textarea { width:100%; background:var(--panel3); color:var(--text);
+  border:1px solid var(--border); border-radius:6px; padding:10px; font:13px inherit;
+  resize:vertical; min-height:76px; }
+form.q button { background:var(--accent); color:var(--on-accent); border:none;
+  border-radius:6px; padding:9px 16px; font:600 13px inherit; cursor:pointer; }
+form.q button:hover { background:var(--accent-hover); }
+form.q .hint { font-size:12px; color:var(--dim); margin-top:8px; }
+.opt-t { font-weight:600; color:var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══ HERO ══════════════════════════════════════════════════════ -->
+<header class="hero">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="badge b-bad">INCIDENT</span>
+    <span class="badge b-plain">branch injest-exploration</span>
+    <span class="badge b-plain">25 Aug 2026</span>
+    <span class="badge b-good">rev 4 · summary = YouTube description</span>
+  </div>
+  <h1 style="margin-top:14px">Indexing failed (exit 1)</h1>
+  <p style="font-size:15px;max-width:74ch">
+    Four videos failed in the RAG Pipeline queue, and a fifth indexed but lost its knowledge
+    graph. All five have the same cause — and it is not in the indexing code. This page proves
+    the cause, measures the damage it has already written into the corpus, and proposes the
+    three changes you asked about: <strong>fix the failure</strong>, <strong>make indexing
+    concurrent</strong>, and <strong>show real per-stage progress</strong>.
+    <strong style="color:var(--text)">§05 carries the design you chose</strong> — index steps
+    1–4 only, record the rest as pending — and <strong style="color:var(--text)">§06 answers
+    where the summary comes from</strong>: Supadata has no summary field, but the YouTube
+    description it already returns is a viable zero-LLM substitute —
+    <strong style="color:var(--text)">now chosen</strong>, which takes the LLM out of indexing
+    entirely. Nothing has been changed in the code yet.
+  </p>
+
+  <div class="verdict">
+    <div class="k">ROOT CAUSE — PROVEN, NOT INFERRED</div>
+    <div class="v">The DeepSeek account is out of money.</div>
+    <p style="margin:8px 0 0;color:var(--text2)">
+      Live check against <code>api.deepseek.com/user/balance</code> just now returned
+      <code>is_available: false</code> and a balance of <strong>−$0.09 USD</strong>. Every
+      LLM call in the ingestion path returns HTTP 402 <span class="mono">Insufficient
+      Balance</span>. Summary generation does not catch it, so the CLI exits 1 and the queue
+      reports a failure.
+    </p>
+  </div>
+
+  <div class="factgrid">
+    <div class="fact"><div class="n" style="color:var(--bad)">−$0.09</div><div class="l">DeepSeek balance</div></div>
+    <div class="fact"><div class="n">402</div><div class="l">HTTP status</div></div>
+    <div class="fact"><div class="n" style="color:var(--warn)">14</div><div class="l">videos now missing summaries</div></div>
+    <div class="fact"><div class="n" style="color:var(--bad)">2</div><div class="l">videos invisible to retrieval</div></div>
+    <div class="fact"><div class="n">124</div><div class="l">videos in corpus</div></div>
+    <div class="fact"><div class="n">3,966</div><div class="l">chunks</div></div>
+  </div>
+  <p class="dim" style="font-size:12px;margin-top:10px">
+    Corpus counts read live from <code>GET /api/corpus</code> on the dev serve (port 8011).
+    Your screenshot showed 112 videos and 2 missing summaries — the number has since grown to
+    14, which is itself a finding. See §03.
+  </p>
+</header>
+
+<!-- ══ 01 EVIDENCE ═══════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">01</span><h2>The evidence chain</h2>
+    <span class="sec-sub">four independent confirmations</span>
+  </div>
+
+  <div class="grid g2">
+    <div class="card bad">
+      <h3>1 &nbsp;The live balance check</h3>
+      <p>Direct, current, unambiguous. This is the whole incident in one response body.</p>
+      <pre class="log"><span class="c">$ curl -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+    https://api.deepseek.com/user/balance</span>
+{<span class="e">"is_available": false</span>,
+ "balance_infos": [{"currency": "USD",
+   <span class="e">"total_balance": "-0.09"</span>,
+   "granted_balance": "0.00",
+   "topped_up_balance": "-0.09"}]}</pre>
+    </div>
+
+    <div class="card bad">
+      <h3>2 &nbsp;The server log</h3>
+      <p>
+        The exact error behind <em>"Check the server log for the CLI output."</em> It appears
+        once per failed job, right after the embedding weights load — i.e. at the summary step,
+        not the fetch step.
+      </p>
+      <pre class="log">Loading weights: 100%|██████████| 103/103
+<span class="e">Error: Error code: 402 - {'error': {'message':
+  'Insufficient Balance', 'type': 'unknown_error',
+  'code': 'invalid_request_error'}}</span></pre>
+    </div>
+
+    <div class="card warn">
+      <h3>3 &nbsp;The graph-extraction storm</h3>
+      <p>
+        The same 402, ~100 times, for the job that <em>did</em> succeed — this is the amber
+        <span class="mono">graph extraction failed</span> badge on the last Done row. Each chunk
+        is retried twice, then given up on.
+      </p>
+      <pre class="log"><span class="e">extraction call failed for chunk:N_DwZR--XCc:49
+  (attempt 1): Error code: 402 ... Insufficient Balance</span>
+<span class="e">extraction call failed for chunk:N_DwZR--XCc:49
+  (attempt 2): Error code: 402 ... Insufficient Balance</span>
+<span class="c">... × 50 chunks</span></pre>
+    </div>
+
+    <div class="card acc">
+      <h3>4 &nbsp;The two different outcomes</h3>
+      <p>
+        The decisive clue. One 402 in <strong>graph extraction</strong> produced an amber
+        warning and a successful job. The same 402 in <strong>summary generation</strong>
+        killed the job outright. Same error, same provider, same run — two opposite policies.
+      </p>
+      <p style="margin-top:10px"><strong style="color:var(--text)">That inconsistency is the
+      real bug.</strong> The balance will be topped up in a minute; the fragile policy will
+      still be there next time any provider hiccups.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 WHERE IT DIES ══════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">02</span><h2>Where it dies, and what it leaves behind</h2>
+    <span class="sec-sub">src/rag/indexing.py · RagIndexer.index()</span>
+  </div>
+  <p style="max-width:78ch">
+    Indexing a video is six steps. Steps 1–4 <strong>commit to Chroma before step 5 runs</strong>.
+    So when step 5 raises, the transcript and its chunks are already on disk — but the job is
+    reported as a total failure. The UI says "failed"; the database says "partly succeeded".
+    Both are telling the truth about different things.
+  </p>
+
+  <figure style="margin-top:20px">
+    <svg viewBox="0 0 900 300" role="img" aria-labelledby="figt figd">
+      <title id="figt">The six indexing steps and the failure point</title>
+      <desc id="figd">Steps one to four write to Chroma and succeed. Step five, summary
+      generation, calls DeepSeek, receives HTTP 402, and raises an uncaught exception that
+      propagates to the CLI top level and returns exit code 1. Step six never runs.</desc>
+
+      <!-- committed band -->
+      <rect x="8" y="34" width="470" height="128" rx="8"
+            fill="var(--good-dim)" stroke="var(--good-border)" stroke-dasharray="4 3"/>
+      <text x="20" y="52" font-family="var(--mono)" font-size="10.5" fill="var(--good)"
+            letter-spacing="0.6">ALREADY COMMITTED TO CHROMA WHEN THE JOB "FAILS"</text>
+
+      <!-- steps 1-4 -->
+      <g font-family="var(--mono)" font-size="11">
+        <g>
+          <rect x="22" y="66" width="102" height="52" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+          <text x="73" y="88" text-anchor="middle" fill="var(--text)" font-weight="600">1 discover</text>
+          <text x="73" y="105" text-anchor="middle" fill="var(--muted)" font-size="9.5">extract_video_id</text>
+        </g>
+        <g>
+          <rect x="136" y="66" width="102" height="52" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+          <text x="187" y="88" text-anchor="middle" fill="var(--text)" font-weight="600">2 fetch</text>
+          <text x="187" y="105" text-anchor="middle" fill="var(--muted)" font-size="9.5">Supadata · transcript</text>
+        </g>
+        <g>
+          <rect x="250" y="66" width="102" height="52" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+          <text x="301" y="88" text-anchor="middle" fill="var(--text)" font-weight="600">3 chunk</text>
+          <text x="301" y="105" text-anchor="middle" fill="var(--muted)" font-size="9.5">build_chunks</text>
+        </g>
+        <g>
+          <rect x="364" y="66" width="102" height="52" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+          <text x="415" y="88" text-anchor="middle" fill="var(--text)" font-weight="600">4 embed</text>
+          <text x="415" y="105" text-anchor="middle" fill="var(--muted)" font-size="9.5">replace_chunks</text>
+        </g>
+      </g>
+
+      <!-- step 5 : failure -->
+      <rect x="516" y="60" width="130" height="64" rx="6" fill="var(--bad-dim)" stroke="var(--bad)" stroke-width="1.6"/>
+      <text x="581" y="84" text-anchor="middle" font-family="var(--mono)" font-size="11.5"
+            font-weight="700" fill="var(--bad)">5 summarize</text>
+      <text x="581" y="101" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--bad)">DeepSeek LLM → 402</text>
+      <text x="581" y="115" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--bad)">raises, uncaught</text>
+
+      <!-- step 6 : never runs -->
+      <rect x="700" y="66" width="130" height="52" rx="6" fill="var(--panel3)" stroke="var(--border2)" stroke-dasharray="4 3"/>
+      <text x="765" y="88" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--dim)">6 graph</text>
+      <text x="765" y="105" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--dim)">never reached</text>
+
+      <!-- arrows -->
+      <g stroke="var(--border2)" stroke-width="1.4" fill="none" marker-end="url(#ah)">
+        <line x1="124" y1="92" x2="132" y2="92"/>
+        <line x1="238" y1="92" x2="246" y2="92"/>
+        <line x1="352" y1="92" x2="360" y2="92"/>
+        <line x1="466" y1="92" x2="512" y2="92"/>
+      </g>
+      <defs>
+        <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill="var(--border2)"/>
+        </marker>
+        <marker id="ahr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill="var(--bad)"/>
+        </marker>
+      </defs>
+
+      <!-- escape path -->
+      <path d="M581 124 L581 168 L300 168 L300 196" stroke="var(--bad)" stroke-width="1.6"
+            fill="none" marker-end="url(#ahr)"/>
+      <rect x="150" y="196" width="300" height="46" rx="6" fill="var(--bad-dim)" stroke="var(--bad-border)"/>
+      <text x="300" y="215" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text)">cli.py:2082 — except (ConfigError, Exception)</text>
+      <text x="300" y="231" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--bad)" font-weight="700">print("Error: ...") ; return 1</text>
+
+      <path d="M300 242 L300 262" stroke="var(--bad)" stroke-width="1.6" fill="none" marker-end="url(#ahr)"/>
+      <rect x="150" y="262" width="300" height="30" rx="6" fill="var(--panel)" stroke="var(--bad-border)"/>
+      <text x="300" y="281" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--text2)">queue row → "Indexing failed (exit 1)"</text>
+
+      <!-- annotation -->
+      <text x="700" y="196" font-family="var(--mono)" font-size="10" fill="var(--muted)">The Supadata credit</text>
+      <text x="700" y="211" font-family="var(--mono)" font-size="10" fill="var(--muted)">for step 2 is spent</text>
+      <text x="700" y="226" font-family="var(--mono)" font-size="10" fill="var(--warn)" font-weight="600">whether or not the</text>
+      <text x="700" y="241" font-family="var(--mono)" font-size="10" fill="var(--warn)" font-weight="600">job later fails.</text>
+    </svg>
+    <figcaption>Steps 1–4 are durable writes. Step 5 is the only one that can kill the job — and it runs last.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <p><strong>No — the summary is not from Supadata.</strong> Supadata's only job in this
+    pipeline is step&nbsp;2: it returns the raw timed transcript segments and the video metadata
+    (title, channel, duration). It never produces a summary. The summary at step&nbsp;5 is
+    written by <strong>DeepSeek</strong>, from text we already hold:
+    <code>TranscriptSummaryGenerator.summarize()</code> joins the stored segments, sends them to
+    <code>ChatOpenAI(**chat_model_kwargs(settings))</code> — which
+    <code>config.py:225</code> points at <code>api.deepseek.com</code> — and parses a JSON
+    summary back out (<code>rag/summaries.py:45–61</code>, wired at
+    <code>cli.py:2500–2504</code>).</p>
+    <p>Two provider accounts, two different steps. Supadata is fine and has 234 credits left;
+    DeepSeek is the one at −$0.09.</p>
+  </div>
+
+  <div class="tw" style="margin-top:14px">
+    <table>
+      <thead><tr><th>Step</th><th>Provider</th><th>Produces</th><th>Metered as</th><th>Status today</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2 fetch</td><td><strong>Supadata</strong></td>
+            <td>timed transcript segments + video metadata</td>
+            <td class="mono">1 credit / video</td>
+            <td><span class="badge b-good">healthy · 234 left</span></td></tr>
+        <tr><td class="mono">5 summarize</td><td><strong>DeepSeek</strong></td>
+            <td>a JSON summary generated <em>from</em> the stored transcript</td>
+            <td class="mono">tokens</td>
+            <td><span class="badge b-bad">out of balance</span></td></tr>
+        <tr><td class="mono">6 graph</td><td><strong>DeepSeek</strong></td>
+            <td>entities &amp; claims, one call per chunk</td>
+            <td class="mono">tokens</td>
+            <td><span class="badge b-bad">out of balance</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout good" style="border-left-color:var(--good);background:var(--good-dim)">
+    <p><strong>This is why in-place repair is free.</strong> Because step&nbsp;5 reads the
+    transcript we already stored at step&nbsp;2, re-generating the 14 missing summaries needs
+    <strong>zero Supadata credits</strong> — only DeepSeek tokens. That settles question&nbsp;2
+    in §10 fairly decisively.</p>
+  </div>
+
+  <div class="callout bad">
+    <p><strong>The retry trap.</strong> Because the transcript is already stored, re-running the
+    same URL after a failure is not free: <code>indexer.index()</code> is called with
+    <code>refresh=True</code> from the queue path, so it re-fetches from Supadata and spends
+    <strong>another credit</strong> — then fails at the same step again. Four failed retries in
+    your screenshot cost four credits and produced nothing.</p>
+  </div>
+</section>
+
+<!-- ══ 03 DAMAGE ═════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">03</span><h2>What the failures already wrote into the corpus</h2>
+    <span class="sec-sub">live from /api/corpus</span>
+  </div>
+  <p style="max-width:78ch">
+    Your screenshot showed <strong>2</strong> videos without summaries. The corpus now reports
+    <strong>14</strong>. The count grew because every retry adds one more half-indexed video.
+    This is silent, cumulative corpus corruption — the pipeline's own health strip is the only
+    thing reporting it.
+  </p>
+
+  <div class="tw" style="margin-top:16px">
+    <table>
+      <thead><tr>
+        <th>Symptom</th><th>Count</th><th>Effect on retrieval</th><th>Cause</th><th>Repair</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge b-warn">warn</span> no transcript summary</td>
+          <td class="mono">14</td>
+          <td>Summary-level routing can never select these videos. Chunk retrieval still finds them.</td>
+          <td>Step 5 raised before writing a summary; steps 1–4 had already committed.</td>
+          <td class="mono">index-rag --refresh-summary</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-bad">bad</span> transcript but zero chunks</td>
+          <td class="mono">2</td>
+          <td><strong style="color:var(--bad)">Completely invisible.</strong> Counted in "124 videos", unreachable by any query.</td>
+          <td><em>Different bug.</em> Supadata returned an empty transcript; chunking produced nothing and the video was stored anyway.</td>
+          <td>Re-fetch, or delete from the corpus</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>The two zero-chunk videos are not part of this incident.</strong>
+    <code>qcH_-leTt7Q</code> ("How I Cracked Databricks Interview") and <code>aircAruvnKk</code>
+    (3Blue1Brown, "But what is a neural network?") have no chunks at all — visible in your
+    screenshot's tree as <span class="mono">3Blue1Brown &nbsp;1 · 0</span>. Chunks are written at
+    step 4, before the failing step, so a 402 cannot explain them. The likely cause is an empty
+    or caption-less Supadata response that the indexer accepted without complaint. Worth fixing
+    in the same pass, but it is a <em>separate</em> defect and I have not yet confirmed it.</p>
+  </div>
+</section>
+
+<!-- ══ 04 DEFECTS ════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">04</span><h2>Four defects, ranked</h2>
+    <span class="sec-sub">the outage is #0 and fixes itself</span>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Defect</th><th>Where</th><th>Why it matters</th><th>Severity</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">0</td>
+          <td><strong>DeepSeek balance exhausted</strong></td>
+          <td class="mono">external</td>
+          <td>The trigger. Top up and today's symptom disappears — but nothing below is fixed by it.</td>
+          <td><span class="badge b-bad">outage</span></td>
+        </tr>
+        <tr>
+          <td class="mono">1</td>
+          <td><strong>Summary failure is fatal; graph failure is not</strong></td>
+          <td class="mono">indexing.py:57<br>ingestion_queue.py:200</td>
+          <td>Two enrichment steps, one policy each, chosen inconsistently. A summary is no more
+              load-bearing than a graph — both are recoverable by re-running. Any provider blip
+              throws away a good vector index.</td>
+          <td><span class="badge b-bad">high</span></td>
+        </tr>
+        <tr>
+          <td class="mono">2</td>
+          <td><strong>Failure leaves a partial write with no marker</strong></td>
+          <td class="mono">indexing.py:46–56</td>
+          <td>The video is in the corpus, counted in the totals, missing a summary, and nothing
+              records that it needs repair except a derived health warning.</td>
+          <td><span class="badge b-bad">high</span></td>
+        </tr>
+        <tr>
+          <td class="mono">3</td>
+          <td><strong>Retry re-fetches and re-spends a Supadata credit</strong></td>
+          <td class="mono">main.py argv → <br>index-rag --refresh</td>
+          <td>The transcript is already stored and unchanged. Re-fetching it to redo a summary
+              burns a metered credit for no data.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr>
+          <td class="mono">4</td>
+          <td><strong>Empty transcript indexes as a zero-chunk video</strong></td>
+          <td class="mono">indexing.py:47</td>
+          <td>Inflates the corpus count with videos no query can ever reach. Unconfirmed cause.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p><strong>All four have one shape:</strong> the pipeline treats an optional enrichment step
+    as if it were load-bearing, and has no way to say "indexed, but not yet enriched". §05 is the fix you proposed, and it dissolves defects 1–3 together.</p>
+  </div>
+</section>
+
+<!-- ══ 05 CORE / ENRICHMENT SPLIT ════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">05</span><h2>The design: index steps 1–4, defer 5–6</h2>
+    <span class="sec-sub"><span class="badge b-good">your call — adopted</span> <span class="badge b-acc">refined by §06</span></span>
+  </div>
+
+  <p style="max-width:78ch">
+    Your proposal: <em>"only do steps 1–4 in index and flag summarise / graph have not been
+    done."</em> That is a better fix than the one I first suggested, and it is worth being
+    precise about why. Catching the exception (my §04 note) makes failure survivable. Splitting
+    the pipeline makes failure <strong>structurally impossible</strong> at that point — because
+    the LLM is no longer in the indexing path at all.
+  </p>
+
+  <figure style="margin-top:22px">
+    <svg viewBox="0 0 900 250" role="img" aria-labelledby="ft2 fd2">
+      <title id="ft2">Core index versus deferred enrichment</title>
+      <desc id="fd2">Steps one to four form the core index, which uses only Supadata and local
+      CPU and always completes. Steps five and six become a separate enrichment pass driven by
+      DeepSeek, recorded as pending on each video and backfilled by a resumable command.</desc>
+
+      <!-- core band -->
+      <rect x="8" y="28" width="500" height="112" rx="8" fill="var(--good-dim)" stroke="var(--good-border)"/>
+      <text x="22" y="47" font-family="var(--mono)" font-size="10.5" fill="var(--good)" letter-spacing="0.6">CORE INDEX — Supadata + local CPU · no LLM · cannot fail on a provider</text>
+      <g font-family="var(--mono)" font-size="10.5">
+        <rect x="22" y="60" width="110" height="44" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+        <text x="77" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">1 discover</text>
+        <text x="77" y="95" text-anchor="middle" fill="var(--muted)" font-size="9">local</text>
+        <rect x="144" y="60" width="110" height="44" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+        <text x="199" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">2 fetch</text>
+        <text x="199" y="95" text-anchor="middle" fill="var(--muted)" font-size="9">Supadata</text>
+        <rect x="266" y="60" width="110" height="44" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+        <text x="321" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">3 chunk</text>
+        <text x="321" y="95" text-anchor="middle" fill="var(--muted)" font-size="9">local</text>
+        <rect x="388" y="60" width="110" height="44" rx="6" fill="var(--panel)" stroke="var(--good-border)"/>
+        <text x="443" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">4 embed</text>
+        <text x="443" y="95" text-anchor="middle" fill="var(--muted)" font-size="9">local CPU</text>
+      </g>
+      <text x="22" y="128" font-family="var(--mono)" font-size="10" fill="var(--good)">→ job is DONE here. The video is retrievable.</text>
+
+      <!-- enrichment band -->
+      <rect x="546" y="28" width="346" height="112" rx="8" fill="var(--warn-dim)" stroke="var(--warn-border)" stroke-dasharray="4 3"/>
+      <text x="560" y="47" font-family="var(--mono)" font-size="10.5" fill="var(--warn)" letter-spacing="0.6">DEFERRED ENRICHMENT — DeepSeek</text>
+      <g font-family="var(--mono)" font-size="10.5">
+        <rect x="560" y="60" width="150" height="44" rx="6" fill="var(--panel)" stroke="var(--warn-border)"/>
+        <text x="635" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">5 summarize</text>
+        <text x="635" y="95" text-anchor="middle" fill="var(--warn)" font-size="9">pending</text>
+        <rect x="722" y="60" width="150" height="44" rx="6" fill="var(--panel)" stroke="var(--warn-border)"/>
+        <text x="797" y="80" text-anchor="middle" fill="var(--text)" font-weight="600">6 graph</text>
+        <text x="797" y="95" text-anchor="middle" fill="var(--warn)" font-size="9">pending</text>
+      </g>
+      <text x="560" y="128" font-family="var(--mono)" font-size="10" fill="var(--warn)">→ recorded as pending, backfilled later.</text>
+
+      <line x1="508" y1="84" x2="542" y2="84" stroke="var(--border2)" stroke-width="1.4" marker-end="url(#ah)"/>
+      <text x="525" y="74" text-anchor="middle" font-family="var(--mono)" font-size="9" fill="var(--dim)">async</text>
+
+      <!-- backfill loop -->
+      <path d="M797 140 L797 176 L640 176" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+      <path d="M635 140 L635 176" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+      <rect x="470" y="176" width="340" height="34" rx="6" fill="var(--accent-dim)" stroke="var(--accent-border)"/>
+      <text x="640" y="197" text-anchor="middle" font-family="var(--mono)" font-size="10.5" fill="var(--accent2)" font-weight="600">enrich pass — resumable, re-runnable, no Supadata cost</text>
+      <path d="M470 193 L300 193 L300 152" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#ah2)"/>
+      <defs><marker id="ah2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="var(--accent)"/></marker></defs>
+      <text x="300" y="232" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">reads stored transcripts + chunks — never re-fetches</text>
+    </svg>
+    <figcaption>The LLM leaves the indexing path entirely. Enrichment becomes a separate, retryable pass.</figcaption>
+  </figure>
+
+  <h3 style="margin-top:26px">What this buys</h3>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card good">
+      <h3>Indexing stops depending on a paid API</h3>
+      <p>Core index touches Supadata once and then only local CPU. A DeepSeek outage, a rate
+      limit, a bad API key — none of them can fail an index again. Today's incident becomes
+      structurally impossible.</p>
+    </div>
+    <div class="card good">
+      <h3>Indexing gets much faster</h3>
+      <p>The summary call is the slowest step in a job — a whole transcript in, JSON out.
+      Removing it from the hot path shortens every index, before any concurrency work.</p>
+    </div>
+    <div class="card good">
+      <h3>"Pending" replaces "corrupt"</h3>
+      <p>The 14 videos stop being damage and become a work queue. Same rows, same data —
+      but an expected state with a defined transition, not an accident nothing recorded.</p>
+    </div>
+    <div class="card good">
+      <h3>Enrichment can be batched and cost-controlled</h3>
+      <p>One pass over N videos, run when you choose, with its own concurrency and its own
+      budget ceiling. You decide when to spend DeepSeek tokens rather than paying per paste.</p>
+    </div>
+    <div class="card good">
+      <h3>Concurrency gets simpler</h3>
+      <p>Core jobs are short and uniform — fetch, chunk, embed. Far easier to parallelize
+      predictably than jobs whose duration is dominated by a variable LLM call (§06).</p>
+    </div>
+    <div class="card good">
+      <h3>Failures stop costing credits</h3>
+      <p>Defect 3 disappears. There is nothing to retry through the fetch path, so no retry
+      re-spends a Supadata credit.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:26px">What already exists, and what's missing</h3>
+  <p style="max-width:78ch">
+    Half of this is already built — the graph half. Checking before proposing:
+  </p>
+
+  <div class="tw" style="margin-top:12px">
+    <table>
+      <thead><tr><th>Piece</th><th>Summarize (step 5)</th><th>Graph (step 6)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Runs outside the index today?</td>
+          <td><span class="badge b-bad">no</span> — inline, and fatal</td>
+          <td><span class="badge b-good">yes</span> — queue hook, already non-fatal</td>
+        </tr>
+        <tr>
+          <td>Corpus-wide backfill command</td>
+          <td><span class="badge b-bad">missing</span> — no <code>index-summaries</code>.
+              <code>--refresh-summary</code> exists but rides the bulk-index fetch path.</td>
+          <td><span class="badge b-good">exists</span> — <code>index-graph</code>
+              (<code>cli.py:318</code>)</td>
+        </tr>
+        <tr>
+          <td>Resumable / cached across runs</td>
+          <td><span class="badge b-warn">partly</span> — <code>ensure_summary</code> returns
+              <span class="mono">hit</span> for an existing summary, so a re-run skips done work</td>
+          <td><span class="badge b-good">yes</span> — extraction cached by chunk hash</td>
+        </tr>
+        <tr>
+          <td>Explicit pending state on the video</td>
+          <td colspan="2"><span class="badge b-bad">missing for both</span> —
+              <code>RawTranscriptDocument</code> (<code>rag/models.py:15–40</code>) has
+              <code>summary</code>, <code>summary_model</code>,
+              <code>summary_generated_at</code> … but <strong>no status field</strong>. Pending
+              is inferred from <code>summary is None</code>, which cannot distinguish
+              <em>never attempted</em> from <em>attempted and failed</em>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p><strong>So the work is narrower than it sounds.</strong> Move the summary call out of
+    <code>RagIndexer.index()</code>; add an <code>index-summaries</code> backfill mirroring the
+    <code>index-graph</code> command that already exists; add one explicit state field so
+    "pending" is recorded rather than inferred. The graph side largely just gets promoted from
+    an implicit queue hook to the same first-class treatment.</p>
+  </div>
+
+  <h3 style="margin-top:26px">The one real tradeoff</h3>
+  <div class="callout warn">
+    <p><strong>A freshly indexed video is invisible to summary-level routing until enrichment
+    runs.</strong> Chunk retrieval finds it immediately, but the summary filter and GraphRAG do
+    not — so a question routed by summary can miss a video you just added. Today that gap exists
+    too and is silent; the difference is that it becomes <em>expected and visible</em>.</p>
+    <p><strong>§06 largely removes this.</strong> If the summary is the YouTube description it
+    arrives with the metadata at step&nbsp;2, so a new video is summary-routable immediately and
+    only GraphRAG lags. The residual question — when the graph pass runs — is question&nbsp;4
+    in §11.</p>
+  </div>
+</section>
+
+<!-- ══ 06 WHERE THE SUMMARY COMES FROM ═══════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">06</span><h2>Where the summary comes from</h2>
+    <span class="sec-sub">checked against the live API, not the docs</span>
+  </div>
+
+  <p style="max-width:78ch">
+    You asked me to double-check whether Supadata gives a video-level summary, so the fix can be
+    Supadata-only with no LLM calls. I called the endpoint rather than reading the docs — their
+    docs site is JS-rendered and not reliably greppable.
+  </p>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card bad">
+      <h3>Verdict — Supadata has no summary field</h3>
+      <p>The complete <code>GET /v1/metadata</code> response for a YouTube video. Every
+      top-level key it returns:</p>
+      <pre class="log">{ "platform": "youtube", "type": "video",
+  "id": "aircAruvnKk",
+  "url": "...",
+  "title": "But what is a neural network? | ...",
+  <span class="o">"description": "What are the neurons, why are
+     there layers, and what is the math ..."</span>,
+  "author": {"displayName": "3Blue1Brown"},
+  "stats": {"views": 23978565, "likes": 558000},
+  "media": {"duration": 1120, "thumbnailUrl": "..."},
+  "tags": [], "createdAt": "2017-10-05T...",
+  "additionalData": {"channelId": "UCYO_..."} }</pre>
+      <p style="margin-top:10px">No <code>summary</code>. No AI-generated field of any kind.
+      The nearest thing is <code>description</code> — the creator's own YouTube blurb.</p>
+    </div>
+
+    <div class="card good">
+      <h3>But we already fetch and store it</h3>
+      <p>
+        <code>description</code> is mapped straight onto
+        <code>RawTranscriptDocument.description</code> (<code>rag/models.py:21</code>) and
+        persisted. I checked the live store: <strong>all 124 videos already have one.</strong>
+        It costs nothing extra — it arrives in the same <code>/v1/metadata</code> call the
+        fetch step already makes at step&nbsp;2.
+      </p>
+      <div class="callout" style="margin-top:12px">
+        <p><strong>Which means the summary stops being an enrichment step at all.</strong>
+        If the description <em>is</em> the summary, it is already in hand before chunking
+        starts. Step&nbsp;5 does not get deferred — it disappears, and only the graph remains
+        as enrichment.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:28px">Is the description actually good enough?</h3>
+  <p style="max-width:78ch">
+    Fair question, and guessable either way — so I measured it across all 124 videos, stripping
+    URLs, timestamps and social handles to see how much real prose is left.
+  </p>
+
+  <div class="factgrid" style="margin-top:14px">
+    <div class="fact"><div class="n" style="color:var(--good)">124/124</div><div class="l">have a description</div></div>
+    <div class="fact"><div class="n">1,207</div><div class="l">median clean chars</div></div>
+    <div class="fact"><div class="n">1,140</div><div class="l">median LLM summary chars</div></div>
+    <div class="fact"><div class="n" style="color:var(--warn)">20%</div><div class="l">median links/timestamps</div></div>
+    <div class="fact"><div class="n" style="color:var(--warn)">4</div><div class="l">too thin (&lt;300c)</div></div>
+    <div class="fact"><div class="n" style="color:var(--bad)">2</div><div class="l">unusable (&lt;120c)</div></div>
+  </div>
+
+  <p style="max-width:78ch;margin-top:14px">
+    <strong>100% coverage, and after cleaning it is the same length as the DeepSeek summaries it
+    would replace</strong> (1,207 vs 1,140 median chars). The tail is small but real — four
+    videos where the description is pure self-promotion:
+  </p>
+
+  <pre class="log">[ 57c] "Copy This Linkedin Strategy, It'll Blow Up Your Inbox"
+        <span class="e">→ "Work with me: Access 6-Figure Tech Freelancer training:"</span>
+[ 66c] "Agentic AI made me an 100x engineer!"
+        <span class="e">→ ": You can support my work at: PS5 &amp; more : Introduction Demo Q &amp; A"</span>
+[256c] "Building beautiful UI using AI (My design workflow)"
+        <span class="o">→ "In this video, I share my step by step design workflow and process using AI..."</span></pre>
+
+  <h3 style="margin-top:28px">The three ways to fill the summary slot</h3>
+  <div class="tw" style="margin-top:12px">
+    <table>
+      <thead><tr>
+        <th>Source</th><th>LLM?</th><th>Cost for the 14</th><th>Cost for all 124</th><th>Coverage</th><th>Verdict</th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:var(--best-row)">
+          <td><strong>YouTube description</strong><br><span class="dim">via /v1/metadata</span>
+              <br><span class="badge b-good" style="margin-top:6px">✓ CHOSEN</span></td>
+          <td><span class="badge b-good">none</span></td>
+          <td class="mono">0 credits</td>
+          <td class="mono">0 credits</td>
+          <td>124/124</td>
+          <td><span class="badge b-good">viable</span> already fetched &amp; stored</td>
+        </tr>
+        <tr>
+          <td><strong>Supadata Extract</strong><br><span class="dim">POST /v1/extract</span></td>
+          <td><span class="badge b-bad">yes — theirs</span></td>
+          <td class="mono" style="color:var(--bad)">~1,689 credits</td>
+          <td class="mono" style="color:var(--bad)">~22,315 credits</td>
+          <td>105/124 <span class="dim">(19 exceed the 55-min cap)</span></td>
+          <td><span class="badge b-bad">impossible</span> 7× your balance for 14 videos</td>
+        </tr>
+        <tr>
+          <td><strong>DeepSeek</strong><br><span class="dim">current behaviour</span></td>
+          <td><span class="badge b-warn">yes</span></td>
+          <td class="mono">0 credits <span class="dim">(tokens)</span></td>
+          <td class="mono">0 credits <span class="dim">(tokens)</span></td>
+          <td>110/124 today</td>
+          <td><span class="badge b-warn">works</span> but is the thing that broke</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout bad">
+    <p><strong>Supadata Extract is not a viable "Supadata-only" route.</strong> It is still an
+    LLM — just theirs rather than DeepSeek's — and it is metered per minute of video: 5 credits
+    per minute with a 5-credit floor. Your corpus is 4,463 minutes. Summarizing just the 14
+    pending videos would cost roughly <strong>1,689 credits against a balance of 234</strong>,
+    and 19 videos exceed its 55-minute hard cap outright. Ruled out on arithmetic, not taste.</p>
+  </div>
+
+  <div class="callout good" style="border-left-color:var(--good);background:var(--good-dim)">
+    <p><strong>Decided: the YouTube description is the summary.</strong> No LLM in the summary
+    path. The ablation below still runs — but to <em>report</em> the quality delta, not to gate
+    the change.</p>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>The known caveat, recorded rather than debated.</strong> A description is what
+    the creator wrote to make you <em>click</em>; an LLM summary is derived from what was
+    actually <em>said</em>. Expect descriptions to route topic well and specific claims less
+    well, and to carry sponsor and CTA noise into the embedding. The eval ablation will put a
+    number on that so it is known rather than assumed.</p>
+  </div>
+
+  <h3 style="margin-top:28px">The consequence that needs a decision</h3>
+  <div class="callout bad">
+    <p><strong>110 of your videos currently have DeepSeek summaries; 14 have none.</strong>
+    Switching the source affects new videos only unless you also rewrite the existing ones — and
+    a corpus where 110 summaries are LLM prose and 14 are marketing copy is
+    <em>worse for routing than either kind alone</em>. The summary embeddings all share one
+    vector space, so mixing two very different registers makes similarity scores mean different
+    things for different videos.</p>
+    <p>Rewriting all 124 from stored descriptions is free and instant — no Supadata calls, no
+    DeepSeek, just re-embedding text already on disk (local CPU). The alternative is keeping the
+    110 as-is and accepting a mixed corpus. That is question&nbsp;2 in §11.</p>
+  </div>
+
+  <h3 style="margin-top:26px">What this does to the §05 design</h3>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card">
+      <h3><span class="badge b-plain">§05 as written</span> 4 core + 2 deferred</h3>
+      <ul>
+        <li>Core: discover → fetch → chunk → embed</li>
+        <li>Deferred: <strong>summarize</strong> (DeepSeek), <strong>graph</strong> (DeepSeek)</li>
+        <li>Needs an <code>index-summaries</code> backfill</li>
+        <li>New videos unroutable by summary until enrichment runs</li>
+      </ul>
+    </div>
+    <div class="card good">
+      <h3><span class="badge b-good">with descriptions</span> 4 core + 1 deferred</h3>
+      <ul>
+        <li>Core: discover → fetch <span class="mono">(+description)</span> → chunk → embed
+          <span class="mono">(+summary embedding)</span></li>
+        <li>Deferred: <strong>graph</strong> only</li>
+        <li><strong>No <code>index-summaries</code> backfill needed</strong> — plan step 3 drops out</li>
+        <li>New videos are summary-routable <strong>immediately</strong> — the §05 tradeoff
+          mostly disappears</li>
+        <li>Embedding the summary is local CPU, so the core index stays entirely LLM-free</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout good" style="border-left-color:var(--good);background:var(--good-dim)">
+    <p><strong>This is a simpler system than either of us proposed.</strong> Indexing makes
+    exactly one paid call (Supadata, 1 credit) and is otherwise local. The only deferred,
+    LLM-dependent step left is the knowledge graph — which is already non-fatal and already has
+    its backfill command. The 14 "pending" videos would be fixed by a re-index that costs
+    14 credits, or free if the stored descriptions are used directly.</p>
+  </div>
+</section>
+
+<!-- ══ 05 CONCURRENCY ════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">07</span><h2>Why there is only one worker</h2>
+    <span class="sec-sub">and what it would take to have several</span>
+  </div>
+
+  <p style="max-width:78ch">
+    You asked why indexing is a queue of one. The answer is a single guard clause, and the
+    comment justifying it points at a limitation that <strong>no longer reflects the rest of the
+    codebase</strong>.
+  </p>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card bad">
+      <h3>The block</h3>
+      <p class="mono dim" style="font-size:11.5px">src/cli.py:2371</p>
+      <pre class="log">def _run_bulk_index(args, settings, ...):
+    if args.concurrency != 1:
+        <span class="e">raise ValueError(
+          "bulk-index currently supports "
+          "--concurrency 1 only")</span></pre>
+      <p style="margin-top:10px">
+        The <code>--concurrency</code> flag exists and defaults to 1
+        (<code>cli.py:726</code>); any other value raises. Below it, the run loop is a plain
+        <code>for video in videos:</code>. There is no partial implementation to finish — the
+        parallel version was simply never written.
+      </p>
+    </div>
+    <div class="card warn">
+      <h3>The stale justification</h3>
+      <p class="mono dim" style="font-size:11.5px">src/api/ingestion_queue.py:7–9</p>
+      <pre class="log"><span class="c"># a single background worker thread drains
+# jobs in submission order (bulk-index only
+# supports concurrency 1 anyway, so serial
+# execution loses nothing)</span></pre>
+      <p style="margin-top:10px">
+        The queue is single-worker <em>because</em> bulk-index is, and bulk-index is
+        single-threaded because nobody removed the guard. It is a circular justification, not a
+        technical constraint.
+      </p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:26px">The codebase already knows how to do this</h3>
+  <p style="max-width:78ch">
+    Three modules run LLM calls concurrently today, with the same
+    <code>ThreadPoolExecutor</code> + ordered-results + progress-lock shape. Concurrency is not
+    a new capability here; it just was never applied at the video level.
+  </p>
+
+  <div class="tw" style="margin-top:14px">
+    <table>
+      <thead><tr><th>Module</th><th>Default workers</th><th>What it parallelizes</th><th>Evidence of tuning</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">rag/graph_extract.py:129</td><td class="mono">8</td><td>entity/claim extraction per chunk</td><td>—</td></tr>
+        <tr><td class="mono">rag/contextualize.py:138</td><td class="mono">8</td><td>chunk contextualization per chunk</td><td>—</td></tr>
+        <tr><td class="mono">rag/conflicts.py:1654</td><td class="mono">6</td><td>conflict adjudication per pair</td><td>—</td></tr>
+        <tr><td class="mono">cli.py:306–312</td><td class="mono">4</td><td>eval matrix cells</td>
+            <td><span class="badge b-good">measured</span> "4 workers cleared 80 cells cleanly, 6–8 collapsed"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:26px">What is actually safe to parallelize</h3>
+  <p style="max-width:78ch">
+    Indexing one video is <strong>~90% network wait</strong> (Supadata fetch, then a DeepSeek
+    summary) and ~10% local CPU (chunking, embedding). That ratio is exactly what thread-level
+    concurrency is good at — but three shared resources need checking first.
+  </p>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card good">
+      <h3><span class="badge b-good">safe</span> Network calls</h3>
+      <p>Supadata fetch and DeepSeek summary are independent per video and hold no shared state.
+      This is the entire win. Supadata Basic allows 10 req/s, well above anything we'd send.</p>
+    </div>
+    <div class="card warn">
+      <h3><span class="badge b-warn">needs a lock</span> Chroma writes</h3>
+      <p>Both stores hold one <code>chromadb.PersistentClient</code> and one collection handle
+      (<code>storage.py:36, 133</code>). Reads are fine; concurrent
+      <code>replace_chunks</code> calls to the same collection should be serialized behind a
+      write lock. The writes are milliseconds — serializing them costs nothing.</p>
+    </div>
+    <div class="card warn">
+      <h3><span class="badge b-warn">needs care</span> The embedding model</h3>
+      <p><code>HuggingFaceEmbeddingModel</code> already guards lazy loading with a lock
+      (<code>embeddings.py:27</code>) and is pinned to CPU. Parallel embedding on CPU competes
+      for the same cores — better to keep <em>embedding</em> serial and parallelize only the
+      network steps, or accept a modest slowdown per video for a large gain overall.</p>
+    </div>
+  </div>
+
+  <div class="callout bad">
+    <p><strong>One shared-file race that must be handled.</strong> Every
+    <code>index-rag</code> / <code>bulk-index</code> run ends by calling
+    <code>_refresh_rag_pipeline_dashboard(settings)</code>, which rewrites the single file
+    <code>dashboard/rag_pipeline.html</code>. Two jobs finishing at once would interleave writes
+    to it. The fix is small — debounce the refresh to once after the queue drains rather than
+    once per job — but it has to be part of the same change, not an afterthought.</p>
+  </div>
+
+  <h3 style="margin-top:26px">Two ways to get concurrency</h3>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card acc">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="badge b-acc">OPTION A</span><span class="badge b-good">recommended</span>
+      </div>
+      <h3 style="margin-top:10px">N workers in the queue</h3>
+      <p>Give <code>IngestionQueue</code> a <code>max_workers</code> parameter and start N worker
+      threads instead of one. Each still runs a whole job start-to-finish.</p>
+      <ul>
+        <li><strong>Wins:</strong> parallelism across <em>all</em> job types — pasted URLs and
+          channel runs alike — with no change to <code>bulk-index</code> at all.</li>
+        <li><strong>Cost:</strong> a Chroma write lock; the dashboard debounce; per-job progress
+          must key off the job id (it already does).</li>
+        <li><strong>Risk:</strong> low. The queue is already pub-sub and each job is
+          self-contained.</li>
+        <li><strong>Suggested default:</strong> 3 — enough to hide network latency, low enough
+          that CPU embedding does not thrash.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="badge b-plain">OPTION B</span>
+      <h3 style="margin-top:10px">Honour <code>--concurrency</code> inside bulk-index</h3>
+      <p>Delete the guard at <code>cli.py:2371</code> and turn the candidate loop into a
+      <code>ThreadPoolExecutor</code>, matching the shape in <code>contextualize.py:161</code>.</p>
+      <ul>
+        <li><strong>Wins:</strong> speeds up multi-video channel runs, which are the slowest
+          thing in the app; the per-candidate <code>try/except</code> already isolates failures
+          correctly.</li>
+        <li><strong>Cost:</strong> same locks as A, plus keeping <code>run.candidates</code>
+          in submission order under concurrent appends.</li>
+        <li><strong>Limitation:</strong> does nothing for a queue of single pasted URLs — which
+          is exactly what failed in your screenshot.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">
+    <p><strong>They compose.</strong> A is the broader win and the smaller change; B makes a
+    single channel job fast. Doing A first is strictly better sequencing, because A's locks are
+    a prerequisite for B anyway.</p>
+  </div>
+</section>
+
+<!-- ══ 06 STAGE VIZ ══════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">08</span><h2>Real per-stage progress</h2>
+    <span class="sec-sub">"3/4 core steps, plus enrichment status"</span>
+  </div>
+
+  <p style="max-width:78ch">
+    You want a stepper. Two things stand between here and there — and the first is worse than a
+    missing feature.
+  </p>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card bad">
+      <h3>Problem 1 — the stages that exist are theatre</h3>
+      <p><code>IngestionJob</code> already carries a <code>stage</code> field, and
+      <code>_process</code> already sets it. But look at the order of operations
+      (<code>ingestion_queue.py:148–165</code>):</p>
+      <pre class="log">job.stage = "discover"   <span class="c"># broadcast</span>
+job.stage = "fetch"      <span class="c"># broadcast</span>
+job.stage = "processing" <span class="c"># broadcast</span>
+<span class="e">exit_code = self._run_blocking(...)</span>  <span class="c"># ← all the work</span></pre>
+      <p style="margin-top:10px">Three stages are announced back-to-back with <em>no work
+      between them</em>, then the entire index runs inside one opaque call. A stepper built on
+      this would jump to 3/6 instantly and freeze there for the whole job. It would be a
+      progress bar that lies.</p>
+    </div>
+    <div class="card warn">
+      <h3>Problem 2 — the frontend ignores it anyway</h3>
+      <p><code>JobRow</code> (<code>IndexPanel.tsx:24–43</code>) renders the status badge, the
+      target URL, and free-text <code>job.message</code>. It never reads
+      <code>job.stage</code>. The type is even loose — <code>stage: string | null</code>
+      (<code>types.ts:1284</code>) — while a precise stage union already exists two lines
+      above it for the old streaming endpoint:</p>
+      <pre class="log">export interface IndexStage {
+  stage: <span class="o">"discover" | "fetch" | "chunk"
+       | "embed" | "summarize"</span>;
+  message: string;
+}</pre>
+      <p style="margin-top:10px">Five of the six stages are already named. Only
+      <code>graph</code> is missing — and under §05 it is no longer a stage at all,
+      so the existing five-value union is exactly right: the first four become the progress bar
+      and <code>summarize</code> moves to the enrichment line.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:26px">The proposed shape</h3>
+  <p style="max-width:78ch">
+    Thread an <code>on_stage</code> callback through <code>RagIndexer.index()</code> so each
+    stage fires when it <em>actually</em> starts — the same
+    <code>on_progress: Callable[[str], None] | None</code> pattern
+    <code>contextualize.py:137</code> already uses. The queue forwards each callback to
+    <code>_broadcast_job</code>, and <code>JobRow</code> renders the stepper below the target URL. Two new fields
+    on the wire: <code>stage_index</code> for the core 4, and an <code>enrichment</code>
+    object carrying <span class="mono">summary</span> and <span class="mono">graph</span>
+    status per video.
+  </p>
+
+  <div class="mockwrap" style="margin-top:18px">
+    <div class="mocklabel">Mock · app design system · RAG Pipeline → queue · core 4 + enrichment</div>
+
+    <div class="idxq-row running">
+      <div class="idxq-head">
+        <span class="pulse"></span>
+        <span class="badge b-acc">Running</span>
+        <span class="idxq-target">https://www.youtube.com/watch?v=vBJF2sy1Pyw</span>
+      </div>
+      <div class="steps">
+        <div class="step done"><div class="dot">✓</div><div class="nm">discover</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">fetch</div></div>
+        <div class="step active"><div class="dot">3</div><div class="nm">chunk</div></div>
+        <div class="step"><div class="dot">4</div><div class="nm">embed</div></div>
+      </div>
+      <div class="steprow">
+        <span class="stepcount">3 / 4</span>
+        <span class="muted" style="font-size:12.5px">Chunking transcript — 51 chunks so far…</span>
+      </div>
+    </div>
+
+    <div class="idxq-row">
+      <div class="idxq-head">
+        <span class="badge b-good">Done</span>
+        <span class="idxq-target">https://www.youtube.com/watch?v=tLK5jyhQOgA</span>
+      </div>
+      <div class="steps">
+        <div class="step done"><div class="dot">✓</div><div class="nm">discover</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">fetch</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">chunk</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">embed</div></div>
+      </div>
+      <div class="steprow">
+        <span class="stepcount" style="color:var(--good)">4 / 4 indexed</span>
+        <span class="badge b-good">+1 videos</span>
+        <span class="badge b-acc">+47 chunks</span>
+      </div>
+      <div class="steprow" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <span class="mono dim" style="font-size:11px;letter-spacing:.06em">ENRICHMENT</span>
+        <span class="badge b-warn">summary · pending</span>
+        <span class="badge b-warn">graph · pending</span>
+        <span class="muted" style="font-size:12px">Retrievable now; not yet routable by summary.</span>
+      </div>
+    </div>
+
+    <div class="idxq-row">
+      <div class="idxq-head">
+        <span class="badge b-good">Done</span>
+        <span class="idxq-target">https://www.youtube.com/watch?v=N_DwZR--XCc</span>
+      </div>
+      <div class="steps">
+        <div class="step done"><div class="dot">✓</div><div class="nm">discover</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">fetch</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">chunk</div></div>
+        <div class="step done"><div class="dot">✓</div><div class="nm">embed</div></div>
+      </div>
+      <div class="steprow">
+        <span class="stepcount" style="color:var(--good)">4 / 4 indexed</span>
+        <span class="badge b-good">+1 videos</span>
+        <span class="badge b-acc">+51 chunks</span>
+      </div>
+      <div class="steprow" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <span class="mono dim" style="font-size:11px;letter-spacing:.06em">ENRICHMENT</span>
+        <span class="badge b-good">summary · done</span>
+        <span class="badge b-bad">graph · failed — provider 402</span>
+      </div>
+    </div>
+
+    <div class="idxq-row" style="border-color:var(--accent-border)">
+      <div class="idxq-head">
+        <span class="badge b-plain">Corpus</span>
+        <span class="idxq-target" style="color:var(--text2)">14 videos awaiting enrichment</span>
+      </div>
+      <div class="steprow" style="margin-top:6px">
+        <span class="muted" style="font-size:12.5px">Backfill is resumable and costs no Supadata credits.</span>
+        <span class="badge b-acc" style="cursor:pointer">Run enrichment pass →</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="dim" style="font-size:12.5px;margin-top:12px">
+    Four core steps are the progress bar; enrichment is a status line, not a stage. The second
+    row is what today's four red <span class="mono">Indexing failed (exit 1)</span> rows would
+    become: <span class="badge b-good">Done</span>, 47 chunks live, and an honest note that the
+    summary has not been written yet. The last row turns the corpus-health warning into the
+    action that clears it.
+  </p>
+
+  <div class="callout warn">
+    <p><strong>Concurrency changes what a stepper means.</strong> With N workers, several rows
+    are mid-stage at once, so a single global progress reading is meaningless — progress has to
+    be per-row, as mocked above. Build the stepper <em>after</em> the queue is multi-worker, or
+    at minimum design it per-job from the start.</p>
+  </div>
+</section>
+
+<!-- ══ 07 PLAN ═══════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">09</span><h2>Proposed order of work</h2>
+    <span class="sec-sub"><span class="badge b-good">no DeepSeek required</span> · nothing implemented yet</span>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>Step</th><th>Change</th><th>Files</th><th>Why this order</th><th>Size</th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:var(--best-row)">
+          <td class="mono">1</td>
+          <td><strong>Cut steps 5–6 out of the index</strong> — <code>RagIndexer.index()</code>
+              ends after embed and reports enrichment as pending</td>
+          <td class="mono">rag/indexing.py<br>api/ingestion_queue.py</td>
+          <td>The §05 design. Removes the LLM from the indexing path, so this failure class
+              cannot recur. Everything below gets easier.</td>
+          <td><span class="badge b-good">small</span></td>
+        </tr>
+        <tr>
+          <td class="mono">2</td>
+          <td>Record enrichment state explicitly — <code>graph_status</code> (and
+              <code>summary_source</code>) of <span class="mono">pending | done | failed</span></td>
+          <td class="mono">rag/models.py<br>rag/storage.py</td>
+          <td>Today pending is inferred from <code>summary is None</code>, which can't tell
+              "never attempted" from "failed". The backfill needs the difference.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr style="background:var(--best-row)">
+          <td class="mono">3</td>
+          <td><strong>Use the YouTube description as the summary</strong>
+              <span class="badge b-good">decided</span></td>
+          <td class="mono">rag/summaries.py<br>config.py</td>
+          <td>§06. Removes the LLM from summaries entirely and makes step 5 vanish rather than
+              defer. No <code>index-summaries</code> backfill needed.</td>
+          <td><span class="badge b-good">small</span></td>
+        </tr>
+        <tr>
+          <td class="mono">3b</td>
+          <td>Measure it — run the existing ablation, description vs DeepSeek summary, on
+              routing quality</td>
+          <td class="mono">evals/</td>
+          <td>The only §06 claim I could not settle from data alone. Reports the delta; does
+              not gate the change.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr>
+          <td class="mono">4</td>
+          <td>Surface it: <span class="mono">summary · pending</span> /
+              <span class="mono">graph · pending</span> badges + a "Run enrichment pass" action</td>
+          <td class="mono">IndexPanel.tsx<br>api/types.ts</td>
+          <td>Pending state the UI doesn't show is the same as silent. Mock in §08.</td>
+          <td><span class="badge b-good">small</span></td>
+        </tr>
+        <tr>
+          <td class="mono">5</td>
+          <td>Clear the backlog — backfill the 14 from their stored descriptions</td>
+          <td class="dim">— (a command run)</td>
+          <td>Free, instant, and needs no DeepSeek at all. Graph extraction stays pending until
+              you choose to spend on it.</td>
+          <td><span class="badge b-good">small</span></td>
+        </tr>
+        <tr>
+          <td class="mono">6</td>
+          <td>Chroma write lock + dashboard-refresh debounce</td>
+          <td class="mono">rag/storage.py<br>cli.py</td>
+          <td>Prerequisite for any concurrency. Harmless on its own.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr>
+          <td class="mono">7</td>
+          <td><strong>Multi-worker queue</strong> (Option A, default 3)</td>
+          <td class="mono">api/ingestion_queue.py<br>api/main.py</td>
+          <td>Depends on step 6. Delivers the concurrency you asked for across all job types.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr>
+          <td class="mono">8</td>
+          <td><code>on_stage</code> callback → real 4-stage progress + enrichment line</td>
+          <td class="mono">rag/indexing.py<br>api/ingestion_queue.py<br>IndexPanel.tsx</td>
+          <td>Per-job by construction, so it must come after step 7 to be designed correctly.</td>
+          <td><span class="badge b-warn">medium</span></td>
+        </tr>
+        <tr>
+          <td class="mono">9</td>
+          <td>Reject or flag zero-chunk videos at index time</td>
+          <td class="mono">rag/indexing.py</td>
+          <td>Independent of everything above. Confirm the cause first.</td>
+          <td><span class="badge b-good">small</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout good" style="border-left-color:var(--good);background:var(--good-dim)">
+    <p><strong>Nothing in this plan needs the DeepSeek account topped up.</strong> That is the
+    clearest sign the design is right: the incident's root cause has become irrelevant to its
+    own fix. Indexing, summaries and the 14-video backlog are all zero-LLM. The knowledge graph
+    is the only thing still waiting on a paid provider, it already fails safely, and it already
+    has <code>index-graph</code> to catch up whenever you decide to spend.</p>
+    <p><strong>Steps 1–5 are the design you chose</strong> and would have prevented this
+    incident entirely. Steps 6–8 are the concurrency and progress work. If you want one thing
+    done today, it is step 1.</p>
+  </div>
+</section>
+
+<!-- ══ 08 RISKS ══════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">10</span><h2>Risks &amp; open questions</h2>
+  </div>
+  <div class="grid g2">
+    <div class="card warn">
+      <h3>A pending backlog can quietly grow forever</h3>
+      <p>Once enrichment is optional, nothing forces it to run. A corpus can drift into mostly
+      unenriched while every job reads <span class="badge b-good">Done</span> — routing degrades
+      with no red flag anywhere. Mitigation: the corpus health strip already counts missing
+      summaries and it caught this incident; keep it prominent, and escalate its level once the
+      pending count crosses a threshold.</p>
+    </div>
+    <div class="card warn">
+      <h3>Concurrency multiplies spend rate, not spend</h3>
+      <p>Three workers burn Supadata credits and DeepSeek tokens three times faster. With 234
+      Supadata credits until the 11 Sep reset, a runaway concurrent channel run is a bigger
+      accident than a serial one. Worth a per-run credit ceiling.</p>
+    </div>
+    <div class="card warn">
+      <h3>CPU embedding is the real ceiling</h3>
+      <p>Embeddings are pinned to CPU deliberately — MPS wedges the server. Three concurrent
+      jobs embedding at once will contend. The measured precedent (4 workers good, 6–8 collapse)
+      suggests starting at 3 and measuring, not guessing.</p>
+    </div>
+    <div class="card good">
+      <h3><span class="badge b-good">resolved</span> How the 14 get repaired</h3>
+      <p>Settled by §05. They are not repaired — they are <em>enriched</em>, by the same
+      backfill pass that will handle every future video. Zero Supadata credits, because the
+      pass reads transcripts already stored. No separate repair path is needed.</p>
+    </div>
+    <div class="card acc">
+      <h3>Open — is the zero-chunk cause really an empty transcript?</h3>
+      <p>Stated as "likely" above because I have not fetched those two videos to confirm.
+      A 10-second check settles it, but it changes the fix in step 7.</p>
+    </div>
+    <div class="card">
+      <h3>Not investigated</h3>
+      <p>Whether the 402 also degraded any <em>already-indexed</em> video's stored summary, and
+      whether the ingestion run records under <code>chroma/ingestion_runs</code> captured these
+      failures. Both are cheap to check if you want them in scope.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 DECISIONS ══════════════════════════════════════════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">11</span><h2>Your call</h2>
+    <span class="sec-sub">summary source is settled — 3 questions live</span>
+  </div>
+
+  <div class="grid g2" style="margin-top:4px">
+
+    <form class="q" data-lavish-question="scope" onsubmit="event.preventDefault();
+      const v = new FormData(event.currentTarget).get('scope');
+      if (v) window.lavish.queuePrompt('Scope decision: ' + v, {tag:'choice', text:'Scope: '+v,
+        element:event.currentTarget, data:{question:'scope', answer:v}});">
+      <h3>1 · How far do we go now?</h3>
+      <p class="muted" style="font-size:12.5px">Steps are from §09. The §05 split and the §06 description source are decided and assumed.</p>
+      <div class="opts">
+        <label><input type="radio" name="scope" value="steps 1-5 only — split core index from enrichment, switch summaries to descriptions, add the state field, then clear the 14">
+          <span><span class="opt-t">The split only</span> — steps 1–5. Kills the failure class, clears the backlog, zero LLM.</span></label>
+        <label><input type="radio" name="scope" value="steps 1-8 — the split, then the Chroma lock, multi-worker queue and real stage progress">
+          <span><span class="opt-t">Everything asked for</span> — steps 1–8, in that order. <em>Recommended.</em></span></label>
+        <label><input type="radio" name="scope" value="step 1 only for now — cut summarize/graph out of the index, leave the description switch and state field for a later pass">
+          <span><span class="opt-t">Just step 1</span> — cut 5–6 out of the index today, rest later.</span></label>
+        <label><input type="radio" name="scope" value="steps 1-5 plus 9 — the split, the backlog, and the zero-chunk video fix; concurrency later">
+          <span><span class="opt-t">Split + cleanup</span> — 1–5 plus the zero-chunk fix (9).</span></label>
+      </div>
+      <button type="submit">Queue this answer</button>
+    </form>
+
+    <form class="q" data-lavish-question="backfill" onsubmit="event.preventDefault();
+      const v = new FormData(event.currentTarget).get('backfill');
+      if (v) window.lavish.queuePrompt('Existing summaries: ' + v, {tag:'choice',
+        text:'Backfill: '+v, element:event.currentTarget, data:{question:'backfill', answer:v}});">
+      <h3>2 · What about the 110 existing LLM summaries?</h3>
+      <p class="muted" style="font-size:12.5px">§06 — descriptions are decided. This is what happens to the ones already written.</p>
+      <div class="opts">
+        <label><input type="radio" name="backfill" value="rewrite all 124 summaries from their stored YouTube descriptions so the whole corpus uses one consistent source - free, no API calls, local re-embed only">
+          <span><span class="opt-t">Rewrite all 124</span> — one consistent source. Free, local re-embed. <em>Recommended.</em></span></label>
+        <label><input type="radio" name="backfill" value="keep the 110 DeepSeek summaries and use descriptions only for the 14 missing ones and all future videos, accepting a mixed corpus">
+          <span><span class="opt-t">Keep the 110</span> — descriptions for new ones only; mixed corpus.</span></label>
+        <label><input type="radio" name="backfill" value="run the eval ablation first on both, then decide whether to rewrite the 110 or keep them">
+          <span><span class="opt-t">Measure, then decide</span> — ablate both before rewriting.</span></label>
+        <label><input type="radio" name="backfill" value="rewrite all 124 from descriptions but keep the existing LLM summaries stored in a separate field so the comparison stays possible later">
+          <span><span class="opt-t">Rewrite, keep both</span> — descriptions live, LLM text retained for comparison.</span></label>
+      </div>
+      <button type="submit">Queue this answer</button>
+    </form>
+
+    <form class="q" data-lavish-question="workers" onsubmit="event.preventDefault();
+      const v = new FormData(event.currentTarget).get('workers');
+      if (v) window.lavish.queuePrompt('Concurrency approach: ' + v, {tag:'choice',
+        text:'Concurrency: '+v, element:event.currentTarget, data:{question:'workers', answer:v}});">
+      <h3>3 · Which concurrency shape?</h3>
+      <p class="muted" style="font-size:12.5px">Detail in §07.</p>
+      <div class="opts">
+        <label><input type="radio" name="workers" value="Option A - multi-worker IngestionQueue with 3 workers by default, covering every job type">
+          <span><span class="opt-t">Option A</span> — 3 queue workers, covers all job types. <em>Recommended.</em></span></label>
+        <label><input type="radio" name="workers" value="Option B - honour --concurrency inside bulk-index only, leaving the queue serial">
+          <span><span class="opt-t">Option B</span> — parallel bulk-index only.</span></label>
+        <label><input type="radio" name="workers" value="both A and B - multi-worker queue first, then parallel bulk-index on top">
+          <span><span class="opt-t">Both</span> — A first, then B on top.</span></label>
+        <label><input type="radio" name="workers" value="Option A but with a different worker count - tell me what to measure first">
+          <span><span class="opt-t">A, but measure</span> — benchmark before picking a count.</span></label>
+      </div>
+      <button type="submit">Queue this answer</button>
+    </form>
+
+    <form class="q" data-lavish-question="extras" onsubmit="event.preventDefault();
+      const f = new FormData(event.currentTarget);
+      const picked = f.getAll('extras'); const note = (f.get('note')||'').toString().trim();
+      const body = (picked.length ? 'Also include: ' + picked.join('; ') : 'No extra scope.')
+        + (note ? ' — Note: ' + note : '');
+      window.lavish.queuePrompt(body, {tag:'scope', text:'Extras: '+(picked.length?picked.length+' selected':'none'),
+        element:event.currentTarget, data:{question:'extras', answer:picked, note:note}});">
+      <h3>4 · Anything else in scope?</h3>
+      <p class="muted" style="font-size:12.5px">From §10. Pick any.</p>
+      <div class="opts">
+        <label><input type="checkbox" name="extras" value="confirm the cause of the two zero-chunk videos and fix step 7">
+          <span>Confirm &amp; fix the two zero-chunk videos</span></label>
+        <label><input type="checkbox" name="extras" value="add a per-run Supadata credit ceiling so concurrent runs cannot overspend">
+          <span>Per-run Supadata credit ceiling</span></label>
+        <label><input type="checkbox" name="extras" value="check whether any already-indexed video had its stored summary degraded by the 402s">
+          <span>Audit existing summaries for 402 damage</span></label>
+        <label><input type="checkbox" name="extras" value="escalate the corpus health warning to an error once the pending-graph count crosses a threshold">
+          <span>Escalate health warning past a pending threshold</span></label>
+        <label><input type="checkbox" name="extras" value="decide graph enrichment triggering - automatic after each core job, manual batch, or auto with manual catch-up">
+          <span>Decide how graph enrichment is triggered</span></label>
+        <label><input type="checkbox" name="extras" value="handle the 2 videos whose description is too thin to route on (under 120 clean chars) - flag them rather than silently indexing a useless summary">
+          <span>Flag the 2 videos with unusable descriptions</span></label>
+      </div>
+      <textarea name="note" placeholder="Anything I got wrong, or scope I've missed…"></textarea>
+      <div class="hint">Queues one prompt with everything ticked plus your note.</div>
+      <button type="submit" style="margin-top:12px">Queue this answer</button>
+    </form>
+
+  </div>
+</section>
+
+<p class="dim" style="font-size:12px;margin-top:44px;text-align:center">
+  Design source (2): the project's own system — tokens copied from
+  <span class="mono">frontend/src/theme.css</span> so this page matches transcript-lab.
+  All file references verified against the working tree on
+  <span class="mono">injest-exploration</span>.
+</p>
+
+</div>
+</body>
+</html>

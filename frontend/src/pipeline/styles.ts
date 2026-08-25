@@ -75,6 +75,44 @@ export const PIPELINE_STYLES = `
 .idxq-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .idxq-target { font: 12px var(--mono); color: var(--text); word-break: break-all; }
 .idxq-message { margin: 4px 0 0; }
+.idxq-enrich {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+.idxq-enrich-label {
+  font: 600 10px var(--mono); color: var(--dim); letter-spacing: .1em;
+}
+.idxq-row.enrich-banner { border-color: var(--accent-border); margin-top: 12px; }
+.idxq-steps {
+  display: flex; align-items: flex-start; gap: 0;
+  list-style: none; margin: 12px 0 0; padding: 0; overflow-x: auto;
+}
+.idxq-step { flex: 1 1 0; min-width: 72px; text-align: center; position: relative; }
+.idxq-step::before {
+  content: ''; position: absolute; top: 9px; left: -50%;
+  width: 100%; height: 1.5px; background: var(--border2); z-index: 0;
+}
+.idxq-step:first-child::before { display: none; }
+.idxq-dot {
+  width: 18px; height: 18px; border-radius: 50%; margin: 0 auto 5px;
+  display: grid; place-items: center; font: 600 9px var(--mono);
+  border: 1.5px solid var(--border2); background: var(--panel2);
+  color: var(--dim); position: relative; z-index: 1;
+}
+.idxq-step-name { font: 10px var(--mono); color: var(--dim); display: block; }
+.idxq-step.done .idxq-dot { background: var(--good-dim); border-color: var(--good-border); color: var(--good); }
+.idxq-step.done .idxq-step-name { color: var(--text2); }
+.idxq-step.done::before { background: var(--good-border); }
+.idxq-step.active .idxq-dot {
+  background: var(--accent-dim); border-color: var(--accent); color: var(--accent2);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.idxq-step.active .idxq-step-name { color: var(--accent2); font-weight: 600; }
+.idxq-step.active::before { background: var(--good-border); }
+.idxq-step.failed .idxq-dot { background: var(--bad-dim); border-color: var(--bad-border); color: var(--bad); }
+.idxq-step.failed .idxq-step-name { color: var(--bad); font-weight: 600; }
+.idxq-steprow { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.idxq-stepcount { font: 600 11px var(--mono); color: var(--accent2); }
 
 /* ── Sub-tab panes ── */
 .pipe-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }

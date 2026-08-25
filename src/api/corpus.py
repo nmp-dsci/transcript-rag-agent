@@ -63,6 +63,16 @@ def list_corpus(
                 "upload_date": meta.get("upload_date") or None,
                 "view_count": meta.get("view_count") or None,
                 "summary": meta.get("summary") or None,
+                # Enrichment state, read straight off the stored document.
+                # ``summary_status`` is absent on anything indexed before the
+                # field existed, so fall back the same way models.summary_state
+                # does: a stored summary means done, its absence means pending.
+                "summary_status": (
+                    meta.get("summary_status")
+                    or ("done" if (meta.get("summary") or "").strip() else "pending")
+                ),
+                "summary_source": meta.get("summary_source") or None,
+                "graph_status": meta.get("graph_status") or "pending",
                 "fetched_at": meta.get("fetched_at") or None,
                 "chunk_count": chunk_counts.get(video_id, 0),
             }
@@ -140,15 +150,44 @@ def build_insights(
 
     missing = [v for v in videos if not v.get("summary")]
     if missing:
+        # A summary the provider lost is a different problem from one nobody
+        # has written yet: the first is a repair, the second is just work not
+        # done. Naming which is which is the whole point of summary_status.
+        failed = [v for v in missing if v.get("summary_status") == "failed"]
+        # Deliberately not "failed on the provider": a summary can also fail
+        # because the source had nothing routable in it — a description that
+        # is only links and a call to action. Both are attempts that lost.
+        detail = f" — {len(failed)} attempted and failed" if failed else ""
         insights.append(
             {
                 "kind": "missing_summaries",
                 "level": "warn",
                 "message": (
                     f"{len(missing)} of {len(videos)} videos have no transcript "
-                    "summary, so the summary filter can never select them"
+                    f"summary, so the summary filter can never select them{detail}"
                 ),
                 "video_ids": [v.get("video_id") for v in missing],
+            }
+        )
+
+    # ``or "unknown"`` rather than dropping None: a summary written before
+    # summary_source existed is still a summary from some *other* generator,
+    # and discarding it here is exactly how a mixed corpus stays invisible.
+    sources = {(v.get("summary_source") or "unknown") for v in videos if v.get("summary")}
+    if len(sources) > 1:
+        # Summary embeddings share one vector space. Two registers in it —
+        # LLM prose and creator marketing copy — make similarity scores mean
+        # different things depending on which video you hit.
+        insights.append(
+            {
+                "kind": "mixed_summary_sources",
+                "level": "warn",
+                "message": (
+                    "summaries come from more than one source "
+                    f"({', '.join(sorted(str(s) for s in sources))}) — "
+                    "routing scores are not comparable across videos"
+                ),
+                "video_ids": [],
             }
         )
 

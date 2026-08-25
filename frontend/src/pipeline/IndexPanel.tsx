@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { api } from '../api/client';
-import type { IngestionJob } from '../api/types';
+import { CORE_STAGES } from '../api/types';
+import type { EnrichmentState, EnrichmentSummary, IngestionJob, Video } from '../api/types';
 import { insightBadgeClass } from './insights';
 
 interface Props {
@@ -18,6 +19,146 @@ const STATUS_LABEL: Record<IngestionJob['status'], string> = {
   done: 'Done',
   error: 'Failed',
 };
+
+const ENRICHMENT_BADGE: Record<EnrichmentState, string> = {
+  done: 'good',
+  pending: 'warn',
+  failed: 'bad',
+};
+
+/** Where a run has actually reached, stage by stage.
+ *
+ * Only rendered while a job is running or once it is done — a queued job has
+ * not started any stage, and showing it at 0/4 would suggest otherwise. */
+function StageSteps({ job }: { job: IngestionJob }) {
+  if (job.status === 'queued') return null;
+  const reached = job.status === 'done' ? CORE_STAGES.length : (job.stage_index ?? 0);
+  return (
+    <>
+      <ol className="idxq-steps" aria-label="Indexing stages">
+        {CORE_STAGES.map((stage, index) => {
+          const position = index + 1;
+          const state =
+            job.status === 'error' && position === reached
+              ? 'failed'
+              : position < reached
+                ? 'done'
+                : position === reached
+                  ? 'active'
+                  : 'waiting';
+          return (
+            <li key={stage} className={`idxq-step ${state}`}>
+              <span className="idxq-dot">{state === 'done' ? '✓' : position}</span>
+              <span className="idxq-step-name">{stage}</span>
+            </li>
+          );
+        })}
+      </ol>
+      <div className="idxq-steprow">
+        <span className="idxq-stepcount">
+          {reached} / {CORE_STAGES.length}
+          {job.status === 'done' ? ' indexed' : ''}
+        </span>
+        {job.status === 'running' && job.message ? (
+          <span className="sub">{job.message}</span>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+/** Enrichment status for one video, spelled out rather than left to the
+ * absence of a summary to imply. `pending` and `failed` look identical in a
+ * corpus that only stores the summary itself — which is how 14 videos went
+ * unnoticed. */
+function EnrichmentLine({ videos }: { videos: Video[] }) {
+  if (videos.length === 0) return null;
+  const worst = (pick: (video: Video) => EnrichmentState): EnrichmentState =>
+    videos.some((v) => pick(v) === 'failed')
+      ? 'failed'
+      : videos.some((v) => pick(v) === 'pending')
+        ? 'pending'
+        : 'done';
+  const summary = worst((v) => v.summary_status);
+  const graph = worst((v) => v.graph_status);
+  const source = videos.find((v) => v.summary_source)?.summary_source;
+  return (
+    <div className="idxq-enrich">
+      <span className="idxq-enrich-label">ENRICHMENT</span>
+      <span className={`badge ${ENRICHMENT_BADGE[summary]}`}>
+        summary · {summary}
+        {source && summary === 'done' ? ` · ${source}` : ''}
+      </span>
+      <span className={`badge ${ENRICHMENT_BADGE[graph]}`}>graph · {graph}</span>
+      {graph !== 'done' ? (
+        <span className="sub">Retrievable now; GraphRAG catches up on the next pass.</span>
+      ) : null}
+    </div>
+  );
+}
+
+/** The corpus-wide enrichment backlog, and the button that clears it.
+ *
+ * Turns the health strip's count into the action that fixes it. Graph
+ * extraction is the only step that still needs a paid provider, so it is the
+ * only one that can sit pending indefinitely — summaries come from the
+ * YouTube description and are written during indexing. */
+function EnrichmentBanner({ jobs }: { jobs: IngestionJob[] }) {
+  const [state, setState] = useState<EnrichmentSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Re-read whenever a job finishes: that is exactly when the backlog moves.
+  const doneCount = jobs.filter((job) => job.status === 'done').length;
+  useEffect(() => {
+    let live = true;
+    api
+      .enrichmentState()
+      .then((next) => live && setState(next))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [doneCount]);
+
+  if (!state) return null;
+  const pending = state.graph_pending.length;
+  const summaryPending = state.summary_pending.length;
+  if (pending === 0 && summaryPending === 0) return null;
+
+  const run = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.runEnrichment({});
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="idxq-row enrich-banner">
+      <div className="idxq-head">
+        <span className="badge plain">Corpus</span>
+        <span className="idxq-target">
+          {pending} video(s) awaiting graph enrichment
+          {summaryPending > 0 ? ` · ${summaryPending} without a summary` : ''}
+        </span>
+      </div>
+      <div className="idxq-enrich">
+        <span className="sub">
+          Reads chunks already indexed — no transcript re-fetch, so no Supadata credits.
+        </span>
+        <button type="button" className="btn" disabled={busy || pending === 0} onClick={() => void run()}>
+          {busy ? 'Queueing…' : 'Run enrichment pass'}
+        </button>
+        {error ? <span className="errtext">{error}</span> : null}
+      </div>
+    </div>
+  );
+}
 
 /** One job's live progress: status pill, stage message, and — once done —
  * the same added-videos/insights summary the single-job panel used to show. */
@@ -36,11 +177,13 @@ function JobRow({ job, onViewVideo }: { job: IngestionJob; onViewVideo: (videoId
         </span>
       </div>
 
-      {job.status === 'running' && job.message ? (
-        <p className="sub idxq-message">{job.message}</p>
-      ) : null}
+      {job.mode === 'enrichment' ? null : <StageSteps job={job} />}
 
       {job.status === 'error' && job.error ? <p className="errtext">{job.error}</p> : null}
+
+      {job.status === 'done' && result?.added_videos?.length ? (
+        <EnrichmentLine videos={result.added_videos} />
+      ) : null}
 
       {job.status === 'done' && result ? (
         <div className="idx-result">
@@ -215,8 +358,9 @@ export function IndexPanel({ onIndexed, onViewVideo }: Props) {
         <div className="pipe-index-body">
           <p className="sub" style={{ margin: '10px 0 8px' }}>
             Fetch transcripts, chunk them on transcript timings, embed the chunks and write a
-            per-video summary. Add as many videos or channels as you like — each one queues and
-            runs in turn, so you never have to wait for one to finish before adding the next.
+            per-video summary from the creator's own description — no LLM, so indexing cannot
+            fail on a provider. Add as many videos or channels as you like: three run at a time
+            and the rest queue behind them.
           </p>
 
           <div className="formrow">
@@ -281,6 +425,8 @@ export function IndexPanel({ onIndexed, onViewVideo }: Props) {
             </button>
             {submitError ? <span className="errtext">{submitError}</span> : null}
           </div>
+
+          <EnrichmentBanner jobs={jobs} />
 
           {jobs.length > 0 ? (
             <ul className="idxq-list" aria-label="Ingestion queue">
