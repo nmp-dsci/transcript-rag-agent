@@ -169,7 +169,7 @@ describe('useSpeechToText connect races', () => {
     act(() => result.current.stop());
     expect(result.current.status).not.toBe('listening');
 
-    act(() => ws.onopen?.());
+    act(() => ws?.onopen?.());
     expect(result.current.status).not.toBe('listening');
   });
 });
