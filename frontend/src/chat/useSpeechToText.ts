@@ -81,6 +81,8 @@ export function useSpeechToText(): SpeechToText {
   const [transcript, setTranscript] = useState<TranscriptState>(EMPTY_TRANSCRIPT);
   const [error, setError] = useState<string | null>(null);
   const session = useRef<Session | null>(null);
+  const connecting = useRef(false);
+  const cancelRequested = useRef(false);
 
   const supported =
     typeof navigator !== 'undefined' &&
@@ -109,7 +111,14 @@ export function useSpeechToText(): SpeechToText {
 
   const stop = useCallback(() => {
     const current = session.current;
-    if (!current || current.flushTimer !== null) return;
+    if (!current) {
+      // Still inside the async setup in start() — flag it so start() tears
+      // down whatever it has acquired once it reaches a checkpoint, instead
+      // of finishing setup and beginning a session the user already cancelled.
+      if (connecting.current) cancelRequested.current = true;
+      return;
+    }
+    if (current.flushTimer !== null) return;
     // Cut the mic at once; hold the socket open briefly so the words still in
     // flight come back as finals before the fold into the question box.
     for (const track of current.stream.getTracks()) track.stop();
@@ -122,7 +131,9 @@ export function useSpeechToText(): SpeechToText {
   }, [teardown]);
 
   const start = useCallback(() => {
-    if (session.current || !supported) return;
+    if (session.current || connecting.current || !supported) return;
+    connecting.current = true;
+    cancelRequested.current = false;
     setError(null);
     setTranscript(EMPTY_TRANSCRIPT);
     setStatus('connecting');
@@ -133,13 +144,29 @@ export function useSpeechToText(): SpeechToText {
           audio: { echoCancellation: true, noiseSuppression: true },
         });
       } catch {
+        connecting.current = false;
         setError('microphone unavailable — check browser permissions');
+        setStatus('idle');
+        return;
+      }
+      if (cancelRequested.current) {
+        connecting.current = false;
+        cancelRequested.current = false;
+        for (const track of stream.getTracks()) track.stop();
         setStatus('idle');
         return;
       }
       try {
         const ctx = new AudioContext();
         await ctx.audioWorklet.addModule(pcmWorkletUrl());
+        if (cancelRequested.current) {
+          connecting.current = false;
+          cancelRequested.current = false;
+          for (const track of stream.getTracks()) track.stop();
+          void ctx.close().catch(() => undefined);
+          setStatus('idle');
+          return;
+        }
         const source = ctx.createMediaStreamSource(stream);
         const node = new AudioWorkletNode(ctx, PCM_WORKLET_NAME);
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -187,8 +214,14 @@ export function useSpeechToText(): SpeechToText {
         };
 
         const capTimer = window.setTimeout(stop, SESSION_CAP_MS);
+        connecting.current = false;
         session.current = { ws, ctx, stream, node, capTimer, flushTimer: null };
+        if (cancelRequested.current) {
+          cancelRequested.current = false;
+          stop();
+        }
       } catch {
+        connecting.current = false;
         for (const track of stream.getTracks()) track.stop();
         setError('voice capture failed to start in this browser');
         setStatus('idle');
