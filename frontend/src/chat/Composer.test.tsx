@@ -79,10 +79,12 @@ function Harness({
   onAsk = vi.fn(),
   initial = WHOLE_CORPUS,
   corpus = CORPUS,
+  stt = false,
 }: {
   onAsk?: (options: AskOptions) => void;
   initial?: ChatScope;
   corpus?: Corpus | null;
+  stt?: boolean;
 }) {
   const [scope, setScope] = useState<ChatScope>(initial);
   return (
@@ -96,6 +98,7 @@ function Harness({
       onDefaultSetupChange={vi.fn()}
       onAsk={onAsk}
       onCancel={vi.fn()}
+      stt={stt}
     />
   );
 }
@@ -109,6 +112,21 @@ const videoOptionLabels = () =>
 
 beforeEach(() => {
   localStorage.clear();
+});
+
+describe('voice input', () => {
+  it('renders no mic unless the server says stt is available', () => {
+    render(<Harness />);
+    expect(screen.queryByLabelText('Start voice input')).toBeNull();
+  });
+
+  it('renders the mic when stt is on, disabled where the browser lacks capture', () => {
+    // jsdom has no mediaDevices/AudioWorklet, which is exactly the
+    // unsupported-browser case: the button exists but cannot start.
+    render(<Harness stt />);
+    const mic = screen.getByLabelText('Start voice input') as HTMLButtonElement;
+    expect(mic.disabled).toBe(true);
+  });
 });
 
 describe('Composer scope selects', () => {

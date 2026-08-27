@@ -123,6 +123,12 @@ class Settings:
     # extractions plus one adjudication call per candidate pair — deleting it
     # costs those calls and nothing else.
     conflict_path: Path = Path(".yt-agent/conflicts.json")
+    # Streaming voice-to-text (the composer mic). Optional: an empty key means
+    # the feature is absent, not an error — /api/health reports stt=false and
+    # the mic never renders. The relay keeps this key server-side.
+    deepgram_api_key: str = ""
+    stt_enabled: bool = True
+    stt_model: str = "nova-3"
 
 
 def _project_root() -> Path:
@@ -314,4 +320,7 @@ def load_settings(require_keys: bool = True) -> Settings:
         conflict_path=_resolve_project_path(
             os.environ.get("YT_AGENT_CONFLICT_PATH", ".yt-agent/conflicts.json")
         ),
+        deepgram_api_key=os.environ.get("DEEPGRAM_API_KEY", ""),
+        stt_enabled=_bool_env(os.environ.get("YT_AGENT_STT_ENABLED"), default=True),
+        stt_model=os.environ.get("YT_AGENT_STT_MODEL", "nova-3"),
     )

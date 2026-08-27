@@ -200,6 +200,7 @@ export function App() {
             onActivity={refreshHealth}
             pendingScope={pendingScope}
             onScopeConsumed={() => setPendingScope(null)}
+            stt={health?.stt === true}
           />
         )}
         {activeTab === 'pipeline' && (

@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Voice-to-Text Plan — transcript-rag-agent</title>
+<style>
+/* ── Instrument design system tokens (ported from frontend/src/theme.css) ── */
+:root, :root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:#0e1116; --panel:#12161d; --panel2:#1c2330; --panel3:#161b22;
+  --border:#252b35; --border2:#2b3442; --text:#e6edf3; --text2:#c9d1d9;
+  --muted:#8b949e; --dim:#6e7681; --accent:#2f81f7; --accent2:#79b8ff;
+  --accent-dim:#132339; --accent-border:#1f4a7a;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3d1d1f; --bad-border:#6b2a2c;
+  --on-accent:#0b1220; --hover:#182029; --best-row:rgba(47,129,247,0.06);
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme:light;
+    --bg:#f6f8fa; --panel:#ffffff; --panel2:#eaeef2; --panel3:#f6f8fa;
+    --border:#d1d9e0; --border2:#bcc4cc; --text:#1f2328; --text2:#424a53;
+    --muted:#59636e; --dim:#818b98; --accent:#0969da; --accent2:#0550ae;
+    --accent-dim:#ddf4ff; --accent-border:#b6e3ff;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --hover:#eef2f6; --best-row:rgba(9,105,218,0.06);
+  }
+}
+* { box-sizing:border-box; }
+html, body { margin:0; }
+body {
+  background:var(--bg); color:var(--text);
+  font:14px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  padding:32px 16px 80px;
+}
+main { max-width: 980px; margin:0 auto; min-width:0; }
+h1 { font-size:22px; margin:0 0 4px; letter-spacing:-0.01em; }
+h2 { font-size:16px; margin:36px 0 10px; letter-spacing:-0.01em; }
+h3 { font-size:13.5px; margin:0 0 8px; }
+p { margin:6px 0; color:var(--text2); }
+code { font-family:var(--mono); font-size:12px; background:var(--panel2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; white-space:nowrap; }
+.wrapcode code, td code { white-space:normal; overflow-wrap:anywhere; }
+.chip { display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--border2); color:var(--muted); background:var(--panel3); margin-right:6px; }
+.chip.acc { color:var(--accent2); border-color:var(--accent-border); background:var(--accent-dim); }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px; min-width:0; }
+.verdict { border-color:var(--accent-border); background:linear-gradient(180deg,var(--accent-dim),var(--panel)); margin:18px 0 0; }
+.verdict strong { color:var(--accent2); }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; min-width:0; }
+.grid2 > * { min-width:0; }
+ul { margin:6px 0; padding-left:20px; color:var(--text2); }
+li { margin:4px 0; }
+li::marker { color:var(--dim); }
+.tag { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:2px 7px; border-radius:4px; }
+.tag.good { color:var(--good); background:var(--good-dim); border:1px solid var(--good-border); }
+.tag.warn { color:var(--warn); background:var(--warn-dim); border:1px solid var(--warn-border); }
+.tag.bad  { color:var(--bad);  background:var(--bad-dim);  border:1px solid var(--bad-border); }
+.tag.acc  { color:var(--accent2); background:var(--accent-dim); border:1px solid var(--accent-border); }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+.tablewrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--panel); }
+th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--border2); white-space:nowrap; }
+td { padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text2); }
+tr:last-child td { border-bottom:none; }
+td.num, th.num { text-align:center; font-family:var(--mono); }
+td.win { color:var(--good); font-weight:700; }
+tr.total td { background:var(--best-row); color:var(--text); font-weight:600; border-top:2px solid var(--border2); }
+.micro { font-size:11.5px; color:var(--muted); }
+.stepnum { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:999px; background:var(--accent-dim); border:1px solid var(--accent-border); color:var(--accent2); font-family:var(--mono); font-size:11px; flex:none; }
+.step { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); min-width:0; }
+.step:last-child { border-bottom:none; }
+.step > div { min-width:0; }
+figure { margin:14px 0; }
+figcaption { font-size:11.5px; color:var(--muted); margin-top:6px; }
+svg text { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+/* ── composer mock, matching the app's own composer chrome ── */
+.mock { background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:12px; min-width:0; }
+.mock textarea, .mock .fake-ta { width:100%; background:var(--panel); color:var(--text); border:1px solid var(--border2); border-radius:8px; padding:9px 11px; font:13px/1.5 inherit; resize:none; min-height:40px; }
+.mock .crow { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.mock .pill { font-size:11.5px; color:var(--muted); border:1px solid var(--border2); background:var(--panel); border-radius:999px; padding:3px 10px; }
+.mock .spacer { flex:1; }
+.mock .btn { font-size:12.5px; border-radius:7px; padding:5px 14px; border:1px solid var(--accent-border); background:var(--accent); color:var(--on-accent); font-weight:600; }
+.micbtn { width:36px; height:36px; border-radius:999px; border:1px solid var(--good-border); background:var(--good-dim); display:inline-flex; align-items:center; justify-content:center; color:var(--good); font-size:17px; flex:none; animation:glowpulse 2s ease-in-out infinite; }
+@keyframes glowpulse {
+  0%,100% { box-shadow:0 0 0 3px var(--good-dim); border-color:var(--good-border); background:var(--good-dim); }
+  50%     { box-shadow:0 0 0 8px transparent; border-color:var(--good); background:color-mix(in srgb, var(--good) 28%, var(--good-dim)); }
+}
+.micbtn.rec { border-color:var(--bad-border); background:var(--bad-dim); color:var(--bad); animation:pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 3px var(--bad-dim);} 50%{box-shadow:0 0 0 9px transparent;} }
+.ghost { color:var(--dim); font-style:italic; }
+blink { display:inline-block; width:2px; height:14px; background:var(--accent2); vertical-align:-2px; animation:blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity:0; } }
+
+/* ── decision form ── */
+.decision { border-color:var(--accent-border); }
+.decision label { display:flex; gap:10px; align-items:flex-start; padding:9px 10px; border:1px solid var(--border); border-radius:8px; margin:8px 0; cursor:pointer; background:var(--panel3); }
+.decision label:hover { background:var(--hover); }
+.decision input { margin-top:3px; accent-color:var(--accent); }
+.decision button { font-size:12.5px; border-radius:7px; padding:6px 16px; border:1px solid var(--accent-border); background:var(--accent); color:var(--on-accent); font-weight:600; cursor:pointer; }
+.decision textarea { width:100%; background:var(--panel); color:var(--text); border:1px solid var(--border2); border-radius:8px; padding:8px 10px; font:12.5px/1.5 inherit; }
+.srcs { font-size:11.5px; color:var(--dim); overflow-wrap:anywhere; }
+.srcs a { color:var(--accent2); text-decoration:none; }
+</style>
+</head>
+<body>
+<main>
+
+<header id="hero">
+  <div style="margin-bottom:10px">
+    <span class="chip acc">branch: voice-text</span>
+    <span class="chip">transcript-rag-agent</span>
+    <span class="chip">plan · not yet implemented</span>
+  </div>
+  <h1>Voice-to-text in the chat composer</h1>
+  <p>Press a mic button, talk, and watch the question appear as live text in the question box — then edit and send as usual. This plan compares <strong>Deepgram</strong> (key already in hand) against <strong>self-hosting STT inside this app</strong>, scores both on a production-grade rubric, and lays out the implementation.</p>
+
+  <div class="card verdict" id="recommendation">
+    <h3>Recommendation — Deepgram Nova-3 streaming, relayed through a FastAPI WebSocket</h3>
+    <p><strong>Use Deepgram's live WebSocket API</strong> (<code>wss://api.deepgram.com/v1/listen</code>) with <code>interim_results=true</code>, proxied through a new <code>/ws/stt</code> endpoint so the API key never reaches the browser. It scores <strong>4.6 / 5</strong> on the rubric vs <strong>2.6 / 5</strong> for self-hosting: sub-300&nbsp;ms word-by-word streaming with zero model ops, for ~$0.46/hour of audio — and your <strong>$200 free credit covers ≈430 hours</strong>, effectively free at portfolio scale. Self-hosting inside <em>this</em> app is ruled out mainly by physics: the demo runs on App Runner at <strong>0.5 vCPU / 1&nbsp;GB</strong>, and Whisper-family streaming needs VAD + sliding-window re-decoding that competes with the CPU-pinned embedding stack locally.</p>
+  </div>
+</header>
+
+<section id="current-state">
+  <h2>Current state (verified in the repo)</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Frontend</h3>
+      <ul>
+        <li><code>frontend/src/chat/Composer.tsx</code> — the question box is a controlled <code>&lt;textarea&gt;</code> bound to a <code>question</code> state (line 139). A mic button only needs to call <code>setQuestion</code>; nothing else changes.</li>
+        <li>Streaming today is <strong>SSE over POST fetch</strong> (<code>frontend/src/api/sse.ts</code>) — <strong>no WebSocket use anywhere yet</strong>.</li>
+        <li>The frontend already reads <code>/api/health</code> flags to show/hide chrome (demo mode) — the same pattern gates the mic button.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Backend &amp; deploy</h3>
+      <ul>
+        <li>FastAPI + uvicorn 0.46; <code>websockets</code> 16.0 is already in the venv (transitive), so uvicorn can serve WS today. Make it an explicit dep.</li>
+        <li>Demo gate is an <code>@app.middleware("http")</code> (<code>src/api/main.py:577</code>) — <strong>HTTP middleware does not run for WebSockets</strong>, so <code>/ws/stt</code> must check <code>demo_mode</code> itself.</li>
+        <li>Config pattern: <code>YT_AGENT_*</code> env vars via <code>src/config.py</code>, secrets from <code>~/.env</code>. <code>DEEPGRAM_API_KEY</code> slots straight in.</li>
+        <li>Demo deploy: App Runner, <strong>0.5 vCPU / 1 GB</strong> — the hard ceiling for any in-app model.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="ux">
+  <h2>What the user sees</h2>
+  <p>Mic button sits in the composer row next to Send. While listening, finalized words are committed into the textarea and the current in-flight phrase shows as trailing ghost text that firms up as Deepgram finalizes it.</p>
+  <div class="grid2">
+    <div class="mock" id="mock-idle">
+      <div class="fake-ta"><span class="ghost">Ask the indexed transcripts anything…</span></div>
+      <div class="crow">
+        <span class="pill">Channel: All channels</span>
+        <span class="pill">Agent: RAG v3</span>
+        <span class="spacer"></span>
+        <span class="micbtn" title="Start voice input" aria-label="Start voice input"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>
+        <span class="btn" style="opacity:.5">Send</span>
+      </div>
+      <p class="micro" style="margin:8px 0 0">Idle — mic shown only when <code>/api/health</code> reports <code>stt: true</code> (hidden in demo mode).</p>
+    </div>
+    <div class="mock" id="mock-recording">
+      <div class="fake-ta">what does the channel say about batch size tuning <span class="ghost">for fine-tun…</span><blink></blink></div>
+      <div class="crow">
+        <span class="pill">Channel: All channels</span>
+        <span class="pill">Agent: RAG v3</span>
+        <span class="spacer"></span>
+        <span class="micbtn rec" title="Stop voice input" aria-label="Stop voice input">■</span>
+        <span class="btn">Send</span>
+      </div>
+      <p class="micro" style="margin:8px 0 0">Listening — solid text is final (<code>is_final</code>), italic tail is the live interim, replaced on every message (~word-by-word).</p>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2>Recommended architecture — where voice fits in the whole app</h2>
+  <p class="micro">The full system as it runs today, with the two new pieces highlighted in green: the mic in the composer and the <code>/ws/stt</code> relay out to Deepgram. Everything else is untouched — the voice path only ever produces text that lands in the same question box the keyboard fills.</p>
+  <figure id="fig-overview">
+  <svg viewBox="0 0 940 420" width="100%" role="img" aria-label="Full system architecture with the new voice path highlighted: browser, FastAPI server, local stores, and external services">
+    <title>Voice path in the context of the full transcript-rag-agent architecture</title>
+    <defs>
+      <marker id="arr2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/>
+      </marker>
+      <marker id="arrB2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#2f81f7"/>
+      </marker>
+      <marker id="arrG2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#3fb950"/>
+      </marker>
+    </defs>
+    <!-- lanes -->
+    <rect x="8" y="44" width="232" height="364" rx="10" fill="none" stroke="#252b35"/>
+    <text x="20" y="34" fill="#8b949e" font-size="11" letter-spacing="1">BROWSER (React · Vite)</text>
+    <rect x="252" y="44" width="324" height="364" rx="10" fill="none" stroke="#252b35"/>
+    <text x="264" y="34" fill="#8b949e" font-size="11" letter-spacing="1">FASTAPI SERVER</text>
+    <rect x="588" y="44" width="176" height="364" rx="10" fill="none" stroke="#252b35"/>
+    <text x="600" y="34" fill="#8b949e" font-size="11" letter-spacing="1">LOCAL STORES</text>
+    <rect x="776" y="44" width="156" height="364" rx="10" fill="none" stroke="#252b35"/>
+    <text x="788" y="34" fill="#8b949e" font-size="11" letter-spacing="1">EXTERNAL</text>
+
+    <!-- new: stt relay -->
+    <g id="ov-stt"><title>NEW: WebSocket relay to Deepgram; key server-side, demo-mode check in the endpoint</title>
+      <rect x="268" y="64" width="292" height="48" rx="8" fill="#173a2b" stroke="#1f5937"/>
+      <text x="284" y="84" fill="#3fb950" font-size="12">/ws/stt relay</text>
+      <text x="284" y="100" fill="#8b949e" font-size="10">audio up · interim/final text down</text>
+      <rect x="512" y="72" width="36" height="16" rx="8" fill="#0e1116" stroke="#1f5937"/>
+      <text x="530" y="84" fill="#3fb950" font-size="9" text-anchor="middle" font-weight="700">NEW</text>
+    </g>
+
+    <!-- browser -->
+    <g id="ov-chat"><title>The React chat UI: composer with the new mic button, and the SSE answer view</title>
+      <rect x="24" y="140" width="200" height="88" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="40" y="162" fill="#e6edf3" font-size="12">Chat UI</text>
+      <text x="40" y="181" fill="#3fb950" font-size="11">Composer · 🎙 mic</text>
+      <rect x="152" y="170" width="36" height="16" rx="8" fill="#0e1116" stroke="#1f5937"/>
+      <text x="170" y="182" fill="#3fb950" font-size="9" text-anchor="middle" font-weight="700">NEW</text>
+      <text x="40" y="200" fill="#8b949e" font-size="10">SSE answer + trace view</text>
+    </g>
+
+    <!-- ask pipeline -->
+    <g id="ov-ask"><title>The existing RAG pipeline behind POST /api/ask, streamed back as SSE</title>
+      <rect x="268" y="150" width="292" height="92" rx="8" fill="#132339" stroke="#1f4a7a"/>
+      <text x="284" y="172" fill="#79b8ff" font-size="12">/api/ask (SSE over POST)</text>
+      <text x="284" y="191" fill="#c9d1d9" font-size="10.5">retrieve → RRF fuse → cross-encoder rerank</text>
+      <text x="284" y="208" fill="#c9d1d9" font-size="10.5">context → prompt → streamed answer</text>
+      <text x="284" y="228" fill="#8b949e" font-size="10">+ RAGAS judge (optional, same LLM)</text>
+    </g>
+
+    <!-- ingestion -->
+    <g id="ov-ingest"><title>Ingestion queue: fetch transcripts, chunk, embed on CPU, index into Chroma</title>
+      <rect x="268" y="280" width="292" height="56" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="284" y="302" fill="#e6edf3" font-size="12">ingestion queue workers</text>
+      <text x="284" y="320" fill="#8b949e" font-size="10">fetch → chunk → embed (CPU-pinned) → index</text>
+    </g>
+
+    <!-- graph routes -->
+    <g id="ov-graphroutes"><title>Graph, themes, conflicts, and eval routes</title>
+      <rect x="268" y="356" width="292" height="36" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="284" y="378" fill="#8b949e" font-size="11">graph · themes · scoreboard · eval routes</text>
+    </g>
+
+    <!-- stores -->
+    <g id="ov-chroma"><title>Chroma vector store with local sentence-transformers embeddings</title>
+      <rect x="600" y="150" width="152" height="40" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="616" y="168" fill="#e6edf3" font-size="11.5">Chroma</text>
+      <text x="616" y="182" fill="#8b949e" font-size="9.5">MiniLM dense vectors</text>
+    </g>
+    <g id="ov-bm25"><title>In-process BM25 lexical index</title>
+      <rect x="600" y="200" width="152" height="34" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="616" y="221" fill="#e6edf3" font-size="11.5">BM25 index</text>
+    </g>
+    <g id="ov-neo4j"><title>Neo4j knowledge graph (snapshot JSON in demo mode)</title>
+      <rect x="600" y="352" width="152" height="40" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="616" y="370" fill="#e6edf3" font-size="11.5">Neo4j graph</text>
+      <text x="616" y="384" fill="#8b949e" font-size="9.5">snapshot in demo</text>
+    </g>
+
+    <!-- external -->
+    <g id="ov-deepgram"><title>NEW: Deepgram Nova-3 live streaming STT</title>
+      <rect x="788" y="64" width="132" height="48" rx="8" fill="#173a2b" stroke="#1f5937"/>
+      <text x="804" y="84" fill="#3fb950" font-size="12">Deepgram</text>
+      <text x="804" y="100" fill="#8b949e" font-size="10">nova-3 live STT</text>
+    </g>
+    <g id="ov-llm"><title>DeepSeek chat model answers and judges</title>
+      <rect x="788" y="170" width="132" height="48" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="804" y="190" fill="#e6edf3" font-size="12">DeepSeek LLM</text>
+      <text x="804" y="206" fill="#8b949e" font-size="10">answer + judge</text>
+    </g>
+    <g id="ov-supadata"><title>Supadata supplies YouTube transcripts and descriptions</title>
+      <rect x="788" y="284" width="132" height="48" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="804" y="304" fill="#e6edf3" font-size="12">Supadata</text>
+      <text x="804" y="320" fill="#8b949e" font-size="10">YouTube transcripts</text>
+    </g>
+
+    <!-- new voice edges (green) -->
+    <path id="ov-e-audio-up" d="M224 152 C 248 146, 246 108, 268 98" stroke="#3fb950" fill="none" marker-end="url(#arrG2)"><title>mic audio over WebSocket</title></path>
+    <path id="ov-e-dg-up" d="M560 80 L 788 80" stroke="#3fb950" fill="none" marker-end="url(#arrG2)"><title>audio forwarded to Deepgram</title></path>
+    <path id="ov-e-dg-down" d="M788 100 L 560 100" stroke="#3fb950" fill="none" stroke-dasharray="4 3" marker-end="url(#arrG2)"><title>interim and final transcripts back</title></path>
+    <path id="ov-e-text-down" d="M268 106 C 246 116, 248 150, 226 160" stroke="#3fb950" fill="none" stroke-dasharray="4 3" marker-end="url(#arrG2)"><title>text lands in the question textarea</title></path>
+    <text x="666" y="72" fill="#3fb950" font-size="9.5" text-anchor="middle">audio ▸</text>
+    <text x="666" y="114" fill="#3fb950" font-size="9.5" text-anchor="middle">◂ text (word-by-word)</text>
+
+    <!-- existing ask edges -->
+    <path id="ov-e-ask" d="M224 176 L 268 176" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>question submitted</title></path>
+    <path id="ov-e-sse" d="M268 198 L 224 198" stroke="#2f81f7" fill="none" marker-end="url(#arrB2)"><title>SSE answer stream</title></path>
+    <path id="ov-e-chroma" d="M560 168 L 600 168" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>dense retrieval</title></path>
+    <path id="ov-e-bm25" d="M560 217 L 600 217" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>lexical retrieval</title></path>
+    <path id="ov-e-llm" d="M560 234 C 660 262, 742 224, 788 202" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>prompt to the answer model</title></path>
+    <path id="ov-e-supadata" d="M560 308 L 788 308" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>transcript fetch</title></path>
+    <path id="ov-e-index" d="M560 288 C 588 280, 584 212, 606 192" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>chunks indexed into Chroma</title></path>
+    <path id="ov-e-neo4j" d="M560 374 L 600 372" stroke="#8b949e" fill="none" marker-end="url(#arr2)"><title>graph queries</title></path>
+  </svg>
+  <figcaption>The app today plus the voice path (green, dashed = text coming back). Voice is additive: it feeds the same composer state that <code>/api/ask</code> already consumes, touches none of the retrieval or answer pipeline, and in demo mode simply isn't offered.</figcaption>
+  </figure>
+
+  <h3 style="margin-top:24px">Zoom in — the new voice path in detail</h3>
+  <figure>
+  <svg viewBox="0 0 940 300" width="100%" role="img" aria-label="Audio flows from the mic through a FastAPI relay to Deepgram; transcript JSON flows back into the composer textarea">
+    <title>Streaming voice-to-text data flow</title>
+    <defs>
+      <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#8b949e"/>
+      </marker>
+      <marker id="arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#2f81f7"/>
+      </marker>
+    </defs>
+    <!-- lanes -->
+    <rect x="8" y="8" width="330" height="284" rx="10" fill="none" stroke="#252b35"/>
+    <text x="24" y="32" fill="#8b949e" font-size="11" letter-spacing="1">BROWSER</text>
+    <rect x="356" y="8" width="270" height="284" rx="10" fill="none" stroke="#252b35"/>
+    <text x="372" y="32" fill="#8b949e" font-size="11" letter-spacing="1">FASTAPI (src/api/stt.py)</text>
+    <rect x="644" y="8" width="288" height="284" rx="10" fill="none" stroke="#252b35"/>
+    <text x="660" y="32" fill="#8b949e" font-size="11" letter-spacing="1">DEEPGRAM CLOUD</text>
+
+    <!-- browser nodes -->
+    <g id="n-mic"><title>Mic button in Composer.tsx starts getUserMedia</title>
+      <rect x="24" y="48" width="140" height="44" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="94" y="67" fill="#e6edf3" font-size="12" text-anchor="middle">🎙 mic button</text>
+      <text x="94" y="83" fill="#8b949e" font-size="10" text-anchor="middle">Composer.tsx</text>
+    </g>
+    <g id="n-rec"><title>MediaRecorder emits Opus/WebM chunks every 250 ms</title>
+      <rect x="24" y="120" width="140" height="44" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="94" y="139" fill="#e6edf3" font-size="12" text-anchor="middle">MediaRecorder</text>
+      <text x="94" y="155" fill="#8b949e" font-size="10" text-anchor="middle">opus · 250 ms slices</text>
+    </g>
+    <g id="n-hook"><title>useSpeechToText hook owns the WebSocket and transcript state</title>
+      <rect x="182" y="84" width="140" height="44" rx="8" fill="#132339" stroke="#1f4a7a"/>
+      <text x="252" y="103" fill="#79b8ff" font-size="12" text-anchor="middle">useSpeechToText</text>
+      <text x="252" y="119" fill="#8b949e" font-size="10" text-anchor="middle">WS client + state</text>
+    </g>
+    <g id="n-ta"><title>Finalized and interim text land in the question textarea via setQuestion</title>
+      <rect x="182" y="216" width="140" height="44" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="252" y="235" fill="#e6edf3" font-size="12" text-anchor="middle">question textarea</text>
+      <text x="252" y="251" fill="#8b949e" font-size="10" text-anchor="middle">setQuestion(...)</text>
+    </g>
+
+    <!-- server node -->
+    <g id="n-relay"><title>WebSocket relay: checks demo mode, holds the API key, forwards audio up and JSON down</title>
+      <rect x="392" y="96" width="200" height="72" rx="8" fill="#132339" stroke="#1f4a7a"/>
+      <text x="492" y="120" fill="#79b8ff" font-size="12" text-anchor="middle">/ws/stt relay</text>
+      <text x="492" y="137" fill="#8b949e" font-size="10" text-anchor="middle">key stays server-side</text>
+      <text x="492" y="152" fill="#8b949e" font-size="10" text-anchor="middle">demo-mode check · session cap</text>
+    </g>
+
+    <!-- deepgram node -->
+    <g id="n-dg"><title>Deepgram live listen endpoint with interim results and endpointing</title>
+      <rect x="672" y="96" width="232" height="72" rx="8" fill="#1c2330" stroke="#2b3442"/>
+      <text x="788" y="120" fill="#e6edf3" font-size="12" text-anchor="middle">wss://api.deepgram.com</text>
+      <text x="788" y="137" fill="#8b949e" font-size="10" text-anchor="middle">/v1/listen · nova-3</text>
+      <text x="788" y="152" fill="#8b949e" font-size="10" text-anchor="middle">interim_results · endpointing</text>
+    </g>
+
+    <!-- edges -->
+    <path id="e-mic-rec" d="M94 92 L94 120" stroke="#8b949e" fill="none" marker-end="url(#arr)"><title>press starts capture</title></path>
+    <path id="e-rec-hook" d="M164 142 C190 142 200 128 208 122" stroke="#8b949e" fill="none" marker-end="url(#arr)"><title>audio chunks</title></path>
+    <path id="e-hook-relay" d="M322 100 C350 96 360 112 392 118" stroke="#8b949e" fill="none" marker-end="url(#arr)"><title>binary audio frames over WebSocket</title></path>
+    <path id="e-relay-dg" d="M592 118 L672 118" stroke="#8b949e" fill="none" marker-end="url(#arr)"><title>audio forwarded verbatim</title></path>
+    <path id="e-dg-relay" d="M672 148 L592 148" stroke="#2f81f7" fill="none" marker-end="url(#arrB)"><title>transcript JSON, ~word-by-word</title></path>
+    <path id="e-relay-hook" d="M392 152 C360 158 350 128 322 122" stroke="#2f81f7" fill="none" marker-end="url(#arrB)"><title>interim and final text</title></path>
+    <path id="e-hook-ta" d="M252 128 L252 216" stroke="#2f81f7" fill="none" marker-end="url(#arrB)"><title>setQuestion on every message</title></path>
+
+    <text x="627" y="108" fill="#8b949e" font-size="10" text-anchor="middle">audio ▸</text>
+    <text x="627" y="166" fill="#79b8ff" font-size="10" text-anchor="middle">◂ text</text>
+    <text x="268" y="180" fill="#79b8ff" font-size="10">interim + final</text>
+  </svg>
+  <figcaption>One WebSocket per utterance. Grey edges carry audio away from the mic; blue edges carry transcript text back into the composer. The relay adds ~10–50&nbsp;ms — negligible against Deepgram's ~200–300&nbsp;ms interim latency.</figcaption>
+  </figure>
+</section>
+
+<section id="options">
+  <h2>The options</h2>
+  <div class="grid2">
+    <div class="card" id="opt-deepgram" style="border-color:var(--accent-border)">
+      <h3>A · Deepgram Nova-3 streaming <span class="tag acc">recommended</span></h3>
+      <p class="micro">Managed live WebSocket API. You already hold the key.</p>
+      <ul>
+        <li><strong>True streaming:</strong> interim results word-by-word, typically &lt;300 ms; <code>is_final</code> + <code>speech_final</code> mark commit points; smart formatting and punctuation built in.</li>
+        <li><strong>Cost:</strong> $0.0077/min streaming (~$0.46/hr); $200 sign-up credit ≈ 430 hrs. A 15-second question costs ~$0.002.</li>
+        <li><strong>Ops:</strong> zero — no model in the container, works on the 1 GB demo instance (mic hidden there anyway).</li>
+        <li><strong>Costs you accept:</strong> audio leaves the machine; vendor dependency; needs network.</li>
+      </ul>
+      <p class="micro"><strong>Wiring A1 (recommended):</strong> FastAPI WS relay — key server-side, demo gating consistent, ~200 LOC. <strong>A2 (later, optional):</strong> Deepgram short-lived token grant (~30 s TTL) lets the browser connect direct, removing relay hop and server bandwidth. The two are compared in depth in the next section.</p>
+    </div>
+    <div class="card" id="opt-selfhost">
+      <h3>B · Self-hosted STT inside this app <span class="tag warn">not now</span></h3>
+      <p class="micro">Run the model in-process or as a sidecar.</p>
+      <ul>
+        <li><strong>Whisper doesn't stream natively.</strong> Real-time means VAD + sliding-window re-decode (LocalAgreement) — 1–2 s text lag, silence-hallucination risk, and it's yours to maintain. <code>faster-whisper</code> (CTranslate2, int8) is the strongest CPU option but small/base is what fits real-time on CPU — a real accuracy step down.</li>
+        <li><strong>Vosk</strong> streams partials natively and is light, but accuracy is clearly below Whisper/Deepgram — wrong trade for a portfolio piece.</li>
+        <li><strong>Parakeet TDT v3</strong> beats whisper-large-v3 on WER (6.3% vs 7.4%) and is extremely fast — but NeMo/ONNX integration + a DIY browser-mic streaming pipeline; realistically a GPU sidecar service, i.e. no longer "inside this app".</li>
+        <li><strong>Hard blocker:</strong> App Runner demo = 0.5 vCPU / 1 GB; locally the embedding stack is already pinned to CPU (the MPS wedge) — an STT model competes for the same cores.</li>
+        <li><strong>What it buys:</strong> audio never leaves the box, $0 marginal, offline, no lock-in.</li>
+      </ul>
+      <p class="micro"><strong>When to revisit:</strong> if privacy/offline becomes a requirement — then as a separate sidecar behind the same <code>/ws/stt</code> contract, so the frontend never changes.</p>
+    </div>
+  </div>
+  <div class="card" id="opt-webspeech" style="margin-top:14px">
+    <h3>C · Browser Web Speech API <span class="tag">baseline, not production</span></h3>
+    <p class="micro">Free, zero-backend, streams interims — worth knowing why it's rejected: Chrome routes audio to Google's recognizer (no control, no SLA), Firefox doesn't support it, Safari support is inconsistent, and you can't pick a model. Fine as a hack-day fallback; it would undercut the production-grade story this feature is meant to tell.</p>
+  </div>
+</section>
+
+<section id="a1-vs-a2">
+  <h2>Deepgram wiring in depth — A1 relay vs A2 direct, and the long-term answer</h2>
+  <div class="grid2">
+    <div class="card" id="a1-detail" style="border-color:var(--accent-border)">
+      <h3>A1 · Server WebSocket relay <span class="tag acc">best long-term for this app</span></h3>
+      <p class="micro">Browser → <code>/ws/stt</code> → Deepgram. One extra hop, everything under your roof.</p>
+      <ul>
+        <li><strong>How it works:</strong> the browser opens one WS to your own origin; the endpoint opens a second WS to Deepgram with the key from config, then pumps audio up and transcript JSON down between them.</li>
+        <li><strong>The strategic property — vendor abstraction:</strong> the frontend codes against <em>your</em> contract (<code>{text, is_final, speech_final}</code>), not Deepgram's protocol. Swapping Nova-3 for another provider, or a self-hosted sidecar in a privacy-first future, is a backend-only change. A2 bakes Deepgram's wire protocol into the React app.</li>
+        <li><strong>Control lives in one place:</strong> session caps, per-IP rate limits, usage logging, and the demo-mode check all sit in the endpoint — enforceable, testable, and visible in your own logs rather than only in Deepgram's console.</li>
+        <li><strong>Testing:</strong> the whole path is testable offline — Starlette's WS test client against a fake Deepgram socket. A2's browser→Deepgram leg can only be integration-tested against the real service.</li>
+        <li><strong>What it costs:</strong> every audio byte transits your server (~4 KB/s per speaker on Opus — trivial at this scale) and each active mic holds two WS connections open. Adds ~10–50 ms on top of Deepgram's ~200–300 ms. Real pressure only arrives at hundreds of <em>concurrent</em> speakers.</li>
+      </ul>
+    </div>
+    <div class="card" id="a2-detail">
+      <h3>A2 · Ephemeral token, browser → Deepgram direct <span class="tag">scale/latency optimization</span></h3>
+      <p class="micro">Browser asks <code>POST /api/stt/token</code> for a ~30 s scoped JWT, then opens the WS straight to Deepgram.</p>
+      <ul>
+        <li><strong>How it works:</strong> the server exchanges the master key for a short-lived, scoped token per session; the master key still never reaches the browser. The token TTL only gates connection <em>establishment</em> — the stream continues past expiry.</li>
+        <li><strong>What it buys:</strong> the lowest possible latency (no relay hop) and zero streaming load on your server — Deepgram absorbs all concurrency. Your infra does one cheap POST per utterance session. This is the shape voice-agent products use at scale.</li>
+        <li><strong>What it costs:</strong> two moving auth parts (token mint + refresh edge cases); the browser now talks to a third-party origin — CSP <code>connect-src</code> changes, and strict corporate networks sometimes block it; per-session caps and usage attribution move to Deepgram's console/webhooks instead of your own logs; and the frontend becomes Deepgram-protocol-aware, so a future provider swap touches UI code.</li>
+        <li><strong>Migration cost from A1 is small:</strong> keep the same message shape, add the token endpoint, point the hook at Deepgram — the A1 relay can even stay as a fallback. Nothing about starting with A1 forecloses A2.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card verdict" id="longterm-verdict" style="margin-top:14px">
+    <h3>Long-term verdict</h3>
+    <p><strong>A1 is not just the easy first step — it is the better long-term architecture for this product.</strong> Its decisive property is that the vendor stays behind your own <code>/ws/stt</code> contract: cost controls, observability, and demo gating live in your codebase, the whole path runs in CI, and Deepgram is swappable (managed → cheaper provider → self-hosted sidecar) without touching the frontend. Its only real weaknesses — one extra network hop and relay bandwidth — are measured in tens of milliseconds and kilobytes per second, which this app will not feel until hundreds of people are speaking <em>simultaneously</em>. A2 is the right move <em>when and if</em> that scale or a hard latency budget arrives, and A1's message contract is deliberately designed so that migration is additive, not a rewrite. Build A1; keep A2 in the drawer.</p>
+  </div>
+</section>
+
+<section id="rubric">
+  <h2>Rubric — production-grade, streaming-first</h2>
+  <p class="micro">1–5 per criterion, weighted. Weights front-load the two things the request named: production readiness and live streaming of text. Self-hosted is scored as its best realistic variant for this app (faster-whisper small/int8 on CPU with VAD windowing).</p>
+  <div class="tablewrap">
+  <table>
+    <thead>
+      <tr><th>Criterion</th><th class="num">Weight</th><th class="num">Deepgram</th><th class="num">Self-hosted</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr id="r-latency"><td>Streaming interims / perceived latency</td><td class="num">25%</td><td class="num win">5</td><td class="num">2</td><td>&lt;300 ms word-by-word vs 1–2 s window-based pseudo-streaming (Vosk is quicker but pays for it in accuracy).</td></tr>
+      <tr id="r-accuracy"><td>Transcription accuracy</td><td class="num">20%</td><td class="num win">5</td><td class="num">3</td><td>Nova-3 vs the small Whisper variants that actually fit CPU real-time. Parakeet closes the gap only with a GPU sidecar.</td></tr>
+      <tr id="r-prod"><td>Production readiness &amp; ops burden</td><td class="num">20%</td><td class="num win">5</td><td class="num">2</td><td>Managed SLA vs owning VAD, memory, concurrency, model updates — and it can't ship in the 1 GB demo image.</td></tr>
+      <tr id="r-effort"><td>Integration effort</td><td class="num">15%</td><td class="num win">4</td><td class="num">2</td><td>~200-line WS relay + a React hook vs audio decode, VAD, windowing, model lifecycle.</td></tr>
+      <tr id="r-cost"><td>Cost at this project's scale</td><td class="num">10%</td><td class="num win">4</td><td class="num">3</td><td>~$0.46/hr with ≈430 free hours vs $0 marginal but real engineering time.</td></tr>
+      <tr id="r-privacy"><td>Privacy / data control</td><td class="num">10%</td><td class="num">3</td><td class="num win">5</td><td>Audio goes to Deepgram's cloud vs never leaving the machine. The only row self-hosting wins.</td></tr>
+      <tr class="total" id="r-total"><td>Weighted total</td><td class="num"></td><td class="num">4.55</td><td class="num">2.60</td><td>Deepgram wins every weighted row except privacy.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="plan">
+  <h2>Implementation plan (Deepgram · A1 relay)</h2>
+  <div class="card">
+    <div class="step" id="step-1"><span class="stepnum">1</span><div>
+      <strong>Config</strong> — <code>src/config.py</code>: read <code>DEEPGRAM_API_KEY</code> from <code>~/.env</code>; add <code>YT_AGENT_STT_ENABLED</code> (default on when a key exists) and <code>YT_AGENT_STT_MODEL</code> (default <code>nova-3</code>). Follows the existing <code>YT_AGENT_*</code> pattern exactly.
+    </div></div>
+    <div class="step" id="step-2"><span class="stepnum">2</span><div>
+      <strong>Backend relay</strong> — new <code>src/api/stt.py</code> with <code>@app.websocket("/ws/stt")</code>: reject when <code>demo_mode</code> or no key (<em>the HTTP demo-gate middleware does not cover WebSockets — this check must live in the endpoint</em>); open Deepgram WS with <code>interim_results=true&amp;smart_format=true&amp;endpointing=300</code>; two async tasks relay audio bytes up and <code>{text, is_final, speech_final}</code> JSON down; send Deepgram <code>KeepAlive</code> during pauses (it closes after ~10 s of silence otherwise); hard session cap (~120 s) and idle close for cost control. Promote <code>websockets</code> to an explicit dependency.
+    </div></div>
+    <div class="step" id="step-3"><span class="stepnum">3</span><div>
+      <strong>Health flag</strong> — add <code>"stt": true|false</code> to <code>/api/health</code>; the frontend renders the mic only when set (same pattern as the demo chrome), so demo mode and keyless dev degrade to today's UI.
+    </div></div>
+    <div class="step" id="step-4"><span class="stepnum">4</span><div>
+      <strong>Frontend hook</strong> — new <code>frontend/src/chat/useSpeechToText.ts</code>: <code>getUserMedia</code> → <code>MediaRecorder</code> (<code>audio/webm;codecs=opus</code>, 250 ms timeslice) → WS to <code>/ws/stt</code>; exposes <code>{state, start, stop, committed, interim, error}</code>; assembles finals and replaces the interim tail on each message.
+    </div></div>
+    <div class="step" id="step-5"><span class="stepnum">5</span><div>
+      <strong>Composer wiring</strong> — mic button beside Send in <code>Composer.tsx</code>; while recording, the textarea shows <code>committed + interim</code> (mic-owned, edits resume after stop); stop on button, on <code>speech_final</code> quiet, or on unmount; disabled while <code>busy</code>.
+    </div></div>
+    <div class="step" id="step-6"><span class="stepnum">6</span><div>
+      <strong>Tests</strong> — vitest: hook tests with mocked <code>MediaRecorder</code>/<code>WebSocket</code> (interim replacement, final commit, error path); pytest: relay test via Starlette's WS test client with a monkeypatched fake Deepgram socket; demo-mode rejection test.
+    </div></div>
+    <div class="step" id="step-7"><span class="stepnum">7</span><div>
+      <strong>Docs</strong> — readme: env vars, run instructions, and the demo-mode behavior note.
+    </div></div>
+  </div>
+</section>
+
+<section id="risks">
+  <h2>Risks &amp; open questions</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Risks</h3>
+      <ul>
+        <li id="risk-safari"><span class="tag warn">Safari</span> Safari's <code>MediaRecorder</code> produces <code>audio/mp4</code> (AAC), not WebM/Opus. Phase 2: an <code>AudioWorklet</code> → PCM <code>linear16</code> path (<code>encoding=linear16&amp;sample_rate=16000</code>) makes capture browser-independent. Phase 1 is Chrome/Edge/Firefox.</li>
+        <li id="risk-silence"><span class="tag warn">Idle cost</span> An open mic left running bills by the minute. Mitigations in the plan: endpointing auto-stop, 120 s hard cap, close on unmount/blur.</li>
+        <li id="risk-ws-infra"><span class="tag warn">First WS</span> This adds the app's first WebSocket route — anything fronting uvicorn later (ALB, nginx) must pass upgrade headers. App Runner is unaffected (demo has no mic).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Open questions</h3>
+      <ul>
+        <li id="q-browser-scope">Chrome-first ship (MediaRecorder only), or build the AudioWorklet/PCM path from day one for universal browser support?</li>
+        <li id="q-language">English-only (<code>$0.0077</code>/min) or multilingual (<code>$0.0092</code>/min, <code>language=multi</code>)? Corpus is English-language YouTube — English-only seems right.</li>
+        <li id="q-token">Any interest in the A2 ephemeral-token path now, or file it as a latency optimization once the relay works?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decide">
+  <h2>Your call</h2>
+  <div class="card decision">
+    <form data-lavish-question="stt-path" onsubmit="event.preventDefault(); const f=new FormData(event.currentTarget); const path=f.get('path'); const scope=f.get('scope'); const notes=(f.get('notes')||'').toString().trim(); if(!path) return; let msg='Voice-to-text decision: '+path+'. Browser scope: '+(scope||'unspecified')+'.'; if(notes) msg+=' Notes: '+notes; window.lavish.queuePrompt(msg,{tag:'decision',text:path,element:event.currentTarget,data:{path:path,scope:scope,notes:notes}});">
+      <h3 style="margin-top:0">1 · Which path should be implemented?</h3>
+      <label><input type="radio" name="path" value="Implement Deepgram via FastAPI WS relay (A1, recommended)"> <span><strong>Deepgram via FastAPI WS relay (A1)</strong> <span class="tag acc">recommended</span><br><span class="micro">Key server-side, demo-gate consistent, ~200 LOC. Ships this branch.</span></span></label>
+      <label><input type="radio" name="path" value="Implement Deepgram direct-from-browser with ephemeral tokens (A2)"> <span><strong>Deepgram direct with ephemeral tokens (A2)</strong><br><span class="micro">Lowest latency, no relay bandwidth; adds a token-grant endpoint and browser key handling.</span></span></label>
+      <label><input type="radio" name="path" value="Prototype self-hosted faster-whisper sidecar instead"> <span><strong>Self-hosted faster-whisper sidecar</strong><br><span class="micro">Privacy-first; accept 1–2 s lag, extra ops, and no demo-image support.</span></span></label>
+      <label><input type="radio" name="path" value="Hold - answer my open questions in the review thread first"> <span><strong>Hold</strong><br><span class="micro">Discuss the open questions before any code.</span></span></label>
+
+      <h3 style="margin-top:16px">2 · Browser scope for phase 1?</h3>
+      <label><input type="radio" name="scope" value="Chrome-first (MediaRecorder only), AudioWorklet PCM as fast-follow"> <span><strong>Chrome-first</strong> — MediaRecorder now, PCM fallback as fast-follow <span class="tag acc">recommended</span></span></label>
+      <label><input type="radio" name="scope" value="Universal from day one (AudioWorklet PCM linear16)"> <span><strong>Universal day one</strong> — AudioWorklet PCM path from the start (+~1 day)</span></label>
+
+      <p class="micro" style="margin-top:14px">Anything else (language mode, session caps, UI placement):</p>
+      <textarea name="notes" rows="2" placeholder="Optional notes…"></textarea>
+      <p style="margin-top:12px"><button type="submit">Queue this answer</button> <span class="micro">then press Send to Agent when done annotating.</span></p>
+    </form>
+  </div>
+</section>
+
+<footer style="margin-top:32px">
+  <p class="srcs">Pricing &amp; landscape sources:
+    <a href="https://deepgram.com/learn/introducing-nova-3-speech-to-text-api">Deepgram Nova-3</a> ·
+    <a href="https://convertaudiototext.com/blog/deepgram-nova-3-explained">Nova-3 pricing ($0.0043 batch / $0.0077 streaming)</a> ·
+    <a href="https://diyai.io/ai-tools/speech-to-text/deepgram-pricing-2026/">Deepgram pricing 2026</a> ·
+    <a href="https://northflank.com/blog/best-open-source-speech-to-text-stt-model-in-2026-benchmarks">open-source STT benchmarks 2026</a> ·
+    <a href="https://www.sinologic.net/en/2026-05/vosk-vs-whisper-local-the-ultimate-2026-guide-to-self-hosted-speech-recognition-stt.html">Vosk vs local Whisper</a> ·
+    <a href="https://localaimaster.com/blog/parakeet-vs-whisper">Parakeet vs Whisper</a> ·
+    <a href="https://github.com/alesaccoia/VoiceStreamAI">VoiceStreamAI (self-hosted WS Whisper reference)</a>.
+    Repo facts verified on branch <code>voice-text</code> @ 43c9a7c.
+  </p>
+</footer>
+
+</main>
+</body>
+</html>

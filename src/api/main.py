@@ -24,7 +24,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -56,6 +56,8 @@ from src.api.matrix_runs import (
 from src.api.packs import list_packs, pack_detail, set_member_override
 from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
+from src.api.stt import ConnectFn as SttConnectFn
+from src.api.stt import relay_stt, stt_available
 from src.chat.frontend import (
     ANSWER_CSS,
     ANSWER_RENDER_JS,
@@ -388,6 +390,7 @@ def create_app(
     matrix_run_fn: RunFn | None = None,
     document_store: "DocumentStore | None" = None,
     document_fetch_fn: Callable[[str], Any] | None = None,
+    stt_connect_fn: "SttConnectFn | None" = None,
 ) -> FastAPI:
     resolved = settings or load_settings(require_keys=True)
     runner_factory = runner_factory or (lambda: RagSetupRunner.from_settings(resolved))
@@ -623,6 +626,12 @@ def create_app(
     def answer_css() -> PlainTextResponse:
         return PlainTextResponse(ANSWER_CSS, media_type="text/css")
 
+    stt_ready = stt_available(
+        api_key=resolved.deepgram_api_key,
+        enabled=resolved.stt_enabled,
+        demo_mode=resolved.demo_mode,
+    )
+
     @app.get("/api/health")
     def health() -> dict:
         return {
@@ -634,7 +643,27 @@ def create_app(
             "answer_model": resolved.deepseek_model,
             "embedding_model": resolved.embedding_model,
             "ui": "react" if bundle_index().is_file() else "legacy",
+            # The composer mic renders only when this is true; demo mode and a
+            # missing Deepgram key both turn it off server-side.
+            "stt": stt_ready,
         }
+
+    @app.websocket("/ws/stt")
+    async def stt_socket(websocket: WebSocket, sample_rate: int = 16_000) -> None:
+        # The demo gate is HTTP middleware and never sees WebSocket
+        # connections, so the refusal must live here. Accept-then-close so the
+        # browser reads a policy code instead of a bare handshake failure.
+        if not stt_ready:
+            await websocket.accept()
+            await websocket.close(code=1008, reason="stt unavailable")
+            return
+        await relay_stt(
+            websocket,
+            api_key=resolved.deepgram_api_key,
+            model=resolved.stt_model,
+            sample_rate=sample_rate,
+            connect=stt_connect_fn,
+        )
 
     @app.get("/api/setups")
     def setups() -> dict:

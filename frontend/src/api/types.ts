@@ -289,6 +289,9 @@ export interface Health {
   answer_model: string;
   embedding_model: string;
   ui: string;
+  /** Whether streaming voice-to-text is available — the mic renders only when
+   * true. Optional so the UI degrades cleanly against an older server. */
+  stt?: boolean;
 }
 
 export interface Video {
