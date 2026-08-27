@@ -992,7 +992,7 @@ Endpoints (JSON unless noted):
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
-| `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode |
+| `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode, `stt` (whether the composer mic is available) |
 | `/api/setups` | GET | The RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
 | `/api/prompts` | GET | The live prompt registry, grouped by system |
@@ -1018,6 +1018,7 @@ Endpoints (JSON unless noted):
 | `/api/graph/knowledge` | GET | The GraphRAG entity graph: laid-out entity nodes, relation/co-mention edges, community summaries (503 if Neo4j is unreachable) |
 | `/api/graph/knowledge/entities/{entity_id}` | GET | One entity's aliases, community, and dated claim timeline (404 if unknown) |
 | `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
+| `/ws/stt` | WS | Streaming voice-to-text relay: browser sends raw PCM binary frames (`sample_rate` query param) and `{"type":"stop"}` to end; server sends `{type, text, is_final, speech_final}` transcript JSON. Closes with 1008 if `stt` is unavailable |
 
 `/api/ask` emits these SSE events: `document` (a resolved document, emitted
 once before the answer setups run when the question carries or pins a URL),
