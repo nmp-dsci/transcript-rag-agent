@@ -194,7 +194,11 @@ export function useSpeechToText(): SpeechToText {
         };
         source.connect(node);
 
-        ws.onopen = () => setStatus('listening');
+        ws.onopen = () => {
+          const current = session.current;
+          if (!current || current.flushTimer !== null) return;
+          setStatus('listening');
+        };
         ws.onmessage = (event: MessageEvent<string>) => {
           try {
             const message = JSON.parse(event.data);
