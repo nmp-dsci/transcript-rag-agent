@@ -45,6 +45,8 @@ interface Props {
   onScopeConsumed: () => void;
   /** Optional channel hint for pendingScope; otherwise read off the corpus. */
   pendingChannel?: string | null;
+  /** Server-decided (health `stt`): whether the composer offers voice input. */
+  stt?: boolean;
 }
 
 /**
@@ -97,6 +99,7 @@ export function ChatView({
   pendingScope,
   onScopeConsumed,
   pendingChannel = null,
+  stt = false,
 }: Props) {
   const [thread, setThread] = useState<Entry[]>([]);
   const [live, setLive] = useState<LiveRun | null>(null);
@@ -582,6 +585,7 @@ export function ChatView({
             onDefaultSetupChange={setDefaultSetup}
             onAsk={(options) => void run(options)}
             onCancel={() => abort.current?.abort()}
+            stt={stt}
           />
         )}
         <div className="sr-only" role="status" aria-live="polite">

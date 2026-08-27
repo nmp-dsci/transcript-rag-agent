@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { Corpus, RetrievalMode, SetupSpec, Video } from '../api/types';
+import { joinSpeech, useSpeechToText } from './useSpeechToText';
 
 /**
  * What retrieval is allowed to look at.
@@ -123,6 +124,8 @@ interface Props {
   onDefaultSetupChange: (key: string) => void;
   onAsk: (options: AskOptions) => void;
   onCancel: () => void;
+  /** Server-decided (health `stt`): whether the voice-input mic renders. */
+  stt?: boolean;
 }
 
 export function Composer({
@@ -135,6 +138,7 @@ export function Composer({
   onDefaultSetupChange,
   onAsk,
   onCancel,
+  stt = false,
 }: Props) {
   const [question, setQuestion] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -148,6 +152,26 @@ export function Composer({
     () => readAskPrefs().filterTranscripts,
   );
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const speech = useSpeechToText();
+  // Connecting counts as a voice session too: the textarea is mic-owned from
+  // the moment the button is pressed, not from the first transcript.
+  const listening = speech.status !== 'idle';
+  const wasListening = useRef(false);
+
+  // When the voice session ends, fold everything spoken into the question
+  // exactly once — during the session the words render as an overlay only.
+  useEffect(() => {
+    if (wasListening.current && !listening) {
+      const spoken = joinSpeech(speech.transcript.committed, speech.transcript.interim);
+      if (spoken) setQuestion((current) => joinSpeech(current, spoken));
+      speech.reset();
+    }
+    wasListening.current = listening;
+  }, [listening, speech]);
+
+  const displayValue = listening
+    ? joinSpeech(question, speech.transcript.committed, speech.transcript.interim)
+    : question;
 
   useEffect(() => {
     localStorage.setItem(AUTOJUDGE_KEY, autoJudge ? '1' : '0');
@@ -166,7 +190,7 @@ export function Composer({
     if (!node) return;
     node.style.height = 'auto';
     node.style.height = `${Math.min(node.scrollHeight, 140)}px`;
-  }, [question]);
+  }, [displayValue]);
 
   const channels = corpus?.channels ?? [];
   const selectableVideos = videosInScope(corpus, scope.channelId);
@@ -220,11 +244,17 @@ export function Composer({
         <textarea
           ref={textarea}
           rows={1}
-          value={question}
+          value={displayValue}
           disabled={busy}
-          placeholder="Ask the indexed transcripts anything…  (Enter to send, Shift+Enter for a newline)"
+          readOnly={listening}
+          placeholder={
+            listening
+              ? 'Listening…'
+              : 'Ask the indexed transcripts anything…  (Enter to send, Shift+Enter for a newline)'
+          }
           onChange={(event) => setQuestion(event.target.value)}
           onKeyDown={(event) => {
+            if (listening) return;
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
               submit();
@@ -294,6 +324,45 @@ export function Composer({
 
           <span className="spacer" />
 
+          {stt ? (
+            <button
+              type="button"
+              className={`micbtn${listening ? ' rec' : ''}`}
+              onClick={() => (listening ? speech.stop() : speech.start())}
+              disabled={busy || !speech.supported}
+              aria-pressed={listening}
+              aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+              title={
+                !speech.supported
+                  ? 'Voice input needs a browser with microphone and AudioWorklet support'
+                  : listening
+                    ? 'Stop voice input'
+                    : 'Ask by voice'
+              }
+            >
+              {listening ? (
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="2" width="6" height="12" rx="3" />
+                  <path d="M5 10a7 7 0 0 0 14 0" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              )}
+            </button>
+          ) : null}
           {busy ? (
             <button type="button" className="btn danger" onClick={onCancel}>
               Cancel (Esc)
@@ -303,7 +372,7 @@ export function Composer({
             type="button"
             className="btn pri"
             onClick={submit}
-            disabled={busy || !question.trim()}
+            disabled={busy || listening || !question.trim()}
           >
             Send
           </button>
@@ -313,6 +382,7 @@ export function Composer({
           <span className="microlabel" role="status" aria-live="polite">
             {describeScope(corpus, scope)}
           </span>
+          {speech.error ? <span className="microlabel micerr">{speech.error}</span> : null}
         </div>
 
         {showAdvanced ? (

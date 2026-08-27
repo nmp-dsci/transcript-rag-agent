@@ -347,6 +347,32 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 }
 .advanced { background: var(--panel3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
 
+/* Voice input. Idle breathes green so the mic reads as the invitation; the
+   recording state flips to the red stop pulse so the two are unmistakable. */
+.micbtn {
+  width: 34px; height: 34px; border-radius: 999px; flex: none; cursor: pointer;
+  border: 1px solid var(--good-border); background: var(--good-dim); color: var(--good);
+  display: inline-flex; align-items: center; justify-content: center;
+  animation: mic-glow 2s ease-in-out infinite;
+}
+.micbtn:disabled { animation: none; opacity: 0.45; cursor: default; }
+.micbtn.rec {
+  border-color: var(--bad-border); background: var(--bad-dim); color: var(--bad);
+  animation: mic-rec 1.4s ease-in-out infinite;
+}
+@keyframes mic-glow {
+  0%, 100% { box-shadow: 0 0 0 2px var(--good-dim); background: var(--good-dim); }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+    background: color-mix(in srgb, var(--good) 25%, var(--good-dim));
+  }
+}
+@keyframes mic-rec {
+  0%, 100% { box-shadow: 0 0 0 2px var(--bad-dim); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+.micerr { color: var(--bad); }
+
 /* suggestions / empty state */
 .suggest { display: flex; flex-wrap: wrap; gap: 7px; }
 .suggest button {

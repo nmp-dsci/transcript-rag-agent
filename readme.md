@@ -296,6 +296,27 @@ Metal driver, and under `serve` that hangs the whole process with the port still
 bound and the PID unkillable (`STAT UE`). Set `mps` or `cuda` to opt back into a
 GPU where one actually works.
 
+### Voice-to-text (the composer mic)
+
+`DEEPGRAM_API_KEY` (optional) turns on streaming speech-to-text in the chat
+composer: press the mic, talk, and the question appears word-by-word as you
+speak — interim words render as a live tail and firm up as Deepgram finalizes
+them. The browser captures raw PCM with an AudioWorklet (identical across
+Chrome, Safari, and Firefox — no MediaRecorder codec fork) and streams it to
+`/ws/stt`, a FastAPI WebSocket relay that forwards audio to Deepgram's live
+API and returns `{text, is_final, speech_final}` JSON. The key never reaches
+the browser, and the frontend codes against the relay's message shape, so the
+transcription vendor is swappable without touching UI code.
+
+Without the key the feature is simply absent — `/api/health` reports
+`stt: false` and the mic never renders. The same applies in demo mode; the
+demo gate is HTTP middleware that WebSockets bypass, so `/ws/stt` re-checks
+`YT_AGENT_DEMO_MODE` itself and refuses with close code 1008.
+`YT_AGENT_STT_ENABLED=false` turns the feature off without deleting the key;
+`YT_AGENT_STT_MODEL` (default `nova-3`) picks the Deepgram model. Sessions are
+capped (110 s client-side, 120 s server-side) and the relay sends KeepAlives
+during pauses, so an abandoned mic cannot bill unattended.
+
 ### Retrieval strategy
 
 `YT_AGENT_RETRIEVAL_MODE` selects how chunks are found:
