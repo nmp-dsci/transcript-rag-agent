@@ -4,9 +4,34 @@ import { api } from '../api/client';
 import type { PromptEntry, SystemDesign, SystemDesignFlowStep, SystemDesignNode } from '../api/types';
 import { useDesignStyles } from './styles';
 
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 46;
+/** Columns sit 220 apart (see src/api/system_design.py), so 200 is the widest
+ * a node can be without two of them touching. */
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 52;
 const VIEWBOX = '0 0 1160 600';
+
+/**
+ * Split "Chroma · transcript_chunks_contextual" into the collection it names
+ * and the backend that holds it.
+ *
+ * Store labels are the longest in the graph and used to run past their own
+ * node into the neighbour's. Putting the backend on the kind line leaves one
+ * short line to fit, instead of one long one to overflow.
+ */
+function splitLabel(label: string): { main: string; prefix: string | null } {
+  const parts = label.split(' · ');
+  if (parts.length === 2 && parts[0] && parts[1]) return { main: parts[1], prefix: parts[0] };
+  return { main: label, prefix: null };
+}
+
+/** Step the label down one size when it would otherwise exceed the node box.
+ * The floor is 10px — below that the graph stops being readable, which is the
+ * whole point of drawing it. */
+function labelSize(main: string): number {
+  if (main.length > 24) return 10;
+  if (main.length > 18) return 10.5;
+  return 11.5;
+}
 
 /** Highlight {placeholder} template variables inside a prompt body. */
 function PromptText({ text }: { text: string }) {
@@ -200,33 +225,44 @@ function Graph({
           );
         })}
 
-        {design.nodes.map((node) => (
-          <g
-            key={node.id}
-            className={`ds-node kind-${node.kind}${node.id === selectedId ? ' sel' : ''}`}
-            transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}
-            role="button"
-            tabIndex={0}
-            aria-label={`${node.label} (${node.kind})`}
-            aria-pressed={node.id === selectedId}
-            onClick={() => onSelect(node.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(node.id);
-              }
-            }}
-          >
-            <rect width={NODE_WIDTH} height={NODE_HEIGHT} />
-            <text x={NODE_WIDTH / 2} y={19} textAnchor="middle">
-              {node.label}
-            </text>
-            <text className="ds-kind" x={NODE_WIDTH / 2} y={34} textAnchor="middle">
-              {node.kind}
-              {node.prompts.length > 0 ? ` · ${node.prompts.length} prompt${node.prompts.length === 1 ? '' : 's'}` : ''}
-            </text>
-          </g>
-        ))}
+        {design.nodes.map((node) => {
+          const { main, prefix } = splitLabel(node.label);
+          const promptCount = node.prompts.length
+            ? `${node.prompts.length} prompt${node.prompts.length === 1 ? '' : 's'}`
+            : '';
+          const kindLine = [prefix ?? node.kind, promptCount].filter(Boolean).join(' · ');
+          return (
+            <g
+              key={node.id}
+              className={`ds-node kind-${node.kind}${node.id === selectedId ? ' sel' : ''}`}
+              transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${node.label} (${node.kind})`}
+              aria-pressed={node.id === selectedId}
+              onClick={() => onSelect(node.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(node.id);
+                }
+              }}
+            >
+              <rect width={NODE_WIDTH} height={NODE_HEIGHT} />
+              <text
+                x={NODE_WIDTH / 2}
+                y={22}
+                textAnchor="middle"
+                style={{ fontSize: `${labelSize(main)}px` }}
+              >
+                {main}
+              </text>
+              <text className="ds-kind" x={NODE_WIDTH / 2} y={38} textAnchor="middle">
+                {kindLine}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
@@ -246,16 +282,31 @@ export function SystemDesignView() {
   }, []);
 
   if (error) {
-    return <div className="ds-toplevel-empty">Could not load the system design graph from the server.</div>;
+    return (
+      <div className="scrollview">
+        <div className="pagewrap">
+          <div className="ds-toplevel-empty">
+            Could not load the system design graph from the server.
+          </div>
+        </div>
+      </div>
+    );
   }
   if (!design) {
-    return <div className="ds-toplevel-empty">Loading system design…</div>;
+    return (
+      <div className="scrollview">
+        <div className="pagewrap">
+          <div className="ds-toplevel-empty">Loading system design…</div>
+        </div>
+      </div>
+    );
   }
 
   const selected = design.nodes.find((node) => node.id === selectedId) ?? null;
 
   return (
-    <div>
+    <div className="scrollview">
+      <div className="pagewrap">
       <p className="ds-intro">
         How transcript·lab is actually built — every answer path, the shared models, and the
         stores each one reads from. Click a node to see its live system prompts and the exact
@@ -282,6 +333,7 @@ export function SystemDesignView() {
           </div>
         </div>
         <DetailPanel node={selected} />
+      </div>
       </div>
     </div>
   );

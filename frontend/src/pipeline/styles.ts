@@ -21,6 +21,14 @@ export const PIPELINE_STYLES = `
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pipe-insights { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+/* The sub-tab switch on its own row, and allowed to scroll rather than clip if
+   a future tab pushes it past a narrow viewport. */
+.pipe-subnav {
+  display: flex; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.pipe-subnav::-webkit-scrollbar { display: none; }
+.pipe-subnav .modes { flex: 0 0 auto; }
 .pipe-chip {
   font-size: 10.5px; padding: 2px 8px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;

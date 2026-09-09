@@ -25,8 +25,10 @@ const CSS = `
 
 .ds-node { cursor: pointer; outline: none; }
 .ds-node rect { fill: var(--panel2); stroke: var(--border2); stroke-width: 1.3; rx: 9; }
+/* 11.5px is the default; long labels step down to a 10px floor inline (see
+   labelSize) rather than overflowing their node. */
 .ds-node text { fill: var(--text2); font: 600 11.5px var(--mono); pointer-events: none; }
-.ds-node .ds-kind { fill: var(--dim); font: 600 9px var(--mono); letter-spacing: 0.04em;
+.ds-node .ds-kind { fill: var(--dim); font: 600 10px var(--mono); letter-spacing: 0.04em;
   text-transform: uppercase; }
 .ds-node:hover rect { stroke: var(--accent2); }
 .ds-node:focus-visible rect { stroke: var(--accent); stroke-width: 2; }

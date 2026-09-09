@@ -114,6 +114,21 @@ export function describeScope(corpus: Corpus | null, scope: ChatScope): string {
   )})`;
 }
 
+/**
+ * The scope in a few words, for the chip that opens the scope popover.
+ *
+ * {@link describeScope} is the full sentence with counts, shown inside the
+ * popover; this is the label a closed control has room for.
+ */
+export function summariseScope(corpus: Corpus | null, scope: ChatScope): string {
+  if (scope.videoUrl) {
+    const video = findVideo(corpus, scope.videoUrl);
+    return (video?.title || video?.video_id || 'one video').slice(0, 34);
+  }
+  if (scope.channelId) return channelTotals(corpus, scope.channelId).name;
+  return 'Everything';
+}
+
 interface Props {
   setups: SetupSpec[];
   corpus: Corpus | null;
@@ -142,6 +157,8 @@ export function Composer({
 }: Props) {
   const [question, setQuestion] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showScope, setShowScope] = useState(false);
+  const scopeRef = useRef<HTMLDivElement>(null);
   const [topK, setTopK] = useState('');
   const [extraSetups, setExtraSetups] = useState<string[]>([]);
   const [autoJudge, setAutoJudge] = useState(() => readAskPrefs().autoJudge);
@@ -192,8 +209,29 @@ export function Composer({
     node.style.height = `${Math.min(node.scrollHeight, 140)}px`;
   }, [displayValue]);
 
+  // Close the scope popover on an outside click or Escape. The composer sits
+  // at the bottom of a pane that never scrolls, so a popover left open would
+  // otherwise be dismissible only by re-clicking the chip.
+  useEffect(() => {
+    if (!showScope) return undefined;
+    const onDown = (event: MouseEvent) => {
+      if (!scopeRef.current?.contains(event.target as Node)) setShowScope(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowScope(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [showScope]);
+
   const channels = corpus?.channels ?? [];
   const selectableVideos = videosInScope(corpus, scope.channelId);
+  const scoped = scope.channelId !== null || scope.videoUrl !== null;
+  const scopeSummary = summariseScope(corpus, scope);
 
   /** Picking a channel drops a pinned video that does not belong to it. */
   const selectChannel = (value: string) => {
@@ -263,39 +301,77 @@ export function Composer({
           aria-label="Question"
         />
         <div className="crow">
-          <label className="chipselect">
-            Channel:{' '}
-            <select
-              value={scope.channelId ?? ''}
-              onChange={(event) => selectChannel(event.target.value)}
-              style={{ border: 'none', background: 'none', padding: 0 }}
-              aria-label="Channel scope"
-            >
-              <option value="">All channels</option>
-              {channels.map((channel) => (
-                <option key={channel.channel_id} value={channel.channel_id}>
-                  {`${channel.channel_name} (${channel.video_count})`}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Scope lives behind one chip that states what it is. Two selects
+              plus a separate description line made the composer tall enough
+              to push its own controls under the fold on a short window — and
+              nothing here scrolls, so they were unreachable, not just hidden. */}
+          {/* Announced whether or not the popover is open: a scope change
+              alters what every subsequent answer is drawn from, so it must
+              reach a screen reader even when the control that made it is
+              closed. */}
+          <span className="sr-only" role="status" aria-live="polite">
+            {describeScope(corpus, scope)}
+          </span>
 
-          <label className="chipselect">
-            Video:{' '}
-            <select
-              value={scope.videoUrl ?? ''}
-              onChange={(event) => selectVideo(event.target.value)}
-              style={{ border: 'none', background: 'none', padding: 0 }}
-              aria-label="Video scope"
+          <div className="scopewrap" ref={scopeRef}>
+            <button
+              type="button"
+              className={`pill scopechip${scoped ? ' on' : ''}`}
+              onClick={() => setShowScope(!showScope)}
+              aria-expanded={showScope}
+              aria-label={`Retrieval scope: ${scopeSummary}`}
             >
-              <option value="">All videos</option>
-              {selectableVideos.map((video) => (
-                <option key={video.video_id} value={video.source_url ?? ''}>
-                  {(video.title || video.video_id).slice(0, 60)}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="scopechip-k">Scope</span>
+              {scopeSummary}
+            </button>
+
+            {showScope ? (
+              <div className="scopepop" role="dialog" aria-label="Retrieval scope">
+                <label className="scopefield">
+                  <span className="microlabel">Channel</span>
+                  <select
+                    value={scope.channelId ?? ''}
+                    onChange={(event) => selectChannel(event.target.value)}
+                    aria-label="Channel scope"
+                  >
+                    <option value="">All channels</option>
+                    {channels.map((channel) => (
+                      <option key={channel.channel_id} value={channel.channel_id}>
+                        {`${channel.channel_name} (${channel.video_count})`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="scopefield">
+                  <span className="microlabel">Video</span>
+                  <select
+                    value={scope.videoUrl ?? ''}
+                    onChange={(event) => selectVideo(event.target.value)}
+                    aria-label="Video scope"
+                  >
+                    <option value="">All videos</option>
+                    {selectableVideos.map((video) => (
+                      <option key={video.video_id} value={video.source_url ?? ''}>
+                        {(video.title || video.video_id).slice(0, 60)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <p className="scopenote">{describeScope(corpus, scope)}</p>
+                {scoped ? (
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => onScopeChange(WHOLE_CORPUS)}
+                  >
+                    Search everything
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
           <label className="chipselect">
             Agent:{' '}
@@ -378,12 +454,11 @@ export function Composer({
           </button>
         </div>
 
-        <div className="crow">
-          <span className="microlabel" role="status" aria-live="polite">
-            {describeScope(corpus, scope)}
-          </span>
-          {speech.error ? <span className="microlabel micerr">{speech.error}</span> : null}
-        </div>
+        {speech.error ? (
+          <div className="crow">
+            <span className="microlabel micerr">{speech.error}</span>
+          </div>
+        ) : null}
 
         {showAdvanced ? (
           <div className="advanced">

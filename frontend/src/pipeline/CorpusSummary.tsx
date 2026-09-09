@@ -15,7 +15,7 @@ interface Props {
   embeddingModel: string | null;
   filter: TreeFilter | null;
   onFilterChange: (filter: TreeFilter | null) => void;
-  /** Rendered at the end of the header row — the pipeline's sub-tab switch. */
+  /** Rendered on its own row below the stats — the pipeline's sub-tab switch. */
   children?: ReactNode;
 }
 
@@ -48,8 +48,6 @@ export function CorpusSummary({
             <span>{stat.label}</span>
           </div>
         ))}
-        <div className="spacer" />
-        {children}
       </div>
 
       {insights.length > 0 || filter ? (
@@ -99,6 +97,11 @@ export function CorpusSummary({
           ) : null}
         </div>
       ) : null}
+
+      {/* Own row. Sharing the stats row meant the sub-tab switch — five
+          nowrap buttons in one rounded group — was the item that ran past
+          the viewport once the stats grew. Nothing can push it out now. */}
+      {children ? <div className="pipe-subnav">{children}</div> : null}
     </header>
   );
 }

@@ -170,7 +170,26 @@ export function KnowledgeGraphView() {
   };
 
   if (error) {
-    return <p className="kg-toplevel-empty">{error}</p>;
+    // A 503 here means one specific thing — the graph store isn't running —
+    // so say that and give the command, instead of printing the status line
+    // the fetch wrapper happened to build.
+    const offline = error.includes("HTTP 503");
+    return (
+      <div className="kg-toplevel-empty">
+        {offline ? (
+          <>
+            <b>Graph store offline.</b> Neo4j isn&apos;t reachable, so entities and claims
+            can&apos;t be read. Start it with{" "}
+            <code>docker compose up -d neo4j</code>, then reload this tab.
+          </>
+        ) : (
+          <>
+            <b>Couldn&apos;t load the knowledge graph.</b> The server returned{" "}
+            <code>{error}</code>.
+          </>
+        )}
+      </div>
+    );
   }
   if (!graph) {
     return <p className="kg-toplevel-empty">Loading knowledge graph…</p>;

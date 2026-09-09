@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,7 @@ import type {
   Video,
 } from '../api/types';
 import { ChatView, documentForEntry } from './ChatView';
+import { openScope } from './scopeTestUtils';
 
 // jsdom has no layout engine, so the thread's scroll-to-bottom effect needs a stub.
 Element.prototype.scrollIntoView = vi.fn();
@@ -131,6 +132,7 @@ describe('ChatView request payload', () => {
 
   it('sends channel_id alone for a channel scope', async () => {
     view();
+    openScope();
     await userEvent.selectOptions(screen.getByLabelText('Channel scope'), 'c1');
     const request = await send('what are the themes?');
     expect(request.channel_id).toBe('c1');
@@ -139,6 +141,7 @@ describe('ChatView request payload', () => {
 
   it('sends url alone for a video scope, dropping the implied channel', async () => {
     view();
+    openScope();
     await userEvent.selectOptions(
       screen.getByLabelText('Video scope'),
       'https://youtu.be/v1',
@@ -257,12 +260,15 @@ describe('ChatView pending scope', () => {
     const onScopeConsumed = vi.fn();
     view({ pendingScope: 'https://youtu.be/v2', onScopeConsumed });
     await waitFor(() => expect(onScopeConsumed).toHaveBeenCalled());
+    openScope();
     expect((screen.getByLabelText('Video scope') as HTMLSelectElement).value).toBe(
       'https://youtu.be/v2',
     );
     expect((screen.getByLabelText('Channel scope') as HTMLSelectElement).value).toBe('c2');
     expect(
-      screen.getByText(/searching 1 video · 20 chunks in “Index funds vs property”/),
+      within(screen.getByRole('dialog', { name: 'Retrieval scope' })).getByText(
+        /searching 1 video · 20 chunks in “Index funds vs property”/,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -279,6 +285,7 @@ describe('ChatView pending scope', () => {
         onScopeConsumed={vi.fn()}
       />,
     );
+    openScope();
     await waitFor(() =>
       expect((screen.getByLabelText('Channel scope') as HTMLSelectElement).value).toBe('c1'),
     );
