@@ -46,13 +46,15 @@ function renderSummary(overrides: Partial<Parameters<typeof CorpusSummary>[0]> =
 }
 
 describe('CorpusSummary', () => {
+  // Video and chunk totals moved to the topbar, which shows them on every tab;
+  // this row carries only what the topbar cannot.
   it('summarises the corpus, including summary coverage and the embedding model', () => {
     renderSummary();
-    expect(screen.getByText('videos').previousSibling).toHaveTextContent('3');
-    expect(screen.getByText('chunks').previousSibling).toHaveTextContent('15');
-    expect(screen.getByText('channels').previousSibling).toHaveTextContent('2');
     expect(screen.getByText('with summaries').previousSibling).toHaveTextContent('2/3');
+    expect(screen.getByText('channels').previousSibling).toHaveTextContent('2');
     expect(screen.getByText('text-embedding-3-small')).toBeInTheDocument();
+    expect(screen.queryByText('videos')).not.toBeInTheDocument();
+    expect(screen.queryByText('chunks')).not.toBeInTheDocument();
   });
 
   it('styles each insight with the badge variant for its level', () => {
@@ -101,7 +103,8 @@ describe('CorpusSummary', () => {
 
   it('renders zeroes and no insight row for an empty corpus', () => {
     renderSummary({ corpus: null, embeddingModel: null });
-    expect(screen.getByText('videos').previousSibling).toHaveTextContent('0');
+    expect(screen.getByText('with summaries').previousSibling).toHaveTextContent('0/0');
+    expect(screen.getByText('channels').previousSibling).toHaveTextContent('0');
     expect(screen.queryByText('corpus health')).not.toBeInTheDocument();
   });
 });

@@ -471,6 +471,30 @@ details.cmd pre {
 .eval-note { font-size: 11px; color: var(--dim); margin-top: 4px; }
 .eval-note.err { color: var(--bad); }
 
+/* ── Standing explanations, folded away ──────────────────────────────────
+   A workbench page is visited dozens of times, so an explanation that must be
+   scrolled past every visit stops being read. These keep the fact one click
+   away and label the summary as the question it answers, so a first-time
+   reader still knows to open it. */
+.note-more { margin-top: 6px; }
+.note-more > summary {
+  cursor: pointer; color: var(--muted); font-size: 11.5px; list-style: none;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.note-more > summary::-webkit-details-marker { display: none; }
+.note-more > summary::before { content: '▸'; color: var(--dim); font-size: 9px; }
+.note-more[open] > summary::before { content: '▾'; }
+.note-more > summary:hover { color: var(--text2); }
+.note-more > p, .note-more > span { margin: 6px 0 0; display: block; }
+
+/* A whole panel behind a disclosure, keeping the panel's own heading. */
+.panel-details > summary { cursor: pointer; list-style: none; display: block; }
+.panel-details > summary::-webkit-details-marker { display: none; }
+.panel-details > summary h2 { display: inline-flex; align-items: center; gap: 6px; }
+.panel-details > summary h2::after { content: '▸'; color: var(--dim); font-size: 10px; }
+.panel-details[open] > summary h2::after { content: '▾'; }
+.panel-details > summary:hover h2 { color: var(--accent2); }
+
 /* ── Panels, stats, tables ── */
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
 .panel h2 { margin: 0 0 4px; font-size: 14px; }

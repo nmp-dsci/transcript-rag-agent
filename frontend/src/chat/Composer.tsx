@@ -139,6 +139,9 @@ interface Props {
   onDefaultSetupChange: (key: string) => void;
   onAsk: (options: AskOptions) => void;
   onCancel: () => void;
+  /** A question to start with, sent through from the landing's examples. */
+  prefill?: string | null;
+  onPrefillConsumed?: (() => void) | undefined;
   /** Server-decided (health `stt`): whether the voice-input mic renders. */
   stt?: boolean;
 }
@@ -153,6 +156,8 @@ export function Composer({
   onDefaultSetupChange,
   onAsk,
   onCancel,
+  prefill = null,
+  onPrefillConsumed,
   stt = false,
 }: Props) {
   const [question, setQuestion] = useState('');
@@ -208,6 +213,15 @@ export function Composer({
     node.style.height = 'auto';
     node.style.height = `${Math.min(node.scrollHeight, 140)}px`;
   }, [displayValue]);
+
+  // A landing example arrives as text to edit, not a question already sent:
+  // the visitor may want to scope it or reword it before spending a run.
+  useEffect(() => {
+    if (!prefill) return;
+    setQuestion(prefill);
+    textarea.current?.focus();
+    onPrefillConsumed?.();
+  }, [prefill, onPrefillConsumed]);
 
   // Close the scope popover on an outside click or Escape. The composer sits
   // at the bottom of a pane that never scrolls, so a popover left open would

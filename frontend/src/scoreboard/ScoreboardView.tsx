@@ -181,13 +181,21 @@ export function ScoreboardView() {
           </div>
         ) : null}
 
+        {/* The provenance bar at the foot of the page carries the same
+            self-graded chip, so this states the consequence once and puts the
+            remedy behind a disclosure rather than repeating the fact. */}
         {board?.provenance.self_graded ? (
           <div className="rubricwarn">
-            <span className="badge bad">self-graded</span> The model that wrote these answers also
-            graded them ({board.provenance.judge_models.join(', ')}). These scores are
-            self-assessment, not an independent verdict — set{' '}
-            <code>YT_AGENT_JUDGE_MODEL</code> to a different provider and re-run before reading
-            this ranking as a result.
+            <span className="badge bad">self-graded</span> These are self-assessment, not an
+            independent verdict — the model that wrote the answers graded them.
+            <details className="note-more">
+              <summary>How to get an independent score</summary>
+              <p>
+                Judged by {board.provenance.judge_models.join(', ')}. Set{' '}
+                <code>YT_AGENT_JUDGE_MODEL</code> to a different provider and re-run before
+                reading this ranking as a result.
+              </p>
+            </details>
           </div>
         ) : null}
 
@@ -349,34 +357,52 @@ export function ScoreboardView() {
 
         <AnswersPanel questions={board?.questions ?? []} />
 
-        <div className="panel">
-          <h2>What the metrics mean</h2>
+        {/* A returning user reads this once. Labelled as the question it
+            answers so a first-time reader still knows to open it. */}
+        <details className="panel panel-details">
+          <summary>
+            <h2>What do these metrics mean?</h2>
+          </summary>
           <p className="sub">
             Every column above comes out of one of these. Open a metric on any answer in the chat
             to see the judge&apos;s claim-by-claim workings for that question.
           </p>
           <MetricExplainers names={metrics} />
-        </div>
+        </details>
 
         {board ? <ProvenanceBar provenance={board.provenance} run={selectedRun} /> : null}
 
+        {/* The one rule a reader must not miss stays on the page; the rest of
+            the methodology moves behind it. The thin-n rule in particular is
+            already enforced visibly on the rows themselves, as the dimming and
+            the "thin" badge — it did not need restating in prose. */}
         <p className="board-note">
-          Every row comes from one <b>committed matrix run</b>: each setup answering the same
-          golden questions under one recorded configuration, graded by one judge. That is what
-          makes these rows comparable — unlike the Chat tab, where whichever questions happened
-          to be asked would decide the ranking. Chat and its history are the <em>live</em> set
-          for exploring the corpus; this tab is the <em>eval</em> set. All answers in a run are
-          graded under one rubric — this one is <b>{rubricVersion}</b>, whose composite is{' '}
-          {board?.provenance.composite ?? 'the mean of the metric scores'}. What makes rows
-          comparable is that they sit <em>inside</em> one run: picking a different run above
-          replaces the whole table, and the new numbers are only comparable with these ones when
-          both runs name the same corpus — read the corpus line at the top of the tab before
-          carrying a figure from one run to another. A win counts a question
-          where a setup scored highest <em>among answers graded by the same judge</em>. Rows
-          judged on {LOW_N} questions or fewer are dimmed and marked{' '}
-          <span className="badge warn">thin</span>: an average over a handful of questions moves
-          several points on one bad answer, so read those as a hint rather than a ranking.
+          Rows are comparable only <em>inside</em> one committed run — picking a different run
+          above replaces the whole table.
         </p>
+        <details className="note-more board-note">
+          <summary>How to read this board</summary>
+          <p>
+            Every row comes from one <b>committed matrix run</b>: each setup answering the same
+            golden questions under one recorded configuration, graded by one judge. That is what
+            makes these rows comparable — unlike the Chat tab, where whichever questions happened
+            to be asked would decide the ranking. Chat and its history are the <em>live</em> set
+            for exploring the corpus; this tab is the <em>eval</em> set.
+          </p>
+          <p>
+            All answers in a run are graded under one rubric — this one is <b>{rubricVersion}</b>,
+            whose composite is {board?.provenance.composite ?? 'the mean of the metric scores'}.
+            Numbers from another run are only comparable with these when both runs name the same
+            corpus, so read the corpus line at the top of the tab before carrying a figure between
+            runs. A win counts a question where a setup scored highest{' '}
+            <em>among answers graded by the same judge</em>.
+          </p>
+          <p>
+            Rows judged on {LOW_N} questions or fewer are dimmed and marked{' '}
+            <span className="badge warn">thin</span>: an average over a handful of questions moves
+            several points on one bad answer, so read those as a hint rather than a ranking.
+          </p>
+        </details>
       </div>
     </div>
   );

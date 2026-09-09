@@ -31,11 +31,12 @@ export function CorpusSummary({
   const insights = corpus?.insights ?? [];
   const summarised = summarisedCount(videos);
 
+  // Video and chunk totals are in the topbar on every tab, so this row carries
+  // only what the topbar cannot: coverage, channel count, and the model the
+  // vectors were built with.
   const stats: { value: string; label: string; wide?: boolean }[] = [
-    { value: String(totals.videos), label: 'videos' },
-    { value: String(totals.chunks), label: 'chunks' },
-    { value: String(totals.channels), label: 'channels' },
     { value: `${summarised}/${totals.videos}`, label: 'with summaries' },
+    { value: String(totals.channels), label: 'channels' },
     { value: embeddingModel ?? '—', label: 'embedding model', wide: true },
   ];
 

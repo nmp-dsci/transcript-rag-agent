@@ -55,6 +55,8 @@ export function App() {
   const [offline, setOffline] = useState(false);
   /** Set by "Ask about this" in the pipeline view so Chat opens pre-scoped. */
   const [pendingScope, setPendingScope] = useState<string | null>(null);
+  /** Set by a landing example question so Chat opens with it already typed. */
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   // index.html applies the theme before first paint; this mirrors it so the
   // toggle can render the right label.
   const [theme, setThemeState] = useState<Theme>(initialTheme);
@@ -109,8 +111,9 @@ export function App() {
     setTab(next);
   };
 
-  const enterApp = () => {
+  const enterApp = (question?: string) => {
     sessionStorage.setItem(ENTERED_KEY, '1');
+    setPendingQuestion(question ?? null);
     setShowLanding(false);
     selectTab('chat');
   };
@@ -200,6 +203,8 @@ export function App() {
             onActivity={refreshHealth}
             pendingScope={pendingScope}
             onScopeConsumed={() => setPendingScope(null)}
+            pendingQuestion={pendingQuestion}
+            onQuestionConsumed={() => setPendingQuestion(null)}
             stt={health?.stt === true}
           />
         )}
