@@ -178,7 +178,12 @@ button, input, select, textarea { font-family: inherit; }
 .brand {
   display: flex; align-items: center; gap: 8px;
   font-weight: 700; font-size: var(--t2); letter-spacing: -0.02em; white-space: nowrap;
+  /* It is a button now (back to the intro), so undo the UA button chrome. */
+  background: none; border: 0; padding: 4px 6px; margin-left: -6px; border-radius: 6px;
+  color: var(--text); font-family: var(--display); cursor: pointer;
+  transition: background var(--dur) var(--ease);
 }
+.brand:hover { background: var(--btn-hover); }
 .brand svg { flex: 0 0 auto; }
 /* The one decorated keyword in the app, in the one italic serif it owns. */
 .brand em { color: var(--accent2); font-family: var(--serif); font-style: italic; font-weight: 400; }
