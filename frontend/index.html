@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>transcript·lab — RAG Evaluation Workbench</title>
+    <!-- The display faces are in the first thing painted (the brand and the
+         landing title), so they are fetched alongside the CSS rather than
+         after it. Self-hosted: no third-party request on any page load. -->
+    <link
+      rel="preload"
+      href="/fonts/instrument-sans.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/instrument-serif-400-italic.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <script>
       // Set the theme before first paint so a light-mode user never sees a
       // dark flash while the bundle loads.

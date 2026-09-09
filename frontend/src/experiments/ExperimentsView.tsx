@@ -19,6 +19,17 @@ function fmt(value: number | undefined): string {
   return typeof value === 'number' ? value.toFixed(3) : '—';
 }
 
+/** Scrolls to an in-page section without touching `location.hash` — the
+ * hash router treats any fragment as a tab id (or falls back to "chat"), so
+ * setting it here would hijack the Experiments tab on every click. */
+function scrollToSection(id: string, event: React.MouseEvent<HTMLAnchorElement>) {
+  event.preventDefault();
+  const target = document.getElementById(id);
+  if (!target) return;
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+}
+
 function signed(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
 }
@@ -339,16 +350,55 @@ export function ExperimentsView() {
           Every number here is reproducible from a snapshot a reviewer can open in the repo.
         </p>
 
-        {!demo && <MatrixRunPanel onRunFinished={() => void load()} />}
+        {/* Four major panels of dense mono, each several screens tall, with
+            nothing to say where you are or what else is below. */}
+        <nav className="exp-nav" aria-label="Sections on this page">
+          {!demo && (
+            <a href="#exp-matrix" onClick={(event) => scrollToSection('exp-matrix', event)}>
+              matrix
+            </a>
+          )}
+          <a href="#exp-packs" onClick={(event) => scrollToSection('exp-packs', event)}>
+            packs
+          </a>
+          <a href="#exp-research" onClick={(event) => scrollToSection('exp-research', event)}>
+            research
+          </a>
+          {critiqueRuns.length > 0 && (
+            <a href="#exp-critique" onClick={(event) => scrollToSection('exp-critique', event)}>
+              critique
+            </a>
+          )}
+          {ablations.length > 0 && (
+            <a href="#exp-ablations" onClick={(event) => scrollToSection('exp-ablations', event)}>
+              ablations
+            </a>
+          )}
+          {goldenRuns.length > 0 && (
+            <a href="#exp-golden" onClick={(event) => scrollToSection('exp-golden', event)}>
+              golden
+            </a>
+          )}
+        </nav>
+
+        {!demo && (
+          <section id="exp-matrix">
+            <MatrixRunPanel onRunFinished={() => void load()} />
+          </section>
+        )}
 
         {/* Reads experts/ rather than evals/runs/, so it renders whether or not
             any eval run is committed — and it loads independently of the
             /api/experiments call below. */}
-        <PackPanel />
+        <section id="exp-packs">
+          <PackPanel />
+        </section>
 
         {/* The offline build loop that produced one of those packs a second
             way. Renders nothing at all for a topic no loop has been run for. */}
-        <ResearchPanel />
+        <section id="exp-research">
+          <ResearchPanel />
+        </section>
 
         {error && <p className="exp-empty">Could not load experiments: {error}</p>}
 
@@ -360,19 +410,25 @@ export function ExperimentsView() {
           </p>
         )}
 
-        {critiqueRuns.map((run) => (
-          <CritiquePanel key={run.run_id} run={run} />
-        ))}
+        <section id="exp-critique">
+          {critiqueRuns.map((run) => (
+            <CritiquePanel key={run.run_id} run={run} />
+          ))}
+        </section>
 
         {matrixRuns.map((run) => (
           <MatrixTable key={run.run_id} run={run} />
         ))}
 
-        {ablations.map((run) => (
-          <AblationTable key={run.run_id} run={run} />
-        ))}
+        <section id="exp-ablations">
+          {ablations.map((run) => (
+            <AblationTable key={run.run_id} run={run} />
+          ))}
+        </section>
 
-        {goldenRuns.length > 0 && <GoldenRuns runs={goldenRuns} />}
+        <section id="exp-golden">
+          {goldenRuns.length > 0 && <GoldenRuns runs={goldenRuns} />}
+        </section>
       </div>
     </div>
   );

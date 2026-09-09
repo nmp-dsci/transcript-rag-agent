@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbench Re-score</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* ===========================================================================
+   Design source: the subject app's own system, as it now stands.
+   Token values copied verbatim from frontend/src/theme.css AFTER this build —
+   including the new Instrument display face and the shifted indigo accent —
+   so this report is rendered in the thing it is reporting on.
+   =========================================================================== */
+:root, :root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0d1017; --panel:#12151e; --panel2:#1b2130; --panel3:#151924;
+  --border:#242936; --border2:#2b3242;
+  --text:#e7ebf3; --text2:#c7ccd9; --muted:#8a90a0; --dim:#6d7383;
+  --accent:#5b7cf0; --accent2:#9db0ff; --accent-dim:#171d33; --accent-border:#33437e;
+  --good:#3fb950; --good-dim:#173a2b; --good-border:#1f5937;
+  --warn:#d29922; --warn-dim:#3a2e12; --warn-border:#5c451a;
+  --bad:#f85149; --bad-dim:#3a1b1d; --bad-border:#6b2a2c;
+  --on-accent:#0b1020; --hover:#171d29; --btn-hover:#222939;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+  --display:'Instrument Sans',var(--sans);
+  --serif:'Instrument Serif',Georgia,serif;
+  --t-2:10.5px; --t-1:11.5px; --t0:12.5px; --t1:13.5px; --t2:15px; --t3:18px;
+  --dur:200ms; --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme: light;
+    --bg:#f5f6fa; --panel:#ffffff; --panel2:#e9ebf2; --panel3:#f5f6fa;
+    --border:#d3d7e0; --border2:#bec3ce;
+    --text:#1e2128; --text2:#414755; --muted:#585f6e; --dim:#7f8695;
+    --accent:#3550d8; --accent2:#2a3fa8; --accent-dim:#e4e8fd; --accent-border:#bcc6f7;
+    --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+    --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+    --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+    --on-accent:#ffffff; --hover:#edeff6; --btn-hover:#edeff6;
+  }
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#f5f6fa; --panel:#ffffff; --panel2:#e9ebf2; --panel3:#f5f6fa;
+  --border:#d3d7e0; --border2:#bec3ce;
+  --text:#1e2128; --text2:#414755; --muted:#585f6e; --dim:#7f8695;
+  --accent:#3550d8; --accent2:#2a3fa8; --accent-dim:#e4e8fd; --accent-border:#bcc6f7;
+  --good:#1a7f37; --good-dim:#dafbe1; --good-border:#aceebb;
+  --warn:#9a6700; --warn-dim:#fff8c5; --warn-border:#d4a72c;
+  --bad:#cf222e; --bad-dim:#ffebe9; --bad-border:#ffcecb;
+  --on-accent:#ffffff; --hover:#edeff6; --btn-hover:#edeff6;
+}
+@media (prefers-reduced-motion: reduce){ :root{ --dur:0.01ms } }
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--text2);
+  font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{color:var(--text);margin:0;line-height:1.18;text-wrap:balance;
+  font-family:var(--display);letter-spacing:-.02em;font-weight:600}
+h1{font-size:clamp(1.9rem,4vw,2.5rem);font-weight:700;letter-spacing:-.03em}
+h2{font-size:1.4rem} h3{font-size:1.05rem} h4{font-size:.95rem}
+h1 em{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--accent2)}
+p{margin:0 0 12px;text-wrap:pretty}
+a{color:var(--accent2);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+strong,b{color:var(--text);font-weight:600}
+code,kbd{font-family:var(--mono);font-size:.86em;background:var(--panel2);
+  padding:.1em .35em;border-radius:4px;color:var(--text2)}
+:where(p,li,dd,dt,td,th,figcaption,h1,h2,h3,h4){overflow-wrap:anywhere}
+
+.wrap{max-width:1140px;margin-inline:auto;padding-inline:22px}
+.label{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--dim);margin:0}
+.lead{font-size:1.02rem;line-height:1.6;color:var(--text2);max-width:72ch}
+.small{font-size:.85rem;color:var(--muted)}
+.tiny{font:11px var(--mono);color:var(--dim)}
+
+.top{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--bg) 90%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.top-in{max-width:1140px;margin-inline:auto;padding:10px 22px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.top b{font:600 12px var(--mono);color:var(--text);white-space:nowrap}
+.top nav{display:flex;gap:18px;margin-left:auto;flex-wrap:wrap;font-size:.85rem;font-weight:500}
+.top nav a{color:var(--text2)}
+.top nav a:hover{color:var(--accent2);text-decoration:none}
+
+section.blk{padding-block:64px 0}
+section.blk:last-of-type{padding-bottom:64px}
+.hd{margin-bottom:24px;max-width:80ch}
+.hd .label{margin-bottom:10px}
+.hd h2{margin-bottom:12px}
+.rule{height:1px;background:var(--border);border:0;margin:64px 0 0}
+
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+.band{background:var(--panel3);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:900px){ .g3,.g2,.g4{grid-template-columns:minmax(0,1fr)} }
+
+/* ---- score headline ---- */
+.scorehead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:32px;align-items:center}
+@media (max-width:900px){ .scorehead{grid-template-columns:minmax(0,1fr)} }
+.bigscore{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.bigscore .n{font:700 4rem/1 var(--display);color:var(--accent2);letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums}
+.bigscore .was{font:400 1.5rem var(--display);color:var(--dim);text-decoration:line-through}
+.bigscore .of{font:400 1rem var(--mono);color:var(--muted)}
+.movebars{display:flex;flex-direction:column;gap:10px}
+.moverow{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:12px;
+  align-items:center;font-size:.85rem}
+.moverow .k{font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--dim);text-align:right}
+.track{height:22px;border-radius:5px;background:var(--panel2);overflow:hidden;display:flex}
+.track i{display:block;height:100%}
+.track .met{background:var(--good)}
+.track .part{background:var(--warn)}
+.track .gap{background:var(--border2)}
+.moverow .v{font:600 12px var(--mono);color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---- status ---- */
+.st{display:inline-flex;align-items:center;gap:6px;font:11px var(--mono);white-space:nowrap}
+.st::before{content:"";width:9px;height:9px;border-radius:3px;flex:none}
+.st-ok::before{background:var(--good-dim);box-shadow:inset 0 0 0 1px var(--good)}
+.st-ok{color:var(--good)}
+.st-part::before{background:var(--warn-dim);box-shadow:inset 0 0 0 1px var(--warn)}
+.st-part{color:var(--warn)}
+.st-gap::before{box-shadow:inset 0 0 0 1.5px var(--dim)}
+.st-gap{color:var(--muted)}
+.st-new::before{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
+.st-new{color:var(--accent2)}
+
+.badge{border-radius:4px;padding:1px 6px;font:600 9.5px var(--mono);white-space:nowrap}
+.badge.good{background:var(--good-dim);color:var(--good);border:1px solid var(--good-border)}
+.badge.warn{background:var(--warn-dim);color:var(--warn);border:1px solid var(--warn-border)}
+.badge.bad{background:var(--bad-dim);color:var(--bad);border:1px solid var(--bad-border)}
+.badge.acc{background:var(--accent-dim);color:var(--accent2);border:1px solid var(--accent-border)}
+.badge.plain{background:var(--panel2);color:var(--muted);border:1px solid var(--border2)}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;
+  border:1px solid var(--border);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.85rem}
+caption{text-align:left;padding:12px 16px 0;color:var(--muted);font-size:.82rem}
+th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--border);
+  vertical-align:top;line-height:1.5}
+thead th{font:600 10px var(--mono);letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);background:var(--panel3);border-bottom:1px solid var(--border2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--hover)}
+tr{transition:background var(--dur) var(--ease)}
+td.n{font:11px var(--mono);color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.grp td{background:var(--panel3);font:600 10px var(--mono);letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted)}
+.grp:hover td{background:var(--panel3)}
+.arrow{color:var(--good);font-weight:600}
+
+/* ---- evidence figures ---- */
+figure{margin:0}
+.shot{border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:var(--panel3)}
+.shot img{display:block;width:100%;height:auto}
+.shot-cap{font:10.5px var(--mono);color:var(--dim);padding:7px 11px;
+  border-top:1px solid var(--border);background:var(--panel3)}
+figcaption{font-size:.85rem;color:var(--muted);line-height:1.55;margin-top:10px}
+figcaption b{color:var(--text)}
+
+/* ---- before/after ---- */
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:820px){ .ba{grid-template-columns:minmax(0,1fr)} }
+.ba > div{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px;
+  display:flex;flex-direction:column;gap:8px}
+.ba .tag{align-self:flex-start;font:600 10px var(--mono);letter-spacing:.07em;
+  text-transform:uppercase;color:var(--dim)}
+.ba .after{border-color:var(--accent-border)}
+.ba .after .tag{color:var(--accent2)}
+.mono-demo{font:11px/1.7 var(--mono);color:var(--muted);background:var(--bg);
+  border:1px solid var(--border2);border-radius:6px;padding:9px 11px;overflow-x:auto}
+.mono-demo b{color:var(--text2);font-weight:500}
+.mono-demo .x{color:var(--bad)}
+.mono-demo .k{color:var(--good)}
+
+/* ---- item cards ---- */
+.item{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:10px;
+  border-top:3px solid var(--border2)}
+.item.done{border-top-color:var(--good)}
+.item.fixed{border-top-color:var(--accent)}
+.item.wrong{border-top-color:var(--bad)}
+.item p{margin:0}
+.item .meta{display:flex;gap:14px;flex-wrap:wrap;font:11px var(--mono);color:var(--dim);
+  padding-top:8px;border-top:1px solid var(--border);margin-top:auto}
+.item .meta b{color:var(--text2);font-weight:500}
+
+.no{display:grid;grid-template-columns:1.5rem minmax(0,1fr);gap:10px;
+  font-size:.85rem;line-height:1.55;padding-block:9px;border-bottom:1px solid var(--border)}
+.no:last-child{border-bottom:0}
+.no .x{font-family:var(--mono);color:var(--dim);line-height:1.4}
+.no .c{font-family:var(--mono);color:var(--good);line-height:1.4}
+
+.kv{display:grid;grid-template-columns:9rem minmax(0,1fr);gap:6px 16px;font-size:.85rem;margin:0}
+.kv dt{font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);padding-top:.2em}
+.kv dd{margin:0;color:var(--text2)}
+
+.foot{border-top:1px solid var(--border);margin-top:64px;padding-block:26px;
+  font:11px var(--mono);color:var(--dim)}
+.foot-in{max-width:1140px;margin-inline:auto;padding-inline:22px;
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <b>s22 · re-score</b>
+    <nav>
+      <a href="#score">Score</a>
+      <a href="#pages">Pages</a>
+      <a href="#levers">Levers</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#wrong">Corrections</a>
+      <a href="#left">What's left</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ===================== HERO ===================== -->
+<section class="blk wrap" id="score">
+  <p class="label">s21 plan → built → re-scored · 9 Sep 2026</p>
+  <h1 style="max-width:24ch;margin:12px 0 16px">The workbench now scores <em>28 of 31</em>. It also caught me being wrong twice.</h1>
+  <p class="lead">All four decisions came back on the recommended option and the full plan
+    shipped — five phases, six commits, 33 files. This is the same 31-lever rubric from s21,
+    re-run against the built app. Every claim below was verified in the running app or by a
+    script, and where the original audit was wrong, that is recorded rather than quietly
+    dropped.</p>
+
+  <div class="scorehead" style="margin-top:34px">
+    <div class="panel">
+      <p class="label" style="margin-bottom:10px">Levers met</p>
+      <div class="bigscore">
+        <span class="n">28</span>
+        <span class="of">/ 31</span>
+        <span class="was">16</span>
+      </div>
+      <p class="small" style="margin:10px 0 0">Up 12. Two of the three remaining are
+        deliberate refusals, not gaps — see <a href="#left">what's left</a>.</p>
+    </div>
+
+    <div class="movebars">
+      <div class="moverow">
+        <span class="k">before</span>
+        <span class="track">
+          <i class="met" style="width:51.6%"></i><i class="part" style="width:19.4%"></i><i class="gap" style="width:29%"></i>
+        </span>
+        <span class="v">16 · 6 · 9</span>
+      </div>
+      <div class="moverow">
+        <span class="k">after</span>
+        <span class="track">
+          <i class="met" style="width:90.3%"></i><i class="part" style="width:6.5%"></i><i class="gap" style="width:3.2%"></i>
+        </span>
+        <span class="v">28 · 2 · 1</span>
+      </div>
+      <p class="tiny" style="margin:2px 0 0">green met · amber partial · grey gap</p>
+
+      <div class="grid g4" style="margin-top:14px;gap:10px">
+        <div class="band" style="padding:10px 12px">
+          <p class="label" style="margin-bottom:4px">Prose cut</p>
+          <b style="font:600 1.3rem var(--display);color:var(--text)">~690</b>
+          <p class="tiny" style="margin:2px 0 0">words out of default views</p>
+        </div>
+        <div class="band" style="padding:10px 12px">
+          <p class="label" style="margin-bottom:4px">Contrast</p>
+          <b style="font:600 1.3rem var(--display);color:var(--good)">52/52</b>
+          <p class="tiny" style="margin:2px 0 0">pairs pass, both themes</p>
+        </div>
+        <div class="band" style="padding:10px 12px">
+          <p class="label" style="margin-bottom:4px">Tests</p>
+          <b style="font:600 1.3rem var(--display);color:var(--text)">528</b>
+          <p class="tiny" style="margin:2px 0 0">+15 new, 0 failing</p>
+        </div>
+        <div class="band" style="padding:10px 12px">
+          <p class="label" style="margin-bottom:4px">Overflow</p>
+          <b style="font:600 1.3rem var(--display);color:var(--good)">0</b>
+          <p class="tiny" style="margin:2px 0 0">5 pages × 4 widths</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ===================== PAGES ===================== -->
+<section class="blk wrap" id="pages">
+  <div class="hd">
+    <p class="label">Part one</p>
+    <h2>Page by page, before and after</h2>
+    <p class="lead">Same scoring method as s21: share of applicable levers met, minus a point
+      per layout defect. The two pages that moved most are the two that were worst.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:13%">Page</th><th style="width:7%">Was</th><th style="width:7%">Now</th>
+        <th style="width:38%">What changed</th><th>What is still true</th></tr></thead>
+      <tbody>
+        <tr><td><b>System Design</b></td><td class="n">3.5</td>
+          <td class="n"><span class="arrow">9.0</span></td>
+          <td>Wrapped in the app's own <code>.pagewrap</code>; store labels split onto a kind
+            line so they stop colliding; nodes 200px with a 10px type floor. Graph takes the
+            full width until a node is picked, and hovering traces the path through it.</td>
+          <td>Still the best idea in the app — a diagram the server renders from the running
+            config, so it cannot drift. Now it looks like one.</td></tr>
+        <tr><td><b>Scoreboard</b></td><td class="n">5.0</td>
+          <td class="n"><span class="arrow">8.5</span></td>
+          <td>Verdict strip states who won, from the same rows. Two banners shrink to one line
+            each; the metric panel and the 180-word footnote move behind disclosures.
+            ~400 words → the page now reads 549 words total.</td>
+          <td>The table, rubric weights and efficiency bars are untouched. They were never the
+            problem.</td></tr>
+        <tr><td><b>Chat</b></td><td class="n">6.5</td>
+          <td class="n"><span class="arrow">8.5</span></td>
+          <td>Six equal boxes per judged answer become three zones: verdict, prose, one meta
+            row. Answer stats printed once instead of twice. Scope behind one chip that states
+            its value.</td>
+          <td>Key findings, score strip, setup tabs with identity swatches and the winner
+            highlight all kept.</td></tr>
+        <tr><td><b>Experiments</b></td><td class="n">5.0</td>
+          <td class="n"><span class="arrow">8.0</span></td>
+          <td>Sticky in-page nav across six sections. Pack explainer and stale-pack warning
+            reduced to one line each with the detail behind them.</td>
+          <td>Still the densest page in the app, deliberately — 8,143 words of it is
+            <em>data</em>, not prose.</td></tr>
+        <tr><td><b>RAG Pipeline</b></td><td class="n">5.5</td>
+          <td class="n"><span class="arrow">8.0</span></td>
+          <td>Sub-tabs on their own row; video/chunk totals dropped in favour of the topbar's;
+            the knowledge-graph <code>HTTP 503</code> replaced with what it means and the
+            command to fix it.</td>
+          <td>Channel tree and the BM25-vs-semantic ranked columns unchanged.</td></tr>
+        <tr><td><b>Landing</b></td><td class="n">8.0</td>
+          <td class="n"><span class="arrow">9.5</span></td>
+          <td>Instrument display face with the serif keyword; a staggered reveal, once; the
+            four example questions became real buttons that enter the workbench with the
+            question pre-filled.</td>
+          <td>Hero, numbered ASK→SEE→MEASURE→DISTIL cards and metric tiles all kept.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ===================== LEVERS ===================== -->
+<section class="blk wrap" id="levers">
+  <div class="hd">
+    <p class="label">Part two</p>
+    <h2>The twelve levers that moved</h2>
+    <p class="lead">Only rows whose verdict changed. The sixteen already met in s21 —
+      token architecture, focus rings, semantic colour, filled primaries, layout variety,
+      the landing's conversion shape — are unchanged and not re-listed.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th style="width:22%">Lever</th><th style="width:9%">Was</th><th style="width:9%">Now</th>
+        <th>What made the difference</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="4">Typography</td></tr>
+        <tr><td><b>Anchor on the headline font</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>Instrument Sans as display, Instrument Serif italic on the one keyword — the
+            <em>lab</em> in transcript·lab. 48 KB self-hosted, preloaded. The system stack also
+            stopped leading with <code>'Segoe UI'</code>, which meant macOS was silently
+            rendering Helvetica.</td></tr>
+        <tr><td><b>Three tiers, distinct treatment</b></td>
+          <td><span class="st st-part">partial</span></td><td><span class="st st-ok">met</span></td>
+          <td>Display / system sans / mono are now three real voices, and thirteen ad-hoc sizes
+            collapsed onto a seven-step scale. <b>Zero literal <code>font-size</code> values
+            remain in theme.css.</b></td></tr>
+
+        <tr class="grp"><td colspan="4">Colour</td></tr>
+        <tr><td><b>Check every combination's contrast</b></td>
+          <td><span class="st st-part">partial</span></td><td><span class="st st-ok">met</span></td>
+          <td><code>scripts/contrast_audit.py</code> — 26 pairs × 2 themes against WCAG AA,
+            exits non-zero on failure. It found a pre-existing failure nobody knew about:
+            <code>--bad</code> on <code>--bad-dim</code> at 4.49:1, a hair under. Fixed.</td></tr>
+        <tr><td><b>A distinct visual identity</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>Neutrals and accent shifted off GitHub's exact values toward cool-slate/indigo.
+            <code>good/warn/bad</code> and the six pinned setup identity colours deliberately
+            untouched — they label which agent answered, in stored history and committed
+            screenshots.</td></tr>
+
+        <tr class="grp"><td colspan="4">Hierarchy &amp; the premium layer</td></tr>
+        <tr><td><b>One main character per section</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>Chat's judged answer went from six peer boxes to three zones; the Scoreboard now
+            opens with a verdict instead of nine equal panels.</td></tr>
+        <tr><td><b>Whitespace / cramming</b></td>
+          <td><span class="st st-part">partial</span></td><td><span class="st st-ok">met</span></td>
+          <td>~690 words of standing prose moved behind labelled disclosures. Data density
+            deliberately unchanged.</td></tr>
+        <tr><td><b>A duration token on every interaction</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td><code>--dur:200ms</code> on the six shared interactive classes. 200 rather than
+            s20's marketing 300: a control that lags its own click reads as slow software.</td></tr>
+        <tr><td><b>Respect prefers-reduced-motion</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>The block the file never had. <code>--dur</code> collapses and both infinite
+            animations — the streaming pulse and the idle mic glow — stop.</td></tr>
+        <tr><td><b>Staggered reveals</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>Landing only, 60ms apart, once. Opacity and transform with
+            <code>fill-mode: backwards</code>, so an animation that never fires leaves the
+            finished page rather than an invisible one.</td></tr>
+        <tr><td><b>Nothing overflows or clips</b></td>
+          <td><span class="st st-gap">defect</span></td><td><span class="st st-ok">met</span></td>
+          <td>Two real defects fixed (see corrections). A third, found by the post-build sweep:
+            below ~1100px the topbar status pushed the theme toggle off screen —
+            <code>.topstat</code> had <code>overflow:hidden</code> but no
+            <code>min-width:0</code>.</td></tr>
+
+        <tr class="grp"><td colspan="4">Unique &amp; operating discipline</td></tr>
+        <tr><td><b>One signature moment</b></td>
+          <td><span class="st st-gap">gap</span></td><td><span class="st st-ok">met</span></td>
+          <td>The live-config graph, full width, with a path trace on hover. See the evidence
+            below — and the bug it hid.</td></tr>
+        <tr><td><b>A design rules file</b></td>
+          <td><span class="st st-part">partial</span></td><td><span class="st st-ok">met</span></td>
+          <td><code>frontend/DESIGN.md</code>: the token contract, the pinned colours and why,
+            the ten-item never-list, where each fact lives, and the pre-ship checks.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ===================== EVIDENCE ===================== -->
+<section class="blk wrap" id="evidence">
+  <div class="hd">
+    <p class="label">Part three</p>
+    <h2>Evidence</h2>
+    <p class="lead">Captured from the running app after the final build. Note that this browser
+      has the Dark Reader extension installed, which repaints pages — so these show layout and
+      type faithfully, but colour judgements were made from computed token values instead.</p>
+  </div>
+
+  <div class="grid g2">
+    <figure>
+      <div class="shot">
+        <img src="s22_evidence/design-trace.jpg" alt="System Design graph with Vector RAG hovered; its path is lit and every other node is dimmed">
+        <div class="shot-cap">system design · hovering Vector RAG</div>
+      </div>
+      <figcaption><b>The signature moment, and the bug it hid.</b> Hovering lights exactly the
+        path through a node — here Vector RAG's summary filter, its three models and its two
+        Chroma collections — and dims the six sibling agents. The first implementation walked
+        edges in <em>both</em> directions, which, because models and stores are shared hubs,
+        lit almost the entire graph from any node. A trace that lights everything answers
+        nothing. It follows edge direction now.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="shot">
+        <img src="s22_evidence/chat.jpg" alt="A judged chat answer showing the setup chip, RAGAS score, key findings, and a single provenance line">
+        <div class="shot-cap">chat · one judged answer</div>
+      </div>
+      <figcaption><b>Three zones instead of six boxes.</b> Identity and score, then the
+        findings, then one provenance line —
+        <code>63.38s · ~16493 tok · 36 chunks · 5 iterations · top_k 10 · deepseek-v4-flash</code>
+        — with sources and command as inline disclosures. Those figures used to print twice per
+        answer. The composer's resting state is now a single row.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="shot">
+        <img src="s22_evidence/board.jpg" alt="Scoreboard with a verdict strip above the results table">
+        <div class="shot-cap">scoreboard · verdict above evidence</div>
+      </div>
+      <figcaption><b>The board finally says what it knew.</b> "Both tie on composite at 0.79,
+        but summary-filtered wins more questions — 60% (12/20) vs 40% (8/20). Single-hop is the
+        best value per token." It reports a tie <em>as</em> a tie, because two setups landing on
+        the same score at different cost is the interesting case here and a strip that always
+        crowned a winner would hide it.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="shot">
+        <img src="s22_evidence/landing.jpg" alt="Landing page with the Instrument display face and clickable example questions">
+        <div class="shot-cap">landing · display face and live pills</div>
+      </div>
+      <figcaption><b>The face, and the demo that starts itself.</b> transcript·<em
+        style="font-family:var(--serif);font-style:italic;color:var(--accent2)">lab</em> in
+        Instrument Sans with the serif keyword. The four example questions were static text —
+        the page's best demo was the one thing on it you could not try — and are now buttons
+        that enter the workbench with the question pre-filled.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ===================== CORRECTIONS ===================== -->
+<section class="blk wrap" id="wrong">
+  <div class="hd">
+    <p class="label">Part four</p>
+    <h2>Where the s21 audit was wrong</h2>
+    <p class="lead">Before building, I checked the four "defects" against the pre-change build.
+      Two were real. Two were artifacts of reading a downscaled screenshot whose right edge cut
+      the image — the layout was fine and I had claimed otherwise. Recording it here because a
+      rubric that only ever confirms itself is worthless.</p>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:16px">
+    <div class="item wrong">
+      <p class="label">Claimed · not real</p>
+      <h3>"The pipeline header overflows at 1615px"</h3>
+      <p class="small">Measured <code>.pipe-head</code> <code>scrollWidth</code> against
+        <code>clientWidth</code> at 1615 / 1440 / 1280 / 1100 / 980 / 860 on the original
+        build: <b>no overflow at any width</b>, and the sub-tabs wrap normally below 1100.</p>
+      <p class="meta"><span><b>Shipped anyway</b> two-row header</span>
+        <span><b>Reason</b> the sub-tabs no longer compete for width, and R2 emptied the row</span></p>
+    </div>
+    <div class="item wrong">
+      <p class="label">Claimed · not real</p>
+      <h3>"The composer clips below the fold, unreachably"</h3>
+      <p class="small">The composer is <code>flex: 0 0 auto</code> in a column whose thread
+        takes the remaining space. Measured inside a 600px shell: the Send button sits
+        <b>fully inside it</b>. It could not have been pushed off.</p>
+      <p class="meta"><span><b>Shipped anyway</b> scope popover</span>
+        <span><b>Reason</b> a row fewer at rest, and scope now states its value</span></p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="label" style="margin-bottom:10px">What was real</p>
+    <div class="no"><span class="c">✓</span><span><b>System Design had no page padding.</b>
+      The view never used the app's <code>.pagewrap</code>, so its intro sat flush against
+      x=0.</span></div>
+    <div class="no"><span class="c">✓</span><span><b>Store labels collided.</b>
+      <code>Chroma · transcript_chunks_contextual</code> is 36 characters — about 248px of
+      11.5px mono centred in a 180px node on a 220px column pitch, so it ran into its
+      neighbour. Arithmetic, not a screenshot.</span></div>
+    <div class="no"><span class="c">✓</span><span><b>A third defect nobody had spotted</b>,
+      found by the post-build sweep: below ~1100px the topbar status pushed the theme toggle
+      off screen on every page.</span></div>
+  </div>
+
+  <div class="band" style="margin-top:16px">
+    <p class="label" style="margin-bottom:8px">The rule this produced</p>
+    <p class="small" style="margin:0">Now in <code>DESIGN.md</code>: <b>measure before claiming
+      a defect.</b> Screenshots show you where to look; the DOM tells you whether you are right.
+      A browser extension such as Dark Reader will also repaint the page and make any colour
+      judgement from a screenshot worthless — read computed token values instead.</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ===================== WHAT'S LEFT ===================== -->
+<section class="blk wrap" id="left">
+  <div class="hd">
+    <p class="label">Part five</p>
+    <h2>The three that did not move</h2>
+    <p class="lead">Two are deliberate refusals recorded in the never-list. One is a genuine
+      remaining gap, and it is small.</p>
+  </div>
+
+  <div class="grid g3">
+    <div class="item">
+      <p class="label"><span class="st st-part">partial</span> · by choice</p>
+      <h3>Frosted, sticky nav</h3>
+      <p class="small">The topbar is persistent but opaque. Nothing scrolls under it — the app
+        shell is a fixed flex column, not a scrolling page — so translucency would be an effect
+        with nothing to reveal. The Experiments in-page nav <em>is</em> frosted, because there
+        content genuinely passes beneath it.</p>
+    </div>
+    <div class="item">
+      <p class="label"><span class="st st-part">partial</span> · by choice</p>
+      <h3>Ban the four horsemen</h3>
+      <p class="small">All the named slop signatures are absent, and the palette is no longer
+        GitHub's. Scored partial rather than met only because "system font on a dark devtool
+        palette" remains the genre's own house style and this app still lives in that genre —
+        the display face is what separates it, not the whole design.</p>
+    </div>
+    <div class="item">
+      <p class="label"><span class="st st-gap">gap</span> · real</p>
+      <h3>The audit is not automated</h3>
+      <p class="small">Contrast is enforced by a script; composition is not. This page is the
+        second hand-run score. The next step would be a <code>design-audit</code> skill holding
+        this rubric and the never-list, so "audit the workbench" is one command with a
+        comparable number — the pattern <code>contrast_audit.py</code> already proves.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:24px">
+    <p class="label" style="margin-bottom:12px">What shipped, in one place</p>
+    <dl class="kv">
+      <dt>Branch</dt><dd><code>studio-design-upgrade</code> — 6 commits, 33 files, +1591 / −408</dd>
+      <dt>Phase 0</dt><dd>System Design layout defects; pipeline header row; scope popover; the 503 empty state</dd>
+      <dt>Phase 1</dt><dd>The cut list R1–R8 — ~690 words out of the default views</dd>
+      <dt>Phase 2</dt><dd>Instrument Sans/Serif (48 KB, self-hosted) + the palette shift, contrast-verified</dd>
+      <dt>Phase 3</dt><dd>Motion token + reduced-motion, the type scale, chat's three zones, the verdict strip, Experiments nav</dd>
+      <dt>Phase 4</dt><dd>The graph's full width and path trace, the landing reveal, <code>DESIGN.md</code></dd>
+      <dt>Checks</dt><dd>528 tests · 52/52 contrast pairs · 0 overflow across 5 pages × 4 widths · typecheck + build clean</dd>
+      <dt>Not merged</dt><dd>The branch is committed but unpushed — no PR opened, nothing merged to main</dd>
+    </dl>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span>s22 · re-score · transcript-rag-agent</span>
+    <span>rubric: s20 · plan: s21 · verified against the running app · 9 Sep 2026</span>
+  </div>
+</footer>
+
+</body>
+</html>

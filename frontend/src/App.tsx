@@ -55,6 +55,8 @@ export function App() {
   const [offline, setOffline] = useState(false);
   /** Set by "Ask about this" in the pipeline view so Chat opens pre-scoped. */
   const [pendingScope, setPendingScope] = useState<string | null>(null);
+  /** Set by a landing example question so Chat opens with it already typed. */
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   // index.html applies the theme before first paint; this mirrors it so the
   // toggle can render the right label.
   const [theme, setThemeState] = useState<Theme>(initialTheme);
@@ -98,8 +100,17 @@ export function App() {
     })();
   }, [refreshCorpus, refreshHealth]);
 
+  // The hash is the only router, so it has to drive *both* pieces of state.
+  // Updating only the tab meant #landing silently resolved to Chat (it is not
+  // a tab id), so the documented way back to the landing did nothing — and
+  // neither did the browser's Back button once you had entered.
   useEffect(() => {
-    const onHashChange = () => setTab(tabFromHash());
+    const onHashChange = () => {
+      setTab(tabFromHash());
+      setShowLanding(
+        shouldShowLanding(window.location.hash, sessionStorage.getItem(ENTERED_KEY) === '1'),
+      );
+    };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
@@ -109,8 +120,9 @@ export function App() {
     setTab(next);
   };
 
-  const enterApp = () => {
+  const enterApp = (question?: string) => {
     sessionStorage.setItem(ENTERED_KEY, '1');
+    setPendingQuestion(question ?? null);
     setShowLanding(false);
     selectTab('chat');
   };
@@ -118,6 +130,12 @@ export function App() {
   const askAbout = (url: string) => {
     setPendingScope(url);
     selectTab('chat');
+  };
+
+  /** Back to the intro. Routed through the hash so Back/Forward keep working. */
+  const showIntro = () => {
+    window.location.hash = 'landing';
+    setShowLanding(true);
   };
 
   const toggleTheme = () => {
@@ -145,12 +163,21 @@ export function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <span className="brand">
+        {/* The brand is the way home, as it is on nearly every site. Before
+            this there was no route back to the intro at all: #landing was
+            documented but did not work, and nothing on the page offered it. */}
+        <button
+          type="button"
+          className="brand"
+          onClick={showIntro}
+          title="Back to the intro"
+          aria-label="Back to the intro"
+        >
           <Logo />
           <span>
-            transcript<em>·lab</em>
+            transcript·<em>lab</em>
           </span>
-        </span>
+        </button>
         <nav className="nav" aria-label="Views">
           {visibleTabs.map(({ id, label }) => (
             <button
@@ -166,7 +193,7 @@ export function App() {
         </nav>
         <div className="topstat">
           <span className={`hdot ${offline ? 'err' : health ? 'ok' : ''}`} />
-          <span>
+          <span className="topstat-text">
             {offline
               ? 'server unreachable'
               : demo
@@ -200,6 +227,8 @@ export function App() {
             onActivity={refreshHealth}
             pendingScope={pendingScope}
             onScopeConsumed={() => setPendingScope(null)}
+            pendingQuestion={pendingQuestion}
+            onQuestionConsumed={() => setPendingQuestion(null)}
             stt={health?.stt === true}
           />
         )}

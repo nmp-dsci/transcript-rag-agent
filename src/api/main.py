@@ -1479,13 +1479,22 @@ def create_app(
             headers=_SSE_HEADERS,
         )
 
-    # Mounted last so it can never shadow an /api route. Absent until the
+    # Mounted last so they can never shadow an /api route. Absent until the
     # frontend is built, which is why `/` falls back to the legacy page.
     if (frontend_dist / "assets").is_dir():
         app.mount(
             "/assets",
             StaticFiles(directory=frontend_dist / "assets"),
             name="bundle-assets",
+        )
+    # Vite copies public/ to the dist root rather than into assets/, so the
+    # self-hosted display faces need their own mount. Without it they 404 and
+    # the app silently falls back to the system stack.
+    if (frontend_dist / "fonts").is_dir():
+        app.mount(
+            "/fonts",
+            StaticFiles(directory=frontend_dist / "fonts"),
+            name="bundle-fonts",
         )
 
     return app

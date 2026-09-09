@@ -26,6 +26,11 @@ function plural(count: number, one: string, many: string): string {
  * 3. **The engine** — no run file records the version of the engine that
  *    answered its questions, so the page says that plainly and points at the
  *    README rather than inventing a version that was never captured.
+ *
+ * Claim 1 is what a reader needs before carrying a number away, so it stays on
+ * the page; 2 and 3 are the standing caveats behind them and sit in a
+ * disclosure. Nothing is dropped — a workbench page is visited dozens of times,
+ * and prose that must be re-scrolled every visit stops being read at all.
  */
 export function CorpusNote({
   run,
@@ -66,35 +71,42 @@ export function CorpusNote({
           . The videos and chunks counted in the page header are the corpus indexed{' '}
           <em>right now</em> — a different question from which corpus produced these numbers.
         </>
-      )}{' '}
-      {peers.different.length > 0 ? (
-        <>
-          {peers.different.length} other committed{' '}
-          {plural(peers.different.length, 'run', 'runs')} here{' '}
-          {plural(peers.different.length, 'was', 'were')} scored on a different corpus (
-          {digestList(peers.different)}). A column that appears in both is not a like-for-like
-          comparison — the two sets of numbers came from different evidence.{' '}
-        </>
-      ) : null}
-      {peers.unknown.length > 0 ? (
-        <>
-          {peers.unknown.length} other {plural(peers.unknown.length, 'run', 'runs')}{' '}
-          {plural(peers.unknown.length, 'has', 'have')} no corpus relationship on record: unknown,
-          not equal.{' '}
-        </>
-      ) : null}
-      {peers.same.length > 0 ? (
-        <>
-          {peers.same.length} other {plural(peers.same.length, 'run', 'runs')}{' '}
-          {plural(peers.same.length, 'records', 'record')} this same digest and so retrieved from
-          the same corpus.{' '}
-        </>
-      ) : null}
-      No run records the <b>engine version</b> behind its answers either. The cell fingerprint is
-      built from configuration, not code, so a change in how an engine behaves that moves no config
-      field leaves no trace in any run file — two runs&apos; identically named columns can be
-      different engines. <code>evals/runs/README.md</code> (&ldquo;What the fingerprint cannot
-      see&rdquo;) records the case where that has already happened.
+      )}
+      <details className="note-more">
+        <summary>How the other runs relate to this one, and what no run records</summary>
+        <p>
+          {peers.different.length > 0 ? (
+            <>
+              {peers.different.length} other committed{' '}
+              {plural(peers.different.length, 'run', 'runs')} here{' '}
+              {plural(peers.different.length, 'was', 'were')} scored on a different corpus (
+              {digestList(peers.different)}). A column that appears in both is not a like-for-like
+              comparison — the two sets of numbers came from different evidence.{' '}
+            </>
+          ) : null}
+          {peers.unknown.length > 0 ? (
+            <>
+              {peers.unknown.length} other {plural(peers.unknown.length, 'run', 'runs')}{' '}
+              {plural(peers.unknown.length, 'has', 'have')} no corpus relationship on record:
+              unknown, not equal.{' '}
+            </>
+          ) : null}
+          {peers.same.length > 0 ? (
+            <>
+              {peers.same.length} other {plural(peers.same.length, 'run', 'runs')}{' '}
+              {plural(peers.same.length, 'records', 'record')} this same digest and so retrieved
+              from the same corpus.{' '}
+            </>
+          ) : null}
+        </p>
+        <p>
+          No run records the <b>engine version</b> behind its answers either. The cell fingerprint
+          is built from configuration, not code, so a change in how an engine behaves that moves no
+          config field leaves no trace in any run file — two runs&apos; identically named columns
+          can be different engines. <code>evals/runs/README.md</code> (&ldquo;What the fingerprint
+          cannot see&rdquo;) records the case where that has already happened.
+        </p>
+      </details>
     </div>
   );
 }

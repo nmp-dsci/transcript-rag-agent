@@ -750,10 +750,15 @@ before `serve` shows the React UI. Without a build, `/` falls back to the
 legacy single-file page and `GET /api/health` reports `"ui": "legacy"` — the
 API is unaffected either way.
 
-Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
-`#library` and `#prompts` links still resolve):
+A dedicated **landing page** (`#landing`) opens on a plain first visit each
+session — `sessionStorage` remembers that you entered, so a reload goes
+straight to the workbench — and its "Enter" button (or any deep link) takes
+you into the tabbed workbench below. The brand mark in the topbar is a button
+back to that landing page. Five workbench views (the tab formerly called
+**Library** is now **RAG Pipeline**; old `#library` and `#prompts` links
+still resolve):
 
-- **Chat** — the landing tab. Type a question and it is answered in a
+- **Chat** — the default workbench tab. Type a question and it is answered in a
   conversation thread with citations back to source timestamps. The default
   agent is `rag_agent` (agentic), whose retrieval loop streams into the bubble
   live — one line per iteration showing the query it chose and how many chunks
@@ -868,7 +873,10 @@ Five views (the tab formerly called **Library** is now **RAG Pipeline**; old
   Built by `index-conflicts` and served by `GET /api/conflicts`.
 - **Scoreboard** — the leaderboard for one **committed matrix run**: every setup
   answering the *same* golden questions under one recorded config, graded by one
-  judge. A run picker selects which committed `matrix-*.json` to rank (newest by
+  judge. A **VerdictStrip** states the run's headline in one sentence — the
+  composite leader, and a win-rate claim only when both `judged` and
+  `contests` clear the low-n floor (a tie is reported as a comparison, never
+  as one row's rate). A run picker selects which committed `matrix-*.json` to rank (newest by
   default), so an older run stays available for comparison; each option is
   labelled with the **rubric** that composited it (`ragas-v1` or `depth-v2`),
   because two runs over identical answers can rank the setups differently purely
@@ -2420,8 +2428,9 @@ evals/runs/      # Committed eval snapshots (ablation + golden + matrix runs); a
 docs/            # Process docs, e.g. growing the golden set
 scripts/         # One-off maintenance (chunk-metadata backfill, stored-citation
                  #   chunk_index repair, legacy matrix-checkpoint migration), the
-                 #   golden-candidate drafting scaffold, and the cache-resumable
-                 #   matrix driver (run_matrix_chunked.py)
+                 #   golden-candidate drafting scaffold, the cache-resumable
+                 #   matrix driver (run_matrix_chunked.py), and the WCAG AA
+                 #   contrast audit (contrast_audit.py, see frontend/DESIGN.md)
 frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
   src/api/       # Typed endpoint client and SSE reader
   src/answers/   # Answer/citation renderer (TS port of the shared renderer)
@@ -2431,9 +2440,11 @@ frontend/        # React 19 + TypeScript UI (Vite); dist/ is gitignored
                  #   and each answer path's step-by-step flow
   src/eval/      # Score breakdown drawer + per-metric explainers, shared by Chat and Scoreboard
   src/experiments/ # Experiments tab: matrix tables + ablation tables + golden-run summaries + the Run eval matrix trigger
+  src/landing/   # The pre-entry landing page (#landing)
   src/pipeline/  # Corpus tree, chunk detail (+ per-chunk graph enrichment), Retrieval Lab, knowledge graph, indexing panel, chunk graph
   src/scoreboard/# Run picker, grouped aggregates, provenance bar, efficiency panel,
-                 #   per-question breakdown of the selected run (QuestionsPanel)
+                 #   per-question breakdown of the selected run (QuestionsPanel), VerdictStrip
+  src/questions.ts # Curated starter questions shared by the landing and Chat composer
 tests/
 ```
 

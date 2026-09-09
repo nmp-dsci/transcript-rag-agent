@@ -16,14 +16,7 @@ import { useEffect } from 'react';
 import { captureEvent } from '../analytics';
 import type { Corpus } from '../api/types';
 import { Logo } from '../Logo';
-
-/** Real recorded questions, in the shape people actually type them. */
-const EXAMPLE_QUESTIONS = [
-  'How do I make my resume ATS-friendly?',
-  'Where do these videos disagree with each other?',
-  'Is a modular monolith a better default than microservices?',
-  'What do recruiters actually look for on an AI engineer resume?',
-];
+import { CURATED_QUESTIONS } from '../questions';
 
 const BENEFITS = [
   {
@@ -104,7 +97,8 @@ interface Props {
   corpus: Corpus | null;
   /** null while /api/health is in flight — the fine print waits for truth. */
   demo: boolean | null;
-  onEnter: () => void;
+  /** Enter the workbench. A question means "enter and ask this immediately". */
+  onEnter: (question?: string) => void;
 }
 
 export function Landing({ corpus, demo, onEnter }: Props) {
@@ -122,7 +116,7 @@ export function Landing({ corpus, demo, onEnter }: Props) {
         <Logo />
       </div>
       <h1 className="l-title">
-        transcript<em>·lab</em>
+        transcript·<em>lab</em>
       </h1>
       <p className="l-tag">RAG you can audit.</p>
 
@@ -163,12 +157,29 @@ export function Landing({ corpus, demo, onEnter }: Props) {
         ))}
       </div>
 
+      {/* Real controls, not decoration: these were static text, which made the
+          landing's best demo the one thing on it you could not try. In demo
+          mode asking is refused server-side, so they stay as plain text. */}
       <div className="l-qs">
-        {EXAMPLE_QUESTIONS.map((question) => (
-          <span className="l-q" key={question}>
-            {question}
-          </span>
-        ))}
+        {CURATED_QUESTIONS.map((question) =>
+          demo === false ? (
+            <button
+              type="button"
+              className="l-q"
+              key={question}
+              onClick={() => {
+                captureEvent('demo_question_click');
+                onEnter(question);
+              }}
+            >
+              {question}
+            </button>
+          ) : (
+            <span className="l-q" key={question}>
+              {question}
+            </span>
+          ),
+        )}
       </div>
 
       <div className="l-metrics">

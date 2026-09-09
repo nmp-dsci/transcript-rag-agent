@@ -408,21 +408,26 @@ function StalenessNotice({ staleness }: { staleness?: PackStaleness | null }) {
   const gained = videos > 0 || chunks > 0;
   return (
     <p className="pk-stale">
-      <b>These rules are out of date.</b> They were distilled from{' '}
-      {staleness.build_videos} videos / {staleness.build_chunks} chunks (
-      <code>{staleness.build_digest}</code>). The corpus you are browsing now holds{' '}
-      {staleness.live_videos} videos / {staleness.live_chunks} chunks (
-      <code>{staleness.live_digest}</code>) —{' '}
-      {gained ? (
-        <>
-          {Math.abs(videos)} video{Math.abs(videos) === 1 ? '' : 's'} and {Math.abs(chunks)} chunk
-          {Math.abs(chunks) === 1 ? '' : 's'} the build never saw
-        </>
-      ) : (
-        <>a re-chunk since the build, so stored citations may have moved</>
-      )}
-      . Nothing below is wrong, but it is not everything the corpus now supports. Rebuild
-      with <code>uv run python -m src.cli build-packs</code>.
+      <b>These rules are out of date.</b> Built from {staleness.build_videos} videos /{' '}
+      {staleness.build_chunks} chunks; the corpus now holds {staleness.live_videos} /{' '}
+      {staleness.live_chunks}. Nothing below is wrong, but it is not everything the corpus now
+      supports.
+      <details className="note-more">
+        <summary>What changed, and how to rebuild</summary>
+        <span>
+          Built from <code>{staleness.build_digest}</code>, browsing{' '}
+          <code>{staleness.live_digest}</code> —{' '}
+          {gained ? (
+            <>
+              {Math.abs(videos)} video{Math.abs(videos) === 1 ? '' : 's'} and {Math.abs(chunks)}{' '}
+              chunk{Math.abs(chunks) === 1 ? '' : 's'} the build never saw
+            </>
+          ) : (
+            <>a re-chunk since the build, so stored citations may have moved</>
+          )}
+          . Rebuild with <code>uv run python -m src.cli build-packs</code>.
+        </span>
+      </details>
     </p>
   );
 }
@@ -755,18 +760,26 @@ export function PackPanel() {
 
       <StalenessNotice staleness={detail?.staleness} />
 
+      {/* One line for what a pack is; how one gets built is a standing
+          explanation the returning reader has already read. */}
       <p className="pk-intro">
         A rubric pack is a standing list of review criteria drawn from the corpus{' '}
-        <em>as it stood at build time</em>, each one carrying the transcript words it
-        came from. Membership is
-        routed — the topic description below is embedded and matched against every
-        video's summary by the same call a live question makes — and the criteria are
-        written from the <em>members</em> of a theme rather than its summary, because
-        theme summaries read more cross-creator than the clusters underneath them are.
-        The build assigns no severity and no confidence; the badges on each rule are
-        the two things that were measured — how many distinct creators back it, and
-        how cleanly its weakest quote snapped onto the transcript.
+        <em>as it stood at build time</em>, each one carrying the transcript words it came from.
       </p>
+      <details className="note-more">
+        <summary>How a pack gets built</summary>
+        <p>
+          Membership is routed — the topic description below is embedded and matched against every
+          video&apos;s summary by the same call a live question makes — and the criteria are
+          written from the <em>members</em> of a theme rather than its summary, because theme
+          summaries read more cross-creator than the clusters underneath them are.
+        </p>
+        <p>
+          The build assigns no severity and no confidence; the badges on each rule are the two
+          things that were measured — how many distinct creators back it, and how cleanly its
+          weakest quote snapped onto the transcript.
+        </p>
+      </details>
 
       {summary && <p className="pk-blurb">{summary.blurb}</p>}
       {detail?.routing_text && (

@@ -10,6 +10,25 @@ const STYLE_ID = 'tlab-experiments';
 
 const CSS = `
 .exp-intro { color: var(--text2); max-width: 74ch; margin: 4px 0 18px; line-height: 1.55; }
+
+/* In-page wayfinding. Sticky because the panels below are several screens
+   each, and the reader's question is "what else is on this page?". */
+.exp-nav {
+  position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; gap: 4px;
+  margin: 0 0 16px; padding: 8px 0;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.exp-nav a {
+  font: var(--t-2) var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 6px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.exp-nav a:hover { color: var(--accent2); background: var(--accent-dim); }
+.exp-nav a:focus-visible { color: var(--accent2); }
+/* The sticky nav would otherwise cover the heading it just jumped to. */
+.pagewrap section[id] { scroll-margin-top: 52px; }
 .exp-empty { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px 16px; }
 

@@ -1,0 +1,834 @@
+<title>Ship Like a Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FAF9F5;
+    --panel: #FFFFFF;
+    --panel-2: #F3F1EA;
+    --ink: #16181D;
+    --body: rgba(22, 24, 29, 0.87);
+    --caption: rgba(22, 24, 29, 0.60);
+    --muted: #5C6270;
+    --line: #E5E2D8;
+    --line-strong: #C9C5B8;
+    --accent: #2434C9;
+    --accent-soft: rgba(36, 52, 201, 0.10);
+    --accent-num: rgba(36, 52, 201, 0.22);
+    --console: #14161B;
+    --console-text: #E9E8E2;
+    --console-label: #9BA1AE;
+    --nav-bg: rgba(250, 249, 245, 0.82);
+    --shadow: 0 1px 2px rgba(22,24,29,.05), 0 8px 28px rgba(22,24,29,.07);
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+    --mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101216;
+      --panel: #171A20;
+      --panel-2: #1C2027;
+      --ink: #EDEBE4;
+      --body: rgba(237, 235, 228, 0.87);
+      --caption: rgba(237, 235, 228, 0.60);
+      --muted: #9BA1AE;
+      --line: #262B34;
+      --line-strong: #3A4150;
+      --accent: #96A4FF;
+      --accent-soft: rgba(150, 164, 255, 0.12);
+      --accent-num: rgba(150, 164, 255, 0.30);
+      --console: #0B0D11;
+      --console-text: #E9E8E2;
+      --console-label: #8189A0;
+      --nav-bg: rgba(16, 18, 22, 0.82);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101216;
+    --panel: #171A20;
+    --panel-2: #1C2027;
+    --ink: #EDEBE4;
+    --body: rgba(237, 235, 228, 0.87);
+    --caption: rgba(237, 235, 228, 0.60);
+    --muted: #9BA1AE;
+    --line: #262B34;
+    --line-strong: #3A4150;
+    --accent: #96A4FF;
+    --accent-soft: rgba(150, 164, 255, 0.12);
+    --accent-num: rgba(150, 164, 255, 0.30);
+    --console: #0B0D11;
+    --console-text: #E9E8E2;
+    --console-label: #8189A0;
+    --nav-bg: rgba(16, 18, 22, 0.82);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--body);
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- shared bits ---------- */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+  .prose { max-width: 68ch; }
+  h1, h2, h3 { color: var(--ink); text-wrap: balance; margin: 0; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4vw, 2.9rem); line-height: 1.08; }
+  h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+  p { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 300ms ease; }
+  a:hover, a:focus-visible { border-bottom-color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  strong { color: var(--ink); font-weight: 600; }
+  .mark {
+    display: inline-block; width: 9px; height: 9px; background: var(--accent);
+    transform: rotate(45deg); flex: none;
+  }
+  .eyebrow {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--caption);
+    margin-bottom: 18px;
+  }
+  section { padding: 84px 0 20px; }
+  .section-head { margin-bottom: 40px; }
+  .section-head .lede { max-width: 62ch; color: var(--body); margin-top: 16px; font-size: 1.05rem; }
+  .caption { color: var(--caption); font-size: 0.86rem; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- nav ---------- */
+  nav.site {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav.site .bar {
+    display: flex; align-items: center; gap: 26px;
+    max-width: 1080px; margin: 0 auto; padding: 14px 28px;
+    overflow-x: auto;
+  }
+  nav.site .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--serif); font-size: 1.15rem; color: var(--ink);
+    white-space: nowrap; border: none;
+  }
+  nav.site .links { display: flex; gap: 22px; margin-left: auto; }
+  nav.site .links a {
+    position: relative; color: var(--body); font-size: 0.88rem; font-weight: 500;
+    white-space: nowrap; border: none; padding: 3px 0;
+  }
+  nav.site .links a::after {
+    content: ""; position: absolute; left: 0; bottom: -2px; height: 2px; width: 100%;
+    background: var(--accent); transform: scaleX(0); transform-origin: left center;
+    transition: transform 300ms ease;
+  }
+  nav.site .links a:hover::after, nav.site .links a:focus-visible::after { transform: scaleX(1); }
+
+  /* ---------- hero ---------- */
+  header.hero { padding: 96px 0 72px; border-bottom: 1px solid var(--line); }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(3rem, 8.5vw, 6rem); line-height: 1.02; letter-spacing: -0.01em;
+    max-width: 14ch;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero .sub { max-width: 56ch; font-size: 1.16rem; margin-top: 26px; }
+  .hero .provenance {
+    display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 36px;
+    font-family: var(--mono); font-size: 0.76rem; color: var(--caption);
+  }
+  .hero .provenance span { display: flex; align-items: center; gap: 8px; }
+  .hero .provenance .mark { width: 7px; height: 7px; }
+
+  /* ---------- epigraph ---------- */
+  .epigraph { margin: 64px 0 8px; padding-left: 26px; border-left: 3px solid var(--accent); }
+  .epigraph blockquote {
+    margin: 0; font-family: var(--serif); font-style: italic;
+    font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.25; color: var(--ink);
+    max-width: 26ch;
+  }
+  .epigraph figcaption { margin-top: 12px; }
+
+  /* ---------- thesis triptych ---------- */
+  .triptych { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 44px; }
+  .triptych > div { background: var(--panel); padding: 26px 24px; min-width: 0; }
+  .triptych .k { font-family: var(--serif); font-size: 1.7rem; color: var(--ink); display: block; margin-bottom: 8px; }
+  .triptych p { margin: 0; font-size: 0.94rem; }
+
+  /* ---------- pipeline ---------- */
+  .stage {
+    display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 28px;
+    padding: 40px 0; border-top: 1px solid var(--line);
+  }
+  .stage:last-of-type { border-bottom: 1px solid var(--line); }
+  .stage .no {
+    font-family: var(--serif); font-size: 3.6rem; line-height: 1; color: var(--accent-num);
+    font-variant-numeric: tabular-nums;
+  }
+  .stage h3 { font-size: 1.22rem; margin-bottom: 4px; }
+  .stage .why { color: var(--caption); font-size: 0.9rem; margin-bottom: 14px; }
+  .stage ul { margin: 0; padding-left: 18px; }
+  .stage li { margin-bottom: 8px; }
+  .stage li::marker { color: var(--accent); }
+
+  /* ---------- lever cards ---------- */
+  .levers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .lever { background: var(--panel); border: 1px solid var(--line); padding: 26px 26px 18px; min-width: 0;
+    transition: box-shadow 300ms ease, transform 300ms ease; }
+  .lever:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .lever h3 { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .lever h3 .mark { width: 8px; height: 8px; }
+  .lever ul { margin: 0; padding-left: 18px; font-size: 0.94rem; }
+  .lever li { margin-bottom: 8px; }
+  .lever li::marker { color: var(--accent); }
+
+  /* ---------- ban table ---------- */
+  .ban { border: 1px solid var(--line); background: var(--panel); }
+  .ban .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); border-top: 1px solid var(--line); }
+  .ban .row:first-child { border-top: none; }
+  .ban .row > div { padding: 16px 22px; min-width: 0; }
+  .ban .row .kill { border-right: 1px solid var(--line); }
+  .ban .head { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--caption); }
+  .ban .kill s { color: var(--muted); text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; }
+  .ban .fix { font-size: 0.94rem; }
+
+  /* ---------- prompt library ---------- */
+  .prompt { margin: 0 0 22px; border: 1px solid var(--line); background: var(--console); }
+  .prompt .label {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--console-label);
+  }
+  .prompt .label button {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em;
+    background: transparent; color: var(--console-label); border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 12px; cursor: pointer; transition: color 300ms, border-color 300ms;
+  }
+  .prompt .label button:hover, .prompt .label button:focus-visible { color: var(--console-text); border-color: var(--console-text); }
+  .prompt pre {
+    margin: 0; padding: 18px 20px; overflow-x: auto;
+    font-family: var(--mono); font-size: 0.86rem; line-height: 1.6; color: var(--console-text);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .prompt .note { padding: 0 20px 16px; font-size: 0.84rem; color: var(--console-label); font-family: var(--sans); }
+
+  /* ---------- sources ---------- */
+  .cluster { margin-bottom: 40px; }
+  .cluster h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .cluster ol { margin: 0; padding-left: 22px; }
+  .cluster li { margin-bottom: 10px; font-size: 0.95rem; }
+  .cluster li::marker { color: var(--caption); font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+  .cluster .tk { color: var(--caption); }
+
+  /* ---------- self-rules ---------- */
+  .selfbox { border: 1px solid var(--line-strong); background: var(--panel-2); padding: 30px 32px; margin: 72px 0 0; }
+  .selfbox h3 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin-bottom: 14px; }
+  .selfbox ul { margin: 0; padding-left: 18px; font-size: 0.93rem; }
+  .selfbox li { margin-bottom: 7px; }
+  .selfbox li::marker { color: var(--accent); }
+
+  footer.site { margin-top: 80px; border-top: 1px solid var(--line); padding: 30px 0 48px; }
+  footer.site .wrap { display: flex; flex-wrap: wrap; gap: 12px 30px; justify-content: space-between; }
+
+  /* ---------- reveal ---------- */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity 600ms ease, transform 600ms ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .lever, nav.site .links a::after, a, .prompt .label button { transition: none; }
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 860px) {
+    .triptych { grid-template-columns: minmax(0, 1fr); }
+    .levers { grid-template-columns: minmax(0, 1fr); }
+    .stage { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 32px 0; }
+    .stage .no { font-size: 2.4rem; }
+    .ban .row { grid-template-columns: minmax(0, 1fr); }
+    .ban .row .kill { border-right: none; border-bottom: 1px dashed var(--line); }
+    section { padding: 64px 0 12px; }
+    header.hero { padding: 64px 0 52px; }
+  }
+</style>
+
+<nav class="site" aria-label="Sections">
+  <div class="bar">
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Ship Like a Studio</a>
+    <div class="links">
+      <a href="#thesis">Thesis</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#beautiful">Beautiful</a>
+      <a href="#unique">Unique</a>
+      <a href="#scale">Scale</a>
+      <a href="#prompts">Prompts</a>
+      <a href="#sources">Sources</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow"><span class="mark" aria-hidden="true"></span>A field guide from the transcript corpus</div>
+  <h1>One person. Agents. Work that reads like a <em>whole studio</em> shipped it.</h1>
+  <p class="sub">How to agentically build webpages that are beautiful, unique, and engineered to scale — distilled from 23 videos indexed in the transcript-rag-agent corpus: the Claude Code web-design creators, the working web designers, the premium-feel app builders, and the principal-level agentic engineers.</p>
+  <div class="provenance">
+    <span><span class="mark" aria-hidden="true"></span>23 source videos</span>
+    <span><span class="mark" aria-hidden="true"></span>838 transcript chunks read in full</span>
+    <span><span class="mark" aria-hidden="true"></span>6 parallel extraction passes</span>
+    <span><span class="mark" aria-hidden="true"></span>compiled 2026-08-31</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= THESIS ================= -->
+  <section id="thesis">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part one</div>
+      <h2>The operating principle</h2>
+      <p class="lede">Every creator in the corpus — designer or engineer, indie or principal — converges on the same diagnosis. "AI slop" isn't a model failure; it's what happens when you accept the default. The model fills every unspecified gap with the safest, most statistically average choice. Beautiful, unique, and scalable are all downstream of the same three moves.</p>
+    </div>
+
+    <div class="triptych reveal">
+      <div>
+        <span class="k">References in</span>
+        <p>Never generate from a blank canvas. Feed real inspiration — screenshots, live URLs, brand kits, one great component — and let the agent study it. Adjectives produce averages; artifacts produce direction.</p>
+      </div>
+      <div>
+        <span class="k">System codified</span>
+        <p>Turn taste into files the agent reads every session: a design system with tokens, a CLAUDE.md persona and rules, skills for conditional knowledge. One source of truth, enforced everywhere.</p>
+      </div>
+      <div>
+        <span class="k">Evidence out</span>
+        <p>Never trust a claim of "done." Demand proof: screenshots in both themes, end-to-end tests that fail before the patch, an adversarial review in a fresh context, a scored audit before launch.</p>
+      </div>
+    </div>
+
+    <figure class="epigraph reveal">
+      <blockquote>&ldquo;AI&rsquo;s first output is the starting line. It is not the finish line.&rdquo;</blockquote>
+      <figcaption class="caption">— <a href="https://youtu.be/MXLF8b15GhQ?t=775" target="_blank" rel="noopener">How I Make Apps FEEL Premium</a>, the one line nearly every source repeats in its own words</figcaption>
+    </figure>
+
+    <div class="prose" style="margin-top:40px">
+      <p>The corollary is the moat: <strong>iteration budgets</strong>. The premium-feel builders put hard numbers on it — thirty-plus prompts for one illustration, thirty color trials for one gradient, six hours on a single animation, twelve versions of a hero's focal image. Their reasoning is brutal and correct: a result you got in one or two prompts is, by definition, a result everyone else can get in one or two prompts. Uniqueness is purchased with iteration the next person won't do — and agents make that iteration nearly free. The veteran engineers add the second corollary: the multiplier only pays if you can judge the output. Expert supervision turns agents into a 100× lever; without judgment, the same tools amplify mediocrity.</p>
+    </div>
+  </section>
+
+  <!-- ================= PIPELINE ================= -->
+  <section id="pipeline">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part two</div>
+      <h2>The pipeline</h2>
+      <p class="lede">Eight stages, assembled from the workflows the creators actually run. The order matters: everything cheap and structural happens before code exists, everything expensive and cosmetic happens after the structure is proven. Skipping ahead is how flashy, purposeless pages get made.</p>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">01</div>
+      <div>
+        <h3>Substance before style</h3>
+        <p class="why">"Flashy front ends nobody is buying" is the most common failure — a Ferrari with no engine.</p>
+        <ul>
+          <li>Answer <strong>five questions</strong> before anything else: Who is this site for (the visitor, not the business)? What <strong>one action</strong> should they take? What objections do they arrive with? What's the vibe? What brand assets already exist and are locked?</li>
+          <li>Have the agent <strong>research the niche</strong> — scrape the top performers (web-scraping MCP, ranked by reviews/SEO) and answer those five questions from evidence, not guesses.</li>
+          <li>Derive the <strong>sitemap and page count</strong> from the research ("based on everything you know, how many pages should this be?" — usually 5–7), then wireframe the structure before styling it.</li>
+          <li>Borrow the PRD discipline from the engineering talks: write the announcement before the feature, mock every view in throwaway HTML, and iterate on those mocks — no tech decisions yet.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">02</div>
+      <div>
+        <h3>Brand brief &amp; design system — the single source of truth</h3>
+        <p class="why">Fully-AI design has a smell, and worse, it's inconsistent page to page. Tokens fix both.</p>
+        <ul>
+          <li>Produce a <strong>brand essence brief</strong>: positioning spectrums (restrained↔expressive, calm↔energetic, accessible↔premium), reference vocabulary, and — critically — <strong>constraints</strong>: what this brand must never do with color, type, imagery, motion, density. Save it as a markdown file the agent reads forever.</li>
+          <li><strong>Extract, don't invent.</strong> Screenshot a world-class reference site, or download one great component, and prompt: <em>create a design system from this — tokens, components, all on one page</em>. Free brand kits for major companies exist as ready-made design.md files.</li>
+          <li>Demand <strong>design tokens</strong>, not raw values: <code style="font-family:var(--mono);font-size:.85em">color-brand-primary</code> and <code style="font-family:var(--mono);font-size:.85em">spacing-md</code>, never loose hex codes and pixel paddings. Dark mode and rebrands become one-token changes; radius and spacing stay identical across every page.</li>
+          <li>Split your sources: <strong>brand system from one reference, page structure from another</strong> — a payment company's layout is wrong for a service business even when its palette is right.</li>
+          <li>Once the system is handed to the coding agent, <strong>never tweak it inside the codebase</strong> — revise it in the design tool and re-port, or drift returns.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">03</div>
+      <div>
+        <h3>The context contract</h3>
+        <p class="why">The model has exactly two information sources: its training data and your context window. Everything you want that isn't in one of them doesn't exist.</p>
+        <ul>
+          <li>Write a <strong>CLAUDE.md / AGENTS.md</strong> that opens with a persona — <em>you are a senior UI designer and front-end developer; you build premium, modern, elegant interfaces</em> — plus your standing rules: banned defaults, TDD conventions, worktree-per-feature, how to report back.</li>
+          <li>Keep the global file <strong>small</strong> (one principal keeps his to ~27 lines — it taxes every session). Project knowledge lives in a project-level memory file, grown by ritual: every time the agent gets something wrong, correct it <em>and tell it to store the learning</em>.</li>
+          <li>Move conditional knowledge into <strong>skills</strong> (progressive disclosure — only the description loads until needed). Install curated design skills: an aesthetic-direction skill that bans default fonts and generic components, an industry-pattern skill with real UI-style libraries. Curate hard; hoarded skills burn context and can make results <em>worse</em>.</li>
+          <li>Encode the anti-cheapness bias one principal ships verbatim: <strong>when making technical decisions, don't weight development cost — prefer quality, simplicity, robustness, scalability, long-term maintainability.</strong> Models assume human-priced labor; agents make good architecture nearly free.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">04</div>
+      <div>
+        <h3>Plan before build — and get grilled</h3>
+        <p class="why">Decisions made when the context is shallow get the model's full intelligence. Decisions excavated from 3,000 lines of generated code get its leftovers.</p>
+        <ul>
+          <li>Use <strong>plan mode</strong> for every phase transition. State the goal and the feeling — <em>what</em> you want, never <em>how</em> — and end with: <em>do not generate any code, only propose.</em></li>
+          <li>Run a <strong>"grill me" pass</strong>: the agent interrogates every design decision one question at a time — scope cuts, edge cases, trade-offs — until the spec is real. Treat it as the meeting you'd have with your developer.</li>
+          <li>Do <strong>program design</strong> before implementation: file locations, type signatures without bodies, what the tests and call stack will look like — formatted for a fast human yes/no.</li>
+          <li>Order the work as <strong>vertical slices</strong>: a walking skeleton end-to-end first (mock API → stubbed page → wire down), never layer-by-layer. Every step stays testable, and steering stays cheap.</li>
+          <li>Write the spec, then compact: once decisions are in a file, the design conversation is disposable context.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">05</div>
+      <div>
+        <h3>Build in slices, hero first, at maximum effort</h3>
+        <p class="why">The hero decides in seconds whether anyone sees section two. Spend accordingly.</p>
+        <ul>
+          <li>Set the harness to its <strong>highest reasoning effort</strong> and let runs go long — the creators doing this professionally treat 40-minute self-verifying runs as the cost of non-generic output.</li>
+          <li>Build <strong>section by section</strong>, hero first. A hero deserves real media: generate the image or video, then have the agent write the generation prompts itself — and batch the remaining set in a prompts file that references the first images so the whole collection matches.</li>
+          <li><strong>Prototype in variations</strong>: ask for three hero directions, five style directions, fifteen animation options — then curate like an art director and commit ("make this permanent and go this way moving forward"). Save a version before every experiment.</li>
+          <li><strong>Decompose interactions</strong>: never one-shot a complex animation. Name its parts — the button rotates into a check, the background expands from the mic, the label fades — and prompt each.</li>
+          <li>Big changes in chat, small changes by pointing: use element-select / screenshot-annotate for targeted fixes, and always land structural moves before polish, or you redo the polish every time.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">06</div>
+      <div>
+        <h3>The polish passes</h3>
+        <p class="why">These are the details agents skip unless told — and they're most of what reads as "professionally built." The full checklist is Part three.</p>
+        <ul>
+          <li><strong>Layout pass:</strong> column ratios (60/40 beats 50/50), container rhythm, full-bleed breaks, consistent section padding applied everywhere at once.</li>
+          <li><strong>Type pass:</strong> three tiers (heading / body / caption) with distinct treatment, deliberate line-height, one decorated keyword — then stop.</li>
+          <li><strong>Interaction pass:</strong> hover and focus states on everything interactive, ~300ms transitions, frosted sticky nav, staggered reveals.</li>
+          <li><strong>Motion rhythm:</strong> alternate one immersive section with one that breathes. When a page feels flat, the fix is rarely more animation — it's extending the hero's own visual grammar downward.</li>
+          <li><strong>Responsive pass:</strong> mobile-first — more than half your visitors are on a phone. Test real device widths, screenshot what breaks, iterate.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">07</div>
+      <div>
+        <h3>Evidence, gates, and adversarial review</h3>
+        <p class="why">Models cheat. One veteran caught his agent "passing" a test suite by silently disabling the feature under test. Trust artifacts, not claims.</p>
+        <ul>
+          <li><strong>Tests first:</strong> failing test → implementation → green, per your AGENTS.md convention. Validate the tests themselves: run them against the pre-patch code — if they don't fail there, they test nothing.</li>
+          <li><strong>Screenshots as proof:</strong> since you're async anyway, demand evidence — the screenshot in dark mode <em>and</em> light mode, the e2e run against the dev server, a browser agent walking the real UI.</li>
+          <li><strong>Adversarial review in a fresh context</strong> — a separate reviewer agent (ideally a different model vendor; different biases catch different bugs) that rebases clean, reviews against your stated intent, runs the tests, and records evidence. This is where most problems get caught.</li>
+          <li><strong>Risk-tiered human review:</strong> read the reviewer's risk assessment, audit the diff where it's risky, skip it where it isn't. You're the director now; directors don't review every PR — they build the process that makes not-reviewing safe.</li>
+          <li><strong>Self-audit before launch:</strong> have the agent score its own site against a rubric — hierarchy, typography, color and imagery, motion, consistency, performance and responsiveness, trust and conversion, security. First scores land in the 60s; fix and re-run until ~80+.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <div class="no">08</div>
+      <div>
+        <h3>Ship, then scale the factory</h3>
+        <p class="why">A deploy pipeline and parallel agents are what turn "a site I made" into "an operation that ships."</p>
+        <ul>
+          <li><strong>Real pipeline from day one:</strong> private Git repo as the code of record, then push-to-deploy (hosting via MCP/plugin, or repo-connected hosting with preview URLs). Local preview → explicit deploy; tell the agent to never deploy without asking.</li>
+          <li><strong>Security pass as a standing ritual:</strong> "do a complete security overhaul — watch my back on the security front": secrets out of the web root, a probe of the live site, then a code pass. Repeat on a schedule.</li>
+          <li><strong>Parallelize with isolation:</strong> one worktree (or one sandbox) per change so agents never collide; cap yourself around 4–5 concurrent sessions — the context-switching tax on <em>you</em> is real.</li>
+          <li><strong>Overnight loops with governors:</strong> long-running improvement loops (an agent using your site "as a seven-year-old," fixing the first usability problem it hits, repeating) — always with token caps, iteration caps, and precise stop conditions.</li>
+          <li><strong>Ratchet quality:</strong> every failure becomes a permanent check; lint/test flakiness gets fixed even when it isn't yours; the pipeline babysits PRs through conflicts and CI to merge.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BEAUTIFUL ================= -->
+  <section id="beautiful">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part three</div>
+      <h2>Beautiful: the lever checklist</h2>
+      <p class="lede">The working designers in the corpus keep landing on the same levers, with numbers attached. Agents execute all of them flawlessly — but only when named. This is the vocabulary to prompt with.</p>
+    </div>
+
+    <div class="levers">
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Typography</h3>
+        <ul>
+          <li><strong>Anchor on the headline font</strong>, not the body — it sets the page's whole personality. Then find pairings that real designers shipped with it (Fonts In Use is the search engine for this).</li>
+          <li>Three tiers — heading, body, caption — with distinct sizes, weights, even families. Max 3 fonts, prefer 2; body type should almost disappear.</li>
+          <li>Condensed display faces can run much larger; one family varied only by size/weight/spacing can carry an entire premium brand.</li>
+          <li>Decorate one keyword (a gradient, an underline, an italic) — singular emphasis, never scattered.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Color</h3>
+        <ul>
+          <li><strong>60 / 30 / 10:</strong> ~60% neutrals, 30% brand color, 10% accent — and the accent is <em>reserved for CTAs</em>, pointing at where the money gets made.</li>
+          <li>3–5 colors total. Restraint reads premium; personality palettes are allowed only when every color supports content and none compete.</li>
+          <li>Check every combination's contrast for accessibility — it's also what screen readers and search engines reward.</li>
+          <li>Carry the palette everywhere: hovers, buttons, imagery, even link states — end-to-end cohesion is what award sites get right.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Hierarchy &amp; whitespace</h3>
+        <ul>
+          <li>Three levers: <strong>size, contrast, spacing</strong>. One "main character" per section; everything else supports it. Nine times out of ten a "content problem" is a hierarchy problem.</li>
+          <li><strong>Opacity hierarchy:</strong> headline at full ink, supporting text at ~87%, captions at ~60% — the eye instantly knows what to read first.</li>
+          <li>Whitespace is not empty space; the most premium sites are almost aggressively minimal. Cramming reads as desperation.</li>
+          <li>Ghost buttons get ignored — fill the background. Every section limits itself to one idea.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Layout vocabulary</h3>
+        <ul>
+          <li>Learn the patterns by name so you can ask for them: split heroes (60/40), bento grids with one prioritized cell, bookended text, funnel layouts, numbered feature cards, before/after comparisons.</li>
+          <li><strong>Balance ≠ symmetry</strong> — it means nothing's tipping over. Vary the layout as the page progresses (one column → two → cards) to keep people scrolling, but only variation with a purpose.</li>
+          <li>Above three columns, grouping is everything or it turns to visual noise; on mobile, almost never more than one or two.</li>
+          <li>Gaze steering: people in photos must look at what you want visitors to see.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>The premium-feel layer</h3>
+        <ul>
+          <li><strong>300ms is the magic number:</strong> hover invert + ~10% grow + shadow over 300ms; nav underlines animating left-to-right; focus rings with an offset. Never instant.</li>
+          <li>Frosted, sticky, translucent nav. Cards lift on hover. Count-up numbers, staggered testimonial reveals (never simultaneous), a shimmer used once.</li>
+          <li>Depth stays subtle: noise/grain texture, soft glass, layered radial gradients — never competing with the focal element.</li>
+          <li>Spring physics is the tell of quality; micro-interactions done a hundred times across an app compound into "premium." Some of the best craft is invisible.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Conversion architecture</h3>
+        <ul>
+          <li>The hero answers one visitor question — <em>is this for me?</em> — with a clear headline (useful beats clever), a CTA, and a reinforcing visual. Nail it and you beat most of the web.</li>
+          <li>People scan, they don't read: every section addresses a fear, answers an objection, or builds confidence, so CTAs feel like conclusions, not interruptions.</li>
+          <li>Social proof with numbers tied to outcomes, placed within scrolling distance of every claim.</li>
+          <li>Beautiful sites that convert nothing exist everywhere; every animation is a speed tax on the page and a patience tax on the visitor — cut anything that shows off instead of helping.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= UNIQUE ================= -->
+  <section id="unique">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part four</div>
+      <h2>Unique: engineering away the slop</h2>
+      <p class="lede">The creators can name the defaults on sight — one calls them "the four horsemen of AI-generated websites." Ban them in your rules file, then earn distinctiveness with references, molding, and iteration nobody else will do.</p>
+    </div>
+
+    <div class="ban reveal">
+      <div class="row">
+        <div class="kill head">Delete on sight</div>
+        <div class="fix head">Replace with</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Wide letter-spacing on body text</s></div>
+        <div class="fix">Tight, confident type; spacing reserved for small uppercase labels only</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Light gradient washes &amp; purple-to-blue heroes</s></div>
+        <div class="fix">Committed grounds — pure black, warm paper, one brand surface — with texture, not gradient</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>"The AI green" and default-palette accents</s></div>
+        <div class="fix">A palette extracted from a real reference brand, accent reserved for CTAs</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Gradients on cards, strokes and dividers everywhere</s></div>
+        <div class="fix">Flat panels separated by spacing; borders only where they group</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Default fonts (Inter-by-reflex), rounded-everything</s></div>
+        <div class="fix">An anchor face chosen on purpose; one radius token reused exactly, everywhere</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Reduced-opacity text on media, overlays on videos</s></div>
+        <div class="fix">Full-opacity content; blend modes and masks when media and text must share space</div>
+      </div>
+      <div class="row">
+        <div class="kill"><s>Em-dash-riddled AI copy, stock faces as testimonials</s></div>
+        <div class="fix">Copy in the brand's voice (rules-file enforced); real proof, real numbers</div>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top:44px">
+      <h3 style="margin-bottom:10px">The reference-and-mold loop</h3>
+      <p>The strongest anti-generic technique in the corpus is a two-step. <strong>Step one, replicate:</strong> hand the agent a screenshot, URL, or even a screen-recorded scroll of a site you admire — <em>recreate this in a single HTML file; self-verify until it's perfect</em> — and let it run long. <strong>Step two, mold:</strong> the replica is a study, never the ship. Change the theme ("this, but a Dark Souls castle"), change the medium ("this, but as an interactive Three.js scene"), transplant the style onto your own structure, keep maybe 10% of the original's essence. Credit your inspirations; ship something they wouldn't recognize.</p>
+      <p>Then spend where spectacle actually pays: scroll-scrubbed video heroes, cursor-following 3D models, text-mask reveals, shader effects inside cards, a stop-motion product animation. The award-site teardown in the corpus carries the warning label: the most enthralling site reviewed was also the least comprehensible — engagement without understanding is a failure mode. The site should share the characteristics of the product it showcases; one signature "scroll-stopper" per page, with everything around it quiet.</p>
+    </div>
+  </section>
+
+  <!-- ================= SCALE ================= -->
+  <section id="scale">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part five</div>
+      <h2>Scale: run it like an engineering org</h2>
+      <p class="lede">What separates "I vibe-coded a page" from "a team clearly delivered this" is not the page — it's the operation behind it. The principal-level engineers in the corpus, shipping 40–50 production PRs a day, describe the same org chart: you at the top, files as management, agents as staff, gates as trust.</p>
+    </div>
+
+    <div class="levers">
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>You are the director</h3>
+        <ul>
+          <li>Spend human time at the <strong>beginning</strong> (planning, taste, decisions) and the <strong>end</strong> (risk-tiered gates) — automate the middle. The more middle you automate, the more runs in parallel.</li>
+          <li>Stay in every <em>design</em> decision even when delegating implementation — defaults compound, and someone must hold the whole system in their head.</li>
+          <li>The bottleneck becomes your idea supply: talk to users, study the field, write better treasure maps.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Files are management</h3>
+        <ul>
+          <li>One agent-agnostic rules file (symlinked into every harness's memory location) so every agent follows identical policy.</li>
+          <li>Project memory = accumulated corrections; skills = conditional knowledge loaded only when relevant; specs and plans live on disk, not in chat scrollback.</li>
+          <li>Expect drift: a rule in the file is not a guarantee — agents violate their own conventions as context grows. Watch for it; re-assert it.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Parallelism with isolation</h3>
+        <ul>
+          <li>One worktree or sandbox per change — two agents in one checkout will collide. Batch related tasks into one session (shared context is cheaper); split unrelated ones.</li>
+          <li>Cap concurrent sessions around 4–5, and make agents ease re-entry: every reply opens with a recap, plain language, one question at a time, next action last.</li>
+          <li>Overnight and background loops carry governors — token caps, iteration caps, stop conditions — and you review the commit list over coffee.</li>
+        </ul>
+      </div>
+
+      <div class="lever reveal">
+        <h3><span class="mark" aria-hidden="true"></span>Trust is manufactured</h3>
+        <ul>
+          <li>Verification is layered: unit tests (written first), e2e tests, a browser agent clicking the real UI, screenshots archived as evidence.</li>
+          <li>Review is adversarial and independent: fresh context, clean rebase, ideally a different model vendor — different biases catch different bugs.</li>
+          <li>Assume the agent will cut a corner eventually — one veteran's agent "passed" a test suite by disabling the feature. The process exists because of that, not despite it.</li>
+          <li>Give agents measurable back-pressure: conversion, load time, an audit score — numbers they can push against, not vibes.</li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="epigraph reveal" style="margin-top:56px">
+      <blockquote>&ldquo;Think of ourselves more as an engineering manager or engineering director.&rdquo;</blockquote>
+      <figcaption class="caption">— <a href="https://www.youtube.com/watch?v=iQyg-KypKAA&t=1754s" target="_blank" rel="noopener">L8 Principal's Agentic Engineering Workflow</a>, on why the human stops reviewing every diff and starts owning the process instead</figcaption>
+    </figure>
+  </section>
+
+  <!-- ================= PROMPTS ================= -->
+  <section id="prompts">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Part six</div>
+      <h2>The prompt library</h2>
+      <p class="lede">Patterns adapted from what the creators actually type. Fill the brackets; keep the shape.</p>
+    </div>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>01 · Replicate a reference</span><button type="button" data-copy>Copy</button></div>
+      <pre>Recreate this [screenshot / URL] in a single HTML file.
+Self-verify until it's perfect.</pre>
+      <div class="note">Run at maximum effort, let it self-verify in a browser, and treat the result as a study to mold — never the ship.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>02 · Style transplant</span><button type="button" data-copy>Copy</button></div>
+      <pre>I'll paste a design prompt for an unrelated website. Do NOT implement
+its content. Extract only its design language — fonts, colors, spacing,
+motion — and apply it to our current site. Keep all our content and
+structure exactly the same.</pre>
+      <div class="note">Separates look from structure: proven aesthetics on your information architecture.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>03 · Design system from one artifact</span><button type="button" data-copy>Copy</button></div>
+      <pre>Create a design system from this [component / screenshot]: color tokens
+with shades, semantic colors, typography scale, spacing, radius,
+elevation, and example components (buttons, inputs, cards, badges).
+Display everything on one page. Then make the rest of the app follow it.</pre>
+      <div class="note">One great artifact becomes the source of truth; the agent is excellent at obeying a system it derived itself.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>04 · The rules-file persona (CLAUDE.md)</span><button type="button" data-copy>Copy</button></div>
+      <pre>You are a senior UI designer and front-end developer. You build premium,
+modern, elegant interfaces.
+- Pick an aesthetic direction before writing code; use CSS variables.
+- Never: Inter-by-default, purple gradients, gradient cards, ghost
+  buttons, wide letter-spacing, strokes as decoration, em dashes in copy.
+- Interactive elements always get hover + focus states, ~300ms.
+- When making technical decisions, do not weight development cost.
+  Prefer quality, simplicity, robustness, scalability, maintainability.</pre>
+      <div class="note">The always-on quality bias. Add your own corrections to it every time the agent disappoints you.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>05 · The four-part page brief</span><button type="button" data-copy>Copy</button></div>
+      <pre>Create a landing page for [subject].
+GOAL: [the one action a visitor should take].
+LAYOUT: [hero treatment, then the sections in order].
+CONTENT: [brand voice, real numbers, what must appear].
+AUDIENCE: [who this is for — and who it is explicitly not for].</pre>
+      <div class="note">Thirty extra seconds of specificity is the difference between intentional and identical.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>06 · Grill me (plan mode)</span><button type="button" data-copy>Copy</button></div>
+      <pre>Before building [feature]: walk me through every design decision you'd
+have to make. One question at a time. Challenge my assumptions, propose
+scope cuts, flag anything that complicates the architecture.
+Do not generate any code. Only propose.</pre>
+      <div class="note">Ends with a written spec and lane plan; then compact and build — the design chat becomes disposable.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>07 · Variations, then curate</span><button type="button" data-copy>Copy</button></div>
+      <pre>Show me three alternative directions for the hero section only — keep
+everything else identical. Vary [layout / type / focal image].
+I'll pick one; then make it permanent and carry its language forward.</pre>
+      <div class="note">Explore before committing, like a designer. Save a version first so every experiment is reversible.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>08 · Evidence, not claims</span><button type="button" data-copy>Copy</button></div>
+      <pre>Prove it: run the e2e tests against the dev server, then give me
+screenshots of [the change] in dark mode AND light mode, desktop and
+mobile widths. Also run the new tests against the pre-change code —
+if they pass there, they test nothing. Fix that first.</pre>
+      <div class="note">You're async anyway; demand artifacts. This is the habit that catches agents declaring victory early.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>09 · The pre-launch audit</span><button type="button" data-copy>Copy</button></div>
+      <pre>Audit this site as a harsh critic. Score /10 on: visual hierarchy,
+typography, color &amp; imagery, motion &amp; interactions, design-system
+consistency, performance &amp; responsiveness, trust &amp; conversion, security.
+List concrete issues and a fix list ordered by impact.
+We ship at 80/100 — keep iterating with me until we're there.</pre>
+      <div class="note">First runs score in the 60s. The gap between 67 and 80+ is the polish pass most people never do.</div>
+    </figure>
+
+    <figure class="prompt reveal">
+      <div class="label"><span>10 · The security ritual</span><button type="button" data-copy>Copy</button></div>
+      <pre>Do a complete security overhaul. Probe the live site like an attacker,
+then review the code line by line: exposed secrets, injection paths,
+auth gaps, anything leaking. Keep secrets out of the web root.
+Watch my back on the security front — and make this a recurring routine.</pre>
+      <div class="note">Run it before launch and on a schedule after. For anything that matters, follow with a human pentest.</div>
+    </figure>
+  </section>
+
+  <!-- ================= SOURCES ================= -->
+  <section id="sources">
+    <div class="section-head">
+      <div class="eyebrow"><span class="mark" aria-hidden="true"></span>Appendix</div>
+      <h2>Sources</h2>
+      <p class="lede">Every claim above traces to one of these 23 videos, indexed as 838 chunks in the transcript-rag-agent corpus and read in full by six parallel extraction agents.</p>
+    </div>
+
+    <div class="cluster reveal">
+      <h3><span class="mark" aria-hidden="true"></span>Building with Claude Code</h3>
+      <ol>
+        <li><a href="https://www.youtube.com/watch?v=TTeMU5iOE84" target="_blank" rel="noopener">Build AMAZING Websites Using Claude Code! (Full Guide)</a> <span class="tk">— brand essence brief → design system → build → database/admin → security pass</span></li>
+        <li><a href="https://www.youtube.com/watch?v=2Gda_ZvV1V4" target="_blank" rel="noopener">Claude Code Web Design: 10 Years Covered In 66 Minutes</a> <span class="tk">— brand extraction, the 300ms detail checklist, deploy via GitHub + Vercel</span></li>
+        <li><a href="https://www.youtube.com/watch?v=bkTY9gYkWis" target="_blank" rel="noopener">How I Build INSANELY Beautiful Websites Using Claude Code</a> <span class="tk">— 8-rule process, skills as taste-injection, motion rhythm, the 80/100 audit</span></li>
+        <li><a href="https://www.youtube.com/watch?v=G-F5Qvy-7KM" target="_blank" rel="noopener">How I Build Insane Three.js Websites With Claude Opus 5</a> <span class="tk">— replicate-then-mold, max effort, 3D scenes under 1MB, workflows into skills</span></li>
+        <li><a href="https://www.youtube.com/watch?v=IR1tzLU-r_4" target="_blank" rel="noopener">Fable 5 for 3D Web Design is Next Level!!!</a> <span class="tk">— asset pipelines (image→video→3D), the "four horsemen," blend-mode &amp; mask tricks</span></li>
+        <li><a href="https://www.youtube.com/watch?v=zTuV3chQCus" target="_blank" rel="noopener">Claude Code just changed Website Design Forever (Relume)</a> <span class="tk">— substance first: research, sitemap, wireframes, then style and the scroll-stopper</span></li>
+        <li><a href="https://www.youtube.com/watch?v=y2n1NMrMNBo" target="_blank" rel="noopener">How to Use Claude Design To Make Sites 10X More Beautiful</a> <span class="tk">— the refinement loop: specific brief, big-before-small, variations, export</span></li>
+      </ol>
+    </div>
+
+    <div class="cluster reveal">
+      <h3><span class="mark" aria-hidden="true"></span>Design craft &amp; layout</h3>
+      <ol>
+        <li><a href="https://www.youtube.com/watch?v=kEN4pp-UFf0" target="_blank" rel="noopener">The Only Web Design Video You Will Ever Need</a> <span class="tk">— hierarchy, 60/30/10, hero formula, social proof, conversion architecture</span></li>
+        <li><a href="https://www.youtube.com/watch?v=pbhLsV-Dyho" target="_blank" rel="noopener">6 EASY Tips to 10x Any Site's Design</a> <span class="tk">— anchor fonts, star of the show, visual rhyming, opacity hierarchy, 12 versions</span></li>
+        <li><a href="https://www.youtube.com/watch?v=nZ2BJt9PgKE" target="_blank" rel="noopener">33 UNIQUE Website Layouts with Real World Project Examples</a> <span class="tk">— the 3/4/5-column pattern library and when each works</span></li>
+        <li><a href="https://www.youtube.com/watch?v=s2DVOZ62F8w" target="_blank" rel="noopener">Ultimate Website Layout Guide: 17 Swipeable Examples</a> <span class="tk">— hierarchy, variation, balance; layouts guide attention or lose it</span></li>
+        <li><a href="https://www.youtube.com/watch?v=RGWXVbkrYKM" target="_blank" rel="noopener">Impressive 2025 Website Design Inspiration</a> <span class="tk">— award-site teardowns; spectacle vs. comprehension</span></li>
+        <li><a href="https://www.youtube.com/watch?v=1NTKwpAVcHg" target="_blank" rel="noopener">Give Me 7 Minutes &amp; Your Web Design Skills Will Take Off</a> <span class="tk">— hierarchy, 60/30/10, ghost buttons banned, conversion beats pretty</span></li>
+      </ol>
+    </div>
+
+    <div class="cluster reveal">
+      <h3><span class="mark" aria-hidden="true"></span>Premium feel &amp; AI-assisted UI</h3>
+      <ol>
+        <li><a href="https://youtu.be/MXLF8b15GhQ" target="_blank" rel="noopener">How I Make Apps FEEL Premium (5 examples)</a> <span class="tk">— iteration budgets, the four levels of feedback, invisible craft</span></li>
+        <li><a href="https://www.youtube.com/watch?v=8mMH6Pq8qnE" target="_blank" rel="noopener">How I Make Apps FEEL 10x Better (5 Design Secrets)</a> <span class="tk">— decomposed animations, haptic tiers, icon systems, taste-building</span></li>
+        <li><a href="https://www.youtube.com/watch?v=hgIonrdRTSE" target="_blank" rel="noopener">These UI libraries + AI = beautiful looking web apps</a> <span class="tk">— component libraries as foundations; extract the system, propagate the look</span></li>
+        <li><a href="https://www.youtube.com/watch?v=vpU9lZY69O4" target="_blank" rel="noopener">Building beautiful UI using AI (My design workflow)</a> <span class="tk">— design tokens, Claude Design → codebase handoff, consistency by system</span></li>
+      </ol>
+    </div>
+
+    <div class="cluster reveal">
+      <h3><span class="mark" aria-hidden="true"></span>Agentic engineering at scale</h3>
+      <ol>
+        <li><a href="https://www.youtube.com/watch?v=iQyg-KypKAA" target="_blank" rel="noopener">L8 Principal's Agentic Engineering Workflow</a> <span class="tk">— planning surfaces, adversarial gates, evidence PRs, parallel worktrees</span></li>
+        <li><a href="https://www.youtube.com/watch?v=5N-okeDdIuI" target="_blank" rel="noopener">L8 Principal's Agentic Dev Environment From Scratch</a> <span class="tk">— reproducible environment, one agent-agnostic rules file, quality-over-cost rule</span></li>
+        <li><a href="https://www.youtube.com/watch?v=Ukju3maxbEQ" target="_blank" rel="noopener">A Meta Engineer's Agentic Engineering Workflow</a> <span class="tk">— grill-me specs, TDD conventions, cross-model review gates, 40-PR weekends</span></li>
+        <li><a href="https://www.youtube.com/watch?v=xgkjtF89-44" target="_blank" rel="noopener">Agentic Engineering Workflow (HumanLayer / 12-Factor Agents)</a> <span class="tk">— context engineering, program design, vertical slices, test-validity checks</span></li>
+        <li><a href="https://www.youtube.com/watch?v=FU5_kpTAVDo" target="_blank" rel="noopener">Agentic Engineering, explained by a 10x developer</a> <span class="tk">— first-principles async workflow, information-complete prompts, proof by screenshot</span></li>
+        <li><a href="https://www.youtube.com/watch?v=Cu8kUBwLoTM" target="_blank" rel="noopener">Agentic AI made me an 100x engineer!</a> <span class="tk">— expert supervision, real harnesses, agents that cheat, hybrid not vibe coding</span></li>
+      </ol>
+    </div>
+
+    <div class="selfbox reveal">
+      <h3>This page follows its own rules</h3>
+      <ul>
+        <li><strong>Anchor font on the headline:</strong> Instrument Serif, paired with Geist — the exact pairing the corpus itself surfaces via Fonts In Use.</li>
+        <li><strong>60/30/10:</strong> warm-paper neutrals, ink, and a single ultramarine accent reserved for emphasis and interaction.</li>
+        <li><strong>Opacity hierarchy:</strong> headings at full ink, body at 87%, captions at 60%.</li>
+        <li><strong>300ms everywhere:</strong> frosted sticky nav with left-to-right underline hovers, cards that lift, focus rings with offset — and no ghost buttons.</li>
+        <li><strong>Visual rhyming:</strong> one ultramarine diamond, repeated from the nav brand to every section mark.</li>
+        <li><strong>Motion with restraint:</strong> one reveal pattern, disabled entirely under reduced-motion preferences.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap caption">
+    <span>Ship Like a Studio — a guide grounded in the transcript-rag-agent corpus.</span>
+    <span class="num">23 videos · 838 chunks · compiled 2026-08-31</span>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons for the prompt library
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.closest('.prompt').querySelector('pre');
+      var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); };
+      try {
+        navigator.clipboard.writeText(pre.textContent).then(done, function () { done(); });
+      } catch (e) { /* clipboard unavailable — leave quietly */ }
+    });
+  });
+
+  // Scroll reveals (skipped under reduced motion)
+  (function () {
+    var reduced = false;
+    try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    var els = document.querySelectorAll('.reveal');
+    if (reduced || !('IntersectionObserver' in window)) {
+      els.forEach(function (el) { el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    els.forEach(function (el) { io.observe(el); });
+  })();
+</script>

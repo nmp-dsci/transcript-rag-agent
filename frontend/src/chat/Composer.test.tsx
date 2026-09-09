@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Corpus, SetupSpec, Video } from '../api/types';
+import { openScope } from './scopeTestUtils';
 import {
   type AskOptions,
   type ChatScope,
@@ -103,8 +104,14 @@ function Harness({
   );
 }
 
-const channelSelect = () => screen.getByLabelText('Channel scope') as HTMLSelectElement;
-const videoSelect = () => screen.getByLabelText('Video scope') as HTMLSelectElement;
+const channelSelect = () => {
+  openScope();
+  return screen.getByLabelText('Channel scope') as HTMLSelectElement;
+};
+const videoSelect = () => {
+  openScope();
+  return screen.getByLabelText('Video scope') as HTMLSelectElement;
+};
 const videoOptionLabels = () =>
   within(videoSelect())
     .getAllByRole('option')

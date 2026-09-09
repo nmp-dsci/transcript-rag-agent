@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api } from '../api/client';
 import { useDemo } from '../demo';
+import { CORPUS_WIDE_QUESTIONS } from '../questions';
 import type {
   AgentStep,
   Answer,
@@ -45,6 +46,10 @@ interface Props {
   onScopeConsumed: () => void;
   /** Optional channel hint for pendingScope; otherwise read off the corpus. */
   pendingChannel?: string | null;
+  /** A question the landing sent through — pre-filled, not auto-sent, so the
+   * visitor can edit or scope it before spending a run. */
+  pendingQuestion?: string | null;
+  onQuestionConsumed?: () => void;
   /** Server-decided (health `stt`): whether the composer offers voice input. */
   stt?: boolean;
 }
@@ -80,11 +85,10 @@ function suggestionsFor(corpus: Corpus | null): string[] {
     .map((video) => video.title)
     .filter((title): title is string => Boolean(title))
     .slice(0, 2);
-  const base = [
-    'What are the main themes across the indexed transcripts?',
-    'Where do these videos disagree with each other?',
-  ];
-  return [...titles.map((title) => `Summarize the key claims in “${title}”`), ...base].slice(
+  return [
+    ...titles.map((title) => `Summarize the key claims in “${title}”`),
+    ...CORPUS_WIDE_QUESTIONS,
+  ].slice(
     0,
     4,
   );
@@ -99,6 +103,8 @@ export function ChatView({
   pendingScope,
   onScopeConsumed,
   pendingChannel = null,
+  pendingQuestion = null,
+  onQuestionConsumed,
   stt = false,
 }: Props) {
   const [thread, setThread] = useState<Entry[]>([]);
@@ -488,9 +494,12 @@ export function ChatView({
             {empty && !demo ? (
               <div className="empty">
                 <h2>Ask the transcripts anything</h2>
+                {/* The corpus totals live in the topbar, on every tab. Repeating
+                    them here spent the empty state's best line on a number the
+                    reader can already see. */}
                 <p>
                   {corpus?.totals.videos
-                    ? `${corpus.totals.videos} videos · ${corpus.totals.chunks} chunks · ${corpus.totals.channels} channels indexed. Narrow the scope below, or ask across everything. Answers are cited back to the source timestamp and scored with RAGAS.`
+                    ? 'Answers are cited back to the source timestamp and scored with RAGAS. Set the scope below, or ask across everything.'
                     : 'No transcripts indexed yet — add one from the RAG Pipeline tab first.'}
                 </p>
                 <div className="suggest">
@@ -585,6 +594,8 @@ export function ChatView({
             onDefaultSetupChange={setDefaultSetup}
             onAsk={(options) => void run(options)}
             onCancel={() => abort.current?.abort()}
+            prefill={pendingQuestion}
+            onPrefillConsumed={onQuestionConsumed}
             stt={stt}
           />
         )}

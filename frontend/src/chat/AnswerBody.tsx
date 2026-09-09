@@ -5,14 +5,27 @@ import { cleanAnswer, escapeHtml, fmtSeconds, renderAnswer } from '../answers/re
 
 const CLAMP_AT = 1600;
 
-function metaChips(answer: Answer): string[] {
-  const chips = [`~${answer.token_estimate} tok`, `${answer.chunk_count} chunks`];
+/**
+ * One provenance line per answer: what it cost and what produced it.
+ *
+ * This used to be printed twice — the bubble header carried elapsed, tokens
+ * and chunks, and these chips repeated all three underneath the prose. The
+ * header no longer prints them, so this is the single place they appear.
+ *
+ * `completed` is deliberately absent: an answer that finished is the ordinary
+ * case, and only a *terminated* run is worth a reader's attention.
+ */
+export function metaChips(answer: Answer): string[] {
+  const chips: string[] = [];
+  if (answer.elapsed_seconds) chips.push(`${answer.elapsed_seconds}s`);
+  chips.push(`~${answer.token_estimate} tok`, `${answer.chunk_count} chunks`);
   if (answer.llm_calls != null) chips.push(`${answer.llm_calls} LLM calls`);
   if (answer.iterations != null) chips.push(`${answer.iterations} iterations`);
-  if (answer.elapsed_seconds) chips.push(`${answer.elapsed_seconds}s`);
   if (answer.top_k != null) chips.push(`top_k ${answer.top_k}`);
   if (answer.model) chips.push(answer.model);
-  if (answer.terminated_reason) chips.push(answer.terminated_reason);
+  if (answer.terminated_reason && answer.terminated_reason !== 'completed') {
+    chips.push(answer.terminated_reason);
+  }
   return chips;
 }
 
@@ -40,40 +53,49 @@ export function AnswerBody({ answer }: { answer: Answer }) {
         </button>
       ) : null}
 
-      <div className="chips">
-        {metaChips(answer).map((chip) => (
-          <span className="chip" key={chip}>
-            {chip}
-          </span>
-        ))}
-      </div>
+      {/* One meta row: what this answer cost, then the two things you can open
+          to check it. These were three stacked blocks of equal weight — chips,
+          a sources box, a command box — which gave a judged answer six peer
+          boxes and no obvious place for the eye to land. */}
+      <div className="ansmeta">
+        <span className="ansmeta-prov">
+          {metaChips(answer).map((chip, index) => (
+            <span className="chip" key={chip}>
+              {index > 0 ? <span className="chip-sep" aria-hidden="true"> · </span> : null}
+              {chip}
+            </span>
+          ))}
+        </span>
 
-      {references.length ? (
-        <details className="refs">
-          <summary>Sources ({references.length})</summary>
-          <ul>
-            {references.map((reference, index) => (
-              <li key={`${reference.label ?? index}-${index}`}>
-                <span className="rnum">{reference.label ?? '[?]'}</span>
-                <a
-                  href={reference.timestamp_url || reference.source_url || '#'}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  open
-                  {reference.start_seconds != null ? ` at ${fmtSeconds(reference.start_seconds)}` : ''}
-                </a>
-                <span className="vid">{reference.video_id ?? ''}</span>
-              </li>
-            ))}
-          </ul>
+        {references.length ? (
+          <details className="refs">
+            <summary>sources ({references.length})</summary>
+            <ul>
+              {references.map((reference, index) => (
+                <li key={`${reference.label ?? index}-${index}`}>
+                  <span className="rnum">{reference.label ?? '[?]'}</span>
+                  <a
+                    href={reference.timestamp_url || reference.source_url || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    open
+                    {reference.start_seconds != null
+                      ? ` at ${fmtSeconds(reference.start_seconds)}`
+                      : ''}
+                  </a>
+                  <span className="vid">{reference.video_id ?? ''}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+
+        <details className="cmd">
+          <summary>command</summary>
+          <pre dangerouslySetInnerHTML={{ __html: escapeHtml(answer.command) }} />
         </details>
-      ) : null}
-
-      <details className="cmd">
-        <summary>command</summary>
-        <pre dangerouslySetInnerHTML={{ __html: escapeHtml(answer.command) }} />
-      </details>
+      </div>
     </>
   );
 }

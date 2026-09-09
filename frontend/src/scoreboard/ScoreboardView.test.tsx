@@ -175,7 +175,9 @@ describe('ScoreboardView', () => {
   it('explains the metrics even with nothing to derive from', async () => {
     scoreboard.mockResolvedValue(board([row()]));
     render(<ScoreboardView />);
-    expect(await screen.findByText('What the metrics mean')).toBeInTheDocument();
+    // The explainers are behind a disclosure now — still rendered, so the
+    // content assertions below are unchanged; only the heading is a summary.
+    expect(await screen.findByText('What do these metrics mean?')).toBeInTheDocument();
     expect(screen.getByText('supported claims ÷ total claims')).toBeInTheDocument();
     expect(
       screen.getByText('average precision — mean of precision@k over the ranks judged useful'),

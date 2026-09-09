@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SystemDesign } from '../api/types';
-import { SystemDesignView } from './SystemDesignView';
+import { SystemDesignView, connectedTo } from './SystemDesignView';
 
 const systemDesign = vi.fn();
 vi.mock('../api/client', () => ({ api: { systemDesign: () => systemDesign() } }));
@@ -185,5 +185,57 @@ describe('SystemDesignView', () => {
     expect(
       await screen.findByText(/Could not load the system design graph/),
     ).toBeInTheDocument();
+  });
+});
+
+describe('connectedTo', () => {
+  const edges = [
+    { source: 'chat', target: 'vector_rag' },
+    { source: 'vector_rag', target: 'embeddings' },
+    { source: 'embeddings', target: 'chroma_chunks' },
+    // A separate component, reachable from neither of the above.
+    { source: 'graph_rag', target: 'neo4j' },
+  ];
+
+  it('follows the whole path, not just immediate neighbours', () => {
+    // The reader's question is "what does this path actually touch?", so
+    // hovering the agent must reach the store three hops away.
+    expect([...connectedTo('chat', edges)].sort()).toEqual([
+      'chat',
+      'chroma_chunks',
+      'embeddings',
+      'vector_rag',
+    ]);
+  });
+
+  it('reaches back up to whatever leads into the node', () => {
+    // Starting at the store still lights the agent that reads it — those are
+    // its ancestors, and the reader wants to know who uses this store.
+    expect(connectedTo('chroma_chunks', edges).has('chat')).toBe(true);
+  });
+
+  it('leaves siblings dim when they merely share a downstream hub', () => {
+    // The trace that matters. Models and stores are shared by every agent, so
+    // an undirected walk from one agent reaches all of them and lights the
+    // whole graph — which answers nothing. Following direction keeps a
+    // sibling that only shares the hub out of the path.
+    const shared = [
+      { source: 'vector_rag', target: 'embeddings' },
+      { source: 'graph_rag', target: 'embeddings' },
+      { source: 'embeddings', target: 'chroma_chunks' },
+    ];
+    const lit = connectedTo('vector_rag', shared);
+    expect(lit.has('embeddings')).toBe(true);
+    expect(lit.has('chroma_chunks')).toBe(true);
+    expect(lit.has('graph_rag')).toBe(false);
+  });
+
+  it('does not cross into an unconnected component', () => {
+    expect(connectedTo('chat', edges).has('neo4j')).toBe(false);
+    expect([...connectedTo('graph_rag', edges)].sort()).toEqual(['graph_rag', 'neo4j']);
+  });
+
+  it('returns just the node itself when nothing connects to it', () => {
+    expect([...connectedTo('orphan', edges)]).toEqual(['orphan']);
   });
 });

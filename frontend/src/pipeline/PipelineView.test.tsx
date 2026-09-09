@@ -154,7 +154,8 @@ describe('PipelineView', () => {
   it('prompts for content when the corpus is empty', () => {
     renderView({ corpus: corpus([]) });
     expect(screen.getByText('The library is empty')).toBeInTheDocument();
-    expect(screen.getByText('videos').previousSibling).toHaveTextContent('0');
+    // Video/chunk totals live in the topbar now; the header keeps coverage.
+    expect(screen.getByText('with summaries').previousSibling).toHaveTextContent('0/0');
   });
 
   it('handles a corpus that has not loaded yet', () => {

@@ -143,12 +143,11 @@ export function MessageBubble({
       {active ? (
         <>
           {!showTabs ? (
+            // Which setup answered, and how it scored. The cost figures used
+            // to repeat here and again in the chips below the prose; they now
+            // live only in AnswerBody's provenance line.
             <div className="bothead">
               <span className="setupchip">{active.title}</span>
-              <span>
-                {active.elapsed_seconds}s · ~{active.token_estimate} tok ·{' '}
-                {active.chunk_count} chunks
-              </span>
               {active.evaluation?.composite != null ? (
                 <span className="badge good">RAGAS {fmtScore(active.evaluation.composite)}</span>
               ) : null}

@@ -4,9 +4,34 @@ import { api } from '../api/client';
 import type { PromptEntry, SystemDesign, SystemDesignFlowStep, SystemDesignNode } from '../api/types';
 import { useDesignStyles } from './styles';
 
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 46;
+/** Columns sit 220 apart (see src/api/system_design.py), so 200 is the widest
+ * a node can be without two of them touching. */
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 52;
 const VIEWBOX = '0 0 1160 600';
+
+/**
+ * Split "Chroma · transcript_chunks_contextual" into the collection it names
+ * and the backend that holds it.
+ *
+ * Store labels are the longest in the graph and used to run past their own
+ * node into the neighbour's. Putting the backend on the kind line leaves one
+ * short line to fit, instead of one long one to overflow.
+ */
+function splitLabel(label: string): { main: string; prefix: string | null } {
+  const parts = label.split(' · ');
+  if (parts.length === 2 && parts[0] && parts[1]) return { main: parts[1], prefix: parts[0] };
+  return { main: label, prefix: null };
+}
+
+/** Step the label down one size when it would otherwise exceed the node box.
+ * The floor is 10px — below that the graph stops being readable, which is the
+ * whole point of drawing it. */
+function labelSize(main: string): number {
+  if (main.length > 24) return 10;
+  if (main.length > 18) return 10.5;
+  return 11.5;
+}
 
 /** Highlight {placeholder} template variables inside a prompt body. */
 function PromptText({ text }: { text: string }) {
@@ -146,6 +171,48 @@ function DetailPanel({ node }: { node: SystemDesignNode | null }) {
   );
 }
 
+/** Walk one direction from `id`, collecting everything reached. */
+function walk(
+  id: string,
+  edges: readonly { source: string; target: string }[],
+  forward: boolean,
+): Set<string> {
+  const seen = new Set<string>([id]);
+  const queue = [id];
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const edge of edges) {
+      const from = forward ? edge.source : edge.target;
+      const to = forward ? edge.target : edge.source;
+      if (from === current && !seen.has(to)) {
+        seen.add(to);
+        queue.push(to);
+      }
+    }
+  }
+  return seen;
+}
+
+/**
+ * The path *through* `id`: everything it reaches, plus everything that reaches
+ * it. Ancestors ∪ descendants.
+ *
+ * Not the undirected closure. Models and stores are shared hubs here — every
+ * agent calls the embedding model, which reads the same Chroma collections —
+ * so walking edges in both directions from any node reaches almost the entire
+ * graph, and a trace that lights everything answers nothing. Following
+ * direction instead means hovering Agentic RAG lights the models and stores
+ * *it* uses, and leaves the sibling agents that merely share those hubs dim.
+ */
+export function connectedTo(
+  id: string,
+  edges: readonly { source: string; target: string }[],
+): Set<string> {
+  const downstream = walk(id, edges, true);
+  for (const node of walk(id, edges, false)) downstream.add(node);
+  return downstream;
+}
+
 function Graph({
   design,
   selectedId,
@@ -159,14 +226,23 @@ function Graph({
     () => new Map(design.nodes.map((node) => [node.id, node])),
     [design.nodes],
   );
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  // Hover traces the path; an explicit selection keeps it lit while the
+  // reader is reading the panel it opened.
+  const focusId = hoverId ?? selectedId;
+  const lit = useMemo(
+    () => (focusId ? connectedTo(focusId, design.edges) : null),
+    [focusId, design.edges],
+  );
 
   return (
     <div className="ds-graphwrap">
       <svg
-        className="ds-graph"
+        className={`ds-graph${lit ? ' tracing' : ''}`}
         viewBox={VIEWBOX}
         role="img"
         aria-label="System design graph — click a node for details"
+        onMouseLeave={() => setHoverId(null)}
       >
         <defs>
           <marker
@@ -186,11 +262,13 @@ function Graph({
           const source = byId.get(edge.source);
           const target = byId.get(edge.target);
           if (!source || !target) return null;
-          const highlighted = selectedId === edge.source || selectedId === edge.target;
+          // On the traced path when both ends are lit; a lit node joined to
+          // an unlit one would draw an edge into nothing.
+          const highlighted = lit ? lit.has(edge.source) && lit.has(edge.target) : false;
           return (
             <line
               key={`${edge.source}-${edge.target}`}
-              className={`ds-edge${highlighted ? ' hi' : ''}`}
+              className={`ds-edge${highlighted ? ' hi' : ''}${lit && !highlighted ? ' dim' : ''}`}
               x1={source.x}
               y1={source.y}
               x2={target.x}
@@ -200,33 +278,58 @@ function Graph({
           );
         })}
 
-        {design.nodes.map((node) => (
-          <g
-            key={node.id}
-            className={`ds-node kind-${node.kind}${node.id === selectedId ? ' sel' : ''}`}
-            transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}
-            role="button"
-            tabIndex={0}
-            aria-label={`${node.label} (${node.kind})`}
-            aria-pressed={node.id === selectedId}
-            onClick={() => onSelect(node.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(node.id);
+        {design.nodes.map((node) => {
+          const { main, prefix } = splitLabel(node.label);
+          const promptCount = node.prompts.length
+            ? `${node.prompts.length} prompt${node.prompts.length === 1 ? '' : 's'}`
+            : '';
+          const kindLine = [prefix ?? node.kind, promptCount].filter(Boolean).join(' · ');
+          return (
+            <g
+              key={node.id}
+              className={[
+                'ds-node',
+                `kind-${node.kind}`,
+                node.id === selectedId ? 'sel' : '',
+                lit && lit.has(node.id) ? 'lit' : '',
+                lit && !lit.has(node.id) ? 'dim' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onMouseEnter={() => setHoverId(node.id)}
+              onMouseLeave={() =>
+                setHoverId((current) => (current === node.id ? null : current))
               }
-            }}
-          >
-            <rect width={NODE_WIDTH} height={NODE_HEIGHT} />
-            <text x={NODE_WIDTH / 2} y={19} textAnchor="middle">
-              {node.label}
-            </text>
-            <text className="ds-kind" x={NODE_WIDTH / 2} y={34} textAnchor="middle">
-              {node.kind}
-              {node.prompts.length > 0 ? ` · ${node.prompts.length} prompt${node.prompts.length === 1 ? '' : 's'}` : ''}
-            </text>
-          </g>
-        ))}
+              onFocus={() => setHoverId(node.id)}
+              onBlur={() => setHoverId(null)}
+              transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${node.label} (${node.kind})`}
+              aria-pressed={node.id === selectedId}
+              onClick={() => onSelect(node.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(node.id);
+                }
+              }}
+            >
+              <rect width={NODE_WIDTH} height={NODE_HEIGHT} />
+              <text
+                x={NODE_WIDTH / 2}
+                y={22}
+                textAnchor="middle"
+                style={{ fontSize: `${labelSize(main)}px` }}
+              >
+                {main}
+              </text>
+              <text className="ds-kind" x={NODE_WIDTH / 2} y={38} textAnchor="middle">
+                {kindLine}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
@@ -246,16 +349,31 @@ export function SystemDesignView() {
   }, []);
 
   if (error) {
-    return <div className="ds-toplevel-empty">Could not load the system design graph from the server.</div>;
+    return (
+      <div className="scrollview">
+        <div className="pagewrap">
+          <div className="ds-toplevel-empty">
+            Could not load the system design graph from the server.
+          </div>
+        </div>
+      </div>
+    );
   }
   if (!design) {
-    return <div className="ds-toplevel-empty">Loading system design…</div>;
+    return (
+      <div className="scrollview">
+        <div className="pagewrap">
+          <div className="ds-toplevel-empty">Loading system design…</div>
+        </div>
+      </div>
+    );
   }
 
   const selected = design.nodes.find((node) => node.id === selectedId) ?? null;
 
   return (
-    <div>
+    <div className="scrollview">
+      <div className="pagewrap">
       <p className="ds-intro">
         How transcript·lab is actually built — every answer path, the shared models, and the
         stores each one reads from. Click a node to see its live system prompts and the exact
@@ -263,7 +381,9 @@ export function SystemDesignView() {
         this view can never drift from what actually executes.
       </p>
 
-      <div className="ds-layout">
+      {/* The graph takes the whole width until a node is picked; the split
+          only earns its space once there is something in the panel. */}
+      <div className={`ds-layout${selected ? ' split' : ''}`}>
         <div>
           <Graph design={design} selectedId={selectedId} onSelect={setSelectedId} />
           <div className="ds-legend">
@@ -279,9 +399,11 @@ export function SystemDesignView() {
             <span>
               <i className="ds-swatch store" /> store
             </span>
+            <span className="ds-legend-hint">hover a node to trace its path</span>
           </div>
         </div>
         <DetailPanel node={selected} />
+      </div>
       </div>
     </div>
   );
