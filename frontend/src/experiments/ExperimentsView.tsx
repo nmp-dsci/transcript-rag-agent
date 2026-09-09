@@ -19,6 +19,17 @@ function fmt(value: number | undefined): string {
   return typeof value === 'number' ? value.toFixed(3) : '—';
 }
 
+/** Scrolls to an in-page section without touching `location.hash` — the
+ * hash router treats any fragment as a tab id (or falls back to "chat"), so
+ * setting it here would hijack the Experiments tab on every click. */
+function scrollToSection(id: string, event: React.MouseEvent<HTMLAnchorElement>) {
+  event.preventDefault();
+  const target = document.getElementById(id);
+  if (!target) return;
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+}
+
 function signed(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(3)}`;
 }
@@ -342,12 +353,32 @@ export function ExperimentsView() {
         {/* Four major panels of dense mono, each several screens tall, with
             nothing to say where you are or what else is below. */}
         <nav className="exp-nav" aria-label="Sections on this page">
-          {!demo && <a href="#exp-matrix">matrix</a>}
-          <a href="#exp-packs">packs</a>
-          <a href="#exp-research">research</a>
-          {critiqueRuns.length > 0 && <a href="#exp-critique">critique</a>}
-          {ablations.length > 0 && <a href="#exp-ablations">ablations</a>}
-          {goldenRuns.length > 0 && <a href="#exp-golden">golden</a>}
+          {!demo && (
+            <a href="#exp-matrix" onClick={(event) => scrollToSection('exp-matrix', event)}>
+              matrix
+            </a>
+          )}
+          <a href="#exp-packs" onClick={(event) => scrollToSection('exp-packs', event)}>
+            packs
+          </a>
+          <a href="#exp-research" onClick={(event) => scrollToSection('exp-research', event)}>
+            research
+          </a>
+          {critiqueRuns.length > 0 && (
+            <a href="#exp-critique" onClick={(event) => scrollToSection('exp-critique', event)}>
+              critique
+            </a>
+          )}
+          {ablations.length > 0 && (
+            <a href="#exp-ablations" onClick={(event) => scrollToSection('exp-ablations', event)}>
+              ablations
+            </a>
+          )}
+          {goldenRuns.length > 0 && (
+            <a href="#exp-golden" onClick={(event) => scrollToSection('exp-golden', event)}>
+              golden
+            </a>
+          )}
         </nav>
 
         {!demo && (

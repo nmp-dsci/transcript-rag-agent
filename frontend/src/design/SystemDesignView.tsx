@@ -297,6 +297,9 @@ function Graph({
                 .filter(Boolean)
                 .join(' ')}
               onMouseEnter={() => setHoverId(node.id)}
+              onMouseLeave={() =>
+                setHoverId((current) => (current === node.id ? null : current))
+              }
               onFocus={() => setHoverId(node.id)}
               onBlur={() => setHoverId(null)}
               transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}

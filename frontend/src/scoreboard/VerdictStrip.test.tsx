@@ -80,6 +80,41 @@ describe('VerdictStrip', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('omits the win rate when contests are thin even though judged is not', () => {
+    // judged=20 clears the ranking filter, but contests=3 is separately thin
+    // — the composite is trustworthy, the head-to-head record is not, so the
+    // strip must not state it as fact.
+    const thinContests = row({
+      key: 'b',
+      title: 'rag_llm (summary-filtered)',
+      avg_composite: 0.9,
+      wins: 3,
+      contests: 3,
+      win_rate: 1,
+    });
+    render(<VerdictStrip rows={[row(), thinContests]} />);
+    const line = screen.getByRole('status');
+    expect(line).toHaveTextContent('rag_llm (summary-filtered)');
+    expect(line).not.toHaveTextContent('winning');
+    expect(line).not.toHaveTextContent('100%');
+  });
+
+  it('omits the tie-breaker win rate when a tied row has thin contests', () => {
+    const thinContests = row({
+      key: 'b',
+      title: 'rag_llm (summary-filtered)',
+      avg_composite: 0.791,
+      wins: 3,
+      contests: 3,
+      win_rate: 1,
+    });
+    render(<VerdictStrip rows={[row({ avg_composite: 0.786 }), thinContests]} />);
+    const line = screen.getByRole('status');
+    expect(line).toHaveTextContent('tie on composite at 0.79');
+    expect(line).not.toHaveTextContent('wins more');
+    expect(line).not.toHaveTextContent('100%');
+  });
+
   it('states the leader, its win rate, and the value disagreement', () => {
     const thrifty = row({
       key: 'b',

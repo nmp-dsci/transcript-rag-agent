@@ -77,8 +77,15 @@ export function VerdictStrip({ rows }: { rows: readonly ScoreboardRow[] }) {
   // On a tie, the win rate is the one thing that separates the tied rows, so
   // it is reported as a comparison. Printing only the leader's rate right
   // after saying two setups tie would read as if it described both.
+  // `contests` is tracked separately from `judged` and is independently
+  // noisy when low, so it gets its own low-n gate before a win rate is
+  // stated as fact.
   const tieBreaker =
-    tiedWith.length === 1 && best.win_rate != null && tiedWith[0]!.win_rate != null
+    tiedWith.length === 1 &&
+    best.win_rate != null &&
+    !isLowN(best.contests) &&
+    tiedWith[0]!.win_rate != null &&
+    !isLowN(tiedWith[0]!.contests)
       ? [best, tiedWith[0]!].sort((a, b) => (b.win_rate ?? 0) - (a.win_rate ?? 0))
       : null;
 
@@ -103,7 +110,7 @@ export function VerdictStrip({ rows }: { rows: readonly ScoreboardRow[] }) {
         ) : (
           <>
             <b>{label(best)}</b> leads on composite at <b>{best.avg_composite!.toFixed(2)}</b>
-            {best.win_rate != null ? (
+            {best.win_rate != null && !isLowN(best.contests) ? (
               <>
                 , winning {pct(best.win_rate)} of questions ({best.wins}/{best.contests})
               </>

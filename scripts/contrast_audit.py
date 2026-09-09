@@ -46,7 +46,9 @@ fails = 0
 for name, tokens in (('dark', dark), ('light', light)):
     for fg, bg, minimum, what in PAIRS:
         if fg not in tokens or bg not in tokens:
-            print(f"  ?? {name}: missing token {fg} or {bg}"); continue
+            fails += 1
+            print(f"  FAIL {name}: missing token {fg} or {bg} ({what})")
+            continue
         r = ratio(tokens[fg], tokens[bg])
         ok = r >= minimum
         if not ok:
