@@ -151,7 +151,7 @@ export function App() {
         <span className="brand">
           <Logo />
           <span>
-            transcript<em>·lab</em>
+            transcript·<em>lab</em>
           </span>
         </span>
         <nav className="nav" aria-label="Views">

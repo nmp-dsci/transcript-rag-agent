@@ -116,7 +116,7 @@ export function Landing({ corpus, demo, onEnter }: Props) {
         <Logo />
       </div>
       <h1 className="l-title">
-        transcript<em>·lab</em>
+        transcript·<em>lab</em>
       </h1>
       <p className="l-tag">RAG you can audit.</p>
 

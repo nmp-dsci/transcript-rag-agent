@@ -5,59 +5,95 @@
    Both themes define the same token set, so components never branch on the
    theme — index.html stamps data-theme on <html> before first paint. Note
    that --accent2 inverts in meaning: it is a light blue for emphasis on dark
-   surfaces, and a dark blue for emphasis on light ones. */
+   surfaces, and a dark blue for emphasis on light ones.
+
+   Typography: Instrument Sans is the display face (brand, view and panel
+   headings) with Instrument Serif italic reserved for the single decorated
+   keyword. Everything a reader actually parses — body text, tables, chips,
+   labels — stays on the system stack, and data stays on mono, so density and
+   rendering are untouched where they matter. The system stack is ordered
+   system-ui first so each OS gets its own face; it used to lead with
+   'Segoe UI', a Windows face, which quietly fell through to Helvetica on the
+   macOS this is developed on.
+
+   Palette: the neutrals and accent carry a slight cool-slate/indigo bias.
+   good/warn/bad and the six pinned setup identity colours are deliberately
+   untouched — they carry meaning, and the setup swatches label which agent
+   produced an answer in history entries and committed screenshots. */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  /* One variable file covers the whole range; 600 and 700 resolved to the
+     same bytes, so it is declared once over a weight range. */
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/instrument-sans.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-400-italic.woff2') format('woff2');
+}
+
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0e1116;
-  --panel: #12161d;
-  --panel2: #1c2330;
-  --panel3: #161b22;
-  --border: #252b35;
-  --border2: #2b3442;
-  --text: #e6edf3;
-  --text2: #c9d1d9;
-  --muted: #8b949e;
-  --dim: #6e7681;
-  --accent: #2f81f7;
-  --accent2: #79b8ff;
-  --accent-dim: #132339;
-  --accent-border: #1f4a7a;
+  --bg: #0d1017;
+  --panel: #12151e;
+  --panel2: #1b2130;
+  --panel3: #151924;
+  --border: #242936;
+  --border2: #2b3242;
+  --text: #e7ebf3;
+  --text2: #c7ccd9;
+  --muted: #8a90a0;
+  --dim: #6d7383;
+  --accent: #5b7cf0;
+  --accent2: #9db0ff;
+  --accent-dim: #171d33;
+  --accent-border: #33437e;
   --good: #3fb950;
   --good-dim: #173a2b;
   --good-border: #1f5937;
   --warn: #d29922;
   --warn-dim: #3a2e12;
   --bad: #f85149;
-  --bad-dim: #3d1d1f;
+  /* Nudged one step darker: the previous #3d1d1f gave 4.49:1 against --bad,
+     a hair under AA. Pre-existing, fixed here while the palette was open. */
+  --bad-dim: #3a1b1d;
   --warn-border: #5c451a;
   --bad-border: #6b2a2c;
-  --on-accent: #0b1220;
-  --scroll-thumb: #2b3442;
-  --hover: #182029;
-  --rail-sep: #1a2029;
-  --btn-hover: #232b38;
-  --accent-hover: #4b93f8;
-  --best-row: rgba(47, 129, 247, 0.06);
+  --on-accent: #0b1020;
+  --scroll-thumb: #2b3242;
+  --hover: #171d29;
+  --rail-sep: #1a1f2b;
+  --btn-hover: #222939;
+  --accent-hover: #7590f3;
+  --best-row: rgba(91, 124, 240, 0.07);
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --display: 'Instrument Sans', var(--sans);
+  --serif: 'Instrument Serif', Georgia, serif;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f6f8fa;
+  --bg: #f5f6fa;
   --panel: #ffffff;
-  --panel2: #eaeef2;
-  --panel3: #f6f8fa;
-  --border: #d1d9e0;
-  --border2: #bcc4cc;
-  --text: #1f2328;
-  --text2: #424a53;
-  --muted: #59636e;
-  --dim: #818b98;
-  --accent: #0969da;
-  --accent2: #0550ae;
-  --accent-dim: #ddf4ff;
-  --accent-border: #b6e3ff;
+  --panel2: #e9ebf2;
+  --panel3: #f5f6fa;
+  --border: #d3d7e0;
+  --border2: #bec3ce;
+  --text: #1e2128;
+  --text2: #414755;
+  --muted: #585f6e;
+  --dim: #7f8695;
+  --accent: #3550d8;
+  --accent2: #2a3fa8;
+  --accent-dim: #e4e8fd;
+  --accent-border: #bcc6f7;
   --good: #1a7f37;
   --good-dim: #dafbe1;
   --good-border: #aceebb;
@@ -68,12 +104,12 @@
   --warn-border: #d4a72c;
   --bad-border: #ffcecb;
   --on-accent: #ffffff;
-  --scroll-thumb: #c9d1d9;
-  --hover: #eef2f6;
-  --rail-sep: #e4e8ec;
-  --btn-hover: #eef2f6;
-  --accent-hover: #0860ca;
-  --best-row: rgba(9, 105, 218, 0.06);
+  --scroll-thumb: #c7ccd9;
+  --hover: #edeff6;
+  --rail-sep: #e3e6ee;
+  --btn-hover: #edeff6;
+  --accent-hover: #2a42c4;
+  --best-row: rgba(53, 80, 216, 0.06);
 }
 
 * { box-sizing: border-box; }
@@ -81,9 +117,11 @@ html, body, #root { margin: 0; height: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
-  font: 13px/1.5 'Segoe UI', Helvetica, Arial, sans-serif;
+  font: 13px/1.5 var(--sans);
   overflow: hidden;
 }
+/* Display face on headings only — never on a data surface. */
+h1, h2, h3, h4, .brand { font-family: var(--display); letter-spacing: -0.015em; }
 button, input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; border: 2px solid var(--bg); }
@@ -107,10 +145,11 @@ button, input, select, textarea { font-family: inherit; }
 }
 .brand {
   display: flex; align-items: center; gap: 8px;
-  font-weight: 700; font-size: 14px; letter-spacing: 0.02em; white-space: nowrap;
+  font-weight: 700; font-size: 14.5px; letter-spacing: -0.02em; white-space: nowrap;
 }
 .brand svg { flex: 0 0 auto; }
-.brand em { color: var(--accent2); font-style: normal; }
+/* The one decorated keyword in the app, in the one italic serif it owns. */
+.brand em { color: var(--accent2); font-family: var(--serif); font-style: italic; font-weight: 400; }
 .nav { display: flex; gap: 2px; }
 .nav button {
   background: none; border: none; color: var(--muted); font-size: 12.5px;
@@ -337,7 +376,7 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
 .composer-inner { max-width: 900px; margin: 0 auto; }
 .composer textarea {
   width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 10px;
-  color: var(--text); padding: 10px 12px; font: 13.5px/1.45 'Segoe UI', Helvetica, sans-serif;
+  color: var(--text); padding: 10px 12px; font: 13.5px/1.45 var(--sans);
   resize: none; min-height: 42px; max-height: 140px;
 }
 .crow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
@@ -612,7 +651,7 @@ tr.legacyrow td { opacity: 0.6; }
 .rrow.on { background: var(--accent-dim); }
 .rrow .rk { width: 14px; color: var(--dim); flex: 0 0 auto; }
 .rrow .cid { color: var(--accent2); flex: 0 0 auto; }
-.rrow .tx { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-family: 'Segoe UI', Helvetica, sans-serif; }
+.rrow .tx { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-family: var(--sans); }
 .rrow .sc { color: var(--text2); flex: 0 0 auto; }
 .mv { flex: 0 0 auto; font: 9.5px var(--mono); border-radius: 3px; padding: 0 4px; }
 .mv.up { color: var(--good); background: var(--good-dim); }
@@ -728,8 +767,9 @@ tr.legacyrow td { opacity: 0.6; }
   width: 64px; height: 64px; border: 1px solid var(--accent-border);
   border-radius: 16px; background: var(--panel); margin-bottom: 14px;
 }
-.l-title { font-size: 2.2rem; letter-spacing: -0.02em; margin: 0; color: var(--text); }
-.l-title em { font-style: normal; color: var(--accent2); }
+.l-title { font-size: clamp(2.1rem, 5vw, 2.9rem); letter-spacing: -0.035em; margin: 0;
+  color: var(--text); font-family: var(--display); font-weight: 700; }
+.l-title em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent2); }
 .l-tag { color: var(--muted); margin: 6px 0 14px; font-size: 1.02rem; }
 .l-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
 .l-chip {
@@ -739,7 +779,7 @@ tr.legacyrow td { opacity: 0.6; }
 .l-chip.on { color: var(--good); background: var(--good-dim); border: 1px solid var(--good-border); }
 .l-chip.demo { color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); }
 .l-enter {
-  font: 600 15px var(--sans, inherit); color: var(--on-accent, #fff); background: var(--accent);
+  font: 600 15px var(--display); color: var(--on-accent, #fff); background: var(--accent);
   border: none; border-radius: 10px; padding: 12px 34px; cursor: pointer; letter-spacing: 0.01em;
 }
 .l-enter:hover { background: var(--accent-hover, var(--accent)); }
