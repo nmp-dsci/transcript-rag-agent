@@ -53,40 +53,49 @@ export function AnswerBody({ answer }: { answer: Answer }) {
         </button>
       ) : null}
 
-      <div className="chips">
-        {metaChips(answer).map((chip) => (
-          <span className="chip" key={chip}>
-            {chip}
-          </span>
-        ))}
-      </div>
+      {/* One meta row: what this answer cost, then the two things you can open
+          to check it. These were three stacked blocks of equal weight — chips,
+          a sources box, a command box — which gave a judged answer six peer
+          boxes and no obvious place for the eye to land. */}
+      <div className="ansmeta">
+        <span className="ansmeta-prov">
+          {metaChips(answer).map((chip, index) => (
+            <span className="chip" key={chip}>
+              {index > 0 ? <span className="chip-sep" aria-hidden="true"> · </span> : null}
+              {chip}
+            </span>
+          ))}
+        </span>
 
-      {references.length ? (
-        <details className="refs">
-          <summary>Sources ({references.length})</summary>
-          <ul>
-            {references.map((reference, index) => (
-              <li key={`${reference.label ?? index}-${index}`}>
-                <span className="rnum">{reference.label ?? '[?]'}</span>
-                <a
-                  href={reference.timestamp_url || reference.source_url || '#'}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  open
-                  {reference.start_seconds != null ? ` at ${fmtSeconds(reference.start_seconds)}` : ''}
-                </a>
-                <span className="vid">{reference.video_id ?? ''}</span>
-              </li>
-            ))}
-          </ul>
+        {references.length ? (
+          <details className="refs">
+            <summary>sources ({references.length})</summary>
+            <ul>
+              {references.map((reference, index) => (
+                <li key={`${reference.label ?? index}-${index}`}>
+                  <span className="rnum">{reference.label ?? '[?]'}</span>
+                  <a
+                    href={reference.timestamp_url || reference.source_url || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    open
+                    {reference.start_seconds != null
+                      ? ` at ${fmtSeconds(reference.start_seconds)}`
+                      : ''}
+                  </a>
+                  <span className="vid">{reference.video_id ?? ''}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+
+        <details className="cmd">
+          <summary>command</summary>
+          <pre dangerouslySetInnerHTML={{ __html: escapeHtml(answer.command) }} />
         </details>
-      ) : null}
-
-      <details className="cmd">
-        <summary>command</summary>
-        <pre dangerouslySetInnerHTML={{ __html: escapeHtml(answer.command) }} />
-      </details>
+      </div>
     </>
   );
 }

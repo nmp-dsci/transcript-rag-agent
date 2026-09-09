@@ -14,6 +14,7 @@ import { EfficiencyPanel } from './EfficiencyPanel';
 import { ProvenanceBar } from './ProvenanceBar';
 import { QuestionsPanel } from './QuestionsPanel';
 import { RubricPanel } from './RubricPanel';
+import { VerdictStrip } from './VerdictStrip';
 
 type GroupBy = 'setup' | 'setup_model';
 
@@ -198,6 +199,8 @@ export function ScoreboardView() {
             </details>
           </div>
         ) : null}
+
+        <VerdictStrip rows={rows} />
 
         <div className="tblwrap">
           {rows.length === 0 || !board?.entries_judged ? (
