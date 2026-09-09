@@ -12,19 +12,30 @@ const CSS = `
 .ds-intro { color: var(--text2); max-width: 74ch; margin: 4px 0 14px; line-height: 1.55; }
 .ds-toplevel-empty { color: var(--muted); background: var(--panel3); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px 16px; }
-.ds-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr);
-  gap: 14px; align-items: start; }
-@media (max-width: 900px) { .ds-layout { grid-template-columns: 1fr; } }
+/* One column until a node is selected — the graph is the page, and a
+   permanently reserved empty panel made it look like the smaller half. */
+.ds-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.ds-layout.split { grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr); }
+@media (max-width: 900px) { .ds-layout.split { grid-template-columns: minmax(0, 1fr); } }
 
 .ds-graphwrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
   overflow: auto; padding: 4px; }
 .ds-graph { display: block; width: 100%; height: auto; min-width: 720px; }
 
-.ds-edge { stroke: var(--border2); stroke-width: 1.4; fill: none; }
+.ds-edge { stroke: var(--border2); stroke-width: 1.4; fill: none;
+  transition: stroke var(--dur) var(--ease), opacity var(--dur) var(--ease); }
 .ds-edge.hi { stroke: var(--accent2); stroke-width: 2; }
+/* Trace: everything off the path recedes rather than disappearing, so the
+   shape of the whole system stays legible behind the path being read. */
+.ds-edge.dim { opacity: 0.18; }
+.ds-node { transition: opacity var(--dur) var(--ease); }
+.ds-node.dim { opacity: 0.3; }
+.ds-node.lit rect { stroke: var(--accent2); }
+.ds-node.lit text { fill: var(--text); }
 
 .ds-node { cursor: pointer; outline: none; }
-.ds-node rect { fill: var(--panel2); stroke: var(--border2); stroke-width: 1.3; rx: 9; }
+.ds-node rect { fill: var(--panel2); stroke: var(--border2); stroke-width: 1.3; rx: 9;
+  transition: stroke var(--dur) var(--ease), fill var(--dur) var(--ease); }
 /* 11.5px is the default; long labels step down to a 10px floor inline (see
    labelSize) rather than overflowing their node. */
 .ds-node text { fill: var(--text2); font: 600 11.5px var(--mono); pointer-events: none; }
@@ -40,8 +51,9 @@ const CSS = `
 .ds-node.kind-model rect { stroke: var(--warn-border); }
 .ds-node.kind-stage rect { stroke-dasharray: 4 3; }
 
-.ds-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 11px;
+.ds-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: var(--t-1);
   color: var(--muted); }
+.ds-legend-hint { margin-left: auto; color: var(--dim); font-style: italic; }
 .ds-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .ds-swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.3px solid; display: inline-block; }
 .ds-swatch.agent { border-color: var(--accent-border); }

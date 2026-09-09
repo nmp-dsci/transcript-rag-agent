@@ -171,6 +171,48 @@ function DetailPanel({ node }: { node: SystemDesignNode | null }) {
   );
 }
 
+/** Walk one direction from `id`, collecting everything reached. */
+function walk(
+  id: string,
+  edges: readonly { source: string; target: string }[],
+  forward: boolean,
+): Set<string> {
+  const seen = new Set<string>([id]);
+  const queue = [id];
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const edge of edges) {
+      const from = forward ? edge.source : edge.target;
+      const to = forward ? edge.target : edge.source;
+      if (from === current && !seen.has(to)) {
+        seen.add(to);
+        queue.push(to);
+      }
+    }
+  }
+  return seen;
+}
+
+/**
+ * The path *through* `id`: everything it reaches, plus everything that reaches
+ * it. Ancestors ∪ descendants.
+ *
+ * Not the undirected closure. Models and stores are shared hubs here — every
+ * agent calls the embedding model, which reads the same Chroma collections —
+ * so walking edges in both directions from any node reaches almost the entire
+ * graph, and a trace that lights everything answers nothing. Following
+ * direction instead means hovering Agentic RAG lights the models and stores
+ * *it* uses, and leaves the sibling agents that merely share those hubs dim.
+ */
+export function connectedTo(
+  id: string,
+  edges: readonly { source: string; target: string }[],
+): Set<string> {
+  const downstream = walk(id, edges, true);
+  for (const node of walk(id, edges, false)) downstream.add(node);
+  return downstream;
+}
+
 function Graph({
   design,
   selectedId,
@@ -184,14 +226,23 @@ function Graph({
     () => new Map(design.nodes.map((node) => [node.id, node])),
     [design.nodes],
   );
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  // Hover traces the path; an explicit selection keeps it lit while the
+  // reader is reading the panel it opened.
+  const focusId = hoverId ?? selectedId;
+  const lit = useMemo(
+    () => (focusId ? connectedTo(focusId, design.edges) : null),
+    [focusId, design.edges],
+  );
 
   return (
     <div className="ds-graphwrap">
       <svg
-        className="ds-graph"
+        className={`ds-graph${lit ? ' tracing' : ''}`}
         viewBox={VIEWBOX}
         role="img"
         aria-label="System design graph — click a node for details"
+        onMouseLeave={() => setHoverId(null)}
       >
         <defs>
           <marker
@@ -211,11 +262,13 @@ function Graph({
           const source = byId.get(edge.source);
           const target = byId.get(edge.target);
           if (!source || !target) return null;
-          const highlighted = selectedId === edge.source || selectedId === edge.target;
+          // On the traced path when both ends are lit; a lit node joined to
+          // an unlit one would draw an edge into nothing.
+          const highlighted = lit ? lit.has(edge.source) && lit.has(edge.target) : false;
           return (
             <line
               key={`${edge.source}-${edge.target}`}
-              className={`ds-edge${highlighted ? ' hi' : ''}`}
+              className={`ds-edge${highlighted ? ' hi' : ''}${lit && !highlighted ? ' dim' : ''}`}
               x1={source.x}
               y1={source.y}
               x2={target.x}
@@ -234,7 +287,18 @@ function Graph({
           return (
             <g
               key={node.id}
-              className={`ds-node kind-${node.kind}${node.id === selectedId ? ' sel' : ''}`}
+              className={[
+                'ds-node',
+                `kind-${node.kind}`,
+                node.id === selectedId ? 'sel' : '',
+                lit && lit.has(node.id) ? 'lit' : '',
+                lit && !lit.has(node.id) ? 'dim' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onMouseEnter={() => setHoverId(node.id)}
+              onFocus={() => setHoverId(node.id)}
+              onBlur={() => setHoverId(null)}
               transform={`translate(${node.x - NODE_WIDTH / 2}, ${node.y - NODE_HEIGHT / 2})`}
               role="button"
               tabIndex={0}
@@ -314,7 +378,9 @@ export function SystemDesignView() {
         this view can never drift from what actually executes.
       </p>
 
-      <div className="ds-layout">
+      {/* The graph takes the whole width until a node is picked; the split
+          only earns its space once there is something in the panel. */}
+      <div className={`ds-layout${selected ? ' split' : ''}`}>
         <div>
           <Graph design={design} selectedId={selectedId} onSelect={setSelectedId} />
           <div className="ds-legend">
@@ -330,6 +396,7 @@ export function SystemDesignView() {
             <span>
               <i className="ds-swatch store" /> store
             </span>
+            <span className="ds-legend-hint">hover a node to trace its path</span>
           </div>
         </div>
         <DetailPanel node={selected} />
