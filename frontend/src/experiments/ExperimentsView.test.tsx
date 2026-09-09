@@ -181,4 +181,22 @@ describe('ExperimentsView', () => {
 
     expect(await screen.findByText(/No committed experiment runs yet/i)).toBeInTheDocument();
   });
+
+  it('scrolls to a section instead of letting the hash router hijack the tab', async () => {
+    experiments.mockResolvedValue(data());
+    render(<ExperimentsView />);
+
+    const link = await screen.findByRole('link', { name: 'packs' });
+    const target = document.getElementById('exp-packs')!;
+    const scrollIntoView = vi.fn();
+    target.scrollIntoView = scrollIntoView;
+
+    await userEvent.click(link);
+
+    // Regression: previously this click set window.location.hash, which
+    // fired the app-level hashchange listener and bounced the user back to
+    // the Chat tab because `exp-packs` isn't a recognized tab id.
+    expect(window.location.hash).toBe('');
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
 });

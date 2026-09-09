@@ -1,4 +1,5 @@
-import re, sys, itertools
+import re
+import sys
 
 css = open('frontend/src/theme.css').read()
 
@@ -9,12 +10,16 @@ def block(sel):
 dark = block(":root[data-theme='dark']")
 light = block(":root[data-theme='light']")
 
+def _linearize(c):
+    return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+
 def lum(hexs):
     h = hexs.lstrip('#')
-    if len(h) == 3: h = ''.join(c*2 for c in h)
+    if len(h) == 3:
+        h = ''.join(c*2 for c in h)
     r, g, b = (int(h[i:i+2], 16)/255 for i in (0, 2, 4))
-    f = lambda c: c/12.92 if c <= 0.03928 else ((c+0.055)/1.055)**2.4
-    return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b)
+    return 0.2126*_linearize(r) + 0.7152*_linearize(g) + 0.0722*_linearize(b)
 
 def ratio(a, b):
     la, lb = lum(a), lum(b)
