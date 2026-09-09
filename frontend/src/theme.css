@@ -192,9 +192,12 @@ button, input, select, textarea { font-family: inherit; }
 .nav button:hover { color: var(--text); }
 .nav button.on { background: var(--accent-dim); color: var(--accent2); }
 .topstat {
-  margin-left: auto; display: flex; align-items: center; gap: 14px;
-  font: var(--t-1) var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden;
+  margin-left: auto; display: flex; align-items: center; gap: 14px; min-width: 0;
+  font: var(--t-1) var(--mono); color: var(--muted); white-space: nowrap;
 }
+/* The status line is the only part that may shrink. Without min-width:0 it
+   refused to, and below ~1100px it pushed the theme toggle off the screen. */
+.topstat-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .themetoggle {
   background: none; border: 1px solid var(--border2); color: var(--muted);
   border-radius: 6px; width: 26px; height: 22px; flex: 0 0 auto;

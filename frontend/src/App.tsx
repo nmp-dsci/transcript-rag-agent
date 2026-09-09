@@ -169,7 +169,7 @@ export function App() {
         </nav>
         <div className="topstat">
           <span className={`hdot ${offline ? 'err' : health ? 'ok' : ''}`} />
-          <span>
+          <span className="topstat-text">
             {offline
               ? 'server unreachable'
               : demo
