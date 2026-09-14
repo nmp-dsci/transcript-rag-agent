@@ -1,0 +1,239 @@
+{
+  "slug": "llm-as-a-judge",
+  "title": "LLM-as-a-Judge",
+  "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",
+  "subtitle": "",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-09-14",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "N_DwZR--XCc",
+    "EjFsjfOBZFE",
+    "pnlT_xatpVQ",
+    "qoPYlLg7_rY",
+    "a3SMraZWNNs",
+    "TL527yTpxlk",
+    "vBJF2sy1Pyw",
+    "X4dEHRzBLmc",
+    "kP_aaFnXLmY",
+    "3FcYdRQPMCo",
+    "mX9HzIRdBpw",
+    "kIvjiH8yJoU",
+    "spvXj9tnWAQ",
+    "8fNP4N46RRo",
+    "uQFLY8rQVYA",
+    "PjCwlX0XT8o",
+    "HI5b0g_mELA",
+    "q2JrUKBMf0w",
+    "cRz0BWkuwHg"
+  ],
+  "sources": [
+    {
+      "video_id": "N_DwZR--XCc",
+      "title": "LLM-as-a-Judge / Autoraters • Guest Lecture at @Northeastern University • March 24, 2026",
+      "channel": "Aman Chadha",
+      "contributed": "The academic backbone: the learning-to-rank taxonomy (pointwise/pairwise/listwise) underlying judge design, the canonical judge-prompt anatomy, APO and RL (J1/Judge-LRM) methods for training judges, and the three canonical bias sources.",
+      "url": "https://www.youtube.com/watch?v=N_DwZR--XCc"
+    },
+    {
+      "video_id": "EjFsjfOBZFE",
+      "title": "UnlikelyAI Webinar: Is LLM-as-a-Judge Ready for Production in Financial Services?",
+      "channel": "UnlikelyAI",
+      "contributed": "Regulated-industry lens: treats LLM-as-judge as a black-box guardrail with audit and consistency risk, and argues for decomposing complex policy checks into small, narrow, deterministic/symbolic sub-checks instead of one big frontier-model judgment.",
+      "url": "https://www.youtube.com/watch?v=EjFsjfOBZFE"
+    },
+    {
+      "video_id": "pnlT_xatpVQ",
+      "title": "LLM-as-a-Judge 101",
+      "channel": "Arize AI",
+      "contributed": "The general conceptual framework: a four-step build process (data, metrics, prompt/model, meta-eval), concrete prompting and model-selection pitfalls, the 4K-token context rule with its source study, and meta-evaluation via human alignment.",
+      "url": "https://www.youtube.com/watch?v=pnlT_xatpVQ"
+    },
+    {
+      "video_id": "qoPYlLg7_rY",
+      "title": "LLM-as-a-Judge Evals with LangSmith",
+      "channel": "COMMAND",
+      "contributed": "A live platform tutorial (datasets/evaluators/experiments in LangSmith) plus a real multi-model controlled experiment showing model-choice results can be counterintuitive, and the 'auto research' automation concept.",
+      "url": "https://www.youtube.com/watch?v=qoPYlLg7_rY"
+    },
+    {
+      "video_id": "a3SMraZWNNs",
+      "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The full three-level framework (unit tests -> human/model eval -> A/B testing) plus the concrete human-vs-model alignment workflow using a shared Excel sheet and meta-prompting to close agreement gaps.",
+      "url": "https://www.youtube.com/watch?v=a3SMraZWNNs"
+    },
+    {
+      "video_id": "TL527yTpxlk",
+      "title": "Complete Beginner's Course on AI Evaluations in 50 Minutes (2025) | Aman Khan",
+      "channel": "Peter Yang",
+      "contributed": "A PM-oriented, live walkthrough of building a golden dataset and rubric in a spreadsheet before ever building an LLM judge, including a caught LLM arithmetic failure and a 'match rate' comparison of human vs. judge labels per criterion.",
+      "url": "https://www.youtube.com/watch?v=TL527yTpxlk"
+    },
+    {
+      "video_id": "vBJF2sy1Pyw",
+      "title": "The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013",
+      "channel": "Qdrant Vector Search",
+      "contributed": "Production-ops framing: where in the request lifecycle to run judge calls, cost control via cheap judge models, root-cause analysis on failure clusters, and a live demo of UpTrain's API/dashboard.",
+      "url": "https://www.youtube.com/watch?v=vBJF2sy1Pyw"
+    },
+    {
+      "video_id": "X4dEHRzBLmc",
+      "title": "Judge the Judge: Building LLM Evaluators That Actually Work with GEPA — Mahmoud Mabrouk, Agenta AI",
+      "channel": "AI Engineer",
+      "contributed": "The only fully worked case study of calibrating a judge against human annotation with the GEPA prompt-optimizer, including exact before/after accuracy numbers, cost figures, and a catalogue of failed experiments.",
+      "url": "https://www.youtube.com/watch?v=X4dEHRzBLmc"
+    },
+    {
+      "video_id": "kP_aaFnXLmY",
+      "title": "3. Tutorial: How to create an LLM judge and align with human labels",
+      "channel": "Evidently AI",
+      "contributed": "A worked, numbers-heavy case study (code review quality judge) showing exact accuracy/precision/recall deltas across three prompt iterations and two model swaps (GPT-4 mini, GPT-3.5 Turbo, Claude), using Evidently's classification-quality tooling.",
+      "url": "https://www.youtube.com/watch?v=kP_aaFnXLmY"
+    },
+    {
+      "video_id": "3FcYdRQPMCo",
+      "title": "LLM as a Judge Explained | Hands-On GenAI Evaluation with Real Code",
+      "channel": "Siddhardhan",
+      "contributed": "The only fully worked code walkthrough: two candidate LLMs + one judge LLM via llama-index, a structured-JSON judge prompt, and a scored comparison loop over a fixed question set.",
+      "url": "https://www.youtube.com/watch?v=3FcYdRQPMCo"
+    },
+    {
+      "video_id": "mX9HzIRdBpw",
+      "title": "Evaluating Netflix Show Synopses with LLM-as-a-Judge",
+      "channel": "Toronto Machine Learning Society (TMLS)",
+      "contributed": "The most detailed industrial case study: building a calibrated golden dataset with expert annotators, per-criteria judges, inference-time scaling (long reasoning + consensus), an agent-as-judge decomposition for factuality, and causal-inference validation of judge scores against real user behavior.",
+      "url": "https://www.youtube.com/watch?v=mX9HzIRdBpw"
+    },
+    {
+      "video_id": "kIvjiH8yJoU",
+      "title": "From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluat... - Eric Pugh & Fernando Rejon Barrera",
+      "channel": "OpenSearch",
+      "contributed": "The case for pairwise/ELO-style judging over single-answer scoring for complex rag/agent systems, plus the argument that judge output (explanations) should be surfaced to humans as an eyeballing/exploration tool, not just a dashboard number.",
+      "url": "https://www.youtube.com/watch?v=kIvjiH8yJoU"
+    },
+    {
+      "video_id": "spvXj9tnWAQ",
+      "title": "Engineering Better Evals: Scalable LLM Evaluation Pipelines That Work — Dat Ngo, Aman Khan, Arize",
+      "channel": "AI Engineer",
+      "contributed": "A production taxonomy of the whole eval toolbox (LLM judge, encoder-only classifiers, code evals, human feedback, golden datasets), zoom-level/conditional eval strategy for agents, and the guardrail-vs-root-cause framing.",
+      "url": "https://www.youtube.com/watch?v=spvXj9tnWAQ"
+    },
+    {
+      "video_id": "8fNP4N46RRo",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 8 - LLM Evaluation",
+      "channel": "Stanford Online",
+      "contributed": "Academic grounding: why raw human agreement is misleading, why reference-based metrics (BLEU/ROUGE/METEOR) fail, the taxonomy of judge biases (position, verbosity, self-enhancement) with remedies, structured-output enforcement, atomic-fact factuality scoring, and how judges relate to benchmarks like MMLU.",
+      "url": "https://www.youtube.com/watch?v=8fNP4N46RRo"
+    },
+    {
+      "video_id": "uQFLY8rQVYA",
+      "title": "LLM Eval Methods | LLM-as-a-Judge | Reference Based Evals Vs Reference Free Evals | CampusX",
+      "channel": "CampusX",
+      "contributed": "The clearest three-method taxonomy (programmatic/human/model-graded) worked through three parallel case studies -- retriever Recall@K, chatbot helpfulness rubric, and UPSC exam auto-grading with MAE -- plus the reference-based vs reference-free distinction.",
+      "url": "https://www.youtube.com/watch?v=uQFLY8rQVYA"
+    },
+    {
+      "video_id": "PjCwlX0XT8o",
+      "title": "Chapter 6: Metrics, LLM Judges, and Statistical Confidence | Evals For AI Engineers",
+      "channel": "onepagecode",
+      "contributed": "The deep engineering playbook: how to write a narrow, criterion-first judge prompt, calibrate it against a frozen held-out label split, measure its bias (position/verbosity/self-preference), correct observed rates with sensitivity/specificity, and run paired bootstrap comparisons and multi-run reliability checks before treating a judge as a release gate.",
+      "url": "https://www.youtube.com/watch?v=PjCwlX0XT8o"
+    },
+    {
+      "video_id": "HI5b0g_mELA",
+      "title": "Amazon Bedrock RAG Evaluation ( LLM as a Judge ) | Step-by-Step Guide",
+      "channel": "Data Science Basics",
+      "contributed": "Hands-on cloud implementation mechanics: golden dataset JSONL schema, IAM/CORS permission requirements, Bedrock's built-in metric catalog, and comparing evaluation runs across configurations before production rollout.",
+      "url": "https://www.youtube.com/watch?v=HI5b0g_mELA"
+    },
+    {
+      "video_id": "q2JrUKBMf0w",
+      "title": "The Future of Evals: From LLM as a Judge to Agent as a Judge — Aparna Dhinakaran, Arize AI",
+      "channel": "AI Engineer",
+      "contributed": "Production-scale eval statistics and the argument that fixed-rubric LLM-as-judge breaks down on long-horizon multi-agent trajectories, motivating a third eval category: agent-as-judge.",
+      "url": "https://www.youtube.com/watch?v=q2JrUKBMf0w"
+    },
+    {
+      "video_id": "cRz0BWkuwHg",
+      "title": "Key Metrics and Evaluation Methods for RAG",
+      "channel": "What's AI by Louis-François Bouchard",
+      "contributed": "Practical RAG evaluation checklist: names the standard retrieval metrics (precision, recall, hit rate, MRR, NDCG) and generation metrics (faithfulness, answer relevancy, answer correctness), then gives concrete LLM-as-judge best practices (pairwise, randomize order, allow ties, chain-of-thought, length-matching) plus the Ragas tooling pointer.",
+      "url": "https://www.youtube.com/watch?v=cRz0BWkuwHg"
+    }
+  ],
+  "chunk_count": 703,
+  "cluster_count": 5,
+  "cite_total": 298,
+  "cite_valid": 298,
+  "gaps": [
+    "None of the talks give a standard, generalizable threshold (e.g. required correlation or agreement score) for when a judge is 'calibrated enough' to trust in production, beyond Mabrouk's informal ~95%-accuracy aspiration on one narrow case study.",
+    "No guidance on how often to re-validate or re-calibrate a judge as the underlying application, policy, or model provider changes over time.",
+    "No discussion of statistical sample-size requirements for golden/eval datasets — how many labeled examples are enough to trust a judge's reported accuracy.",
+    "No cost or latency comparison across pointwise vs pairwise vs listwise judging in concrete dollar or millisecond terms.",
+    "No worked guidance on how to aggregate multiple per-criterion scores into one overall pass/fail decision beyond a passing mention of simple averaging.",
+    "No detail on monitoring judge drift or disagreement rate once a judge is deployed in production, versus one-time offline validation against a golden set.",
+    "None of the four talks gives a firm number for how many labeled examples a golden dataset needs -- pnlT_xatpVQ explicitly declines to give a rule, and the 50-100 figures used in uQFLY8rQVYA and HI5b0g_mELA are presented as informal, small-scale demo choices, not a validated minimum.",
+    "pnlT_xatpVQ promises deeper coverage of meta-evaluation statistics and pairwise-judge design in a 'future session' that isn't part of this corpus, so rigorous methodology for those two areas is missing here.",
+    "uQFLY8rQVYA explicitly flags 'offline vs online evaluation' as the next topic to cover but the available chunks end before that discussion, so how to run judges continuously against a live production system isn't answered in this cluster.",
+    "None of the four videos gives quantitative cost/latency figures for running an LLM judge at volume (e.g. $ per judgment, tokens per call, throughput limits) beyond qualitative statements that humans are 'costly'.",
+    "No video addresses judge drift -- what to do when a provider silently updates or deprecates the judge model version you calibrated against.",
+    "No video discusses statistical significance when comparing experiment scores between configurations (e.g. is a 79% vs 94% gap meaningful given a sample of only 20-70 examples).",
+    "Multi-turn or full agentic-trajectory evaluation (judging an entire tool-calling trajectory rather than a single final answer) is mentioned only in passing (pnlT_xatpVQ's Q&A) and never worked through as a case study in this cluster.",
+    "None of the four talks give a statistical rule (confidence interval, sample-size formula) for how many labeled examples are truly enough to trust a judge's agreement score beyond rough rules of thumb like '10 to start, 100+ for production.'",
+    "No discussion of the cost or per-call latency budget for running LLM judges at scale in production beyond one passing remark that OpenAI ran faster than Anthropic in one test.",
+    "No guidance on defending a judge prompt against adversarial or prompt-injected inputs designed to fool the judge.",
+    "No worked example of how to combine multiple narrow judges (e.g. tone, policy compliance, product knowledge) into a single pass/fail or release-gating decision.",
+    "The ELO/ragelo approach (kIvjiH8yJoU) is described conceptually but the talk doesn't explain its K-factor or scoring math, so a reader can't reproduce the ranking algorithm from the transcript alone.",
+    "No comparison of open-source/self-hosted judge models versus hosted API judges on cost or reliability.",
+    "None of the four talks give concrete dollar or token-cost figures for running an LLM judge at scale, beyond general warnings that judge calls 'add up' or 'you will be charged' — a reader can't budget from this corpus alone.",
+    "No video compares specific judge models against each other with benchmark numbers (e.g. which model is empirically the best judge) — recommendations stay generic ('use a bigger model', 'use a cheaper model').",
+    "No discussion of how to detect or prevent adversarial gaming of the judge itself (e.g. a generator model learning to exploit judge biases during RLHF-style optimization).",
+    "Netflix describes doing calibration up front but doesn't give a concrete cadence or trigger for re-calibrating human raters or the judge prompt once the system is live long-term.",
+    "No video discusses self-hosted/open-weight judge models as an alternative to API-based judges (cost, latency, or quality tradeoffs of running your own judge model).",
+    "No rigorous treatment of how large a golden/meta-evaluation dataset needs to be for statistical confidence — Netflix calls 600 'pretty diverse' but doesn't give a power-analysis style justification, and UpTrain's '50-100 samples' guidance is anecdotal.",
+    "None of the three talks give concrete dollar-per-call pricing or benchmark latency numbers for LLM-as-judge calls beyond EjFsjfOBZFE's qualitative 'seconds, not milliseconds' — a reader can't budget precisely from this corpus alone.",
+    "No comparison of specific judge-model choices (e.g. which frontier or open-source model tends to be the least biased judge) is offered anywhere in the cluster.",
+    "cRz0BWkuwHg names Ragas as a tool but the cluster gives no comparison of Ragas against other eval frameworks (e.g. DeepEval, TruLens, promptfoo), so a reader can't choose a tool from this corpus.",
+    "EjFsjfOBZFE's financial-services guardrail framing never engages with the statistical rigor (confusion matrices, bias correction, bootstrap comparisons) that PjCwlX0XT8o develops in depth — a reader wanting to apply that rigor to a regulated guardrail system has to bridge the two talks themselves.",
+    "None of the videos address how to evaluate a judge's own drift over time in a live production system beyond stating that judge configuration changes should get a new version — no worked example of ongoing production monitoring cadence is given.",
+    "cRz0BWkuwHg does not discuss judge bias (position, verbosity, self-preference) at all, despite recommending pairwise LLM-as-judge use — a reader following only that video would miss the bias-testing methodology PjCwlX0XT8o considers essential."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "pipeline",
+      "scoring",
+      "ban",
+      "instrument",
+      "production",
+      "prompts",
+      "disagreements",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20260914T204433Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "fix:1",
+        "model": "claude-opus-5",
+        "cost_usd": 0.6647550000000001,
+        "duration_ms": 70884,
+        "turns": 20,
+        "tool_calls": 21
+      }
+    ]
+  }
+}

@@ -49,6 +49,13 @@ demo = [
     "anthropic>=0.40",
     "claude-agent-sdk>=0.2.131",
 ]
+# The field-guide writer runs on the Claude Agent SDK, billed to the Claude
+# subscription (CLAUDE_CODE_OAUTH_TOKEN) rather than an API key. Optional for
+# the same reason as `demo`: the app only *reads* guides; the demo container
+# has neither the `claude` binary nor a token. `uv sync --group guides`.
+guides = [
+    "claude-agent-sdk>=0.2.131",
+]
 
 [tool.ruff]
 # 100 cols matches the repo's TypeScript house style (Prettier printWidth: 100).

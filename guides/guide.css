@@ -259,6 +259,14 @@
 
 /* ---------- reader additions (workbench bridge) ---------- */
 cite { font-style: inherit; }
-cite[data-video] { border-bottom: 1px dotted var(--accent, currentColor); }
+cite[data-video] { font-family: var(--mono); font-size: 0.72em; color: var(--accent); vertical-align: 0.25em;
+  margin-left: 0.15em; white-space: nowrap; }
+cite[data-video]::before { content: "["; opacity: 0.6; }
+cite[data-video]::after { content: "]"; opacity: 0.6; }
+a > cite[data-video], li > a cite[data-video] { font-family: inherit; font-size: inherit; color: inherit; vertical-align: baseline; margin: 0; white-space: normal; }
+a > cite[data-video]::before, a > cite[data-video]::after { content: none; }
 .guide-hl { outline: 2px solid var(--accent, #2434C9); outline-offset: 4px; border-radius: 4px;
   transition: outline-color 300ms ease; }
+/* Long section lists (agent-written guides run to ten) wrap instead of scrolling. */
+nav.site .bar { flex-wrap: wrap; row-gap: 4px; overflow-x: visible; }
+nav.site .links { flex-wrap: wrap; row-gap: 2px; gap: 6px 18px; justify-content: flex-end; }

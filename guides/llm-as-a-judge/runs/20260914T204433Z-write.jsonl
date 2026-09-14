@@ -1,0 +1,36 @@
+{"at": "2026-09-14T20:44:33+00:00", "stage": "scope", "status": "done", "message": "19 videos confirmed", "video_ids": ["N_DwZR--XCc", "EjFsjfOBZFE", "pnlT_xatpVQ", "qoPYlLg7_rY", "a3SMraZWNNs", "TL527yTpxlk", "vBJF2sy1Pyw", "X4dEHRzBLmc", "kP_aaFnXLmY", "3FcYdRQPMCo", "mX9HzIRdBpw", "kIvjiH8yJoU", "spvXj9tnWAQ", "8fNP4N46RRo", "uQFLY8rQVYA", "PjCwlX0XT8o", "HI5b0g_mELA", "q2JrUKBMf0w", "cRz0BWkuwHg"]}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "export", "status": "skip", "message": "corpus already exported", "chunk_count": 703}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "skip", "message": "cluster-1: evidence exists", "cluster": "cluster-1"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "skip", "message": "cluster-2: evidence exists", "cluster": "cluster-2"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "skip", "message": "cluster-3: evidence exists", "cluster": "cluster-3"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "skip", "message": "cluster-4: evidence exists", "cluster": "cluster-4"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "skip", "message": "cluster-5: evidence exists", "cluster": "cluster-5"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "start", "message": "0 extraction passes (claude-sonnet-5)", "total": 5, "pending": 0}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "extract", "status": "done", "message": "280 verified claims in 5 evidence files", "claims": 280}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "compose", "status": "skip", "message": "guide.html already written"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "verify", "status": "start", "message": "resolving cites"}
+{"at": "2026-09-14T20:44:33+00:00", "stage": "verify", "status": "progress", "message": "2 invalid cites, 0 structure errors — fix pass 1", "invalid": 2, "structure_errors": []}
+{"at": "2026-09-14T20:44:36+00:00", "stage": "fix:1", "status": "tool", "message": "Grep pnlT_xatpVQ", "name": "Grep", "summary": "Grep pnlT_xatpVQ"}
+{"at": "2026-09-14T20:44:37+00:00", "stage": "fix:1", "status": "tool", "message": "ToolSearch", "name": "ToolSearch", "summary": "ToolSearch"}
+{"at": "2026-09-14T20:44:40+00:00", "stage": "fix:1", "status": "tool", "message": "Glob corpus/*", "name": "Glob", "summary": "Glob corpus/*"}
+{"at": "2026-09-14T20:44:41+00:00", "stage": "fix:1", "status": "tool", "message": "Grep data-video=\"pnlT_xatpVQ\"", "name": "Grep", "summary": "Grep data-video=\"pnlT_xatpVQ\""}
+{"at": "2026-09-14T20:44:45+00:00", "stage": "fix:1", "status": "tool", "message": "Grep ^#+ .*@(6|7|8)\\b|^#+ .*chunk.*(6|7|8)", "name": "Grep", "summary": "Grep ^#+ .*@(6|7|8)\\b|^#+ .*chunk.*(6|7|8)"}
+{"at": "2026-09-14T20:44:46+00:00", "stage": "fix:1", "status": "tool", "message": "Grep data-chunk=\"31\"", "name": "Grep", "summary": "Grep data-chunk=\"31\""}
+{"at": "2026-09-14T20:44:49+00:00", "stage": "fix:1", "status": "tool", "message": "Read /Users/nathanphillips/git/nmp-ai-portfolio/transcript-rag-agent/corpus/pnlT_xatpVQ.md", "name": "Read", "summary": "Read /Users/nathanphillips/git/nmp-ai-portfolio/transcript-rag-agent/corpus/pnlT_xatpVQ.md"}
+{"at": "2026-09-14T20:44:50+00:00", "stage": "fix:1", "status": "tool", "message": "Grep after the fact", "name": "Grep", "summary": "Grep after the fact"}
+{"at": "2026-09-14T20:44:54+00:00", "stage": "fix:1", "status": "tool", "message": "Glob **/guide.html", "name": "Glob", "summary": "Glob **/guide.html"}
+{"at": "2026-09-14T20:45:02+00:00", "stage": "fix:1", "status": "tool", "message": "Grep ^## pnlT_xatpVQ@7", "name": "Grep", "summary": "Grep ^## pnlT_xatpVQ@7"}
+{"at": "2026-09-14T20:45:03+00:00", "stage": "fix:1", "status": "tool", "message": "Grep ^## pnlT_xatpVQ@31", "name": "Grep", "summary": "Grep ^## pnlT_xatpVQ@31"}
+{"at": "2026-09-14T20:45:08+00:00", "stage": "fix:1", "status": "tool", "message": "retrieve_chunks \"Why label your own data by hand \\u2014 labels let you quantify how well the judge is performing\"", "name": "mcp__corpus__retrieve_chunks", "summary": "retrieve_chunks \"Why label your own data by hand \\u2014 labels let you quantify how well the judge is performing\""}
+{"at": "2026-09-14T20:45:15+00:00", "stage": "fix:1", "status": "tool", "message": "Why label your own data by hand — labels let you quantify how well the judge is performing", "tool": "retrieve_chunks", "question": "Why label your own data by hand — labels let you quantify how well the judge is performing", "video_ids": ["pnlT_xatpVQ"], "results": 8}
+{"at": "2026-09-14T20:45:15+00:00", "stage": "fix:1", "status": "tool", "message": "retrieve_chunks \"guardrails run inline in production while evals are a check after the fact\"", "name": "mcp__corpus__retrieve_chunks", "summary": "retrieve_chunks \"guardrails run inline in production while evals are a check after the fact\""}
+{"at": "2026-09-14T20:45:15+00:00", "stage": "fix:1", "status": "tool", "message": "guardrails run inline in production while evals are a check after the fact", "tool": "retrieve_chunks", "question": "guardrails run inline in production while evals are a check after the fact", "video_ids": ["pnlT_xatpVQ"], "results": 8}
+{"at": "2026-09-14T20:45:24+00:00", "stage": "fix:1", "status": "tool", "message": "Read guide.html", "name": "Read", "summary": "Read guide.html"}
+{"at": "2026-09-14T20:45:24+00:00", "stage": "fix:1", "status": "tool", "message": "Grep pnlT_xatpVQ@(7|31)\\]", "name": "Grep", "summary": "Grep pnlT_xatpVQ@(7|31)\\]"}
+{"at": "2026-09-14T20:45:26+00:00", "stage": "fix:1", "status": "tool", "message": "Glob *.md", "name": "Glob", "summary": "Glob *.md"}
+{"at": "2026-09-14T20:45:30+00:00", "stage": "fix:1", "status": "tool", "message": "Read guide.html", "name": "Read", "summary": "Read guide.html"}
+{"at": "2026-09-14T20:45:33+00:00", "stage": "fix:1", "status": "tool", "message": "Edit guide.html", "name": "Edit", "summary": "Edit guide.html"}
+{"at": "2026-09-14T20:45:35+00:00", "stage": "fix:1", "status": "tool", "message": "Edit guide.html", "name": "Edit", "summary": "Edit guide.html"}
+{"at": "2026-09-14T20:45:45+00:00", "stage": "verify", "status": "done", "message": "cites 298/298 resolve", "valid": 298, "total": 298, "fix_passes": 1}
+{"at": "2026-09-14T20:45:45+00:00", "stage": "publish", "status": "start", "message": "publishing v1"}
+{"at": "2026-09-14T20:45:45+00:00", "stage": "publish", "status": "done", "message": "v1 published", "version": 1}

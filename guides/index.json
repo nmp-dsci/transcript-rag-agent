@@ -1,6 +1,22 @@
 {
   "guides": [
     {
+      "slug": "llm-as-a-judge",
+      "title": "LLM-as-a-Judge",
+      "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",
+      "subtitle": "",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-09-14",
+      "videos": 19,
+      "chunk_count": 703,
+      "cite_total": 298,
+      "cite_valid": 298,
+      "versions": [
+        1
+      ]
+    },
+    {
       "slug": "ship-like-a-studio",
       "title": "Ship Like a Studio",
       "topic": "Ship Like a Studio",
