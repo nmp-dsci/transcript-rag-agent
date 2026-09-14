@@ -18,10 +18,10 @@ export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'guides' | 'de
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
+  { id: 'guides', label: 'Field Guides' },
   { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
   { id: 'experiments', label: 'Experiments' },
-  { id: 'guides', label: 'Field Guides' },
   { id: 'design', label: 'System Design' },
 ];
 
