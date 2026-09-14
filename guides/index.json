@@ -4,7 +4,7 @@
       "slug": "llm-as-a-judge",
       "title": "LLM-as-a-Judge",
       "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",
-      "subtitle": "",
+      "subtitle": "How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.",
       "status": "published",
       "current_version": 1,
       "compiled_at": "2026-09-14",
@@ -12,6 +12,22 @@
       "chunk_count": 703,
       "cite_total": 298,
       "cite_valid": 298,
+      "versions": [
+        1
+      ]
+    },
+    {
+      "slug": "production-genai-systems",
+      "title": "Production GenAI Systems",
+      "topic": "production generative AI systems: taking LLM and agent applications from pilot to production",
+      "subtitle": "Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-09-14",
+      "videos": 17,
+      "chunk_count": 737,
+      "cite_total": 195,
+      "cite_valid": 195,
       "versions": [
         1
       ]

@@ -61,6 +61,8 @@ a > cite[data-video]::before, a > cite[data-video]::after { content: none; }
   transition: outline-color 300ms ease; }
 /* Long section lists (agent-written guides run to ten) wrap instead of scrolling. */
 nav.site .bar { flex-wrap: wrap; row-gap: 4px; overflow-x: visible; }
+/* header.hero's vertical padding rule outranks .wrap's side padding; restore it. */
+header.hero.wrap { padding-left: 28px; padding-right: 28px; }
 nav.site .links { flex-wrap: wrap; row-gap: 2px; gap: 6px 18px; justify-content: flex-end; }
 """
 
@@ -225,7 +227,7 @@ def extract_sources(html: str) -> list[dict[str, Any]]:
 
 
 def extract_subtitle(html: str) -> str:
-    match = re.search(r'<p class="sub">(.*?)</p>', html, re.S)
+    match = re.search(r'<p\b[^>]*\bclass="[^"]*\bsub\b[^"]*"[^>]*>(.*?)</p>', html, re.S)
     return _text(match.group(1)) if match else ""
 
 
