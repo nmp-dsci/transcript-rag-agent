@@ -1979,3 +1979,69 @@ export interface GuideDetail extends GuideSummary {
   version_urls: Record<string, string>;
   receipts: Record<string, GuideReceipt>;
 }
+
+export interface GuideCandidate {
+  video_id: string;
+  title: string;
+  channel_name: string;
+  chunk_count: number;
+  probe_hits: number;
+  probes: string[];
+  title_match: boolean;
+  score: number;
+}
+
+export interface GuideScope {
+  topic: string;
+  probes: string[];
+  candidates: GuideCandidate[];
+  total_videos: number;
+}
+
+export interface GuideActivity {
+  at: string;
+  label: string;
+  name: string;
+  message: string;
+  question?: string | null;
+  results?: number | null;
+}
+
+export interface GuideStageState {
+  status: 'pending' | 'start' | 'progress' | 'done' | 'skip' | 'error';
+  message?: string;
+  at?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface GuideClusterState {
+  status: 'pending' | 'reading' | 'done' | 'skipped';
+  claims: number;
+}
+
+export interface GuideJob {
+  id: string;
+  kind: 'write' | 'revise' | 'markdown';
+  slug: string;
+  topic: string;
+  title: string;
+  video_ids: string[];
+  allow_web: boolean;
+  comment_ids: string[];
+  status: 'running' | 'done' | 'error';
+  stage: string | null;
+  stage_order: string[];
+  stages: Record<string, GuideStageState>;
+  message: string | null;
+  counters: Record<string, number>;
+  /** Per-cluster progress keyed `cluster-N`, plus a `videos` map of exported videos. */
+  clusters: Record<string, GuideClusterState | Record<string, { video_id: string; title: string; channel_name: string; chunk_count: number }>>;
+  activity: GuideActivity[];
+  gaps: string[];
+  version: number | null;
+  cite_valid: number | null;
+  cite_total: number | null;
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+}

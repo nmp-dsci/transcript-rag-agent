@@ -15,7 +15,9 @@ import type {
   Evaluation,
   Experiments,
   GuideDetail,
+  GuideJob,
   GuideList,
+  GuideScope,
   Health,
   IndexResult,
   IndexStage,
@@ -159,6 +161,48 @@ export const api = {
    *  The page itself loads by URL (`html_url`) inside the reader iframe. */
   guide: (slug: string) =>
     getJson<GuideDetail>(`/api/guides/${encodeURIComponent(slug)}`),
+
+  /** Rank the corpus for a topic — the checklist a guide is written from. */
+  guideScope: (topic: string, limit = 25) =>
+    postJson<GuideScope>("/api/guides/scope", { topic, limit }),
+
+  /** Start writing a guide from a confirmed video set. 409 while one runs,
+   *  503 when the Agent SDK or its token is missing (detail says which). */
+  startGuide: (payload: {
+    topic: string;
+    title?: string;
+    slug?: string;
+    video_ids: string[];
+    allow_web?: boolean;
+  }) => postJson<GuideJob>("/api/guides", payload),
+
+  /** Append a reader comment anchored to an element id in the guide page. */
+  addGuideComment: (
+    slug: string,
+    payload: { body: string; anchor?: string | null; section_id?: string | null; quote?: string },
+  ) =>
+    postJson<import("./types").GuideComment>(
+      `/api/guides/${encodeURIComponent(slug)}/comments`,
+      payload,
+    ),
+
+  /** Start a revision over the guide's open comments (a tracked batch). */
+  reviseGuide: (slug: string, payload: { comment_ids?: string[]; allow_web?: boolean } = {}) =>
+    postJson<GuideJob>(`/api/guides/${encodeURIComponent(slug)}/revise`, payload),
+
+  guideJob: () =>
+    getJson<{ job: GuideJob | null; sdk: string | null }>("/api/guides/job"),
+
+  /** Live stage events and agent activity for the current guide job. Never
+   *  ends on its own — abort `signal` to disconnect. */
+  subscribeGuideJob: (
+    handlers: {
+      snapshot?: (data: { job: GuideJob | null }) => void;
+      job?: (data: { job: GuideJob }) => void;
+      activity?: (data: { job_id: string; event: import("./types").GuideActivity }) => void;
+    },
+    signal?: AbortSignal,
+  ) => getStream("/api/guides/job/stream", handlers, signal),
 
   prompts: () => getJson<Prompts>("/api/prompts"),
   systemDesign: () => getJson<SystemDesign>("/api/system-design"),

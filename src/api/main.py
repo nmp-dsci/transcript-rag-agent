@@ -44,6 +44,8 @@ from src.api.corpus import (
     load_chunk_embeddings,
     theme_detail,
 )
+from src.api.guide_runner import GuideRunner
+from src.api.guide_runner import RunFn as GuideRunFn
 from src.api.ingestion_queue import IngestionQueue
 from src.api.matrix_runner import MatrixRunner, RunFn
 from src.api.matrix_runs import (
@@ -58,7 +60,7 @@ from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.api.stt import ConnectFn as SttConnectFn
 from src.api.stt import relay_stt, stt_available
-from src.guides.catalog import DEFAULT_GUIDES_DIR, guide_detail, list_guides
+from src.guides.catalog import DEFAULT_GUIDES_DIR, guide_detail, is_slug, list_guides
 from src.chat.frontend import (
     ANSWER_CSS,
     ANSWER_RENDER_JS,
@@ -170,6 +172,39 @@ class MatrixRunRequest(BaseModel):
     """Which engines to sweep; empty means every engine in the matrix default."""
 
     setups: list[str] = Field(default_factory=list)
+
+
+class GuideScopeRequest(BaseModel):
+    """A topic to rank the corpus for; ``limit`` caps the candidate list."""
+
+    topic: str
+    limit: int = 25
+
+
+class GuideWriteRequest(BaseModel):
+    """Start writing a guide from a confirmed video set."""
+
+    topic: str
+    title: str | None = None
+    slug: str | None = None
+    video_ids: list[str] = Field(default_factory=list)
+    allow_web: bool = False
+
+
+class GuideCommentRequest(BaseModel):
+    """One reader comment, anchored to an element id in the guide page."""
+
+    body: str
+    anchor: str | None = None
+    section_id: str | None = None
+    quote: str = ""
+
+
+class GuideReviseRequest(BaseModel):
+    """Which open comments to apply; empty means every open comment."""
+
+    comment_ids: list[str] = Field(default_factory=list)
+    allow_web: bool = False
 
 
 class MemberOverride(BaseModel):
@@ -393,6 +428,8 @@ def create_app(
     document_fetch_fn: Callable[[str], Any] | None = None,
     stt_connect_fn: "SttConnectFn | None" = None,
     guides_dir: Path | None = None,
+    guide_run_fn: GuideRunFn | None = None,
+    guide_sdk_check: Callable[[], str | None] | None = None,
 ) -> FastAPI:
     resolved = settings or load_settings(require_keys=True)
     runner_factory = runner_factory or (lambda: RagSetupRunner.from_settings(resolved))
@@ -558,6 +595,53 @@ def create_app(
 
     matrix_runner = MatrixRunner(run_fn=matrix_run_fn or _default_matrix_run_fn)
 
+    def _default_guide_run_fn(job: Any, on_event: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
+        """Write, revise or backfill a guide — the same path the ``guides`` CLI takes.
+
+        Reuses the app's retrieval provider (it is read-only for this job) but
+        every agent session is its own fresh SDK client, so nothing here holds
+        state between runs.
+        """
+        from src.guides.catalog import guide_paths, read_manifest
+        from src.guides.service import build_writer
+        from src.guides.writer import WriterConfig
+
+        paths = guide_paths(job.slug, guides_root)
+        config = WriterConfig(allow_web=bool(job.allow_web))
+        writer = build_writer(resolved, get_runner().provider, paths, config=config, on_event=on_event)
+        if job.kind == "write":
+            manifest = writer.write(
+                topic=job.topic,
+                title=job.title or job.topic.title(),
+                video_ids=list(job.video_ids),
+                videos_meta=list(corpus_fn().get("videos") or []),
+            )
+        elif job.kind == "revise":
+            manifest = writer.revise(comment_ids=list(job.comment_ids))
+        elif job.kind == "markdown":
+            found = read_manifest(paths)
+            if found is None:
+                raise RuntimeError(f"Unknown guide: {job.slug}")
+            writer.write_markdown(title=found.title, video_ids=list(found.video_ids))
+            manifest = found
+        else:
+            raise RuntimeError(f"Unknown guide job kind: {job.kind}")
+        return {
+            "version": manifest.current_version,
+            "cite_valid": manifest.cite_valid,
+            "cite_total": manifest.cite_total,
+            "gaps": list(manifest.gaps),
+        }
+
+    guide_runner = GuideRunner(run_fn=guide_run_fn or _default_guide_run_fn)
+
+    def _guide_sdk_check() -> str | None:
+        from src.guides.service import sdk_problem
+
+        return sdk_problem()
+
+    guide_sdk_check = guide_sdk_check or _guide_sdk_check
+
     app = FastAPI(title="Transcript RAG Evaluation Workbench", version="0.2.0")
 
     if resolved.demo_mode:
@@ -575,7 +659,11 @@ def create_app(
         #
         # The container carries no provider keys, so even a gap here has no
         # LLM to reach; this gate exists so the app also *says* no cleanly.
-        demo_blocked_gets = {"/api/eval/matrix/stream", "/api/index/queue/stream"}
+        demo_blocked_gets = {
+            "/api/eval/matrix/stream",
+            "/api/index/queue/stream",
+            "/api/guides/job/stream",
+        }
         demo_allowed_posts = {"/api/chunk-graph"}
 
         @app.middleware("http")
@@ -813,6 +901,80 @@ def create_app(
         """
         return list_guides(guides_root)
 
+    @app.post("/api/guides/{slug}/comments", status_code=201)
+    def guide_comment(slug: str, payload: GuideCommentRequest) -> dict:
+        """Append a reader comment to ``guides/<slug>/comments.jsonl``.
+
+        Comments are the input to a revision, so they are recorded even while
+        a job runs; only the revision itself is one-at-a-time.
+        """
+        from src.guides.catalog import guide_paths, read_manifest
+        from src.guides.comments import add_comment
+
+        if not is_slug(slug):
+            raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
+        paths = guide_paths(slug, guides_root)
+        if read_manifest(paths) is None:
+            raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
+        try:
+            return add_comment(
+                paths,
+                body=payload.body,
+                anchor=payload.anchor,
+                section_id=payload.section_id,
+                quote=payload.quote,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post("/api/guides/{slug}/revise", status_code=202)
+    def guide_revise(slug: str, payload: GuideReviseRequest) -> dict:
+        """Start a revision over the guide's open comments (a tracked batch)."""
+        from src.guides.catalog import guide_paths, read_manifest
+        from src.guides.comments import open_comments
+
+        if not is_slug(slug):
+            raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
+        problem = guide_sdk_check()
+        if problem:
+            raise HTTPException(status_code=503, detail=problem)
+        paths = guide_paths(slug, guides_root)
+        manifest = read_manifest(paths)
+        if manifest is None:
+            raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
+        pending = open_comments(paths)
+        if payload.comment_ids:
+            wanted = set(payload.comment_ids)
+            pending = [c for c in pending if c["id"] in wanted]
+        if not pending:
+            raise HTTPException(status_code=422, detail="no open comments to apply")
+        job, started = guide_runner.start(
+            kind="revise",
+            slug=slug,
+            topic=manifest.topic,
+            title=manifest.title,
+            video_ids=list(manifest.video_ids),
+            allow_web=payload.allow_web,
+            comment_ids=[c["id"] for c in pending],
+        )
+        if not started:
+            raise HTTPException(status_code=409, detail={"message": "a guide job is already running", "job": job.to_dict()})
+        return job.to_dict()
+
+    @app.get("/api/guides/job")
+    def guide_job() -> dict:
+        return {"job": guide_runner.snapshot(), "sdk": guide_sdk_check()}
+
+    @app.get("/api/guides/job/stream")
+    def guide_job_stream() -> StreamingResponse:
+        """Live stage events and agent activity for the current guide job."""
+        subscriber = guide_runner.subscribe()
+        return StreamingResponse(
+            _subscription_stream(subscriber, guide_runner.unsubscribe),
+            media_type="text/event-stream",
+            headers=_SSE_HEADERS,
+        )
+
     @app.get("/api/guides/{slug}")
     def guide(slug: str) -> dict:
         """One guide: manifest, versions, comments, verified claims, receipts.
@@ -824,6 +986,69 @@ def create_app(
         if result is None:
             raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
         return result
+
+    @app.post("/api/guides/scope")
+    def guide_scope(payload: GuideScopeRequest) -> dict:
+        """Rank the corpus for a topic: the videos a guide would read in full.
+
+        Loads the retrieval stack (the probes run through the hybrid provider)
+        but no LLM, and writes nothing — the candidate list is a checklist
+        the user edits before anything starts.
+        """
+        from src.guides.scope import candidate_videos, probe_questions
+        from src.guides.service import retrieval_fns
+
+        topic = " ".join(payload.topic.split())
+        if not topic:
+            raise HTTPException(status_code=422, detail="topic is required")
+        retrieve_whole, _retrieve = retrieval_fns(get_runner().provider)
+        videos = list(corpus_fn().get("videos") or [])
+        ranked = candidate_videos(topic, videos, retrieve_whole)[: max(1, payload.limit)]
+        return {
+            "topic": topic,
+            "probes": probe_questions(topic),
+            "candidates": [candidate.to_dict() for candidate in ranked],
+            "total_videos": len(videos),
+        }
+
+    @app.post("/api/guides", status_code=202)
+    def guide_write(payload: GuideWriteRequest) -> dict:
+        """Start writing a guide in the background from a confirmed video set.
+
+        409 while another guide job is running (one at a time — see
+        ``GuideRunner``); 503 when the Agent SDK or its subscription token is
+        absent, with the one-line fix in ``detail``.
+        """
+        from src.guides.catalog import is_slug, slugify
+
+        problem = guide_sdk_check()
+        if problem:
+            raise HTTPException(status_code=503, detail=problem)
+        topic = " ".join(payload.topic.split())
+        if not topic:
+            raise HTTPException(status_code=422, detail="topic is required")
+        if not payload.video_ids:
+            raise HTTPException(status_code=422, detail="video_ids must not be empty")
+        title = (payload.title or "").strip() or topic.title()
+        slug = (payload.slug or "").strip() or slugify(title)
+        if not is_slug(slug):
+            raise HTTPException(status_code=422, detail=f"not a valid slug: {slug}")
+        known = {str(v.get("video_id")) for v in corpus_fn().get("videos") or []}
+        unknown = [v for v in payload.video_ids if v not in known]
+        if unknown:
+            raise HTTPException(status_code=422, detail=f"not in the corpus: {', '.join(unknown)}")
+        job, started = guide_runner.start(
+            kind="write",
+            slug=slug,
+            topic=topic,
+            title=title,
+            video_ids=list(dict.fromkeys(payload.video_ids)),
+            allow_web=payload.allow_web,
+        )
+        if not started:
+            raise HTTPException(status_code=409, detail={"message": "a guide job is already running", "job": job.to_dict()})
+        return job.to_dict()
+
 
     @app.post("/api/packs/{topic}/members/{video_id}")
     def pack_member_override(topic: str, video_id: str, body: MemberOverride) -> dict:

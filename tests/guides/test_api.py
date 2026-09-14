@@ -76,3 +76,192 @@ def test_demo_mode_serves_guides_read_only(settings: Settings, tmp_path: Path):
     assert client.get("/api/guides/tiny-guide").status_code == 200
     assert client.get("/guides/tiny-guide/guide.html").status_code == 200
     assert client.post("/api/guides", json={}).status_code == 403
+
+
+def test_job_routes_and_scope_start(settings: Settings, tmp_path: Path):
+    """The write path end to end against a fake run function and fake provider."""
+    import threading
+
+    from types import SimpleNamespace
+
+    from src.api.main import create_app
+
+    calls: list = []
+    done = threading.Event()
+
+    def run_fn(job, on_event):
+        calls.append(job)
+        on_event(
+            {
+                "at": "t",
+                "stage": "scope",
+                "status": "done",
+                "message": "ok",
+                "video_ids": job.video_ids,
+            }
+        )
+        on_event({"at": "t", "stage": "publish", "status": "done", "message": "v1", "version": 1})
+        done.set()
+        return {"version": 1, "cite_valid": 4, "cite_total": 4, "gaps": []}
+
+    class FakeStore:
+        def query_by_video_ids(self, ids, q, k):
+            return []
+
+    class FakeProvider:
+        chunk_store = FakeStore()
+
+        def get_context(self, question, top_k=10, **kw):
+            return SimpleNamespace(retrieved_chunks=[SimpleNamespace(video_id="abc123XYZ")])
+
+    corpus = {
+        "videos": [
+            {
+                "video_id": "abc123XYZ",
+                "title": "LLM judge basics",
+                "channel_name": "A",
+                "chunk_count": 12,
+            },
+            {"video_id": "zzz", "title": "Unrelated", "channel_name": "B", "chunk_count": 3},
+        ],
+        "channels": [],
+        "totals": {},
+        "insights": [],
+    }
+    sdk_state = {"problem": None}
+    app = create_app(
+        replace(settings, demo_mode=False),
+        runner_factory=lambda: SimpleNamespace(provider=FakeProvider()),
+        judge_factory=forbidden,
+        graph_store_factory=forbidden,
+        corpus_fn=lambda: corpus,
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        runs_dir=tmp_path / "runs",
+        frontend_dist=tmp_path / "no-bundle",
+        guides_dir=tmp_path / "guides",
+        guide_run_fn=run_fn,
+        guide_sdk_check=lambda: sdk_state["problem"],
+    )
+    client = TestClient(app)
+
+    assert client.get("/api/guides/job").json() == {"job": None, "sdk": None}
+
+    scoped = client.post("/api/guides/scope", json={"topic": "LLM judge", "limit": 5}).json()
+    assert [c["video_id"] for c in scoped["candidates"]] == ["abc123XYZ"]
+    assert scoped["candidates"][0]["title_match"] is True and len(scoped["probes"]) == 8
+    assert client.post("/api/guides/scope", json={"topic": "   "}).status_code == 422
+
+    # Validation before anything starts.
+    assert client.post("/api/guides", json={"topic": "x", "video_ids": []}).status_code == 422
+    assert client.post("/api/guides", json={"topic": "x", "video_ids": ["nope"]}).status_code == 422
+    assert (
+        client.post(
+            "/api/guides", json={"topic": "x", "slug": "Bad Slug", "video_ids": ["abc123XYZ"]}
+        ).status_code
+        == 422
+    )
+    sdk_state["problem"] = "no token"
+    assert (
+        client.post("/api/guides", json={"topic": "x", "video_ids": ["abc123XYZ"]}).status_code
+        == 503
+    )
+    sdk_state["problem"] = None
+
+    started = client.post(
+        "/api/guides",
+        json={"topic": "LLM judge", "video_ids": ["abc123XYZ", "abc123XYZ"], "allow_web": True},
+    )
+    assert started.status_code == 202
+    job = started.json()
+    assert job["kind"] == "write" and job["slug"] == "llm-judge" and job["title"] == "Llm Judge"
+    assert job["video_ids"] == ["abc123XYZ"] and job["allow_web"] is True
+    assert done.wait(2)
+    assert calls[0].slug == "llm-judge"
+    for _ in range(50):
+        snap = client.get("/api/guides/job").json()["job"]
+        if snap["status"] == "done":
+            break
+        import time
+
+        time.sleep(0.02)
+    assert snap["status"] == "done" and snap["version"] == 1 and snap["cite_valid"] == 4
+    assert "/api/guides/job" not in client.get("/api/guides/job").text  # not the 404 body
+
+
+def test_demo_blocks_starting_and_streaming_guide_jobs(settings: Settings, tmp_path: Path):
+    client = make_client(settings, tmp_path, seeded(tmp_path), demo=True)
+    assert client.post("/api/guides/scope", json={"topic": "x"}).status_code == 403
+    assert client.post("/api/guides", json={"topic": "x", "video_ids": ["a"]}).status_code == 403
+    assert client.get("/api/guides/job").status_code == 200
+    assert client.get("/api/guides/job/stream").status_code == 403
+
+
+def test_comment_and_revise_routes(settings: Settings, tmp_path: Path):
+    from types import SimpleNamespace
+
+    from src.api.main import create_app
+    from src.guides.comments import open_comments
+    from src.guides.catalog import GuidePaths
+
+    jobs: list = []
+
+    def run_fn(job, on_event):
+        jobs.append(job)
+        return {"version": 2, "cite_valid": 4, "cite_total": 4, "gaps": []}
+
+    guides_dir = seeded(tmp_path)
+    app = create_app(
+        replace(settings, demo_mode=False),
+        runner_factory=lambda: SimpleNamespace(provider=None),
+        judge_factory=forbidden,
+        graph_store_factory=forbidden,
+        corpus_fn=lambda: {"videos": [], "channels": [], "totals": {}, "insights": []},
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        runs_dir=tmp_path / "runs",
+        frontend_dist=tmp_path / "no-bundle",
+        guides_dir=guides_dir,
+        guide_run_fn=run_fn,
+        guide_sdk_check=lambda: None,
+    )
+    client = TestClient(app)
+    assert client.post("/api/guides/nope/comments", json={"body": "x"}).status_code == 404
+    assert client.post("/api/guides/tiny-guide/comments", json={"body": "   "}).status_code == 422
+    created = client.post(
+        "/api/guides/tiny-guide/comments",
+        json={
+            "body": "Cite the numbers",
+            "anchor": "thesis-p2",
+            "section_id": "thesis",
+            "quote": "Body with",
+        },
+    )
+    assert created.status_code == 201
+    comment = created.json()
+    assert comment["status"] == "open" and comment["anchor"] == "thesis-p2"
+    detail = client.get("/api/guides/tiny-guide").json()
+    assert [c["id"] for c in detail["comments"]] == [comment["id"]] and detail["comments_open"] == 1
+
+    assert (
+        client.post("/api/guides/tiny-guide/revise", json={"comment_ids": ["c-none"]}).status_code
+        == 422
+    )
+    started = client.post("/api/guides/tiny-guide/revise", json={})
+    assert started.status_code == 202
+    job = started.json()
+    assert (
+        job["kind"] == "revise"
+        and job["comment_ids"] == [comment["id"]]
+        and job["title"] == "Tiny Guide"
+    )
+    for _ in range(50):
+        if jobs:
+            break
+        import time
+
+        time.sleep(0.02)
+    assert jobs[0].comment_ids == [comment["id"]]
+    assert (
+        len(open_comments(GuidePaths(guides_dir, "tiny-guide"))) == 1
+    )  # the fake run resolved nothing
