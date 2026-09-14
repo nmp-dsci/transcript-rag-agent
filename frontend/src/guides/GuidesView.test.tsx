@@ -4,14 +4,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GuideDetail, GuideSummary } from '../api/types';
 import { DemoContext } from '../demo';
-import { GuidesView, citeRate, guideFromLocation } from './GuidesView';
+import { GuidesView, appendActivity, citeRate, guideFromLocation } from './GuidesView';
+import { job } from './ResearchMap.test';
 
 const guides = vi.fn();
 const guide = vi.fn();
+const guideJob = vi.fn();
+const subscribeGuideJob = vi.fn();
 vi.mock('../api/client', () => ({
   api: {
     guides: () => guides(),
     guide: (slug: string) => guide(slug),
+    guideJob: () => guideJob(),
+    // The stream never resolves on its own, exactly as the endpoint behaves.
+    subscribeGuideJob: (handlers: unknown, signal: AbortSignal) => subscribeGuideJob(handlers, signal),
+    guideScope: () => Promise.resolve({ topic: '', probes: [], candidates: [], total_videos: 0 }),
+    startGuide: () => Promise.resolve(null),
   },
 }));
 
@@ -59,6 +67,10 @@ function detail(overrides: Partial<GuideDetail> = {}): GuideDetail {
 beforeEach(() => {
   guides.mockReset();
   guide.mockReset();
+  guideJob.mockReset();
+  subscribeGuideJob.mockReset();
+  guideJob.mockResolvedValue({ job: null, sdk: null });
+  subscribeGuideJob.mockImplementation(() => new Promise<void>(() => undefined));
   window.history.replaceState(null, '', '/');
   guides.mockResolvedValue({
     guides: [summary(), summary({ slug: 'llm-as-a-judge', title: 'LLM-as-a-Judge', cite_total: 40, cite_valid: 35 })],
@@ -78,6 +90,13 @@ describe('helpers', () => {
     expect(guideFromLocation('?guide=ship-like-a-studio')).toBe('ship-like-a-studio');
     expect(guideFromLocation('?guide=../etc')).toBeNull();
     expect(guideFromLocation('')).toBeNull();
+  });
+
+  it('folds a live activity event into the job', () => {
+    const next = appendActivity(job({ activity: [], counters: {} }), { at: 't', label: 'compose', name: 'mcp__corpus__retrieve_chunks', message: 'q', question: 'why?' });
+    expect(next?.activity).toHaveLength(1);
+    expect(next?.counters).toEqual({ tool_calls: 1, retrieval_queries: 1 });
+    expect(appendActivity(null, { at: 't', label: 'x', name: 'Read', message: 'm' })).toBeNull();
   });
 
   it('formats the cite rate', () => {
@@ -150,14 +169,45 @@ describe('GuidesView', () => {
     expect(screen.queryByRole('button', { name: 'Evil' })).not.toBeInTheDocument();
   });
 
-  it('hides the terminal hint in demo mode', async () => {
+  it('hides the compose panel and never opens the job stream in demo mode', async () => {
     render(
       <DemoContext.Provider value={true}>
         <GuidesView />
       </DemoContext.Provider>,
     );
     await screen.findByRole('heading', { level: 2, name: 'Ship Like a Studio' });
-    expect(screen.queryByText(/written from the terminal/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('New guide')).not.toBeInTheDocument();
+    expect(subscribeGuideJob).not.toHaveBeenCalled();
+    expect(screen.getByText(/the demo is read-only/)).toBeInTheDocument();
+  });
+
+  it('shows the running job from the stream, then opens the guide it published', async () => {
+    let handlers: Record<string, (data: unknown) => void> = {};
+    subscribeGuideJob.mockImplementation((h: Record<string, (data: unknown) => void>) => {
+      handlers = h;
+      return new Promise<void>(() => undefined);
+    });
+    render(<GuidesView />);
+    await screen.findByRole('heading', { level: 2, name: 'Ship Like a Studio' });
+    expect(screen.getByLabelText('New guide')).toBeInTheDocument();
+    const running = job({ slug: 'production-genai-systems', title: 'Production GenAI Systems' });
+    await act(async () => handlers.snapshot?.({ job: running }));
+    // The rail lists the run; clicking it shows the research map.
+    await userEvent.click(screen.getByText('Production GenAI Systems', { selector: '.rq' }));
+    expect(screen.getByText('chunks read in full')).toBeInTheDocument();
+    await act(async () =>
+      handlers.activity?.({ job_id: 'j1', event: { at: '2026-09-14T11:19:00+00:00', label: 'extract:cluster-2', name: 'Read', message: 'Read corpus/c.md' } }),
+    );
+    expect(screen.getByText('30 / 30')).toBeInTheDocument();
+    // Done: the catalog reloads and the new guide opens in the reader.
+    guides.mockResolvedValue({
+      guides: [summary(), summary({ slug: 'production-genai-systems', title: 'Production GenAI Systems' })],
+      write_command: 'x',
+    });
+    guide.mockImplementation((slug: string) => Promise.resolve(detail({ slug, title: slug === 'production-genai-systems' ? 'Production GenAI Systems' : 'Ship Like a Studio' })));
+    await act(async () => handlers.job?.({ job: { ...running, status: 'done', version: 1 } }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Production GenAI Systems' })).toBeInTheDocument();
+    expect(window.location.search).toBe('?guide=production-genai-systems');
   });
 
   it('shows the empty state when nothing is committed', async () => {
