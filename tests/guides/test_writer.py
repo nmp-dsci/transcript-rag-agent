@@ -493,9 +493,7 @@ def test_confinement_hook_denies_a_glob_pattern_that_escapes_the_guide_dir(tmp_p
     hook = make_confinement_hook(root)
 
     async def run(tool_input):
-        return await hook(
-            {"tool_name": "Glob", "tool_input": tool_input}, "tool-use-1", None
-        )
+        return await hook({"tool_name": "Glob", "tool_input": tool_input}, "tool-use-1", None)
 
     escaping = _asyncio.run(run({"pattern": "/etc/*"}))
     assert escaping["hookSpecificOutput"]["permissionDecision"] == "deny"

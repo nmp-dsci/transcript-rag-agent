@@ -419,7 +419,9 @@ class GuideWriter:
             pending=len(requests),
         )
 
-        cluster_videos_by_name = {f"cluster-{n}": list(c) for n, c in enumerate(summary.clusters, 1)}
+        cluster_videos_by_name = {
+            f"cluster-{n}": list(c) for n, c in enumerate(summary.clusters, 1)
+        }
 
         async def one(name: str, request: AgentRequest, output: Path) -> None:
             self.emit("extract", "progress", f"{name}: reading", cluster=name)

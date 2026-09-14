@@ -595,7 +595,9 @@ def create_app(
 
     matrix_runner = MatrixRunner(run_fn=matrix_run_fn or _default_matrix_run_fn)
 
-    def _default_guide_run_fn(job: Any, on_event: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
+    def _default_guide_run_fn(
+        job: Any, on_event: Callable[[dict[str, Any]], None]
+    ) -> dict[str, Any]:
         """Write, revise or backfill a guide — the same path the ``guides`` CLI takes.
 
         Reuses the app's retrieval provider (it is read-only for this job) but
@@ -608,7 +610,9 @@ def create_app(
 
         paths = guide_paths(job.slug, guides_root)
         config = WriterConfig(allow_web=bool(job.allow_web))
-        writer = build_writer(resolved, get_runner().provider, paths, config=config, on_event=on_event)
+        writer = build_writer(
+            resolved, get_runner().provider, paths, config=config, on_event=on_event
+        )
         if job.kind == "write":
             manifest = writer.write(
                 topic=job.topic,
@@ -958,7 +962,10 @@ def create_app(
             comment_ids=[c["id"] for c in pending],
         )
         if not started:
-            raise HTTPException(status_code=409, detail={"message": "a guide job is already running", "job": job.to_dict()})
+            raise HTTPException(
+                status_code=409,
+                detail={"message": "a guide job is already running", "job": job.to_dict()},
+            )
         return job.to_dict()
 
     @app.get("/api/guides/job")
@@ -1046,9 +1053,11 @@ def create_app(
             allow_web=payload.allow_web,
         )
         if not started:
-            raise HTTPException(status_code=409, detail={"message": "a guide job is already running", "job": job.to_dict()})
+            raise HTTPException(
+                status_code=409,
+                detail={"message": "a guide job is already running", "job": job.to_dict()},
+            )
         return job.to_dict()
-
 
     @app.post("/api/packs/{topic}/members/{video_id}")
     def pack_member_override(topic: str, video_id: str, body: MemberOverride) -> dict:

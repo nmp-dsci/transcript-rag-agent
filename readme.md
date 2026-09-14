@@ -1269,7 +1269,9 @@ hook, plus one in-process MCP tool, `retrieve_chunks`, over the same hybrid
 retriever the Chat tab uses. `WebSearch`/`WebFetch`/`Bash` are disallowed;
 `--allow-web` adds the two web tools for one run and the manifest records it.
 Runs bill to the Claude subscription (`CLAUDE_CODE_OAUTH_TOKEN` in `~/.env`;
-the pay-as-you-go `ANTHROPIC_API_KEY` is blanked for the subprocess).
+the pay-as-you-go `ANTHROPIC_API_KEY` is blanked for the subprocess whenever
+`CLAUDE_CODE_OAUTH_TOKEN` is set). If only `ANTHROPIC_API_KEY` is set, it is
+left in place and a warning is logged that the run will bill that account.
 Extractors run on Sonnet 5, the composer and reviser on Opus 5.
 
 A guide is a committed directory:
@@ -1311,6 +1313,7 @@ uv run python -m src.cli guides comment llm-as-a-judge --from-json annotations.j
 uv run python -m src.cli guides comments llm-as-a-judge                     # status per comment
 uv run python -m src.cli guides revise llm-as-a-judge                       # apply open comments → vN+1 + receipt
 uv run python -m src.cli guides import page.html --slug my-guide            # bring a hand-made page under guides/
+uv run python -m src.cli guides import page.html --slug my-guide --force    # overwrite an existing v1.html
 ```
 
 Scoping runs eight templated probe questions through hybrid retrieval and

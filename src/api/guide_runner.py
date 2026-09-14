@@ -231,13 +231,21 @@ class GuideRunner:
             if stage == "extract":
                 cluster = event.get("cluster")
                 if cluster:
-                    entry = job.clusters.setdefault(str(cluster), {"status": "pending", "claims": 0})
-                    entry["status"] = "done" if "claims" in event else ("skipped" if status == "skip" else "reading")
+                    entry = job.clusters.setdefault(
+                        str(cluster), {"status": "pending", "claims": 0}
+                    )
+                    entry["status"] = (
+                        "done"
+                        if "claims" in event
+                        else ("skipped" if status == "skip" else "reading")
+                    )
                     if "claims" in event:
                         entry["claims"] = int(event["claims"])
                         job.counters["clusters_done"] = job.counters.get("clusters_done", 0) + 1
                 if status == "start":
-                    job.counters["clusters"] = int(event.get("total", job.counters.get("clusters", 0)))
+                    job.counters["clusters"] = int(
+                        event.get("total", job.counters.get("clusters", 0))
+                    )
                 if status == "done":
                     job.counters["claims"] = int(event.get("claims", 0))
             if stage == "verify" and status == "done":
