@@ -66,14 +66,7 @@ def add_comment(
 
 def latest_comments(paths: GuidePaths) -> list[dict[str, Any]]:
     """One record per id — the last line for that id wins — in first-seen order."""
-    order: list[str] = []
-    latest: dict[str, dict[str, Any]] = {}
-    for record in read_comments(paths):
-        comment_id = str(record["id"])
-        if comment_id not in latest:
-            order.append(comment_id)
-        latest[comment_id] = {**latest.get(comment_id, {}), **record}
-    return [latest[comment_id] for comment_id in order]
+    return read_comments(paths)
 
 
 def open_comments(paths: GuidePaths) -> list[dict[str, Any]]:

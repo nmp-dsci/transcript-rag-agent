@@ -49,6 +49,10 @@ def test_describe_tool_call():
     assert describe_tool_call("Read", {"file_path": "corpus/a.md"}) == "Read corpus/a.md"
     assert describe_tool_call("Grep", {"pattern": "judge"}) == "Grep judge"
     assert (
+        describe_tool_call("Read", {"file_path": "/g/x/corpus/a.md"}, "/g/x/") == "Read corpus/a.md"
+    )
+    assert describe_tool_call("Read", {"file_path": "/etc/hosts"}, "/g/x") == "Read /etc/hosts"
+    assert (
         describe_tool_call("mcp__corpus__retrieve_chunks", {"question": "q"})
         == 'retrieve_chunks "q"'
     )

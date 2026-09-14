@@ -199,18 +199,49 @@ export function ResearchMap({ job }: { job: GuideJob }) {
       </div>
       <div className="gj-body">
         <div className="gj-left">
-          {view.clusters.length > 0 ? <Map view={view} /> : <div className="gj-map-empty">exporting the corpus…</div>}
-          <div className="gj-kpis">
-            <div className="kpi">
-              <div className="v">
-                {view.chunksRead} / {view.chunksTotal}
+          {job.kind === 'write' &&
+            (view.clusters.length > 0 ? <Map view={view} /> : <div className="gj-map-empty">exporting the corpus…</div>)}
+          {job.kind === 'revise' && (
+            <div className="gj-revise">
+              <div className="gj-revise-h">Applying {job.comment_ids.length} comment{job.comment_ids.length === 1 ? '' : 's'} as one batch</div>
+              <div className="gj-revise-ids">
+                {job.comment_ids.map((id) => (
+                  <code key={id}>{id}</code>
+                ))}
               </div>
-              <div className="l">chunks read in full</div>
+              <p className="gj-sub">
+                The reviser edits the page in place, cites anything new from the corpus, and must return a receipt naming every id
+                exactly once — addressed, deferred or rejected.
+              </p>
             </div>
-            <div className="kpi">
-              <div className="v">{view.claims}</div>
-              <div className="l">claims with a chunk id</div>
-            </div>
+          )}
+          {job.kind === 'markdown' && <div className="gj-map-empty">rendering the agent-facing copy from the published page…</div>}
+          <div className="gj-kpis">
+            {job.kind === 'write' ? (
+              <>
+                <div className="kpi">
+                  <div className="v">
+                    {view.chunksRead} / {view.chunksTotal}
+                  </div>
+                  <div className="l">chunks read in full</div>
+                </div>
+                <div className="kpi">
+                  <div className="v">{view.claims}</div>
+                  <div className="l">claims with a chunk id</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="kpi">
+                  <div className="v">{view.filesRead}</div>
+                  <div className="l">files read</div>
+                </div>
+                <div className="kpi">
+                  <div className="v">{job.counters.tool_calls ?? 0}</div>
+                  <div className="l">tool calls</div>
+                </div>
+              </>
+            )}
             <div className="kpi">
               <div className="v">{view.retrievalQueries}</div>
               <div className="l">retrieval queries</div>

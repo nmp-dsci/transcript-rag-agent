@@ -6,14 +6,15 @@
       "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",
       "subtitle": "How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.",
       "status": "published",
-      "current_version": 1,
+      "current_version": 2,
       "compiled_at": "2026-09-14",
       "videos": 19,
       "chunk_count": 703,
-      "cite_total": 298,
-      "cite_valid": 298,
+      "cite_total": 308,
+      "cite_valid": 308,
       "versions": [
-        1
+        1,
+        2
       ]
     },
     {

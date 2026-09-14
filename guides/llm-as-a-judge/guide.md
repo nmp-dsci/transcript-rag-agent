@@ -194,7 +194,11 @@ Numeric ratings don't work well for LLM judges; use a small set of discrete word
 
 ### Pairwise beats scoring in isolation
 
-Judges scoring a single answer tend to be too optimistic and agree with whatever they're shown [kIvjiH8yJoU@6], so ask "left or right — which one is better?" like an eye exam [kIvjiH8yJoU@8]. Pairwise gives the model a baseline and a clearer benchmark of quality [cRz0BWkuwHg@5]. Pairwise evals are a sports tournament; direct scoring is Olympic gymnastics [pnlT_xatpVQ@4].
+Judges scoring a single answer tend to be too optimistic and agree with whatever they're shown [kIvjiH8yJoU@6], so ask "left or right — which one is better?" like an eye exam [kIvjiH8yJoU@8]. Pairwise gives the model a baseline and a clearer benchmark of quality [cRz0BWkuwHg@5]. Pairwise evals are a sports tournament; direct scoring is Olympic gymnastics [pnlT_xatpVQ@4]. What it buys in discrimination it gives back in order sensitivity: the judge can pick response A purely because A was mentioned first [8fNP4N46RRo@23]. Control for that before you believe a win rate — next section.
+
+### Pairwise's own bias: position
+
+Position bias is the tax on the format: judges always favour one or the other, the first or the second, depending on the ordering [N_DwZR--XCc@46]. Four controls, cheapest first. **Randomise** which response appears first, and allow ties so the judge is never forced to invent a winner between two equally good answers [cRz0BWkuwHg@6]. **Run both orderings** — ask A vs B, then B vs A, and take the majority across the two runs; if the two disagree, you do not have a verdict [8fNP4N46RRo@24]. **Keep the swap paired**: hold rubric, evidence, decoding settings and whitespace fixed so the only thing that changed is position — a new seed or altered context makes the diagnosis ambiguous, and a flipped verdict then means neither answer has demonstrated superiority [PjCwlX0XT8o@37]. **Predeclare the aggregation rule**: a production comparison either aggregates both orders or excludes and separately reports unresolved reversals under a documented rule [PjCwlX0XT8o@37]. Anonymise candidates as response_A / response_B while you are at it, and randomise their order during the experiment [PjCwlX0XT8o@32]. If you train a judge rather than prompt one, the training-time mitigation is shuffling candidate positions intentionally so the model cannot overfit to "first" [N_DwZR--XCc@46]. The flip rate belongs on the model card as a measured number, not an assumption [PjCwlX0XT8o@36].
 
 ### ELO when you have more than two variants
 

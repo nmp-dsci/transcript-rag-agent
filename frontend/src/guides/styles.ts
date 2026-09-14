@@ -12,6 +12,7 @@ const STYLE_ID = 'tlab-guides';
 
 const CSS = `
 .guides { flex-direction: row; }
+.guides-rail { width: 300px; }
 .guides-rail .rentry { display: block; }
 .guides-rail .rq { font-weight: 500; color: var(--text); }
 .guides-rail .rentry.on .rq { color: var(--accent2); }
@@ -71,7 +72,8 @@ const CSS = `
 .gc-row label:hover { background: var(--hover); }
 .gc-row.on label { background: var(--panel2); }
 .gc-row input { margin: 0; grid-row: span 2; }
-.gc-title { font-size: var(--t0); color: var(--text); line-height: 1.3; }
+.gc-title { font-size: var(--t0); color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
 .gc-star { color: var(--accent2); margin-right: 3px; }
 .gc-meta { grid-column: 2; display: flex; gap: 8px; font: var(--t-2) var(--mono); color: var(--dim); }
 .gc-hits { grid-row: span 2; display: flex; align-items: center; gap: 5px; }
@@ -113,6 +115,10 @@ const CSS = `
 .gj-bar { fill: var(--accent); }
 .gj-bar-label { font: 10px var(--sans); fill: var(--dim); }
 .gj-bar-label.read { fill: var(--text2); }
+.gj-revise { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.gj-revise-h { color: var(--text); font-size: var(--t1); font-weight: 500; }
+.gj-revise-ids { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.gj-revise-ids code { font: var(--t-2) var(--mono); color: var(--accent2); background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 4px; padding: 1px 6px; }
 .gj-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
 @media (max-width: 700px) { .gj-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .gj-kpis .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }

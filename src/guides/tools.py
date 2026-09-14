@@ -161,12 +161,18 @@ def build_retrieval_server(
     return create_sdk_mcp_server(SERVER_NAME, "1.0.0", tools=[tool_def])
 
 
-def describe_tool_call(name: str, arguments: dict[str, Any]) -> str:
-    """One line for the activity log: what the agent did, without the payload."""
+def describe_tool_call(name: str, arguments: dict[str, Any], cwd: str | None = None) -> str:
+    """One line for the activity log: what the agent did, without the payload.
+
+    Paths are shown relative to the guide directory: the agent sometimes
+    reads by absolute path, and the log is read by a person.
+    """
     if name in ("Read", "Write", "Edit", "Glob", "Grep"):
-        target = (
+        target = str(
             arguments.get("file_path") or arguments.get("pattern") or arguments.get("path") or ""
         )
+        if cwd and target.startswith(cwd.rstrip("/") + "/"):
+            target = target[len(cwd.rstrip("/")) + 1 :]
         return f"{name} {target}".strip()
     if name.endswith(TOOL_NAME):
         return f"retrieve_chunks {json.dumps(arguments.get('question', ''))}"

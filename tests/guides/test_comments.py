@@ -106,3 +106,25 @@ def test_receipt_validation():
         parse_receipt("nope", expected_ids=[], version=1)
     ok = parse_receipt({"items": []}, expected_ids=[], version=3)
     assert isinstance(ok, Receipt) and ok.version == 3 and ok.to_dict()["items"] == []
+
+
+def test_detail_shows_one_record_per_comment(tmp_path: Path):
+    from src.guides.importer import import_lavish_html
+    from tests.guides.test_importer import SAMPLE
+
+    source = tmp_path / "page.html"
+    source.write_text(SAMPLE, encoding="utf-8")
+    guides_dir = tmp_path / "guides"
+    import_lavish_html(source, slug="tiny-guide", guides_dir=guides_dir, known_videos=set())
+    paths = GuidePaths(guides_dir, "tiny-guide")
+    first = add_comment(paths, body="one")
+    receipt = parse_receipt(
+        {"items": [{"id": first["id"], "outcome": "addressed"}]},
+        expected_ids=[first["id"]],
+        version=2,
+    )
+    resolve_comments(paths, receipt)
+    detail = guide_detail("tiny-guide", guides_dir)
+    assert detail is not None
+    assert [c["status"] for c in detail["comments"]] == ["addressed"]
+    assert detail["comments_open"] == 0 and detail["comments_total"] == 1

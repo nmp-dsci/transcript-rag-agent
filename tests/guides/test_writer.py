@@ -263,10 +263,10 @@ def test_allow_web_adds_web_tools_and_records_it(tmp_path: Path):
 def test_agent_error_aborts_the_run(tmp_path: Path):
     class Fails(FakeAgent):
         async def __call__(self, request, retrieve, on_event):
-            return AgentResult(error="rate_limit")
+            return AgentResult(error="billing_error")
 
     writer, events = make_writer(tmp_path, Fails())
-    with pytest.raises(RuntimeError, match="extract:cluster-1: rate_limit"):
+    with pytest.raises(RuntimeError, match="extract:cluster-1: billing_error"):
         writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)
 
 
@@ -438,3 +438,46 @@ def test_revise_needs_open_comments(tmp_path: Path):
     writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)
     with pytest.raises(RuntimeError, match="no open comments"):
         make_writer(tmp_path, FakeReviser())[0].revise()
+
+
+def test_rate_limit_is_retried_once_after_a_pause(tmp_path: Path, monkeypatch):
+    import asyncio as _asyncio
+
+    class RateLimitedOnce(FakeAgent):
+        def __init__(self):
+            super().__init__()
+            self.limited = False
+
+        async def __call__(self, request, retrieve, on_event):
+            if request.label == "compose" and not self.limited:
+                self.limited = True
+                self.requests.append(request)
+                return AgentResult(error="rate_limit")
+            return await super().__call__(request, retrieve, on_event)
+
+    slept = []
+
+    async def fake_sleep(seconds):
+        slept.append(seconds)
+
+    monkeypatch.setattr(_asyncio, "sleep", fake_sleep)
+    agent = RateLimitedOnce()
+    writer, events = make_writer(tmp_path, agent, rate_limit_pause_seconds=7)
+    manifest = writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)
+    assert slept == [7]
+    assert [r.label for r in agent.requests] == ["extract:cluster-1", "compose", "compose"]
+    assert manifest.current_version == 1
+    assert any(e["status"] == "progress" and "rate limited" in e["message"] for e in events)
+
+
+def test_stage_timeout_aborts_the_run(tmp_path: Path):
+    import asyncio as _asyncio
+
+    class Hangs(FakeAgent):
+        async def __call__(self, request, retrieve, on_event):
+            await _asyncio.sleep(5)
+            return AgentResult()
+
+    writer, _ = make_writer(tmp_path, Hangs(), stage_timeout_seconds=0.05)
+    with pytest.raises(RuntimeError, match="no result after"):
+        writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)

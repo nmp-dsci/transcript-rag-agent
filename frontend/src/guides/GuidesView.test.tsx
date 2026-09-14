@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GuideDetail, GuideSummary } from '../api/types';
 import { DemoContext } from '../demo';
-import { GuidesView, appendActivity, citeRate, guideFromLocation } from './GuidesView';
+import { GuidesView, appendActivity, citeRate, guideFromLocation, shortLabel } from './GuidesView';
 import { job } from './ResearchMap.test';
 
 const guides = vi.fn();
@@ -97,6 +97,13 @@ describe('helpers', () => {
     expect(next?.activity).toHaveLength(1);
     expect(next?.counters).toEqual({ tool_calls: 1, retrieval_queries: 1 });
     expect(appendActivity(null, { at: 't', label: 'x', name: 'Read', message: 'm' })).toBeNull();
+  });
+
+  it('shortens section labels for the nav', () => {
+    expect(shortLabel('The thesis: narrow it, calibrate it')).toBe('The thesis');
+    expect(shortLabel('Scoring — what you ask the judge')).toBe('Scoring');
+    expect(shortLabel('What this corpus does not tell you at all')).toBe('What this corpus does not');
+    expect(shortLabel('Sources')).toBe('Sources');
   });
 
   it('formats the cite rate', () => {

@@ -45,6 +45,13 @@ function rememberGuide(slug: string | null): void {
   window.history.replaceState(null, '', url.toString());
 }
 
+/** Section labels for the in-app nav: the part before a colon or dash, cut on a word. */
+export function shortLabel(label: string): string {
+  const head = label.split(/\s[—:–-]\s|:\s/)[0] ?? label;
+  if (head.length <= 28) return head;
+  return head.slice(0, 28).replace(/\s+\S*$/, '');
+}
+
 export function citeRate(guide: Pick<GuideSummary, 'cite_total' | 'cite_valid'>): string {
   if (!guide.cite_total) return 'no cites';
   return `cites ${guide.cite_valid}/${guide.cite_total}`;
@@ -359,8 +366,8 @@ export function GuidesView() {
             {sections.length > 0 && (
               <nav className="guide-toc" aria-label="Guide sections">
                 {sections.map((section) => (
-                  <button key={section.id} type="button" onClick={() => reader.current?.scrollTo(section.id)}>
-                    {section.label}
+                  <button key={section.id} type="button" title={section.label} onClick={() => reader.current?.scrollTo(section.id)}>
+                    {shortLabel(section.label)}
                   </button>
                 ))}
               </nav>

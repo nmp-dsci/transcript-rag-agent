@@ -104,3 +104,13 @@ describe('ResearchMap', () => {
     expect(screen.getByText('cites 40/41 resolve')).toBeInTheDocument();
   });
 });
+
+describe('ResearchMap for a revision', () => {
+  it('shows the comment batch instead of the corpus map', () => {
+    render(<ResearchMap job={job({ kind: 'revise', stage_order: ['revise', 'verify', 'publish'], stages: { revise: { status: 'start' } }, comment_ids: ['c-1', 'c-2'], counters: { tool_calls: 5, files_read: 3 } })} />);
+    expect(screen.getByText('Applying 2 comments as one batch')).toBeInTheDocument();
+    expect(screen.getByText('c-2')).toBeInTheDocument();
+    expect(screen.queryByText('chunks read in full')).not.toBeInTheDocument();
+    expect(screen.getByText('files read').previousSibling).toHaveTextContent('3');
+  });
+});

@@ -189,8 +189,8 @@ def list_versions(paths: GuidePaths) -> list[int]:
     return sorted(found)
 
 
-def read_comments(paths: GuidePaths) -> list[dict[str, Any]]:
-    """Every comment line, oldest first. Malformed lines are skipped, not fatal."""
+def read_comment_lines(paths: GuidePaths) -> list[dict[str, Any]]:
+    """Every line of ``comments.jsonl``, oldest first. Malformed lines are skipped."""
     if not paths.comments.is_file():
         return []
     comments: list[dict[str, Any]] = []
@@ -205,6 +205,19 @@ def read_comments(paths: GuidePaths) -> list[dict[str, Any]]:
         if isinstance(record, dict) and record.get("id"):
             comments.append(record)
     return comments
+
+
+def read_comments(paths: GuidePaths) -> list[dict[str, Any]]:
+    """One record per comment id, in first-seen order; a later line for the
+    same id (a status change) is merged over the earlier one."""
+    order: list[str] = []
+    latest: dict[str, dict[str, Any]] = {}
+    for record in read_comment_lines(paths):
+        comment_id = str(record["id"])
+        if comment_id not in latest:
+            order.append(comment_id)
+        latest[comment_id] = {**latest.get(comment_id, {}), **record}
+    return [latest[comment_id] for comment_id in order]
 
 
 def read_claims(paths: GuidePaths) -> dict[str, Any] | None:

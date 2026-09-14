@@ -106,6 +106,13 @@ class WriterConfig:
     max_clusters: int = 6
     parallel_extract: bool = True
     example_path: Path | None = None
+    #: A stage that runs longer than this is abandoned (the SDK session is
+    #: closed) and the run errors; the next run resumes from the last file.
+    stage_timeout_seconds: float = 2400.0
+    #: The subscription's rate limit surfaces as ``rate_limit``; one retry after
+    #: a pause turns a transient refusal into a finished stage.
+    rate_limit_retries: int = 1
+    rate_limit_pause_seconds: float = 120.0
 
 
 def _inside(root: Path, candidate: str) -> bool:
@@ -217,7 +224,9 @@ async def run_with_sdk(
                     elif isinstance(block, ToolUseBlock):
                         call = {
                             "name": block.name,
-                            "summary": describe_tool_call(block.name, block.input),
+                            "summary": describe_tool_call(
+                                block.name, block.input, str(request.cwd)
+                            ),
                         }
                         result.tool_calls.append(call)
                         on_event({"type": "tool", "label": request.label, **call})
@@ -307,7 +316,28 @@ class GuideWriter:
         return allowed, disallowed
 
     async def _run(self, request: AgentRequest) -> AgentResult:
-        result = await self.agent_fn(request, self.retrieve, self._tool_event)
+        attempts = 0
+        while True:
+            attempts += 1
+            try:
+                result = await asyncio.wait_for(
+                    self.agent_fn(request, self.retrieve, self._tool_event),
+                    timeout=self.config.stage_timeout_seconds,
+                )
+            except asyncio.TimeoutError as exc:
+                raise RuntimeError(
+                    f"{request.label}: no result after {self.config.stage_timeout_seconds:.0f}s"
+                ) from exc
+            if result.error == "rate_limit" and attempts <= self.config.rate_limit_retries:
+                self.emit(
+                    request.label,
+                    "progress",
+                    f"rate limited; retrying in {self.config.rate_limit_pause_seconds:.0f}s",
+                    attempt=attempts,
+                )
+                await asyncio.sleep(self.config.rate_limit_pause_seconds)
+                continue
+            break
         self.costs.append(
             {
                 "label": request.label,
