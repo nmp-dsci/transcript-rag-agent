@@ -1,0 +1,20 @@
+{
+  "guides": [
+    {
+      "slug": "ship-like-a-studio",
+      "title": "Ship Like a Studio",
+      "topic": "Ship Like a Studio",
+      "subtitle": "How to agentically build webpages that are beautiful, unique, and engineered to scale — distilled from 23 videos indexed in the transcript-rag-agent corpus: the Claude Code web-design creators, the working web designers, the premium-feel app builders, and the principal-level agentic engineers.",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-08-31",
+      "videos": 23,
+      "chunk_count": 838,
+      "cite_total": 25,
+      "cite_valid": 25,
+      "versions": [
+        1
+      ]
+    }
+  ]
+}

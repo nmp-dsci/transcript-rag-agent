@@ -82,4 +82,8 @@ files = [
     "src/rag/context.py",
     "src/rag/conflicts.py",
     "src/rag/question_scope.py",
+    "src/guides/catalog.py",
+    "src/guides/verify.py",
+    "src/guides/importer.py",
+    "src/guides/cli.py",
 ]

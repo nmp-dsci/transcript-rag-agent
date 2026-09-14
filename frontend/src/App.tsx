@@ -8,18 +8,20 @@ import { DemoContext } from './demo';
 import { Landing } from './landing/Landing';
 import { SystemDesignView } from './design/SystemDesignView';
 import { ExperimentsView } from './experiments/ExperimentsView';
+import { GuidesView } from './guides/GuidesView';
 import { Logo } from './Logo';
 import { PipelineView } from './pipeline/PipelineView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
 
-export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'design';
+export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'guides' | 'design';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
   { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
   { id: 'experiments', label: 'Experiments' },
+  { id: 'guides', label: 'Field Guides' },
   { id: 'design', label: 'System Design' },
 ];
 
@@ -242,6 +244,7 @@ export function App() {
         )}
         {activeTab === 'board' && <ScoreboardView />}
         {activeTab === 'experiments' && <ExperimentsView />}
+        {activeTab === 'guides' && <GuidesView />}
         {activeTab === 'design' && !demo && <SystemDesignView />}
         </DemoContext.Provider>
       </main>

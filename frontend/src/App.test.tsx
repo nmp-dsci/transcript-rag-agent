@@ -24,6 +24,7 @@ vi.mock('./pipeline/PipelineView', () => ({ PipelineView: () => <div>pipeline vi
 vi.mock('./scoreboard/ScoreboardView', () => ({ ScoreboardView: () => <div>scoreboard view</div> }));
 vi.mock('./experiments/ExperimentsView', () => ({ ExperimentsView: () => <div>experiments view</div> }));
 vi.mock('./design/SystemDesignView', () => ({ SystemDesignView: () => <div>design view</div> }));
+vi.mock('./guides/GuidesView', () => ({ GuidesView: () => <div>guides view</div> }));
 
 /** Drive the hash the way a click or the Back button would. */
 async function goToHash(hash: string) {
@@ -104,5 +105,23 @@ describe('landing routing', () => {
     render(<App />);
     expect(await screen.findByText('scoreboard view')).toBeInTheDocument();
     expect(screen.queryByText('RAG you can audit.')).not.toBeInTheDocument();
+  });
+});
+
+describe('field guides tab', () => {
+  it('routes #guides to the guides view', async () => {
+    window.location.hash = '#guides';
+    render(<App />);
+    expect(await screen.findByText('guides view')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Field Guides' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('stays visible in demo mode — guides are committed files, served read-only', async () => {
+    health.mockResolvedValue({ mode: 'demo', judge_model: 'x', runner_loaded: false, stt: false });
+    window.location.hash = '#guides';
+    render(<App />);
+    expect(await screen.findByText('guides view')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Field Guides' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'System Design' })).not.toBeInTheDocument();
   });
 });

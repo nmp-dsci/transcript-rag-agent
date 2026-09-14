@@ -14,6 +14,8 @@ import type {
   EntityDetail,
   Evaluation,
   Experiments,
+  GuideDetail,
+  GuideList,
   Health,
   IndexResult,
   IndexStage,
@@ -149,6 +151,14 @@ export const api = {
       `/api/packs/${encodeURIComponent(topic)}/members/${encodeURIComponent(videoId)}`,
       { included },
     ),
+
+  /** Every committed field guide, with provenance and cite rate. */
+  guides: () => getJson<GuideList>("/api/guides"),
+
+  /** One guide's manifest, versions, comments, verified claims and receipts.
+   *  The page itself loads by URL (`html_url`) inside the reader iframe. */
+  guide: (slug: string) =>
+    getJson<GuideDetail>(`/api/guides/${encodeURIComponent(slug)}`),
 
   prompts: () => getJson<Prompts>("/api/prompts"),
   systemDesign: () => getJson<SystemDesign>("/api/system-design"),

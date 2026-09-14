@@ -58,6 +58,7 @@ from src.api.ranking import DEFAULT_MODES, RankMode, build_rankings
 from src.api.scoreboard import build_scoreboard
 from src.api.stt import ConnectFn as SttConnectFn
 from src.api.stt import relay_stt, stt_available
+from src.guides.catalog import DEFAULT_GUIDES_DIR, guide_detail, list_guides
 from src.chat.frontend import (
     ANSWER_CSS,
     ANSWER_RENDER_JS,
@@ -391,6 +392,7 @@ def create_app(
     document_store: "DocumentStore | None" = None,
     document_fetch_fn: Callable[[str], Any] | None = None,
     stt_connect_fn: "SttConnectFn | None" = None,
+    guides_dir: Path | None = None,
 ) -> FastAPI:
     resolved = settings or load_settings(require_keys=True)
     runner_factory = runner_factory or (lambda: RagSetupRunner.from_settings(resolved))
@@ -798,6 +800,30 @@ def create_app(
         from src.rag.deep_research import research_report
 
         return research_report(topic, packs_dir)
+
+    guides_root = guides_dir or DEFAULT_GUIDES_DIR
+
+    @app.get("/api/guides")
+    def guides() -> dict:
+        """Every committed field guide with its provenance and cite rate.
+
+        Read from ``guides/<slug>/manifest.json`` on every call rather than the
+        derived ``index.json``: a guide the pipeline just published (or one
+        being written in the terminal) shows up without a restart.
+        """
+        return list_guides(guides_root)
+
+    @app.get("/api/guides/{slug}")
+    def guide(slug: str) -> dict:
+        """One guide: manifest, versions, comments, verified claims, receipts.
+
+        The page itself is not inlined — the reader loads it by URL from the
+        ``/guides/`` mount so relative assets and the sandboxed iframe work.
+        """
+        result = guide_detail(slug, guides_root)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unknown guide: {slug}")
+        return result
 
     @app.post("/api/packs/{topic}/members/{video_id}")
     def pack_member_override(topic: str, video_id: str, body: MemberOverride) -> dict:
@@ -1481,6 +1507,10 @@ def create_app(
 
     # Mounted last so they can never shadow an /api route. Absent until the
     # frontend is built, which is why `/` falls back to the legacy page.
+    # The guide pages, their shared stylesheet and the reader bridge are plain
+    # committed files, served read-only; the tab's iframe loads them by URL.
+    if guides_root.is_dir():
+        app.mount("/guides", StaticFiles(directory=guides_root), name="guides")
     if (frontend_dist / "assets").is_dir():
         app.mount(
             "/assets",
