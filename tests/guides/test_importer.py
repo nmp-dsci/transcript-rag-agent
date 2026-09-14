@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.guides.catalog import guide_detail, list_guides
 from src.guides.importer import extract_sources, import_lavish_html, rewrite
 
@@ -105,6 +107,25 @@ def test_import_writes_the_guide_contract(tmp_path: Path):
     assert detail["version_urls"] == {"1": "/guides/tiny-guide/versions/v1.html"}
     assert guide_detail("missing", guides_dir) is None
     assert guide_detail("../etc", guides_dir) is None
+
+
+def test_reimport_refuses_to_clobber_v1_without_force(tmp_path: Path):
+    source = tmp_path / "page.html"
+    source.write_text(SAMPLE, encoding="utf-8")
+    guides_dir = tmp_path / "guides"
+    import_lavish_html(source, slug="tiny-guide", guides_dir=guides_dir)
+    v1 = (guides_dir / "tiny-guide" / "versions" / "v1.html").read_text()
+
+    with pytest.raises(ValueError):
+        import_lavish_html(source, slug="tiny-guide", guides_dir=guides_dir, title="Changed")
+
+    # The published version is untouched by the refused re-import.
+    assert (guides_dir / "tiny-guide" / "versions" / "v1.html").read_text() == v1
+
+    manifest = import_lavish_html(
+        source, slug="tiny-guide", guides_dir=guides_dir, title="Changed", force=True
+    )
+    assert manifest.title == "Changed"
 
 
 def test_unreadable_manifest_is_skipped(tmp_path: Path):

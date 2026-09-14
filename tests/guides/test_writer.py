@@ -15,6 +15,8 @@ from src.guides.writer import (
     AgentResult,
     GuideWriter,
     WriterConfig,
+    make_confinement_hook,
+    sdk_env,
 )
 
 CHUNKS = {
@@ -481,3 +483,74 @@ def test_stage_timeout_aborts_the_run(tmp_path: Path):
     writer, _ = make_writer(tmp_path, Hangs(), stage_timeout_seconds=0.05)
     with pytest.raises(RuntimeError, match="no result after"):
         writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)
+
+
+def test_confinement_hook_denies_a_glob_pattern_that_escapes_the_guide_dir(tmp_path: Path):
+    import asyncio as _asyncio
+
+    root = tmp_path / "guides" / "slug"
+    root.mkdir(parents=True)
+    hook = make_confinement_hook(root)
+
+    async def run(tool_input):
+        return await hook(
+            {"tool_name": "Glob", "tool_input": tool_input}, "tool-use-1", None
+        )
+
+    escaping = _asyncio.run(run({"pattern": "/etc/*"}))
+    assert escaping["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    traversal = _asyncio.run(run({"pattern": "../../../secrets/**"}))
+    assert traversal["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    inside = _asyncio.run(run({"pattern": "corpus/*.md"}))
+    assert inside == {}
+
+
+def test_sdk_env_blanks_the_api_key_only_when_the_oauth_token_covers_the_run(monkeypatch, caplog):
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-live")
+    assert sdk_env() == {"ANTHROPIC_API_KEY": ""}
+
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
+    with caplog.at_level("WARNING"):
+        env = sdk_env()
+    assert env == {}
+    assert any("bill" in record.message for record in caplog.records)
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert sdk_env() == {}
+
+
+def test_extract_regenerates_evidence_when_the_cluster_scope_changes(tmp_path: Path):
+    agent = FakeAgent()
+    writer, _ = make_writer(tmp_path, agent)
+    writer.write(topic="t", title="T", video_ids=["v1", "v2"], videos_meta=VIDEOS)
+
+    rescoped = FakeAgent()
+    writer2, events = make_writer(tmp_path, rescoped)
+    writer2.write(topic="t", title="T", video_ids=["v1", "v2", "v3"], videos_meta=VIDEOS)
+    # The cluster now covers a third video, so the stale evidence is redone.
+    assert [r.label for r in rescoped.requests if r.label.startswith("extract:")]
+    assert ("extract", "skip") not in [(e["stage"], e["status"]) for e in events]
+
+
+def test_publish_refuses_to_overwrite_an_existing_version(tmp_path: Path):
+    agent = FakeAgent()
+    writer, _ = make_writer(tmp_path, agent)
+    writer.write(topic="t", title="T", video_ids=["v1"], videos_meta=VIDEOS)
+    from src.guides.export import load_export
+    from src.guides.catalog import read_manifest as _read_manifest
+
+    manifest = _read_manifest(writer.paths)
+    summary = load_export(writer.paths)
+    with pytest.raises(RuntimeError, match="already exists"):
+        writer.stage_publish(
+            topic="t",
+            title="T",
+            summary=summary,
+            report=type("R", (), {"total": 0, "valid": 0})(),
+            compiled_at="2026-09-14",
+            version=1,
+            manifest=manifest,
+        )

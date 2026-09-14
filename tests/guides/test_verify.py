@@ -66,3 +66,26 @@ def test_structure_rules():
 def test_empty_page_is_ok():
     report = verify_html("<section id='a'></section>", known_videos=set())
     assert report.ok and report.pass_rate == 1.0 and report.total == 0
+
+
+def test_unclosed_cite_is_a_structure_error_not_a_silent_pass():
+    page = '<section id="a"><cite data-video="doesnotexist">quote</cite'
+    report = verify_html(page, known_videos=set())
+    assert report.ok is False
+    assert any("never closed" in error for error in report.structure_errors)
+
+
+def test_nested_cite_closes_the_previous_one_as_an_error():
+    page = (
+        '<section id="a">'
+        '<cite data-video="vid1" data-chunk="2">first'
+        '<cite data-video="vid2">second</cite>'
+        "</section>"
+    )
+    report = verify_html(page, known_videos={"vid1", "vid2"}, chunk_lookup=lookup)
+    assert report.ok is False
+    assert any("still open" in error for error in report.structure_errors)
+    # Both cites are recorded rather than the first being silently dropped.
+    video_ids = [claim.video_id for claim in report.claims]
+    assert "vid1" in video_ids
+    assert "vid2" in video_ids

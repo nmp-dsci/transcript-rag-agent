@@ -284,9 +284,18 @@ def import_lavish_html(
     chunk_counts: dict[str, int] | None = None,
     compiled_at: str | None = None,
     write_css: bool = True,
+    force: bool = False,
 ) -> Manifest:
-    """Import ``source`` as ``guides/<slug>/`` v1. Returns the written manifest."""
+    """Import ``source`` as ``guides/<slug>/`` v1. Returns the written manifest.
+
+    Refuses to clobber an already-published ``versions/v1.html`` unless
+    ``force=True``: versions are immutable once written.
+    """
     paths: GuidePaths = guide_paths(slug, guides_dir)
+    if paths.version_html(1).is_file() and not force:
+        raise ValueError(
+            f"guides/{slug}/versions/v1.html already exists; pass force=True to overwrite it"
+        )
     original = source.read_text(encoding="utf-8")
     page, css, found_title = rewrite(original)
     sources = extract_sources(original)

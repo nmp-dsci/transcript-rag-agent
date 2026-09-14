@@ -140,7 +140,7 @@ def make_confinement_hook(root: Path) -> Any:
         tool_name = str(hook_input.get("tool_name", ""))
         tool_input = hook_input.get("tool_input") or {}
         if tool_name in FILE_TOOLS:
-            for key in ("file_path", "path", "notebook_path"):
+            for key in ("file_path", "path", "notebook_path", "pattern"):
                 value = tool_input.get(key)
                 if isinstance(value, str) and value and not _inside(root, value):
                     return {
@@ -164,11 +164,18 @@ def sdk_env() -> dict[str, str]:
     key is a different account with no credit — so when an OAuth token exists
     the API key is blanked for the subprocess only.
     """
+    import logging
     import os
 
     env: dict[str, str] = {}
-    if os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") and os.environ.get("ANTHROPIC_API_KEY"):
-        env["ANTHROPIC_API_KEY"] = ""
+    if os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            env["ANTHROPIC_API_KEY"] = ""
+    elif os.environ.get("ANTHROPIC_API_KEY"):
+        logging.getLogger(__name__).warning(
+            "CLAUDE_CODE_OAUTH_TOKEN is not set; this run will bill ANTHROPIC_API_KEY's "
+            "pay-as-you-go account instead of the subscription"
+        )
     return env
 
 
@@ -379,7 +386,7 @@ class GuideWriter:
         for number, cluster in enumerate(summary.clusters, 1):
             name = f"cluster-{number}"
             output = self.paths.evidence / f"{name}.json"
-            if output.is_file():
+            if output.is_file() and self._evidence_matches(output, cluster):
                 self.emit("extract", "skip", f"{name}: evidence exists", cluster=name)
                 continue
             requests.append(
@@ -412,12 +419,14 @@ class GuideWriter:
             pending=len(requests),
         )
 
+        cluster_videos_by_name = {f"cluster-{n}": list(c) for n, c in enumerate(summary.clusters, 1)}
+
         async def one(name: str, request: AgentRequest, output: Path) -> None:
             self.emit("extract", "progress", f"{name}: reading", cluster=name)
             await self._run(request)
             if not output.is_file():
                 raise RuntimeError(f"{name}: the extractor wrote no {output.name}")
-            claims = self._verify_evidence(output)
+            claims = self._verify_evidence(output, cluster_videos_by_name[name])
             self.emit(
                 "extract",
                 "progress",
@@ -441,12 +450,23 @@ class GuideWriter:
         )
         return files
 
-    def _verify_evidence(self, path: Path) -> int:
+    @staticmethod
+    def _evidence_matches(path: Path, cluster: list[str]) -> bool:
+        """Only skip re-extraction when the cached evidence covers this exact cluster."""
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError:
+            return False
+        return list(data.get("videos") or []) == list(cluster)
+
+    def _verify_evidence(self, path: Path, video_ids: list[str] | None = None) -> int:
         """Mark each claim ``verified`` (chunk exists and quote occurs). Returns the count."""
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except ValueError as exc:
             raise RuntimeError(f"{path.name} is not valid JSON: {exc}") from exc
+        if video_ids is not None:
+            data["videos"] = list(video_ids)
         cache: dict[str, dict[int, str]] = {}
         verified = 0
         for claim in data.get("claims", []):
@@ -610,7 +630,10 @@ class GuideWriter:
             self.paths.html.write_text(normalized, encoding="utf-8")
             self.emit("publish", "progress", "normalized page chrome (wrap / nav / bridge)")
         self.paths.versions.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(self.paths.html, self.paths.version_html(version))
+        version_path = self.paths.version_html(version)
+        if version_path.is_file():
+            raise RuntimeError(f"{version_path} already exists; versions are immutable")
+        shutil.copyfile(self.paths.html, version_path)
         subtitle = ""
         if manifest is None:
             from src.guides.importer import extract_subtitle

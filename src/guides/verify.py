@@ -137,6 +137,12 @@ class _CiteScanner(HTMLParser):
                 self.sections.append(section_id)
             self._section_stack.append(section_id)
         if tag == "cite":
+            if self._open_cite is not None:
+                self.errors.append(
+                    f"<cite data-video={self._open_cite['video_id']!r}> was still open "
+                    "when another <cite> opened"
+                )
+                self._close_cite()
             chunk_raw = attributes.get("data-chunk")
             chunk_index: int | None = None
             if chunk_raw not in (None, ""):
@@ -156,13 +162,26 @@ class _CiteScanner(HTMLParser):
         if tag in self.SECTION_TAGS and self._section_stack:
             self._section_stack.pop()
         if tag == "cite" and self._open_cite is not None:
-            self._open_cite["text"] = " ".join("".join(self._cite_text).split())
-            self.cites.append(self._open_cite)
-            self._open_cite = None
+            self._close_cite()
 
     def handle_data(self, data: str) -> None:
         if self._open_cite is not None:
             self._cite_text.append(data)
+
+    def _close_cite(self) -> None:
+        assert self._open_cite is not None
+        self._open_cite["text"] = " ".join("".join(self._cite_text).split())
+        self.cites.append(self._open_cite)
+        self._open_cite = None
+        self._cite_text = []
+
+    def close(self) -> None:
+        super().close()
+        if self._open_cite is not None:
+            self.errors.append(
+                f"<cite data-video={self._open_cite['video_id']!r}> was never closed"
+            )
+            self._close_cite()
 
 
 _WS = re.compile(r"\s+")

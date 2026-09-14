@@ -61,6 +61,11 @@ def add_guides_parser(subparsers: Any) -> None:
         action="store_true",
         help="Do not (re)write guides/guide.css from the page's stylesheet",
     )
+    imp.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an already-imported guides/<slug>/versions/v1.html",
+    )
 
     verify = sub.add_parser("verify", help="Re-run the citation verifier on a guide")
     verify.add_argument("slug")
@@ -203,6 +208,7 @@ def run_guides(args: argparse.Namespace, settings: Settings) -> int:
             chunk_counts=counts,
             compiled_at=args.compiled_at,
             write_css=not args.no_css,
+            force=args.force,
         )
         print(
             f"Imported {manifest.title!r} as guides/{slug} v1: "
