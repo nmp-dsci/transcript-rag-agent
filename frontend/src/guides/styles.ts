@@ -141,8 +141,8 @@ const CSS = `
 .guide-side { min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel3); }
 @media (max-width: 900px) { .guide-side { border-left: 0; border-top: 1px solid var(--border); max-height: 42vh; } }
 .guide-side-tabs { display: flex; border-bottom: 1px solid var(--border); }
-.guide-side-tabs button { flex: 1; background: none; border: 0; padding: 8px 10px; font: var(--t-2) var(--mono);
-  letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+.guide-side-tabs button { flex: 1; background: none; border: 0; padding: 8px 4px; font: var(--t-2) var(--mono);
+  letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
   transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
 .guide-side-tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
 .guide-links select { font: var(--t-2) var(--mono); color: var(--text2); background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; }
@@ -165,6 +165,32 @@ const CSS = `
 .cr-clear { position: absolute; top: 2px; right: 4px; background: none; border: 0; color: var(--muted); cursor: pointer; font-size: var(--t1); }
 .cr-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .cr-actions .btn { flex: 1; }
+
+/* ── revisions rail ── */
+.rv { width: auto; min-width: 0; border-right: 0; flex: 1; min-height: 0; }
+.rv-list { padding-bottom: 6px; }
+.rv-live { margin: 8px 10px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--accent-border); border-radius: 8px;
+  display: flex; flex-direction: column; gap: 8px; }
+.rv-live.done { border-color: var(--good-border); }
+.rv-live.error { border-color: var(--bad-border); }
+.rv-live-h { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.rv-live .gj-revise-ids { margin: 0; }
+.rv-live .gj-log { max-height: 34vh; }
+/* The rail is narrow and every row is the reviser's, so drop the label column. */
+.rv-live .gj-log-row { grid-template-columns: 58px minmax(0, 1fr); }
+.rv-live .gj-log-label { display: none; }
+.rv-kpis { display: flex; flex-wrap: wrap; gap: 4px 10px; font: var(--t-2) var(--mono); color: var(--muted); }
+.rv-msg { margin: 0; font: var(--t-2) var(--mono); color: var(--muted); }
+.rv-table { width: calc(100% - 20px); margin: 8px 10px 0; border-collapse: collapse; font-size: var(--t-1); }
+.rv-table th { text-align: left; font: var(--t-2) var(--mono); letter-spacing: 0.04em; color: var(--dim); padding: 4px 6px;
+  border-bottom: 1px solid var(--border); }
+.rv-table td { padding: 5px 6px; color: var(--text2); border-bottom: 1px solid var(--border); vertical-align: top; }
+.rv-table tbody tr { cursor: pointer; transition: background var(--dur) var(--ease); }
+.rv-table tbody tr:hover { background: var(--hover); }
+.rv-table tbody tr.on td { background: var(--panel2); }
+.rv-table code { font: var(--t-1) var(--mono); color: var(--text); }
+.rv-table td:last-child { display: flex; flex-wrap: wrap; gap: 3px; }
+.rv-cur { font: var(--t-2) var(--mono); color: var(--accent2); }
 
 .ev { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; }
 .ev-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 10px; }

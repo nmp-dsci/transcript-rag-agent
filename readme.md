@@ -1330,7 +1330,9 @@ candidate checklist → write), streams stage events and agent activity to a
 research map, and opens the published guide when done. The reader iframe is
 sandboxed without `allow-same-origin`; selecting text in the page fills an
 anchored comment in the commentary rail, and **Send N to the agent** starts
-the revision. The tab stays visible in demo mode (catalog, pages, claims and
+the revision. A revision never takes over the window: the page stays open
+and the side rail's **Revisions** tab shows the live stage, tool log and
+receipt, plus a table of every published version. The tab stays visible in demo mode (catalog, pages, claims and
 comments are plain GETs over committed files); composing and commenting are
 hidden there and refused by the server.
 

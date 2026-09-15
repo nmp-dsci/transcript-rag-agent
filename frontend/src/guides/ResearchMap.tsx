@@ -92,7 +92,7 @@ export function stageLabel(stage: string, state?: { status: string; message?: st
   return stage;
 }
 
-function StageRail({ job }: { job: GuideJob }) {
+export function StageRail({ job }: { job: GuideJob }) {
   return (
     <ol className="gj-stages" aria-label="Stages">
       {job.stage_order.map((stage) => {
@@ -109,8 +109,8 @@ function StageRail({ job }: { job: GuideJob }) {
   );
 }
 
-function ActivityLog({ activity }: { activity: GuideActivity[] }) {
-  const recent = activity.slice(-14).reverse();
+export function ActivityLog({ activity, limit = 14 }: { activity: GuideActivity[]; limit?: number }) {
+  const recent = activity.slice(-limit).reverse();
   return (
     <div className="gj-log" aria-label="Agent activity">
       {recent.length === 0 && <div className="gj-log-empty">waiting for the agent…</div>}

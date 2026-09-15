@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { api } from '../api/client';
-import type { GuideComment, GuideDetail, GuideJob, GuideReceipt } from '../api/types';
+import type { GuideComment, GuideDetail, GuideJob } from '../api/types';
 import type { GuideSelection } from './GuideReader';
 
 interface Props {
@@ -28,28 +28,6 @@ export function commentCounts(comments: GuideComment[]): Record<GuideComment['st
   return counts;
 }
 
-function Receipt({ receipt }: { receipt: GuideReceipt }) {
-  return (
-    <details className="cr-receipt" open>
-      <summary>
-        Receipt for v{receipt.version} · {receipt.items.length} comments
-      </summary>
-      {receipt.summary && <p>{receipt.summary}</p>}
-      <ul>
-        {receipt.items.map((item) => (
-          <li key={item.id}>
-            <span className={`badge ${TONE[item.outcome]}`}>{item.outcome}</span> <code>{item.id}</code>
-            {item.reason && <span className="cr-reason"> — {item.reason}</span>}
-          </li>
-        ))}
-      </ul>
-      {receipt.changed_sections.length > 0 && (
-        <p className="cr-dim">changed: {receipt.changed_sections.join(', ')}</p>
-      )}
-    </details>
-  );
-}
-
 /** Screen D: the commentary rail. Comments are local until "Add"; a
  *  revision sends every open comment as one batch and the receipt that comes
  *  back gives each id exactly one outcome. */
@@ -72,7 +50,6 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
 
   const counts = commentCounts(guide.comments);
   const blocked = !!running && running.status === 'running';
-  const latestReceipt = Object.values(guide.receipts).sort((a, b) => b.version - a.version)[0] ?? null;
 
   const add = async () => {
     if (!body.trim()) return;
@@ -146,7 +123,6 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
             {comment.reason && <div className="cr-reason">↳ {comment.reason}</div>}
           </button>
         ))}
-        {latestReceipt && <Receipt receipt={latestReceipt} />}
       </div>
       {!demo && (
         <form

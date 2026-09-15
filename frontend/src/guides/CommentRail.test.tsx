@@ -91,14 +91,12 @@ describe('CommentRail', () => {
     expect(commentCounts(guide().comments)).toEqual({ open: 1, addressed: 1, deferred: 0, rejected: 0 });
   });
 
-  it('lists comments with status words, the receipt, and jumps on click', async () => {
+  it('lists comments with status words and jumps on click', async () => {
     const onJump = vi.fn();
     render(<CommentRail guide={guide()} selection={null} running={null} sdkProblem={null} demo={false} onAdded={vi.fn()} onRevisionStarted={vi.fn()} onJump={onJump} />);
     expect(screen.getByText('1 open · 1 addressed')).toBeInTheDocument();
     expect(screen.getByText('open')).toHaveClass('warn');
     expect(screen.getByText('addressed in v2')).toHaveClass('good');
-    expect(screen.getByText(/Receipt for v2/)).toBeInTheDocument();
-    expect(screen.getByText(/added figures/)).toBeInTheDocument();
     await userEvent.click(screen.getAllByText('Cite the numbers per creator')[0]!);
     expect(onJump).toHaveBeenCalledWith('thesis-p2');
   });

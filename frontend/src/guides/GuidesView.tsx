@@ -9,6 +9,7 @@ import { ComposePanel } from './ComposePanel';
 import { EvidenceMap } from './EvidenceMap';
 import { GuideReader, type GuideReaderHandle, type GuideSection, type GuideSelection } from './GuideReader';
 import { ResearchMap } from './ResearchMap';
+import { RevisionRail, isRevisionOf } from './RevisionRail';
 import { useGuidesStyles } from './styles';
 
 const ACTIVITY_LIMIT = 200;
@@ -66,10 +67,12 @@ function citeTone(guide: Pick<GuideSummary, 'cite_total' | 'cite_valid'>): 'good
 function GuideEntry({
   guide,
   selected,
+  revising,
   onSelect,
 }: {
   guide: GuideSummary;
   selected: boolean;
+  revising: boolean;
   onSelect: (slug: string) => void;
 }) {
   return (
@@ -86,6 +89,7 @@ function GuideEntry({
         <span>v{guide.current_version}</span>
         <span className={`badge ${citeTone(guide)}`}>{citeRate(guide)}</span>
         {guide.comments_open > 0 && <span>{guide.comments_open} open</span>}
+        {revising && <span className="badge acc">● revising</span>}
       </div>
     </button>
   );
@@ -147,12 +151,14 @@ export function GuidesView() {
   const reader = useRef<GuideReaderHandle | null>(null);
   const [job, setJob] = useState<GuideJob | null>(null);
   const [sdkProblem, setSdkProblem] = useState<string | null>(null);
-  /** 'job' shows the research map for the current run; null shows the reader. */
+  /** 'job' shows the research map for a write run; null shows the reader. A
+   *  revision never takes the window: its log lives in the Revisions rail so
+   *  the reader stays on the page while the agent works. */
   const [view, setView] = useState<'job' | null>(null);
   const lastJobStatus = useRef<string | null>(null);
   const [selection, setSelection] = useState<GuideSelection | null>(null);
   const [version, setVersion] = useState<number | null>(null);
-  const [side, setSide] = useState<'comments' | 'evidence'>('comments');
+  const [side, setSide] = useState<'comments' | 'evidence' | 'revisions'>('comments');
 
   const load = useCallback(async () => {
     try {
@@ -278,7 +284,7 @@ export function GuidesView() {
           )}
         </div>
         <div className="rail-list">
-          {job && (job.status === 'running' || view === 'job') && (
+          {job && job.kind !== 'revise' && (job.status === 'running' || view === 'job') && (
             <button
               type="button"
               className={`rentry gj-entry ${view === 'job' ? 'on' : ''}`}
@@ -301,6 +307,7 @@ export function GuidesView() {
               key={guide.slug}
               guide={guide}
               selected={view === null && guide.slug === slug}
+              revising={isRevisionOf(job, guide.slug) && job.status === 'running'}
               onSelect={(next) => {
                 setView(null);
                 setSlug(next);
@@ -382,10 +389,15 @@ export function GuidesView() {
                     Commentary{detail.comments_open > 0 ? ` · ${detail.comments_open}` : ''}
                   </button>
                   <button type="button" role="tab" aria-selected={side === 'evidence'} className={side === 'evidence' ? 'on' : ''} onClick={() => setSide('evidence')}>
-                    Evidence · {citeRate(detail).replace('cites ', '')}
+                    Evidence
+                  </button>
+                  <button type="button" role="tab" aria-selected={side === 'revisions'} className={side === 'revisions' ? 'on' : ''} onClick={() => setSide('revisions')}>
+                    Revisions{isRevisionOf(job, detail.slug) && job.status === 'running' ? ' ●' : detail.versions.length > 1 ? ` · ${detail.versions.length}` : ''}
                   </button>
                 </div>
-                {side === 'comments' ? (
+                {side === 'revisions' ? (
+                  <RevisionRail guide={detail} job={job} viewing={version ?? detail.current_version} onView={(v) => setVersion(v)} />
+                ) : side === 'comments' ? (
                   <CommentRail
                     guide={detail}
                     selection={selection}
@@ -399,7 +411,7 @@ export function GuidesView() {
                     }
                     onRevisionStarted={(started) => {
                       setJob(started);
-                      setView('job');
+                      setSide('revisions');
                     }}
                     onJump={jump}
                   />

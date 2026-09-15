@@ -217,6 +217,45 @@ describe('GuidesView', () => {
     expect(window.location.search).toBe('?guide=production-genai-systems');
   });
 
+  it('keeps the reader on the page during a revision and logs it in the Revisions tab', async () => {
+    let handlers: Record<string, (data: unknown) => void> = {};
+    subscribeGuideJob.mockImplementation((h: Record<string, (data: unknown) => void>) => {
+      handlers = h;
+      return new Promise<void>(() => undefined);
+    });
+    render(<GuidesView />);
+    await screen.findByRole('heading', { level: 2, name: 'Ship Like a Studio' });
+    const running = job({ kind: 'revise', slug: 'ship-like-a-studio', title: 'Ship Like a Studio', comment_ids: ['c-1', 'c-2'], stage: 'revise' });
+    await act(async () => handlers.snapshot?.({ job: running }));
+    // The page is still open — no research map took the window — and the
+    // rail marks the guide, not a separate job entry.
+    expect(screen.getByTitle('Ship Like a Studio')).toBeInTheDocument();
+    expect(screen.queryByText('chunks read in full')).not.toBeInTheDocument();
+    expect(screen.getByText('● revising')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: /Revisions/ }));
+    expect(screen.getByLabelText('Revision in progress')).toHaveTextContent('2 comments as one batch');
+    expect(screen.getByText('c-2')).toBeInTheDocument();
+    await act(async () =>
+      handlers.activity?.({ job_id: 'j1', event: { at: '2026-09-14T11:19:00+00:00', label: 'revise', name: 'mcp__corpus__retrieve_chunks', message: 'q', question: 'position bias?' } }),
+    );
+    expect(screen.getByText(/retrieve_chunks "position bias\?"/)).toBeInTheDocument();
+    // Published: the reader reloads the new version and the table lists it.
+    guide.mockImplementation(() =>
+      Promise.resolve(
+        detail({
+          current_version: 2,
+          versions: [1, 2],
+          version_urls: { '1': '/guides/ship-like-a-studio/versions/v1.html', '2': '/guides/ship-like-a-studio/versions/v2.html' },
+          receipts: { v2: { version: 2, created_at: '2026-09-15T10:00:00+00:00', summary: 'Both done.', changed_sections: ['scoring'], items: [{ id: 'c-1', outcome: 'addressed', reason: '', sections: ['scoring'] }, { id: 'c-2', outcome: 'deferred', reason: 'no chunk', sections: [] }] } },
+        }),
+      ),
+    );
+    await act(async () => handlers.job?.({ job: { ...running, status: 'done', version: 2 } }));
+    expect(await screen.findByText('1 addressed')).toBeInTheDocument();
+    expect(screen.getByText('1 deferred')).toBeInTheDocument();
+    expect((screen.getByTitle('Ship Like a Studio') as HTMLIFrameElement).getAttribute('src')).toBe('/guides/ship-like-a-studio/guide.html?v=2');
+  });
+
   it('shows the empty state when nothing is committed', async () => {
     guides.mockResolvedValue({ guides: [], write_command: 'x' });
     render(<GuidesView />);
