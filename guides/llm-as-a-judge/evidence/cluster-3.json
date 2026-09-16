@@ -1,0 +1,571 @@
+{
+ "cluster": "cluster-3",
+ "videos": [
+  "a3SMraZWNNs",
+  "kP_aaFnXLmY",
+  "kIvjiH8yJoU",
+  "TL527yTpxlk"
+ ],
+ "video_notes": [
+  {
+   "video_id": "a3SMraZWNNs",
+   "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+   "contributed": "The full three-level framework (unit tests -> human/model eval -> A/B testing) plus the concrete human-vs-model alignment workflow using a shared Excel sheet and meta-prompting to close agreement gaps."
+  },
+  {
+   "video_id": "kP_aaFnXLmY",
+   "title": "Tutorial: How to create an LLM judge and align with human labels",
+   "contributed": "A worked, numbers-heavy case study (code review quality judge) showing exact accuracy/precision/recall deltas across three prompt iterations and two model swaps (GPT-4 mini, GPT-3.5 Turbo, Claude), using Evidently's classification-quality tooling."
+  },
+  {
+   "video_id": "kIvjiH8yJoU",
+   "title": "From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluation (Eric Pugh & Fernando Rejon Barrera)",
+   "contributed": "The case for pairwise/ELO-style judging over single-answer scoring for complex rag/agent systems, plus the argument that judge output (explanations) should be surfaced to humans as an eyeballing/exploration tool, not just a dashboard number."
+  },
+  {
+   "video_id": "TL527yTpxlk",
+   "title": "Complete Beginner's Course on AI Evaluations in 50 Minutes (2025)",
+   "contributed": "A PM-oriented, live walkthrough of building a golden dataset and rubric in a spreadsheet before ever building an LLM judge, including a caught LLM arithmetic failure and a 'match rate' comparison of human vs. judge labels per criterion."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "industry failure rate stats",
+   "claim": "Gartner projects 40% of agentic AI projects will be cancelled by 2027, framing why systematic evals matter.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 0,
+   "quote": "40% of all agent AI projects is expected to be cancelled",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "industry failure rate stats",
+   "claim": "MIT reporting cited puts generative AI pilot failure rates at 95%.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 0,
+   "quote": "95% of all generative AI pilots are failing",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "three ways to operationalize evals",
+   "claim": "Evals get used three ways in production: background monitoring, real-time guardrails that block bad outputs, and labeling data for fine-tuning/test-set creation.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 9,
+   "quote": "you block bad outputs in real time",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "three-level eval framework",
+   "claim": "The three eval levels (unit tests, human/model eval, A/B testing) increase in cost and effort, which should dictate how often each is run.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 11,
+   "quote": "cost and effort increase with each level",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "cadence for level-two evals",
+   "claim": "Human-and-model evaluation (level two) should run weekly or bi-weekly depending on system complexity and size.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 12,
+   "quote": "run these weekly or bi-weekly",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "model choice for judges",
+   "claim": "Use the most powerful model you can afford as the judge (e.g. GPT-4.1 or Claude Sonnet-class), not mini-tier models.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 18,
+   "quote": "use the most powerful model that you can afford",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "judges must explain, not just score",
+   "claim": "A judge should generate a detailed critique explaining its reasoning, not just output a bare score.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 19,
+   "quote": "generate detailed critique, detailed critiques, not just scores",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "alignment process",
+   "claim": "Building an aligned judge is a five-step loop: collect model predictions, generate model critiques, collect human evaluations on the same data, compare model vs. human judgments, and iterate the evaluator prompt until agreement is sufficient.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 20,
+   "quote": "you collect model predictions, you generate model critiques",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "measuring agreement",
+   "claim": "A worked example showed a first-pass judge reaching only 70% agreement with human labels on 10 examples, illustrating that agreement should be tracked as an explicit metric.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 25,
+   "quote": "There is a 70% agreement score",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "meta-prompting to close the gap",
+   "claim": "Feed a powerful model the input/output pairs, human critiques, current judge outcomes, and the current judge prompt, and ask it to rewrite the prompt to maximize agreement with human labels.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 26,
+   "quote": "help me optimize the prompt so that the next time we run this system",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "look at your data",
+   "claim": "A cited anecdote: a principal engineer at Zapier spends three hours per day looking at traces and data, underscoring that manual data review is not optional even for senior engineers.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 34,
+   "quote": "spends three hours per day looking at traces and data",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "unaligned judge pitfall",
+   "claim": "The most common mistake is assuming an LLM judge works out of the box; you must run a validation process against human judgments first.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 35,
+   "quote": "you cannot just assume the judge works",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "value of manual inspection",
+   "claim": "Manual inspection of examples has the highest value-to-prestige ratio of any evaluation activity, meaning it's undervalued relative to its payoff.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 36,
+   "quote": "Manual inspection has the highest value to prestige ratio",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "scope judges narrowly",
+   "claim": "Don't build one overall product judge; build multiple small, narrowly scoped judges, each evaluating one specific failure mode or quality dimension.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 1,
+   "quote": "create multiple small judges where each of them evaluates one specific thing",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "limits of what a judge can assess",
+   "claim": "You cannot reliably ask a judge something like whether an answer is medically correct; scope questions to what an LLM can plausibly assess, e.g. whether an answer is grounded in the provided context.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 1,
+   "quote": "Is this answer medically correct?",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "be the judge first",
+   "claim": "Before building an LLM judge, you must manually label data yourself to establish ground truth.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 2,
+   "quote": "Before you create a judge, you have to be the judge",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "binary over 1-10 scales",
+   "claim": "Labeling gets much easier and more consistent when you use binary or few-class labels instead of a 1-10 grading scale.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 2,
+   "quote": "much easier to stick to binary or few classes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "domain knowledge in prompts",
+   "claim": "Writing the judge prompt yourself, with even a little domain knowledge folded in, improves judge quality significantly.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 3,
+   "quote": "Even a little bit of domain knowledge can improve the results greatly",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "test against a simple baseline",
+   "claim": "Don't assume a fancier judging method from a research paper is better; always test it against a simple baseline on your own labels.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 3,
+   "quote": "Always test it against the more simple baseline",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "evaluation metrics for judges",
+   "claim": "Judge quality can be measured with correlation metrics like Cohen's Kappa or with classification metrics (accuracy, precision, recall); classification metrics are preferable because they're intuitive and let you weight precision vs. recall to what matters.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 4,
+   "quote": "classification metrics like accuracy, precision, recall",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "balanced dataset",
+   "claim": "The code-review case study used a balanced label set of 27 bad and 23 good examples so the judge's ability to catch both classes could be tested.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 8,
+   "quote": "27 bad examples and 23 good examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "first prompt accuracy",
+   "claim": "A minimal one-line judge prompt ('good when actionable and constructive, bad when non-actionable or overly critical') scored only 64% accuracy against human labels.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 12,
+   "quote": "we got a 64% accuracy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "precision/recall tradeoff",
+   "claim": "The first judge prompt had 100% precision (every 'bad' label was correct) but only 36% recall, meaning it missed most actually-bad reviews.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 15,
+   "quote": "the recall is only 36%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "avoid overfitting the judge prompt",
+   "claim": "Putting your specific labeled examples verbatim into the judge prompt causes it to score those examples correctly but fail to generalize to new ones — write general criteria instead.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 16,
+   "quote": "will score them correctly but will not generalize outside these examples",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "detailed prompt improves accuracy",
+   "claim": "Rewriting the judge prompt with explicit, generalized criteria (what counts as good vs. bad, e.g. dismissive, praise-only) jumped accuracy to 95% and recall to 92%, down to two total errors.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 18,
+   "quote": "95% accuracy and 92% recall",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "small prompt tweaks can help",
+   "claim": "Adding a single extra line, 'Always explain your reasoning,' to an already-detailed judge prompt pushed accuracy from 95% to 98% (down to one error).",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 19,
+   "quote": "Always explain your reasoning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "model choice affects judge quality",
+   "claim": "Running the exact same winning prompt on a cheaper model (GPT-3.5 Turbo instead of GPT-4 mini) collapsed performance to 48% recall and 72% accuracy — judge quality depends on prompt and model together.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 20,
+   "quote": "we got only 48% recall, 72% accuracy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "OpenAI vs Anthropic as judge",
+   "claim": "With the same winning prompt, Claude performed nearly as well as GPT-4 mini as a judge, but OpenAI's model ran noticeably faster.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 22,
+   "quote": "the OpenAI was actually much faster",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "split judges by criterion",
+   "claim": "In hindsight, the presenter would split a combined good/bad judge into two separate judges — one for actionability, one for tone — rather than one judge covering both.",
+   "video_id": "kP_aaFnXLmY",
+   "chunk_index": 23,
+   "quote": "actionability and tone can be two different judges",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "single-answer judges are lenient",
+   "claim": "LLM judges scoring a single answer in isolation tend to be too optimistic and agree with whatever they're shown, correlating poorly with human judgments on absolute quality.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 6,
+   "quote": "a bit too optimistic and they will kind of agree with you",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "relative ranking correlates better",
+   "claim": "Even when absolute LLM-judge scores disagree with humans, sorting system variations from worst to best shows real correlation between LLM and expert rankings.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 6,
+   "quote": "there seems to be some correlation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "pairwise judging",
+   "claim": "Because LLMs are better at relative comparison than absolute scoring, ask the judge to pick which of two answers is better, likened to an eye exam ('which is better, left or right?').",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 8,
+   "quote": "Left or right? Which one is better?",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "ELO ranking for multiple systems",
+   "claim": "When comparing more than two system variants, treat each as a chess player and apply the ELO ranking system to pairwise judge outcomes to produce a global ranking.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 8,
+   "quote": "called the uh ELO ranking system",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "ragelo toolkit",
+   "claim": "The presenters built and open-sourced a toolkit that scores retrieved-hit relevance, feeds that plus both systems' answers to a pairwise judge, then runs an ELO algorithm to rank agents.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 9,
+   "quote": "developed this toolkit called write elo",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "judge decisions are nuanced",
+   "claim": "A pairwise judge picked a winner for an ambiguous query ('main deep learning researchers') without noticing the better behavior might have been to ask the user to clarify 'main' — a reminder that judge verdicts need human eyeballing, not blind trust.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 10,
+   "quote": "What do you mean by main, right?",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "metrics need not be numeric",
+   "claim": "A useful 'metric' from a judge doesn't have to be a number — a text label or an explanation string can itself be the metric surfaced to humans.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 16,
+   "quote": "a metric could also be some text or a label",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "ranking metrics to triage attention",
+   "claim": "RBO and Jaccard-style overlap metrics are good for flagging which queries need human review, but the presenters hadn't solved how to apply similar triage signals to long, free-form RAG answers.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 21,
+   "quote": "RBO and Jakar are very very good metrics",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "don't naively average ranking metrics",
+   "claim": "Aggregate metrics like ELO should not be computed by averaging per-query scores — the tool they used incorrectly forced an average, which distorts what ELO is supposed to represent.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 24,
+   "quote": "ELO is not just the average of the per query",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "judge/model non-determinism",
+   "claim": "Re-running the same evaluation can give different results because of LLM non-determinism, an effect they observed frequently with 4o-mini-class models.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 26,
+   "quote": "we saw this happen a lot with photo mini",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "agents can game retrieval",
+   "claim": "One agent (GPT-5-mini) was observed rewriting a plain query into a guess-filled query (e.g. adding 'AWS, Google' to a question about multilingual embedding providers) rather than searching the literal query, retrieving 111 hits versus a baseline's fixed 10 — a failure mode only visible by inspecting retrieved hits, not just final scores.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 18,
+   "quote": "GP5 mini will kind of cheat with the with the queries",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "four eval types",
+   "claim": "There are four practical eval types used across development to production: code-based pass/fail checks, human eval, LLM-as-a-judge, and user/business-metric eval.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 0,
+   "quote": "there's really just four types of of evalu",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "code-based evals",
+   "claim": "The simplest eval tier is a code-based check like verifying the presence or absence of a specific string in the output (e.g. catching a United-brand bot referencing Delta).",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 2,
+   "quote": "checking for a string or presence of a string in a message",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "rubric dimensions",
+   "claim": "A practical rubric for a support-agent judge covers product knowledge, rule/policy-following, and tone, each graded good/average/bad.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 13,
+   "quote": "Does it know about the product in the first place",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLMs and arithmetic",
+   "claim": "A real customer support agent incorrectly told a user their 45-minute-old order had missed a 60-minute cancellation window — LLMs make basic arithmetic errors even inside otherwise correct policy logic, and this only surfaces by reading real transcripts.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 21,
+   "quote": "because it's been 45 minutes, you've passed the 60-minute window",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "dataset size guidance",
+   "claim": "For internal/early testing, around 10 labeled examples is enough to decide whether further investment is worth it; before production or higher-confidence testing, aim for roughly 100 or more examples.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 23,
+   "quote": "usually it's around 10 or more examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "dataset size guidance",
+   "claim": "Scaling to production confidence typically requires around 100+ labeled examples, depending on the industry/regulatory bar.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 24,
+   "quote": "you might need maybe a 100 examples or more",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "judge over-generosity",
+   "claim": "An LLM judge rated every sampled output 'good' on first pass — a signal you can't trust the judge yet and must compare it against fresh human labels before relying on it.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 35,
+   "quote": "it's just giving everything good",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "match rate per criterion",
+   "claim": "Running a match-rate comparison per rubric dimension showed product-knowledge judge labels matched human labels 100% of the time, but tone judge labels matched only once out of several — meaning some criteria need far more judge-prompt work than others.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 39,
+   "quote": "the tone only matches once in from our human labels",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "evals vs. business metrics can conflict",
+   "claim": "Teams must pre-decide how to break ties when an eval says an output is good but a real business/user metric (like satisfaction) drops — the two signals won't always agree.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 45,
+   "quote": "when the eval is good, but the business metric goes down",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "start with a tiny dataset",
+   "claim": "Even a five-row golden dataset is a meaningful starting point — 'five is better than nothing' — you don't need a large dataset to begin iterating.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 29,
+   "quote": "Fi five is better than nothing",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "skepticism toward auto prompt optimizers",
+   "claim": "An automated prompt-optimization tool made the support-agent prompt longer and more rule-laden without clearly improving it — automated optimization output should be manually checked, not trusted blindly.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 27,
+   "quote": "it's like not clear to me that this was better",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "rollout strategy after evals pass",
+   "claim": "After evals look good, launch as an A/B test on a small slice of real traffic (e.g. ~10%, or ~1% depending on company size) and dogfood internally first, rather than going straight to full production.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 43,
+   "quote": "launch this thing as like a AB test first",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scaffolding prompts with vendor tools",
+   "claim": "Anthropic's console/workbench 'generate' feature can draft a starting prompt with input variables already templated, giving a fast zero-to-one starting point before hand-editing.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 7,
+   "quote": "helps you get started from like 0 to one with writing a prompt",
+   "kind": "tool",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Does the judge need the most powerful/expensive model?",
+   "positions": [
+    {
+     "video_id": "a3SMraZWNNs",
+     "chunk_index": 18,
+     "position": "Explicitly recommends the most powerful model you can afford for LLM-as-a-judge, ruling out mini-tier models."
+    },
+    {
+     "video_id": "kP_aaFnXLmY",
+     "chunk_index": 18,
+     "position": "Shows GPT-4 mini reaching 95-98% accuracy as a judge once the prompt is detailed enough, suggesting a mid-tier model can suffice with the right prompt — though the same video later shows a further step down to GPT-3.5 Turbo collapsing accuracy, so model tier still matters at the low end."
+    }
+   ]
+  },
+  {
+   "topic": "Should judges score single answers or compare pairs?",
+   "positions": [
+    {
+     "video_id": "kIvjiH8yJoU",
+     "chunk_index": 6,
+     "position": "Argues single-answer absolute scoring is unreliable because LLM judges are too agreeable; recommends pairwise comparison plus ELO ranking for complex rag/agent systems."
+    },
+    {
+     "video_id": "kP_aaFnXLmY",
+     "chunk_index": 18,
+     "position": "Builds and validates a single-answer binary (good/bad) judge that reaches 95-98% accuracy against human labels through iterative prompt refinement, without needing pairwise comparison."
+    },
+    {
+     "video_id": "a3SMraZWNNs",
+     "chunk_index": 21,
+     "position": "Also designs a single-response binary judge (accuracy/helpfulness/tone) rather than a pairwise one."
+    }
+   ]
+  },
+  {
+   "topic": "How many rating classes should labels use?",
+   "positions": [
+    {
+     "video_id": "kP_aaFnXLmY",
+     "chunk_index": 2,
+     "position": "Recommends binary or very few classes because a 1-10 scale is hard to label consistently."
+    },
+    {
+     "video_id": "TL527yTpxlk",
+     "chunk_index": 13,
+     "position": "Uses a three-way good/average/bad scale for its rubric criteria, adding a middle category the Evidently talk advises against for consistency."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four talks give a statistical rule (confidence interval, sample-size formula) for how many labeled examples are truly enough to trust a judge's agreement score beyond rough rules of thumb like '10 to start, 100+ for production.'",
+  "No discussion of the cost or per-call latency budget for running LLM judges at scale in production beyond one passing remark that OpenAI ran faster than Anthropic in one test.",
+  "No guidance on defending a judge prompt against adversarial or prompt-injected inputs designed to fool the judge.",
+  "No worked example of how to combine multiple narrow judges (e.g. tone, policy compliance, product knowledge) into a single pass/fail or release-gating decision.",
+  "The ELO/ragelo approach (kIvjiH8yJoU) is described conceptually but the talk doesn't explain its K-factor or scoring math, so a reader can't reproduce the ranking algorithm from the transcript alone.",
+  "No comparison of open-source/self-hosted judge models versus hosted API judges on cost or reliability."
+ ],
+ "verified_claims": 51
+}

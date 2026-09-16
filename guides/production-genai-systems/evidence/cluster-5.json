@@ -1,0 +1,550 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "cvPEiPt7HXo",
+  "hBzUokVYQkI",
+  "7YYVgH0_9CA"
+ ],
+ "video_notes": [
+  {
+   "video_id": "cvPEiPt7HXo",
+   "title": "Large Language Model Operations (LLMOps) Explained",
+   "contributed": "Short vendor-agnostic primer that names the LLMOps lifecycle stages and explains how LLM-specific requirements (transfer learning, cost-aware tuning, BLEU/ROUGE evaluation) diverge from traditional MLOps."
+  },
+  {
+   "video_id": "hBzUokVYQkI",
+   "title": "AI Infrastructure Explained (GPUs, vLLM, and LLM-D)",
+   "contributed": "The only talk in the cluster that goes underneath the application layer: GPU vs CPU architecture, VRAM bandwidth math, tokens/prefill/decode/KV-cache mechanics, batching limits, sharding strategies, and the LLM-D router/well-lit-path recipes for running vLLM fleets on Kubernetes."
+  },
+  {
+   "video_id": "7YYVgH0_9CA",
+   "title": "Scalable GenAI in Production - Kamelia Aryafar",
+   "contributed": "Practitioner lessons from scaling GenAI at Netflix/Google-scale: the full production stack, a 5-stage maturity model, the 'latency is a product decision' framing, the data-flywheel/continuous-evaluation argument, and five imperatives for taking GenAI from demo to system."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "LLMOps definition",
+   "claim": "LLMOps is the collaboration of data scientists, DevOps engineers, and IT professionals working in one environment for data exploration, prompt engineering, and pipeline management, automating the operational and monitoring tasks of the ML lifecycle.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 0,
+   "quote": "collaboration of data scientists, DevOps engineers, and IT professionals",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LLMOps vs MLOps",
+   "claim": "LLMOps sits inside MLOps but exists because LLMs have specific requirements that traditional MLOps practice does not address.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 1,
+   "quote": "but traditional MLOps does not",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "MLOps pipeline shape",
+   "claim": "A standard MLOps lifecycle has an EDA/development stage feeding two separate CI/CD pipelines (one for deployment, one for training) that both roll up into a single monitoring stage.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 1,
+   "quote": "continuous integration and continuous delivery",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning over training from scratch",
+   "claim": "Most LLMs are built by fine-tuning an existing foundation model with new domain data rather than training from scratch, because training a new model from scratch is very expensive.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 1,
+   "quote": "start from an existing foundation model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Hyperparameter tuning goals differ for LLMs",
+   "claim": "For LLMs, hyperparameter tuning targets reducing the cost and computational power required for training and inference, not just accuracy improvements as in traditional ML.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 2,
+   "quote": "reducing the cost and computational power requirements",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LLM-specific evaluation metrics",
+   "claim": "LLMs need a different scoring toolkit than traditional ML (accuracy/AUC/F1) — standard benchmarks like BLEU and ROUGE are used instead.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 2,
+   "quote": "Bilingual Evaluations Understudy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LLMOps lifecycle stages",
+   "claim": "A full LLMOps lifecycle includes EDA, data prep, prompt engineering, fine-tuning, model review & governance (tracking model/pipeline versions across the lifecycle), inference & serving (managing refresh frequency and inference request times), and monitoring with human feedback for drift and malicious-attack detection.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 3,
+   "quote": "model review and governance process to track the model and pipeline versions",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Benefits of a unified LLMOps platform",
+   "claim": "A unified LLMOps platform speeds cross-team collaboration, reduces risk through improved security/privacy for sensitive data, and enables easier scaling of CI/CD across multiple models under oversight.",
+   "video_id": "cvPEiPt7HXo",
+   "chunk_index": 4,
+   "quote": "reduce the risk through improved security and privacy",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI infrastructure spend",
+   "claim": "Amazon, Google, Microsoft, and Meta together are spending over $700 billion on AI infrastructure in a single year — 4x what they spent four years earlier (pre-ChatGPT) and up ~80% year over year; McKinsey projects close to $7 trillion into data centers by 2030.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 0,
+   "quote": "spending over $700 billion on AI infrastructure this year",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "What a model is",
+   "claim": "A model is fundamentally a fixed formula (structure) plus learned weights (numbers) — it takes an input, does math, and hands back an output.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 2,
+   "quote": "it takes an input, it does some math and it hands you an output",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "What training is",
+   "claim": "Training is the process of working out the weights that best fit a formula given real labeled examples (e.g. house features to sale price).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 4,
+   "quote": "that working out of the weights from examples is what training is",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Transformer architecture is shared",
+   "claim": "The transformer formula is essentially the same code across GPT, Claude, and Llama; what makes each model different is entirely in the trained weights, not the structure.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 5,
+   "quote": "all of the knowledge is in the weights",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Model file sizes",
+   "claim": "Model weight file sizes scale with parameter count: a small model is roughly 2GB, a midsize model ~16GB, a large 70-billion-parameter model ~140GB, and 500-billion-plus parameter giants run several hundred GB.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 5,
+   "quote": "a large model with 70 billion parameters would be 140GB",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "CPU vs GPU throughput",
+   "claim": "A CPU manages roughly 10 trillion operations/sec versus a GPU's roughly 1,000 trillion operations/sec — about 100x more math per second — because a GPU trades a handful of powerful cores for thousands of small parallel ones (e.g. an Nvidia T4 has ~2,500 cores).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 9,
+   "quote": "about 100 times more math every second",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "System RAM is too slow to feed a GPU",
+   "claim": "System RAM connects to a GPU over a pipe carrying about 64Gbps, roughly 50x slower than the GPU's cores can consume, which is why weights must live in dedicated on-card VRAM instead of regular RAM.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 10,
+   "quote": "roughly 50 times slower than what the core actually can eat",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Three numbers that size a GPU",
+   "claim": "Every GPU/AI workload is sized by three numbers: compute (how much math it can do), capacity (how much fits in memory), and bandwidth (how fast it can read its own memory).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 11,
+   "quote": "three numbers that size every AI workload",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "GPU generation comparison",
+   "claim": "Top-end B200 GPUs deliver about 2,250 TFLOPS of compute with ~192GB of VRAM and ~8TB/s bandwidth — well above A100 (312 TFLOPS/80GB/2TB/s) and H100/H200 (990 TFLOPS, with 80GB vs 141GB VRAM respectively).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 13,
+   "quote": "2,250 tlops computing power and has a really high VRAM of about 192GB",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "vLLM is OpenAI-API compatible",
+   "claim": "vLLM wraps a model into a service with a normal web API and speaks the exact same request format as the OpenAI API, so existing OpenAI-integrated tools can point at it without code changes.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 15,
+   "quote": "VLM speaks the exact same format that the OpenAI API uses",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Model load time",
+   "claim": "Starting a vLLM server means reading weights off disk into GPU memory — moving roughly 16GB for a modest model takes a minute or two before the server is ready.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 14,
+   "quote": "that's about 16 GB to move",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "One model server = one full GPU copy",
+   "claim": "A model server holds the entire model in GPU memory for its whole runtime, so scaling to a second server means paying for a full duplicate model copy on another expensive GPU — servers are heavy, slow to start, and costly to copy.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 15,
+   "quote": "another full copy of the model on another expensive GPU",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Tokens defined",
+   "claim": "A token is roughly 3/4 of a word (an 8-word sentence is about 9 tokens); everything you read, pay for, and wait on is measured in tokens, not words.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 16,
+   "quote": "a token is roughly 3/4 of a word",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Prefill and TTFT",
+   "claim": "Prefill is the compute-heavy first phase where the entire prompt is processed in one parallel pass; the time this takes is called TTFT (time to first token) and it scales with prompt length.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 19,
+   "quote": "TTFT or time to first token",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Decode speed is memory-bound",
+   "claim": "Each generated token requires rereading the entire model from VRAM (decode phase); at ~3TB/s memory bandwidth for a 16GB model, that caps throughput near 200 tokens/sec, i.e. about one token every 5 milliseconds (TPOT, time per output token).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 21,
+   "quote": "one token every 5 milliseconds",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "KV cache avoids re-prefill",
+   "claim": "The model saves its expensive prefill computation in GPU memory as the KV cache, so each new token in a single response just reuses that cached work instead of repeating prefill from scratch.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 23,
+   "quote": "prefill runs once right at the start and saves the output in the KV cache",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Multi-turn chat re-prefills everything",
+   "claim": "Without persisted caching, the KV cache is cleared once a request ends, so a chat app resending the whole thread each turn forces a full reread from scratch every message — the cost of a conversation grows with every message.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 24,
+   "quote": "the cost of a conversation grows with every message",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Prefix/prompt caching cost savings",
+   "claim": "Prefix caching keeps saved KV-cache blocks keyed to exact prior text, so a turn-10 request costs about what turn-2 cost; Anthropic's console exposes this as prompt caching, and a cached input token costs roughly a tenth of a fresh one.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 25,
+   "quote": "a cacheed input token only costs about tenth of what a fresh one does",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Batching multiplies throughput",
+   "claim": "Because producing a token already requires reading the whole model from memory, that same read can generate tokens for many users at once — you can serve 50 people for close to the cost of serving one, without batching.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 27,
+   "quote": "you end up serving 50 people for something close to the cost of serving just one",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Memory, not compute, caps concurrency",
+   "claim": "The ceiling on how many users one GPU can serve is memory, not compute: every batched user needs their own KV-cache scratch pad held alongside the fixed model weights, and once that space fills, new users queue or others get evicted — this is why 'at capacity' errors happen.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 28,
+   "quote": "it's the memory that decides how many people one GPU can actually serve",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Overbuying GPUs is a common waste",
+   "claim": "Teams commonly buy far more GPUs than the compute math actually requires because memory, not raw processing power, is usually the real constraint, leaving expensive GPUs sitting half idle.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 28,
+   "quote": "teams end up buying far more GPUs than the math can actually calls for",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Sharding strategy: tensor vs pipeline parallel",
+   "claim": "Model sharding splits by layer (pipeline parallel) or within a layer's math (tensor parallel); the rule of thumb is to keep the chatty tensor-parallel talk inside one NVLink-connected box and use the lighter pipeline-parallel handoffs between separate boxes on ordinary networking.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 31,
+   "quote": "you keep the chatty talk inside a box and you keep the light talk between boxes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Round-robin load balancing fails LLM serving",
+   "claim": "A plain round-robin load balancer treats every server as interchangeable, so it throws away perfectly good saved KV-cache work by routing a follow-up message to a server that never saw the conversation, wasting the most expensive hardware you own.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 33,
+   "quote": "it throws away saved work that was perfectly good",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-D as a smart router",
+   "claim": "LLM-D is a smart router in front of the server fleet that, for each request, stops and decides where to route it based on which server already holds saved KV-cache work, how much memory it has free, and how long its queue is — rather than just picking a free server.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 35,
+   "quote": "stops and thinks about where that request should go",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Cache-aware routing gains",
+   "claim": "Cache-aware routing (sending a user's follow-up straight back to the server holding their conversation cache) delivers around 3x the throughput and roughly 2x faster first response versus spreading requests evenly, on the same hardware.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 35,
+   "quote": "gives you around three times the throughput and a first response that is twice as fast",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Prefill/decode disaggregation",
+   "claim": "Splitting serving into separate prefill (compute-heavy, e.g. H100) and decode (memory-heavy, e.g. H200) pools that hand off saved KV work over a fast link yields up to 70% more tokens per second on the same hardware.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 36,
+   "quote": "up to 70% more tokens per second on the same hardware",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Kubernetes dominates inference hosting",
+   "claim": "About 66% of organizations hosting generative AI use Kubernetes to manage some or all of their inference workloads (per a CNCF blog), making it the de facto platform LLM-D is built to run on top of.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 37,
+   "quote": "66% of organizations hosting generative AI use it to manage some or all of their inference workloads",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Well-lit paths avoid manual tuning",
+   "claim": "LLM-D ships pre-tuned 'well-lit path' recipes for every knob (cache-affinity weighting, prefill/decode split, GPU count per model shard, batch size) because hand-tuning them all could take weeks and still get several wrong.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 38,
+   "quote": "the welllit paths",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Recommended starting path",
+   "claim": "Most teams should start with the 'optimized baseline' well-lit path — one pool of identical vLLM servers with cache-aware routing switched on and nothing else changed — because it's the smallest change with the biggest payoff.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 39,
+   "quote": "most people start with the first path because it's the smallest change",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Two-command LLM-D deployment",
+   "claim": "Deploying LLM-D takes two Helm commands: `helm install router` (installs the LLM-D router and sets up the vLLM servers) and `helm install model` (installs the model itself).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 39,
+   "quote": "helm install router command that installs the LLMD router",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "LeaderWorkerSet for sharded models",
+   "claim": "Kubernetes StatefulSets don't fit sharded LLM serving because they treat pods as independent replicas; LLM-D instead uses the LeaderWorkerSet object, which scales and heals a leader-plus-workers group as a single unit since a model missing one shard can't answer at all.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 42,
+   "quote": "leader pod plus its workers scaled and healed as a single unit",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Kubernetes handles the ops loop",
+   "claim": "Once deployed, ordinary Kubernetes mechanics keep LLM-D running: a crashed pod gets restarted, pods move off a dead machine, and prefill/decode pools scale independently as prompt or answer load grows.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 43,
+   "quote": "a pod crashes and Kubernetes restarts it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "The model is a small part of the stack",
+   "claim": "The production GenAI stack has four layers above raw infrastructure (GPUs/TPUs): foundation models, data & retrieval (vector DB, knowledge graph, grounding), orchestration/agents, and application/UX — the model itself is only a small part of what actually scales GenAI to production.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 2,
+   "quote": "the model is just a very small part of an end-to-end architecture",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "RAG as the foundation for agents",
+   "claim": "RAG is best understood as a single-turn grounded conversation, which is the foundation layer that makes multi-turn, autonomous-action agent workflows possible.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 5,
+   "quote": "rag is a single turn grounded conversation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Cost/capacity blind spots kill apps",
+   "claim": "A lot of GenAI applications quietly fail because they don't factor cost and capacity estimates into their design, defaulting to the most powerful reasoning model for every task.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 6,
+   "quote": "they don't take cost into account and capacity estimates",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Responsible AI's four buckets",
+   "claim": "Responsible AI is a runtime engineering requirement with four buckets: input guardrails (what the model responds to), output guardrails (how it phrases answers), policy enforcement (e.g. HIPAA compliance), and auditing/explainability.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 6,
+   "quote": "input guardrails for what your models are going to respond to",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Lesson zero: the data flywheel",
+   "claim": "'Lesson zero' is building a data flywheel — the application learns from interaction data and feeds it back into the next training/fine-tuning cadence — so the model compounds learning from user behavior instead of requiring constant manual engineering intervention.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 8,
+   "quote": "your application is going to learn from the data that's generated from interaction",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Evaluation must be continuous",
+   "claim": "Evaluation can't stop at launch — models drift over time, so teams that only evaluate once lose track of where quality actually stands.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 9,
+   "quote": "it's not okay to just monitor things and evaluate at the launch",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Demos are the happy path",
+   "claim": "Demos are 'the happy path' — production introduces edge cases around latency, capacity, and quality monitoring at scale that teams need to plan for before they even build the demo.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 10,
+   "quote": "I like to call demos the happy path",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Latency is a product decision",
+   "claim": "Latency targets should be set as a product decision, not an engineering one — e.g. Google wants sub-millisecond latency for AI Overviews on the top-10 blue links — because that decision shapes the whole architecture and orchestration design.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 11,
+   "quote": "latency is a product decision",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LLM judges for scalable quality checks",
+   "claim": "Every enterprise needs a scalable framework of LLM judges (potentially a different model family scoring outputs) since sending everything to humans for validation no longer scales, supplemented by periodic manual review.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 13,
+   "quote": "having a very scalable framework of having LLM judges",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Five-stage GenAI maturity model",
+   "claim": "Enterprises move through five GenAI maturity stages: prompt-and-pray demos, RAG-augmented responses, tool-using agents (where most enterprises sit today), multi-agent systems of specialized collaborating agents, and a fully autonomous enterprise where humans define only goals and guardrails.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 14,
+   "quote": "prompt and pray",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prediction: small specialized models win",
+   "claim": "Prediction: small, task-specialized models will beat large generalized models for most tasks that don't require broad world knowledge, driving a shift from single large models toward a mixed fleet of small and large models.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 19,
+   "quote": "small specialized models are going to beat large generalized models for most tasks",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prediction: orchestration becomes the moat",
+   "claim": "Prediction: the orchestration layer becomes the competitive moat — a dynamic intelligence layer deciding how to plan, which tool or reasoning skill to use, which specialized model to call, and whether to solve a task directly or delegate it.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 20,
+   "quote": "the orchestration layer becomes the competitive moat",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prediction: evaluation infra becomes critical",
+   "claim": "Prediction: evaluation infrastructure (golden datasets, LLM judges, data flywheels) will become as critical as training/inference infrastructure — an area she says the industry currently underinvests in.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 21,
+   "quote": "evaluation infrastructure and it's going to become as critical as a infrastructure",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Five imperatives for production GenAI",
+   "claim": "Five imperatives for production GenAI: get upfront alignment on cost/latency/quality trade-offs, build reliable data quality/infrastructure, run continuous evaluation via a data flywheel, enforce runtime safety and guardrails, and secure organizational alignment across teams.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 22,
+   "quote": "five imperatives for production gen AI",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Stop building demos",
+   "claim": "The closing call to action: teams are past the demo stage and need to start building systems, not more demos.",
+   "video_id": "7YYVgH0_9CA",
+   "chunk_index": 24,
+   "quote": "stop building demos",
+   "kind": "quote-worthy",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Where the real discipline of shipping GenAI lives",
+   "positions": [
+    {
+     "video_id": "hBzUokVYQkI",
+     "chunk_index": 44,
+     "position": "Frames production GenAI almost entirely as an infrastructure problem: 'almost none of it was machine learning. It was infrastructure work from the first lesson to the last' — the hard problems are GPUs, routing, caching, and Kubernetes."
+    },
+    {
+     "video_id": "7YYVgH0_9CA",
+     "chunk_index": 8,
+     "position": "Frames the differentiator as the data flywheel and continuous evaluation — the model/infra is commodity, but learning from your own interaction data and compounding it into training is what makes a production system 'yours' and prevents it from stalling."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No concrete $/token or $/GPU-hour cost figures for a real production deployment — the Netflix talk names cost as a top imperative but gives no numbers, and the infra talk covers hardware specs without pricing.",
+  "No detail on how to technically implement input/output guardrails or policy enforcement (e.g. which libraries, filters, or classifiers) beyond naming the four responsible-AI buckets.",
+  "No discussion of security testing, red-teaming, or prompt-injection defenses for agentic systems.",
+  "No walkthrough of how to actually build an LLM-judge pipeline (prompt design, calibration against humans, golden dataset construction) — it's named as important but not shown.",
+  "No comparison of vLLM against other inference engines (TensorRT-LLM, SGLang, TGI) or guidance on when to choose one over another.",
+  "No numbers or case study on what organizational alignment work actually looks like in practice, despite it being named as one of the five imperatives.",
+  "No discussion of how to size or validate a fine-tuning dataset, or what fine-tuning costs/timelines look like in practice.",
+  "No treatment of multi-region or disaster-recovery concerns for GPU fleets serving global traffic."
+ ],
+ "verified_claims": 55
+}

@@ -454,39 +454,32 @@ def test_index_stream_reports_added_videos_and_totals(settings: Settings, tmp_pa
     assert done[1]["channels"] == ["chan"]
 
 
-def test_index_stream_emits_heartbeats_while_indexing_is_slow(
-    settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_run_index_streaming_emits_heartbeats_while_indexing_is_slow(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(api_main, "_INDEX_HEARTBEAT_INTERVAL_SECONDS", 0.05)
+    """The wait loop must heartbeat instead of going silent on a slow index run.
+
+    Driven directly (like ``_subscription_stream`` below) rather than through
+    ``TestClient`` + a wall-clock ``Timer``: gating ``release`` on real time
+    races the worker thread's startup, so under load the index call could
+    finish before its 0.2s deadline and the test would see zero heartbeats.
+    Here ``release`` is only set after a heartbeat is observed, so the order
+    is deterministic regardless of scheduling.
+    """
+    monkeypatch.setattr(api_main, "_INDEX_HEARTBEAT_INTERVAL_SECONDS", 0.01)
     release = threading.Event()
 
     def slow_index_fn(argv: list[str]) -> int:
         release.wait(timeout=2)
         return 0
 
-    app = create_app(
-        settings,
-        runner_factory=lambda: None,
-        history_path=tmp_path / "h.json",
-        chat_html_path=tmp_path / "c.html",
-        index_fn=slow_index_fn,
-    )
-    client = TestClient(app)
-    timer = threading.Timer(0.2, release.set)
-    timer.start()
-    try:
-        response = client.post(
-            "/api/index/stream",
-            json={"mode": "video", "url": "https://youtu.be/abc123"},
-        )
-    finally:
-        timer.cancel()
-    events = sse_events(response.text)
-    stage_events = [data for event, data in events if event == "stage"]
-    heartbeats = [data for data in stage_events if data["message"] == "Still indexing..."]
-    assert len(heartbeats) >= 1
-    assert all(data["stage"] == "processing" for data in heartbeats)
-    assert events[-1][0] == "done"
+    stream = api_main._run_index_streaming(slow_index_fn, [])
+    kind, _value = next(stream)
+    assert kind == "heartbeat"
+    release.set()
+    kind, value = next(stream)
+    assert kind == "result"
+    assert value == 0
 
 
 def test_index_stream_reports_nonzero_exit_code_as_error(

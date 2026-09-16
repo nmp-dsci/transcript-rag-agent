@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production GenAI Systems — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  .ban { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+  .ban th { text-align: left; font-weight: 600; padding: 0.6rem 0.8rem 0.6rem 0; border-bottom: 2px solid currentColor; opacity: 0.7; }
+  .ban td { vertical-align: top; padding: 0.7rem 0.8rem 0.7rem 0; border-bottom: 1px solid rgba(128,128,128,0.25); }
+  .ban td:first-child { width: 42%; }
+  .contested { display: grid; gap: 1.25rem; margin: 1.5rem 0; }
+  .contested .split { border-left: 3px solid rgba(128,128,128,0.35); padding-left: 1rem; }
+  .contested .side { margin: 0.5rem 0; }
+  .contested .side b { font-variant: all-small-caps; letter-spacing: 0.03em; }
+  .tk { opacity: 0.72; }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Production GenAI Systems</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#evals">Evals</a>
+    <a href="#retrieval">Retrieval</a>
+    <a href="#agents">Agents</a>
+    <a href="#serving">Serving</a>
+    <a href="#ban">Delete</a>
+    <a href="#templates">Templates</a>
+    <a href="#contested">Contested</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>Production GenAI <em>Systems</em></h1>
+  <p class="sub">Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.</p>
+  <div class="provenance">17 source videos · 737 transcript chunks read in full · 6 parallel extraction passes · compiled 2026-09-14</div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h21">The thesis: it is never the model</h2>
+
+  <p id="thesis-p1">Every talk in this corpus was given by someone who has watched a GenAI pilot die. None of them blame the model. A two-year agency practice puts it flatly: when a project fails <cite data-video="Q679gH7oszg" data-chunk="2" data-quote="it's almost never the model but always rather the kind of like the execution">it is the execution, not the model</cite>. A Netflix- and Google-scale practitioner draws the same architecture diagram and notes that <cite data-video="7YYVgH0_9CA" data-chunk="2" data-quote="the model is just a very small part of an end-to-end architecture">the model is a very small part of an end-to-end architecture</cite>. A consultant who watched 200+ enterprise deployments opens with the warning that <cite data-video="vW8wLsb3Nnc" data-chunk="0" data-quote="generative AI is not the the magical pill that solves everything">generative AI is not the magical pill</cite>.</p>
+
+  <p id="thesis-p2">The pattern that kills pilots is legible and repeatable: pick a model, build features against predictable data, demo it, and then discover in production that <cite data-video="ObTPqBGsEbA" data-chunk="13" data-quote="you have no way to check what the AI did">nobody can check what the AI actually did</cite>. One retail bank spent <cite data-video="ObTPqBGsEbA" data-chunk="23" data-quote="spent around 85K in 6 months doing a POC which did not succeed">roughly $85K over six months on a POC that did not succeed</cite>, and no one could say why. Demos are, in the corpus's own phrase, <cite data-video="7YYVgH0_9CA" data-chunk="10" data-quote="I like to call demos the happy path">the happy path</cite>: they are <cite data-video="uaiq1HvQKoI" data-chunk="45" data-quote="demos are designed to impress but scaling them into reliable">designed to impress</cite>, and impressing is not a system property.</p>
+
+  <blockquote class="epigraph" id="thesis-blockquote1">“I like to leave you with <strong>stop building demos</strong>. We are beyond demos. We have many cool demos. Start building systems.” <cite data-video="7YYVgH0_9CA" data-chunk="24" data-quote="stop building demos">Kamelia Aryafar</cite></blockquote>
+
+  <p id="thesis-p3">Three moves separate a system from a demo. Each one inverts a default that feels productive and is not.</p>
+
+  <div class="triptych">
+    <div class="panel">
+      <h3 id="thesis-h31">Spec before stack</h3>
+      <p id="thesis-p4">The eval set <em>is</em> the specification — <cite data-video="ObTPqBGsEbA" data-chunk="6" data-quote="Evaluation is basically specification for your AI system">evaluation is basically specification for your AI system</cite>. In the successful redo of that failed bank chatbot, the team <cite data-video="ObTPqBGsEbA" data-chunk="24" data-quote="we selected the model in week seven">selected the model in week seven of an eight-week POC</cite>, and spent weeks one and two building the evaluation layer. <cite data-video="T0HhO4YtTfE" data-chunk="1" data-quote="Specs are the new code">Specs are the new code.</cite></p>
+    </div>
+    <div class="panel">
+      <h3 id="thesis-h32">Trace before scale</h3>
+      <p id="thesis-p5">Observability is not a dashboard you add later; <cite data-video="1LhvqZvDT5w" data-chunk="51" data-quote="every step in your agentic pipeline has a certain service attached to it for logging">every step in an agentic pipeline needs its own logging service attached</cite>. Without traces a disputed AI decision cannot be reconstructed at all, and teams default to refunding the customer. The closing line of the framework talk holds: <cite data-video="T0HhO4YtTfE" data-chunk="22" data-quote="You can't improve what you can't measure">you can't improve what you can't measure</cite>.</p>
+    </div>
+    <div class="panel">
+      <h3 id="thesis-h33">Price before ship</h3>
+      <p id="thesis-p6">Cost and latency are design inputs, not post-launch cleanup. Applications quietly die because <cite data-video="7YYVgH0_9CA" data-chunk="6" data-quote="they don't take cost into account and capacity estimates">they don't take cost into account and capacity estimates</cite>, defaulting to the biggest reasoning model for every call. The market verdict is blunt: <cite data-video="vW8wLsb3Nnc" data-chunk="12" data-quote="if you are slower and more expensive, you will not be used">if you are slower and more expensive, you will not be used</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <h2 id="pipeline-h21">Pilot to production in six stages</h2>
+  <p id="pipeline-p1">Two talks in the corpus offer full frameworks — a four-phase design loop from MongoDB and a five-pillar enterprise playbook from Databricks. They agree more than they differ. What follows merges them and folds in the field reports from everyone else. Run the stages in order the first time; after that you will be iterating across all six at once.</p>
+
+  <div class="stage">
+    <div class="no">01</div>
+    <h3 id="pipeline-h31">Quantify the problem. Forbid the solution.</h3>
+    <p class="why" id="pipeline-p2">A business problem that names an architecture has already skipped the thinking. Write it so that an agent, a control flow, and a logistic regression all remain live options.</p>
+    <ul>
+      <li id="pipeline-li1">Name the user, state the current state, quantify the pain — and stop there. A good problem statement <cite data-video="T0HhO4YtTfE" data-chunk="3" data-quote="It should not prescribe what the system is going to be">should not prescribe what the system is going to be</cite>, whether agent, multi-agent, or otherwise.</li>
+      <li id="pipeline-li2">Put a number on the baseline. The worked example: reviewers spend two days per claim, <cite data-video="T0HhO4YtTfE" data-chunk="3" data-quote="four times the industry standard for non-urgent cases">four times the industry standard for non-urgent cases</cite> and twelve times for urgent ones.</li>
+      <li id="pipeline-li3">Collect the constraints that will veto your design before you draw it: data residency, approved vendors, and the rule that <cite data-video="T0HhO4YtTfE" data-chunk="4" data-quote="denial decisions must be uh reviewed by a human reviewer">denial decisions must be reviewed by a human reviewer</cite>.</li>
+      <li id="pipeline-li4">Classify the role of AI on three axes — <cite data-video="T0HhO4YtTfE" data-chunk="5" data-quote="is AI critical to your product or complementary">is AI critical to your product or complementary</cite>, reactive or proactive, and what maximum autonomy the constraints permit.</li>
+      <li id="pipeline-li5">Write one SMART success metric tied to the baseline: <cite data-video="T0HhO4YtTfE" data-chunk="6" data-quote="reduce the average processing time for urgent claim review requests">reduce the average processing time for urgent claim review requests</cite> from two days to one hour within 90 days of launch.</li>
+      <li id="pipeline-li6">Treat “we can't tell what good looks like” as a stop signal. The agency red flag is a project where <cite data-video="Q679gH7oszg" data-chunk="6" data-quote="there is no real way to kind of like track the impact">there is no real way to track the impact</cite> — and the standing advice is to <cite data-video="Q679gH7oszg" data-chunk="6" data-quote="always pick the quick wins over the moonshots">always pick the quick wins over the moonshots</cite>.</li>
+      <li id="pipeline-li7">Reset the accuracy expectation in the first meeting. <cite data-video="Q679gH7oszg" data-chunk="10" data-quote="Your first build typically gets to 70 or 80% accuracy">Your first build typically gets to 70 or 80% accuracy</cite>; iteration takes it to about 90. Clients arriving from deterministic software <cite data-video="Q679gH7oszg" data-chunk="7" data-quote="expect magic from day one">expect magic from day one</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">02</div>
+    <h3 id="pipeline-h32">Build the eval before you choose the model</h3>
+    <p class="why" id="pipeline-p3">Model choice is the most reversible decision in the project and the one teams make first. Invert it. The eval set outlives every model you will run behind it.</p>
+    <ul>
+      <li id="pipeline-li8">Define success in hard numbers before writing code: the bank chatbot targeted 60% of user queries handled at <cite data-video="ObTPqBGsEbA" data-chunk="24" data-quote="85% it was around 85% accuracy target">around 85% accuracy</cite>, plus latency and operational targets.</li>
+      <li id="pipeline-li9">Build the golden set from what humans actually answered. <cite data-video="ObTPqBGsEbA" data-chunk="7" data-quote="Talk with the domain experts and find what is actually happening">Talk with the domain experts and find what is actually happening</cite> on the ground — including the gray areas. That project started from 200 real agent-answered cases.</li>
+      <li id="pipeline-li10">Expect the set to grow forever: <cite data-video="ObTPqBGsEbA" data-chunk="25" data-quote="your evaluation data set is a living system">your evaluation data set is a living system</cite>, and the bigger it grows the better the system gets.</li>
+      <li id="pipeline-li11">Start it on day one, not after the pipeline works. At AWS's GenAI Innovation Center, <cite data-video="1LhvqZvDT5w" data-chunk="25" data-quote="one of the very first things we try to do is to actually build">one of the very first things we try to do is to actually build</cite> an evaluation rubric.</li>
+      <li id="pipeline-li12">The cheapest first eval is the vibe check you already ran, written down and varied: <cite data-video="vW8wLsb3Nnc" data-chunk="15" data-quote="20 minutes later, you do have some form of eval set">20 minutes later, you do have some form of eval set</cite> you can begin running.</li>
+      <li id="pipeline-li13">This is the layer where you earn the right to claim the system works — <cite data-video="vW8wLsb3Nnc" data-chunk="8" data-quote="this is where we prove that the system is robust and not just a vibe check">this is where we prove that the system is robust and not just a vibe check</cite> that got lucky on one prompt.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">03</div>
+    <h3 id="pipeline-h33">Design the simplest thing the flow allows</h3>
+    <p class="why" id="pipeline-p4">Map how one real request moves end to end, then choose the least machinery that satisfies it. Agents are a design pattern, not a starting position.</p>
+    <ul>
+      <li id="pipeline-li14">Don't let hype or a coding agent pick the architecture — <cite data-video="T0HhO4YtTfE" data-chunk="10" data-quote="you risk ending up with an over-engineered system by doing this">you risk ending up with an over-engineered system by doing this</cite>. Start simple, evaluate, find gaps, iterate.</li>
+      <li id="pipeline-li15">Trace the request first: <cite data-video="T0HhO4YtTfE" data-chunk="10" data-quote="map out how an insurance claim would flow through the system">map out how a claim would flow through the system</cite>, because the flow informs the architecture and not the reverse.</li>
+      <li id="pipeline-li16">Match the technique to the data source, not to fashion: <cite data-video="T0HhO4YtTfE" data-chunk="9" data-quote="either want to use vector search with metadata pre-filtering or hybrid search">vector search with metadata pre-filtering or hybrid search</cite> for policy documents full of codes; exact match on patient ID for structured history.</li>
+      <li id="pipeline-li17">Some problems are not GenAI problems. For demand forecasting, <cite data-video="1LhvqZvDT5w" data-chunk="9" data-quote="you don't need you know to to run claude oppus to uh to predict">you don't need to run Claude Opus to predict</cite> a time series — and the standing rule is that <cite data-video="1LhvqZvDT5w" data-chunk="45" data-quote="you should always pick up the simplest tool possible">you should always pick up the simplest tool possible</cite>.</li>
+      <li id="pipeline-li18">What you commit to is the contract, not the wiring. <cite data-video="vW8wLsb3Nnc" data-chunk="8" data-quote="That is the most fundamental part your inputs and your outputs">Inputs and outputs are the most fundamental part</cite>; the architecture and the specific LLM are incidental and will change.</li>
+      <li id="pipeline-li19">Freeze the surrounding stack so the model can churn. One agency has run FastAPI, Celery, Postgres and Redis for two years across client projects — <cite data-video="Q679gH7oszg" data-chunk="50" data-quote="We just swap out the model">we just swap out the model</cite> — which also keeps coding agents inside a scaffold they can't wander out of.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">04</div>
+    <h3 id="pipeline-h34">Pay the data tax up front</h3>
+    <p class="why" id="pipeline-p5">This is the majority of the project and almost nobody budgets for it. Humans route around bad data silently; agents do not.</p>
+    <ul>
+      <li id="pipeline-li20">Budget the time honestly: on enterprise agent projects <cite data-video="ObTPqBGsEbA" data-chunk="14" data-quote="I spend 60% of my time">60% of project time</cite> goes into the data foundation — split between the data that answers questions and the data that traces behaviour.</li>
+      <li id="pipeline-li21">Data built for humans does not survive contact with agents: <cite data-video="ObTPqBGsEbA" data-chunk="14" data-quote="Agents will go, find it wrong, they'll give you the wrong answer confidently">agents will find it wrong and give you the wrong answer confidently</cite>, with no flag raised. With GenAI, <cite data-video="uaiq1HvQKoI" data-chunk="46" data-quote="with generative AI garbage in garbage out really bites">garbage in, garbage out really bites</cite>.</li>
+      <li id="pipeline-li22">Set each pipeline's cadence from the source's real update frequency — guidelines annually, policies quarterly, claims hourly — or <cite data-video="T0HhO4YtTfE" data-chunk="8" data-quote="our system is going to work off of stale information">the system works off stale information</cite>.</li>
+      <li id="pipeline-li23">The canonical production incident in this corpus is a freshness bug: after a rate-policy update, <cite data-video="ObTPqBGsEbA" data-chunk="28" data-quote="the new policy document was not updated in the vector database">the new policy document was not updated in the vector database</cite>, the embeddings never came through, and the bot kept answering from the old policy. It surfaced as a thumbs-down trend, not an alert.</li>
+      <li id="pipeline-li24">Keeping the index in sync with new, edited and archived documents without full reindexing is an ongoing operational job — <cite data-video="uaiq1HvQKoI" data-chunk="25" data-quote="vector database uh needs to be kept in sync with uh these changes">the vector database needs to be kept in sync with these changes</cite>.</li>
+      <li id="pipeline-li25">Prefer a pipeline that detects deltas itself. An integrated ingestion pipeline can <cite data-video="_2tZaDs-w5s" data-chunk="19" data-quote="we will automatically track changes so it's not a one-hot thing">automatically track changes so it's not a one-shot thing</cite>, paying incremental cost rather than reindexing everything.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">05</div>
+    <h3 id="pipeline-h35">Instrument every step before you scale any of it</h3>
+    <p class="why" id="pipeline-p6">Three gaps sink pilots: you can't see what the AI did, you have no metric that matters to the business, and no one owns the failure. The first is the one you fix with code.</p>
+    <ul>
+      <li id="pipeline-li26">Name the gap out loud. <cite data-video="ObTPqBGsEbA" data-chunk="2" data-quote="The first one is the observability gap">The first one is the observability gap</cite> — and it is followed by the evaluation gap and the governance gap.</li>
+      <li id="pipeline-li27">Trace at the granularity of the decision. One overdraft-fee request should show intent classification, the account API call, the <cite data-video="ObTPqBGsEbA" data-chunk="12" data-quote="it retrieves policy documents. It checks from a rag vector database">policy-document retrieval from the RAG vector database</cite>, the reasoning step and the final guardrail check.</li>
+      <li id="pipeline-li28">Watch behaviour, not just answers. An agent can return the right answer while <cite data-video="ObTPqBGsEbA" data-chunk="10" data-quote="the agent uh actually made three calls to the database to find that answer">making three calls to the database to find that answer</cite> — invisible in a demo, expensive at thousands of queries a day.</li>
+      <li id="pipeline-li29">Log every request and response automatically; that logging is what later <cite data-video="1jvxxa7tdjw" data-chunk="12" data-quote="we automatically log each request and response">feeds monitoring, retraining and debugging</cite>.</li>
+      <li id="pipeline-li30">Track the human's disagreement rate as your live quality signal — <cite data-video="T0HhO4YtTfE" data-chunk="19" data-quote="how often a human reviewer overrides the AI verdict">how often a human reviewer overrides the AI verdict</cite>. Alongside it, watch <cite data-video="T0HhO4YtTfE" data-chunk="18" data-quote="average token cost, token usage, uh average number of turns">average token cost, token usage, and average number of turns</cite>.</li>
+      <li id="pipeline-li31">Two tools cover most of it in practice: <cite data-video="Q679gH7oszg" data-chunk="40" data-quote="Langfuse for all our LLM traces">Langfuse for all LLM traces</cite> plus Sentry piped into Slack for application errors. A Sentry trace can be copied as markdown and <cite data-video="Q679gH7oszg" data-chunk="43" data-quote="you chug it into cloud code and it fixes">pasted straight into the coding agent</cite>.</li>
+      <li id="pipeline-li32">Wire detection to action. With online monitoring in place, a duplicate or failing tool call can trigger a fallback that will <cite data-video="ObTPqBGsEbA" data-chunk="14" data-quote="go and retry for three times, not more than three times">retry three times, not more than three times</cite>, then escalate to a human.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">06</div>
+    <h3 id="pipeline-h36">Harden, then roll out slowly</h3>
+    <p class="why" id="pipeline-p7">Guardrails are a runtime engineering requirement, and rollout is a separate discipline from building. Both exist because LLM systems fail differently from the software around them.</p>
+    <ul>
+      <li id="pipeline-li33">The reason guardrails exist at all: unlike traditional software, LLM-based systems <cite data-video="T0HhO4YtTfE" data-chunk="17" data-quote="are probabilistic systems and can produce outputs that are unexpected, incorrect, or even harmful">are probabilistic and can produce outputs that are unexpected, incorrect, or even harmful</cite>.</li>
+      <li id="pipeline-li34">One layer is never enough. A managed guardrail service alone is <cite data-video="1LhvqZvDT5w" data-chunk="11" data-quote="usually not enough. You usually need to have multiple layers of defense">usually not enough — you need multiple layers of defense</cite>: prompt instructions, a classifier fleet, and observability for what slips through.</li>
+      <li id="pipeline-li35">Put classifiers on both sides of the model. They must also <cite data-video="1LhvqZvDT5w" data-chunk="16" data-quote="set them between the LLM response and the user">sit between the LLM response and the user</cite>, since web-search or hallucinated output can itself be harmful.</li>
+      <li id="pipeline-li36">Red-team before launch and turn it into a number: one system passed only <cite data-video="1LhvqZvDT5w" data-chunk="18" data-quote="out of 20 different stress scenarios, maybe our system only passes five or six">five or six out of 20 stress scenarios</cite>, which is the signal that guardrails aren't done.</li>
+      <li id="pipeline-li37">Cheap deterministic checks catch expensive things: NER-based PII pre-validation meant the team <cite data-video="ObTPqBGsEbA" data-chunk="21" data-quote="we already detected 47 PII breaches during the testing phase">already detected 47 PII breaches during the testing phase</cite>.</li>
+      <li id="pipeline-li38">Version prompts like code. <cite data-video="ObTPqBGsEbA" data-chunk="21" data-quote="You have to treat prompt versioning as change management">You have to treat prompt versioning as change management</cite> in an enterprise-grade solution — not a casual commit.</li>
+      <li id="pipeline-li39">Roll out behind a switch: use versioning with <cite data-video="uaiq1HvQKoI" data-chunk="43" data-quote="blue green uh deployments or canary deployments">blue-green or canary deployments</cite>, reindexing in parallel and cutting over only after validation. On the serving side, <cite data-video="1jvxxa7tdjw" data-chunk="15" data-quote="assign a challenger Alias and use that as well">assign a challenger alias</cite> while the champion keeps taking traffic.</li>
+      <li id="pipeline-li40">Rehearse the incident loop: <cite data-video="ObTPqBGsEbA" data-chunk="29" data-quote="you detect using your eval dashboard">detect using your eval dashboard</cite>, diagnose with tracing, contain by rolling back the prompt version, fix from the test-case library, then add the case to the eval suite so it is caught automatically next time.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="evals">
+  <h2 id="evals-h21">The evaluation stack</h2>
+  <p id="evals-p1">Evaluation in this corpus is three layers deep, runs continuously, and has a CI budget. Treat any one of those three as optional and you have a vibe check with a dashboard.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="evals-h31">Layer 1 — deterministic, and first</h3>
+      <p id="evals-p2">Formats, regex, classic NER and PII models. <cite data-video="ObTPqBGsEbA" data-chunk="8" data-quote="the first layer is deterministic">The first layer is deterministic</cite> and it is cheap, so run it before you spend a token on anything smarter.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h32">Layer 2 — semantic judges</h3>
+      <p id="evals-p3">LLM-as-judge for groundedness, safety and relevance. Every enterprise needs <cite data-video="7YYVgH0_9CA" data-chunk="13" data-quote="having a very scalable framework of having LLM judges">a very scalable framework of LLM judges</cite>, because routing everything to humans stopped scaling long ago.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h33">Layer 3 — behavioural, and skipped</h3>
+      <p id="evals-p4">Are tool calls correct, duplicated, or looping? This is the layer most teams never build, and the one that catches <cite data-video="ObTPqBGsEbA" data-chunk="10" data-quote="the agent uh actually made three calls to the database to find that answer">three database calls where one would do</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h34">Humans are the gold standard, judges are the loop</h3>
+      <p id="evals-p5">Human experts scoring against a rubric set the standard; <cite data-video="1LhvqZvDT5w" data-chunk="25" data-quote="we also used LLM as a judge evaluation">an LLM judge reusing the same rubric</cite> gives you fast, cheap iteration on every prompt change.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h35">Aligning a judge costs examples</h3>
+      <p id="evals-p6">Getting an LLM judge to agree with humans took one engagement <cite data-video="1LhvqZvDT5w" data-chunk="29" data-quote="almost 50 examples showing uh you know how different human judges judge">almost 50 examples of how different human judges judge</cite>, cached in the system prompt to control cost. Budget for that calibration.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h36">Score components, not just answers</h3>
+      <p id="evals-p7">Evaluate <cite data-video="1jvxxa7tdjw" data-chunk="45" data-quote="both the components and the system as a whole">both the components and the system as a whole</cite>: did retrieval fetch the right context, and was the response faithful to it? Debug it the way you debug code.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h37">Measure guardrail compliance as a metric</h3>
+      <p id="evals-p8">Turn the boundary into a number — <cite data-video="T0HhO4YtTfE" data-chunk="18" data-quote="we can have something like a missing citation rate">a missing-citation rate</cite> for output compliance, a faithfulness score for grounding, a rejection rate for inputs.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h38">Never stop at launch</h3>
+      <p id="evals-p9">Models drift. <cite data-video="7YYVgH0_9CA" data-chunk="9" data-quote="it's not okay to just monitor things and evaluate at the launch">It's not okay to just monitor things and evaluate at the launch</cite> — teams that evaluate once lose track of where quality actually stands.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h39">Give CI a cost ceiling</h3>
+      <p id="evals-p10">Behavioural evals get expensive past 300–500 rows. Run a subset on each change and <cite data-video="ObTPqBGsEbA" data-chunk="33" data-quote="you only do the full test when you merge to the main branch">only do the full test when you merge to the main branch</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="evals-h310">Re-run your own set on every model upgrade</h3>
+      <p id="evals-p11">Published leaderboards are not evidence about your system. Rerun the new model against your eval set, and keep more than one provider live, because <cite data-video="ObTPqBGsEbA" data-chunk="22" data-quote="you cannot really rely on one single model">you cannot really rely on one single model</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="retrieval">
+  <h2 id="retrieval-h21">The retrieval floor</h2>
+  <p id="retrieval-p1">RAG is <cite data-video="7YYVgH0_9CA" data-chunk="5" data-quote="rag is a single turn grounded conversation">a single-turn grounded conversation</cite> — the foundation the agent layer stands on. Retrieval quality is therefore the ceiling on everything above it: your app works <cite data-video="_2tZaDs-w5s" data-chunk="10" data-quote="they ask a question and they get the answer they're looking for">when they ask a question and they get the answer they're looking for</cite>. These are the levers that move that number, roughly in order of payoff.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="retrieval-h31">Scope before you rank</h3>
+      <p id="retrieval-p2">The single most effective lever is narrowing the candidate set: <cite data-video="_2tZaDs-w5s" data-chunk="13" data-quote="the other dimension of getting quality out of the system is to narrow the data set">the other dimension of getting quality out of the system is to narrow the data set</cite>, then do the ranking tricks on top. Filters stay fast <cite data-video="_2tZaDs-w5s" data-chunk="9" data-quote="even if you have hundreds of millions of documents these are not a problem">even if you have hundreds of millions of documents</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h32">Two stages, always</h3>
+      <p id="retrieval-p3">The <cite data-video="_2tZaDs-w5s" data-chunk="11" data-quote="first stage is recall oriented and uses vectors and keywords">first stage is recall-oriented and uses vectors and keywords</cite>; the second reranks the small candidate set with a heavier model. Benchmarked on one query set, quality runs BM25 &lt; vectors &lt; fusion &lt; fusion+rerank, with <cite data-video="_2tZaDs-w5s" data-chunk="12" data-quote="better results just out of the box when uh when reranking is enabled">better results just out of the box when reranking is enabled</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h33">Rerankers are cross-encoders, and that's the point</h3>
+      <p id="retrieval-p4"><cite data-video="_2tZaDs-w5s" data-chunk="12" data-quote="these type of R rankers are often called cross encoders">These rerankers are cross-encoders</cite> — they see query and document together, which is why they rank better and why they can't run over the whole corpus. Budget <cite data-video="_2tZaDs-w5s" data-chunk="13" data-quote="this is like 100 milliseconds give or take for a model like this">about 100 milliseconds per query</cite>; in an interactive app that hides behind the LLM call.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h34">Decouple candidates from returns</h3>
+      <p id="retrieval-p5">Pull deep and hand over shallow: <cite data-video="_2tZaDs-w5s" data-chunk="10" data-quote="basically separate how many candidates you want from how many you want to return">separate how many candidates you want from how many you want to return</cite>. Recall depth and prompt size are different budgets.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h35">Quantize, then oversample back</h3>
+      <p id="retrieval-p6">Single-bit quantization is a 32× density gain that still lands <cite data-video="_2tZaDs-w5s" data-chunk="17" data-quote="low to mid 90% of the original performance">in the low-to-mid 90% of original performance</cite>. Keep the full-precision vectors on the side so you can <cite data-video="_2tZaDs-w5s" data-chunk="18" data-quote="we can do oversampling where we query at the quantized">query the compressed index and rerank at full precision</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h36">Embeddings are not a query engine</h3>
+      <p id="retrieval-p7"><cite data-video="vW8wLsb3Nnc" data-chunk="12" data-quote="Embeddings alone do not a great query system make">Embeddings alone do not a great query system make</cite> — you still need OpenSearch or Postgres underneath for facets and filters. And a single query can carry a vector, free text and categorical filters together.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h37">Chunk with overlap, then tune both</h3>
+      <p id="retrieval-p8">A workable default is <cite data-video="mvleESOUTRw" data-chunk="71" data-quote="at least thousand words">about a thousand words</cite> per chunk with a 200-word overlap, because <cite data-video="mvleESOUTRw" data-chunk="73" data-quote="without overlap you can see that chunk one">without overlap</cite> a narrative splits mid-thought. Then tune: <cite data-video="uaiq1HvQKoI" data-chunk="24" data-quote="if your chunks are too small, they might lack uh sufficient context">chunks too small lack sufficient context</cite>, chunks too large add noise.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h38">Return citations or don't ship</h3>
+      <p id="retrieval-p9"><cite data-video="uaiq1HvQKoI" data-chunk="21" data-quote="good drag systems will also provide uh citations or links">Good RAG systems provide citations or links</cite> back to the source. They are also your feedback channel: let reviewers <cite data-video="T0HhO4YtTfE" data-chunk="15" data-quote="have them flag any irrelevant citations">flag any irrelevant citations</cite> and you get a hallucination signal for free.</p>
+    </div>
+    <div class="lever">
+      <h3 id="retrieval-h39">The payoff is measurable</h3>
+      <p id="retrieval-p10">On one engagement with scattered, unversioned documentation, a RAG retrieval layer meant <cite data-video="uaiq1HvQKoI" data-chunk="11" data-quote="60% of the time uh that they spent initially was reduced">60% of the search time was cut</cite> for complex queries. That is the shape of a defensible ROI claim.</p>
+    </div>
+  </div>
+</section>
+
+<section id="agents">
+  <h2 id="agents-h21">Agent architectures that survive contact</h2>
+  <p id="agents-p1">The corpus contains exactly one multi-agent system with published production numbers — Factory's “missions”, whose <cite data-video="ow1we5PzK-o" data-chunk="7" data-quote="Our longest mission ran for 16 days">longest mission ran for 16 days</cite>. Its design choices are the most concrete evidence here about what makes long-horizon agent work hold together, and they are mostly about structure, not intelligence. The stated bottleneck is not model capability: <cite data-video="ow1we5PzK-o" data-chunk="0" data-quote="the bottleneck in software engineering nowadays is not intelligence">the bottleneck in software engineering nowadays is not intelligence</cite>, it's human attention.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="agents-h31">Write the validation contract before the code</h3>
+      <p id="agents-p2">A contract <cite data-video="ow1we5PzK-o" data-chunk="5" data-quote="written during planning before any code">written during planning before any code</cite> defines correctness independently of implementation — hundreds of assertions on a complex project, each feature covered by at least one. The alternative is worthless: <cite data-video="ow1we5PzK-o" data-chunk="5" data-quote="Tests written after implementation don't catch bugs. They confirm decisions">tests written after implementation don't catch bugs, they confirm decisions</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h32">Three roles, one active at a time</h3>
+      <p id="agents-p3">Missions uses <cite data-video="ow1we5PzK-o" data-chunk="3" data-quote="It uses a three-role architecture. There's orchestrator, there's workers">a three-role architecture: orchestrator, workers, validators</cite>. Each worker gets clean context for its feature and commits via Git so the next inherits a working codebase.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h33">Validate behaviour, not just code</h3>
+      <p id="agents-p4">Two validators run per milestone: scrutiny (tests, types, lints, per-feature review agents) and a user-testing validator that <cite data-video="ow1we5PzK-o" data-chunk="6" data-quote="It spawns the application. It interacts with it through computer use">spawns the application and interacts with it through computer use</cite>. Most <cite data-video="ow1we5PzK-o" data-chunk="6" data-quote="wall clock time is actually spent here waiting for this like real world execution">wall-clock time is spent waiting on that real-world execution</cite>, not generating tokens.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h34">Make validation adversarial on purpose</h3>
+      <p id="agents-p5"><cite data-video="ow1we5PzK-o" data-chunk="7" data-quote="neither validator has seen the code before">Neither validator has seen the code before</cite>, so neither is invested in it. Go further and let validation <cite data-video="ow1we5PzK-o" data-chunk="11" data-quote="validation might use a different model provider entirely">use a different model provider entirely</cite>, so the check isn't biased by the same training data.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h35">Handoffs in writing, not in memory</h3>
+      <p id="agents-p6">A finishing worker files what was completed, what was left, which commands ran and their exit codes. The system self-heals at milestone boundaries <cite data-video="ow1we5PzK-o" data-chunk="7" data-quote="by forcing them to write it down">by forcing them to write it down</cite> rather than hoping agents remember.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h36">Serial beats parallel for mutating work</h3>
+      <p id="agents-p7">Ten agents is not ten times throughput: <cite data-video="ow1we5PzK-o" data-chunk="8" data-quote="agents conflict. They step on each other's changes. They duplicate work">agents conflict, step on each other's changes, and duplicate work</cite>. Missions runs features serially and parallelizes only read-only operations. <cite data-video="ow1we5PzK-o" data-chunk="9" data-quote="It seems slower on paper, but the error rate drops dramatically">It seems slower on paper, but the error rate drops dramatically</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h37">Keep orchestration in prompts</h3>
+      <p id="agents-p8"><cite data-video="ow1we5PzK-o" data-chunk="13" data-quote="almost all of the orchestration logic is defined in prompts and skills">Almost all of the orchestration logic is defined in prompts and skills</cite> — about 700 lines of text — instead of a hard-coded state machine, so the system improves with each model release instead of being obsoleted by it. The structure is load-bearing enough to <cite data-video="ow1we5PzK-o" data-chunk="11" data-quote="run missions very very successfully even using open-weight models">run missions successfully even using open-weight models</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h38">Fresh context per task, not one long session</h3>
+      <p id="agents-p9"><cite data-video="sk6HBdmVmL8" data-chunk="6" data-quote="When the context window gets bigger, the model gets stupider">When the context window gets bigger, the model gets stupider</cite> — and you pay for the whole context on every turn. Kick off sub-agents so <cite data-video="sk6HBdmVmL8" data-chunk="6" data-quote="they each have like a fresh start">they each have a fresh start</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h39">Policies that read session state</h3>
+      <p id="agents-p10">Static allow/deny lists only ask whether <cite data-video="sk6HBdmVmL8" data-chunk="10" data-quote="does the tool call it's making match this pattern and like allow or disallow">the tool call matches this pattern</cite>. Risk lives in history: an agent that just pulled a new npm package and <cite data-video="sk6HBdmVmL8" data-chunk="11" data-quote="read 10,000 company docs, and now it's trying to send an email">read 10,000 company docs and now wants to send an email</cite> is suspicious even though sending email is normally fine.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h310">Risk-score toward a human</h3>
+      <p id="agents-p11">A workable pattern: <cite data-video="sk6HBdmVmL8" data-chunk="12" data-quote="As you take actions, your score goes up">as you take actions, your score goes up</cite>, and past a threshold the session needs supervision. Separately, <cite data-video="sk6HBdmVmL8" data-chunk="12" data-quote="narrow down what it can do based on that initial prompt">narrow what it can do based on that initial prompt</cite> — then any attempt to act outside the stated task is an injection signal.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h311">Cap the spend inside the agent</h3>
+      <p id="agents-p12">Agents can <cite data-video="sk6HBdmVmL8" data-chunk="13" data-quote="spend like $1,000 by mistake">spend $1,000 by mistake</cite> generating a giant log file. Tell the agent to <cite data-video="sk6HBdmVmL8" data-chunk="13" data-quote="ask me for permission after like every $10 spent">ask for permission after every $10 spent</cite> so it checkpoints instead of running unchecked.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h312">Failure handling is the boring 80%</h3>
+      <p id="agents-p13">Production agent pipelines need <cite data-video="1LhvqZvDT5w" data-chunk="52" data-quote="certain logic to do retry and exponential">retry with exponential backoff</cite> for throttling, plus session-memory retrieval to resume mid-conversation. Tools fail too: <cite data-video="uaiq1HvQKoI" data-chunk="33" data-quote="reliable tool use and uh error handling">reliable tool use and error handling</cite> is a core agent-building problem, not an edge case.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h313">Point agents at the ops long tail</h3>
+      <p id="agents-p14">A survey puts <cite data-video="vSx5IULvBns" data-chunk="1" data-quote="70% of the time from an engineer is actually not">70% of an engineer's time</cite> into running already-shipped code. Background agents absorb it: trigger them <cite data-video="vSx5IULvBns" data-chunk="11" data-quote="It can just do it on a schedule">on a schedule</cite>, on a deploy event, or by message — and let the agent choose its own cadence, since <cite data-video="vSx5IULvBns" data-chunk="20" data-quote="none of this is hard-coded in">none of this is hard-coded in</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="agents-h314">The expensive part is the environment</h3>
+      <p id="agents-p15">Model capability isn't the wall; <cite data-video="vSx5IULvBns" data-chunk="6" data-quote="truly understanding your environment um and the way that your services interact">truly understanding your environment and the way your services interact</cite> is. The cost of production AI ops is <cite data-video="vSx5IULvBns" data-chunk="25" data-quote="not just in the task execution, it's in the environment complexity">not just in the task execution, it's in the environment complexity</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="serving">
+  <h2 id="serving-h21">Serving economics: the three numbers</h2>
+  <p id="serving-p1">Below the application layer the constraints are physical and unforgiving. Every workload is sized by <cite data-video="hBzUokVYQkI" data-chunk="11" data-quote="three numbers that size every AI workload">three numbers: compute, capacity, and bandwidth</cite>. Get them wrong and you buy hardware you don't need to serve users you can't fit. And set the target before the architecture, because <cite data-video="7YYVgH0_9CA" data-chunk="11" data-quote="Latency is a product decision">latency is a product decision</cite>, not an engineering one.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="serving-h31">Memory caps concurrency, not compute</h3>
+      <p id="serving-p2">Every batched user needs a KV-cache scratch pad alongside the fixed weights, so <cite data-video="hBzUokVYQkI" data-chunk="28" data-quote="it's the memory that decides how many people one GPU can actually serve">it's the memory that decides how many people one GPU can actually serve</cite>. Which is why <cite data-video="hBzUokVYQkI" data-chunk="28" data-quote="teams end up buying far more GPUs than the math can actually calls for">teams end up buying far more GPUs than the math calls for</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h32">Cache-aware routing is the cheapest 3×</h3>
+      <p id="serving-p3">Round-robin treats servers as interchangeable, so <cite data-video="hBzUokVYQkI" data-chunk="33" data-quote="it throws away saved work that was perfectly good">it throws away saved work that was perfectly good</cite>. Routing a follow-up back to the server holding the conversation cache <cite data-video="hBzUokVYQkI" data-chunk="35" data-quote="gives you around three times the throughput and a first response that is twice as fast">gives around three times the throughput and a first response twice as fast</cite> — same hardware.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h33">Split prefill from decode</h3>
+      <p id="serving-p4">Prefill is compute-bound and parallelizable; decode is sequential and memory-bound. You can <cite data-video="tLK5jyhQOgA" data-chunk="21" data-quote="split these two phases into different group of pods">split these two phases into different groups of pods</cite> and hand off the KV work, for <cite data-video="hBzUokVYQkI" data-chunk="36" data-quote="up to 70% more tokens per second on the same hardware">up to 70% more tokens per second on the same hardware</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h34">Start with the smallest change</h3>
+      <p id="serving-p5">Don't hand-tune every knob. <cite data-video="hBzUokVYQkI" data-chunk="39" data-quote="most people start with the first path because it's the smallest change">Most people start with the first path because it's the smallest change</cite>: one pool of identical vLLM servers with cache-aware routing on and nothing else touched.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h35">Prompt caching, and where you put the volatile bits</h3>
+      <p id="serving-p6">A <cite data-video="hBzUokVYQkI" data-chunk="25" data-quote="a cacheed input token only costs about tenth of what a fresh one does">cached input token costs about a tenth of a fresh one</cite>, so turn 10 costs roughly what turn 2 did. You forfeit that by putting per-request data at the top — move it <cite data-video="vW8wLsb3Nnc" data-chunk="13" data-quote="at the bottom of the prompt after the instructions">to the bottom of the prompt after the instructions</cite>. Long-running agent systems lean on this <cite data-video="ow1we5PzK-o" data-chunk="12" data-quote="we take advantage of prompt caching heavily">heavily</cite> to offset multi-day costs.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h36">Batch anything that isn't interactive</h3>
+      <p id="serving-p7">One model read can serve many users at once, and <cite data-video="vW8wLsb3Nnc" data-chunk="18" data-quote="batch on bedrock is a 50% off">batch on Bedrock is 50% off</cite> whatever model inference you're running. For repeat-shaped requests, add <cite data-video="T0HhO4YtTfE" data-chunk="21" data-quote="semantic caching could be useful to expedite decisions">semantic caching to expedite decisions</cite> on cases similar to past ones.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h37">Know the price band you must hit</h3>
+      <p id="serving-p8">The spread is enormous: some applications justify dollars per query, others must <cite data-video="1jvxxa7tdjw" data-chunk="38" data-quote="cut below 1 cent per query">cut below 1 cent per query</cite> for the ROI to work. Ask early whether <cite data-video="vW8wLsb3Nnc" data-chunk="14" data-quote="is this inference going to bankrupt my company">this inference is going to bankrupt the company</cite>. Alternative silicon is a real lever — Trainium and Inferentia land <cite data-video="vW8wLsb3Nnc" data-chunk="9" data-quote="these come at about a 60% price performance improvement over using Nvidia GPUs">about a 60% price-performance improvement over Nvidia GPUs</cite>, at the cost of less HBM and the Neuron SDK.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h38">Models break your deployment assumptions</h3>
+      <p id="serving-p9">A served model is <cite data-video="tLK5jyhQOgA" data-chunk="3" data-quote="10 to 100 GB of read-only trained data">10 to 100 GB of read-only trained data</cite>. <cite data-video="tLK5jyhQOgA" data-chunk="9" data-quote="startup can be, you know, up to 10 minutes or more">Startup can be up to 10 minutes or more</cite>, so readiness probes must signal that weights are loaded and warm-up is done — and a fixed deployment with brief downtime can beat a rolling one when GPUs are scarce.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h39">Stop shipping weights per pod</h3>
+      <p id="serving-p10">You cannot <cite data-video="tLK5jyhQOgA" data-chunk="10" data-quote="download 50 GB of model data for every pod start">download 50 GB of model data for every pod start</cite>. Pre-populated persistent volumes remain the common answer; image volumes, <cite data-video="tLK5jyhQOgA" data-chunk="16" data-quote="enabled by default in Kubernetes 1.35">enabled by default in Kubernetes 1.35</cite>, are the intended end state. And taint GPU nodes so ordinary workloads can't land on them.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h310">Route on LLM state, not connection count</h3>
+      <p id="serving-p11">Traditional balancers assume equal-cost requests. An inference-aware endpoint picker scrapes server state and sends work to whichever replica has the <cite data-video="tLK5jyhQOgA" data-chunk="19" data-quote="least amount of in-flight requests, has the shortest queue">least in-flight requests and the shortest queue</cite>, with cache quality factored in.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h311">Fine-tune late, and cheaply</h3>
+      <p id="serving-p12">There are only <cite data-video="1LhvqZvDT5w" data-chunk="30" data-quote="two main reasons for fine-tuning">two main reasons for fine-tuning</cite>: push past what prompting achieves, or swap a large model for a small one. It takes about <cite data-video="1LhvqZvDT5w" data-chunk="32" data-quote="a couple of thousand examples to take the accuracy to the next level">a couple of thousand examples</cite>, and on a small model with LoRA <cite data-video="1LhvqZvDT5w" data-chunk="34" data-quote="the cost of it is below $2 per hour">the cost is below $2 per hour</cite> — roughly $10 for a couple of variants.</p>
+    </div>
+    <div class="lever">
+      <h3 id="serving-h312">Prompt engineering outperformed the forecast</h3>
+      <p id="serving-p13">Across 200+ deployments the team expected to fine-tune and never did: <cite data-video="vW8wLsb3Nnc" data-chunk="13" data-quote="prompt engineering has proven unreasonably effective for us">prompt engineering has proven unreasonably effective for us</cite>, and moving prompts from Claude 3.7 to Claude 4 was a drop-in with zero regressions.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ban">
+  <h2 id="ban-h21">Delete on sight</h2>
+  <p id="ban-p1">Thirteen patterns the corpus names explicitly as waste, with the replacement each speaker prescribed. None of them are stylistic; every one costs money, latency, or a production incident.</p>
+
+  <table class="ban" id="ban-table1">
+    <thead><tr><th>Delete on sight</th><th>Replace with</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>A <code>get_current_date</code> tool call — <cite data-video="vW8wLsb3Nnc" data-chunk="13" data-quote="defining a tool called get current date is infuriating to me">“infuriating”</cite></td>
+        <td>It's <code>time.now()</code>. Format the string into the prompt you already control.</td>
+      </tr>
+      <tr>
+        <td>Arithmetic inside the LLM — <cite data-video="vW8wLsb3Nnc" data-chunk="17" data-quote="It is the most expensive possible way of doing math">the most expensive possible way of doing math</cite></td>
+        <td>A deterministic function. Hand the model the result.</td>
+      </tr>
+      <tr>
+        <td>Volatile content at the top of the prompt</td>
+        <td>Time-sensitive info goes <cite data-video="vW8wLsb3Nnc" data-chunk="13" data-quote="at the bottom of the prompt after the instructions">at the bottom, after the instructions</cite>, so the cache prefix survives.</td>
+      </tr>
+      <tr>
+        <td>Round-robin in front of a vLLM fleet</td>
+        <td>Cache-aware routing — otherwise <cite data-video="hBzUokVYQkI" data-chunk="33" data-quote="it throws away saved work that was perfectly good">it throws away saved work that was perfectly good</cite>.</td>
+      </tr>
+      <tr>
+        <td>One long chat session for a whole project</td>
+        <td>Sub-agents with clean context: <cite data-video="sk6HBdmVmL8" data-chunk="6" data-quote="they each have like a fresh start">they each have a fresh start</cite>.</td>
+      </tr>
+      <tr>
+        <td>Tests written after the implementation</td>
+        <td>A validation contract <cite data-video="ow1we5PzK-o" data-chunk="5" data-quote="written during planning before any code">written during planning before any code</cite>.</td>
+      </tr>
+      <tr>
+        <td>“Shall we use GPT? Shall we use Claude?” in week one</td>
+        <td>The evaluation layer in weeks one and two; <cite data-video="ObTPqBGsEbA" data-chunk="24" data-quote="we selected the model in week seven">select the model in week seven</cite>.</td>
+      </tr>
+      <tr>
+        <td>Benchmark leaderboards as upgrade evidence</td>
+        <td>Your own eval set, rerun — because <cite data-video="ObTPqBGsEbA" data-chunk="22" data-quote="you cannot really rely on one single model">you cannot really rely on one single model</cite>.</td>
+      </tr>
+      <tr>
+        <td>A single managed guardrail, ticked on and forgotten</td>
+        <td>Layers: it is <cite data-video="1LhvqZvDT5w" data-chunk="11" data-quote="usually not enough. You usually need to have multiple layers of defense">usually not enough — you need multiple layers of defense</cite>.</td>
+      </tr>
+      <tr>
+        <td>A <code>create_tables</code> script as your migration path</td>
+        <td>A real migration tool. <cite data-video="E8zpgNPx8jE" data-chunk="59" data-quote="this only creates tables if they don't exist">This only creates tables if they don't exist</cite> — new columns silently never appear.</td>
+      </tr>
+      <tr>
+        <td>A production database listening on 0.0.0.0</td>
+        <td>Set <cite data-video="E8zpgNPx8jE" data-chunk="141" data-quote="the inbound IP restrictions">the inbound IP restrictions</cite> before it holds anything real; the agency default is to <cite data-video="Q679gH7oszg" data-chunk="38" data-quote="block all IPs by default">block all IPs by default</cite> and allowlist.</td>
+      </tr>
+      <tr>
+        <td>The job-run date as your <code>created_at</code></td>
+        <td>The source's publish date — <cite data-video="E8zpgNPx8jE" data-chunk="93" data-quote="I want that to be the original date of the article itself">the original date of the article itself</cite> — or date filters break.</td>
+      </tr>
+      <tr>
+        <td>A chatbot with no business function behind it</td>
+        <td>Automate a durable workflow. <cite data-video="vW8wLsb3Nnc" data-chunk="7" data-quote="if you just build a chatbot, you know, sayanara">If you just build a chatbot, sayonara.</cite></td>
+      </tr>
+      <tr>
+        <td>Thousand-word skill and tool descriptions</td>
+        <td>Read your traces. One team found <cite data-video="sk6HBdmVmL8" data-chunk="14" data-quote="tool descriptions and stuff for our engineers were just like super long">tool descriptions that were just super long</cite>, burning tokens on every call.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="templates">
+  <h2 id="templates-h21">Templates to copy</h2>
+  <p id="templates-p1">Three artefacts assembled from the corpus: the one-pager that has to exist before design, the POC schedule that inverts model selection, and the readiness checklist that decides whether you ship. Copy, fill, argue about the numbers.</p>
+
+  <figure class="prompt" id="templates-figure1">
+    <div class="label">Product requirements one-pager <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre1">BUSINESS PROBLEM  (solution-agnostic — no architecture words allowed)
+  Who:        [user role]
+  Today:      [current process]
+  Baseline:   [number] [unit] per [task], which is [N]x [comparator]
+  Cost of it: [downstream consequence]
+
+CONSTRAINTS  (gather before designing, not after)
+  Regulatory / residency: [e.g. data must stay in approved cloud]
+  Approved vendors/models: [procurement limits]
+  Mandatory human review: [which decisions can never be automated]
+  Performance:            [latency ceiling] [monthly inference budget] [uptime SLA]
+
+ROLE OF AI  (three axes)
+  Critical or complementary: [...]
+  Reactive or proactive:     [...]
+  Max autonomy permitted:    [full | semi | advisory]   <- set by constraints above
+
+SUCCESS METRIC  (one, SMART, tied to the baseline)
+  Reduce [metric] from [baseline] to [target] within [window] of launch.
+
+DATA SOURCES
+  | source | where it lives | raw format | update frequency | pipeline cadence |
+  | ...    | ...            | ...        | ...              | ...              |
+  Retrieval technique per source: [vector+prefilter | hybrid | exact match | SQL]
+
+REQUEST FLOW  (one real request, end to end, before any architecture is chosen)
+  1. [trigger] -> 2. [retrieve] -> 3. [reason] -> 4. [escalate if ...] -> 5. [log]
+
+UX + FEEDBACK
+  Input / Output / Where it lives / What triggers it / Human's role /
+  How it explains itself / How a user disagrees with it</pre>
+    <div class="note" id="templates-p2">Structure follows the four-phase framework — <cite data-video="T0HhO4YtTfE" data-chunk="1" data-quote="Four phases. You start with product requirements">four phases, starting with product requirements</cite> — plus the UX questions from the design phase, beginning with <cite data-video="T0HhO4YtTfE" data-chunk="14" data-quote="what does the system take as input">what does the system take as input</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="templates-figure2">
+    <div class="label">Eight-week POC, model chosen in week 7 <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre2">WEEK 1-2   EVALUATION LAYER
+  - Interview domain experts; collect ~200 real human-answered cases,
+    including the gray areas and the edge cases they argue about.
+  - Define success in numbers: % of queries handled, accuracy target,
+    latency target, tolerable false-positive rate.
+  - Stand up the automated scoring pipeline: capture question + response,
+    score against the golden set, route anything below threshold to a human.
+
+WEEK 2-4   DATA FOUNDATION            (expect ~60% of total effort to land here)
+  - "Question data": what the system answers from. Freshness cadence per source.
+  - "Tracking data": traces, spans, tool calls, token counts. Built now, not later.
+  - Fix the source data. Agents do not silently correct what humans route around.
+
+WEEK 4-6   ORCHESTRATION + GUARDRAILS
+  - Simplest architecture that satisfies the request flow. Control flow before agents.
+  - Deterministic checks (format, PII/NER) -> semantic judges -> behavioural checks.
+  - Guardrail classifiers on BOTH sides of the model. Fallback: retry 3x, then human.
+
+WEEK 7     MODEL SELECTION
+  - Now, and only now, run candidates against YOUR eval set. Ignore leaderboards.
+  - Keep a second provider wired up as a hedge.
+
+WEEK 8     GOVERNANCE + ROLLOUT
+  - Prompt versioning as change management. Canary or blue/green. Champion/challenger.
+  - Incident playbook rehearsed: detect -> diagnose -> contain -> fix -> add to evals.</pre>
+    <div class="note" id="templates-p3">The week-7 inversion is taken directly from the banking-chatbot redo, where the team <cite data-video="ObTPqBGsEbA" data-chunk="24" data-quote="we selected the model in week seven">selected the model in week seven</cite> of an eight-week POC after a prior attempt burned <cite data-video="ObTPqBGsEbA" data-chunk="23" data-quote="spent around 85K in 6 months doing a POC which did not succeed">$85K over six months</cite>. The five pillars it walks through are <cite data-video="ObTPqBGsEbA" data-chunk="4" data-quote="these are the five pillars">evaluation, observability, data foundation, orchestration, and governance</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="templates-figure3">
+    <div class="label">Pre-launch readiness checklist <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre3">EVALUATION
+  [ ] Golden set exists, built from real human answers, and is growing weekly
+  [ ] Three layers running: deterministic -> LLM-judge -> behavioural (tool calls)
+  [ ] LLM judge calibrated against human scores (budget ~50 few-shot examples)
+  [ ] CI runs a subset per change; full suite only on merge to main
+
+OBSERVABILITY
+  [ ] Every pipeline step emits its own trace, including each tool call
+  [ ] One request reconstructable end to end: intent -> retrieval -> reason -> guardrail
+  [ ] Cost per request, tokens, and turn count on a dashboard
+  [ ] Human-override rate tracked as a first-class quality metric
+
+SAFETY
+  [ ] Guardrail classifiers before AND after the model
+  [ ] PII detection run in testing, not just production
+  [ ] Red-team scenarios written; pass rate recorded (x of 20)
+  [ ] Non-English jailbreak attempts tested
+  [ ] Agent tool scope narrowed to the stated task; out-of-scope = injection signal
+  [ ] Per-agent spend cap with a human checkpoint
+
+COST + LATENCY
+  [ ] Target $/query agreed with product, not inferred after launch
+  [ ] Prompt cache prefix stable; volatile content at the bottom of the prompt
+  [ ] Non-interactive work moved to batch
+  [ ] Cache-aware routing on if self-hosting
+
+ROLLOUT
+  [ ] Prompts versioned under change management, rollback rehearsed
+  [ ] Canary or blue/green; reindex in parallel, cut over after validation
+  [ ] Incident playbook written and the last incident added to the eval suite
+  [ ] Named owner for the agent's actions</pre>
+    <div class="note" id="templates-p4">Assembled from the guardrail architecture (classifiers on both sides, <cite data-video="1LhvqZvDT5w" data-chunk="16" data-quote="maybe it takes like 100 milliseconds or 50 milliseconds">50–100ms when run in parallel</cite>), the incident playbook, and the accountability question the corpus raises but does not answer in depth: <cite data-video="uaiq1HvQKoI" data-chunk="50" data-quote="clarify accountability who owns the agents actions">clarify accountability — who owns the agent's actions</cite>.</div>
+  </figure>
+</section>
+
+<section id="contested">
+  <h2 id="contested-h21">Where the corpus disagrees</h2>
+  <p id="contested-p1">Five live disagreements between people who have all shipped. Each is a real fork, not a misunderstanding — which means the right answer is situational and you should know which situation you are in.</p>
+
+  <div class="contested">
+    <div class="split">
+      <h3 id="contested-h31">How much autonomy to grant</h3>
+      <p class="side" id="contested-p2"><b>Constrain it.</b> Start with the simplest, most controlled design and iterate, because <cite data-video="T0HhO4YtTfE" data-chunk="10" data-quote="you risk ending up with an over-engineered system by doing this">you risk an over-engineered system</cite> otherwise.</p>
+      <p class="side" id="contested-p3"><b>Release it.</b> Let a background agent choose its own monitoring cadence — check hourly, or come back in three days for an intermittent fault — because <cite data-video="vSx5IULvBns" data-chunk="20" data-quote="none of this is hard-coded in">none of this is hard-coded in</cite>, and that judgement is the value.</p>
+      <p class="side" id="contested-p4"><b>Reading:</b> the split tracks blast radius. Autonomy over <em>when to look</em> is cheap; autonomy over <em>what to decide</em> is not.</p>
+    </div>
+
+    <div class="split">
+      <h3 id="contested-h32">Parallel agents: throughput or chaos</h3>
+      <p class="side" id="contested-p5"><b>Serial.</b> For software work, <cite data-video="ow1we5PzK-o" data-chunk="8" data-quote="agents conflict. They step on each other's changes. They duplicate work">agents conflict, step on each other's changes, and duplicate work</cite>; missions run one worker at a time.</p>
+      <p class="side" id="contested-p6"><b>Parallel.</b> In the choreography pattern, independent agents on a shared message bus run concurrently, and <cite data-video="ObTPqBGsEbA" data-chunk="20" data-quote="the advantage it brings you is the latency is reduced">the advantage it brings you is the latency is reduced</cite> because nothing waits on an orchestrator.</p>
+      <p class="side" id="contested-p7"><b>Reading:</b> it comes down to shared mutable state. Agents writing to one codebase must serialize; agents reading disjoint sources should not.</p>
+    </div>
+
+    <div class="split">
+      <h3 id="contested-h33">How many coding sessions a human can hold</h3>
+      <p class="side" id="contested-p8"><b>Build for many.</b> Sub-agents, orchestrators mixing providers, and <cite data-video="sk6HBdmVmL8" data-chunk="5" data-quote="GPT is like widely considered to be better at debugging">routing by known model strengths</cite> are treated as a maturity pattern worth building infrastructure for.</p>
+      <p class="side" id="contested-p9"><b>Stay under three.</b> A shipping agency deliberately runs <cite data-video="Q679gH7oszg" data-chunk="33" data-quote="I usually like to work with one or three sessions at a time">one to three sessions at a time</cite>, plan-mode first, because past that you stop being able to oversee the work.</p>
+      <p class="side" id="contested-p10"><b>Reading:</b> the first position assumes a validation harness exists; the second assumes the human <em>is</em> the harness.</p>
+    </div>
+
+    <div class="split">
+      <h3 id="contested-h34">Fine-tuning: plan for it or wait for it</h3>
+      <p class="side" id="contested-p11"><b>Reactively.</b> Prompting plus few-shot usually suffices; fine-tune only for the two named reasons — <cite data-video="1LhvqZvDT5w" data-chunk="30" data-quote="two main reasons for fine-tuning">accuracy beyond prompting, or a smaller cheaper model</cite>.</p>
+      <p class="side" id="contested-p12"><b>Proactively.</b> Advice from the platform side is <cite data-video="1jvxxa7tdjw" data-chunk="44" data-quote="working on platforms which do support fine tuning and training">working on platforms which do support fine tuning and training</cite> from the start, and collecting proprietary feedback data now, to avoid a migration later.</p>
+      <p class="side" id="contested-p13"><b>Reading:</b> these only conflict on spend. Choosing a capable platform is nearly free; running the tuning job is not. There is also a licensing trap — outputs blended across model families <cite data-video="1jvxxa7tdjw" data-chunk="40" data-quote="you can't use those outputs to F tune some other architectures">can't be used to fine-tune some other architecture</cite>.</p>
+    </div>
+
+    <div class="split">
+      <h3 id="contested-h35">Where the real discipline lives</h3>
+      <p class="side" id="contested-p14"><b>Infrastructure.</b> Having walked the full stack: <cite data-video="hBzUokVYQkI" data-chunk="44" data-quote="almost none of it was machine learning">almost none of it was machine learning</cite> — it was GPUs, routing, caching and Kubernetes from the first lesson to the last.</p>
+      <p class="side" id="contested-p15"><b>Data flywheel.</b> The differentiator is that <cite data-video="7YYVgH0_9CA" data-chunk="8" data-quote="your application is going to learn from the data that's generated from interaction">your application learns from the data generated from interaction</cite> and feeds it back — which is what makes the system yours rather than rented.</p>
+      <p class="side" id="contested-p16"><b>Reading:</b> both are downstream of the same claim in the thesis. Infrastructure sets your cost floor; the flywheel sets your ceiling. Neither is the model.</p>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h21">Sources</h2>
+  <p id="sources-p1">Seventeen talks, read in full, grouped as they were extracted. Each note says what that talk uniquely contributed — several are here for exactly one thing they are the only source for.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Frameworks and field reports</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=T0HhO4YtTfE" target="_blank" rel="noopener"><cite data-video="T0HhO4YtTfE">AI System Design: From Idea to Production — Apoorva Joshi, MongoDB</cite></a> <span class="tk">— the four-phase framework (requirements → design → eval/monitoring → cost/latency/reliability), walked end to end on a claims-review system, including how to pick retrieval per data source and set guardrail metrics.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=vSx5IULvBns" target="_blank" rel="noopener"><cite data-video="vSx5IULvBns">Always-on agents run production without the on-call tax — Justin Smith, Resolve AI</cite></a> <span class="tk">— the background-agent pattern: always-on, cloud-sandboxed agents triggered by schedule, event or message, absorbing the ops long tail and choosing their own cadence.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=vW8wLsb3Nnc" target="_blank" rel="noopener"><cite data-video="vW8wLsb3Nnc">POC to PROD: Hard Lessons from 200+ Enterprise GenAI Deployments — Randall Hunt, Caylent</cite></a> <span class="tk">— war stories with numbers: vector-store cost tradeoffs, custom silicon, prompt-caching mechanics, generative UI, and the field failures that came from not knowing the user.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Retrieval and agent architecture at scale</h3>
+    <ol>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=_2tZaDs-w5s" target="_blank" rel="noopener"><cite data-video="_2tZaDs-w5s">RAG at scale: production ready GenAI apps with Azure AI Search</cite></a> <span class="tk">— the retrieval mechanics: two-stage recall+rerank, cross-encoder latency budgets, quantization and oversampling, index density limits, incremental ingestion.</span></li>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=ow1we5PzK-o" target="_blank" rel="noopener"><cite data-video="ow1we5PzK-o">The Multi-Agent Architecture That Actually Ships — Luke Alvoeiro, Factory</cite></a> <span class="tk">— the only production multi-agent system here with published numbers: orchestrator/worker/validator, adversarial validation contracts, serial execution, 16-day missions.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=ObTPqBGsEbA" target="_blank" rel="noopener"><cite data-video="ObTPqBGsEbA">The Production AI Playbook: Deploying Agents at Enterprise Scale — Sandipan Bhaumik, Databricks</cite></a> <span class="tk">— five pillars, three eval layers, the $85K failed POC and its successful redo, and the stale-embedding incident that defines the freshness problem.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Platform, MLOps and Kubernetes</h3>
+    <ol>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=tLK5jyhQOgA" target="_blank" rel="noopener"><cite data-video="tLK5jyhQOgA">Make GenAI Production-Ready With Kubernetes Patterns — Roland Huss, Red Hat &amp; Bilgin Ibryam, Diagrid</cite></a> <span class="tk">— model-data loading patterns, LLM-state-aware request routing, prefill/decode disaggregation, and RAG expressed as ordinary Kubernetes primitives.</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=1LhvqZvDT5w" target="_blank" rel="noopener"><cite data-video="1LhvqZvDT5w">From GenAI Pilots to Production — Nikita Kozodoi</cite></a> <span class="tk">— layered guardrail architecture, red-teaming practice with a pass-rate metric, human-then-judge evaluation pipelines, and concrete fine-tuning cost and data thresholds.</span></li>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=1jvxxa7tdjw" target="_blank" rel="noopener"><cite data-video="1jvxxa7tdjw">Exploring MLOps and LLMOps: Architectures and Best Practices — Databricks</cite></a> <span class="tk">— deploy-code-not-models, catalog governance and lineage, drift-triggered retraining thresholds, and what actually changes moving from MLOps to LLMOps.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">Harnesses and hands-on builds</h3>
+    <ol>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=sk6HBdmVmL8" target="_blank" rel="noopener"><cite data-video="sk6HBdmVmL8">Omnigent: Open-Source Meta-Harness for AI Agents — Matei Zaharia</cite></a> <span class="tk">— the only talk on infrastructure for running many coding agents together: session portability, contextual state-aware security policies, per-agent spend caps.</span></li>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=E8zpgNPx8jE" target="_blank" rel="noopener"><cite data-video="E8zpgNPx8jE">Build a Complete End-to-End GenAI Project in 3 Hours — Dave Ebbelaar</cite></a> <span class="tk">— a warts-and-all build: the OOM from a heavy dependency, the migration that hit the wrong database, the committed <code>.env</code>, and how each was actually fixed.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=Q679gH7oszg" target="_blank" rel="noopener"><cite data-video="Q679gH7oszg">How I Build and Ship Custom AI Solutions for Clients — Dave Ebbelaar</cite></a> <span class="tk">— the business layer: discovery red flags, the 70/80→90% accuracy conversation, PoC vs MVP framing, sprint pricing, and a standardized deploy/monitor/secure stack.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h35">Infrastructure and scale</h3>
+    <ol>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=cvPEiPt7HXo" target="_blank" rel="noopener"><cite data-video="cvPEiPt7HXo">Large Language Model Operations (LLMOps) Explained — IBM Technology</cite></a> <span class="tk">— a short vendor-agnostic primer naming the LLMOps lifecycle stages and how LLM requirements diverge from classic MLOps.</span></li>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=hBzUokVYQkI" target="_blank" rel="noopener"><cite data-video="hBzUokVYQkI">AI Infrastructure Explained (GPUs, vLLM, and LLM-D) — KodeKloud</cite></a> <span class="tk">— the layer underneath everything else: VRAM bandwidth math, prefill/decode/KV-cache mechanics, batching limits, sharding, and cache-aware routing gains.</span></li>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=7YYVgH0_9CA" target="_blank" rel="noopener"><cite data-video="7YYVgH0_9CA">Scalable GenAI in Production — Kamelia Aryafar</cite></a> <span class="tk">— the production stack above the model, a five-stage maturity model, “latency is a product decision”, and the data-flywheel argument for continuous evaluation.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h36">RAG in practice and enterprise-grade code</h3>
+    <ol>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=uaiq1HvQKoI" target="_blank" rel="noopener"><cite data-video="uaiq1HvQKoI">GenAI in Production: How RAG &amp; AI Agents Are Shaping the Future — Xgrid</cite></a> <span class="tk">— the RAG stack walked through from ingestion to citations, a 60%-search-time-reduction case study, and a checklist of production hurdles including the non-technical ones.</span></li>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=mvleESOUTRw" target="_blank" rel="noopener"><cite data-video="mvleESOUTRw">Production-Grade AI Project Tutorial – Build &amp; Deploy — freeCodeCamp.org</cite></a> <span class="tk">— software-architecture patterns for a GenAI data pipeline: unified loaders, Pydantic models everywhere, chunk metadata for traceability, per-call usage tracking.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h21">What this corpus does not tell you</h2>
+  <p id="gaps-p1">Seventeen talks, and these questions still have no answer here. Anything below is a gap you must close with your own numbers — do not let the confident tone above imply otherwise.</p>
+  <ul>
+    <li id="gaps-li1"><strong>Steady-state inference cost.</strong> No talk gives $/1M tokens, $/GPU-hour, or $/query at production volume. Fine-tuning hourly cost is quantified; serving cost is not. You cannot budget a deployment from this corpus.</li>
+    <li id="gaps-li2"><strong>A worked eval methodology.</strong> Accuracy figures — 70–80%, 90%, 85% — are quoted as outcomes but never as measurements. No talk shows how those percentages were computed, or names a framework for scoring RAG answers.</li>
+    <li id="gaps-li3"><strong>Prompt-injection defence for tool-calling agents.</strong> Injection is named as a risk, hidden-instruction attacks are described, and task-scoped tool access is offered as a signal — but no talk gives a defence architecture or tested mitigations.</li>
+    <li id="gaps-li4"><strong>Guardrail accuracy.</strong> Classifier fleets are described with latency numbers (50–100ms) and layering, but no false-positive or false-negative rates. You cannot tell what the layered defence costs you in blocked legitimate traffic.</li>
+    <li id="gaps-li5"><strong>Who is on call for the agent.</strong> Accountability is raised as a question. No talk says who debugs the debugger, or how an always-on agent's own judgement is evaluated for correctness.</li>
+    <li id="gaps-li6"><strong>A proactive freshness strategy.</strong> The stale-embedding incident is the corpus's best pitfall, but it was caught after a satisfaction drop. Nobody prescribes staleness alarms, refresh SLAs, or index-lag monitoring to catch it before users do.</li>
+    <li id="gaps-li7"><strong>Reranker and inference-engine selection.</strong> ~100ms is the only guidance on choosing a cross-encoder. vLLM is described but never compared against TensorRT-LLM, SGLang or TGI.</li>
+    <li id="gaps-li8"><strong>Capacity planning and failover.</strong> No GPU autoscaling thresholds, no traffic-spike headroom numbers, and no multi-region or disaster-recovery strategy for GenAI serving anywhere in the corpus.</li>
+    <li id="gaps-li9"><strong>Named orchestration frameworks.</strong> LangGraph, CrewAI and AutoGen are never named. Orchestration patterns are described generically or as one vendor's implementation.</li>
+    <li id="gaps-li10"><strong>How validation contracts stay honest.</strong> Factory's contracts can span hundreds of assertions over a 16–30 day run, but the talk does not say how they are authored, reviewed, or prevented from going stale as requirements move.</li>
+    <li id="gaps-li11"><strong>Prompt and agent rollback in practice.</strong> Versioning-as-change-management is asserted; no talk walks through canarying a prompt change or rolling one back mid-incident.</li>
+    <li id="gaps-li12"><strong>Model deprecation at scale.</strong> One anecdote — Claude 3.7 to 4 as a drop-in — stands in for the whole migration-risk question across a fleet of models and prompts.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  <p id="footer-p1">Production GenAI Systems — a field guide compiled from a transcript corpus of 17 talks, 737 chunks read in full across 6 parallel extraction passes, compiled 2026-09-14. Every claim above resolves to a cited chunk; where the corpus was silent, the Gaps section says so instead of guessing.</p>
+</div></footer>
+
+<script>
+(function () {
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var fig = btn.closest('figure');
+      var pre = fig && fig.querySelector('pre');
+      if (!pre) return;
+      var done = function () {
+        var prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.textContent).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = pre.textContent;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

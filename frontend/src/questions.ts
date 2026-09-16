@@ -22,3 +22,12 @@ export const CORPUS_WIDE_QUESTIONS = [
   'What are the main themes across the indexed transcripts?',
   'Where do these videos disagree with each other?',
 ] as const;
+
+/** Starter asks for a field guide: questions broad enough that the corpus
+ *  has several talks on each, phrased as a reader would ask, not as a topic. */
+export const GUIDE_QUESTIONS = [
+  'How do teams calibrate an LLM judge against human labels, and where does it drift?',
+  'How should I structure a RAG eval so the numbers mean something?',
+  'What do recruiters actually look for on an AI engineer resume?',
+  'Is a modular monolith a better default than microservices for an AI product?',
+] as const;

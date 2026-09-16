@@ -1,0 +1,638 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "_2tZaDs-w5s",
+  "ow1we5PzK-o",
+  "ObTPqBGsEbA"
+ ],
+ "video_notes": [
+  {
+   "video_id": "_2tZaDs-w5s",
+   "title": "RAG at scale: production ready GenAI apps with Azure AI Search",
+   "contributed": "Retrieval-layer scaling mechanics for RAG in production — two-stage recall+rerank, quantization tradeoffs, index density limits, and ingestion pipelines — from the team building Azure AI Search."
+  },
+  {
+   "video_id": "ow1we5PzK-o",
+   "title": "The Multi-Agent Architecture That Actually Ships — Luke Alvoeiro, Factory",
+   "contributed": "A concrete production multi-agent architecture (Factory's 'missions') for long-horizon coding work: orchestrator/worker/validator roles, adversarial validation contracts, serial-not-parallel execution, and per-role model selection."
+  },
+  {
+   "video_id": "ObTPqBGsEbA",
+   "title": "The Production AI Playbook: Deploying Agents at Enterprise Scale — Sandipan Bhaumik, Databricks",
+   "contributed": "An end-to-end enterprise playbook (five pillars: evaluation, observability, data foundation, orchestration, governance) grounded in a real banking-chatbot case study with dollar and time figures."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Three ways to add domain knowledge",
+   "claim": "There are three options for bringing your own domain knowledge to a language model: prompt engineering, fine-tuning (for jargon/patterns), and RAG (for facts the model never saw in training).",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 1,
+   "quote": "for that fine tuning is often a good option",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "RAG separates reasoning from knowledge",
+   "claim": "RAG works by separating the reasoning piece (the LLM) from the knowledge piece (an external knowledge base), gluing them together via an orchestration component.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 1,
+   "quote": "you lean on the language model for the reasoning capabilities",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "What changed going to production",
+   "claim": "2023 was the year everyone built RAG prototypes; the 2024 shift is those prototypes going to production, which introduces real concurrent users demanding more data and faster answers.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 3,
+   "quote": "the interesting shift to this year to 2024 is being these applications are going to production",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Five dimensions of RAG scale",
+   "claim": "Going to production stresses RAG systems along five axes at once: data volume, data change rate, query load, workflow complexity (multi-step retrieval+LLM calls), and data source/type diversity.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 4,
+   "quote": "you end up doing this multi-step workflows that hit the retrieval system and the language model multiple times",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Two-stage retrieval",
+   "claim": "Production-grade retrieval uses two stages: a recall-oriented first stage (vectors + keywords) that pulls a large candidate set, then a second-stage rerank with a heavier model on the small candidate set only.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 11,
+   "quote": "first stage is recall oriented and uses vectors and keywords",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reranking lifts quality across the board",
+   "claim": "Benchmarked on the same query set, quality ranks BM25 keyword search < vectors-only < fusion (vectors+keywords) < fusion+reranking, with reranking giving a clear step up over fusion alone.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 12,
+   "quote": "we see better results just out of the box when uh when reranking is enabled",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Cross-encoders vs bi-encoders",
+   "claim": "Rerankers are cross-encoder Transformer models that see the query and document together and predict a correspondence label, unlike vector similarity where the model never sees query and document jointly — hence cross-encoders rank higher quality but can't scale to the full corpus.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 12,
+   "quote": "these type of R rankers are often called cross encoders",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reranker latency budget",
+   "claim": "Cross-encoder reranking runs at roughly 100ms per query, a deliberate speed/quality tradeoff, and that latency is typically hidden behind the LLM call's own latency in an interactive app.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 13,
+   "quote": "this is like 100 milliseconds give or take for a model like this",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Scoping beats ranking tricks",
+   "claim": "The most effective lever for retrieval quality is narrowing the candidate set with metadata filters before applying ranking tricks — scope first, then rank.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 13,
+   "quote": "scoping is uh is a very effective way to uh to get quality up",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Filters stay cheap at massive scale",
+   "claim": "Metadata filters (category equals, ranges, AND/OR) remain fast and usable even against hundreds of millions of documents in the index.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 9,
+   "quote": "even if you have hundreds of millions of documents these are not a problem",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Decouple candidate count from returned count",
+   "claim": "You can request more retrieval candidates than you ultimately return to the LLM (e.g., pull extra from vector and keyword sides, fuse, then rerank down to top-N) — separating recall depth from final answer size.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 10,
+   "quote": "basically separate how many candidates you want from how many you want to return",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Index density limits jumped 10-12x",
+   "claim": "Azure AI Search raised vector density limits 10-12x on the same pricing tiers at no extra cost after seeing customers move from tiny indexes to putting all their data in, enabling multi-billion-vector apps on a single provisioned service.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 15,
+   "quote": "you'll get anywhere 10 between 10 and 12 times the vector density",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "OpenAI scaled vector store limits 500x",
+   "claim": "OpenAI's ChatGPT file uploads and Assistants API vector stores run on Azure AI Search; after Azure raised backend limits, OpenAI increased the limits it gives its own users by 500x.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 16,
+   "quote": "they increase the limits they give to their users by 500 times",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Single-bit quantization preserves most quality",
+   "claim": "Single-bit vector quantization (float32 to 1 bit, a 32x density gain) still preserves roughly 90-95% of original retrieval precision in evaluations — surprising even to the team that built it — and Cohere independently found ~95% precision retained.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 17,
+   "quote": "they are still for some models in the mid uh low to mid 90% of the original performance",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Oversampling recovers precision after quantization",
+   "claim": "When Azure AI Search quantizes vectors, it keeps the full-precision originals on the side, so you can query the compressed index for speed and then rerank the retrieved set at full precision to recover the quality lost to compression.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 18,
+   "quote": "we can do oversampling where we query at the quantized kind compressed version",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Integrated ingestion pipeline",
+   "claim": "An integrated-vectorization ingestion pipeline can connect directly to Blob Storage/OneLake/CosmosDB, auto-detect and process only changed data (incremental cost, not a full reindex each time), and handle chunking, vectorization, and format unpacking (PDFs, Office docs, images) as one continuously running pipeline.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 19,
+   "quote": "we will automatically track changes so it's not a one-hot thing",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Combine vector, keyword and metadata in one query",
+   "claim": "A single retrieval query can combine a vector, free text/keyword search, and categorical filters together, with the engine fusing and ranking the results — avoiding the need to stitch together separate systems.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 9,
+   "quote": "if I want to combine text and keyword search I can also add search text",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Quote-worthy: quality is what users feel",
+   "claim": "User-perceived quality is directly gated by whether retrieval actually surfaced the pieces of information needed to answer the question — retrieval quality is the ceiling on RAG app quality.",
+   "video_id": "_2tZaDs-w5s",
+   "chunk_index": 10,
+   "quote": "your application works well for your users when they ask a question and they get the answer they're looking for",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Attention, not intelligence, is the bottleneck",
+   "claim": "In software engineering, the bottleneck is no longer model intelligence but human attention: engineers can only drive a couple of the 50 tasks a backlog holds forward per day because every task needs their review.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 0,
+   "quote": "the bottleneck in software engineering nowadays is not intelligence",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Five multi-agent communication patterns",
+   "claim": "A taxonomy of five frontier multi-agent patterns exists: delegation (parent spawns child, waits for a response), creator-verifier (separate fresh agent checks the work), direct communication (agents DM each other, no coordinator), negotiation (agents share a contested resource, ideally net-positive-sum), and broadcast (one agent informs many).",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 1,
+   "quote": "there's five frontier multi-agent frameworks",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Direct communication is hard to get right",
+   "claim": "Direct agent-to-agent communication without a coordinator is hard to get right because state fragments across conversations and there's no single source of truth.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 2,
+   "quote": "state fragments across conversations without that coordinator",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Missions combine four patterns",
+   "claim": "Factory's 'missions' system combines delegation, creator-verifier, broadcast, and negotiation into a single workflow: describe a goal, scope via conversation, approve a plan, then the system executes for hours or days.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 3,
+   "quote": "combines four of those. Delegation, creator verifier, broadcast and negotiation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Orchestrator / worker / validator roles",
+   "claim": "Missions uses a three-role architecture: the orchestrator plans and produces a validation contract defining 'done'; workers implement with clean context per feature and commit via Git; validators verify both correctness and end-to-end behavior.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 4,
+   "quote": "it uses a three-role architecture. There's orchestrator, there's workers and then there's validators",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Validation contract written before code",
+   "claim": "A validation contract is written during planning, before any code exists, defining correctness independently of the implementation; for a complex project this can span hundreds of assertions, and every feature must be covered by at least one.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 5,
+   "quote": "it's written during planning before any code and it defines correctness independently of implementation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Tests written after code confirm, don't catch",
+   "claim": "Tests written after implementation are shaped by the code rather than by intent, so they confirm decisions rather than catch bugs — systems relying on post-hoc tests will eventually drift.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 5,
+   "quote": "tests written after implementation don't catch bugs. They confirm decisions",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Two validator types",
+   "claim": "After each milestone, two validators run: a scrutiny validator (test suite, type checking, lints, plus dedicated code-review agents per feature) and a user-testing validator that spawns the live app and drives it via computer use — filling forms, clicking through flows.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 6,
+   "quote": "it spawns the application. It interacts with it through computer use",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Most wall-clock time is real-world execution",
+   "claim": "Most of a mission's wall-clock time is spent in the user-testing validator waiting on real-world execution against a live application, not generating tokens.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 6,
+   "quote": "missions most of the missions wall clock time is actually spent here waiting for this like real world execution",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Validation is adversarial by design",
+   "claim": "Neither validator has seen the implementation code before, so they aren't invested in it — validation is deliberately adversarial rather than collaborative.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 7,
+   "quote": "neither validator has seen the code before. They're not invested in the",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Structured handoffs self-heal the mission",
+   "claim": "When a worker finishes, it files a structured handoff detailing what was completed, what was left undone, the commands run and their exit codes, and what issues surfaced — this documentation, not agent memory, is how the system catches problems and self-corrects at milestone boundaries.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 7,
+   "quote": "not by hoping that agents remember what happened but by forcing them to write it down",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Longest mission: 16 days",
+   "claim": "Factory's longest mission ran for 16 days — longer than a full sprint — and the team believes missions can run for 30 days given the structure in place.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 7,
+   "quote": "our longest mission ran for 16 days which is much longer than a full sprint",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Parallelism doesn't work for coding agents",
+   "claim": "Running many coding agents in parallel does not scale throughput in software dev because agents conflict, step on each other's changes, duplicate work, and make inconsistent architectural decisions — coordination overhead eats the speed gains while still burning tokens.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 8,
+   "quote": "agents conflict. They step on each other's changes. They duplicate work",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Serial execution with targeted parallelism",
+   "claim": "Missions runs features serially — only one worker or validator active at a time — while parallelizing read-only operations within a feature (code search, API research) and within validators (code review); this looks slower on paper but the error rate drops dramatically over multi-day runs.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 8,
+   "quote": "it seems slower on paper, but the error rate drops dramatically",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Mission Control dashboard",
+   "claim": "Mission Control is a dedicated async monitoring view showing what the active worker is doing, budget burned, and handoff summaries, letting a human act as a supervising project manager instead of a chat participant.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 9,
+   "quote": "we built mission control, which is a dedicated view for this",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Right model in each role",
+   "claim": "No single model is best at every role: planning benefits from slow careful reasoning, implementation from fast code fluency and creativity, and validation from precise instruction-following — matching models to roles ('droid whispering') is a deliberate design skill.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 10,
+   "quote": "planning benefits from slow, careful reasoning, implementation from fast code fluency and creativity",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Cross-provider validation avoids shared bias",
+   "claim": "Validation may deliberately use a different model provider than implementation so that checks aren't biased by the same training data — being locked into one provider constrains you to that family's weakest capability.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 11,
+   "quote": "validation might use a different model provider entirely to make sure that it's not biased by the same training data",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Structure compensates for weaker models",
+   "claim": "Validation contracts and milestone checkpoints let missions run successfully even with open-weight, non-frontier models, because the process structure — not raw model strength alone — enforces correctness.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 11,
+   "quote": "they allow you to run missions very very successfully even using open-weight models",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Slack-clone production numbers",
+   "claim": "In a real mission that built a Slack clone: 60% of time and 60% of tokens went to implementation, validation never succeeded on the first pass (follow-up features were always needed), 50% of final lines of code were tests, and 90% of code was covered by tests.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 11,
+   "quote": "60% of our time is spent on implementation, and 60% of our tokens as well",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Prompt caching offsets long-run cost",
+   "claim": "Missions lean heavily on prompt caching to offset the cost of running tasks that span hours or days.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 12,
+   "quote": "we take advantage of prompt caching heavily to make sure that we're sort of offsetting",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Orchestration logic lives in prompts, not code",
+   "claim": "Almost all of missions' orchestration logic is defined in prompts and skills (about 700 lines of text) rather than a hard-coded state machine, so the system automatically improves with every model upgrade instead of becoming obsolete.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 13,
+   "quote": "almost all of the orchestration logic is defined in prompts and skills",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Economics: 10 workstreams to 30",
+   "claim": "With missions, a team of five engineers can move from managing roughly 10 concurrent workstreams to roughly 30, freeing them to focus on architecture and product decisions instead of execution.",
+   "video_id": "ow1we5PzK-o",
+   "chunk_index": 14,
+   "quote": "a team of five engineers might be able to uh work on 10 work streams",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Common production failure pattern",
+   "claim": "The pattern that repeatedly failed: teams pick a model first, build features in a controlled environment with predictable data, get a great-looking demo signed off, then in production nobody can explain why the AI isn't answering the way it did in the demo.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 1,
+   "quote": "shall we use GPT? Shall we use Claude?",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Three gaps behind failed pilots",
+   "claim": "Three recurring gaps sink AI pilots in production: an observability gap (can't trace what the AI actually did), an evaluation gap (no defined metric that matters to the business, measured continuously), and a governance gap (no accountability for failures).",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 2,
+   "quote": "the first one is the observability gap",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Five-pillar production framework",
+   "claim": "The production framework has five pillars to address before/while building: evaluation, observability, data foundation, orchestration, and governance — ideally in sequence, though real projects rarely follow it cleanly.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 4,
+   "quote": "these are the five pillars",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Evaluation is your specification",
+   "claim": "Evaluation is the specification for an AI system: define success in numbers (accuracy target, tolerable false-positive rate, deflection rate) before writing any code or discussing models.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 6,
+   "quote": "evaluation is basically specification for your AI system",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Build the golden dataset from real experts",
+   "claim": "Build the evaluation/golden dataset by talking to domain experts about what real human agents actually answer, including gray-area and edge-case questions, then automate a pipeline that scores live responses against it continuously.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 7,
+   "quote": "talk with the domain experts and find what is actually happening in real life on the ground",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Three layers of evaluation",
+   "claim": "Evaluation architecture has three layers: deterministic checks (formats, regex, classic NER/PII models — cheap, do first), non-deterministic semantic checks (LLM-as-judge for groundedness, safety, relevance), and behavioral checks (are tool calls correct, duplicated, or looping).",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 8,
+   "quote": "the first layer is deterministic",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Behavioral evals catch expensive hidden bugs",
+   "claim": "An agent can give a correct answer while making three redundant database calls to get there — invisible in a demo, but an expensive, easy-to-miss problem at thousands of queries a day; behavioral evaluation is the layer most teams skip.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 10,
+   "quote": "the agent uh actually made three calls to the database to find that answer",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Tracing a real dispute end to end",
+   "claim": "In a banking chatbot, one user request (waive an overdraft fee) traced through intent classification, an account-database API call, a RAG lookup of policy documents, a reasoning step, and a final guardrail check — this is the level of detail full tracing should capture.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 12,
+   "quote": "it retrieves policy documents. It checks from a rag vector database",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "No tracing, no dispute resolution",
+   "claim": "Without tracing in place, a team facing a customer dispute over an AI decision has no way to reconstruct what happened and typically defaults to just giving the customer a discount to placate them.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 13,
+   "quote": "you have no way to check what the AI did",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Online monitoring enables fallback strategies",
+   "claim": "With online monitoring in place, detected failures (like duplicate or failing API calls) can trigger fallback strategies automatically, e.g., retry up to three times then escalate to a human.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 14,
+   "quote": "go and retry for three times, not more than three times",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Data foundation eats 60% of project time",
+   "claim": "Data foundation work — split into 'question data' (serving/answering data) and 'tracking data' (tracing/observability) — typically consumes about 60% of project time, because agents (unlike humans) act confidently on bad data instead of catching and correcting it.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 14,
+   "quote": "I spend 60% of my time, uh and I see I see a lot of organizations spending a lot of time here",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Agents don't forgive bad data",
+   "claim": "Data was always built for humans, who are forgiving of errors and correct them in-line; agents are not forgiving — they will confidently give a wrong answer from bad data without flagging it.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 14,
+   "quote": "agents will go, find it wrong, they'll give you the wrong answer confidently",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Databricks data stack layers",
+   "claim": "The Databricks stack for a production data foundation layers as: cloud storage (raw files) -> Delta Lake (table-like structure via manifest files, incremental loading) -> Unity Catalog (centralized permissions, metadata/PII tagging, discovery) -> application layer (Mosaic AI, Genie text-to-SQL, Agent Bricks).",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 16,
+   "quote": "we help you create this um you know, uh table-like structure on top of it using manifest files",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Three multi-agent orchestration patterns",
+   "claim": "Three orchestration patterns fit different needs: orchestrator-worker (central control, every request logged through the orchestrator, easy to debug), choreography (independent agents listening to a shared message bus, run in parallel, lower latency since there's no central round-trip), and human-in-the-loop (a human is pulled in when confidence drops below a threshold).",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 18,
+   "quote": "the first one I describe here is the orchestrator worker pattern",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Choreography reduces latency via independence",
+   "claim": "In the choreography pattern, agents run in parallel and are not dependent on an orchestrator relaying messages back and forth, which reduces latency compared to centrally coordinated patterns.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 20,
+   "quote": "the advantage it brings you is the latency is reduced because they are not dependent on an orchestrator",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "47 PII breaches caught in testing",
+   "claim": "Applying NER-based PII pre-validation during testing caught 47 PII breaches before the system went to production.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 21,
+   "quote": "we already detected 47 PII breaches during the testing phase",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Treat prompts as code",
+   "claim": "Prompt versioning must be treated as enterprise change management, not a casual git commit — every prompt change needs the same governance rigor as a code change.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 21,
+   "quote": "you have to treat prompt versioning as change management in enterprise grade solution",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Model change management",
+   "claim": "When model providers upgrade their models, don't trust published benchmark boards — rerun the upgraded model against your own evaluation dataset before switching, and keep the flexibility to use more than one model provider as a risk hedge.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 22,
+   "quote": "you cannot really rely on one single model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "$85K, 6-month failed POC",
+   "claim": "Before this framework was applied, a retail banking client spent roughly $85K over 6 months on a chatbot POC that did not succeed, with no one able to explain why it failed in production.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 23,
+   "quote": "they spent around 85K in 6 months doing a POC which did not succeed",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Model selection deferred to week 7 of 8",
+   "claim": "In the redo of the banking chatbot project, the team deliberately delayed model selection to week 7 of an 8-week POC, spending weeks one and two building the evaluation layer first — inverting the typical 'pick a model first' order.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 24,
+   "quote": "we selected the model in week seven, like in a eight weeks POC",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Concrete success targets",
+   "claim": "The banking chatbot's success criteria were defined in hard numbers: handle 60% of user queries (the simple ones), hit about 85% accuracy, plus latency and other operational targets — not vague notions of 'good.'",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 24,
+   "quote": "they needed some sort of accuracy. So, 85% it was around 85% accuracy target",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Eval dataset is a living system",
+   "claim": "The evaluation dataset should start small (this case started at 200 real agent-answered cases) and grow continuously as new failures are found and added — treating it as a living system, not a one-time artifact.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 25,
+   "quote": "your evaluation data set is a living system",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Stale embeddings caused a live incident",
+   "claim": "A real production incident: after the bank updated an interest-rate policy, the new policy document never made it into the vector database (embeddings didn't update), so the chatbot kept giving stale answers — caught via a CSAT/thumbs-down drop and trace inspection, not by anyone flagging the data pipeline directly.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 28,
+   "quote": "the new policy document was not updated in the vector database. The embeddings did not come through",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Production incident playbook",
+   "claim": "A production incident playbook should follow: detect (via the eval dashboard) -> diagnose (via tracing) -> contain (roll back/version the prompt, or apply fault-tolerance patterns like saga, compensation, or circuit breaker) -> fix (using the test case library and LLM-judge reports) -> add the case to the eval suite so it's caught automatically next time.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 29,
+   "quote": "first, you detect using your eval dashboard. Then you diagnose using your tracing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cap expensive layer-3 eval runs in CI",
+   "claim": "Behavioral (layer-3) evals get expensive to rerun at scale (300-500+ rows) as the eval set grows, so run only a small subset on each CI change and reserve the full eval suite for merges to main to control cost.",
+   "video_id": "ObTPqBGsEbA",
+   "chunk_index": 33,
+   "quote": "you only do the full test when you merge to the main branch",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Whether running multiple agents in parallel is a good production strategy",
+   "positions": [
+    {
+     "video_id": "ow1we5PzK-o",
+     "chunk_index": 8,
+     "position": "For software-dev tasks specifically, parallel agents conflict, duplicate work, and produce inconsistent architectural decisions; Factory's missions deliberately run features serially (one worker/validator at a time) with only read-only sub-steps parallelized, because correctness compounds over multi-day runs."
+    },
+    {
+     "video_id": "ObTPqBGsEbA",
+     "chunk_index": 19,
+     "position": "The choreography orchestration pattern runs independent agents in parallel against a shared message bus (e.g., separate agents pulling customer details and approval details for a mortgage application) and presents this as advantageous, reducing latency because agents aren't waiting on a central orchestrator."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks give concrete dollar or token-cost figures for running retrieval/rerank infrastructure or multi-agent missions at steady-state production volume (Factory mentions prompt caching helps, but not by how much; Azure talk gives no pricing).",
+  "The Databricks talk shows a vector database going stale (policy doc embeddings not refreshed) as a real incident, but none of the three videos describe a concrete freshness/refresh strategy (e.g., cadence, staleness alarms) to prevent this proactively rather than detect it after CSAT drops.",
+  "No talk addresses how to choose which specific cross-encoder or reranker model to deploy beyond citing Azure's ~100ms budget — no comparative guidance on reranker model selection.",
+  "Factory's talk does not explain how the hundreds of assertions in a validation contract are authored, reviewed, or kept from becoming stale as requirements change over a 16-30 day mission.",
+  "None of the talks detail concrete prompt-injection or adversarial-input defenses for agents that call external tools/APIs in production, beyond generic mentions of guardrail checks and PII detection.",
+  "The Azure AI Search talk does not address multi-agent orchestration at all, and the two agent-orchestration talks (Factory, Databricks) do not address vector index scaling/quantization — a reader wanting both retrieval-infra scaling and agent-orchestration scaling has to synthesize across talks with no single source of truth on how they interact (e.g., how RAG retrieval scaling interacts with multi-agent tool calls)."
+ ],
+ "verified_claims": 62
+}

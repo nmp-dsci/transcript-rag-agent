@@ -1,0 +1,294 @@
+{
+  "slug": "production-genai-systems",
+  "title": "Production GenAI Systems",
+  "topic": "production generative AI systems: taking LLM and agent applications from pilot to production",
+  "subtitle": "Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.",
+  "question": "",
+  "status": "published",
+  "current_version": 2,
+  "compiled_at": "2026-09-14",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "mvleESOUTRw",
+    "1LhvqZvDT5w",
+    "Q679gH7oszg",
+    "uaiq1HvQKoI",
+    "ObTPqBGsEbA",
+    "vSx5IULvBns",
+    "vW8wLsb3Nnc",
+    "E8zpgNPx8jE",
+    "hBzUokVYQkI",
+    "7YYVgH0_9CA",
+    "1jvxxa7tdjw",
+    "tLK5jyhQOgA",
+    "T0HhO4YtTfE",
+    "_2tZaDs-w5s",
+    "ow1we5PzK-o",
+    "sk6HBdmVmL8",
+    "cvPEiPt7HXo"
+  ],
+  "sources": [
+    {
+      "video_id": "mvleESOUTRw",
+      "title": "Production-Grade AI Project Tutorial – Build & Deploy",
+      "channel": "freeCodeCamp.org",
+      "contributed": "A hands-on build of an 'enterprise-grade' Python training-data curation system, showing concrete software-architecture patterns for productionizing a GenAI data pipeline: unified/abstract loaders, Pydantic data models, async context managers, task-template driven generation, a multi-provider AI client with simulation fallback, a quality evaluator, and a multi-format exporter.",
+      "url": "https://www.youtube.com/watch?v=mvleESOUTRw"
+    },
+    {
+      "video_id": "1LhvqZvDT5w",
+      "title": "From GenAI Pilots to Production - Nikita Kozodoi",
+      "channel": "DataTalksClub ⬛",
+      "contributed": "Field-tested, project-grounded advice from AWS's GenAI Innovation Center: layered/independent guardrail architecture, red-teaming practice, human-then-LLM-judge evaluation pipelines, concrete fine-tuning cost and data-volume thresholds, and organizational discipline (scoping, 'simplest tool first') for getting pilots into production.",
+      "url": "https://www.youtube.com/watch?v=1LhvqZvDT5w"
+    },
+    {
+      "video_id": "Q679gH7oszg",
+      "title": "How I Build and Ship Custom AI Solutions for Clients",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The only talk with the business/process layer around production GenAI: discovery-call red flags, accuracy-expectation management (70/80% to 90%), PoC vs MVP framing, sprint pricing, and the standardized deploy/monitor/secure stack (Hetzner, Caddy, Langfuse, Sentry).",
+      "url": "https://www.youtube.com/watch?v=Q679gH7oszg"
+    },
+    {
+      "video_id": "uaiq1HvQKoI",
+      "title": "GenAI in Production: How RAG & AI Agents Are Shaping the Future",
+      "channel": "Xgrid",
+      "contributed": "Interview-format breakdown of the RAG stack, agent vs. chatbot distinctions, a concrete case study (60% retrieval-time reduction), and a checklist of production hurdles (security, monitoring, rollout patterns, risks) from an applied-AI engineering consultant.",
+      "url": "https://www.youtube.com/watch?v=uaiq1HvQKoI"
+    },
+    {
+      "video_id": "ObTPqBGsEbA",
+      "title": "The Production AI Playbook: Deploying Agents at Enterprise Scale — Sandipan Bhaumik, Databricks",
+      "channel": "AI Engineer",
+      "contributed": "An end-to-end enterprise playbook (five pillars: evaluation, observability, data foundation, orchestration, governance) grounded in a real banking-chatbot case study with dollar and time figures.",
+      "url": "https://www.youtube.com/watch?v=ObTPqBGsEbA"
+    },
+    {
+      "video_id": "vSx5IULvBns",
+      "title": "Always-on agents run production without the on-call tax — Justin Smith, Resolve AI",
+      "channel": "AI Engineer",
+      "contributed": "The 'background agent' pattern for production operations: always-on, cloud-sandboxed agents triggered by schedule/event/message that absorb the uncounted long tail of on-call work (deployment monitoring, health checks, handoffs, Slack triage), with the agent itself deciding how long and how often to keep checking.",
+      "url": "https://www.youtube.com/watch?v=vSx5IULvBns"
+    },
+    {
+      "video_id": "vW8wLsb3Nnc",
+      "title": "POC to PROD: Hard Lessons from 200+ Enterprise GenAI Deployments - Randall Hunt, Caylent",
+      "channel": "AI Engineer",
+      "contributed": "Tactical, war-story lessons from 200+ enterprise deployments: concrete cost/speed tradeoffs across AWS vector stores and custom silicon, prompt-caching mechanics, generative UI, and 'know your user' field failures (low-connectivity PDFs, nurses rejecting voice bots).",
+      "url": "https://www.youtube.com/watch?v=vW8wLsb3Nnc"
+    },
+    {
+      "video_id": "E8zpgNPx8jE",
+      "title": "Build a Complete End-to-End GenAI Project in 3 Hours",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A real-time, warts-and-all build of an AI news aggregator from brainstorm to Render deployment — shows the actual AI-assisted planning workflow, the specific production failures hit (OOM from a heavy library, duplicate digests, exposed database, env-mixups) and how each was fixed.",
+      "url": "https://www.youtube.com/watch?v=E8zpgNPx8jE"
+    },
+    {
+      "video_id": "hBzUokVYQkI",
+      "title": "AI Infrastructure Explained (GPUs, vLLM, and LLM-D)",
+      "channel": "KodeKloud",
+      "contributed": "The only talk in the cluster that goes underneath the application layer: GPU vs CPU architecture, VRAM bandwidth math, tokens/prefill/decode/KV-cache mechanics, batching limits, sharding strategies, and the LLM-D router/well-lit-path recipes for running vLLM fleets on Kubernetes.",
+      "url": "https://www.youtube.com/watch?v=hBzUokVYQkI"
+    },
+    {
+      "video_id": "7YYVgH0_9CA",
+      "title": "Scalable GenAI in Production - Kamelia Aryafar",
+      "channel": "Optimized AI Conference",
+      "contributed": "Practitioner lessons from scaling GenAI at Netflix/Google-scale: the full production stack, a 5-stage maturity model, the 'latency is a product decision' framing, the data-flywheel/continuous-evaluation argument, and five imperatives for taking GenAI from demo to system.",
+      "url": "https://www.youtube.com/watch?v=7YYVgH0_9CA"
+    },
+    {
+      "video_id": "1jvxxa7tdjw",
+      "title": "Exploring MLOps and LLMOps: Architectures and Best Practices",
+      "channel": "Databricks",
+      "contributed": "Databricks' platform-level view: the deploy-code-not-deploy-models pattern, Unity Catalog governance/lineage, Lakehouse Monitoring driving automated drift-triggered retraining, and a framework for what specifically changes in LLMOps (model selection, data, evaluation, deploy/monitor) versus classic MLOps, plus MLflow tracing/packaging specifics for chains.",
+      "url": "https://www.youtube.com/watch?v=1jvxxa7tdjw"
+    },
+    {
+      "video_id": "tLK5jyhQOgA",
+      "title": "Make GenAI Production-Ready With Kubernetes Patterns - Roland Huss, Red Hat & Bilgin Ibryam, Diagrid",
+      "channel": "CNCF [Cloud Native Computing Foundation]",
+      "contributed": "Maps established Kubernetes patterns onto GenAI workloads: model-data loading tricks (init container, model-car sidecar hack, image volumes), LLM-state-aware request routing (prefix/KV-cache-aware, prefill/decode disaggregation), and RAG as a composed pattern of existing primitives.",
+      "url": "https://www.youtube.com/watch?v=tLK5jyhQOgA"
+    },
+    {
+      "video_id": "T0HhO4YtTfE",
+      "title": "AI System Design: From Idea to Production - Apoorva Joshi, MongoDB",
+      "channel": "AI Engineer",
+      "contributed": "A repeatable four-phase framework (product requirements -> system design -> evaluation/monitoring -> cost/latency/reliability optimization) walked step-by-step through a hypothetical health-insurance claims review system, including how to pick retrieval patterns and set concrete guardrail metrics.",
+      "url": "https://www.youtube.com/watch?v=T0HhO4YtTfE"
+    },
+    {
+      "video_id": "_2tZaDs-w5s",
+      "title": "RAG at scale: production ready GenAI apps with Azure AI Search",
+      "channel": "AI Engineer",
+      "contributed": "Retrieval-layer scaling mechanics for RAG in production — two-stage recall+rerank, quantization tradeoffs, index density limits, and ingestion pipelines — from the team building Azure AI Search.",
+      "url": "https://www.youtube.com/watch?v=_2tZaDs-w5s"
+    },
+    {
+      "video_id": "ow1we5PzK-o",
+      "title": "The Multi-Agent Architecture That Actually Ships — Luke Alvoeiro, Factory",
+      "channel": "AI Engineer",
+      "contributed": "A concrete production multi-agent architecture (Factory's 'missions') for long-horizon coding work: orchestrator/worker/validator roles, adversarial validation contracts, serial-not-parallel execution, and per-role model selection.",
+      "url": "https://www.youtube.com/watch?v=ow1we5PzK-o"
+    },
+    {
+      "video_id": "sk6HBdmVmL8",
+      "title": "Omnigent: Open-Source Meta-Harness for AI Agents | Matei Zaharia",
+      "channel": "Databricks",
+      "contributed": "The only talk on infrastructure for running many coding agents together: session portability across models, contextual (state-aware) security policies, per-agent spend caps, and the case for open-sourcing the orchestration layer.",
+      "url": "https://www.youtube.com/watch?v=sk6HBdmVmL8"
+    },
+    {
+      "video_id": "cvPEiPt7HXo",
+      "title": "Large Language Model Operations (LLMOps) Explained",
+      "channel": "IBM Technology",
+      "contributed": "Short vendor-agnostic primer that names the LLMOps lifecycle stages and explains how LLM-specific requirements (transfer learning, cost-aware tuning, BLEU/ROUGE evaluation) diverge from traditional MLOps.",
+      "url": "https://www.youtube.com/watch?v=cvPEiPt7HXo"
+    }
+  ],
+  "chunk_count": 737,
+  "cluster_count": 6,
+  "cite_total": 241,
+  "cite_valid": 241,
+  "gaps": [
+    "None of the three talks give concrete guidance on who owns or is on-call for the AI agent itself once it's in production (who debugs the debugger).",
+    "No talk details how to red-team, adversarially test, or defend against prompt injection for a production agent with real autonomy.",
+    "The claims-review system in T0HhO4YtTfE is a hypothetical walkthrough, not a shipped case study -- there are no real production latency, cost, or accuracy numbers for it once live.",
+    "vSx5IULvBns doesn't explain how Resolve evaluates or scores whether a background agent's own actions/investigations were actually correct -- no eval methodology for the agent's judgment is given.",
+    "vW8wLsb3Nnc doesn't describe how prompts or evals are version-controlled, reviewed, or rolled back in CI for the 200+ deployments referenced.",
+    "None of the talks name specific multi-agent orchestration frameworks (e.g. LangGraph, CrewAI) -- 'orchestration frameworks' is mentioned only generically in T0HhO4YtTfE.",
+    "No talk addresses how to handle model deprecation or migration risk at scale beyond the single anecdote of Claude 3.7 to 4 being a drop-in upgrade.",
+    "None of the three talks give concrete dollar or token-cost figures for running retrieval/rerank infrastructure or multi-agent missions at steady-state production volume (Factory mentions prompt caching helps, but not by how much; Azure talk gives no pricing).",
+    "The Databricks talk shows a vector database going stale (policy doc embeddings not refreshed) as a real incident, but none of the three videos describe a concrete freshness/refresh strategy (e.g., cadence, staleness alarms) to prevent this proactively rather than detect it after CSAT drops.",
+    "No talk addresses how to choose which specific cross-encoder or reranker model to deploy beyond citing Azure's ~100ms budget — no comparative guidance on reranker model selection.",
+    "Factory's talk does not explain how the hundreds of assertions in a validation contract are authored, reviewed, or kept from becoming stale as requirements change over a 16-30 day mission.",
+    "None of the talks detail concrete prompt-injection or adversarial-input defenses for agents that call external tools/APIs in production, beyond generic mentions of guardrail checks and PII detection.",
+    "The Azure AI Search talk does not address multi-agent orchestration at all, and the two agent-orchestration talks (Factory, Databricks) do not address vector index scaling/quantization — a reader wanting both retrieval-infra scaling and agent-orchestration scaling has to synthesize across talks with no single source of truth on how they interact (e.g., how RAG retrieval scaling interacts with multi-agent tool calls).",
+    "None of the three talks give concrete production inference cost figures (e.g. $ per million tokens or $/GPU-hour at serving scale) — only fine-tuning hourly costs are quantified.",
+    "No comparison of specific vector database products or benchmarks for RAG retrieval quality/latency at production scale.",
+    "The Kubernetes talk describes prefix/KV-cache-aware routing conceptually but does not detail the protocol or latency cost of the cache-eviction signaling between LLM servers and the endpoint picker.",
+    "No guidance on GPU cluster autoscaling thresholds or capacity-planning numbers for handling production traffic spikes.",
+    "No discussion of multi-region failover or disaster-recovery strategy specific to GenAI serving.",
+    "No data on false-positive/false-negative rates for the guardrail classifier fleets described by Nikita — only latency and layering, not accuracy tradeoffs.",
+    "No guidance on team sizing, budget, or ROI-measurement benchmarks for standing up a scoping/'AI strategist' function.",
+    "The evaluation walkthroughs (score sheets, LLM-as-judge) are demonstrated mainly on a translation use case; no detail on how the same rubric-based approach generalizes to open-ended agentic or multi-turn chat evaluation.",
+    "None of the three talks give a worked methodology for LLM evaluation scoring (e.g. how accuracy percentages like the '70-80% to 90%' figures were actually measured) beyond mentioning that evals exist.",
+    "No discussion of fine-tuning versus prompting/RAG as a lever for improving accuracy on a stuck use case.",
+    "No detail on how Omnigen's 'intelligent routing' heuristics are trained or how reliable that routing actually is.",
+    "No discussion of latency or SLA requirements for production agent responses, or how those trade off against cost/accuracy.",
+    "The client-facing playbook (Q679gH7oszg) is agency/freelancer-specific (proposals, sprint billing); none of the talks address how the same discovery-to-production process maps onto an internal enterprise platform team without external client billing.",
+    "No breakdown of ongoing per-token / per-request LLM API costs at production volume, despite spend-cap tooling being discussed (only a $1,000 mistaken-spend anecdote is given).",
+    "No discussion of how to roll out or roll back changes to prompts/agents already in production (canary releases, A/B testing, versioning of prompts).",
+    "No concrete $/token or $/GPU-hour cost figures for a real production deployment — the Netflix talk names cost as a top imperative but gives no numbers, and the infra talk covers hardware specs without pricing.",
+    "No detail on how to technically implement input/output guardrails or policy enforcement (e.g. which libraries, filters, or classifiers) beyond naming the four responsible-AI buckets.",
+    "No discussion of security testing, red-teaming, or prompt-injection defenses for agentic systems.",
+    "No walkthrough of how to actually build an LLM-judge pipeline (prompt design, calibration against humans, golden dataset construction) — it's named as important but not shown.",
+    "No comparison of vLLM against other inference engines (TensorRT-LLM, SGLang, TGI) or guidance on when to choose one over another.",
+    "No numbers or case study on what organizational alignment work actually looks like in practice, despite it being named as one of the five imperatives.",
+    "No discussion of how to size or validate a fine-tuning dataset, or what fine-tuning costs/timelines look like in practice.",
+    "No treatment of multi-region or disaster-recovery concerns for GPU fleets serving global traffic.",
+    "Neither video gives concrete infrastructure cost numbers (e.g. $/query, $/1M tokens, GPU hosting cost) beyond generic warnings that 'costs can spiral' — a reader can't budget from this corpus alone.",
+    "mvleESOUTRw's quality evaluator (toxicity, bias, diversity, coherence, relevance checks) is explicitly left as a 'mock' / unimplemented stub, so there's no concrete method or threshold for scoring generated data, only the category names.",
+    "Neither talk names a specific evaluation framework or benchmark (e.g. RAGAS, human-eval rubrics with numeric thresholds) for judging RAG answer quality — uaiq1HvQKoI says evaluation is 'notoriously difficult' but doesn't prescribe a method.",
+    "No discussion in either video of specific multi-agent orchestration frameworks (LangGraph, CrewAI, AutoGen) by name, despite both discussing agents/task managers conceptually.",
+    "Neither video reports concrete latency/throughput numbers or load-test results for a production RAG or agent system.",
+    "mvleESOUTRw leaves classification and summarization task generators, additional export formats, and toxicity/bias detection unimplemented ('please feel free to go ahead and implement that'), so the guide can't cite a working reference implementation for those pieces from this corpus.",
+    "Neither video addresses fine-tuning workflows in production detail (only a passing warning that fine-tuned models inherit bad training data)."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "pipeline",
+      "evals",
+      "retrieval",
+      "agents",
+      "serving",
+      "ban",
+      "templates",
+      "contested",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20260914T205145Z-write.jsonl",
+      "20260916T012012Z-revise.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.6963275,
+        "duration_ms": 162774,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.8878458,
+        "duration_ms": 232053,
+        "turns": 5,
+        "tool_calls": 4
+      },
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0294259,
+        "duration_ms": 238920,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-6",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.1313905,
+        "duration_ms": 241267,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.2965018,
+        "duration_ms": 269774,
+        "turns": 11,
+        "tool_calls": 10
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.2130694,
+        "duration_ms": 379797,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 5.687168000000001,
+        "duration_ms": 886729,
+        "turns": 54,
+        "tool_calls": 53
+      },
+      {
+        "label": "revise",
+        "model": "claude-opus-5",
+        "cost_usd": 4.971603999999998,
+        "duration_ms": 548339,
+        "turns": 52,
+        "tool_calls": 51
+      }
+    ]
+  }
+}

@@ -55,6 +55,7 @@ COPY --from=frontend /build/dist frontend/dist
 COPY dashboard/chat_history.json dashboard/chat_history.json
 COPY evals/runs evals/runs
 COPY experts experts
+COPY guides guides
 COPY .yt-agent/chroma .yt-agent/chroma
 COPY .yt-agent/graph_snapshot .yt-agent/graph_snapshot
 COPY .yt-agent/themes.json .yt-agent/conflicts.json .yt-agent/

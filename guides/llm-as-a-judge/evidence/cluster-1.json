@@ -1,0 +1,560 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "spvXj9tnWAQ",
+  "X4dEHRzBLmc",
+  "q2JrUKBMf0w",
+  "N_DwZR--XCc"
+ ],
+ "video_notes": [
+  {
+   "video_id": "spvXj9tnWAQ",
+   "title": "Engineering Better Evals: Scalable LLM Evaluation Pipelines That Work — Dat Ngo, Aman Khan, Arize",
+   "contributed": "A production taxonomy of the whole eval toolbox (LLM judge, encoder-only classifiers, code evals, human feedback, golden datasets), zoom-level/conditional eval strategy for agents, and the guardrail-vs-root-cause framing."
+  },
+  {
+   "video_id": "X4dEHRzBLmc",
+   "title": "Judge the Judge: Building LLM Evaluators That Actually Work with GEPA — Mahmoud Mabrouk, Agenta AI",
+   "contributed": "The only fully worked case study of calibrating a judge against human annotation with the GEPA prompt-optimizer, including exact before/after accuracy numbers, cost figures, and a catalogue of failed experiments."
+  },
+  {
+   "video_id": "q2JrUKBMf0w",
+   "title": "The Future of Evals: From LLM as a Judge to Agent as a Judge — Aparna Dhinakaran, Arize AI",
+   "contributed": "Production-scale eval statistics and the argument that fixed-rubric LLM-as-judge breaks down on long-horizon multi-agent trajectories, motivating a third eval category: agent-as-judge."
+  },
+  {
+   "video_id": "N_DwZR--XCc",
+   "title": "LLM-as-a-Judge / Autoraters — Guest Lecture at Northeastern University",
+   "contributed": "The academic backbone: the learning-to-rank taxonomy (pointwise/pairwise/listwise) underlying judge design, the canonical judge-prompt anatomy, APO and RL (J1/Judge-LRM) methods for training judges, and the three canonical bias sources."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Eval scale at top AI teams",
+   "claim": "Duolingo runs roughly 20 evals per trace, illustrating how eval volume scales in real production systems.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 1,
+   "quote": "tend to run about 20 evals per per like",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Eval toolbox beyond LLM judges",
+   "claim": "The eval toolbox is bigger than LLM-as-judge: it includes encoder-only classifiers, human feedback, golden datasets, and code-based heuristics.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 5,
+   "quote": "you don't just have LLM at your disposal",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Encoder-only judges are cheaper and faster",
+   "claim": "Encoder-only (BERT-style) evaluators run roughly 10x cheaper and one-to-two orders of magnitude faster than LLM-as-judge calls.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 5,
+   "quote": "about 10 times cheaper um about one or two orders of magnitude",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Golden datasets calibrate the judge",
+   "claim": "Run the LLM judge against a human-graded golden dataset to check whether it approximates the judgment you already trust, before relying on it.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 6,
+   "quote": "can the LLM approximate the thing that I trust",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Code-based evals are the cheapest tier",
+   "claim": "For deterministic checks — keyword presence, regex match, parseable JSON — use plain code evals instead of an LLM judge; they're far cheaper and faster to run.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 7,
+   "quote": "does this output contain any keywords",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Don't trust out-of-the-box evals",
+   "claim": "Generic, out-of-the-box eval templates produce generic, low-value results; customize eval criteria heavily to the application.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 12,
+   "quote": "if you use out of the box evals",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Two virtuous cycles",
+   "claim": "Teams run two parallel loops: one improving the AI system from eval signal, and a separate one annotating eval failures to improve the eval prompt template itself.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 9,
+   "quote": "you'll want to improve the eval prompt template",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Iteration velocity compounds",
+   "claim": "Getting through four eval iterations a month instead of two produces an exponentially better product, not just a linearly better one.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 10,
+   "quote": "get through four iterations in a month rather than two",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Conditional evals save cost",
+   "claim": "If an agent's control-flow step fails, skip evaluating everything downstream of it — the results are likely invalid anyway, so skipping saves compute and cost.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 12,
+   "quote": "why eval anything down the line",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Trajectory eval without ground truth",
+   "claim": "An LLM judge can grade an agent's trajectory against a reference path, or even without one, by comparing the hit nodes and their descriptions to the expected process.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 16,
+   "quote": "here's what we did here's what we expected into an LLM",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Guardrails treat symptom, not cause",
+   "claim": "When a guardrail fires, the fix is almost always in the orchestration/prompt (\"system one\"), not more guardrail tuning (\"system two\") — guardrails just mitigate known risks at a latency cost and aren't infallible.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 19,
+   "quote": "you need to adjust system one",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Log-prob as judge confidence",
+   "claim": "When the model provider exposes log-probabilities, the log-prob of the returned eval-label token is a solid confidence proxy for autoregressive judges; small encoder-only models return a classification probability directly.",
+   "video_id": "spvXj9tnWAQ",
+   "chunk_index": 22,
+   "quote": "a really good way to start for auto reggressive models",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judges must be calibrated to humans",
+   "claim": "A hallucination-judge prompt that just asks 'rate whether it's a hallucination' can't work in practice — if the model could reliably tell, the underlying app would already have gotten it right; judges must be explicitly calibrated against human annotation.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 0,
+   "quote": "how the hell would the agent know whether it's a hallucination",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Eval speed is the dev-loop bottleneck",
+   "claim": "The speed of the prompt-iterate-eval loop is gated by evaluation speed: human annotation is highest quality but slowest.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 1,
+   "quote": "the bottleneck in this loop is actually the evaluation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Uncalibrated judge produces useless signal",
+   "claim": "An LLM judge that doesn't correlate with human annotation makes the dev loop move fast but 'won't go anywhere' — speed without calibration is wasted motion.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 1,
+   "quote": "you'll end up with useless signal",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Worked case-study dataset",
+   "claim": "The GEPA case study uses Tau-bench's airline customer-support agent: 599 conversation traces with human-style compliance annotations, roughly 62% compliant / 38% non-compliant.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 6,
+   "quote": "It's 62% compliant, 38% compliant",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Metrics come from the use case",
+   "claim": "Don't evaluate with generic metrics like 'hallucination' — evaluation criteria should be derived from the specific business use case, ideally defined by subject-matter experts.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 7,
+   "quote": "the metrics need to come from uh the use case itself",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "One judge per error type, not one catch-all judge",
+   "claim": "Error analysis on the support transcripts surfaced four distinct error types (policy adherence, response style, information delivery, tool-call correctness); build a separate judge per error type instead of one generic 'success' judge.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 8,
+   "quote": "issues with policy adherance uh sometimes issue with the response style",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Prefer binary judge labels over 1-5 scales",
+   "claim": "Move away from 1-5 or percentage scores toward binary pass/fail judgments — even binary labels are hard to calibrate, and two human annotators often don't agree on a 1-5 score either.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 9,
+   "quote": "move away from one to five scores or like percentages",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reasoning in annotations is required",
+   "claim": "Annotators must record why an example failed, not just the label — without that reasoning, the prompt-optimization algorithm has no way to discover the underlying rule.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 10,
+   "quote": "without the reasoning we will see uh the optimization algorithm",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Data curation is the hardest part",
+   "claim": "Designing metrics and annotating data — the steps teams tend to rush — are actually the hardest part of building a calibrated judge.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 11,
+   "quote": "getting your data um is the hardest thing",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "GEPA selects via Pareto frontier, not average score",
+   "claim": "GEPA samples new candidate judge prompts by mutating one prompt (reflection) or merging two, then keeps the set that best covers the whole task distribution (Pareto frontier) rather than the single highest-average scorer.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 15,
+   "quote": "select the ones that have the average best score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Naive seed judge collapses to the majority label",
+   "claim": "The naive seed judge scored 61% accuracy on validation but was biased, calling the trajectory 'compliant' 98% of the time — essentially the majority-class default.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 23,
+   "quote": "saying it's compliant 98% of the time",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "GEPA optimization lifted accuracy and reduced bias",
+   "claim": "After GEPA optimization with a custom reflection template, validation accuracy rose from 69% to 74%, and the model's bias toward the 'compliant' label dropped from 98% to 64%.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 26,
+   "quote": "the accuracy increased from 69% to 74%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Even optimized judges stayed far from human-level agreement",
+   "claim": "After a full optimization pass on a complex policy, the judge was still far from a roughly 95%-accuracy target that would be considered well-aligned with human judgment.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 27,
+   "quote": "still quite far from kind of 95% accuracy",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Small/cheap models fail as judges on complex policy",
+   "claim": "Swapping in smaller or older models (GPT-4o-mini, nano, some Gemini/DeepSeek variants) for the judge or the refiner was a complete failure on this complex-policy task; the best combo found was Gemini for reflection plus Grok for the judge.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 28,
+   "quote": "smaller models really are very bad at least",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Copying the policy into the seed prompt traps optimization",
+   "claim": "A seed judge prompt that did NOT copy the agent's policy text directly outperformed one that did — pasting the policy up front locked the optimizer into a local minimum it couldn't escape.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 30,
+   "quote": "did not have access to the policy did uh better",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Use a bigger model to refine, a smaller model to judge",
+   "claim": "Even a small-scale GEPA experiment cost roughly $200-300 in tokens due to long trajectory inputs; the recommended split is a bigger model for the refinement/reflection step and a smaller, cheaper model for the judge itself, since the judge runs at high volume online.",
+   "video_id": "X4dEHRzBLmc",
+   "chunk_index": 31,
+   "quote": "bigger model for the refinement prompt and smaller model",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Arize eval scale stats",
+   "claim": "Arize runs over 100 million evals a month; the average customer team runs about 12 different eval jobs, and top teams run over 3,800 distinct evaluators.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 0,
+   "quote": "top teams running over 3,800 different evaluators",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "What's being evaluated has fundamentally changed",
+   "claim": "The target of evaluation shifted from single prompt-answering (2023) to tool calls/reasoning/deep research (2024) to today's long-horizon, multi-sub-agent loops on real-world data — a fundamentally different problem, not just a harder version of the same one.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 1,
+   "quote": "teams running loops on real-world data with sub-agents kicked off",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Fixed-rubric judges miss agentic failure modes",
+   "claim": "Classical LLM-as-judge with a fixed rubric couldn't catch the failures Arize's own agent produced in practice — forgetting context, getting stuck in loops, generating a different dynamic UI on every turn defeats a fixed evaluation trajectory.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 2,
+   "quote": "just weren't for us to be able to catch all the types of failures",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Agent-as-judge proposal",
+   "claim": "The proposed fix for agentic complexity is 'agent as judge': using an adaptive agent, not a fixed-rubric LLM, to do dynamic analysis of another agent's behavior.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 3,
+   "quote": "the best way to an evaluate an agent was actually with an agent",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Three eval categories, not two",
+   "claim": "Most teams today only run deterministic evals and LLM-as-judge; the claim is that mature eval stacks need a third category — agent-as-judge — because a fixed rubric with fixed scores can't cover adaptive agent behavior.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 3,
+   "quote": "LLM as a judge just gives you a fixed rubric with these fixed scores",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Signal: a trace-reading agent-judge",
+   "claim": "Arize's 'Signal' is a long-running agent that reads in traces and discovers patterns of issues that a rubric-based judge would never catch.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 4,
+   "quote": "a long-running agent that can read traces sent in",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Example of a subtle trajectory failure",
+   "claim": "One failure Signal caught was an agent repeatedly calling the same tool in a loop — an inefficient trajectory invisible to a fixed-criteria judge.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 4,
+   "quote": "calling the same tool for repeatedly long time",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Agent-judge can self-remediate",
+   "claim": "Because Signal does full trace analysis, it can go beyond flagging an issue and actually open a pull request with a proposed fix.",
+   "video_id": "q2JrUKBMf0w",
+   "chunk_index": 4,
+   "quote": "it can go put up a PR and put up a fix",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Traditional metrics measure overlap, not meaning",
+   "claim": "BLEU/ROUGE/METEOR only measure lexical overlap with a reference; BERTScore/MoverScore add semantic overlap, but none support genuine multi-dimensional evaluation like coherence, formality, or readability.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 6,
+   "quote": "you can't do a multi-dimensional evaluation",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM judges fuse multi-criteria scores",
+   "claim": "An LLM judge prompt specifies several evaluation criteria plus a scoring rubric for each, then the per-criteria scores are fused (e.g. averaged) into one overall judgment.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 7,
+   "quote": "give it a scoring rubric for each criteria",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Multimodal judging fills a metrics gap",
+   "claim": "For image/video outputs, automatic metrics (FID, Inception Score) are scarce and limited, which is why multimodal LLM judges (e.g. LLaVA-Critic, Prometheus-Vision) fill the evaluation gap for non-text modalities.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 9,
+   "quote": "coming up with a whole bunch of metrics uh for evaluation is very challenging",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM judges cut human-eval cost; reasoning models help more",
+   "claim": "LLM-as-judge substantially lowers evaluation cost versus manual human grading, and reasoning models further improve judgment quality because they can reason through the assessment.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 10,
+   "quote": "this also brings down human evaluation costs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Learning-to-rank is the theoretical basis for judge design",
+   "claim": "LLM-as-judge design is built on the pointwise/pairwise/listwise learning-to-rank (LTR) paradigms borrowed from information retrieval and recommender systems.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 15,
+   "quote": "one example being graded uh in independently in isolation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pointwise: cheap and scalable, but miscalibrated",
+   "claim": "Pointwise judging scores each candidate independently as a regression task — cheap, scalable, good for filtering datasets — but its absolute scores can be inconsistent or miscalibrated compared to a relative comparison.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 21,
+   "quote": "because these scores are absolute they can be inconsistent",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Pairwise: better human correlation, higher cost",
+   "claim": "Pairwise judging (sigmoid of the score difference between two candidates) correlates better with human judgment than pointwise scoring but needs many more comparisons and raises evaluation cost; it's the same formulation used to train RLHF reward models.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 26,
+   "quote": "shown to have higher correlation with human judgments",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Listwise: global ranking via NDCG, expensive",
+   "claim": "Listwise judging ranks a whole candidate list, scored with NDCG (normalized discounted cumulative gain); it captures global ranking quality but is the most computationally expensive and hardest to scale of the three paradigms.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 28,
+   "quote": "computationally expensive and harder to scale",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Standard judge prompt anatomy",
+   "claim": "A well-built judge prompt has: role definition, task description, an evaluation-criteria list, a scoring rubric per criterion (binary/Likert/ordinal/categorical), optional few-shot rubric examples, the candidate output(s), explicit instructions, and a structured JSON output spec.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 30,
+   "quote": "specify the evaluation criteria and scoring rubrics",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Explicitly forbid the judge from suggesting fixes",
+   "claim": "Without an explicit instruction to avoid suggesting improvements, judges default to giving improvement feedback instead of a clean score, which breaks downstream parsing.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 35,
+   "quote": "avoid suggesting improvements",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Asking for rationale improves accuracy, not just explainability",
+   "claim": "Requiring the judge to output a rationale alongside its score doesn't just aid human interpretation — it measurably makes the judge better at the underlying assessment task.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 13,
+   "quote": "makes judges even better uh at the entire task",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Automatic Prompt Optimization (APO) calibrates judges without training",
+   "claim": "APO iteratively refines a seed judge prompt using 'textual gradients' — LLM-generated verbal feedback comparing its output to ground truth — and can work with roughly a couple hundred labeled examples.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 41,
+   "quote": "textual gradients which is essentially verbal feedback",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "RL (GRPO) trains judges to reason before verdicts",
+   "claim": "The J1 paper (Meta) uses GRPO — the same RL algorithm behind DeepSeek-R1's reasoning training — to teach judges to produce a reasoning trace before their verdict and to reduce positional bias; Judge-LRM uses outcome-based rewards in a similar way.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 39,
+   "quote": "generate reasoning traces before Wordex and also comes up with ways",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Panels of judges trade compute for reliability",
+   "claim": "A panel of multiple different judge models (PoLL), aggregated by averaging or majority vote, reduces individual-model bias at the cost of extra compute.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 44,
+   "quote": "trading off compute here for better reliability",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Three canonical judge biases",
+   "claim": "The three most common LLM-judge biases are positional bias (favoring an answer by order), verbosity/length bias (favoring longer responses regardless of added value), and self-preference bias (a judge rating its own model family's outputs more favorably).",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 46,
+   "quote": "the a judge model prefers longer responses",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Mitigating positional bias via training-time shuffling",
+   "claim": "Positional bias is mitigated during training by shuffling candidate order intentionally, so the judge doesn't overfit to 'first' or 'second' as a signal.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 46,
+   "quote": "shuffling through their positions intentionally",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Ambiguous rubrics invite reward hacking",
+   "claim": "A judge's reliability depends entirely on how objectively its criteria and rubrics are specified — ambiguity there opens a direct path to reward hacking.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 48,
+   "quote": "go through reward hacking as well",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Decoder architectures dominate judge implementations",
+   "claim": "Nearly all LLM-as-judge systems use decoder-only (generative) transformer architectures; encoder-only and encoder-decoder ranker variants exist but are far less used today.",
+   "video_id": "N_DwZR--XCc",
+   "chunk_index": 37,
+   "quote": "transformer decoder based evaluators",
+   "kind": "tool",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Whether agentic/trajectory evaluation needs a fundamentally new paradigm",
+   "positions": [
+    {
+     "video_id": "spvXj9tnWAQ",
+     "chunk_index": 16,
+     "position": "Trajectory evaluation is just another application of LLM-as-judge — you can grade a trajectory against a reference path, or without ground truth by matching node descriptions to the expected process."
+    },
+    {
+     "video_id": "q2JrUKBMf0w",
+     "chunk_index": 3,
+     "position": "Classic fixed-rubric LLM-as-judge fundamentally cannot handle agentic, non-deterministic trajectories and requires a new category, 'agent-as-judge,' built on adaptive dynamic analysis rather than a fixed rubric."
+    }
+   ]
+  },
+  {
+   "topic": "Score granularity: numeric/Likert scales vs binary labels",
+   "positions": [
+    {
+     "video_id": "X4dEHRzBLmc",
+     "chunk_index": 9,
+     "position": "Move away from 1-5 or percentage scores toward binary pass/fail judgments — even binary labels are hard enough to calibrate, and two human annotators often disagree on a 1-5 score anyway."
+    },
+    {
+     "video_id": "N_DwZR--XCc",
+     "chunk_index": 34,
+     "position": "Presents Likert-scale (1-5), ordinal, and categorical scoring rubrics as standard, unremarkable practice for judge prompts, without flagging scale granularity itself as a major calibration risk."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the talks give a standard, generalizable threshold (e.g. required correlation or agreement score) for when a judge is 'calibrated enough' to trust in production, beyond Mabrouk's informal ~95%-accuracy aspiration on one narrow case study.",
+  "No guidance on how often to re-validate or re-calibrate a judge as the underlying application, policy, or model provider changes over time.",
+  "No discussion of statistical sample-size requirements for golden/eval datasets — how many labeled examples are enough to trust a judge's reported accuracy.",
+  "No cost or latency comparison across pointwise vs pairwise vs listwise judging in concrete dollar or millisecond terms.",
+  "No worked guidance on how to aggregate multiple per-criterion scores into one overall pass/fail decision beyond a passing mention of simple averaging.",
+  "No detail on monitoring judge drift or disagreement rate once a judge is deployed in production, versus one-time offline validation against a golden set."
+ ],
+ "verified_claims": 54
+}

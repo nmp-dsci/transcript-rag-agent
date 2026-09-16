@@ -24,3 +24,6 @@ frontend/*.tsbuildinfo
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Field guides: exported chunk corpora are rebuilt from Chroma, never committed
+guides/*/corpus/

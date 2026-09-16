@@ -15,3 +15,5 @@ frontend/dist/
 !.yt-agent/themes.json
 !.yt-agent/conflicts.json
 !.yt-agent/documents/
+!guides/
+guides/*/corpus/

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "created_at": "2026-09-14T21:24:10+00:00",
+  "summary": "One comment, addressed. The Scoring section recommended pairwise judging without naming the bias it introduces, even though the corpus covers position bias in four places. I appended a cited clause to the existing pairwise lever (scoring-p4) naming order sensitivity as the cost of the format, and added a new lever card immediately after it — 'Pairwise's own bias: position' (scoring-h311, scoring-p12) — that states the bias and the four corpus-supported controls in cost order: randomise order and allow ties (cRz0BWkuwHg@6), run both orderings and take the majority (8fNP4N46RRo@24), keep the swap a paired operation so a flipped verdict reads as instability rather than a winner (PjCwlX0XT8o@37), and predeclare whether production aggregates both orders or reports unresolved reversals separately (PjCwlX0XT8o@37), plus anonymised response_A/response_B pairs (PjCwlX0XT8o@32) and training-time position shuffling for trained judges (N_DwZR--XCc@46). Every existing id is preserved; the two new ids continue the scoring section's sequence. guide.md carries the same text under identical headings with [VIDEO_ID@N] cites. No new gaps were opened — the corpus supports each control directly, and the pre-existing position-bias lever in 'Validate the instrument' (instrument-p3) now has a scoring-side counterpart rather than being the only mention.",
+  "items": [
+    {
+      "id": "c-138f9f",
+      "outcome": "addressed",
+      "reason": "The corpus supports the request in detail. Stanford CME295 names position bias and the swap-and-majority remedy (8fNP4N46RRo@23, @24); the Northeastern lecture gives the 'always favors the first or the second' framing and training-time shuffling (N_DwZR--XCc@46); the RAG-metrics talk gives randomised order and allowing ties as pairwise best practice (cRz0BWkuwHg@6); and the evals playbook gives the paired swap test, the 'neither answer has demonstrated superiority' reading of a flip, the aggregate-or-report-reversals production rule and anonymised pairs (PjCwlX0XT8o@36, @37, @32). Added as a new lever card directly after the pairwise card, with a cited pointer sentence in the pairwise card itself so the correction lands where the reader was reading.",
+      "sections": [
+        "scoring-p4",
+        "scoring-h311",
+        "scoring-p12"
+      ]
+    }
+  ],
+  "changed_sections": [
+    "scoring-p4",
+    "scoring-h311",
+    "scoring-p12"
+  ]
+}
