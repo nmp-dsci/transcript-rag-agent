@@ -11,6 +11,7 @@ const guides = vi.fn();
 const guide = vi.fn();
 const guideJob = vi.fn();
 const subscribeGuideJob = vi.fn();
+const askGuide = vi.fn();
 vi.mock('../api/client', () => ({
   api: {
     guides: () => guides(),
@@ -18,10 +19,18 @@ vi.mock('../api/client', () => ({
     guideJob: () => guideJob(),
     // The stream never resolves on its own, exactly as the endpoint behaves.
     subscribeGuideJob: (handlers: unknown, signal: AbortSignal) => subscribeGuideJob(handlers, signal),
-    guideScope: () => Promise.resolve({ topic: '', probes: [], candidates: [], total_videos: 0 }),
-    startGuide: () => Promise.resolve(null),
+    askGuide: (payload: unknown) => askGuide(payload),
+    addGuideComment: () => Promise.resolve(null),
+    reviseGuide: () => Promise.resolve(null),
   },
 }));
+vi.mock('../speech/useSpeechToText', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../speech/useSpeechToText')>();
+  return {
+    ...actual,
+    useSpeechToText: () => ({ supported: true, status: 'idle', transcript: { committed: '', interim: '' }, error: null, start: vi.fn(), stop: vi.fn(), reset: vi.fn() }),
+  };
+});
 
 function summary(overrides: Partial<GuideSummary> = {}): GuideSummary {
   return {
@@ -69,6 +78,7 @@ beforeEach(() => {
   guide.mockReset();
   guideJob.mockReset();
   subscribeGuideJob.mockReset();
+  askGuide.mockReset();
   guideJob.mockResolvedValue({ job: null, sdk: null });
   subscribeGuideJob.mockImplementation(() => new Promise<void>(() => undefined));
   window.history.replaceState(null, '', '/');
@@ -196,7 +206,7 @@ describe('GuidesView', () => {
     });
     render(<GuidesView />);
     await screen.findByRole('heading', { level: 2, name: 'Ship Like a Studio' });
-    expect(screen.getByLabelText('New guide')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ New guide' })).toBeInTheDocument();
     const running = job({ slug: 'production-genai-systems', title: 'Production GenAI Systems' });
     await act(async () => handlers.snapshot?.({ job: running }));
     // The rail lists the run; clicking it shows the research map.
@@ -256,10 +266,49 @@ describe('GuidesView', () => {
     expect((screen.getByTitle('Ship Like a Studio') as HTMLIFrameElement).getAttribute('src')).toBe('/guides/ship-like-a-studio/guide.html?v=2');
   });
 
-  it('shows the empty state when nothing is committed', async () => {
+  it('opens the ask surface when nothing is committed, and the read-only empty state in demo', async () => {
     guides.mockResolvedValue({ guides: [], write_command: 'x' });
     render(<GuidesView />);
-    expect(await screen.findByText('No field guides yet')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'What do you want a guide on?' })).toBeInTheDocument();
+    expect(window.location.search).toBe('?guide=new');
     await waitFor(() => expect(guide).not.toHaveBeenCalled());
+  });
+
+  it('asks for a guide in plain language and opens the research map', async () => {
+    let handlers: Record<string, (data: unknown) => void> = {};
+    subscribeGuideJob.mockImplementation((h: Record<string, (data: unknown) => void>) => {
+      handlers = h;
+      return new Promise<void>(() => undefined);
+    });
+    const question = 'How do teams calibrate an LLM judge against human labels?';
+    const started = job({ slug: 'calibrate-an-llm-judge', title: question, question, video_ids: ['a', 'b'], stage: 'export' });
+    askGuide.mockResolvedValue(started);
+    render(<GuidesView stt />);
+    await screen.findByRole('heading', { level: 2, name: 'Ship Like a Studio' });
+    await userEvent.click(screen.getByRole('button', { name: '+ New guide' }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'What do you want a guide on?' })).toBeInTheDocument();
+    // The mic renders because the server has a speech relay.
+    expect(screen.getByRole('button', { name: 'Start voice input' })).toBeInTheDocument();
+    const box = screen.getByLabelText('Question');
+    await userEvent.type(box, question);
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(askGuide).toHaveBeenCalledWith({ question, allow_web: false }));
+    // Straight to the research map, headed by the question, no checklist.
+    expect(await screen.findByText('answering')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: question })).toBeInTheDocument();
+    expect(screen.getByText('2 videos chosen from the corpus')).toBeInTheDocument();
+    expect(handlers.snapshot).toBeDefined();
+  });
+
+  it('hides the ask surface in demo mode', async () => {
+    window.history.replaceState(null, '', '/?guide=new');
+    render(
+      <DemoContext.Provider value={true}>
+        <GuidesView />
+      </DemoContext.Provider>,
+    );
+    await screen.findByText('Ship Like a Studio', { selector: '.rq' });
+    expect(screen.queryByRole('button', { name: '+ New guide' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'What do you want a guide on?' })).not.toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ import { api } from '../api/client';
 import type { GuideActivity, GuideDetail, GuideJob, GuideSummary } from '../api/types';
 import { useDemo } from '../demo';
 import { CommentRail } from './CommentRail';
-import { ComposePanel } from './ComposePanel';
+import { AskGuide } from './AskGuide';
 import { EvidenceMap } from './EvidenceMap';
 import { GuideReader, type GuideReaderHandle, type GuideSection, type GuideSelection } from './GuideReader';
 import { ResearchMap } from './ResearchMap';
@@ -31,6 +31,8 @@ export function appendActivity(job: GuideJob | null, event: GuideActivity): Guid
 }
 
 const GUIDE_PARAM = 'guide';
+/** The ask surface's address: `?guide=new` is not a slug the catalog can hold. */
+export const NEW_GUIDE = 'new';
 
 /** The selected guide lives in the query string, not the hash — the hash is
  *  the tab router, and a `#guides/slug` would be read as an unknown tab. */
@@ -177,9 +179,10 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
   useEffect(() => {
     void load().then((list) => {
       // A deep link wins; otherwise open the most recent guide so the tab is
-      // never an empty frame next to a list of things to click.
-      if (slug && list.some((g) => g.slug === slug)) return;
-      const first = list[0]?.slug ?? null;
+      // never an empty frame next to a list of things to click. An empty
+      // catalog opens the ask surface — the one thing to do there.
+      if (slug === NEW_GUIDE || (slug && list.some((g) => g.slug === slug))) return;
+      const first = list[0]?.slug ?? (demo ? null : NEW_GUIDE);
       setSlug(first);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,7 +199,7 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
     setSections([]);
     setSelection(null);
     setVersion(null);
-    if (!slug) {
+    if (!slug || slug === NEW_GUIDE) {
       setDetail(null);
       return;
     }
@@ -284,6 +287,19 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
           )}
         </div>
         <div className="rail-list">
+          {!demo && (
+            <button
+              type="button"
+              className={`rentry gnew ${slug === NEW_GUIDE && view === null ? 'on' : ''}`}
+              aria-current={slug === NEW_GUIDE && view === null ? 'true' : undefined}
+              onClick={() => {
+                setView(null);
+                setSlug(NEW_GUIDE);
+              }}
+            >
+              + New guide
+            </button>
+          )}
           {job && job.kind !== 'revise' && (job.status === 'running' || view === 'job') && (
             <button
               type="button"
@@ -315,19 +331,9 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
             />
           ))}
         </div>
-        {!demo && (
-          <ComposePanel
-            running={job}
-            sdkProblem={sdkProblem}
-            onStarted={(started) => {
-              setJob(started);
-              setView('job');
-            }}
-          />
-        )}
         {demo && writeCommand && (
           <div className="rail-foot">
-            Guides are written by an agent from the corpus; the demo is read-only.
+            Guides are asked for in plain language and written by an agent from the corpus; the demo is read-only.
           </div>
         )}
       </aside>
@@ -335,6 +341,18 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
       <div className="guides-main">
         {error && <div className="guide-error">{error}</div>}
         {view === 'job' && job && <ResearchMap job={job} />}
+        {view !== 'job' && slug === NEW_GUIDE && !demo && (
+          <AskGuide
+            running={job}
+            sdkProblem={sdkProblem}
+            stt={stt}
+            onStarted={(started) => {
+              captureEvent('guide_ask', { slug: started.slug, videos: started.video_ids.length, web: started.allow_web });
+              setJob(started);
+              setView('job');
+            }}
+          />
+        )}
         {view !== 'job' && detail && (
           <>
             <header className="guide-head">
@@ -423,7 +441,7 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
             </div>
           </>
         )}
-        {view !== 'job' && !detail && guides && guides.length === 0 && !error && (
+        {view !== 'job' && slug !== NEW_GUIDE && !detail && guides && guides.length === 0 && !error && (
           <div className="guide-empty">
             <h2>No field guides yet</h2>
             <p>
@@ -431,7 +449,7 @@ export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
               corpus. Import a hand-made page or write one:
             </p>
             <p>
-              <code>python -m src.cli guides import page.html --slug my-guide</code>
+              <code>python -m src.cli guides write --question "..."</code>
             </p>
           </div>
         )}

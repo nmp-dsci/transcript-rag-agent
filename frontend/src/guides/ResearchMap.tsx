@@ -181,19 +181,65 @@ function Map({ view }: { view: ResearchView }) {
   );
 }
 
+/** The videos the run reads, named once the export has listed them. Shown in
+ *  the header because an asked-for guide skips the checklist: this is where
+ *  the choice is visible. */
+function ChosenVideos({ job }: { job: GuideJob }) {
+  const videos = (job.clusters.videos ?? {}) as Record<string, VideoMeta>;
+  return (
+    <details className="note-more gj-chosen">
+      <summary>
+        {job.video_ids.length} video{job.video_ids.length === 1 ? '' : 's'} chosen from the corpus
+      </summary>
+      <ul>
+        {job.video_ids.map((id) => {
+          const meta = videos[id];
+          return (
+            <li key={id}>
+              <a href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener">
+                {meta?.title ?? id}
+              </a>
+              {meta && (
+                <span className="gj-log-dim">
+                  {' '}
+                  · {meta.channel_name} · {meta.chunk_count} chunks
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </details>
+  );
+}
+
 export function ResearchMap({ job }: { job: GuideJob }) {
   const view = deriveResearch(job, clusterMembership(job));
   return (
     <div className="gj">
       <div className="gj-head">
         <div>
-          <h2>{job.title || job.slug}</h2>
+          {job.question ? (
+            <>
+              <p className="gj-eyebrow">answering</p>
+              <h2>{job.question}</h2>
+            </>
+          ) : (
+            <h2>{job.title || job.slug}</h2>
+          )}
           <p className="gj-sub">
             {job.kind === 'write' ? 'Writing from' : job.kind === 'revise' ? 'Revising with' : 'Backfilling for'}{' '}
             {job.video_ids.length} videos · {job.allow_web ? 'web on' : 'corpus only'} · started {job.started_at.slice(11, 16)}
             {job.status === 'error' && <span className="gj-err"> · failed: {job.error}</span>}
-            {job.status === 'done' && <span className="gj-ok"> · published v{job.version ?? '?'}</span>}
+            {job.status === 'done' && (
+              <span className="gj-ok">
+                {' '}
+                · published v{job.version ?? '?'}
+                {job.question && job.title && job.title !== job.question ? ` as “${job.title}”` : ''}
+              </span>
+            )}
           </p>
+          {job.kind === 'write' && <ChosenVideos job={job} />}
         </div>
         <StageRail job={job} />
       </div>

@@ -1946,6 +1946,8 @@ export interface GuideSummary {
   title: string;
   topic: string;
   subtitle: string;
+  /** The question the guide was asked for, when it was asked rather than configured. */
+  question?: string;
   status: 'published' | 'draft' | 'error';
   current_version: number;
   compiled_at: string;
@@ -1993,6 +1995,7 @@ export interface GuideCandidate {
 
 export interface GuideScope {
   topic: string;
+  question?: string;
   probes: string[];
   candidates: GuideCandidate[];
   total_videos: number;
@@ -2025,6 +2028,8 @@ export interface GuideJob {
   slug: string;
   topic: string;
   title: string;
+  /** The plain-language ask, when the guide was asked for rather than configured. */
+  question?: string;
   video_ids: string[];
   allow_web: boolean;
   comment_ids: string[];

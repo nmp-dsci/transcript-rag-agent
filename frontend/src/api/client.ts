@@ -166,6 +166,11 @@ export const api = {
   guideScope: (topic: string, limit = 25) =>
     postJson<GuideScope>("/api/guides/scope", { topic, limit }),
 
+  /** Ask for a guide in plain language: the server scopes the corpus and
+   *  starts at once; the job carries the question as its title until the
+   *  composer names the page. */
+  askGuide: (payload: { question: string; allow_web?: boolean }) => postJson<GuideJob>("/api/guides", payload),
+
   /** Start writing a guide from a confirmed video set. 409 while one runs,
    *  503 when the Agent SDK or its token is missing (detail says which). */
   startGuide: (payload: {

@@ -57,6 +57,31 @@ const CSS = `
   padding: 1px 5px; border-radius: 4px; }
 .guide-error { padding: 12px 16px; color: var(--bad); font-size: var(--t0); }
 
+/* ── ask surface ── */
+.guides-rail .gnew { display: block; text-align: center; color: var(--accent2); background: var(--accent-dim);
+  border: 1px dashed var(--accent-border); margin-bottom: 6px; font-weight: 500; }
+.guides-rail .gnew.on { border-style: solid; }
+.ask { max-width: 660px; margin: 40px auto 0; padding: 0 20px 24px; }
+.ask-eyebrow { font: var(--t-2) var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent2); }
+.ask h2 { font-family: var(--display); font-size: var(--t3); letter-spacing: -0.015em; color: var(--text); margin: 6px 0 6px; line-height: 1.15; }
+.ask-lead { color: var(--muted); font-size: var(--t0); line-height: 1.5; margin: 0 0 14px; }
+.ask-box { background: var(--panel); border: 1px solid var(--border2); border-radius: 12px; padding: 10px 12px;
+  box-shadow: 0 0 0 3px var(--accent-dim); transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.ask-box:focus-within { border-color: var(--accent-border); }
+.ask-box.rec { border-color: var(--bad-border); box-shadow: 0 0 0 3px var(--bad-dim); }
+.ask-box textarea { width: 100%; resize: vertical; font: inherit; font-size: var(--t1); line-height: 1.5; color: var(--text);
+  background: none; border: 0; padding: 4px 2px; min-height: 64px; }
+.ask-box textarea:focus { outline: none; }
+.ask-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ask-row .spacer { flex: 1; }
+.ask-hint { font: var(--t-2) var(--mono); color: var(--dim); }
+.ask-hint.rec { color: var(--bad); }
+.ask-opt { display: block; margin: 10px 2px 0; font-size: var(--t-1); color: var(--text2); }
+.ask-opt input { margin-right: 6px; }
+.ask .gc-err, .ask .gc-warn { margin: 8px 0 0; }
+.ask-suggest { margin-top: 14px; }
+.ask-note { margin: 16px 0 0; font: var(--t-2) var(--mono); color: var(--dim); line-height: 1.5; }
+
 /* ── compose panel (screen A) ── */
 .gc { border-top: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
 .gc .rail-head { border-bottom: 0; }
@@ -93,6 +118,14 @@ const CSS = `
 .gj-head > div { flex: 1 1 320px; min-width: 0; }
 .gj-head h2 { margin: 0; font-size: var(--t2); color: var(--text); }
 .gj-sub { margin: 2px 0 0; font: var(--t-1) var(--mono); color: var(--muted); }
+.gj-eyebrow { margin: 0; font: var(--t-2) var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent2); }
+.gj-chosen { margin-top: 6px; font-size: var(--t-1); color: var(--text2); }
+.gj-chosen summary { cursor: pointer; color: var(--muted); }
+.gj-chosen ul { margin: 6px 0 0; padding-left: 18px; columns: 2; column-gap: 18px; }
+@media (max-width: 700px) { .gj-chosen ul { columns: 1; } }
+.gj-chosen li { break-inside: avoid; margin: 2px 0; }
+.gj-chosen a { color: var(--text); text-decoration: none; }
+.gj-chosen a:hover { color: var(--accent2); }
 .gj-err { color: var(--bad); }
 .gj-ok { color: var(--good); }
 .gj-stages { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
