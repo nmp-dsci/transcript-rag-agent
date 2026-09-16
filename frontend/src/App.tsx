@@ -193,7 +193,17 @@ export function App() {
             </button>
           ))}
         </nav>
-        <div className="topstat">
+        <div
+          className="topstat"
+          // The judge model and stack state matter only when something is
+          // wrong or someone asks, so they live in the tooltip; the bar keeps
+          // the corpus size and the health dot.
+          title={
+            health && !demo
+              ? `judge ${health.judge_model} · ${health.runner_loaded ? 'stack loaded' : 'stack cold'}`
+              : undefined
+          }
+        >
           <span className={`hdot ${offline ? 'err' : health ? 'ok' : ''}`} />
           <span className="topstat-text">
             {offline
@@ -201,9 +211,7 @@ export function App() {
               : demo
                 ? `${corpusBit}demo replay`
                 : health
-                  ? `${corpusBit}judge ${health.judge_model}${
-                      health.runner_loaded ? ' · stack loaded' : ' · stack cold'
-                    }`
+                  ? corpusBit.replace(/\s·\s$/, '') || 'ready'
                   : 'connecting…'}
           </span>
           <button
