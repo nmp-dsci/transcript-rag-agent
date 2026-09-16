@@ -2,6 +2,8 @@
 title: Production GenAI Systems
 topic: "production generative AI systems: taking LLM and agent applications from pilot to production"
 compiled_at: 2026-09-14
+revised_at: 2026-09-16
+version: 2
 videos: 17
 chunks: 737
 extraction_passes: 6
@@ -46,11 +48,34 @@ sources:
 
 Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.
 
-*17 source videos · 737 transcript chunks read in full · 6 parallel extraction passes · compiled 2026-09-14*
+*17 source videos · 737 transcript chunks read in full · 6 parallel extraction passes · compiled 2026-09-14 · v2 revised 2026-09-16: seven whiteboards drawn from the same cited chunks*
 
 ## The thesis: it is never the model
 
 Every talk in this corpus was given by someone who has watched a GenAI pilot die. None of them blame the model. A two-year agency practice puts it flatly: when a project fails, it is the execution, not the model [Q679gH7oszg@2]. A Netflix- and Google-scale practitioner draws the same architecture diagram and notes that the model is a very small part of an end-to-end architecture [7YYVgH0_9CA@2]. A consultant who watched 200+ enterprise deployments opens with the warning that generative AI is not the magical pill [vW8wLsb3Nnc@0].
+
+**Whiteboard 1 — the stack the model sits inside**
+
+```
++----------------------------------------------+   +------------------------+
+| 5 . APPLICATION & UX                          |   | RESPONSIBLE AI         |
+|     chatbots, copilots, autonomous agents     |   |   input guardrails     |
++----------------------------------------------+   |   output guardrails    |
+| 4 . ORCHESTRATION & AGENTS                    |   |   policy enforcement   |
+|     the intelligence router: model -> task    |   |   auditing &           |
++----------------------------------------------+   |   explainability       |
+| 3 . DATA & RETRIEVAL                          |   |                        |
+|     vector DB, knowledge graph, grounding     |   | a runtime engineering  |
++----------------------------------------------+   | requirement spanning   |
+| 2 . FOUNDATION MODELS  <- the band the        |   | every layer, not a     |
+|     leadership room argues about; 1 of 5      |   | review gate at the end |
++----------------------------------------------+   +------------------------+
+| 1 . INFRASTRUCTURE                            |
+|     GPUs, TPUs, capacity you pay for          |
++----------------------------------------------+
+```
+
+Layer by layer as the talk draws it: at the bottom of the layer, the focus on infrastructure [7YYVgH0_9CA@3]; the third layer is your data and retrieval layer [7YYVgH0_9CA@3]; the fourth layer, my personal favorite, is actually the orchestration and agents layer [7YYVgH0_9CA@3]. Alongside all five: input guardrails [7YYVgH0_9CA@6], output guardrails, policy enforcement [7YYVgH0_9CA@7], and auditing and explainability [7YYVgH0_9CA@7] — responsible AI as a runtime engineering requirement [7YYVgH0_9CA@6].
 
 The pattern that kills pilots is legible and repeatable: pick a model, build features against predictable data, demo it, and then discover in production that nobody can check what the AI actually did [ObTPqBGsEbA@13]. One retail bank spent roughly $85K over six months on a POC that did not succeed [ObTPqBGsEbA@23], and no one could say why. Demos are, in the corpus's own phrase, the happy path [7YYVgH0_9CA@10]: they are designed to impress [uaiq1HvQKoI@45], and impressing is not a system property.
 
@@ -125,6 +150,23 @@ Three gaps sink pilots: you can't see what the AI did, you have no metric that m
 - Two tools cover most of it in practice: Langfuse for all LLM traces [Q679gH7oszg@40] plus Sentry piped into Slack for application errors. A Sentry trace can be copied as markdown and pasted straight into the coding agent [Q679gH7oszg@43].
 - Wire detection to action. With online monitoring in place, a duplicate or failing tool call can trigger a fallback that will retry three times, not more than three times [ObTPqBGsEbA@14], then escalate to a human.
 
+**Whiteboard 2 — one overdraft request, as a trace**
+
+```
+user: "I have been charged an overdraft fee - can you waive it?"
+                                     time ->
+1 . intent classification   ####                      latency + confidence captured
+2 . customer account API        ######                x3 duplicate calls
+3 . policy docs from RAG            ###########       is the claim legitimate?
+4 . reasoning                                  #####
+5 . final guardrail check                           ###
+6 . response to customer                               ##
+--------------------------------------------------------------------------------
+no trace -> the dispute arrives -> "give the customer a discount" -> never diagnosed
+```
+
+Redrawn from the retail-banking chatbot trace: the agent does an intent classification [ObTPqBGsEbA@12], connects to the customer database, gets the account details [ObTPqBGsEbA@12], retrieves policy documents from a rag vector database [ObTPqBGsEbA@12], reasons, then does some final guardrail checks, and responds to the customer [ObTPqBGsEbA@12]. The fat span is the one a demo hides — three calls to the database to find that answer [ObTPqBGsEbA@10]. Without it, you have no way to check what the AI did [ObTPqBGsEbA@13].
+
 ### 06 — Harden, then roll out slowly
 
 Guardrails are a runtime engineering requirement, and rollout is a separate discipline from building. Both exist because LLM systems fail differently from the software around them.
@@ -138,9 +180,40 @@ Guardrails are a runtime engineering requirement, and rollout is a separate disc
 - Roll out behind a switch: use versioning with blue-green or canary deployments [uaiq1HvQKoI@43], reindexing in parallel and cutting over only after validation. On the serving side, assign a challenger alias [1jvxxa7tdjw@15] while the champion keeps taking traffic.
 - Rehearse the incident loop: detect using your eval dashboard [ObTPqBGsEbA@29], diagnose with tracing, contain by rolling back the prompt version, fix from the test-case library, then add the case to the eval suite so it is caught automatically next time.
 
+**Whiteboard 3 — the guardrail sandwich**
+
+```
+user --> INPUT FLEET        --> LLM --> OUTPUT FLEET          --> user
+         prompt attack?                 hallucinated claim?
+         violent topic?                 harmful web result?
+         harmful language?              PII leaking back?
+         10 in parallel, 50-100 ms      same layer, other side
+            |
+            +--> tripped: placeholder answer, or rephrase before the model sees it
+```
+
+The common pattern is a fleet of different classifiers, usually zero shot classifiers [1LhvqZvDT5w@15] labelling the input — "Is it a prompt attack? Yes or no. Is it a violent topic?" [1LhvqZvDT5w@15] — in parallel, so maybe it takes like 100 milliseconds or 50 milliseconds [1LhvqZvDT5w@16]. When one trips, we either send a placeholder back to the user [1LhvqZvDT5w@16]. The same fleet runs between the LLM response and the user [1LhvqZvDT5w@16], because a clean question can still return a harmful answer. Prompt instructions alone are usually not enough — you need multiple layers of defense [1LhvqZvDT5w@11].
+
 ## The evaluation stack
 
 Evaluation in this corpus is three layers deep, runs continuously, and has a CI budget. Treat any one of those three as optional and you have a vibe check with a dashboard.
+
+**Whiteboard 4 — the three eval layers, cheapest first**
+
+```
+LAYER 1 . deterministic   formats, regex, NER, PII      -> malformed output, leaked PII
+   |                                                       cheap: get it out of the way
+   v
+LAYER 2 . semantic        LLM-as-judge: groundedness,   -> ungrounded, off-policy answers
+   |                      safety, relevance                ~50 examples to align the judge
+   v
+LAYER 3 . behavioural     right tool? duplicates? loops? -> the right answer, bought 3x
+                                                            the layer most teams skip
+--------------------------------------------------------------------------------------
+CI budget: a subset of rows per change . full suite only on merge to main (300-500 rows bites)
+```
+
+The layering is an architectural decision, not a maturity ladder: the first layer is deterministic [ObTPqBGsEbA@8], the second layer is the non-deterministic semantic stuff [ObTPqBGsEbA@9], and the third layer is behavioral [ObTPqBGsEbA@10] — where you find the agent that made three calls to the database to find that answer [ObTPqBGsEbA@10]. Cost control at the bottom: you only do the full test when you merge to the main branch [ObTPqBGsEbA@33].
 
 - **Layer 1 — deterministic, and first.** Formats, regex, classic NER and PII models. The first layer is deterministic [ObTPqBGsEbA@8] and it is cheap, so run it before you spend a token on anything smarter.
 - **Layer 2 — semantic judges.** LLM-as-judge for groundedness, safety and relevance. Every enterprise needs a very scalable framework of LLM judges [7YYVgH0_9CA@13], because routing everything to humans stopped scaling long ago.
@@ -157,6 +230,22 @@ Evaluation in this corpus is three layers deep, runs continuously, and has a CI 
 
 RAG is a single-turn grounded conversation [7YYVgH0_9CA@5] — the foundation the agent layer stands on. Retrieval quality is therefore the ceiling on everything above it: your app works when they ask a question and they get the answer they're looking for [_2tZaDs-w5s@10]. These are the levers that move that number, roughly in order of payoff.
 
+**Whiteboard 5 — two-stage retrieval, drawn as a funnel**
+
+```
+ index            stage 1 . recall        stage 2 . rerank        top n -> LLM
+ 100M+ docs  -->  vectors + keywords  --> cross-encoder sees  -->  candidates != returns
+ filters:         fused                   query + doc together     latency hides behind
+ tenant,          hundreds of              ~100 ms,                the LLM call
+ category, date   candidates               small set only
+---------------------------------------------------------------------------------------
+quality ladder:  BM25  <  vectors  <  fusion  <  fusion + rerank
+density lever:   1-bit quantization = 32x density, low-to-mid 90% quality
+                 -> oversample -> rescore the survivors at full precision
+```
+
+The first stage is recall oriented and uses vectors and keywords [_2tZaDs-w5s@11]; the second rescores that short list, since these type of R rankers are often called cross encoders [_2tZaDs-w5s@12] and run at about 100 milliseconds give or take for a model like this [_2tZaDs-w5s@13] — you can do it only on a smaller set [_2tZaDs-w5s@13]. Filter before either stage: even if you have hundreds of millions of documents these are not a problem [_2tZaDs-w5s@9]. And separate how many candidates you want from how many you want to return [_2tZaDs-w5s@10].
+
 - **Scope before you rank.** The single most effective lever is narrowing the candidate set: the other dimension of getting quality out of the system is to narrow the data set [_2tZaDs-w5s@13], then do the ranking tricks on top. Filters stay fast even if you have hundreds of millions of documents [_2tZaDs-w5s@9].
 - **Two stages, always.** The first stage is recall oriented and uses vectors and keywords [_2tZaDs-w5s@11]; the second reranks the small candidate set. Benchmarked on one query set, quality runs BM25 < vectors < fusion < fusion+rerank, with better results just out of the box when reranking is enabled [_2tZaDs-w5s@12].
 - **Rerankers are cross-encoders, and that's the point.** These rerankers are cross encoders [_2tZaDs-w5s@12] — they see query and document together, which is why they rank better and can't run over the whole corpus. Budget about 100 milliseconds give or take for a model like this [_2tZaDs-w5s@13]; in an interactive app that hides behind the LLM call.
@@ -170,6 +259,27 @@ RAG is a single-turn grounded conversation [7YYVgH0_9CA@5] — the foundation th
 ## Agent architectures that survive contact
 
 The corpus contains exactly one multi-agent system with published production numbers — Factory's "missions", whose longest mission ran for 16 days [ow1we5PzK-o@7]. Its design choices are the most concrete evidence here about what makes long-horizon agent work hold together, and they are mostly about structure, not intelligence. The stated bottleneck is not model capability: the bottleneck in software engineering nowadays is not intelligence [ow1we5PzK-o@0], it's human attention.
+
+**Whiteboard 6 — orchestrator, workers, validators**
+
+```
+                    ORCHESTRATOR . planning
+            features . milestones . validation contract
+              (the contract is written before any code)
+                              |  one feature at a time
+    worker 1  --git commit-->  worker 2  --git commit-->  worker 3
+    clean context,             inherits a clean slate     serial, not parallel:
+    no baggage                 and a working codebase     slower on paper, fewer errors
+                              |  milestone
+    SCRUTINY VALIDATOR                     USER-TESTING VALIDATOR
+    test suite, type checking, lints,      spawns the app, drives it by computer use
+    a review agent per feature             most of the wall-clock time lives here
+                              |
+                              +-- handoff, written down --> orchestrator
+    neither validator has seen the code . validation may use a different provider
+```
+
+The shape of the only production multi-agent system here: it uses a three-role architecture. There's orchestrator, there's workers [ow1we5PzK-o@3] and validators. The orchestrator handles planning [ow1we5PzK-o@4] and emits features, milestones and then something that's called a validation contract [ow1we5PzK-o@4]; each worker has clean context, no accumulated baggage [ow1we5PzK-o@4] and commits by Git allowing the next worker to inherit a clean slate [ow1we5PzK-o@4]. Per milestone you get the scrutiny validator and the user testing validator [ow1we5PzK-o@6] — the first runs the test suite, type checking, lints [ow1we5PzK-o@6], the second spawns the application and interacts with it through computer use [ow1we5PzK-o@6]. Neither validator has seen the code before [ow1we5PzK-o@7].
 
 - **Write the validation contract before the code.** A contract written during planning before any code [ow1we5PzK-o@5] defines correctness independently of implementation — hundreds of assertions on a complex project. The alternative is worthless: tests written after implementation don't catch bugs. They confirm decisions [ow1we5PzK-o@5].
 - **Three roles, one active at a time.** Missions uses a three-role architecture. There's orchestrator, there's workers [ow1we5PzK-o@3] and validators. Each worker gets clean context and commits via Git so the next inherits a working codebase.
@@ -189,6 +299,25 @@ The corpus contains exactly one multi-agent system with published production num
 ## Serving economics: the three numbers
 
 Below the application layer the constraints are physical and unforgiving. Every workload is sized by three numbers that size every AI workload [hBzUokVYQkI@11]: compute, capacity, and bandwidth. And set the target before the architecture, because Latency is a product decision [7YYVgH0_9CA@11], not an engineering one.
+
+**Whiteboard 7 — the request path under an inference fleet**
+
+```
+requests  -->  CACHE-AWARE ROUTER  -->  PREFILL POOL
+"hi" and       . saved work held        compute-heavy, reads the prompt
+"summarize     . memory free            sized by TTFT, e.g. H100
+ 50 pages"     . queue length                  |
+look the same  follow-up -> the server         |  KV cache over a fast link
+to a load      that already has your           v
+balancer       conversation            DECODE POOL  -->  stream out
+                                       memory-bandwidth-heavy,   TPOT = the gap
+                                       one model read per token, between two words
+                                       e.g. H200
+-----------------------------------------------------------------------------------
+routing alone: ~3x throughput, first response 2x faster . split pools: up to +70% tokens/sec
+```
+
+LLM-D's answer to a load balancer that cannot see inside a server: it's a smart router that sits in front of your entire fleet of servers [hBzUokVYQkI@34], weighing saved work, how much memory it has free, and how long its queue is [hBzUokVYQkI@35], then it sends it straight back to the server that already has your conversation [hBzUokVYQkI@35]. Downstream, one pool does nothing but prefill and the other does nothing but decode [hBzUokVYQkI@36], and when prefill finishes it hands the saved work across a fast link to a decode server [hBzUokVYQkI@36]. The halves differ in kind: the prefill phase which is when the original prompt gets processed [hBzUokVYQkI@22] versus the decode phase which writes the answer by rereading the model over and over [hBzUokVYQkI@22].
 
 - **Memory caps concurrency, not compute.** Every batched user needs a KV-cache scratch pad alongside the fixed weights, so it's the memory that decides how many people one GPU can actually serve [hBzUokVYQkI@28]. Which is why teams end up buying far more GPUs than the math can actually calls for [hBzUokVYQkI@28].
 - **Cache-aware routing is the cheapest 3×.** Round-robin treats servers as interchangeable, so it throws away saved work that was perfectly good [hBzUokVYQkI@33]. Routing a follow-up back to the server holding the conversation cache gives you around three times the throughput and a first response that is twice as fast [hBzUokVYQkI@35].
@@ -422,7 +551,8 @@ Seventeen talks, and these questions still have no answer here. Anything below i
 - **How validation contracts stay honest.** Factory's contracts can span hundreds of assertions over a 16–30 day run, but the talk does not say how they are authored, reviewed, or kept current.
 - **Prompt and agent rollback in practice.** Versioning-as-change-management is asserted; no talk walks through canarying a prompt change or rolling one back mid-incident.
 - **Model deprecation at scale.** One anecdote — Claude 3.7 to 4 as a drop-in — stands in for the whole migration-risk question.
+- **The speakers' own diagrams.** The corpus is transcript text only — no slides, no images. The seven whiteboards above are reconstructions from what each speaker described out loud and the numbers they cited; detail that lived only on a slide (exact topologies, axis units, vendor-specific boxes) is not recoverable here.
 
 ---
 
-*Production GenAI Systems — compiled from a transcript corpus of 17 talks, 737 chunks read in full across 6 parallel extraction passes, compiled 2026-09-14. Every claim above resolves to a cited chunk; where the corpus was silent, the gaps section says so instead of guessing.*
+*Production GenAI Systems — compiled from a transcript corpus of 17 talks, 737 chunks read in full across 6 parallel extraction passes, compiled 2026-09-14, revised 2026-09-16 (v2) with seven whiteboards. Every claim above — text and diagram alike — resolves to a cited chunk; where the corpus was silent, the gaps section says so instead of guessing.*

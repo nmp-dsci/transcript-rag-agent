@@ -1,6 +1,6 @@
 {
-  "total": 195,
-  "valid": 195,
+  "total": 241,
+  "valid": 241,
   "pass_rate": 1.0,
   "sections": [
     "thesis",
@@ -59,6 +59,97 @@
     {
       "cite_index": 3,
       "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 3,
+      "chunk_id": "chunk:7YYVgH0_9CA:3",
+      "quote": "At the bottom of the layer, you can see the focus on infrastructure",
+      "text": "at the bottom of the layer, the focus on infrastructure",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 4,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 3,
+      "chunk_id": "chunk:7YYVgH0_9CA:3",
+      "quote": "the third layer layer is your data and retrieval layer",
+      "text": "the third layer is your data and retrieval layer",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 5,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 3,
+      "chunk_id": "chunk:7YYVgH0_9CA:3",
+      "quote": "the fourth layer, my personal favorite, is actually the orchestration and agents layer",
+      "text": "the fourth layer, the orchestration and agents layer",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 6,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 6,
+      "chunk_id": "chunk:7YYVgH0_9CA:6",
+      "quote": "there's input guardrails for what your models are going to respond to",
+      "text": "input guardrails",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 7,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 7,
+      "chunk_id": "chunk:7YYVgH0_9CA:7",
+      "quote": "There's policy enforcement",
+      "text": "policy enforcement",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 8,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 7,
+      "chunk_id": "chunk:7YYVgH0_9CA:7",
+      "quote": "the auditing and explainability",
+      "text": "auditing and explainability",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 9,
+      "section_id": "thesis",
+      "video_id": "7YYVgH0_9CA",
+      "chunk_index": 6,
+      "chunk_id": "chunk:7YYVgH0_9CA:6",
+      "quote": "I consider responsible AI a runtime engineering requirement",
+      "text": "a runtime engineering requirement",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 10,
+      "section_id": "thesis",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 13,
       "chunk_id": "chunk:ObTPqBGsEbA:13",
@@ -70,7 +161,7 @@
       "valid": true
     },
     {
-      "cite_index": 4,
+      "cite_index": 11,
       "section_id": "thesis",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 23,
@@ -83,7 +174,7 @@
       "valid": true
     },
     {
-      "cite_index": 5,
+      "cite_index": 12,
       "section_id": "thesis",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 10,
@@ -96,7 +187,7 @@
       "valid": true
     },
     {
-      "cite_index": 6,
+      "cite_index": 13,
       "section_id": "thesis",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 45,
@@ -109,7 +200,7 @@
       "valid": true
     },
     {
-      "cite_index": 7,
+      "cite_index": 14,
       "section_id": "thesis",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 24,
@@ -122,7 +213,7 @@
       "valid": true
     },
     {
-      "cite_index": 8,
+      "cite_index": 15,
       "section_id": "thesis",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 6,
@@ -135,7 +226,7 @@
       "valid": true
     },
     {
-      "cite_index": 9,
+      "cite_index": 16,
       "section_id": "thesis",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 24,
@@ -148,7 +239,7 @@
       "valid": true
     },
     {
-      "cite_index": 10,
+      "cite_index": 17,
       "section_id": "thesis",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 1,
@@ -161,7 +252,7 @@
       "valid": true
     },
     {
-      "cite_index": 11,
+      "cite_index": 18,
       "section_id": "thesis",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 51,
@@ -174,7 +265,7 @@
       "valid": true
     },
     {
-      "cite_index": 12,
+      "cite_index": 19,
       "section_id": "thesis",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 22,
@@ -187,7 +278,7 @@
       "valid": true
     },
     {
-      "cite_index": 13,
+      "cite_index": 20,
       "section_id": "thesis",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 6,
@@ -200,7 +291,7 @@
       "valid": true
     },
     {
-      "cite_index": 14,
+      "cite_index": 21,
       "section_id": "thesis",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 12,
@@ -213,7 +304,7 @@
       "valid": true
     },
     {
-      "cite_index": 15,
+      "cite_index": 22,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 3,
@@ -226,7 +317,7 @@
       "valid": true
     },
     {
-      "cite_index": 16,
+      "cite_index": 23,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 3,
@@ -239,7 +330,7 @@
       "valid": true
     },
     {
-      "cite_index": 17,
+      "cite_index": 24,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 4,
@@ -252,7 +343,7 @@
       "valid": true
     },
     {
-      "cite_index": 18,
+      "cite_index": 25,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 5,
@@ -265,7 +356,7 @@
       "valid": true
     },
     {
-      "cite_index": 19,
+      "cite_index": 26,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 6,
@@ -278,7 +369,7 @@
       "valid": true
     },
     {
-      "cite_index": 20,
+      "cite_index": 27,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 6,
@@ -291,7 +382,7 @@
       "valid": true
     },
     {
-      "cite_index": 21,
+      "cite_index": 28,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 6,
@@ -304,7 +395,7 @@
       "valid": true
     },
     {
-      "cite_index": 22,
+      "cite_index": 29,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 10,
@@ -317,7 +408,7 @@
       "valid": true
     },
     {
-      "cite_index": 23,
+      "cite_index": 30,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 7,
@@ -330,7 +421,7 @@
       "valid": true
     },
     {
-      "cite_index": 24,
+      "cite_index": 31,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 24,
@@ -343,7 +434,7 @@
       "valid": true
     },
     {
-      "cite_index": 25,
+      "cite_index": 32,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 7,
@@ -356,7 +447,7 @@
       "valid": true
     },
     {
-      "cite_index": 26,
+      "cite_index": 33,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 25,
@@ -369,7 +460,7 @@
       "valid": true
     },
     {
-      "cite_index": 27,
+      "cite_index": 34,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 25,
@@ -382,7 +473,7 @@
       "valid": true
     },
     {
-      "cite_index": 28,
+      "cite_index": 35,
       "section_id": "pipeline",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 15,
@@ -395,7 +486,7 @@
       "valid": true
     },
     {
-      "cite_index": 29,
+      "cite_index": 36,
       "section_id": "pipeline",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 8,
@@ -408,7 +499,7 @@
       "valid": true
     },
     {
-      "cite_index": 30,
+      "cite_index": 37,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 10,
@@ -421,7 +512,7 @@
       "valid": true
     },
     {
-      "cite_index": 31,
+      "cite_index": 38,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 10,
@@ -434,7 +525,7 @@
       "valid": true
     },
     {
-      "cite_index": 32,
+      "cite_index": 39,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 9,
@@ -447,7 +538,7 @@
       "valid": true
     },
     {
-      "cite_index": 33,
+      "cite_index": 40,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 9,
@@ -460,7 +551,7 @@
       "valid": true
     },
     {
-      "cite_index": 34,
+      "cite_index": 41,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 45,
@@ -473,7 +564,7 @@
       "valid": true
     },
     {
-      "cite_index": 35,
+      "cite_index": 42,
       "section_id": "pipeline",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 8,
@@ -486,7 +577,7 @@
       "valid": true
     },
     {
-      "cite_index": 36,
+      "cite_index": 43,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 50,
@@ -499,7 +590,7 @@
       "valid": true
     },
     {
-      "cite_index": 37,
+      "cite_index": 44,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 14,
@@ -512,7 +603,7 @@
       "valid": true
     },
     {
-      "cite_index": 38,
+      "cite_index": 45,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 14,
@@ -525,7 +616,7 @@
       "valid": true
     },
     {
-      "cite_index": 39,
+      "cite_index": 46,
       "section_id": "pipeline",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 46,
@@ -538,7 +629,7 @@
       "valid": true
     },
     {
-      "cite_index": 40,
+      "cite_index": 47,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 8,
@@ -551,7 +642,7 @@
       "valid": true
     },
     {
-      "cite_index": 41,
+      "cite_index": 48,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 28,
@@ -564,7 +655,7 @@
       "valid": true
     },
     {
-      "cite_index": 42,
+      "cite_index": 49,
       "section_id": "pipeline",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 25,
@@ -577,7 +668,7 @@
       "valid": true
     },
     {
-      "cite_index": 43,
+      "cite_index": 50,
       "section_id": "pipeline",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 19,
@@ -590,7 +681,7 @@
       "valid": true
     },
     {
-      "cite_index": 44,
+      "cite_index": 51,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 2,
@@ -603,7 +694,7 @@
       "valid": true
     },
     {
-      "cite_index": 45,
+      "cite_index": 52,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 12,
@@ -616,7 +707,7 @@
       "valid": true
     },
     {
-      "cite_index": 46,
+      "cite_index": 53,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 10,
@@ -629,7 +720,7 @@
       "valid": true
     },
     {
-      "cite_index": 47,
+      "cite_index": 54,
       "section_id": "pipeline",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 12,
@@ -642,7 +733,7 @@
       "valid": true
     },
     {
-      "cite_index": 48,
+      "cite_index": 55,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 19,
@@ -655,7 +746,7 @@
       "valid": true
     },
     {
-      "cite_index": 49,
+      "cite_index": 56,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 18,
@@ -668,7 +759,7 @@
       "valid": true
     },
     {
-      "cite_index": 50,
+      "cite_index": 57,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 40,
@@ -681,7 +772,7 @@
       "valid": true
     },
     {
-      "cite_index": 51,
+      "cite_index": 58,
       "section_id": "pipeline",
       "video_id": "Q679gH7oszg",
       "chunk_index": 43,
@@ -694,7 +785,7 @@
       "valid": true
     },
     {
-      "cite_index": 52,
+      "cite_index": 59,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 14,
@@ -707,7 +798,85 @@
       "valid": true
     },
     {
-      "cite_index": 53,
+      "cite_index": 60,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 12,
+      "chunk_id": "chunk:ObTPqBGsEbA:12",
+      "quote": "the agent does an intent classification",
+      "text": "the agent does an intent classification",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 61,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 12,
+      "chunk_id": "chunk:ObTPqBGsEbA:12",
+      "quote": "connects to the customer database, gets the account details",
+      "text": "connects to the customer database, gets the account details",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 62,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 12,
+      "chunk_id": "chunk:ObTPqBGsEbA:12",
+      "quote": "It retrieves policy documents. It checks from a rag vector database",
+      "text": "retrieves policy documents from a RAG vector database",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 63,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 12,
+      "chunk_id": "chunk:ObTPqBGsEbA:12",
+      "quote": "it does some final guardrail checks, and responds to the customer",
+      "text": "does some final guardrail checks, and responds to the customer",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 64,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 10,
+      "chunk_id": "chunk:ObTPqBGsEbA:10",
+      "quote": "the agent uh actually made three calls to the database to find that answer",
+      "text": "three calls to the database to find that answer",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 65,
+      "section_id": "pipeline",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 13,
+      "chunk_id": "chunk:ObTPqBGsEbA:13",
+      "quote": "you have no way to check what the AI did",
+      "text": "you have no way to check what the AI did",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 66,
       "section_id": "pipeline",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 17,
@@ -720,7 +889,7 @@
       "valid": true
     },
     {
-      "cite_index": 54,
+      "cite_index": 67,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 11,
@@ -733,7 +902,7 @@
       "valid": true
     },
     {
-      "cite_index": 55,
+      "cite_index": 68,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 16,
@@ -746,7 +915,7 @@
       "valid": true
     },
     {
-      "cite_index": 56,
+      "cite_index": 69,
       "section_id": "pipeline",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 18,
@@ -759,7 +928,7 @@
       "valid": true
     },
     {
-      "cite_index": 57,
+      "cite_index": 70,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 21,
@@ -772,7 +941,7 @@
       "valid": true
     },
     {
-      "cite_index": 58,
+      "cite_index": 71,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 21,
@@ -785,7 +954,7 @@
       "valid": true
     },
     {
-      "cite_index": 59,
+      "cite_index": 72,
       "section_id": "pipeline",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 43,
@@ -798,7 +967,7 @@
       "valid": true
     },
     {
-      "cite_index": 60,
+      "cite_index": 73,
       "section_id": "pipeline",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 15,
@@ -811,7 +980,7 @@
       "valid": true
     },
     {
-      "cite_index": 61,
+      "cite_index": 74,
       "section_id": "pipeline",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 29,
@@ -824,7 +993,150 @@
       "valid": true
     },
     {
-      "cite_index": 62,
+      "cite_index": 75,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 15,
+      "chunk_id": "chunk:1LhvqZvDT5w:15",
+      "quote": "a fleet of different classifiers, usually zero shot classifiers",
+      "text": "a fleet of different classifiers, usually zero-shot classifiers",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 76,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 15,
+      "chunk_id": "chunk:1LhvqZvDT5w:15",
+      "quote": "Is it a prompt attack? Yes or no. Is it a violent topic?",
+      "text": "is it a prompt attack? is it a violent topic?",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 77,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 16,
+      "chunk_id": "chunk:1LhvqZvDT5w:16",
+      "quote": "maybe it takes like 100 milliseconds or 50 milliseconds",
+      "text": "50 to 100 milliseconds",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 78,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 16,
+      "chunk_id": "chunk:1LhvqZvDT5w:16",
+      "quote": "we either send a placeholder back to the user",
+      "text": "you send a placeholder back to the user",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 79,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 16,
+      "chunk_id": "chunk:1LhvqZvDT5w:16",
+      "quote": "set them between the LLM response and the user",
+      "text": "between the LLM response and the user",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 80,
+      "section_id": "pipeline",
+      "video_id": "1LhvqZvDT5w",
+      "chunk_index": 11,
+      "chunk_id": "chunk:1LhvqZvDT5w:11",
+      "quote": "usually not enough. You usually need to have multiple layers of defense",
+      "text": "usually not enough — you need multiple layers of defense",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 81,
+      "section_id": "evals",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 8,
+      "chunk_id": "chunk:ObTPqBGsEbA:8",
+      "quote": "the first layer is deterministic",
+      "text": "the first layer is deterministic",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 82,
+      "section_id": "evals",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 9,
+      "chunk_id": "chunk:ObTPqBGsEbA:9",
+      "quote": "The second layer is the non-deterministic semantic stuff",
+      "text": "the second layer is the non-deterministic semantic stuff",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 83,
+      "section_id": "evals",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 10,
+      "chunk_id": "chunk:ObTPqBGsEbA:10",
+      "quote": "The third layer is behavioral",
+      "text": "the third layer is behavioral",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 84,
+      "section_id": "evals",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 10,
+      "chunk_id": "chunk:ObTPqBGsEbA:10",
+      "quote": "the agent uh actually made three calls to the database to find that answer",
+      "text": "made three calls to the database to find that answer",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 85,
+      "section_id": "evals",
+      "video_id": "ObTPqBGsEbA",
+      "chunk_index": 33,
+      "chunk_id": "chunk:ObTPqBGsEbA:33",
+      "quote": "you only do the full test when you merge to the main branch",
+      "text": "you only do the full test when you merge to the main branch",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 86,
       "section_id": "evals",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 8,
@@ -837,7 +1149,7 @@
       "valid": true
     },
     {
-      "cite_index": 63,
+      "cite_index": 87,
       "section_id": "evals",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 13,
@@ -850,7 +1162,7 @@
       "valid": true
     },
     {
-      "cite_index": 64,
+      "cite_index": 88,
       "section_id": "evals",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 10,
@@ -863,7 +1175,7 @@
       "valid": true
     },
     {
-      "cite_index": 65,
+      "cite_index": 89,
       "section_id": "evals",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 25,
@@ -876,7 +1188,7 @@
       "valid": true
     },
     {
-      "cite_index": 66,
+      "cite_index": 90,
       "section_id": "evals",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 29,
@@ -889,7 +1201,7 @@
       "valid": true
     },
     {
-      "cite_index": 67,
+      "cite_index": 91,
       "section_id": "evals",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 45,
@@ -902,7 +1214,7 @@
       "valid": true
     },
     {
-      "cite_index": 68,
+      "cite_index": 92,
       "section_id": "evals",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 18,
@@ -915,7 +1227,7 @@
       "valid": true
     },
     {
-      "cite_index": 69,
+      "cite_index": 93,
       "section_id": "evals",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 9,
@@ -928,7 +1240,7 @@
       "valid": true
     },
     {
-      "cite_index": 70,
+      "cite_index": 94,
       "section_id": "evals",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 33,
@@ -941,7 +1253,7 @@
       "valid": true
     },
     {
-      "cite_index": 71,
+      "cite_index": 95,
       "section_id": "evals",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 22,
@@ -954,7 +1266,7 @@
       "valid": true
     },
     {
-      "cite_index": 72,
+      "cite_index": 96,
       "section_id": "retrieval",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 5,
@@ -967,7 +1279,7 @@
       "valid": true
     },
     {
-      "cite_index": 73,
+      "cite_index": 97,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 10,
@@ -980,33 +1292,7 @@
       "valid": true
     },
     {
-      "cite_index": 74,
-      "section_id": "retrieval",
-      "video_id": "_2tZaDs-w5s",
-      "chunk_index": 13,
-      "chunk_id": "chunk:_2tZaDs-w5s:13",
-      "quote": "the other dimension of getting quality out of the system is to narrow the data set",
-      "text": "the other dimension of getting quality out of the system is to narrow the data set",
-      "video_ok": true,
-      "chunk_ok": true,
-      "quote_ok": true,
-      "valid": true
-    },
-    {
-      "cite_index": 75,
-      "section_id": "retrieval",
-      "video_id": "_2tZaDs-w5s",
-      "chunk_index": 9,
-      "chunk_id": "chunk:_2tZaDs-w5s:9",
-      "quote": "even if you have hundreds of millions of documents these are not a problem",
-      "text": "even if you have hundreds of millions of documents",
-      "video_ok": true,
-      "chunk_ok": true,
-      "quote_ok": true,
-      "valid": true
-    },
-    {
-      "cite_index": 76,
+      "cite_index": 98,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 11,
@@ -1019,46 +1305,59 @@
       "valid": true
     },
     {
-      "cite_index": 77,
-      "section_id": "retrieval",
-      "video_id": "_2tZaDs-w5s",
-      "chunk_index": 12,
-      "chunk_id": "chunk:_2tZaDs-w5s:12",
-      "quote": "better results just out of the box when uh when reranking is enabled",
-      "text": "better results just out of the box when reranking is enabled",
-      "video_ok": true,
-      "chunk_ok": true,
-      "quote_ok": true,
-      "valid": true
-    },
-    {
-      "cite_index": 78,
+      "cite_index": 99,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 12,
       "chunk_id": "chunk:_2tZaDs-w5s:12",
       "quote": "these type of R rankers are often called cross encoders",
-      "text": "These rerankers are cross-encoders",
+      "text": "these rerankers are cross-encoders",
       "video_ok": true,
       "chunk_ok": true,
       "quote_ok": true,
       "valid": true
     },
     {
-      "cite_index": 79,
+      "cite_index": 100,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 13,
       "chunk_id": "chunk:_2tZaDs-w5s:13",
       "quote": "this is like 100 milliseconds give or take for a model like this",
-      "text": "about 100 milliseconds per query",
+      "text": "about 100 milliseconds",
       "video_ok": true,
       "chunk_ok": true,
       "quote_ok": true,
       "valid": true
     },
     {
-      "cite_index": 80,
+      "cite_index": 101,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 13,
+      "chunk_id": "chunk:_2tZaDs-w5s:13",
+      "quote": "you can do it only on a smaller set you couldn't do it on the entire data set",
+      "text": "you can do it only on a smaller set",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 102,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 9,
+      "chunk_id": "chunk:_2tZaDs-w5s:9",
+      "quote": "even if you have hundreds of millions of documents these are not a problem",
+      "text": "even if you have hundreds of millions of documents these are not a problem",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 103,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 10,
@@ -1071,7 +1370,98 @@
       "valid": true
     },
     {
-      "cite_index": 81,
+      "cite_index": 104,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 13,
+      "chunk_id": "chunk:_2tZaDs-w5s:13",
+      "quote": "the other dimension of getting quality out of the system is to narrow the data set",
+      "text": "the other dimension of getting quality out of the system is to narrow the data set",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 105,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 9,
+      "chunk_id": "chunk:_2tZaDs-w5s:9",
+      "quote": "even if you have hundreds of millions of documents these are not a problem",
+      "text": "even if you have hundreds of millions of documents",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 106,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 11,
+      "chunk_id": "chunk:_2tZaDs-w5s:11",
+      "quote": "first stage is recall oriented and uses vectors and keywords",
+      "text": "first stage is recall-oriented and uses vectors and keywords",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 107,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 12,
+      "chunk_id": "chunk:_2tZaDs-w5s:12",
+      "quote": "better results just out of the box when uh when reranking is enabled",
+      "text": "better results just out of the box when reranking is enabled",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 108,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 12,
+      "chunk_id": "chunk:_2tZaDs-w5s:12",
+      "quote": "these type of R rankers are often called cross encoders",
+      "text": "These rerankers are cross-encoders",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 109,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 13,
+      "chunk_id": "chunk:_2tZaDs-w5s:13",
+      "quote": "this is like 100 milliseconds give or take for a model like this",
+      "text": "about 100 milliseconds per query",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 110,
+      "section_id": "retrieval",
+      "video_id": "_2tZaDs-w5s",
+      "chunk_index": 10,
+      "chunk_id": "chunk:_2tZaDs-w5s:10",
+      "quote": "basically separate how many candidates you want from how many you want to return",
+      "text": "separate how many candidates you want from how many you want to return",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 111,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 17,
@@ -1084,7 +1474,7 @@
       "valid": true
     },
     {
-      "cite_index": 82,
+      "cite_index": 112,
       "section_id": "retrieval",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": 18,
@@ -1097,7 +1487,7 @@
       "valid": true
     },
     {
-      "cite_index": 83,
+      "cite_index": 113,
       "section_id": "retrieval",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 12,
@@ -1110,7 +1500,7 @@
       "valid": true
     },
     {
-      "cite_index": 84,
+      "cite_index": 114,
       "section_id": "retrieval",
       "video_id": "mvleESOUTRw",
       "chunk_index": 71,
@@ -1123,7 +1513,7 @@
       "valid": true
     },
     {
-      "cite_index": 85,
+      "cite_index": 115,
       "section_id": "retrieval",
       "video_id": "mvleESOUTRw",
       "chunk_index": 73,
@@ -1136,7 +1526,7 @@
       "valid": true
     },
     {
-      "cite_index": 86,
+      "cite_index": 116,
       "section_id": "retrieval",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 24,
@@ -1149,7 +1539,7 @@
       "valid": true
     },
     {
-      "cite_index": 87,
+      "cite_index": 117,
       "section_id": "retrieval",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 21,
@@ -1162,7 +1552,7 @@
       "valid": true
     },
     {
-      "cite_index": 88,
+      "cite_index": 118,
       "section_id": "retrieval",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 15,
@@ -1175,7 +1565,7 @@
       "valid": true
     },
     {
-      "cite_index": 89,
+      "cite_index": 119,
       "section_id": "retrieval",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 11,
@@ -1188,7 +1578,7 @@
       "valid": true
     },
     {
-      "cite_index": 90,
+      "cite_index": 120,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 7,
@@ -1201,7 +1591,7 @@
       "valid": true
     },
     {
-      "cite_index": 91,
+      "cite_index": 121,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 0,
@@ -1214,46 +1604,98 @@
       "valid": true
     },
     {
-      "cite_index": 92,
-      "section_id": "agents",
-      "video_id": "ow1we5PzK-o",
-      "chunk_index": 5,
-      "chunk_id": "chunk:ow1we5PzK-o:5",
-      "quote": "written during planning before any code",
-      "text": "written during planning before any code",
-      "video_ok": true,
-      "chunk_ok": true,
-      "quote_ok": true,
-      "valid": true
-    },
-    {
-      "cite_index": 93,
-      "section_id": "agents",
-      "video_id": "ow1we5PzK-o",
-      "chunk_index": 5,
-      "chunk_id": "chunk:ow1we5PzK-o:5",
-      "quote": "Tests written after implementation don't catch bugs. They confirm decisions",
-      "text": "tests written after implementation don't catch bugs, they confirm decisions",
-      "video_ok": true,
-      "chunk_ok": true,
-      "quote_ok": true,
-      "valid": true
-    },
-    {
-      "cite_index": 94,
+      "cite_index": 122,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 3,
       "chunk_id": "chunk:ow1we5PzK-o:3",
       "quote": "It uses a three-role architecture. There's orchestrator, there's workers",
-      "text": "a three-role architecture: orchestrator, workers, validators",
+      "text": "a three-role architecture — orchestrator, workers",
       "video_ok": true,
       "chunk_ok": true,
       "quote_ok": true,
       "valid": true
     },
     {
-      "cite_index": 95,
+      "cite_index": 123,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 4,
+      "chunk_id": "chunk:ow1we5PzK-o:4",
+      "quote": "The orchestrator handles planning",
+      "text": "The orchestrator handles planning",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 124,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 4,
+      "chunk_id": "chunk:ow1we5PzK-o:4",
+      "quote": "features, milestones and then something that's called a validation contract",
+      "text": "features, milestones and a validation contract",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 125,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 4,
+      "chunk_id": "chunk:ow1we5PzK-o:4",
+      "quote": "clean context, no accumulated baggage",
+      "text": "clean context, no accumulated baggage",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 126,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 4,
+      "chunk_id": "chunk:ow1we5PzK-o:4",
+      "quote": "commits by Git allowing the next worker to inherit a clean slate",
+      "text": "commits by Git allowing the next worker to inherit a clean slate",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 127,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 6,
+      "chunk_id": "chunk:ow1we5PzK-o:6",
+      "quote": "the scrutiny validator and the user testing validator",
+      "text": "the scrutiny validator and the user testing validator",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 128,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 6,
+      "chunk_id": "chunk:ow1we5PzK-o:6",
+      "quote": "runs the test suite, type checking, lints",
+      "text": "runs the test suite, type checking, lints",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 129,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 6,
@@ -1266,7 +1708,72 @@
       "valid": true
     },
     {
-      "cite_index": 96,
+      "cite_index": 130,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 7,
+      "chunk_id": "chunk:ow1we5PzK-o:7",
+      "quote": "neither validator has seen the code before",
+      "text": "neither validator has seen the code before",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 131,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 5,
+      "chunk_id": "chunk:ow1we5PzK-o:5",
+      "quote": "written during planning before any code",
+      "text": "written during planning before any code",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 132,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 5,
+      "chunk_id": "chunk:ow1we5PzK-o:5",
+      "quote": "Tests written after implementation don't catch bugs. They confirm decisions",
+      "text": "tests written after implementation don't catch bugs, they confirm decisions",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 133,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 3,
+      "chunk_id": "chunk:ow1we5PzK-o:3",
+      "quote": "It uses a three-role architecture. There's orchestrator, there's workers",
+      "text": "a three-role architecture: orchestrator, workers, validators",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 134,
+      "section_id": "agents",
+      "video_id": "ow1we5PzK-o",
+      "chunk_index": 6,
+      "chunk_id": "chunk:ow1we5PzK-o:6",
+      "quote": "It spawns the application. It interacts with it through computer use",
+      "text": "spawns the application and interacts with it through computer use",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 135,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 6,
@@ -1279,7 +1786,7 @@
       "valid": true
     },
     {
-      "cite_index": 97,
+      "cite_index": 136,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 7,
@@ -1292,7 +1799,7 @@
       "valid": true
     },
     {
-      "cite_index": 98,
+      "cite_index": 137,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 11,
@@ -1305,7 +1812,7 @@
       "valid": true
     },
     {
-      "cite_index": 99,
+      "cite_index": 138,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 7,
@@ -1318,7 +1825,7 @@
       "valid": true
     },
     {
-      "cite_index": 100,
+      "cite_index": 139,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 8,
@@ -1331,7 +1838,7 @@
       "valid": true
     },
     {
-      "cite_index": 101,
+      "cite_index": 140,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 9,
@@ -1344,7 +1851,7 @@
       "valid": true
     },
     {
-      "cite_index": 102,
+      "cite_index": 141,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 13,
@@ -1357,7 +1864,7 @@
       "valid": true
     },
     {
-      "cite_index": 103,
+      "cite_index": 142,
       "section_id": "agents",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 11,
@@ -1370,7 +1877,7 @@
       "valid": true
     },
     {
-      "cite_index": 104,
+      "cite_index": 143,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 6,
@@ -1383,7 +1890,7 @@
       "valid": true
     },
     {
-      "cite_index": 105,
+      "cite_index": 144,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 6,
@@ -1396,7 +1903,7 @@
       "valid": true
     },
     {
-      "cite_index": 106,
+      "cite_index": 145,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 10,
@@ -1409,7 +1916,7 @@
       "valid": true
     },
     {
-      "cite_index": 107,
+      "cite_index": 146,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 11,
@@ -1422,7 +1929,7 @@
       "valid": true
     },
     {
-      "cite_index": 108,
+      "cite_index": 147,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 12,
@@ -1435,7 +1942,7 @@
       "valid": true
     },
     {
-      "cite_index": 109,
+      "cite_index": 148,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 12,
@@ -1448,7 +1955,7 @@
       "valid": true
     },
     {
-      "cite_index": 110,
+      "cite_index": 149,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 13,
@@ -1461,7 +1968,7 @@
       "valid": true
     },
     {
-      "cite_index": 111,
+      "cite_index": 150,
       "section_id": "agents",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 13,
@@ -1474,7 +1981,7 @@
       "valid": true
     },
     {
-      "cite_index": 112,
+      "cite_index": 151,
       "section_id": "agents",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 52,
@@ -1487,7 +1994,7 @@
       "valid": true
     },
     {
-      "cite_index": 113,
+      "cite_index": 152,
       "section_id": "agents",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 33,
@@ -1500,7 +2007,7 @@
       "valid": true
     },
     {
-      "cite_index": 114,
+      "cite_index": 153,
       "section_id": "agents",
       "video_id": "vSx5IULvBns",
       "chunk_index": 1,
@@ -1513,7 +2020,7 @@
       "valid": true
     },
     {
-      "cite_index": 115,
+      "cite_index": 154,
       "section_id": "agents",
       "video_id": "vSx5IULvBns",
       "chunk_index": 11,
@@ -1526,7 +2033,7 @@
       "valid": true
     },
     {
-      "cite_index": 116,
+      "cite_index": 155,
       "section_id": "agents",
       "video_id": "vSx5IULvBns",
       "chunk_index": 20,
@@ -1539,7 +2046,7 @@
       "valid": true
     },
     {
-      "cite_index": 117,
+      "cite_index": 156,
       "section_id": "agents",
       "video_id": "vSx5IULvBns",
       "chunk_index": 6,
@@ -1552,7 +2059,7 @@
       "valid": true
     },
     {
-      "cite_index": 118,
+      "cite_index": 157,
       "section_id": "agents",
       "video_id": "vSx5IULvBns",
       "chunk_index": 25,
@@ -1565,7 +2072,7 @@
       "valid": true
     },
     {
-      "cite_index": 119,
+      "cite_index": 158,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 11,
@@ -1578,7 +2085,7 @@
       "valid": true
     },
     {
-      "cite_index": 120,
+      "cite_index": 159,
       "section_id": "serving",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 11,
@@ -1591,7 +2098,98 @@
       "valid": true
     },
     {
-      "cite_index": 121,
+      "cite_index": 160,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 34,
+      "chunk_id": "chunk:hBzUokVYQkI:34",
+      "quote": "it's a smart router that sits in front of your entire fleet of servers",
+      "text": "a smart router that sits in front of your entire fleet of servers",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 161,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 35,
+      "chunk_id": "chunk:hBzUokVYQkI:35",
+      "quote": "how much memory it has free, and how long its queue is",
+      "text": "how much memory it has free, and how long its queue is",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 162,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 35,
+      "chunk_id": "chunk:hBzUokVYQkI:35",
+      "quote": "sends it straight back to the server that already has your conversation",
+      "text": "sending it straight back to the server that already has your conversation",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 163,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 36,
+      "chunk_id": "chunk:hBzUokVYQkI:36",
+      "quote": "one pool does nothing but prefill and the other does nothing but decode",
+      "text": "one pool does nothing but prefill and the other does nothing but decode",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 164,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 36,
+      "chunk_id": "chunk:hBzUokVYQkI:36",
+      "quote": "it hands the saved work across a fast link to a decode server",
+      "text": "it hands the saved work across a fast link to a decode server",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 165,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 22,
+      "chunk_id": "chunk:hBzUokVYQkI:22",
+      "quote": "prefill phase which is when the original prompt gets processed",
+      "text": "prefill is when the original prompt gets processed",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 166,
+      "section_id": "serving",
+      "video_id": "hBzUokVYQkI",
+      "chunk_index": 22,
+      "chunk_id": "chunk:hBzUokVYQkI:22",
+      "quote": "the decode phase which writes the answer by rereading the model over and over",
+      "text": "decode writes the answer by rereading the model over and over",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 167,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 28,
@@ -1604,7 +2202,7 @@
       "valid": true
     },
     {
-      "cite_index": 122,
+      "cite_index": 168,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 28,
@@ -1617,7 +2215,7 @@
       "valid": true
     },
     {
-      "cite_index": 123,
+      "cite_index": 169,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 33,
@@ -1630,7 +2228,7 @@
       "valid": true
     },
     {
-      "cite_index": 124,
+      "cite_index": 170,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 35,
@@ -1643,7 +2241,7 @@
       "valid": true
     },
     {
-      "cite_index": 125,
+      "cite_index": 171,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 21,
@@ -1656,7 +2254,7 @@
       "valid": true
     },
     {
-      "cite_index": 126,
+      "cite_index": 172,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 36,
@@ -1669,7 +2267,7 @@
       "valid": true
     },
     {
-      "cite_index": 127,
+      "cite_index": 173,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 39,
@@ -1682,7 +2280,7 @@
       "valid": true
     },
     {
-      "cite_index": 128,
+      "cite_index": 174,
       "section_id": "serving",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 25,
@@ -1695,7 +2293,7 @@
       "valid": true
     },
     {
-      "cite_index": 129,
+      "cite_index": 175,
       "section_id": "serving",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 13,
@@ -1708,7 +2306,7 @@
       "valid": true
     },
     {
-      "cite_index": 130,
+      "cite_index": 176,
       "section_id": "serving",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 12,
@@ -1721,7 +2319,7 @@
       "valid": true
     },
     {
-      "cite_index": 131,
+      "cite_index": 177,
       "section_id": "serving",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 18,
@@ -1734,7 +2332,7 @@
       "valid": true
     },
     {
-      "cite_index": 132,
+      "cite_index": 178,
       "section_id": "serving",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 21,
@@ -1747,7 +2345,7 @@
       "valid": true
     },
     {
-      "cite_index": 133,
+      "cite_index": 179,
       "section_id": "serving",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 38,
@@ -1760,7 +2358,7 @@
       "valid": true
     },
     {
-      "cite_index": 134,
+      "cite_index": 180,
       "section_id": "serving",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 14,
@@ -1773,7 +2371,7 @@
       "valid": true
     },
     {
-      "cite_index": 135,
+      "cite_index": 181,
       "section_id": "serving",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 9,
@@ -1786,7 +2384,7 @@
       "valid": true
     },
     {
-      "cite_index": 136,
+      "cite_index": 182,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 3,
@@ -1799,7 +2397,7 @@
       "valid": true
     },
     {
-      "cite_index": 137,
+      "cite_index": 183,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 9,
@@ -1812,7 +2410,7 @@
       "valid": true
     },
     {
-      "cite_index": 138,
+      "cite_index": 184,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 10,
@@ -1825,7 +2423,7 @@
       "valid": true
     },
     {
-      "cite_index": 139,
+      "cite_index": 185,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 16,
@@ -1838,7 +2436,7 @@
       "valid": true
     },
     {
-      "cite_index": 140,
+      "cite_index": 186,
       "section_id": "serving",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": 19,
@@ -1851,7 +2449,7 @@
       "valid": true
     },
     {
-      "cite_index": 141,
+      "cite_index": 187,
       "section_id": "serving",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 30,
@@ -1864,7 +2462,7 @@
       "valid": true
     },
     {
-      "cite_index": 142,
+      "cite_index": 188,
       "section_id": "serving",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 32,
@@ -1877,7 +2475,7 @@
       "valid": true
     },
     {
-      "cite_index": 143,
+      "cite_index": 189,
       "section_id": "serving",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 34,
@@ -1890,7 +2488,7 @@
       "valid": true
     },
     {
-      "cite_index": 144,
+      "cite_index": 190,
       "section_id": "serving",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 13,
@@ -1903,7 +2501,7 @@
       "valid": true
     },
     {
-      "cite_index": 145,
+      "cite_index": 191,
       "section_id": "ban",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 13,
@@ -1916,7 +2514,7 @@
       "valid": true
     },
     {
-      "cite_index": 146,
+      "cite_index": 192,
       "section_id": "ban",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 17,
@@ -1929,7 +2527,7 @@
       "valid": true
     },
     {
-      "cite_index": 147,
+      "cite_index": 193,
       "section_id": "ban",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 13,
@@ -1942,7 +2540,7 @@
       "valid": true
     },
     {
-      "cite_index": 148,
+      "cite_index": 194,
       "section_id": "ban",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 33,
@@ -1955,7 +2553,7 @@
       "valid": true
     },
     {
-      "cite_index": 149,
+      "cite_index": 195,
       "section_id": "ban",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 6,
@@ -1968,7 +2566,7 @@
       "valid": true
     },
     {
-      "cite_index": 150,
+      "cite_index": 196,
       "section_id": "ban",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 5,
@@ -1981,7 +2579,7 @@
       "valid": true
     },
     {
-      "cite_index": 151,
+      "cite_index": 197,
       "section_id": "ban",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 24,
@@ -1994,7 +2592,7 @@
       "valid": true
     },
     {
-      "cite_index": 152,
+      "cite_index": 198,
       "section_id": "ban",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 22,
@@ -2007,7 +2605,7 @@
       "valid": true
     },
     {
-      "cite_index": 153,
+      "cite_index": 199,
       "section_id": "ban",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 11,
@@ -2020,7 +2618,7 @@
       "valid": true
     },
     {
-      "cite_index": 154,
+      "cite_index": 200,
       "section_id": "ban",
       "video_id": "E8zpgNPx8jE",
       "chunk_index": 59,
@@ -2033,7 +2631,7 @@
       "valid": true
     },
     {
-      "cite_index": 155,
+      "cite_index": 201,
       "section_id": "ban",
       "video_id": "E8zpgNPx8jE",
       "chunk_index": 141,
@@ -2046,7 +2644,7 @@
       "valid": true
     },
     {
-      "cite_index": 156,
+      "cite_index": 202,
       "section_id": "ban",
       "video_id": "Q679gH7oszg",
       "chunk_index": 38,
@@ -2059,7 +2657,7 @@
       "valid": true
     },
     {
-      "cite_index": 157,
+      "cite_index": 203,
       "section_id": "ban",
       "video_id": "E8zpgNPx8jE",
       "chunk_index": 93,
@@ -2072,7 +2670,7 @@
       "valid": true
     },
     {
-      "cite_index": 158,
+      "cite_index": 204,
       "section_id": "ban",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": 7,
@@ -2085,7 +2683,7 @@
       "valid": true
     },
     {
-      "cite_index": 159,
+      "cite_index": 205,
       "section_id": "ban",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 14,
@@ -2098,7 +2696,7 @@
       "valid": true
     },
     {
-      "cite_index": 160,
+      "cite_index": 206,
       "section_id": "templates",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 1,
@@ -2111,7 +2709,7 @@
       "valid": true
     },
     {
-      "cite_index": 161,
+      "cite_index": 207,
       "section_id": "templates",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 14,
@@ -2124,7 +2722,7 @@
       "valid": true
     },
     {
-      "cite_index": 162,
+      "cite_index": 208,
       "section_id": "templates",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 24,
@@ -2137,7 +2735,7 @@
       "valid": true
     },
     {
-      "cite_index": 163,
+      "cite_index": 209,
       "section_id": "templates",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 23,
@@ -2150,7 +2748,7 @@
       "valid": true
     },
     {
-      "cite_index": 164,
+      "cite_index": 210,
       "section_id": "templates",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 4,
@@ -2163,7 +2761,7 @@
       "valid": true
     },
     {
-      "cite_index": 165,
+      "cite_index": 211,
       "section_id": "templates",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 16,
@@ -2176,7 +2774,7 @@
       "valid": true
     },
     {
-      "cite_index": 166,
+      "cite_index": 212,
       "section_id": "templates",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": 50,
@@ -2189,7 +2787,7 @@
       "valid": true
     },
     {
-      "cite_index": 167,
+      "cite_index": 213,
       "section_id": "contested",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": 10,
@@ -2202,7 +2800,7 @@
       "valid": true
     },
     {
-      "cite_index": 168,
+      "cite_index": 214,
       "section_id": "contested",
       "video_id": "vSx5IULvBns",
       "chunk_index": 20,
@@ -2215,7 +2813,7 @@
       "valid": true
     },
     {
-      "cite_index": 169,
+      "cite_index": 215,
       "section_id": "contested",
       "video_id": "ow1we5PzK-o",
       "chunk_index": 8,
@@ -2228,7 +2826,7 @@
       "valid": true
     },
     {
-      "cite_index": 170,
+      "cite_index": 216,
       "section_id": "contested",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": 20,
@@ -2241,7 +2839,7 @@
       "valid": true
     },
     {
-      "cite_index": 171,
+      "cite_index": 217,
       "section_id": "contested",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": 5,
@@ -2254,7 +2852,7 @@
       "valid": true
     },
     {
-      "cite_index": 172,
+      "cite_index": 218,
       "section_id": "contested",
       "video_id": "Q679gH7oszg",
       "chunk_index": 33,
@@ -2267,7 +2865,7 @@
       "valid": true
     },
     {
-      "cite_index": 173,
+      "cite_index": 219,
       "section_id": "contested",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": 30,
@@ -2280,7 +2878,7 @@
       "valid": true
     },
     {
-      "cite_index": 174,
+      "cite_index": 220,
       "section_id": "contested",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 44,
@@ -2293,7 +2891,7 @@
       "valid": true
     },
     {
-      "cite_index": 175,
+      "cite_index": 221,
       "section_id": "contested",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": 40,
@@ -2306,7 +2904,7 @@
       "valid": true
     },
     {
-      "cite_index": 176,
+      "cite_index": 222,
       "section_id": "contested",
       "video_id": "hBzUokVYQkI",
       "chunk_index": 44,
@@ -2319,7 +2917,7 @@
       "valid": true
     },
     {
-      "cite_index": 177,
+      "cite_index": 223,
       "section_id": "contested",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": 8,
@@ -2332,7 +2930,7 @@
       "valid": true
     },
     {
-      "cite_index": 178,
+      "cite_index": 224,
       "section_id": "sources",
       "video_id": "T0HhO4YtTfE",
       "chunk_index": null,
@@ -2345,7 +2943,7 @@
       "valid": true
     },
     {
-      "cite_index": 179,
+      "cite_index": 225,
       "section_id": "sources",
       "video_id": "vSx5IULvBns",
       "chunk_index": null,
@@ -2358,7 +2956,7 @@
       "valid": true
     },
     {
-      "cite_index": 180,
+      "cite_index": 226,
       "section_id": "sources",
       "video_id": "vW8wLsb3Nnc",
       "chunk_index": null,
@@ -2371,7 +2969,7 @@
       "valid": true
     },
     {
-      "cite_index": 181,
+      "cite_index": 227,
       "section_id": "sources",
       "video_id": "_2tZaDs-w5s",
       "chunk_index": null,
@@ -2384,7 +2982,7 @@
       "valid": true
     },
     {
-      "cite_index": 182,
+      "cite_index": 228,
       "section_id": "sources",
       "video_id": "ow1we5PzK-o",
       "chunk_index": null,
@@ -2397,7 +2995,7 @@
       "valid": true
     },
     {
-      "cite_index": 183,
+      "cite_index": 229,
       "section_id": "sources",
       "video_id": "ObTPqBGsEbA",
       "chunk_index": null,
@@ -2410,7 +3008,7 @@
       "valid": true
     },
     {
-      "cite_index": 184,
+      "cite_index": 230,
       "section_id": "sources",
       "video_id": "tLK5jyhQOgA",
       "chunk_index": null,
@@ -2423,7 +3021,7 @@
       "valid": true
     },
     {
-      "cite_index": 185,
+      "cite_index": 231,
       "section_id": "sources",
       "video_id": "1LhvqZvDT5w",
       "chunk_index": null,
@@ -2436,7 +3034,7 @@
       "valid": true
     },
     {
-      "cite_index": 186,
+      "cite_index": 232,
       "section_id": "sources",
       "video_id": "1jvxxa7tdjw",
       "chunk_index": null,
@@ -2449,7 +3047,7 @@
       "valid": true
     },
     {
-      "cite_index": 187,
+      "cite_index": 233,
       "section_id": "sources",
       "video_id": "sk6HBdmVmL8",
       "chunk_index": null,
@@ -2462,7 +3060,7 @@
       "valid": true
     },
     {
-      "cite_index": 188,
+      "cite_index": 234,
       "section_id": "sources",
       "video_id": "E8zpgNPx8jE",
       "chunk_index": null,
@@ -2475,7 +3073,7 @@
       "valid": true
     },
     {
-      "cite_index": 189,
+      "cite_index": 235,
       "section_id": "sources",
       "video_id": "Q679gH7oszg",
       "chunk_index": null,
@@ -2488,7 +3086,7 @@
       "valid": true
     },
     {
-      "cite_index": 190,
+      "cite_index": 236,
       "section_id": "sources",
       "video_id": "cvPEiPt7HXo",
       "chunk_index": null,
@@ -2501,7 +3099,7 @@
       "valid": true
     },
     {
-      "cite_index": 191,
+      "cite_index": 237,
       "section_id": "sources",
       "video_id": "hBzUokVYQkI",
       "chunk_index": null,
@@ -2514,7 +3112,7 @@
       "valid": true
     },
     {
-      "cite_index": 192,
+      "cite_index": 238,
       "section_id": "sources",
       "video_id": "7YYVgH0_9CA",
       "chunk_index": null,
@@ -2527,7 +3125,7 @@
       "valid": true
     },
     {
-      "cite_index": 193,
+      "cite_index": 239,
       "section_id": "sources",
       "video_id": "uaiq1HvQKoI",
       "chunk_index": null,
@@ -2540,7 +3138,7 @@
       "valid": true
     },
     {
-      "cite_index": 194,
+      "cite_index": 240,
       "section_id": "sources",
       "video_id": "mvleESOUTRw",
       "chunk_index": null,

@@ -3,8 +3,9 @@
   "title": "Production GenAI Systems",
   "topic": "production generative AI systems: taking LLM and agent applications from pilot to production",
   "subtitle": "Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.",
+  "question": "",
   "status": "published",
-  "current_version": 1,
+  "current_version": 2,
   "compiled_at": "2026-09-14",
   "model": {
     "extractor": "claude-sonnet-5",
@@ -153,8 +154,8 @@
   ],
   "chunk_count": 737,
   "cluster_count": 6,
-  "cite_total": 195,
-  "cite_valid": 195,
+  "cite_total": 241,
+  "cite_valid": 241,
   "gaps": [
     "None of the three talks give concrete guidance on who owns or is on-call for the AI agent itself once it's in production (who debugs the debugger).",
     "No talk details how to red-team, adversarially test, or defend against prompt injection for a production agent with real autonomy.",
@@ -220,7 +221,8 @@
       "gaps"
     ],
     "runs": [
-      "20260914T205145Z-write.jsonl"
+      "20260914T205145Z-write.jsonl",
+      "20260916T012012Z-revise.jsonl"
     ],
     "costs": [
       {
@@ -278,6 +280,14 @@
         "duration_ms": 886729,
         "turns": 54,
         "tool_calls": 53
+      },
+      {
+        "label": "revise",
+        "model": "claude-opus-5",
+        "cost_usd": 4.971603999999998,
+        "duration_ms": 548339,
+        "turns": 52,
+        "tool_calls": 51
       }
     ]
   }

@@ -5,6 +5,7 @@
       "title": "LLM-as-a-Judge",
       "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",
       "subtitle": "How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.",
+      "question": "",
       "status": "published",
       "current_version": 2,
       "compiled_at": "2026-09-14",
@@ -22,15 +23,17 @@
       "title": "Production GenAI Systems",
       "topic": "production generative AI systems: taking LLM and agent applications from pilot to production",
       "subtitle": "Seventeen practitioners — Databricks, AWS, MongoDB, Red Hat, Factory, Caylent, Azure AI Search, IBM, Resolve AI, and two agencies that ship client work every fortnight — on the distance between a pilot that impressed the room and a system that survives Monday morning. Everything below is traceable to a chunk you can open.",
+      "question": "",
       "status": "published",
-      "current_version": 1,
+      "current_version": 2,
       "compiled_at": "2026-09-14",
       "videos": 17,
       "chunk_count": 737,
-      "cite_total": 195,
-      "cite_valid": 195,
+      "cite_total": 241,
+      "cite_valid": 241,
       "versions": [
-        1
+        1,
+        2
       ]
     },
     {
@@ -38,6 +41,7 @@
       "title": "Ship Like a Studio",
       "topic": "Ship Like a Studio",
       "subtitle": "How to agentically build webpages that are beautiful, unique, and engineered to scale — distilled from 23 videos indexed in the transcript-rag-agent corpus: the Claude Code web-design creators, the working web designers, the premium-feel app builders, and the principal-level agentic engineers.",
+      "question": "",
       "status": "published",
       "current_version": 1,
       "compiled_at": "2026-08-31",

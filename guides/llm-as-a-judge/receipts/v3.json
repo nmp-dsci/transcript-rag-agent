@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "created_at": "2026-09-15T00:04:47+00:00",
+  "summary": "One comment, addressed. A reader asked what TP/FP/TN/FN mean where the thesis triptych tells you to report them. The abbreviations were used but never expanded anywhere on the page, so the thesis section now closes with a plain-terms gloss: a new subsection \"The four cells, in plain terms\" (thesis-h34) defining the confusion matrix against a named positive class (thesis-p8), a four-item list defining each cell in the corpus's own worked framing — unsupported-claim detection — with the cost of a false negative called out (thesis-li1 to thesis-li4), and a paragraph deriving sensitivity, specificity and balanced accuracy from those cells and tying them back to the stage-07 worked numbers (thesis-p9). The existing thesis-p6 now names the letters in words and links down to the definition. Every new claim is cited to PjCwlX0XT8o chunks 54, 55, 56, 57 and 60, all read in full before writing. No existing ids were changed or reused; guide.md carries the identical new subsection.",
+  "items": [
+    {
+      "id": "c-f63c64",
+      "outcome": "addressed",
+      "reason": "The corpus defines all four cells explicitly (PjCwlX0XT8o@55: true positive, false positive, true negative and false negative each given a one-sentence definition), plus the requirement to name the positive class first (@54), the sensitivity/specificity/balanced-accuracy definitions (@56), the worked counts TP 34 / FN 6 / FP 16 / TN 144 (@57) and the asymmetric cost of a false negative (@60). Added a definition subsection at the end of the thesis section and a pointer from the anchored paragraph, so the abbreviation is expanded where the reader hits it and explained fully a screen later without bloating the triptych panel.",
+      "sections": [
+        "thesis-p6",
+        "thesis-h34",
+        "thesis-p8",
+        "thesis-li1",
+        "thesis-li2",
+        "thesis-li3",
+        "thesis-li4",
+        "thesis-p9"
+      ]
+    }
+  ],
+  "changed_sections": [
+    "thesis-p6",
+    "thesis-h34",
+    "thesis-p8",
+    "thesis-li1",
+    "thesis-li2",
+    "thesis-li3",
+    "thesis-li4",
+    "thesis-p9"
+  ]
+}
