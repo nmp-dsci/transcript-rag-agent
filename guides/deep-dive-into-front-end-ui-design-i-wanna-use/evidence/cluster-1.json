@@ -1,0 +1,508 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "TTeMU5iOE84",
+  "23lJ2YAnlC8",
+  "qF5il_9IwME",
+  "yAOzupIW87E"
+ ],
+ "video_notes": [
+  {
+   "video_id": "TTeMU5iOE84",
+   "title": "Build AMAZING Websites Using Claude Code! (Full Guide)",
+   "contributed": "The only video showing a fully no-code pipeline where an AI (Claude Design) generates an entire visual design system — colors, typography, components, wireframes — from a five-question brand brief, then Claude Code builds and deploys it."
+  },
+  {
+   "video_id": "23lJ2YAnlC8",
+   "title": "Figma Website Design Tutorial 2026",
+   "contributed": "The only video where a human manually builds the design system inside a dedicated design tool: naming type styles, defining color variables, constructing button components with variants, and using auto layout for responsive sections — then migrates the file into Wix Studio."
+  },
+  {
+   "video_id": "qF5il_9IwME",
+   "title": "Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)",
+   "contributed": "Shows front-end UI work embedded inside a full custom-coded stack: scaffolding React+TS+Tailwind+shadcn/ui, invoking Anthropic's 'front-end design' skill, and iterating on chat UI details (loading states, citation panels, logo padding) via screenshot-annotated prompts."
+  },
+  {
+   "video_id": "yAOzupIW87E",
+   "title": "Data Scientist to AI Engineer Roadmap for 2026",
+   "contributed": "Frames front-end/full-stack skill as one step in a six-part AI-engineer roadmap and names it the area data scientists find least familiar; contributes career-sequencing context rather than concrete UI technique."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Brand-first design brief",
+   "claim": "Before any visual design starts, generate a 'brand essence' brief that scores the brand on spectrums like restrained/expressive and calm/energetic so later design choices are grounded in brand fit, not personal taste.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 5,
+   "quote": "restrained or expressive, calm or energetic, accessible or premium",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Brand-first design brief",
+   "claim": "Convert the AI's brand-essence output into a downloadable markdown file rather than copying its raw prompt text, so it becomes a durable, editable source-of-truth document you re-attach at every later design step.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 11,
+   "quote": "create a markdown file of this for me",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Model choice for design work",
+   "claim": "On a lower-tier plan, avoid the most expensive/creative model for open-ended design generation (e.g. Fable/Opus-tier) because it burns tokens fast — use a mid-tier model unless you have a maxed-out plan.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 15,
+   "quote": "I don't recommend Fable 5 because it will eat through your tokens",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Generate then converge on style",
+   "claim": "Have the AI design tool generate multiple (five or more) distinct full style directions from one brief, then converge by picking and mixing elements across them rather than committing to a single first draft.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 16,
+   "quote": "we have five different options",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Generate then converge on style",
+   "claim": "Instead of accepting a generated variant wholesale, explicitly instruct the design AI to 'go deeper' on one specific direction while grafting in elements (nav style, fonts, colors) borrowed from other generated variants.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 17,
+   "quote": "tell Claude to go deeper on one of these designs",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Sourcing visual inspiration",
+   "claim": "Feed the design AI outside inspiration (site galleries like 21st.dev, Pinterest, Google Images) as attached context images rather than relying only on its own generated options.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 18,
+   "quote": "You can go through 21st.dev for free",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Design system as source of truth",
+   "claim": "Treat the generated design system (colors, typography, wireframes, navigation, animations, button hover states) as the single source of truth that gets handed off to the coding stage, not just a moodboard.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 14,
+   "quote": "single source of truth through things like colors, typography",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Design vs. build separation",
+   "claim": "Keep the visual-design stage (look, feel, images, layout) strictly separate from the functional-build stage — the design tool should never be asked to implement working features like email sending.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 25,
+   "quote": "The design is for claw design.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Handoff format",
+   "claim": "Export the finished design as a 'project archive' (zip) from the design tool's share menu — this bundles pages, uploaded assets, and the whole design system for the coding agent to consume.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 25,
+   "quote": "I recommend doing the project archive.",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Element-level editing",
+   "claim": "Use the coding agent's element-selection tool to click specific on-page elements before describing an edit in natural language, rather than describing location verbally.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 45,
+   "quote": "this little select element tool",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Local-before-live workflow",
+   "claim": "Instruct the coding agent to make and preview all UI changes locally first and never redeploy without explicit approval, so the live site can't drift from what was actually reviewed.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 46,
+   "quote": "never deploy without asking me",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Ongoing maintenance",
+   "claim": "Run a recurring AI-driven security/health-check pass on the deployed site (checking secrets exposure, source-code leaks) as a standing routine, not a one-time step.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 61,
+   "quote": "do a complete security overhaul and really make sure",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cost/time economics",
+   "claim": "A traditional web design agency build runs $5,000–$15,000 as a one-time fee versus roughly $23.79/month for the Claude+Hostinger stack shown, with a first draft in ~20 minutes versus 2–4 weeks from an agency.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 3,
+   "quote": "$5,000 to $15,000 to build what we're going to build",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Cost/time economics",
+   "claim": "Committing to a 48-month Hostinger hosting term brings the effective cost down to $3.79/month, plus a free domain for the first year.",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 33,
+   "quote": "the price all the way down to $3.79 per month",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Full-flow testing pitfall",
+   "claim": "Forgetting to verify your sending domain in the transactional-email tool (Resend) will silently swallow one-time-password emails with no visible error — always send yourself a live test login before considering an auth flow 'done.'",
+   "video_id": "TTeMU5iOE84",
+   "chunk_index": 58,
+   "quote": "I checked my inbox and I didn't get the email",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Figma project structure",
+   "claim": "Start every Figma design project with a dedicated 'style guide' page split into named frames for typography, colors, and illustrations before touching any real page layout.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 1,
+   "quote": "creating a basic style guide like this one here",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Figma project structure",
+   "claim": "Use a 1440×1024 frame as the standard baseline for a desktop wireframe canvas when starting a new web design frame in Figma.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 1,
+   "quote": "size at 1440 x1024 for the height and width",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Typography scale",
+   "claim": "Set H1 around 36px at a medium font weight as the anchor size, then create the remaining heading levels as reusable named text styles rather than one-off sized text.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 3,
+   "quote": "maybe something like 36 pixels and the font family to be a medium",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Typography scale",
+   "claim": "Build a full heading scale (H1 through H5) that decreases in size at each increment, and save each as its own named text style so it can be reused and mass-updated.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 4,
+   "quote": "heading 1 2 3 4 and 5 which decrease in size at each increment",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Color system",
+   "claim": "Define exactly three core colors up front — primary, secondary, and background/tertiary — as the foundation of a style guide before adding any accent colors.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 5,
+   "quote": "I want to have three main colors",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Color system",
+   "claim": "Save each core color as a Figma color style/variable (not just a filled shape) so it can be selected and reapplied consistently across every component.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 6,
+   "quote": "This is now stored as a color variable.",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Working hygiene",
+   "claim": "Name and group layers immediately when creating them — waiting until later leaves you with dozens of unnamed groups you can no longer distinguish.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 8,
+   "quote": "I always prefer to set the group names immediately",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Component systems",
+   "claim": "Build button variants (primary, secondary/outline) as separate components first, then use Figma's 'combine as variations' to merge them into a single super-component with switchable states, instead of creating one component per variant.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 10,
+   "quote": "we have combine as variations",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Auto layout for responsiveness",
+   "claim": "Auto layout in Figma functions like CSS flexbox — elements placed inside it automatically re-arrange and re-space, which is the mechanism that makes a Figma section adapt when resized or when content changes.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 12,
+   "quote": "using flex if you've ever used that in web design",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Auto layout for responsiveness",
+   "claim": "Set container sizing to 'hug contents' (rather than fixed width) for text blocks inside an auto layout so spacing recalculates automatically as copy length changes.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 18,
+   "quote": "get it to hug its container",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Figma-to-site migration",
+   "claim": "Wix Studio has a direct Figma-import feature (via a plugin run from Figma) that pulls the connected file's style guide and page layouts straight into a real, publishable site, preserving the auto-layout structure as sections.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 22,
+   "quote": "which allows me to import directly from Figma",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "AI-assisted responsive design",
+   "claim": "Wix Studio's built-in 'responsive AI' feature can auto-generate tablet/mobile breakpoint layouts from a well-built desktop design with one click.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 25,
+   "quote": "use responsive AI and generate a responsive design immediately",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Migration pitfall",
+   "claim": "Migrating a Figma design into a site builder can silently break asset fidelity — SVG icons/logos exported this way can lose intentional effects like grayscale, so every imported asset needs a manual visual check.",
+   "video_id": "23lJ2YAnlC8",
+   "chunk_index": 24,
+   "quote": "the SVG imports, which have lost their grayscale that they originally had",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Modern front-end stack",
+   "claim": "For a coded React front end, the standard fast-start combination is Vite+React+TypeScript scaffolding, then add Supabase (data/auth), Tailwind CSS (styling), and shadcn/ui (component primitives) as the only extra dependencies.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 62,
+   "quote": "Tailwind CSS is going to help us with styling",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Modern front-end stack",
+   "claim": "A component library like shadcn/ui is valued specifically because it gives ready-made, customizable UI components out of the box, which the presenter says 'could change the way you build projects forever.'",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 62,
+   "quote": "give us all kinds of cool components out of the box",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Component theming",
+   "claim": "Before installing shadcn/ui, preview available style presets (fonts, icon sets) in its online theme builder so you pick a coherent base theme rather than installing blind and re-theming later.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 64,
+   "quote": "you can see all of the different styles and they're very subtle",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Backend-first mindset applied to front end",
+   "claim": "A backend-leaning engineer explicitly treats the front end as the least familiar part of the stack and is comfortable being looser/more 'vibe coded' there once auth and data plumbing are solid.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 61,
+   "quote": "Front end has always been a little bit foreign for me",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI design skill + model pairing",
+   "claim": "Anthropic's 'front-end design' skill paired specifically with Anthropic (Claude) models is the presenter's go-to combination for any UI/visual-design task, distinct from the model he otherwise prefers for backend work.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 129,
+   "quote": "combined with the models from Entropic always works really well",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Model tier for complex UI",
+   "claim": "Once a front-end task spans multiple interacting components, switch from a fast/cheap model to a heavier one (Opus 4.8 / GPT-5.5 high) — fast models that worked fine for early scaffolding start failing as UI complexity ramps up.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 130,
+   "quote": "switch to a beefier model at this point",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "UI redesign prompting",
+   "claim": "When prompting an agent to redesign a UI, explicitly ask it to research UX best practices online first, run a gap analysis against the current app, then plan reusable design-system components rather than one-off isolated pieces.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 132,
+   "quote": "perform kind of like a gap analysis and create a plan",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Named UI libraries",
+   "claim": "prompt-kit is a component library built to pair with the Vercel AI SDK, giving a ChatGPT-style chat interface (bubbles, streaming, composer) essentially out of the box.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 133,
+   "quote": "prompt kit is a natural fit",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Restrained palette for internal tools",
+   "claim": "For an internal/enterprise tool, deliberately restrict the palette to black/white/gray rather than a full brand color system — simplicity reads as more 'proper' for this use case.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 131,
+   "quote": "we just simply use black and white and use the",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Precise UI bug-fix prompting",
+   "claim": "Attach a numbered/annotated screenshot to the agent and reference each number in the prompt text — this produces far more precise, itemized UI fixes than describing issues in prose alone.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 144,
+   "quote": "I attached a screenshot with numbers",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Loading-state UX pattern",
+   "claim": "Replace generic spinners/dots during long agent responses with a short text label per phase (e.g. 'analyzing' → 'searching') rendered with a gradient color wipe, so users get legible progress feedback.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 145,
+   "quote": "a gradient wipe of color of gray",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Citation UX pitfall",
+   "claim": "An early implementation had inline citations open a brand-new browser tab — a UX bug the presenter flagged as broken behavior needing an in-app panel instead.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 147,
+   "quote": "click on the inline citations it opens a new browser tab",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Citation UX pattern",
+   "claim": "The chosen pattern for showing a chat answer's sources is a slide-over/sheet panel from the side (not a modal or new page) that reveals the retrieved passage in context.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 123,
+   "quote": "a slide out panel from the side where we can",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Brand asset iteration",
+   "claim": "Fixing a logo/favicon's visual fit (centering, negative space, corner radius) required an explicit follow-up prompt calling out exact padding and radius issues with an attached reference image — a single generic request wasn't enough.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 150,
+   "quote": "make sure that we have some padding",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Deployment sizing",
+   "claim": "For a chat-style app expected to serve ~40 concurrent users, the recommended baseline compute is 2 vCPUs and 4GB RAM — 1GB RAM was called out as too low.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 182,
+   "quote": "two vCPUs and then four gigs of RAM",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Retrieval-affects-UI pitfall",
+   "claim": "Naive document chunking can produce chunks with almost no surrounding context (especially for tables), which directly degrades what a citation/source panel can meaningfully show a user in the UI.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 97,
+   "quote": "it has like very little context",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Roadmap sequencing",
+   "claim": "FastAPI is named the standard Python web framework to learn for building the API layer an AI-powered front end talks to, ahead of any front-end-specific tooling.",
+   "video_id": "yAOzupIW87E",
+   "chunk_index": 13,
+   "quote": "I just recommend using fast API it's just in the Python ecosystem",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Portfolio-building principle",
+   "claim": "Ship complete end-to-end projects that include a working front end (not just backend/API demos) as the strongest way to demonstrate full-stack AI engineering ability for hiring or freelance work.",
+   "video_id": "yAOzupIW87E",
+   "chunk_index": 22,
+   "quote": "get serious on shipping projects",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Front end as the unfamiliar layer",
+   "claim": "For engineers with a data-science background, understanding how the front end talks to the backend and database is described as the least familiar part of full-stack work, historically taking years to learn — AI has since compressed that timeline.",
+   "video_id": "yAOzupIW87E",
+   "chunk_index": 199,
+   "quote": "that whole world of okay look front end like how does that work",
+   "kind": "quote-worthy",
+   "verified": false
+  },
+  {
+   "theme": "Sequencing before UI/AI work",
+   "claim": "Before touching any LLM, RAG, or UI-facing feature work, first close basic software-engineering gaps (project structure, dependency management, git workflow) — jumping straight to AI features on a messy foundation is discouraged.",
+   "video_id": "yAOzupIW87E",
+   "chunk_index": 5,
+   "quote": "Don't even like go into like all like the rack, the LLMs",
+   "kind": "principle",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much manual design skill is actually required to ship a good-looking site",
+   "positions": [
+    {
+     "video_id": "TTeMU5iOE84",
+     "chunk_index": 14,
+     "position": "No design skill is needed — an AI design tool can generate a complete design system (colors, typography, components, wireframes) directly from a five-question brand brief; the human's job is picking and mixing among AI-generated options."
+    },
+    {
+     "video_id": "23lJ2YAnlC8",
+     "chunk_index": 1,
+     "position": "Producing a professional design system still means manually building a style guide, naming type styles, defining color variables, and constructing component variants by hand inside a dedicated design tool before any publishing step happens."
+    }
+   ]
+  },
+  {
+   "topic": "Whether a no-code AI+hosting stack is a legitimate substitute for a custom-coded application",
+   "positions": [
+    {
+     "video_id": "TTeMU5iOE84",
+     "chunk_index": 31,
+     "position": "A plain-English Claude Code + Hostinger pipeline (with PHP/MySQL for a database and one prompt to deploy) is presented as sufficient for a real small business site, including lead capture and an admin dashboard."
+    },
+    {
+     "video_id": "qF5il_9IwME",
+     "chunk_index": 12,
+     "position": "Real client/enterprise work requires a proper mono-repo (FastAPI + React/TypeScript + Postgres), Docker containers, environment/secrets separation, and manual security review — off-the-shelf/no-code tooling is explicitly called out as inadequate for data-sensitive, standardized, multi-user products."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No corpus video discusses accessibility (WCAG contrast/keyboard navigation/screen-reader support) for any of the interfaces built.",
+  "No guidance on mobile-first design or touch-target sizing beyond ad hoc per-viewport adjustments made after the fact in Wix Studio.",
+  "No discussion of page-speed, Core Web Vitals, or front-end performance budgeting for any of the shipped sites.",
+  "No usability or user testing methodology is shown — all design decisions are validated by the builder's own eye, never by watching a real user.",
+  "No systematic rationale for a typographic scale or spacing grid (e.g., a ratio system or 8-point grid) beyond ad hoc pixel choices like 36px/24px headings.",
+  "No treatment of dark mode or multi-theme support in any of the design systems built.",
+  "No cost/time benchmark exists for the manual Figma-build path comparable to the detailed Claude+Hostinger cost table, so a reader can't directly compare no-code vs. hand-crafted design economics.",
+  "No discussion of design handoff to developers when the designer and coder are different people/teams (all examples are one person doing both roles, often via AI)."
+ ],
+ "verified_claims": 45
+}

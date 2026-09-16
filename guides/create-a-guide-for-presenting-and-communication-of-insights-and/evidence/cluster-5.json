@@ -1,0 +1,558 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "c7_riQh50UE",
+  "kIvjiH8yJoU",
+  "r-MPiu0E4W4"
+ ],
+ "video_notes": [
+  {
+   "video_id": "c7_riQh50UE",
+   "title": "Communicate like McKinsey: top 3 consulting frameworks",
+   "contributed": "The core communication-of-insights framework in this cluster: know your goal / know your audience / know your approach, plus the Pyramid Principle, the Rule of Three, MECE, and the SCR (situation-complication-resolution) storytelling structure for high-stakes business communication."
+  },
+  {
+   "video_id": "kIvjiH8yJoU",
+   "title": "From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluation",
+   "contributed": "Shows how to communicate and validate the quality of a system's outputs to skeptical experts using pairwise LLM judging, an ELO ranking tournament, and a human-in-the-loop 'eyeballing' UI that surfaces the judge's qualitative explanation alongside the score."
+  },
+  {
+   "video_id": "r-MPiu0E4W4",
+   "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+   "contributed": "Mostly a tool-selection guide for AI design workflows, not a communication framework, but it contributes concrete practices for presenting work-in-progress to stakeholders/clients cheaply (fast low-token demos before expensive high-fidelity ones), keeping documentation structurally consistent, and being able to narrate/justify a workflow or design decision in a review."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Lead with the answer",
+   "claim": "Flip the academic report structure (background then conclusion) into a business structure that leads with the answer, because executives care about the destination, not the breadcrumbs.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 2,
+   "quote": "leading with an answer is the single biggest communication upgrade",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Know your goal",
+   "claim": "Before any meeting, define what you need the audience to think, feel, and do by the end — not just what topic you'll cover.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 3,
+   "quote": "what do you need the other person to think, to feel, and to do",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Three goal types",
+   "claim": "Nearly every business communication goal is a flavor of three buckets: alignment (buy-in), education (bring someone up to speed), or problem-solving (decide together).",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 4,
+   "quote": "Alignment, education, and problem",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Adapt to audience role",
+   "claim": "A CEO is time-poor and outcome-driven — give them the answer first and evidence later, unlike a middle manager who needs structure or a junior analyst who needs more background.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 5,
+   "quote": "time poor and outcomed driven",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Assume zero context",
+   "claim": "Always assume your audience has zero context on your topic, even after you've lived in the project for weeks, and open every meeting with a brief context-setting recap.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 6,
+   "quote": "Always assume zero context.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Map audience motivations",
+   "claim": "Before presenting, identify the specific fears, concerns, and goals each stakeholder brings into the room so you can proactively address them.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 7,
+   "quote": "their fears, their concerns, and their goals",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Frame for collaboration",
+   "claim": "Reframe a recommendation collaboratively (e.g. 'directing resources to the highest impact opportunities') instead of accusatorially (e.g. 'our current product isn't working') to avoid triggering defensiveness in stakeholders emotionally invested in the topic.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 8,
+   "quote": "directing resources to the highest impact opportunities",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Empathy as a tool",
+   "claim": "Treat empathy in communication as a functional tool, not softness — it aligns your framing so you don't create unnecessary enemies while delivering the same message.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 9,
+   "quote": "empathy in communication is a superpower",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pyramid Principle origin",
+   "claim": "The Pyramid Principle, the dominant structure for business communication, was developed by Barbara Minto at McKinsey.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 9,
+   "quote": "developed by Babrainto who was at Mckenzie",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Pyramid Principle structure",
+   "claim": "Structure any communication as a pyramid: the tip is your main message/recommendation/so-what, and the base is the supporting arguments and data.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 10,
+   "quote": "your main message, your answer, your recommendation, your so what",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Elevator answer test",
+   "claim": "Use the 'elevator with the CEO' test: if asked for a status update on the spot, give the direct recommendation and top risks immediately, not the research trail.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 11,
+   "quote": "start with the answer first",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Rule of Three",
+   "claim": "Support your recommendation with exactly three arguments because the human brain is wired for three — it's the minimum for pattern recognition.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 12,
+   "quote": "the human brain is wired for three",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Rule of Three",
+   "claim": "Three is also roughly the maximum number of points working memory can hold without overload — give someone seven arguments and they'll forget most of them by decision time.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 12,
+   "quote": "maximum number for working memory without overload",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Sequencing: deductive",
+   "claim": "Sequence supporting points deductively (major premise, minor premise, conclusion) when the audience is analytical and needs to follow logical proof.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 13,
+   "quote": "major premise, minor premise and conclusion",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Sequencing: chronological",
+   "claim": "Sequence points chronologically (step one, step two, step three) for a process, action plan, or roadmap — it's simple and easy to follow.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 14,
+   "quote": "This is the natural time order sequence",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Sequencing: comparative",
+   "claim": "Sequence points comparatively by degree of importance, leading with the strongest, so your key point lands even if the audience zones out later.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 14,
+   "quote": "you start with your most important points",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "MECE arguments",
+   "claim": "Build MECE (mutually exclusive, collectively exhaustive) arguments — the three points must not overlap and together must form the complete picture, or someone can poke a hole in your case.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 15,
+   "quote": "mutually exclusive, collectively exhaustive",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "SCR framework",
+   "claim": "For data-heavy presentations or skeptical audiences, use the SCR (situation-complication-resolution) framework to build the story before landing the recommendation, instead of leading with the answer.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 16,
+   "quote": "situation complication and resolution",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SCR: situation",
+   "claim": "Open the situation section with non-controversial, already-agreed facts so the audience nods along and credibility is established before tension is introduced.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 17,
+   "quote": "The situation component should not be surprising",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SCR: complication",
+   "claim": "The complication section introduces the problem, threat, or disruption, creating tension that makes the audience feel the recommendation is necessary or urgent.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 17,
+   "quote": "This is where you introduce the problem or the tension",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SCR: resolution",
+   "claim": "Deliver the resolution as a structured multi-part response (e.g. a three-part plan) so the recommendation feels earned rather than arbitrary.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 18,
+   "quote": "we recommend a three-part response",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Combine frameworks",
+   "claim": "Pairing SCR with the Pyramid Principle produces a communication that is both logically bulletproof and emotionally engaging.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 19,
+   "quote": "logically bulletproof and is emotionally engaging",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Applied example",
+   "claim": "In a worked board-presentation example, the presenter opens by stating the alignment goal explicitly ('I need the board to say yes to a $2 million investment') and filters every slide and answer through that goal.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 20,
+   "quote": "My goal in this meeting is alignment",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Three pre-meeting questions",
+   "claim": "Before any meeting, ask three questions: What is my goal? Who is my audience? What approach am I going to take?",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 23,
+   "quote": "What is my goal? Who is my audience? And what approach am I going to take?",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Communication is a trainable skill",
+   "claim": "Communication is a skill, not an innate talent — it improves with deliberate practice like any other skill.",
+   "video_id": "c7_riQh50UE",
+   "chunk_index": 23,
+   "quote": "Communication is not a talent that you are born with",
+   "kind": "quote-worthy",
+   "verified": false
+  },
+  {
+   "theme": "Evaluation complexity",
+   "claim": "Modern agentic RAG systems have so many tunable variations (retrieval pipeline, tool choice, agent architecture, model) that manually prototyping is easy but evaluating which variation is best is hard.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 4,
+   "quote": "so many prompts that you can tweak",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Human review bottleneck",
+   "claim": "Handing 50-100 queries to a domain expert for manual review typically gets only one or two completed before the expert says they're too busy — a hard bottleneck for evaluation.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 5,
+   "quote": "50 to 100 queries to an expert",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Single-answer LLM judges are biased",
+   "claim": "LLM judges scoring a single answer in isolation tend to be too optimistic and will find a tangential way to call the answer relevant, compared to human annotations.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 6,
+   "quote": "LLMs are a bit too optimistic and they will kind of agree",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Relative ranking still useful",
+   "claim": "Even though absolute LLM-judge scores are unreliable, sorting system variations from worst to best shows empirical agreement between the LLM judge and human experts on which system is worst and which is best.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 6,
+   "quote": "the worst performing system is on the one on the left",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Pairwise judging",
+   "claim": "Because LLMs are much better at distinguishing between a pair than scoring one answer, switch from single-answer scoring to pairwise comparison ('is A or B better').",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 7,
+   "quote": "should we then just ask the LM to compare two answers instead of one",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Optometrist analogy",
+   "claim": "Pairwise LLM judging is analogous to an eye exam: the judge just says 'left or right, which one is better' repeatedly rather than scoring in isolation.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 8,
+   "quote": "Left or right? Which one is better?",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "ELO for ranking many variants",
+   "claim": "Borrow the chess ELO ranking system to rank many RAG/agent variations: each variation is a 'player,' each query judged pairwise is a 'game,' and scores update based on expected vs actual outcome.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 8,
+   "quote": "called the uh ELO ranking system",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "RAGElo toolkit",
+   "claim": "The open-source toolkit (referred to in transcript as 'write elo'/RAGElo) evaluates hit relevance per query, then judges which answer wins, and runs the ELO algorithm to produce a ranked list of systems.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 9,
+   "quote": "developed this toolkit called write elo",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Judge decisions are nuanced",
+   "claim": "A single pairwise win/loss verdict can hide nuance — e.g. the 'better' answer may just be more confident about an ambiguous term, when the actually-desired behavior might have been to ask a clarifying question back to the user.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 10,
+   "quote": "winning is nuance right",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Eyeballing as human-in-the-loop",
+   "claim": "Looking directly at individual query results ('eyeballing') via a search relevance workbench is a fast, concrete way to bring a human back into the evaluation loop rather than trusting the aggregate score alone.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 11,
+   "quote": "eyeballing this gives us just a very easy way of looking at what is happening",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Metrics can be text, not just numbers",
+   "claim": "A metric in an evaluation dashboard doesn't have to be a number — the judge's free-text explanation of why it picked a winner is itself a useful metric/label to surface to reviewers.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 16,
+   "quote": "a metric could also be some text or a label that helps you understand something",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Hit-count variation across agents",
+   "claim": "Different agent/model configurations can retrieve wildly different numbers of hits for the same query (one config returned 111 hits) compared to older models that stop at 10 — a signal worth surfacing when comparing systems.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 17,
+   "quote": "there are um 111 hits for this one",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Models can game retrieval",
+   "claim": "One model was observed 'cheating' by expanding a plain-language query into an exact-phrase search (quoted terms) to game retrieval — a failure mode that eyeballing surfaced but the standard scored dashboard did not.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 18,
+   "quote": "GP5 mini will kind of cheat with the with the queries",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Subject-matter review of citations",
+   "claim": "Domain experts reviewing the underlying citations/hits alongside the generated answer can judge whether the citations actually make sense, not just whether the answer text sounds right.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 19,
+   "quote": "subject matter expert who understands that domain you can look at that",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Design for n-way comparison",
+   "claim": "A retrospective lesson: build evaluation tooling around n-number of experiment variants compared together, rather than pairwise experiments you have to awkwardly recombine yourself for 5+ systems.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 20,
+   "quote": "n number of experiment variants within a single experiment",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "RBO/Jaccard for triage",
+   "claim": "Rank-based overlap (RBO) and Jaccard similarity are good metrics for flagging which queries deserve human attention in ranked-list evaluation, but the same triage doesn't have a solved answer for long-form RAG answers.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 21,
+   "quote": "very very good metrics for kind of uh sorting what queries",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Open gap: long-answer divergence",
+   "claim": "The team has not solved how to automatically signal that two long RAG answers are different enough (or in disagreement) to warrant human review.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 21,
+   "quote": "how do you signal whether you need to look at these two answers",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Don't average ELO",
+   "claim": "ELO ranking should not be computed as a simple average of per-query outcomes (0/1/2) — the current implementation does this, which the presenters flag as a modeling mismatch to fix.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 24,
+   "quote": "ELO is not just the average of the per query",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM non-determinism",
+   "claim": "LLM judges cannot reproduce the same verdict every time on a rerun, but running many pairwise 'games' (as in chess ELO) partially compensates for this noise.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 26,
+   "quote": "you cannot kind of reproduce the the the answers uh every time",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Prompt sensitivity has decreased",
+   "claim": "Compared to 2022, when every word choice in a prompt could completely change an LLM's output, models today are noticeably more stable to prompt phrasing.",
+   "video_id": "kIvjiH8yJoU",
+   "chunk_index": 26,
+   "quote": "each word you put in the prompt might change the outcome completely",
+   "kind": "metric",
+   "verified": false
+  },
+  {
+   "theme": "Platform vs. model",
+   "claim": "The same underlying model produces noticeably different output quality depending on which platform runs it — e.g. Grok's own platform beat the identical Grok model accessed through Cursor.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 18,
+   "quote": "platform is not the same as model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Token/time cost comparison",
+   "claim": "In a head-to-head test generating the same dashboard, Grok took 2 minutes and 47,000 tokens for great quality, while Claude Fable took 17 minutes and 128,000 tokens for comparable quality.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 21,
+   "quote": "took 2 minutes and 47,000 tokens with an great design quality",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Cheap demos for stakeholder buy-in",
+   "claim": "Use fast, low-token tools like Grok to produce a clickable live dashboard that can be screen-shared or deployed for an early client/stakeholder demo before investing in expensive high-fidelity generation.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 54,
+   "quote": "deploy it to Verscell and share it with other people in my organization",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Live click-through with stakeholders",
+   "claim": "Because a Grok-built prototype runs locally, you can share your screen and click through it live to talk through specific elements with team members, a stakeholder, or a client.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 57,
+   "quote": "talk through specific elements with our team members, with a stakeholder, with a client",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Off-brand rejection risk",
+   "claim": "A rough AI-generated design that gets stakeholder buy-in on direction can still be rejected outright by executives with 'this is very off-brand' if it isn't reconnected to the real design system before that review.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 64,
+   "quote": "this is very off-brand",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Documentation consistency",
+   "claim": "When producing documentation for an audience (e.g. developers reading component docs), the top priority is consistency — every piece must share the same structure, or some readers get inconsistent, confusing information.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 68,
+   "quote": "your priority here is consistency",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reusable structure beats ad hoc prompts",
+   "claim": "Building a defined 'skill' (a saved spec for what information must appear) produces consistent documentation on every run, versus ad hoc prompting a link and asking for 'documentation,' which yields different structure each time.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 70,
+   "quote": "read the skill to understand the types of information that we want included",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Depth of automated audit reporting",
+   "claim": "A dedicated accessibility-audit skill surfaced 22 issues (3 critical, 13 major, 6 minor) on one screen, deeper than a shallow generic chatbot check that would likely only flag the critical items.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 74,
+   "quote": "it found 22 issues, three critical, 13 major, and six minor",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Narrating your workflow signals seniority",
+   "claim": "Being able to narrate a multi-tool workflow (idea generation, prototyping, QA, then design-system alignment) in an interview or review is itself a way to demonstrate a senior, advanced process to a hiring manager or stakeholder.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 67,
+   "quote": "you're already impressing the hiring manager",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI can't substitute for system-level understanding",
+   "claim": "AI cannot build a true design system end-to-end — it can produce styles, variables, or a button, but without someone who understands the rationale, no one can defend or explain the decisions in review.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 92,
+   "quote": "The answer, no, it cannot",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Can't explain what you didn't decide",
+   "claim": "If you can't answer 'when should this variant be used versus that one' about your own AI-generated tokens/components, you'll get pressed in a design review or by a developer and won't be able to defend the decision.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 97,
+   "quote": "Do you know when surface subtle versus surface sunken should be applied",
+   "kind": "pitfall",
+   "verified": false
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Whether to lead with the answer immediately or delay it to build a narrative",
+   "positions": [
+    {
+     "video_id": "c7_riQh50UE",
+     "chunk_index": 10,
+     "position": "The Pyramid Principle says always start with the answer first (the tip of the pyramid), then support it — this is presented as the default and 'the single biggest communication upgrade.'"
+    },
+    {
+     "video_id": "c7_riQh50UE",
+     "chunk_index": 16,
+     "position": "The SCR framework says that for data-heavy presentations or skeptical audiences, you should build the situation and complication first and delay the recommendation/answer until the resolution, so it feels earned rather than arbitrary."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks address how to design or format slides/visuals themselves (layout, typography, chart choice) for a presentation of insights — the McKinsey talk is about structuring the argument, not the deck.",
+  "The McKinsey talk doesn't cover how to handle live interruptions, hostile pushback, or being challenged mid-pyramid in the room beyond the single toothpaste framing example.",
+  "The McKinsey talk doesn't address remote/virtual presentation delivery (video calls, async written memos) versus in-person meetings.",
+  "The LLM-judge talk explicitly leaves open how to automatically detect when two long-form RAG answers are 'different enough' to need human review — stated as unsolved by the presenters themselves.",
+  "The LLM-judge talk doesn't discuss the cost or latency of running a full ELO tournament at scale (many systems x many queries x pairwise games), only that it works for their couple-week prototype.",
+  "The AI-design talk is fundamentally about tool selection and design-system workflows, not about communicating insights verbally or in writing — readers looking for data-storytelling or verbal delivery technique will not find it here.",
+  "None of the three talks discuss measuring whether a presentation of insights actually changed a decision or behavior after the meeting (follow-through/impact tracking)."
+ ],
+ "verified_claims": 50
+}

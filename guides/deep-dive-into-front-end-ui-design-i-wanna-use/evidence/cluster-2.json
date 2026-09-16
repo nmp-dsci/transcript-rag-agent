@@ -1,0 +1,630 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "a3SMraZWNNs",
+  "omU3zR3K7-U",
+  "G-F5Qvy-7KM",
+  "B-ytMSuwbf8"
+ ],
+ "video_notes": [
+  {
+   "video_id": "a3SMraZWNNs",
+   "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+   "contributed": "Not about front-end UI design at all — a crash course on evaluating LLM/agent applications (unit tests, human/LLM-judge alignment, A/B testing); contributes no citable UI-design claims to this guide."
+  },
+  {
+   "video_id": "omU3zR3K7-U",
+   "title": "The Best AI Automation Stack to Learn in 2026",
+   "contributed": "Names the specific front-end stack (React + Vite + shadcn/ui) recommended for building AI-automation UIs, and frames the claim that AI has largely solved front-end coding while UX/design taste remains a human bottleneck."
+  },
+  {
+   "video_id": "G-F5Qvy-7KM",
+   "title": "How I Build Insane Three.js Websites With Claude Opus 5",
+   "contributed": "A concrete AI-assisted design workflow for building striking Three.js/3D landing pages with Claude Code (Opus 5): reference-first prompting, MCP-driven inspiration gathering, effort-level settings, and turning repeatable techniques into reusable skills."
+  },
+  {
+   "video_id": "B-ytMSuwbf8",
+   "title": "Web Design for Beginners | FREE COURSE",
+   "contributed": "The only source that teaches manual UI/UX design fundamentals end-to-end — project briefs, wireframes, color theory, typography, the eight-point spacing system, common UI patterns (headers, heroes, buttons, galleries, footers, testimonials, tabs, accordions, forms), and responsive breakpoints — applied to a real Figma project."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Web design role definitions",
+   "claim": "A web designer is responsible for the entire front end (colors, typography, spacing, shapes, information architecture) while a web developer/engineer builds the back end — conflating the two roles causes client/professional friction.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 4,
+   "quote": "in charge of designing the front end of a website",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "UX vs UI specialization",
+   "claim": "UX design is about understanding what users want and need and building a seamless experience around that (information architecture, usability testing, content strategy) — it is a distinct specialization from visual UI design.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 6,
+   "quote": "understand what users want and what they need",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "UX vs UI specialization",
+   "claim": "UI design covers aspects that relate almost exclusively to a project's visual appearance — color, typography, spacing, sizing, shape — applied on top of the structure UX defines.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 7,
+   "quote": "covers aspects that relate almost exclusively to the visual appearance",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Start with a project brief",
+   "claim": "Every web design project should start with a written project brief (client background, site structure, content, design guidelines) before any color or typeface decision is made.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 13,
+   "quote": "always start a web project with a brief",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Wireframes come before visuals",
+   "claim": "A wireframe is a low-fidelity sketch representing only content and structure — no color, no typography, no sizing decisions belong in it.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 14,
+   "quote": "low-fidelity versions of your final design",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Wireframes come before visuals",
+   "claim": "A wireframe should be devoid of any intentional aesthetic decisions like color or typography so the UI designer isn't anchored to layout choices made before design begins.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 19,
+   "quote": "devoid of any intentional aesthetic decisions like color or typography",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Design tool choice",
+   "claim": "Figma is the recommended UI design tool for beginners because it's free, cross-platform, and runs in the browser — Photoshop/Illustrator were not built for this workflow and should be avoided.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 23,
+   "quote": "free, crossplatform, and works in the browser",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Color theory fundamentals",
+   "claim": "A tint is created by mixing white into a color, a shade by mixing black, and a tone by mixing gray — these are the three core color-manipulation moves used to build a palette.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 25,
+   "quote": "a tint is when you add white to a specific color",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Color models",
+   "claim": "CMYK (subtractive) is for print; RGB and HSB (additive) are the color models used for screens/digital design.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 28,
+   "quote": "CMYK stands for cyan, magenta, yellow, and black",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Hex is the practical web format",
+   "claim": "Hexadecimal is the most popular color format in web design because it's a compact, easily shareable stand-in for RGB values.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 33,
+   "quote": "the hex format is the most popular when it comes to web design",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Color psychology",
+   "claim": "Blue is the single most-used color on the internet and conveys trust, calm, and security — which is why tech brands and financial institutions default to it.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 36,
+   "quote": "the most used color on the internet, fun fact",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Color harmony selection",
+   "claim": "Of all the color-harmony options in a tool like Adobe Color, analogous, monochromatic and complementary are the three used in practice most of the time.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 39,
+   "quote": "monochromatic and complimentary are the most used",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Never use pure black for text",
+   "claim": "Avoid pure black (#000) for body text — it contrasts too harshly; mix a primary-tinted gray instead.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 47,
+   "quote": "against doing is to use pure black",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Build a tonal black scale",
+   "claim": "Create a 'black' color that mixes a bit of the brand's primary hue with gray, then derive reusable tints (75/50/25/10/5%) for text, muted copy and separators instead of re-deriving grays each time.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 48,
+   "quote": "mixing my primary hue with a bit of gray",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Always check contrast",
+   "claim": "Every text or interactive-element color must be checked for proper contrast against its background using a contrast-checker app before the palette is finalized — several of the tone-25/tone-10 tints will fail this check.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 51,
+   "quote": "it has proper contrast compared to its background",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Font sourcing",
+   "claim": "As a beginner, source fonts from Google Fonts (free) or Adobe Fonts (paid, more granular filters by weight/width/x-height and higher perceived quality).",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 55,
+   "quote": "get your fonts from either Google Fonts or Adobe Fonts",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Typeface personality matching",
+   "claim": "Match typeface style to brand feeling: a serif as the big headline typeface signals luxury/sophistication, while sans-serif signals modern and trustworthy (why Stripe uses sans-serif, not serif).",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 58,
+   "quote": "go for a serif font as the big headliner",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Two-typeface pairing rule",
+   "claim": "When using two typefaces, reserve the more-readable-at-small-sizes face for body text/buttons/menus/captions and the other for large headings.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 60,
+   "quote": "the fonts with the greatest readability for smaller elements",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Font pairing example",
+   "claim": "Brandon Grotesque (headings) pairs well with Proxima Nova (body) — Proxima Nova stays legible at 16–18px where Brandon Grotesque does not.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 64,
+   "quote": "pairs very well with Proximanova",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Type scale generation",
+   "claim": "Use a type-scale tool (typescale.com) with a chosen base font size (e.g. 21px for an airy, white-space-heavy design) to auto-generate the full heading scale.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 66,
+   "quote": "use a base font size of 21 pixels",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Type scale generation",
+   "claim": "A 1.414 ('augmented fourth') ratio gives a good balance between small and large font-size contrast for a project scale.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 67,
+   "quote": "an augmented fourth scale or 1.414",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Eight-point spacing system",
+   "claim": "Every spacing/sizing dimension (margins, padding, widths, heights) should be a multiple of 8 — it's simple to remember, keeps measurements consistent across a project, and makes handoff to developers easier.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 71,
+   "quote": "every dimension is basically a multiple of eight",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Eight-point spacing system",
+   "claim": "Example applied padding: 16px top/bottom and 32px left/right on a button — both multiples of 8.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 71,
+   "quote": "a padding of 16 pixels on top and bottom",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Grids are optional",
+   "claim": "Grid systems can add unnecessary complexity for beginner projects; a simpler ruler/guide-based alignment approach is often sufficient and easier to learn.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 74,
+   "quote": "grids can add a certain degree of complexity to a project",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Icon consistency",
+   "claim": "Icons must share a consistent visual style (all outline or all solid) — mixing styles within one UI reads as sloppy even if icons come from different sets.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 79,
+   "quote": "be consistent and use icons with the same style",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Icon set recommendations",
+   "claim": "Bootstrap Icons is a free, 1,600+ icon set worth defaulting to; Font Awesome, Heroicons (230 icons, MIT-licensed) and IconJar (icon-organizer app) are the other go-to resources.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 79,
+   "quote": "over 1,600 icons. It's free to use",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Avoid generic stock photography",
+   "claim": "Prefer real client photos over stock photography wherever possible; reserve stock photos only for generic background context, never for 'people at work' cliché shots.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 81,
+   "quote": "stay away from stock photos as much as possible",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Header pattern",
+   "claim": "A header is the top section of a page and typically contains logo, nav menu, CTA and optionally a search field — but the structure is flexible (can go vertical, can hide nav under a menu button).",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 84,
+   "quote": "the top section of a web page that contains the logo",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Hero pattern",
+   "claim": "The hero area sits immediately below/next to the header, is 'prime real estate' because it's above the fold, and should carry the strongest message plus a CTA.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 100,
+   "quote": "the area immediately below or next to the header",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Button usability rules",
+   "claim": "Buttons must be easy to click and to tap on mobile — size them for a finger, which is much larger than a cursor.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 114,
+   "quote": "easy to click but also more importantly easy to tap",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Button states are mandatory",
+   "claim": "Every interactive button needs explicitly designed default, hover, active and disabled states, plus a subdued secondary style for lower-emphasis actions.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 115,
+   "quote": "consider the different states that element can be in",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Never fake testimonials",
+   "claim": "Never use fake testimonials — it's both unethical and illegal; wait for real client feedback rather than fabricating quotes for a new business.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 138,
+   "quote": "not use fake testimonials ever",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Tabs vs. accordions",
+   "claim": "Tabs show exactly one panel at a time; accordions can show multiple open panels simultaneously and suit simpler text content — which is why accordions dominate FAQ sections.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 158,
+   "quote": "accordians can display multiple panels at once",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Contact form minimalism",
+   "claim": "A contact form needs only name, email address and message as the bare minimum — extra required fields (budget, company size, purpose) reduce completion rates.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 166,
+   "quote": "all you need is their name, email address, and their message",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Origin of responsive design",
+   "claim": "Ethan Marcotte's 2010 List Apart article coined the term 'responsive web design'; it became the industry standard once media queries saw widespread adoption in 2012, replacing separate 'm.' mobile subdomains.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 179,
+   "quote": "he named it responsive web design and this term stuck",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Breakpoints should be discovered, not assumed",
+   "claim": "Relying on 'standard' fixed breakpoints (1024/768/480) is unreliable because different layouts break at different widths — instead, resize the canvas until a problem visibly appears and set the breakpoint there.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 183,
+   "quote": "relying on those fixed break points is not ideal",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Breakpoint ranges used on the demo project",
+   "claim": "The demo portfolio site used three empirically-found ranges: laptop >1200px, tablet 1200–600px, phone <600px, each with its own type scale and spacing.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 184,
+   "quote": "phone range with screen sizes of less than 600 pixels",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Scale spacing down across breakpoints",
+   "claim": "Major section spacing shrinks step-wise across breakpoints — 256px on large screens down to 168px on tablet and 96px on phone — so smaller screens aren't wasted on desktop-scale whitespace.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 188,
+   "quote": "distance between each major section on large screens is 256",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Responsive component pattern for tabs",
+   "claim": "To make a tab-and-card component responsive, progressively strip repeated label text, shrink icon/padding values, stack cards two-per-row, then swap text labels for icons entirely at the smallest widths.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 195,
+   "quote": "the easiest thing to do is make them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Prototyping before handoff",
+   "claim": "Before shipping a design to development, link screens together in Figma's prototype mode to simulate the user journey and catch navigation problems early.",
+   "video_id": "B-ytMSuwbf8",
+   "chunk_index": 204,
+   "quote": "an interactive mockup of your design that allows you",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI front-end stack recommendation",
+   "claim": "For AI-automation front ends, the recommended stack is React for components, Vite as the dev/build server, and shadcn/ui for pre-built components (buttons, graphs, chat UIs).",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 7,
+   "quote": "combination of three things that I recommend that is react, fight, and shet UI",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "shadcn/ui component ownership",
+   "claim": "shadcn/ui components are copied directly into your project's source rather than installed as a node_modules dependency, so both you and your coding agent can freely edit and restyle them.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 9,
+   "quote": "you import that code into your project. So now it's there",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI has solved front-end code, not UX",
+   "claim": "AI can now build front-end code trivially, but there remains a real gap between just building a front end and doing actual UX/design work — AI still lacks in the latter.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 9,
+   "quote": "difference between the actual exercise of creating the front end versus the design and the UX",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI has solved front-end code, not UX",
+   "claim": "The speaker's provocative claim: being 'just' a front-end developer with no other skills is no longer valuable because AI makes building simple front ends this easy.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 9,
+   "quote": "just being a front-end developer, like you're cooked",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Scope of AI-automation front ends",
+   "claim": "Most AI-automation projects only need simple internal tools — admin dashboards and simple chat applications — not consumer-grade polished UX.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 10,
+   "quote": "internal tools simple admin dashboards simple chat applications",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "File size as a quality signal",
+   "claim": "A fully 3D, interactive Three.js landing page (weather effects, animated towers, dynamic lighting) was built at under 1MB total file size — proof that visually rich sites don't require heavy asset payloads.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 0,
+   "quote": "less than 1 meg in term of file size",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Definition of AI slop",
+   "claim": "'AI slop' results from vague, unspecialized prompts — asking for 'a landing page' without a specific reference or vocabulary produces the same generic output every time.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 5,
+   "quote": "you ask something too vague, and then you get something extremely standard",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "MCP-driven design research",
+   "claim": "Connecting an MCP server like Mobbin lets the coding agent autonomously research and fetch high-quality UI reference examples (e.g. 'find the top UI for a mobile design for a travel app') instead of you manually browsing inspiration sites.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 9,
+   "quote": "find the top UI for a mobile design for a travel app",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Starter prompt for cloning a reference",
+   "claim": "The go-to starter prompt for a new AI-built landing page is simply pasting a reference URL and saying 'recreate this in a single HTML file. Self-verify until it's perfect' — no manual description of typography/layout needed anymore.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 11,
+   "quote": "recreate this in a single HTML file. Self-verify until it's perfect",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reasoning effort matters for design quality",
+   "claim": "Always run the coding agent at maximum/'extra high' reasoning effort for front-end design work — medium effort produces noticeably worse, less-researched results.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 12,
+   "quote": "auto is just enough. It's safer",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reasoning effort matters for design quality",
+   "claim": "Extra-high effort is described as the 'bare minimum' setting for getting non-slop design output from Opus 5 or Codex.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 13,
+   "quote": "extra is my bare minimum here",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Video/screen-recording as design context",
+   "claim": "Modern coding agents can use a tool like Playwright to scroll a reference site and record the interaction themselves, giving them frame-by-frame context on animations and scroll behavior that used to be impossible to convey in a text prompt.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 14,
+   "quote": "use a tool like Playwright, do the scrolling for you",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Higher-quality AI design costs more",
+   "claim": "Getting a high-fidelity, non-slop AI-generated design costs meaningfully more in tokens, money and time than a quick generic prompt — the trade-off is explicit, not free.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 14,
+   "quote": "yes, it will lose a lot of tokens",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Molding, not copying, the reference",
+   "claim": "Cloning a reference design is only the starting point — the real design skill is developing enough vocabulary and taste to progressively mold the clone into something original and on-brand.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 15,
+   "quote": "grow your vocabulary, your taste, your ability to",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Transparent PNGs for parallax layering",
+   "claim": "Ask the image model explicitly for transparent PNGs (rather than framed images) so elements can be layered and floated to create parallax depth effects — this is the same technique historically done manually in Figma layers.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 18,
+   "quote": "you want to ask also is you want transparent PNG",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Canvas UI for shader effects",
+   "claim": "canvasui.dev provides copy-paste shader-effect prompts (water, cloth, flame) that apply visual effects directly onto HTML elements rather than as a separate rendering layer.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 17,
+   "quote": "shader effects on top of HTML",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Turn reusable techniques into skills",
+   "claim": "Once a technique (a texture pipeline, a weather effect, an orbit animation) works, capture it as an agent 'skill' so it can be reliably reused across future projects instead of re-prompted each time.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 23,
+   "quote": "you want to tell your AI to turn that into skills",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Super prompts capture an entire design",
+   "claim": "A 'super prompt' is a full text description distilled from a video/reference that captures the entire website design, letting you regenerate the same structure under a completely different brand/theme from a clean starting point.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 23,
+   "quote": "the super prompt is going to describe the entire website",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "skills.sh as a skill marketplace",
+   "claim": "skills.sh is a directory for finding reusable agent skills, including a 'kill AI slop' family of skills specifically for stripping AI-sounding writing/design patterns.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 24,
+   "quote": "really good for finding the skills, such as grill me",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Open-sourcing as portfolio strategy",
+   "claim": "Open-sourcing finished AI-built projects builds an audience and functions as a portfolio — engineers historically used GitHub stars the way others used a personal website to attract hiring interest.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 7,
+   "quote": "you will get the audience. You will get a portfolio",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI-assisted style prototyping",
+   "claim": "Once a base clone exists, ask the AI to generate multiple style/layout/copy options to prototype against before locking anything in permanently — don't settle for the first output.",
+   "video_id": "G-F5Qvy-7KM",
+   "chunk_index": 26,
+   "quote": "gives you these options to prototype the design",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How front-end UI work should actually get made",
+   "positions": [
+    {
+     "video_id": "B-ytMSuwbf8",
+     "chunk_index": 23,
+     "position": "UI design is a craft built from first principles — color theory, typographic scales, an eight-point spacing system, hand-built common patterns — executed manually in Figma over a 5+ hour course."
+    },
+    {
+     "video_id": "G-F5Qvy-7KM",
+     "chunk_index": 11,
+     "position": "Modern practice is to paste a reference URL into an AI coding agent (Claude Opus 5) and let it replicate and self-verify the design; the human's job shifts to curating references and 'molding' the AI output rather than hand-building the layout system."
+    },
+    {
+     "video_id": "omU3zR3K7-U",
+     "chunk_index": 9,
+     "position": "Being solely a hands-on front-end coder/builder is no longer valuable ('you're cooked') because AI has commoditized the build step — though this same video concedes AI still lacks genuine UX/design judgment."
+    }
+   ]
+  },
+  {
+   "topic": "How easy AI-driven front-end work actually is",
+   "positions": [
+    {
+     "video_id": "omU3zR3K7-U",
+     "chunk_index": 10,
+     "position": "The AI/front-end layer for automation projects is framed as simple — most projects need only basic internal dashboards or chat UIs, and getting a working front end is comparatively trivial."
+    },
+    {
+     "video_id": "G-F5Qvy-7KM",
+     "chunk_index": 14,
+     "position": "Achieving a genuinely non-slop, high-quality AI-generated design (like the Three.js showcase site) required running at maximum reasoning effort for 40+ minutes, high token spend, and iterative manual 'molding' — explicitly not fast or cheap."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No source covers accessibility beyond basic color-contrast checking — no guidance on ARIA, keyboard navigation, screen-reader support, or focus management.",
+  "No source explains how a finished Figma design or an AI-cloned reference actually gets translated into production HTML/CSS/component code, or what a design-to-dev handoff process looks like in practice.",
+  "No source compares component/design-system tooling beyond a single mention of shadcn/ui — no discussion of design tokens, Storybook, or maintaining a design system at scale.",
+  "No source discusses user testing, usability testing, or validating a UI design with real users before shipping.",
+  "No source gives any data connecting specific design decisions (color, layout, copy) to measurable business outcomes like conversion rate or engagement.",
+  "The AI-driven workflow videos (G-F5Qvy-7KM, omU3zR3K7-U) don't explain how to evaluate whether an AI-generated design is actually usable/accessible, only whether it looks distinctive ('non-slop').",
+  "No source covers motion/animation design principles systematically — the Three.js video shows effects (weather, cloth, orbiting) as anecdotal outcomes without a framework for when/how much motion to use.",
+  "No source addresses design work for non-marketing UI (e.g., dense data tables, enterprise dashboards, forms with complex validation) — B-ytMSuwbf8's patterns are all marketing/portfolio-site oriented."
+ ],
+ "verified_claims": 59
+}

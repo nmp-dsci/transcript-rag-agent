@@ -1,0 +1,579 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "Oo-5AWdQAt8",
+  "bkTY9gYkWis",
+  "gXwF0VbTKvs",
+  "wLJ40GV2XEc"
+ ],
+ "video_notes": [
+  {
+   "video_id": "Oo-5AWdQAt8",
+   "title": "Use AI Like a Senior Designer (3 Workflows)",
+   "contributed": "Three concrete workflows senior designers at Meta/Google actually use: widget-first generation before page generation, persona-driven AI flow testing, and AI-assisted reading-order for developer handoff."
+  },
+  {
+   "video_id": "bkTY9gYkWis",
+   "title": "How I Build INSANELY Beautiful Websites Using Claude Code",
+   "contributed": "An 8-step, tool-by-tool build process (skills to kill AI slop, plan mode, inspiration images, section-by-section build starting with hero, motion rhythm, responsiveness pass, self-audit score, one-command Hostinger deploy) for turning a default Claude Code output into a premium-feeling site."
+  },
+  {
+   "video_id": "gXwF0VbTKvs",
+   "title": "Real Senior Frontend System Design Interview 2026 (AI Coding Included)",
+   "contributed": "A full mock senior front-end system-design interview transcript covering requirements gathering, state architecture, performance/caching strategy, and how to credibly answer questions about which AI models, harnesses, and guardrails to use."
+  },
+  {
+   "video_id": "wLJ40GV2XEc",
+   "title": "Top UI/UX Design Tips - How to Design a Great Bottom Mobile Navigation Bar",
+   "contributed": "A checklist of concrete, numeric UI specs (icon sizes, tap targets, tab counts, contrast ratios) specifically for designing a mobile bottom navigation bar."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Widget-first generation",
+   "claim": "Start AI generation with the single most important widget on a page, not the whole page — generate dozens of variations of that one component before touching anything else.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 1,
+   "quote": "they're starting off with widget generation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Widget exploration prompt",
+   "claim": "Prompt for many distinctly different versions of one widget (layout, chart style, color scheme) instead of asking for a whole dashboard, so you can pick a strong starting point instead of prompting a generic result into shape.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 3,
+   "quote": "Create eight distinctively different versions",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Hand off winning widget to Figma",
+   "claim": "Once a generated widget looks right, screenshot it and have Figma agents recreate it as an editable component with the studio's own design system applied, rather than continuing to prompt inside the AI design tool.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 4,
+   "quote": "he takes a screenshot of whatever widget he identified",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Manual critical thinking for layout",
+   "claim": "Senior designers do the surrounding-page structure themselves rather than asking AI to build the full dashboard, because relying on AI to think for you doesn't hold up in corporate enterprise settings.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 5,
+   "quote": "He doesn't rely on AI to build the rest of the dashboard for him.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Selective iteration",
+   "claim": "Only repeat the multi-variant widget-generation process on widgets you're actually stuck on — not every widget on a page needs that level of iteration.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 5,
+   "quote": "He doesn't do it for every widget",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Flow home base for AI testing",
+   "claim": "Build one page linking every flow you want tested so an AI agent has a home base it can navigate from one flow to the next (and back) during a UX review.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 6,
+   "quote": "flow home base, where you have all the different flows",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Persona-driven usability prompt",
+   "claim": "Give the agent a specific persona (role, experience level, constraints, goals) and ask it to narrate expectations, hesitations, and confidence per step on a 1-5 scale before comparing two flows.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 8,
+   "quote": "your confidence on one to five",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI flow comparison output",
+   "claim": "A persona-driven agent review returns a recommended flow plus a step-by-step evaluation of both flows — useful for surfacing blind spots when you don't have time or access to real users.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 9,
+   "quote": "recommending flow B and gave some reasons why",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Don't trust AI UX verdicts fully",
+   "claim": "Never treat an AI usability verdict as full truth — use it as a foundation to open up your thinking or tweak a design, then validate with real users when you can.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 10,
+   "quote": "never just take an AI suggestion and take it 100%",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI for reading order, not full annotation",
+   "claim": "The one developer-handoff task these designers actually delegate to AI is reading order, because designers' default left-to-right-then-down assumption is not always the logical reading order.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 11,
+   "quote": "the reading order is the logical order",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Never ship raw AI annotations",
+   "claim": "Never forward AI's raw reading-order annotations straight to developers — always manually re-verify and place the numbers yourself; that's where mistakes happen.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 14,
+   "quote": "never ever ever just take the output that AI gives you",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Accessibility annotation kit",
+   "claim": "The Web Accessibility Annotation Kit by CVS Health, free on the Figma Community, gives ready-made reading-order stamps for marking up handoff files with the AI-suggested order.",
+   "video_id": "Oo-5AWdQAt8",
+   "chunk_index": 13,
+   "quote": "the web accessibility annotation kit by CVS Health",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Seven traits of a premium website",
+   "claim": "A site reads as premium when it checks seven boxes: visual hierarchy/whitespace, typography, color and imagery, motion and interactions, design-system consistency, performance and responsiveness, and trust/conversion.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 1,
+   "quote": "having a perfect hierarchy, having enough white space",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Motion earns the premium feel",
+   "claim": "Micro-interactions and purposeful animation are what turn a static layout into an experience, not just a page.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 2,
+   "quote": "purposeful animation, purposeful motion really takes the website to the next level",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Kill AI slop with skills",
+   "claim": "Out of the box, most AI-built sites default to the same purple gradients and Inter font — that recognizable sameness is what installing design skills is meant to break.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 5,
+   "quote": "same purple gradients, same inter font",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Hand-pick skills, don't install everything",
+   "claim": "Don't install every design skill/MCP from a skills repository at once — it can confuse Claude Code and burns extra context and tokens; hand-pick two or three that fit the project.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 6,
+   "quote": "it might just confuse Claude Code",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Anthropic's official front-end-design skill",
+   "claim": "Anthropic's own 'front-end design' skill forces the model to pick a real aesthetic direction before writing code, requires genuine typography pairing, and blocks generic components while enforcing CSS variables and a cohesive color system.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 7,
+   "quote": "pick an actual aesthetic direction before writing the code",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "UI UX Pro Max plugin",
+   "claim": "The community 'UI UX Pro Max' plugin adds industry-specific design reasoning plus roughly 84 named UI styles (palettes, font pairings, text tags) that Claude Code can draw from.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 9,
+   "quote": "then it has 84 ui styles",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Plan before building",
+   "claim": "Use plan mode to lock in pages, sections, content, design system, and aesthetic direction before any code is generated, instead of jumping straight to a build.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 10,
+   "quote": "the pages, the sections, the content, even the design system",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Describe the what, not the how",
+   "claim": "When briefing the plan, state the desired feeling and objective (calm, refined, premium, single conversion goal) and let the model propose implementation, rather than prescribing the how yourself.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 11,
+   "quote": "focus more on what you're looking for instead of how it should do it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Seed with real inspiration images",
+   "claim": "Before building, feed the model three to five screenshots from sites like Dribbble or Awwwards so it can infer your visual taste directly instead of guessing from a text description alone.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 13,
+   "quote": "you can share screenshots you like",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Build section by section, hero first",
+   "claim": "Don't generate the whole site at once — build and refine one section at a time, starting with the hero, before moving to the rest of the page.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 16,
+   "quote": "the next rule is to build it in pieces",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Hero needs a real image or video",
+   "claim": "A text-only hero reads as plain; adding even a plain background image or video noticeably elevates the section.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 16,
+   "quote": "text-only heroes look plain",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Generate hero imagery with a written prompt",
+   "claim": "Ask the coding model to draft the image-generation prompt for your hero background, then run that prompt in an image tool, instead of writing the image prompt yourself from scratch.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 17,
+   "quote": "ask claude to help me with that",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Batch image generation with a second coding agent",
+   "claim": "Running OpenAI's Codex extension side-by-side with Claude Code in the same VS Code project lets you batch-generate a whole prompt file's worth of images, referencing earlier generated images so the new ones match visually.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 21,
+   "quote": "you can download the Codex extension inside of VS Code",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Motion rhythm, not maximum motion",
+   "claim": "Wall-to-wall animation, transitions, and scroll effects make a site feel playful and visually exhausting; alternate high-motion sections with calmer, static ones to create a rhythm instead.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 26,
+   "quote": "the website feels playful and visually exhausting",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Self-audit before launch",
+   "claim": "Have the coding agent audit its own build — scoring visual hierarchy, security, performance/responsiveness, trust, motion, and design out of 100 and listing concrete pre-launch fixes — before you ship.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 32,
+   "quote": "gave us a score of 67 on 100",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Audit score thresholds",
+   "claim": "Treat a self-audit score above 50 as not bad and above 80 as launch-ready, since the audit prompt is deliberately strict; re-run it after each round of fixes.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 32,
+   "quote": "anything above 80 is amazing",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "One-command deploy via hosting MCP",
+   "claim": "Connecting a hosting provider's MCP server (e.g. Hostinger) to Claude Code lets you deploy the site and connect a domain with a single natural-language command instead of manual upload steps.",
+   "video_id": "bkTY9gYkWis",
+   "chunk_index": 35,
+   "quote": "Hostinger connects directly with Claude Code",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Functional vs. non-functional requirements",
+   "claim": "Separate functional requirements (what the UI must do) from non-functional ones (how well it does it — speed, accessibility, security) at the very start of a front-end design, the way a car's 'gets you from A to B' differs from its fuel efficiency.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 2,
+   "quote": "does it take me from A to B",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Quantify performance with Core Web Vitals",
+   "claim": "State non-functional performance goals in terms of Core Web Vitals and real-user-monitoring data rather than vague claims about speed.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 3,
+   "quote": "you quantify that with core web vitals",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI over-complicates state models",
+   "claim": "AI can propose a first-pass state architecture from a UI screenshot, but it tends not to hallucinate so much as expand — adding unnecessary fields — so treat its output as a draft to simplify, not a final answer.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 10,
+   "quote": "AI tends to not hallucinate, but tends to expand things",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Prefer simple, unified state shapes",
+   "claim": "When two data points are always fetched and used together, merge them into a single type rather than keeping them as separate state — simple beats complex.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 12,
+   "quote": "simple is always better than complex",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Don't reinvent data fetching",
+   "claim": "For straightforward component-level state, plain useState is enough; use a library like TanStack for the data-fetching/caching layer instead of writing custom fetch hooks.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 15,
+   "quote": "use an external library like TanStack",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Vite over Webpack for new builds",
+   "claim": "Recommend Vite for new front-end builds for its speed, reserving something like Rspack (Webpack-in-Rust) only when there's an existing Webpack setup you want to keep but speed up.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 18,
+   "quote": "nowadays most people use things like Vite",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Three dimensions of web performance",
+   "claim": "Break web performance into three named dimensions in an interview or plan: loading speed, responsiveness to user input, and layout stability (CLS) — naming all three signals seniority over a generic 'do code splitting' answer.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 21,
+   "quote": "the three dimensions, which are basically loading speed",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "BFF stabilizes a volatile backend",
+   "claim": "Insert a backend-for-frontend layer when the upstream API shape changes often or you don't own the service, so the front end depends on a stable interface — this also makes AI-assisted root-cause analysis on bugs far easier since fewer layers can have changed.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 24,
+   "quote": "we can use a BFF to provide like a stable interface for the front end",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Polling doesn't scale for live widgets",
+   "claim": "Client-side polling for live data effectively DDoSes your own backend once you have many concurrent clients each hitting the endpoint every couple of seconds — e.g. ten graphs on one screen at a 2-second interval means ten requests per client at once.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 25,
+   "quote": "They will DDoS your back end.",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Server-sent events over WebSockets for one-way live data",
+   "claim": "When updates only need to flow server-to-client (no need for the client to push data back), Server-Sent Events are the simpler, native-API fit — bidirectional WebSockets are overkill unless you need two-way communication like chat.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 27,
+   "quote": "This is a native API where you listen to an URL",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cache by read/write ratio",
+   "claim": "Decide what to cache by checking its read/write ratio: past time-series data points become read-only once written (the price of yesterday's stock never changes), so cache them aggressively via HTTP caching plus a client-side cache like TanStack's, while only the newest live point can't be cached.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 29,
+   "quote": "what we call the read write ratio of a resource",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Separate CSS from the bundle for caching",
+   "claim": "CSS-in-JS approaches (e.g. styled-components) inject style tags directly into the document, coupling CSS to the page and defeating caching; separate CSS out at the build-tool level, especially design-system CSS which changes far less than app code, so it can be cached independently via a CDN.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 29,
+   "quote": "the CSS in the design system, it's usually more stable than the rest of the application",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI models lack visual intelligence",
+   "claim": "No current coding model has strong visual judgment despite vendor claims, so anchor them with stable artifacts — a design system, a state diagram, sequence diagrams — and let the model interpolate between those checkpoints rather than freelancing the visuals.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 33,
+   "quote": "they lack any visual intelligence",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Local models for data-sensitive orgs",
+   "claim": "For regulated environments like financial institutions, ask about self-hosted local models (e.g. via Ollama, running a ~15B-parameter class model) as a way to avoid sending proprietary data to model vendors, even though they're far slower than a frontier hosted model.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 35,
+   "quote": "I would even consider local AI in this case",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Code review agents can loop with coding agents",
+   "claim": "Feeding a code-review agent's findings straight back into a coding agent works for catching security and accessibility bugs, but the two agents can enter an infinite correction loop, so this pipeline still needs human supervision.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 37,
+   "quote": "they just correct each other and they go into an infinite loop",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Seniors present options, juniors give answers",
+   "claim": "The clearest interview tell of seniority is presenting two or three labeled options with tradeoffs and letting the interviewer choose, instead of jumping straight to one tool-oriented answer.",
+   "video_id": "gXwF0VbTKvs",
+   "chunk_index": 39,
+   "quote": "seniors present options",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Only essential destinations in bottom nav",
+   "claim": "Reserve the bottom nav for the handful of most-used destinations (home/feed, search, add/create, messages, profile) and keep everything else out of it.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 2,
+   "quote": "The bottom navigation should only contain the most essential destinations",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Bad candidates for bottom nav",
+   "claim": "Help, log out, and legal pages don't belong in the bottom nav — nobody needs them at their fingertips, so push them into profile or a side menu instead.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 3,
+   "quote": "No one logs out that frequently",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Center CTA in bottom nav",
+   "claim": "A centered call-to-action button (e.g. 'create' or 'post') in the bottom nav gets both prominence and easy reach, especially on larger phones.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 4,
+   "quote": "CTA button in the bottom navigation is a smart move",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Concrete bottom-nav pixel specs",
+   "claim": "Use roughly 24px icons, and 10-12px labels as a starting sizing baseline, adjusted per device rather than applied rigidly.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 5,
+   "quote": "an icon size of 24 pixels strikes a good balance",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Respect the device safe area",
+   "claim": "Never overlap or hide the home indicator with the nav bar — leave enough spacing above it and test on a real device (e.g. via Figma Mirror), since a Figma preview can look fine while the real phone doesn't.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 6,
+   "quote": "You should not overlap your navigation bar onto it",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Cap tabs at 3-5, max 6",
+   "claim": "Keep the bottom nav to three to five tabs, six at the absolute max — more causes choice paralysis and shrinks each tap target.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 7,
+   "quote": "aim for three to five tabs, max six tabs",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "44x44px minimum tap target",
+   "claim": "Size every bottom-nav tap target at least 44x44 pixels, matched to average thumb size, to cut mis-taps and support users with varying motor abilities.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 8,
+   "quote": "a tap area of at least 44 pixels x 44 pixels",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Two visual changes for the active state",
+   "claim": "Mark the active tab with at least two simultaneous visual changes at once (e.g. outline-to-filled icon plus a color and weight change) — a single change alone is too subtle for users to register quickly.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 11,
+   "quote": "apply at least two visual changes, such as adjusting the icon's color",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Badge placement and restraint",
+   "claim": "Place notification badges in the icon's top-right corner and reserve them for genuinely important updates only — badging every minor event causes notification fatigue and undermines the signal.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 15,
+   "quote": "placing them in the top right corner of the icon is a common practice",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Minimum 3:1 contrast for inactive icons",
+   "claim": "Inactive nav icons and labels still need to clear WCAG's minimum 3:1 contrast ratio for graphical elements — reduce opacity in a controlled way rather than picking a washed-out color by eye.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 20,
+   "quote": "minimum contrast ratio of 3:1 for graphical elements",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Micro-interactions on tap and transition",
+   "claim": "Layer in tap feedback (scale/ripple/color change), an animated sliding underline between tabs, and fade/slide transitions between screens — these details separate a nav that merely works from one that feels alive.",
+   "video_id": "wLJ40GV2XEc",
+   "chunk_index": 21,
+   "quote": "add a small sliding underline or animate the icon smoothly into place",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much design/UX judgment to trust from AI",
+   "positions": [
+    {
+     "video_id": "Oo-5AWdQAt8",
+     "chunk_index": 9,
+     "position": "An agent can browse a live prototype through a defined persona and return a usable, step-by-step UX comparison of two flows — treated as a credible stand-in when real users aren't available, as long as you double-check it."
+    },
+    {
+     "video_id": "gXwF0VbTKvs",
+     "chunk_index": 33,
+     "position": "No current model actually has strong visual intelligence despite vendor claims, so AI's design judgment should be constrained with stable artifacts (design system, state diagrams) rather than trusted to evaluate or invent visuals on its own."
+    }
+   ]
+  },
+  {
+   "topic": "Does the specific AI tool/model choice matter for design work",
+   "positions": [
+    {
+     "video_id": "Oo-5AWdQAt8",
+     "chunk_index": 2,
+     "position": "Tool choice is interchangeable for the widget-generation workflow — Claude Design, Grok, Claude Code, or Codex all work, 'doesn't really matter.'"
+    },
+    {
+     "video_id": "gXwF0VbTKvs",
+     "chunk_index": 35,
+     "position": "Tool and model choice is a real, context-dependent decision — e.g. avoid sending a regulated financial institution's data to hosted frontier models and consider local models instead, and pick Cursor over a CLI harness specifically for heavier code review."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No corpus content on choosing a specific color system (hex values, palette-generation method) beyond naming 'design tokens' and 'brand palette' as concepts.",
+  "No guidance on desktop or tablet primary navigation patterns — wLJ40GV2XEc is scoped entirely to mobile bottom navigation.",
+  "No concrete detail on how to raise a website's 'trust and conversion' score once a self-audit flags it low (bkTY9gYkWis's own audit scored trust 3/10 with no follow-up fix shown).",
+  "No cost or time benchmarks for the AI design workflows described (e.g. how long widget-generation exploration takes, how much the Claude Code / Codex / image-generation combo costs per project).",
+  "No discussion of design-system tooling implementation (e.g. Storybook) beyond a passing mention that it's worth considering.",
+  "No comparison of how the persona-driven AI flow-testing prompt performs across different coding-agent tools beyond one Google Antigravity demo.",
+  "No guidance on accessibility beyond reading order and nav contrast ratios — no coverage of keyboard navigation, ARIA patterns, or screen-reader testing workflows."
+ ],
+ "verified_claims": 53
+}

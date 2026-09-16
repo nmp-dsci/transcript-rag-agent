@@ -1,0 +1,286 @@
+{
+  "slug": "create-a-guide-for-presenting-and-communication-of-insights-and",
+  "title": "The Executive Readout",
+  "topic": "create a guide for presenting and communication of insights and",
+  "subtitle": "A rubric and a method for communicating insights to stakeholders — distilled from ex-McKinsey, ex-BCG and ex-Bain consultants breaking down real client decks, plus solutions architects, data analysts and AI practitioners who have to make findings land in a room, a report, or a running app.",
+  "question": "Can you create a guide for presenting and communication of insights and projects. So explicitly use the rag pipeline chunks you know, looking for presentation, communication, particularly from, like, the leaders in this area, which is, like, your BCG, McKinsey's, And I want you to, you know, distill and create a rubric of what strong presentation is. And, you know, what's the structure it should be And this is a guide that I will use to review work that I present in an app or, you know, findings in a dashboard. And so I want this to be a multipurpose presentation guide of, you know, how do I communicate to stakeholders, focus on the impact, and the delivery.",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-09-16",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "c7_riQh50UE",
+    "3bVc_-m_fMg",
+    "nAlR78kKSTs",
+    "WZuDhxS40qo",
+    "YXQWfTPQoSg",
+    "eyGUsY1f2a8",
+    "jUFFkh5YSU8",
+    "Ck-LeYlAVbY",
+    "hahPTeXJEBk",
+    "r-MPiu0E4W4",
+    "Ukju3maxbEQ",
+    "Z9S9oxvYUvk",
+    "nuosoMyf0eA",
+    "uaiq1HvQKoI",
+    "CY1Y367KEko",
+    "kIvjiH8yJoU",
+    "5gLVxMKeSGM",
+    "9WCPpEIIdrE"
+  ],
+  "sources": [
+    {
+      "video_id": "c7_riQh50UE",
+      "title": "Communicate like McKinsey: top 3 consulting frameworks",
+      "channel": "Olaide TM",
+      "contributed": "The core communication-of-insights framework in this cluster: know your goal / know your audience / know your approach, plus the Pyramid Principle, the Rule of Three, MECE, and the SCR (situation-complication-resolution) storytelling structure for high-stakes business communication.",
+      "url": "https://www.youtube.com/watch?v=c7_riQh50UE"
+    },
+    {
+      "video_id": "3bVc_-m_fMg",
+      "title": "How to Turn Data into Actionable Insights (6-Step System)",
+      "channel": "Clicks Don't Lie - Understand ecommerce data",
+      "contributed": "Lays out a 6-step data-to-insight system whose final steps (audience-first framing, punchy slides, appendix for detail, narrative story arc) are the corpus's most direct, worked playbook for presenting analysis to stakeholders.",
+      "url": "https://www.youtube.com/watch?v=3bVc_-m_fMg"
+    },
+    {
+      "video_id": "nAlR78kKSTs",
+      "title": "Strategy consultant explains BCG presentation!",
+      "channel": "Johannes Sommer",
+      "contributed": "A slide-by-slide walkthrough of one real, public BCG deck that names the anatomy of a consulting slide (action title, thirds/quarters layout, legend, footnotes, think-in-tables) and critiques specific slides where the deck itself falls short.",
+      "url": "https://www.youtube.com/watch?v=nAlR78kKSTs"
+    },
+    {
+      "video_id": "WZuDhxS40qo",
+      "title": "How Bain & Co. builds million dollar presentations for their clients (Consulting Slide Breakdown)",
+      "channel": "Analyst Academy",
+      "contributed": "A single-slide teardown of a real Bain deck showing how title-as-conclusion, chart-type choice, and a tightly limited color palette combine to make one insight instantly legible.",
+      "url": "https://www.youtube.com/watch?v=WZuDhxS40qo"
+    },
+    {
+      "video_id": "YXQWfTPQoSg",
+      "title": "Consulting Presentation Tips from former McKinsey Consultant",
+      "channel": "Firm Learning",
+      "contributed": "Reviews six audience-submitted decks live, surfacing a wider catalog of concrete slide-writing fixes (font consistency, action titles, dewording, alignment/jitter, animation, banking vs. consulting norms) than a single-slide teardown can show.",
+      "url": "https://www.youtube.com/watch?v=YXQWfTPQoSg"
+    },
+    {
+      "video_id": "eyGUsY1f2a8",
+      "title": "Interviewing for Databricks? Nailing the situational interview for Solutions Architect!",
+      "channel": "VectorLab",
+      "contributed": "The richest source on presenting to a mixed technical/non-technical audience: discovery over pitching, jargon-free explanation, objection handling, and building a 'trusted advisor' relationship.",
+      "url": "https://www.youtube.com/watch?v=eyGUsY1f2a8"
+    },
+    {
+      "video_id": "jUFFkh5YSU8",
+      "title": "How to create presentations like a consultant (ex-BCG consultant explains)",
+      "channel": "Matt Huang",
+      "contributed": "A three-step upstream process — define the meeting's goal, storyline the deck by writing takeaway titles before building any slides, then build and present top-down — plus the fullest explanation of the pyramid principle's origin and mechanics, and the only mention of inviting live audience input.",
+      "url": "https://www.youtube.com/watch?v=jUFFkh5YSU8"
+    },
+    {
+      "video_id": "Ck-LeYlAVbY",
+      "title": "What is a Forward Deployed Engineer? (with Founding Rippling FDE)",
+      "channel": "Exponent",
+      "contributed": "The underlying communication craft behind presenting insights to customers — active listening to find the real problem, prep-driven clarity, executive presence, and scoping the smallest deliverable that proves the point.",
+      "url": "https://www.youtube.com/watch?v=Ck-LeYlAVbY"
+    },
+    {
+      "video_id": "hahPTeXJEBk",
+      "title": "How to Ace the Databricks Solutions Architect Technical Interview | Tips from an Insider!",
+      "channel": "VectorLab",
+      "contributed": "How to explain a technical project so an evaluator can follow it: admit limits, tie reasoning to business need, use a diagram for clarity, and know when to stop talking.",
+      "url": "https://www.youtube.com/watch?v=hahPTeXJEBk"
+    },
+    {
+      "video_id": "r-MPiu0E4W4",
+      "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+      "channel": "UI Collective",
+      "contributed": "Mostly a tool-selection guide for AI design workflows, not a communication framework, but it contributes concrete practices for presenting work-in-progress to stakeholders/clients cheaply (fast low-token demos before expensive high-fidelity ones), keeping documentation structurally consistent, and being able to narrate/justify a workflow or design decision in a review.",
+      "url": "https://www.youtube.com/watch?v=r-MPiu0E4W4"
+    },
+    {
+      "video_id": "Ukju3maxbEQ",
+      "title": "A Meta Engineer's Agentic Engineering Workflow",
+      "channel": "Jason Ku",
+      "contributed": "Not a presentation-design talk — it's a coding-agent workflow demo — but it documents a concrete pattern for communicating status/insights to a person juggling many concurrent threads: recap-first updates, one question at a time, plain language, an explicit next action, and evidence (screenshots, risk assessment) attached to a report instead of raw claims.",
+      "url": "https://www.youtube.com/watch?v=Ukju3maxbEQ"
+    },
+    {
+      "video_id": "Z9S9oxvYUvk",
+      "title": "Solutions Architect Interview: \"Solve a Complex Problem for a Customer\"",
+      "channel": "Exponent",
+      "contributed": "How to narrate a 'complex problem solved' story in an interview — stakeholder mapping, quantifying pain and impact, naming the true decision-maker, and self-critiquing delivery.",
+      "url": "https://www.youtube.com/watch?v=Z9S9oxvYUvk"
+    },
+    {
+      "video_id": "nuosoMyf0eA",
+      "title": "5 Small Changes to Improve Your Presentations Forever!",
+      "channel": "Jeff Su",
+      "contributed": "Five concrete slide-craft techniques reverse-engineered from real MBB decks: never show an isolated data point, SCQA, the pyramid principle, intentional color, and when a table beats a chart.",
+      "url": "https://www.youtube.com/watch?v=nuosoMyf0eA"
+    },
+    {
+      "video_id": "uaiq1HvQKoI",
+      "title": "GenAI in Production: How RAG & AI Agents Are Shaping the Future",
+      "channel": "Xgrid",
+      "contributed": "How to make AI-generated insights trustworthy and reportable to stakeholders: cite sources, combine automated + human evaluation, and communicate business value through measurable outcomes rather than model sophistication.",
+      "url": "https://www.youtube.com/watch?v=uaiq1HvQKoI"
+    },
+    {
+      "video_id": "CY1Y367KEko",
+      "title": "Storytelling in PowerPoint: Learn McKinsey’s 3-Step Framework",
+      "channel": "Dan Galletta",
+      "contributed": "The SCQA/SCR storyline structure, the Word-first dot-dash drafting process, and the action-title/horizontal-vertical flow rules that turn analysis into a persuasive deck.",
+      "url": "https://www.youtube.com/watch?v=CY1Y367KEko"
+    },
+    {
+      "video_id": "kIvjiH8yJoU",
+      "title": "From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluat... - Eric Pugh & Fernando Rejon Barrera",
+      "channel": "OpenSearch",
+      "contributed": "Shows how to communicate and validate the quality of a system's outputs to skeptical experts using pairwise LLM judging, an ELO ranking tournament, and a human-in-the-loop 'eyeballing' UI that surfaces the judge's qualitative explanation alongside the score.",
+      "url": "https://www.youtube.com/watch?v=kIvjiH8yJoU"
+    },
+    {
+      "video_id": "5gLVxMKeSGM",
+      "title": "How to Write a Winning Tech Resume | Resume Tips from a Software Engineer & Career Coach",
+      "channel": "Anthony D. Mays",
+      "contributed": "Applies impact-communication discipline to a written self-marketing document: quantify results with a formula, tailor content to what the specific reader (audience) is scanning for, and write the summary/thesis only after the evidence is assembled.",
+      "url": "https://www.youtube.com/watch?v=5gLVxMKeSGM"
+    },
+    {
+      "video_id": "9WCPpEIIdrE",
+      "title": "McKinsey Presentation Slide Review: Consulting Slide Review From Former Bain & Company Consultant",
+      "channel": "Felix",
+      "contributed": "A single-slide teardown of a real McKinsey exhibit that turns four review lenses (title/message, structure, evidence, formatting) into a repeatable checklist for critiquing your own slides.",
+      "url": "https://www.youtube.com/watch?v=9WCPpEIIdrE"
+    }
+  ],
+  "chunk_count": 497,
+  "cluster_count": 6,
+  "cite_total": 262,
+  "cite_valid": 262,
+  "gaps": [
+    "None of the three videos cover live delivery mechanics for verbal presentations — pacing, body language, tone, or handling Q&A when presenting an insight in person.",
+    "There's no guidance on designing or presenting slides for a virtual/remote meeting versus an in-room presentation.",
+    "No discussion of statistical rigor (sample size, significance, confidence) for deciding when a data difference is real enough to present as an 'insight' versus noise.",
+    "5gLVxMKeSGM's principles (thesis-last writing, audience tailoring, quantified impact) apply to a written self-marketing document, not a live data presentation — the corpus doesn't confirm how directly these translate to presenting analysis out loud to stakeholders.",
+    "3bVc_-m_fMg references an 'appendix' slide for detail-seeking audiences but never shows a worked example of building one.",
+    "No coverage of how to structure a full multi-slide executive deck beyond a handful of individual slide examples — the corpus doesn't show a complete end-to-end presentation.",
+    "No guidance on presenting insights when the data is inconclusive or contradicts the story the audience wants to hear.",
+    "None of the three videos show an actual live presentation delivery — only the deck-writing process or interviews about having done the work — so there's no guidance on pacing, tone, or in-room delivery mechanics.",
+    "No corpus guidance on choosing or designing the actual charts/visualizations for a slide body; CY1Y367KEko explicitly defers that methodology to a follow-up video not included here.",
+    "No data on how much more persuasive an SCR-structured deck is versus an unstructured one (win rate, time-to-approval, or similar lift metrics).",
+    "No guidance on handling live pushback, objections, or a skeptical/hostile audience during a presentation of insights.",
+    "No treatment of remote or asynchronous presenting (e.g., recorded walkthroughs, written memos in place of a live readout).",
+    "None of the three talks cover live verbal delivery — pacing, body language, vocal tone, handling live Q&A, or presenting on a video call — only static slide/document design and written status updates.",
+    "No guidance on how to open or close a live presentation, structure a narrative arc across many slides, or manage a room's attention over time.",
+    "No discussion of presenting data insights to non-expert, non-corporate audiences (e.g., customers, the general public) — the examples are all consulting/banking/university-project decks.",
+    "No metrics on how long a dewording pass should take, how many words per slide is 'too many,' or how to test whether a slide's message actually lands with a reader.",
+    "The agentic-workflow video's recap/one-question-at-a-time/next-action pattern is designed for a person supervising several AI agents, not for presenting insights to a human audience or client — it's unclear how directly that pattern transfers to stakeholder presentations rather than async status pings.",
+    "No coverage of remote/virtual presentation tools (screen share etiquette, slide-to-video pacing) or of presenting with data-heavy dashboards instead of static slides.",
+    "None of the three videos cover delivery mechanics during the live moment — vocal tone, pacing, body language, or how to handle a hostile or skeptical stakeholder's pushback beyond generically 'inviting questions.'",
+    "No guidance on remote/virtual presenting (screen-share etiquette, webinar tools, camera framing) — all three creators discuss only in-room or slide-content advice.",
+    "No discussion of accessibility, e.g., colorblind-safe palettes, despite all three videos leaning heavily on color-coding as a core technique.",
+    "No numbers on ideal deck length or slide count for a given meeting duration — Matt Huang's 'less than 20 minutes' refers to his own video length, not a presentation-length benchmark.",
+    "No coverage of how to gather or incorporate stakeholder feedback on a draft deck before the live meeting (iteration process), only how to invite input during the meeting itself.",
+    "No comparison of presentation software (PowerPoint vs. Keynote vs. Figma/Canva) beyond Jeff Su's free asset tools (Flaticon, SlidesCarnival, Color Hunt) and Matt Huang's plug for Gamma AI.",
+    "None of the three talks address how to design or format slides/visuals themselves (layout, typography, chart choice) for a presentation of insights — the McKinsey talk is about structuring the argument, not the deck.",
+    "The McKinsey talk doesn't cover how to handle live interruptions, hostile pushback, or being challenged mid-pyramid in the room beyond the single toothpaste framing example.",
+    "The McKinsey talk doesn't address remote/virtual presentation delivery (video calls, async written memos) versus in-person meetings.",
+    "The LLM-judge talk explicitly leaves open how to automatically detect when two long-form RAG answers are 'different enough' to need human review — stated as unsolved by the presenters themselves.",
+    "The LLM-judge talk doesn't discuss the cost or latency of running a full ELO tournament at scale (many systems x many queries x pairwise games), only that it works for their couple-week prototype.",
+    "The AI-design talk is fundamentally about tool selection and design-system workflows, not about communicating insights verbally or in writing — readers looking for data-storytelling or verbal delivery technique will not find it here.",
+    "None of the three talks discuss measuring whether a presentation of insights actually changed a decision or behavior after the meeting (follow-through/impact tracking).",
+    "No guidance on structuring an actual slide deck, choosing chart types, or laying out a dashboard/report for presenting data insights visually.",
+    "No treatment of written communication conventions — how to write an executive summary or a one-page insight memo.",
+    "No concrete techniques for holding attention on video/remote calls beyond naming the risk that people 'switch off' online; no advice on interactive tactics (polls, pauses, screen-share cues).",
+    "No guidance on presenting statistical uncertainty (confidence, model accuracy, error margins) to non-technical stakeholders.",
+    "No worked example of Q&A handling in a pure data/analytics-insight presentation — objection handling here is framed around sales conversations, not around defending a chart or a forecast.",
+    "No mention of specific diagramming or presentation tools practitioners actually use, beyond a passing reference to 'open a tool where they can start mocking the architecture'."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "rubric",
+      "pipeline",
+      "page",
+      "room",
+      "screens",
+      "templates",
+      "tensions",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20260916T040447Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.5859977,
+        "duration_ms": 125660,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.6099017,
+        "duration_ms": 157172,
+        "turns": 10,
+        "tool_calls": 9
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.6904444,
+        "duration_ms": 179780,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0128899,
+        "duration_ms": 199748,
+        "turns": 11,
+        "tool_calls": 10
+      },
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.7840325,
+        "duration_ms": 206487,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "extract:cluster-6",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.8829670999999999,
+        "duration_ms": 220093,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 3.5410895,
+        "duration_ms": 739681,
+        "turns": 11,
+        "tool_calls": 10
+      }
+    ]
+  }
+}

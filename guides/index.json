@@ -1,6 +1,40 @@
 {
   "guides": [
     {
+      "slug": "create-a-guide-for-presenting-and-communication-of-insights-and",
+      "title": "The Executive Readout",
+      "topic": "create a guide for presenting and communication of insights and",
+      "subtitle": "A rubric and a method for communicating insights to stakeholders — distilled from ex-McKinsey, ex-BCG and ex-Bain consultants breaking down real client decks, plus solutions architects, data analysts and AI practitioners who have to make findings land in a room, a report, or a running app.",
+      "question": "Can you create a guide for presenting and communication of insights and projects. So explicitly use the rag pipeline chunks you know, looking for presentation, communication, particularly from, like, the leaders in this area, which is, like, your BCG, McKinsey's, And I want you to, you know, distill and create a rubric of what strong presentation is. And, you know, what's the structure it should be And this is a guide that I will use to review work that I present in an app or, you know, findings in a dashboard. And so I want this to be a multipurpose presentation guide of, you know, how do I communicate to stakeholders, focus on the impact, and the delivery.",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-09-16",
+      "videos": 18,
+      "chunk_count": 497,
+      "cite_total": 262,
+      "cite_valid": 262,
+      "versions": [
+        1
+      ]
+    },
+    {
+      "slug": "deep-dive-into-front-end-ui-design-i-wanna-use",
+      "title": "The Interface Scorecard",
+      "topic": "deep dive into front end ui design. i wanna use",
+      "subtitle": "Twelve dimensions, each with a written Low / Medium / High descriptor, drawn from twenty talks by working designers, design-system leads, front-end system-design interviewers and AI-build practitioners. Use it to grade an app you already own, then to specify the version that grades higher. Distilled from Jesse Showalter, UI Collective, Ras Mic, Envato Tuts+, Eric Tech, theSeniorDev, uxpeak, Self-Made Web Designer, DesignCode, Dave Ebbelaar, Yashica Jain, AI Foundations, Codex Community and GroundZero.",
+      "question": "Can you do a deep dive into front end UI design. I wanna use this guide as a rubric to apply to my other projects front ends, and use this guide as a critical review of those apps front ends so that there's a rubric, and it and it is scored high, medium, low. And that enables, the LLM to score where it's at today and then propose a solution that would score highly on the rubric So this needs to be an in-depth guide of building high quality front end UIs.",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-09-16",
+      "videos": 20,
+      "chunk_count": 1307,
+      "cite_total": 301,
+      "cite_valid": 301,
+      "versions": [
+        1
+      ]
+    },
+    {
       "slug": "llm-as-a-judge",
       "title": "LLM-as-a-Judge",
       "topic": "LLM-as-a-judge: using language models to evaluate language model outputs",

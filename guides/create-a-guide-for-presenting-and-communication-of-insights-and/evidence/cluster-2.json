@@ -1,0 +1,526 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "CY1Y367KEko",
+  "Z9S9oxvYUvk",
+  "Ck-LeYlAVbY"
+ ],
+ "video_notes": [
+  {
+   "video_id": "CY1Y367KEko",
+   "title": "Storytelling in PowerPoint: Learn McKinsey's 3-Step Framework",
+   "contributed": "The SCQA/SCR storyline structure, the Word-first dot-dash drafting process, and the action-title/horizontal-vertical flow rules that turn analysis into a persuasive deck."
+  },
+  {
+   "video_id": "Z9S9oxvYUvk",
+   "title": "Solutions Architect Interview: \"Solve a Complex Problem for a Customer\"",
+   "contributed": "How to narrate a 'complex problem solved' story in an interview — stakeholder mapping, quantifying pain and impact, naming the true decision-maker, and self-critiquing delivery."
+  },
+  {
+   "video_id": "Ck-LeYlAVbY",
+   "title": "What is a Forward Deployed Engineer? (with Founding Rippling FDE)",
+   "contributed": "The underlying communication craft behind presenting insights to customers — active listening to find the real problem, prep-driven clarity, executive presence, and scoping the smallest deliverable that proves the point."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "purpose of a deck",
+   "claim": "A deck's job is to persuade the client to act on recommendations, not to sit on a shelf.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 0,
+   "quote": "influence their clients to implement their recommendations",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "purpose of a deck",
+   "claim": "The storyline, not the slide design, is the single most important part of a persuasive deck.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 0,
+   "quote": "the storyline is the most important part of the slide deck",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "Top consulting firms (McKinsey, BCG, Bain) all use the same universal storyline structure, SCQA/SCR, which also underlies films, books and plays.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 1,
+   "quote": "found a universal storyline structure that you can apply to any slide deck",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "McKinsey's own internal materials favor the SCR variant of the framework over SCQA.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 1,
+   "quote": "McKinsey actually prefers the scripture as you can see here in one of their papers",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "The Situation stage gives the audience prior context and explains why the topic matters before anything else is said.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 2,
+   "quote": "explaining why it's important and why you should care about it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "The Complication stage doesn't just state the problem — it argues why the problem is serious enough to demand attention.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 2,
+   "quote": "why the problem is such a terrible thing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "The 'Question' in SCQA is implied, not stated aloud — it's simply 'what should we do about the problem.'",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 2,
+   "quote": "implied question is what should we do about the problem",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SCQA/SCR framework",
+   "claim": "The Resolution stage delivers the specific recommendation as 'the blueprint for solving the problem' just described.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 2,
+   "quote": "here's the blueprint for solving the problem",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "reverse-engineering decks",
+   "claim": "To check whether a deck follows SCR, extract every slide title into a Word document as bullet points and read them end to end.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 3,
+   "quote": "write out all of the slide titles as bullet points in word",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "reverse-engineering decks",
+   "claim": "A full storyline of 10-15 slides can be compressed into a single 3-sentence situation/complication/resolution summary as a sanity check.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 4,
+   "quote": "summarize that entire storyline into three sentences",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "when to storyline",
+   "claim": "Storylining happens after analysis and synthesis are complete — it's about packaging a conclusion you already have, not doing more analysis.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 5,
+   "quote": "the storyline process is all about packaging the conclusion that you already have",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "when to storyline",
+   "claim": "The biggest mistake after finishing analysis is jumping straight into PowerPoint instead of drafting the storyline in Word first.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 5,
+   "quote": "the biggest mistake that people make when they've finished their analysis is that they jump into PowerPoint",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "why draft in Word",
+   "claim": "A storyline is easier to read as a single page in Word than spread across dozens of PowerPoint slides.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 5,
+   "quote": "it's easier to read a storyline when it's on a single page in word",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "why draft in Word",
+   "claim": "Storyline drafting is inherently iterative — first draft, manager feedback, redraft — and that loop is far faster in Word than in PowerPoint.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 5,
+   "quote": "writing a storyline is an iterative process",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "why draft in Word",
+   "claim": "PowerPoint hides logical contradictions between distant slides (e.g., slide 3 vs. slide 19) in a way a single Word document doesn't.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 6,
+   "quote": "it's really hard to find contradictions on slide 3 and on slide 19",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "dot-dash structure",
+   "claim": "McKinsey's 'dot-dash' structure: each dot is a key statement, and its dashes are the supporting data that justifies it.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 6,
+   "quote": "the dashes reference the supporting data that justifies the statement above",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "dot-dash structure",
+   "claim": "Worked example: the King County homelessness deck's dot 'homelessness continues to increase' was backed by dashes showing the population grew from 9,000 to 11,200 (2008–2019) and households grew from 20.7k to 22.5k (2016–2018), a 4.2% annual increase.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 7,
+   "quote": "Grew From 9000 to 11 200",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "when to storyline",
+   "claim": "Finish all storyline refinements in Word before opening PowerPoint — changes made later in PowerPoint usually force you to rebuild slides.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 8,
+   "quote": "any changes that we make later in PowerPoint are probably going to mean that we rebuild slides",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "slide anatomy",
+   "claim": "Every slide has two parts: an action title stating the 'so what,' and a slide body containing the data/visuals that support it.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 9,
+   "quote": "explains the so what of the slide",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "slide anatomy",
+   "claim": "Horizontal flow: reading only the action titles across every slide should tell the complete argument without ever reading the slide bodies.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 9,
+   "quote": "you can understand the argument by just reading the action titles across all the slides",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "slide anatomy",
+   "claim": "Vertical flow: nothing in an action title should be unjustified by data or a visualization in that slide's body.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 9,
+   "quote": "there's nothing set in the action title that isn't justified by some kind of data or visualization",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "dot-dash structure",
+   "claim": "Once the storyline is finalized, dots convert directly into action titles and dashes convert into the charts that sit in each slide body.",
+   "video_id": "CY1Y367KEko",
+   "chunk_index": 9,
+   "quote": "the dots are the action titles and the dashes turn into charts that sit in the slide body",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "understanding the business problem",
+   "claim": "Before proposing a solution, dig into the customer's actual business process end to end — how they get from point A to point B today.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 3,
+   "quote": "understanding what is their business process how do they operate",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "stakeholder mapping",
+   "claim": "Map external stakeholders explicitly by title and interest — in this deal that meant the CEO, President, COO, and Director of Operations.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 3,
+   "quote": "externally we're with the ceo the president the chief operations officer and the director of operations",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "building credibility",
+   "claim": "Bring in an implementation partner with prior experience in similarly complex deployments to strengthen the proposal.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 4,
+   "quote": "we also brought in an implementation partner that has done a complex implementation like this",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "building credibility",
+   "claim": "Showing prior experience with the same kind of problem instills the customer's confidence that the team can deliver.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 4,
+   "quote": "we've done this before we can do it again",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "overcoming hesitation",
+   "claim": "Overcome resistance to change by quantifying pain at multiple levels: time wasted on manual work, frequency of costly mistakes, and competitive risk.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 6,
+   "quote": "understand the pain at multiple levels",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "overcoming hesitation",
+   "claim": "Build urgency by framing the cost of doing nothing against the cost of the proposed solution.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 6,
+   "quote": "what happens if you don't get this transformation done",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "decision-maker identification",
+   "claim": "Identify the true 'authority' — the person who signs off and pays — as early as possible in the process.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 8,
+   "quote": "authority is a decision maker that is a person who is going to sign off",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "decision-maker identification",
+   "claim": "Leaving the actual decision-maker (here, the COO) out of early calls is a 'yellow flag' that slows or risks the deal.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 8,
+   "quote": "that is a big you know yellow flag i would call it",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "telling the story with metrics",
+   "claim": "A complex-problem story is weaker without quantified impact — number of demos, discovery sessions, and time invested with stakeholders.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 9,
+   "quote": "i would have loved to give a little bit more metrics",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "telling the story with metrics",
+   "claim": "Behavioral interviews about solving customer problems are fundamentally an exercise in storytelling.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 10,
+   "quote": "it's all about you know good storytelling",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "delivery mechanics",
+   "claim": "Filler words ('um,' 'you know') are a delivery habit worth catching in yourself — even experienced speakers slip into them mid-sentence.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 11,
+   "quote": "focusing on and being cognizant of your arms your you knows",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "framing the story",
+   "claim": "Leading a technical story with 'the coolest thing I built' undersells the role — the audience also wants to hear the sales/business-acumen dimension.",
+   "video_id": "Z9S9oxvYUvk",
+   "chunk_index": 12,
+   "quote": "be aware that the solution architect role is not a just a software developer role",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "listening as communication",
+   "claim": "The most important communication skill in a customer-facing role is listening, not talking.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 6,
+   "quote": "the main communication skill of an FD is listening",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "listening as communication",
+   "claim": "Active listening means getting the customer to reveal the problems they don't want to tell anybody — not just the ones that closed the deal.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 6,
+   "quote": "you have to practice active listening",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "finding the real problem",
+   "claim": "What a customer reports is a symptom, not the real problem — ask why it matters to their business before designing a fix.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 9,
+   "quote": "the problem is rarely ever the problem",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "finding the real problem",
+   "claim": "Worked example: a 'dashboard latency' complaint was reframed as the real goal being conversion and sales, not raw speed.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 10,
+   "quote": "actual goal there is sales and conversion to sales rather than latency",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "finding the real problem",
+   "claim": "Don't dismiss the customer's stated framing as wrong — validate it while working toward the underlying goal, since flatly contradicting them is dishonest and alienating.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 10,
+   "quote": "I would never tell you you're wrong because latency is an issue",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scoping the fix",
+   "claim": "Chasing a symptom like latency indefinitely is 'a swamp' — solving it once just raises the bar for the next ask without guaranteed satisfaction.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 11,
+   "quote": "latency is also a bit of a swamp",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "scoping the fix",
+   "claim": "When presenting options, pick the strategy most likely to hit the stated goal within the actual time and resources available, not the theoretically best solution.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 13,
+   "quote": "smallest piece of scope that would lead to a net increase in conversion",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scoping the fix",
+   "claim": "Ship the smallest scope that produces a net win and iterate — trying to nail the 'best' version first is how deals get lost.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 13,
+   "quote": "build a shitty first version and then iterate from there",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "outcome ownership",
+   "claim": "Customers judge the outcome, not the effort — own the problem, not just the project, or you're optimizing for the wrong thing.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 15,
+   "quote": "the customer doesn't care how happy or miserable you are",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "outcome ownership",
+   "claim": "Quality (clean, optimized code) and completeness (customer understands it works and it drives the business outcome) are different bars — completeness is what actually matters to the customer.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 17,
+   "quote": "differentiate between quality and completeness",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "outcome ownership",
+   "claim": "Completeness includes communicating edge cases and misuse conditions to the customer, not just delivering working code — e.g., telling them a function can't accept strings.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 24,
+   "quote": "you can't pass in strings",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "executive presence",
+   "claim": "Executive presence — a term borrowed from consulting — is how well you carry yourself in front of senior leadership internally or externally, and interviewers explicitly probe for it.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 22,
+   "quote": "a word that um we borrow from consulting is executive presence",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "clarity through preparation",
+   "claim": "You can't become an effective presenter just by watching videos or reading a book on speaking — like leetcode, it requires actually doing it.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 23,
+   "quote": "you also can't be an effective presenter by just watching videos on YouTube",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "clarity through preparation",
+   "claim": "The difference between clear and muddled communication is almost entirely the amount of preparation put into the words beforehand, not raw speaking talent.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 26,
+   "quote": "the amount of preparation that someone has put into the words",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "clarity through preparation",
+   "claim": "Quote-worthy framing for communication prep, borrowed from a mentor: 'fail to prepare, prepare to fail.'",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 27,
+   "quote": "fail to prepare, prepare to fail",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "clarity through preparation",
+   "claim": "Calibrate your own communication by directly asking peers whether you're clear, understandable, and able to simplify complexity.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 28,
+   "quote": "ask your peers about your communication",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "writing to present",
+   "claim": "Practice presenting decisions by writing them down and checking whether someone with zero context on the situation could follow your reasoning.",
+   "video_id": "Ck-LeYlAVbY",
+   "chunk_index": 29,
+   "quote": "make some decisions and then write about them",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much to finalize before you present or ship",
+   "positions": [
+    {
+     "video_id": "CY1Y367KEko",
+     "chunk_index": 8,
+     "position": "Finish all storyline refinements in Word before touching PowerPoint — late changes force costly slide rebuilds, so rigor comes before the audience sees anything."
+    },
+    {
+     "video_id": "Ck-LeYlAVbY",
+     "chunk_index": 13,
+     "position": "Deliberately ship the smallest, roughest version that proves the point and iterate live with the customer — over-polishing before showing work is how you lose a deal."
+    }
+   ]
+  },
+  {
+   "topic": "Which single communication skill matters most",
+   "positions": [
+    {
+     "video_id": "Z9S9oxvYUvk",
+     "chunk_index": 7,
+     "position": "The pivotal skill is understanding and running the sales motion — knowing you're in a sales role and getting the right decision-maker engaged."
+    },
+    {
+     "video_id": "Ck-LeYlAVbY",
+     "chunk_index": 6,
+     "position": "The pivotal skill is listening — everything else (scoping, credibility, delivery) depends on first surfacing what the customer won't volunteer."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three videos show an actual live presentation delivery — only the deck-writing process or interviews about having done the work — so there's no guidance on pacing, tone, or in-room delivery mechanics.",
+  "No corpus guidance on choosing or designing the actual charts/visualizations for a slide body; CY1Y367KEko explicitly defers that methodology to a follow-up video not included here.",
+  "No data on how much more persuasive an SCR-structured deck is versus an unstructured one (win rate, time-to-approval, or similar lift metrics).",
+  "No guidance on handling live pushback, objections, or a skeptical/hostile audience during a presentation of insights.",
+  "No treatment of remote or asynchronous presenting (e.g., recorded walkthroughs, written memos in place of a live readout)."
+ ],
+ "verified_claims": 49
+}

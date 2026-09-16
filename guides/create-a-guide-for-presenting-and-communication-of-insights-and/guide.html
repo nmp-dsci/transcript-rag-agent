@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Executive Readout — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  .scorecard { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+  .scorecard th, .scorecard td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(0,0,0,0.1); vertical-align: top; }
+  .scorecard th { font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; font-size: 0.75rem; opacity: 0.65; }
+  .scorecard td:first-child { font-weight: 500; white-space: nowrap; }
+  .lever .pass { font-weight: 600; }
+  .lever .fail { font-weight: 600; opacity: 0.7; }
+  .verdict { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.7; }
+  .tension { margin: 1.4rem 0; padding-left: 1rem; border-left: 3px solid rgba(0,0,0,0.15); }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>The Executive Readout</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#rubric">Rubric</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#page">The page</a>
+    <a href="#room">The room</a>
+    <a href="#screens">Apps &amp; dashboards</a>
+    <a href="#templates">Templates</a>
+    <a href="#tensions">Tensions</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>Lead with the answer. Then <em>earn</em> it.</h1>
+  <p class="sub">A rubric and a method for communicating insights to stakeholders — distilled from ex-McKinsey, ex-BCG and ex-Bain consultants breaking down real client decks, plus solutions architects, data analysts and AI practitioners who have to make findings land in a room, a report, or a running app.</p>
+  <div class="provenance">
+    <span>18 source videos</span>
+    <span>497 transcript chunks read in full</span>
+    <span>6 parallel extraction passes</span>
+    <span>compiled 2026-09-16</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h21">What strong actually means</h2>
+
+  <p id="thesis-p1">A strong presentation is a <strong>decision delivered</strong>, not a body of work displayed. The corpus is unanimous on the mechanism: school trains you to lay a trail of breadcrumbs and put the conclusion at the end; business inverts it, because the person you are presenting to has no time for breadcrumbs and wants the destination. One ex-McKinsey consultant calls the flip <cite data-video="c7_riQh50UE" data-chunk="2" data-quote="leading with an answer is the single biggest communication upgrade">the single biggest upgrade</cite> most professionals ever make, and a BCG walkthrough describes the same inversion as the structural difference between a university paper and a consulting deck: <cite data-video="nAlR78kKSTs" data-chunk="2" data-quote="you start with the key message first and that you then only break it down into the single arguments">key message first, arguments after</cite>.</p>
+
+  <p id="thesis-p2">Everything else in this guide is machinery for that one move. Structure it as a pyramid — the tip is <cite data-video="c7_riQh50UE" data-chunk="10" data-quote="your main message, your answer, your recommendation, your so what">your answer, your recommendation, your so-what</cite>, the base is the evidence — a shape Barbara Minto invented at McKinsey and every top firm now teaches <cite data-video="jUFFkh5YSU8" data-chunk="11" data-quote="the pyramid principle was developed by a woman named Barbara Mento">as its core executive-communication technique</cite>. Support it with exactly three arguments, because three is the minimum for pattern recognition and roughly <cite data-video="c7_riQh50UE" data-chunk="12" data-quote="maximum number for working memory without overload">the maximum working memory holds without overload</cite>. Make those three <cite data-video="c7_riQh50UE" data-chunk="15" data-quote="mutually exclusive, collectively exhaustive">mutually exclusive and collectively exhaustive</cite> so nobody can poke a hole in the set.</p>
+
+  <p id="thesis-p3">And treat the packaging as real work. The storyline — not the design — is <cite data-video="CY1Y367KEko" data-chunk="0" data-quote="the storyline is the most important part of the slide deck">the most important part of the deck</cite>, and presenting findings is <cite data-video="3bVc_-m_fMg" data-chunk="15" data-quote="presenting your data to your stakeholders is a skill on itself">a skill in itself</cite>, separate from producing them. Teams burn the project on research and analysis and then skimp on synthesis <cite data-video="nuosoMyf0eA" data-chunk="5" data-quote="we don't actually spend that much time summarizing our findings since we already know the answer by the end">because they already know the answer</cite> — which is exactly the part the executive is buying.</p>
+
+  <blockquote class="epigraph" id="thesis-bq1">
+    “This shift from building up to an answer to <cite data-video="c7_riQh50UE" data-chunk="2" data-quote="leading with an answer is the single biggest communication upgrade">leading with an answer is the single biggest communication upgrade</cite> most professionals need to make today.”
+  </blockquote>
+
+  <div class="triptych">
+    <div>
+      <h3 id="thesis-h31">Decide before you build</h3>
+      <p id="thesis-p4">Know the goal — <cite data-video="c7_riQh50UE" data-chunk="4" data-quote="Alignment, education, and problem">alignment, education, or problem-solving</cite> — and what you need the room to <cite data-video="c7_riQh50UE" data-chunk="3" data-quote="what do you need the other person to think, to feel, and to do">think, feel and do</cite>. Then <cite data-video="jUFFkh5YSU8" data-chunk="2" data-quote="understand what the goal of the meeting even is">clarify that goal before you open slide software</cite>.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h32">Write the argument, not the artefact</h3>
+      <p id="thesis-p5">Draft the storyline in a document. Jumping straight into PowerPoint after analysis is <cite data-video="CY1Y367KEko" data-chunk="5" data-quote="the biggest mistake that people make when they've finished their analysis is that they jump into PowerPoint">the biggest mistake people make</cite>, because <cite data-video="CY1Y367KEko" data-chunk="6" data-quote="it's really hard to find contradictions on slide 3 and on slide 19">contradictions between slide 3 and slide 19 hide</cite> in a deck.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h33">Make every page a claim</h3>
+      <p id="thesis-p6">Each page carries one full-sentence takeaway, and reading only those takeaways should <cite data-video="CY1Y367KEko" data-chunk="9" data-quote="you can understand the argument by just reading the action titles across all the slides">give the whole argument</cite>. Nothing in a title may sit <cite data-video="CY1Y367KEko" data-chunk="9" data-quote="there's nothing set in the action title that isn't justified by some kind of data or visualization">unjustified by data below it</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="rubric">
+  <h2 id="rubric-h21">The rubric: eight dimensions, sixteen points</h2>
+
+  <p id="rubric-p1">Use this to review a deck, a report, a screen, or a dashboard before it ships. Score each dimension <span class="verdict">0 — absent · 1 — partial · 2 — strong</span>. Below 12, send it back. The dimensions and their tests come from the corpus; the 0–2 scale and the 12-point bar are an editorial construction of this guide, not something any of the eighteen talks specify. One of the reviewers in this corpus is blunt that there is <cite data-video="YXQWfTPQoSg" data-chunk="14" data-quote="there is no such thing as the law of slide presentations">no such thing as the law of slide presentations</cite> — treat this as a calibrated default you override with reasons, not scripture.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="rubric-h31">1 · Message</h3>
+      <p id="rubric-p2">Can a reader state your single takeaway before you say a word?</p>
+      <ul>
+        <li id="rubric-li1"><span class="pass">Strong:</span> the analysis was done first, so <cite data-video="9WCPpEIIdrE" data-chunk="2" data-quote="you need to collect the data do the analysis and then you know the message">you know the message</cite> before the page exists.</li>
+        <li id="rubric-li2"><span class="pass">Strong:</span> the headline number is in the title — <cite data-video="3bVc_-m_fMg" data-chunk="14" data-quote="12% maybe you even add it here in the title">“sales down 12%”</cite>, not “Sales performance”.</li>
+        <li id="rubric-li3"><span class="fail">Weak:</span> the title names the topic but takes no position — <cite data-video="9WCPpEIIdrE" data-chunk="4" data-quote="it's a tad descriptive i think it's it's insightful but it doesn't it doesn't put out a point of view">descriptive, not a point of view</cite>.</li>
+        <li id="rubric-li4"><span class="fail">Weak:</span> a bare topic header, which is <cite data-video="YXQWfTPQoSg" data-chunk="7" data-quote="the clearest thing that is missing is the action title">the clearest thing missing</cite> when a page reads as noise.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h32">2 · Structure</h3>
+      <p id="rubric-p3">Answer first, then three non-overlapping reasons, then evidence.</p>
+      <ul>
+        <li id="rubric-li5"><span class="pass">Strong:</span> the recommendation lands in the first minute — <cite data-video="c7_riQh50UE" data-chunk="11" data-quote="start with the answer first">start with the answer first</cite>, evidence on request.</li>
+        <li id="rubric-li6"><span class="pass">Strong:</span> core idea, then <cite data-video="jUFFkh5YSU8" data-chunk="11" data-quote="your core idea is supported by, let's say, two">two or three supporting reasons</cite>, then evidence one level down.</li>
+        <li id="rubric-li7"><span class="pass">Strong:</span> long decks open with <cite data-video="nAlR78kKSTs" data-chunk="1" data-quote="they start with the results at eight glance and this is what we would typically refer to as a executive summary">an executive summary of every main finding</cite>, so leadership can skip the meeting and still know the content.</li>
+        <li id="rubric-li8"><span class="fail">Weak:</span> chronological build-up — question, method, findings, then a recommendation at the end. <cite data-video="jUFFkh5YSU8" data-chunk="12" data-quote="people have short attention spans">People have short attention spans</cite>; they will be gone.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h33">3 · Evidence</h3>
+      <p id="rubric-p4">Every claim traceable to data, and the data traceable to a source.</p>
+      <ul>
+        <li id="rubric-li9"><span class="pass">Strong:</span> claims sit on visible numbers — <cite data-video="9WCPpEIIdrE" data-chunk="6" data-quote="it's always strong when your slides are full of data">slides full of data</cite> read as credible even before commentary.</li>
+        <li id="rubric-li10"><span class="pass">Strong:</span> a source note says how the numbers were produced; its absence is what one reviewer wanted fixed — <cite data-video="9WCPpEIIdrE" data-chunk="6" data-quote="i would have liked in the source some notes how they got to these numbers">notes on how they got to these numbers</cite>.</li>
+        <li id="rubric-li11"><span class="pass">Strong:</span> sources cited on the page itself; the instruction is flat — <cite data-video="jUFFkh5YSU8" data-chunk="8" data-quote="make sure you're citing your sources">make sure you're citing your sources</cite>.</li>
+        <li id="rubric-li12"><span class="fail">Weak:</span> scope undefined, so the number can't be read at all — <cite data-video="YXQWfTPQoSg" data-chunk="8" data-quote="What industry exactly are you talking about here">what industry exactly are you talking about here</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h34">4 · Comparison</h3>
+      <p id="rubric-p5">No number appears alone. Every figure carries a reference point.</p>
+      <ul>
+        <li id="rubric-li13"><span class="pass">Strong:</span> the rule is absolute — <cite data-video="nuosoMyf0eA" data-chunk="0" data-quote="never share a single data point in isolation">never share a single data point in isolation</cite>.</li>
+        <li id="rubric-li14"><span class="pass">Strong:</span> one of three comparisons is present: <cite data-video="nuosoMyf0eA" data-chunk="1" data-quote="common ways to compare data points include time frames benchmarking within the same category or against the">time frame, same-category benchmark, or category average</cite>.</li>
+        <li id="rubric-li15"><span class="pass">Strong:</span> the comparison creates the story — <cite data-video="nuosoMyf0eA" data-chunk="1" data-quote="Ethiopia has a 63% increase in this food production metric versus a 12% increase for the industry as a whole">a 63% increase against a 12% industry increase</cite>.</li>
+        <li id="rubric-li16"><span class="fail">Weak:</span> cohorts that aren't alike. New customers versus existing customers isn't a finding, it's trust already built — <cite data-video="3bVc_-m_fMg" data-chunk="5" data-quote="compare apples to apples">compare apples to apples</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h35">5 · The page</h3>
+      <p id="rubric-p6">One goal per page, one grid, one accent colour, one body font size.</p>
+      <ul>
+        <li id="rubric-li17"><span class="pass">Strong:</span> you can name the page's single job before adding data — <cite data-video="3bVc_-m_fMg" data-chunk="12" data-quote="you need to know your main goal of that slide">know your main goal of that slide</cite>.</li>
+        <li id="rubric-li18"><span class="pass">Strong:</span> attention is directed, not hunted for: <cite data-video="WZuDhxS40qo" data-chunk="5" data-quote="you don't want your audience to go searching for the important information">don't make the audience go searching</cite>.</li>
+        <li id="rubric-li19"><span class="pass">Strong:</span> body type is uniform — <cite data-video="YXQWfTPQoSg" data-chunk="2" data-quote="the body of your slide, so everything except for the title and maybe some footnotes, should be the same font size">everything except title and footnotes at one size</cite> — with hierarchy carried by <cite data-video="9WCPpEIIdrE" data-chunk="7" data-quote="they use primarily the size of the text to to show hierarchy">size, not chrome</cite>.</li>
+        <li id="rubric-li20"><span class="fail">Weak:</span> five type sizes on one page — <cite data-video="YXQWfTPQoSg" data-chunk="2" data-quote="the action title 28. Here this title, 24">28, then 24, then 20, then 18, then 12</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h36">6 · Audience fit</h3>
+      <p id="rubric-p7">Built for the specific people in the room, at their context level.</p>
+      <ul>
+        <li id="rubric-li21"><span class="pass">Strong:</span> you named the audience before building — technical readers want method, business readers don't — <cite data-video="3bVc_-m_fMg" data-chunk="1" data-quote="you need to also think about who is your target audience">think about who your target audience is</cite>.</li>
+        <li id="rubric-li22"><span class="pass">Strong:</span> you opened with context, because the golden rule is <cite data-video="c7_riQh50UE" data-chunk="6" data-quote="Always assume zero context.">always assume zero context</cite> even after three weeks inside the project.</li>
+        <li id="rubric-li23"><span class="pass">Strong:</span> you mapped <cite data-video="c7_riQh50UE" data-chunk="7" data-quote="their fears, their concerns, and their goals">their fears, their concerns, and their goals</cite> and addressed them before they were raised.</li>
+        <li id="rubric-li24"><span class="fail">Weak:</span> insider conventions nobody outside your function reads — the banking “football field” chart, where <cite data-video="YXQWfTPQoSg" data-chunk="13" data-quote="nobody understands this outside of banking">nobody understands this outside of banking</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h37">7 · Action</h3>
+      <p id="rubric-p8">The audience leaves knowing what happens next and who owns it.</p>
+      <ul>
+        <li id="rubric-li25"><span class="pass">Strong:</span> the deck closes on implications — make it a habit to <cite data-video="nAlR78kKSTs" data-chunk="13" data-quote="make it a habit that if you have a presentation that you always close with a core message with an implication">always close with a core message and an implication</cite>.</li>
+        <li id="rubric-li26"><span class="pass">Strong:</span> recommendations are enumerated — the answer section culminates in <cite data-video="nuosoMyf0eA" data-chunk="3" data-quote="final slide with three key recommendations one two and three">a final slide with three key recommendations</cite>.</li>
+        <li id="rubric-li27"><span class="pass">Strong:</span> any written update <cite data-video="Ukju3maxbEQ" data-chunk="18" data-quote="end with the next action">ends with the next action</cite>, so the reader doesn't re-derive it.</li>
+        <li id="rubric-li28"><span class="fail">Weak:</span> impact claimed in model or method terms instead of <cite data-video="uaiq1HvQKoI" data-chunk="42" data-quote="faster uh task completion lower optional operational costs">faster task completion and lower operational costs</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="rubric-h38">8 · Honesty</h3>
+      <p id="rubric-p9">Limits, risks and unknowns are stated by you, not discovered by them.</p>
+      <ul>
+        <li id="rubric-li29"><span class="pass">Strong:</span> you say what you don't know. Evaluators reward people who <cite data-video="hahPTeXJEBk" data-chunk="5" data-quote="know their limits and not try to just basically answer">know their limits and don't just answer</cite>.</li>
+        <li id="rubric-li30"><span class="pass">Strong:</span> the framed version buys credibility rather than losing it — <cite data-video="hahPTeXJEBk" data-chunk="21" data-quote="this is something I may not be able to answer it at this time">this is something I may not be able to answer at this time</cite>.</li>
+        <li id="rubric-li31"><span class="pass">Strong:</span> risk is surfaced explicitly, including the unglamorous kind: <cite data-video="uaiq1HvQKoI" data-chunk="44" data-quote="lack of explanability can also uh pose a lot of challenges">lack of explainability</cite> is itself a business risk.</li>
+        <li id="rubric-li32"><span class="fail">Weak:</span> confidence you can't defend. Bluffing is precisely what breaks trust — <cite data-video="hahPTeXJEBk" data-chunk="20" data-quote="know when to stop">know when to stop</cite>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <table class="scorecard" id="rubric-table1">
+    <thead><tr><th>Score</th><th>Verdict</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>14–16</td><td>Ship</td><td>Polish jitter and footnotes only. Not every page has to be perfect — <cite data-video="nAlR78kKSTs" data-chunk="11" data-quote="not every table in not every sliding consulting is perfect">not every slide in consulting is perfect</cite> as long as the key message lands.</td></tr>
+      <tr><td>10–13</td><td>Rewrite titles</td><td>Extract every title into a document and read them end to end. If the argument doesn't hold, the deck doesn't either — <cite data-video="CY1Y367KEko" data-chunk="3" data-quote="write out all of the slide titles as bullet points in word">write out all of the slide titles as bullet points</cite>.</td></tr>
+      <tr><td>0–9</td><td>Back to the storyline</td><td>Stop editing pages. Restart from the argument, and check you can <cite data-video="CY1Y367KEko" data-chunk="4" data-quote="summarize that entire storyline into three sentences">summarize the entire storyline in three sentences</cite>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="pipeline">
+  <h2 id="pipeline-h21">The pipeline: analysis to decision in eight stages</h2>
+
+  <p id="pipeline-p1">Run it in order. Every stage before stage six happens in a document or a notebook — not in slide software, not in Figma, not in a dashboard builder.</p>
+
+  <div class="stage">
+    <div class="no">01</div>
+    <h3 id="pipeline-h31">Set goal, audience, approach</h3>
+    <p class="why" id="pipeline-p2">Most people know their topic. Knowing the goal is knowing what the other person must think, feel and do when you finish — and without it you ramble, overshare, or underexplain.</p>
+    <ul>
+      <li id="pipeline-li1">Name the goal as one of three buckets: <cite data-video="c7_riQh50UE" data-chunk="4" data-quote="Alignment, education, and problem">alignment, education, or problem-solving</cite>. Alignment means you need a yes; education means you're levelling someone up; problem-solving means you decide together.</li>
+      <li id="pipeline-li2">State it out loud to yourself the way the worked example does — <cite data-video="c7_riQh50UE" data-chunk="20" data-quote="My goal in this meeting is alignment">“my goal in this meeting is alignment”</cite> — then filter every page and every answer through it.</li>
+      <li id="pipeline-li3">Profile the audience by role. A CEO is <cite data-video="c7_riQh50UE" data-chunk="5" data-quote="time poor and outcomed driven">time-poor and outcome-driven</cite> and gets the answer first; a junior analyst needs background and examples.</li>
+      <li id="pipeline-li4">Assume they have none of your context — they've been in forty meetings — so <cite data-video="c7_riQh50UE" data-chunk="6" data-quote="Always assume zero context.">always assume zero context</cite> and open with a short setup.</li>
+      <li id="pipeline-li5">Frame to avoid manufacturing enemies. “Our product isn't working” attacks the head of product; <cite data-video="c7_riQh50UE" data-chunk="8" data-quote="directing resources to the highest impact opportunities">“directing resources to the highest impact opportunities”</cite> carries the same message collaboratively.</li>
+      <li id="pipeline-li6">For a customer or sales-adjacent readout, find the person who signs: <cite data-video="Z9S9oxvYUvk" data-chunk="8" data-quote="authority is a decision maker that is a person who is going to sign off">authority is the person who is going to sign off</cite>, and their absence from early calls is <cite data-video="Z9S9oxvYUvk" data-chunk="8" data-quote="that is a big you know yellow flag i would call it">a yellow flag</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">02</div>
+    <h3 id="pipeline-h32">Ask a question the data can answer</h3>
+    <p class="why" id="pipeline-p3">Opening a dashboard without a question is how you end up presenting a pattern that isn't there.</p>
+    <ul>
+      <li id="pipeline-li7">Set the question before you open anything: <cite data-video="3bVc_-m_fMg" data-chunk="1" data-quote="you set a goal or a question that you need to answer">a goal or a question that you need to answer</cite>. Otherwise — <cite data-video="3bVc_-m_fMg" data-chunk="0" data-quote="if you torture data long enough it will confess to anything">if you torture data long enough it will confess to anything</cite>.</li>
+      <li id="pipeline-li8">Make it narrow enough to name its own data source: <cite data-video="3bVc_-m_fMg" data-chunk="1" data-quote="what were our three top selling products in April">“what were our three top-selling products in April?”</cite></li>
+      <li id="pipeline-li9">Then layer a comparison to turn a fact into an insight: <cite data-video="3bVc_-m_fMg" data-chunk="2" data-quote="conversion rate down by 5% from the previous month">“why is Google Ads conversion rate down 5% from the previous month?”</cite></li>
+      <li id="pipeline-li10">Decompose before you diagnose. A revenue move is always <cite data-video="3bVc_-m_fMg" data-chunk="3" data-quote="traffic conversion rate or average order value">traffic, conversion rate, or average order value</cite>, and you <cite data-video="3bVc_-m_fMg" data-chunk="3" data-quote="start from the beginning of the user Journey">start from the beginning of the user journey</cite>, not the end of the funnel.</li>
+      <li id="pipeline-li11">Segment until the cause is named. Checkout completion at <cite data-video="3bVc_-m_fMg" data-chunk="7" data-quote="only 45% completed it this is really low">45%</cite> became actionable only when a country split showed Canadian shipping running <cite data-video="3bVc_-m_fMg" data-chunk="8" data-quote="between $50 and $80">$50 to $80</cite>, revealed at the payment step.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">03</div>
+    <h3 id="pipeline-h33">Compare, then find the difference</h3>
+    <p class="why" id="pipeline-p4">An insight is a difference you can explain. A number without a reference point is not an insight; it's a reading.</p>
+    <ul>
+      <li id="pipeline-li12">“3% conversion rate” means nothing alone — <cite data-video="3bVc_-m_fMg" data-chunk="5" data-quote="you always have to have data to compare with">you always have to have data to compare with</cite>.</li>
+      <li id="pipeline-li13">Compare like with like, then read the gap: <cite data-video="3bVc_-m_fMg" data-chunk="6" data-quote="those differences are the insights">those differences are the insights</cite>. Your job from there is explaining why the difference exists.</li>
+      <li id="pipeline-li14">A prior-year figure next to today's does the work for you: 52% optimistic and 30% concerned becomes <cite data-video="nuosoMyf0eA" data-chunk="0" data-quote="there's even a 17% jump in optimism">a 17-point jump in optimism</cite>.</li>
+      <li id="pipeline-li15">Pattern recognition is trainable, not innate — <cite data-video="3bVc_-m_fMg" data-chunk="9" data-quote="sporting patterns comes with practice">spotting patterns comes with practice</cite> and with domain depth.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">04</div>
+    <h3 id="pipeline-h34">Synthesise to one so-what</h3>
+    <p class="why" id="pipeline-p5">This is the step everyone underfunds and the only step the executive is paying for.</p>
+    <ul>
+      <li id="pipeline-li16">Do the distillation before the design. Pages fail because the author skipped it — <cite data-video="9WCPpEIIdrE" data-chunk="2" data-quote="you need to collect the data do the analysis and then you know the message">collect the data, do the analysis, and then you know the message</cite>.</li>
+      <li id="pipeline-li17">Understand what this stage is and isn't: storylining is <cite data-video="CY1Y367KEko" data-chunk="5" data-quote="the storyline process is all about packaging the conclusion that you already have">packaging the conclusion you already have</cite>, not more analysis.</li>
+      <li id="pipeline-li18">Pick a sequencing for your three points — <cite data-video="c7_riQh50UE" data-chunk="13" data-quote="major premise, minor premise and conclusion">deductive</cite> for analytical audiences, <cite data-video="c7_riQh50UE" data-chunk="14" data-quote="This is the natural time order sequence">chronological</cite> for a roadmap, or comparative where <cite data-video="c7_riQh50UE" data-chunk="14" data-quote="you start with your most important points">you start with your most important point</cite> so it lands before anyone drifts.</li>
+      <li id="pipeline-li19">Check the set is MECE. If someone can say “what about this?”, <cite data-video="c7_riQh50UE" data-chunk="15" data-quote="mutually exclusive, collectively exhaustive">the argument falls apart</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">05</div>
+    <h3 id="pipeline-h35">Storyline in a document</h3>
+    <p class="why" id="pipeline-p6">Word before PowerPoint. A page of prose exposes logic errors that thirty slides conceal, and it is cheap to rewrite.</p>
+    <ul>
+      <li id="pipeline-li20">Draft on one page, because <cite data-video="CY1Y367KEko" data-chunk="5" data-quote="it's easier to read a storyline when it's on a single page in word">a storyline is easier to read on a single page</cite> than spread across a deck.</li>
+      <li id="pipeline-li21">Expect several passes — <cite data-video="CY1Y367KEko" data-chunk="5" data-quote="writing a storyline is an iterative process">writing a storyline is an iterative process</cite> of draft, manager feedback, redraft — and that loop is far faster in text.</li>
+      <li id="pipeline-li22">Use dot-dash: each dot is a key statement and <cite data-video="CY1Y367KEko" data-chunk="6" data-quote="the dashes reference the supporting data that justifies the statement above">the dashes are the supporting data that justifies it</cite>. In the King County deck, the dot “homelessness continues to increase” is carried by dashes showing the population <cite data-video="CY1Y367KEko" data-chunk="7" data-quote="Grew From 9000 to 11 200">grew from 9,000 to 11,200</cite>.</li>
+      <li id="pipeline-li23">Choose the arc. Pyramid (answer first) is the default; for data-heavy material or a sceptical room, use <cite data-video="c7_riQh50UE" data-chunk="16" data-quote="situation complication and resolution">situation, complication, resolution</cite> so the recommendation feels earned.</li>
+      <li id="pipeline-li24">Open the situation on agreed ground — <cite data-video="c7_riQh50UE" data-chunk="17" data-quote="The situation component should not be surprising">the situation component should not be surprising</cite> — then pivot. In real decks the complication is usually findable by scanning for <cite data-video="nuosoMyf0eA" data-chunk="2" data-quote="you can usually recognize the complication when you see the words but or however">“but” or “however”</cite>.</li>
+      <li id="pipeline-li25">The question in SCQA stays implicit; it's just <cite data-video="CY1Y367KEko" data-chunk="2" data-quote="implied question is what should we do about the problem">what should we do about the problem</cite>, and the resolution is <cite data-video="CY1Y367KEko" data-chunk="2" data-quote="here's the blueprint for solving the problem">the blueprint for solving it</cite>.</li>
+      <li id="pipeline-li26">Finish the storyline before you open slide software: <cite data-video="CY1Y367KEko" data-chunk="8" data-quote="any changes that we make later in PowerPoint are probably going to mean that we rebuild slides">changes made later mean rebuilding slides</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">06</div>
+    <h3 id="pipeline-h36">Write every title before you build anything</h3>
+    <p class="why" id="pipeline-p7">The titles are the deck. Build them as a list, read the list aloud, and only then make pages.</p>
+    <ul>
+      <li id="pipeline-li27">Write them all up front: <cite data-video="jUFFkh5YSU8" data-chunk="3" data-quote="you write the titles of every single slide in the presentation before you've even made any slides or even done any analysis">the title of every single slide before you've made any slides</cite>. Treat the first version as a hypothesis that <cite data-video="jUFFkh5YSU8" data-chunk="3" data-quote="it's important to go in to starting the presentation and starting to build out the slides with at least some kind of hypothesis of what you think the story is going to tell">you expect the data to revise</cite>.</li>
+      <li id="pipeline-li28">Each title is a full sentence, not a label — <cite data-video="nAlR78kKSTs" data-chunk="3" data-quote="the action title is typically a title as you see here which is on the top of the slide that summarizes the key message of the slide in one very clear sentence">one very clear sentence summarising the key message</cite>. A real BCG example: <cite data-video="nAlR78kKSTs" data-chunk="3" data-quote="french companies are lagging behind in leveraging ai">“French companies are lagging behind in leveraging AI.”</cite></li>
+      <li id="pipeline-li29">Bain does the same thing — <cite data-video="WZuDhxS40qo" data-chunk="1" data-quote="they've written the title out in a full sentence">the title written out in a full sentence</cite> — and then the body supplies the proof, <cite data-video="WZuDhxS40qo" data-chunk="2" data-quote="start with the highest level idea first">highest-level idea first</cite>.</li>
+      <li id="pipeline-li30">Keep it to one line that prioritises; <cite data-video="9WCPpEIIdrE" data-chunk="3" data-quote="it's one line it's not too long it clearly states">one line, not too long, clearly stating</cite> the takeaway beats listing everything you found.</li>
+      <li id="pipeline-li31">Run both flow checks: horizontally the titles alone tell the argument, and vertically <cite data-video="CY1Y367KEko" data-chunk="9" data-quote="the dots are the action titles and the dashes turn into charts that sit in the slide body">the dots become action titles and the dashes become the charts beneath them</cite>.</li>
+      <li id="pipeline-li32">Check adjacency. There should never be a moment where the reader wonders why this page follows the last — <cite data-video="jUFFkh5YSU8" data-chunk="6" data-quote="each slide should build on the last one">each slide should build on the last one</cite>. Where you need to set up a set of topics, use a framework page that <cite data-video="jUFFkh5YSU8" data-chunk="6" data-quote="a framework slide is just a fancy word for a page that basically lays out at a high level all the main buckets of whatever it is you're talking about today">lays out all the main buckets</cite>, then deep-dive one bucket per page after it.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">07</div>
+    <h3 id="pipeline-h37">Build the page</h3>
+    <p class="why" id="pipeline-p8">Design is subtraction. A live audience is listening, reading and forming a response at once, so assume attention is scarce even in a smart room.</p>
+    <ul>
+      <li id="pipeline-li33">Budget for overload: they are <cite data-video="WZuDhxS40qo" data-chunk="6" data-quote="trying to listen to the speaker, read the words and numbers">trying to listen to the speaker and read the words and numbers</cite> simultaneously. A page exists to reduce load, <cite data-video="jUFFkh5YSU8" data-chunk="4" data-quote="it's not to add an additional layer of mental cognitive load onto the listener">not add a layer of it</cite>.</li>
+      <li id="pipeline-li34">Lay out on a grid — <cite data-video="nAlR78kKSTs" data-chunk="4" data-quote="this principle means that you think your slides in third which means that if you structure your slide that you always try to divide your slide in thirds">think in thirds</cite>, chart across two-thirds and commentary in the last third, or halves and quarters. Inside the grid, <cite data-video="nAlR78kKSTs" data-chunk="8" data-quote="they apply a principle that is called think in tables and this means that every chart is also a table">think in tables</cite>: every chart is also rows and columns.</li>
+      <li id="pipeline-li35">Pick the chart for the comparison you're making: <cite data-video="nuosoMyf0eA" data-chunk="7" data-quote="we use the clustered bar chart when we want to compare">clustered bar to compare subcategories</cite>, <cite data-video="nuosoMyf0eA" data-chunk="8" data-quote="the line chart is best used to show Trend and changes over time">line for trend over time</cite>, and — against the usual advice — a table <cite data-video="nuosoMyf0eA" data-chunk="8" data-quote="that instance is when you need to show precise values">when you need precise values</cite>.</li>
+      <li id="pipeline-li36">Remember the chart type is itself the message. Swap Bain's waterfall for a stacked column and <cite data-video="WZuDhxS40qo" data-chunk="4" data-quote="the focus becomes the height of each of these columns">the focus becomes the height of each column</cite> — total size, not source of growth. Ask of every rebuild: <cite data-video="WZuDhxS40qo" data-chunk="4" data-quote="Can you still see the insight?">can you still see the insight?</cite></li>
+      <li id="pipeline-li37">Colour carries meaning or it goes. <cite data-video="nuosoMyf0eA" data-chunk="6" data-quote="use color with intention">Use colour with intention</cite>; the eye reaches it before the explanation. Green/yes and red/no work because <cite data-video="nuosoMyf0eA" data-chunk="7" data-quote="the green Yes red no aligns with our preconceptions that green is for go and red is for stop">green is go and red is stop</cite>. On a data page, one accent plus <cite data-video="WZuDhxS40qo" data-chunk="6" data-quote="besides this black and this gray">black and grey</cite> is usually all you need.</li>
+      <li id="pipeline-li38">Add the “why”, not just the “what”. Bain's key-insights callout works because it is <cite data-video="WZuDhxS40qo" data-chunk="7" data-quote="helping me understand why it's growing the way it is">helping you understand why it's growing the way it is</cite>, and a customer quote next to the chart <cite data-video="WZuDhxS40qo" data-chunk="7" data-quote="it brings a personal element to the data">brings a personal element to the data</cite>.</li>
+      <li id="pipeline-li39">Deword ruthlessly: <cite data-video="YXQWfTPQoSg" data-chunk="9" data-quote="you usually wanna say as much as possible with as little words as possible">say as much as possible with as few words as possible</cite>. “The value of this information depends on the trust within the network” becomes <cite data-video="YXQWfTPQoSg" data-chunk="9" data-quote="Information value depends on network trust">“Information value depends on network trust.”</cite></li>
+      <li id="pipeline-li40">Push detail down, not out. Keep the focal metric on the page and <cite data-video="3bVc_-m_fMg" data-chunk="13" data-quote="you can add that to appendix">add the exhaustive tables to an appendix</cite> for the data-minded. <cite data-video="jUFFkh5YSU8" data-chunk="7" data-quote="less is always more on a slide">Less is always more on a slide.</cite></li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">08</div>
+    <h3 id="pipeline-h38">Deliver, then prove it moved</h3>
+    <p class="why" id="pipeline-p9">The readout isn't the finish line. Slides are a tool you should be able to work without, and the outcome is what gets judged.</p>
+    <ul>
+      <li id="pipeline-li41">Open with a recap before you ask anything, especially of someone running several workstreams — <cite data-video="Ukju3maxbEQ" data-chunk="17" data-quote="first open with a recap">first open with a recap</cite> — and <cite data-video="Ukju3maxbEQ" data-chunk="18" data-quote="explain things very simply so that I can quickly ramp back up on exactly what we're working on">explain things simply</cite> rather than in your project's private shorthand.</li>
+      <li id="pipeline-li42">Make it two-way. <cite data-video="jUFFkh5YSU8" data-chunk="15" data-quote="after every slide or after every section, create ways for them to chime in">After every slide or section, create ways for them to chime in</cite>, with a line as plain as <cite data-video="jUFFkh5YSU8" data-chunk="15" data-quote="want to pause here now in case anyone has any questions">“want to pause here now in case anyone has any questions.”</cite></li>
+      <li id="pipeline-li43">Ask one question at a time; <cite data-video="Ukju3maxbEQ" data-chunk="18" data-quote="ask one question at a time">a batch of three or four is taxing to process</cite>.</li>
+      <li id="pipeline-li44">Treat the deck as secondary — <cite data-video="jUFFkh5YSU8" data-chunk="11" data-quote="slides are really just a tool">slides are really just a tool</cite> — and remember <cite data-video="Ck-LeYlAVbY" data-chunk="15" data-quote="the customer doesn't care how happy or miserable you are">the customer doesn't care how much effort it took</cite>; they judge the outcome.</li>
+      <li id="pipeline-li45">Quantify what you claimed. Use <cite data-video="uaiq1HvQKoI" data-chunk="42" data-quote="AB testings uh or pilot rollouts can definitely help quantify">A/B tests or pilot rollouts to quantify benefits</cite> instead of asserting them, and lead with the one hard number — the RAG rollout in this corpus reports <cite data-video="uaiq1HvQKoI" data-chunk="11" data-quote="60% of the time uh that they spent initially was reduced">a 60% reduction in documentation-retrieval time</cite>.</li>
+      <li id="pipeline-li46">Build trust in increments rather than one big reveal: start with <cite data-video="uaiq1HvQKoI" data-chunk="48" data-quote="you uh build trust and learn fast">small pilots where you build trust and learn fast</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="page">
+  <h2 id="page-h21">Delete on sight</h2>
+
+  <p id="page-p1">Fifteen things the reviewers in this corpus cut from real decks, and what goes in their place. Run this pass last, when the argument is already settled.</p>
+
+  <table class="ban" id="page-table1">
+    <thead><tr><th>Delete on sight</th><th>Replace with</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>A topic header — “Market and Industry”</td>
+        <td>A full-sentence takeaway. The missing action title is <cite data-video="YXQWfTPQoSg" data-chunk="7" data-quote="the clearest thing that is missing is the action title">the clearest thing missing</cite> from an unreadable page, and it is <cite data-video="YXQWfTPQoSg" data-chunk="7" data-quote="action title's our fundamental piece of every slide presentation">a fundamental piece of every slide presentation</cite>.</td>
+      </tr>
+      <tr>
+        <td>A lone number with no reference</td>
+        <td>The number plus a time frame, peer, or industry average — <cite data-video="nuosoMyf0eA" data-chunk="0" data-quote="never share a single data point in isolation">never share a single data point in isolation</cite>.</td>
+      </tr>
+      <tr>
+        <td>Full paragraphs of prose</td>
+        <td>Deworded bullet fragments. Dense text <cite data-video="YXQWfTPQoSg" data-chunk="9" data-quote="this is just something that will not be read">will not be read</cite>, even when printed and handed out, and it is <cite data-video="3bVc_-m_fMg" data-chunk="11" data-quote="this is just way too long for people to understand">way too long for people to understand</cite> while listening to you.</td>
+      </tr>
+      <tr>
+        <td>An entire quote or block in bold</td>
+        <td>A light grey box behind it. <cite data-video="WZuDhxS40qo" data-chunk="7" data-quote="the overuse of bolded text">Overuse of bolded text</cite> destroys the contrast that makes bold work; instead <cite data-video="WZuDhxS40qo" data-chunk="8" data-quote="just put a simple box behind them">just put a simple box behind them</cite>.</td>
+      </tr>
+      <tr>
+        <td>Five font sizes in one body</td>
+        <td>One body size throughout — <cite data-video="YXQWfTPQoSg" data-chunk="2" data-quote="the body of your slide, so everything except for the title and maybe some footnotes, should be the same font size">everything except the title and footnotes at the same size</cite>.</td>
+      </tr>
+      <tr>
+        <td>Decorative colour</td>
+        <td>Colour with a job. Every colour needs <cite data-video="YXQWfTPQoSg" data-chunk="3" data-quote="whenever you use colors on your page, it either has a direct meaning or the needs to be legend">a direct meaning or a legend</cite>; the BCG deck's French-flag arrows were <cite data-video="nAlR78kKSTs" data-chunk="10" data-quote="this makes the slide very busy and this would be something where i would say okay this is very a very unnecessary use of colors">a very unnecessary use of colours</cite>.</td>
+      </tr>
+      <tr>
+        <td>A second highlight shade for “average”</td>
+        <td>Plain grey. A lighter green beside a darker green reads busy — <cite data-video="nAlR78kKSTs" data-chunk="9" data-quote="i would have done it probably in a more decent gray because you know this makes this light just very busy">a more decent grey</cite> keeps the highlight legible.</td>
+      </tr>
+      <tr>
+        <td>Animations and builds</td>
+        <td>A static page. <cite data-video="YXQWfTPQoSg" data-chunk="12" data-quote="animations is just not the look and feel that you should go for for C level presentations">Animation is not the look and feel for C-level presentations</cite>, partly because these decks are <cite data-video="YXQWfTPQoSg" data-chunk="12" data-quote="often these presentations are not even getting presented, but they're just printed out as documents">often printed out as documents rather than presented</cite>.</td>
+      </tr>
+      <tr>
+        <td>A chart screenshotted out of a report</td>
+        <td>A chart rebuilt natively from the underlying numbers — <cite data-video="YXQWfTPQoSg" data-chunk="8" data-quote="never just copy paste charts like that">never just copy-paste charts like that</cite>.</td>
+      </tr>
+      <tr>
+        <td>An unlabelled percentage</td>
+        <td>Percentage of what — units, dollars, users. <cite data-video="YXQWfTPQoSg" data-chunk="6" data-quote="always add the percentage of what are you looking at">Always add what the percentage is of</cite>.</td>
+      </tr>
+      <tr>
+        <td>A legend occupying its own column</td>
+        <td>A legend at the bottom of the chart; <cite data-video="9WCPpEIIdrE" data-chunk="5" data-quote="i think we they could have moved it down">it could have moved down</cite> and given the space back to content. But do include one — <cite data-video="nAlR78kKSTs" data-chunk="5" data-quote="i highly recommend to always double check if this is included and this is a legend">always double-check the legend is there</cite>.</td>
+      </tr>
+      <tr>
+        <td>One row off the grid</td>
+        <td>Everything on the same grid. A single stray row reads as an error — <cite data-video="9WCPpEIIdrE" data-chunk="7" data-quote="the digitalization trend the internet of things trend is not fully aligned with all the other trends">not fully aligned with all the other trends</cite> — and across pages, <cite data-video="YXQWfTPQoSg" data-chunk="3" data-quote="several elements are jittering, are moving">jittering elements</cite> are a quiet tell. Do a final pass to <cite data-video="YXQWfTPQoSg" data-chunk="4" data-quote="make sure that you have no jarring on your pages">make sure there is no jarring on your pages</cite>.</td>
+      </tr>
+      <tr>
+        <td>Indistinguishable gradient steps</td>
+        <td>Shades far enough apart to read as different values — there should be <cite data-video="9WCPpEIIdrE" data-chunk="8" data-quote="there could be a little bit more differences between the color shades here">more difference between the colour shades</cite>.</td>
+      </tr>
+      <tr>
+        <td>Seven footnotes</td>
+        <td>Two. Footnotes are the elegant place for sources and secondary detail, but <cite data-video="nAlR78kKSTs" data-chunk="6" data-quote="be cautious don't overdo footnotes">don't overdo footnotes</cite> — five or six look as busy as the clutter they replaced.</td>
+      </tr>
+      <tr>
+        <td>An insider chart form</td>
+        <td>A form your specific room can read. Banking's football-field chart is standard internally, and <cite data-video="YXQWfTPQoSg" data-chunk="13" data-quote="nobody understands this outside of banking">nobody understands it outside of banking</cite>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p id="page-p2">Two additions rather than deletions, both cheap: thin <cite data-video="YXQWfTPQoSg" data-chunk="5" data-quote="these separator lines that you could include between these elements to make it look a bit more organized">separator lines between grouped elements</cite>, whose absence is often the only thing making a decent page feel unfinished; and <cite data-video="9WCPpEIIdrE" data-chunk="7" data-quote="these little lines here to to clearly make the connection between the trend and the impact">connector lines</cite> that make the link between a label and its data point explicit instead of inferred.</p>
+</section>
+
+<section id="room">
+  <h2 id="room-h21">The room: preparation, objections, limits</h2>
+
+  <p id="room-p1">Delivery in this corpus is not about charisma. The difference between clear and muddled is <cite data-video="Ck-LeYlAVbY" data-chunk="26" data-quote="the amount of preparation that someone has put into the words">the amount of preparation someone put into the words</cite> — which is why the mentor's line is <cite data-video="Ck-LeYlAVbY" data-chunk="27" data-quote="fail to prepare, prepare to fail">fail to prepare, prepare to fail</cite>. And you cannot acquire it passively; <cite data-video="Ck-LeYlAVbY" data-chunk="23" data-quote="you also can't be an effective presenter by just watching videos on YouTube">you can't be an effective presenter by just watching videos</cite>.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="room-h31">Ask, don't pitch</h3>
+      <ul>
+        <li id="room-li1">The fastest way to win a room is to let it <cite data-video="eyGUsY1f2a8" data-chunk="7" data-quote="do most of the talking">do most of the talking</cite> and feed you the ideas you then respond to.</li>
+        <li id="room-li2">Aim for the shift where the audience narrates their own problem back and you probe — <cite data-video="hahPTeXJEBk" data-chunk="7" data-quote="them doing a lot of the storytelling">them doing a lot of the storytelling</cite>.</li>
+        <li id="room-li3">Overpreparing facts is a trap: presenters who do it <cite data-video="eyGUsY1f2a8" data-chunk="13" data-quote="almost overprepared on the technical aspects">retreat into that comfort zone</cite> under pressure, exactly when a mixed room needs them not to.</li>
+        <li id="room-li4">Success is mutual: <cite data-video="eyGUsY1f2a8" data-chunk="10" data-quote="somebody who takes control of the situation">someone who takes control of the situation</cite> so the audience got value and you learned what you needed.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="room-h32">Give every segment a hook</h3>
+      <ul>
+        <li id="room-li5">Build the narrative like a Disney film — <cite data-video="eyGUsY1f2a8" data-chunk="14" data-quote="think about going to watch a Disney movie">content for the technical people and separate themes the business people relate to</cite> — so nobody switches off.</li>
+        <li id="room-li6">Explain complexity in plain terms, <cite data-video="eyGUsY1f2a8" data-chunk="16" data-quote="using fewer words less jargon">using fewer words and less jargon</cite>, so the audience gets the value without being experts.</li>
+        <li id="room-li7">Blend the registers until the audience <cite data-video="eyGUsY1f2a8" data-chunk="16" data-quote="you can't see the join between the two">can't see the join</cite> between the technical and the business conversation.</li>
+        <li id="room-li8">Always connect the method to the need: the top skill is <cite data-video="hahPTeXJEBk" data-chunk="20" data-quote="explaining your technical approach and reasoning well">explaining your technical approach and reasoning</cite> against business requirements, and deep questions probe <cite data-video="hahPTeXJEBk" data-chunk="16" data-quote="fundamentals that of why these technologies exist">why the technology exists</cite>, not tool trivia.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="room-h33">Handle the “no”</h3>
+      <ul>
+        <li id="room-li9"><cite data-video="eyGUsY1f2a8" data-chunk="19" data-quote="an objection is an opportunity right">An objection is an opportunity</cite> — dig for the fear or perceived risk behind it rather than defending.</li>
+        <li id="room-li10">Reframe rather than hide a limitation: <cite data-video="eyGUsY1f2a8" data-chunk="20" data-quote="if you can't fix it feature it">if you can't fix it, feature it</cite>.</li>
+        <li id="room-li11">Read the pushback as a start, not a failure: <cite data-video="eyGUsY1f2a8" data-chunk="21" data-quote="when you hear the no is when the negotiation starts">when you hear the no is when the negotiation starts</cite>.</li>
+        <li id="room-li12">Respect emotional ownership of what you're proposing to replace — <cite data-video="eyGUsY1f2a8" data-chunk="21" data-quote="we sell technology but we sell change">we sell technology but we sell change</cite>, and someone spent two years building the thing you're critiquing.</li>
+        <li id="room-li13">Learn to spot objections <cite data-video="eyGUsY1f2a8" data-chunk="20" data-quote="objections that are have been planted by competitors">planted by competitors</cite>, and treat them as intelligence.</li>
+        <li id="room-li14">Take the lifeline. When you're off track the room will often throw <cite data-video="eyGUsY1f2a8" data-chunk="11" data-quote="throwing them a Lifeline right">a steering question</cite> — use it instead of digging in.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="room-h34">Find the real problem first</h3>
+      <ul>
+        <li id="room-li15">What they report is a symptom: <cite data-video="Ck-LeYlAVbY" data-chunk="9" data-quote="the problem is rarely ever the problem">the problem is rarely ever the problem</cite>.</li>
+        <li id="room-li16">The worked case: a “dashboard latency” complaint whose <cite data-video="Ck-LeYlAVbY" data-chunk="10" data-quote="actual goal there is sales and conversion to sales rather than latency">actual goal was sales and conversion, not latency</cite>.</li>
+        <li id="room-li17">Never flatly contradict the framing — <cite data-video="Ck-LeYlAVbY" data-chunk="10" data-quote="I would never tell you you're wrong because latency is an issue">“I would never tell you you're wrong”</cite> — validate it while steering to the underlying goal.</li>
+        <li id="room-li18">Quantify the pain at several levels — time on manual work, frequency of costly mistakes, competitive risk — and <cite data-video="Z9S9oxvYUvk" data-chunk="6" data-quote="understand the pain at multiple levels">build urgency</cite> by asking <cite data-video="Z9S9oxvYUvk" data-chunk="6" data-quote="what happens if you don't get this transformation done">what happens if you don't do this</cite>.</li>
+        <li id="room-li19">Borrow credibility where you can: showing you have solved this shape of problem before says <cite data-video="Z9S9oxvYUvk" data-chunk="4" data-quote="we've done this before we can do it again">we've done this before, we can do it again</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="room-h35">Know your limits out loud</h3>
+      <ul>
+        <li id="room-li20">Have the sentence ready before you need it: <cite data-video="hahPTeXJEBk" data-chunk="6" data-quote="this is not something an area I know about">“this is not an area I know about, let me get back to you.”</cite></li>
+        <li id="room-li21">Draw the architecture even when nobody asked, <cite data-video="hahPTeXJEBk" data-chunk="18" data-quote="prepare one just to have like clarity in your mind">purely to force clarity in your own mind</cite> — and show it, because <cite data-video="hahPTeXJEBk" data-chunk="19" data-quote="the more they understand what you do">the more they understand, the more favourably they judge you</cite>.</li>
+        <li id="room-li22">Anchor on one specialisation you can go deep on; it's worth <cite data-video="hahPTeXJEBk" data-chunk="3" data-quote="it's always good to think about a particular spike">thinking about a particular spike</cite> rather than claiming breadth everywhere.</li>
+        <li id="room-li23">Calibrate by asking, not guessing: <cite data-video="Ck-LeYlAVbY" data-chunk="28" data-quote="ask your peers about your communication">ask your peers about your communication</cite>, and practise by writing decisions down so <cite data-video="Ck-LeYlAVbY" data-chunk="29" data-quote="make some decisions and then write about them">someone with zero context can follow the reasoning</cite>.</li>
+        <li id="room-li24">Watch the delivery habits you can't hear yourself doing — even strong speakers flag <cite data-video="Z9S9oxvYUvk" data-chunk="11" data-quote="focusing on and being cognizant of your arms your you knows">their arms and their “you knows”</cite> on review.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="room-h36">Plan the window</h3>
+      <ul>
+        <li id="room-li25">A discovery or readout slot is short and fixed — <cite data-video="eyGUsY1f2a8" data-chunk="8" data-quote="usually kind of 35 maybe 40 minutes">roughly 35 to 40 minutes</cite> — so plan its use rather than winging it.</li>
+        <li id="room-li26">You are rarely solo; a technical presenter <cite data-video="eyGUsY1f2a8" data-chunk="12" data-quote="typically have a salesperson with them an account executive">typically works with an account executive</cite>, so agree who steers what.</li>
+        <li id="room-li27">When you need backup, be specific: <cite data-video="eyGUsY1f2a8" data-chunk="26" data-quote="really be good at explaining uh what help you need">be good at explaining exactly what help you need</cite>.</li>
+        <li id="room-li28">Carrying yourself in front of senior leadership has a name and it is assessed — <cite data-video="Ck-LeYlAVbY" data-chunk="22" data-quote="a word that um we borrow from consulting is executive presence">executive presence</cite>, a term borrowed from consulting.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p id="room-p2">One calibration on how much technical depth to lead with: in a pre-sales or mixed-stakeholder setting, the soft-skill layer is the differentiator, and <cite data-video="eyGUsY1f2a8" data-chunk="9" data-quote="less than half right let's put it that way">fewer than half</cite> of technically excellent people can do it. Technical depth is necessary; the persistent myth is that it is sufficient — <cite data-video="eyGUsY1f2a8" data-chunk="22" data-quote="Solutions Architects um need to be very technical">that presenters mainly need to be very technical</cite>.</p>
+</section>
+
+<section id="screens">
+  <h2 id="screens-h21">When the deck is an app or a dashboard</h2>
+
+  <p id="screens-p1">No talk in this corpus is about dashboard design — that is the largest gap in the evidence, and it is stated plainly in <a href="#gaps">Gaps</a>. What the corpus does cover, directly and repeatedly, is the two things that decide whether a screen communicates: whether each view states a conclusion, and whether the numbers on it can be traced. The transfers below are marked for what they are.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="screens-h31">Every view needs an action title</h3>
+      <ul>
+        <li id="screens-li1">A dashboard page with a chart and no takeaway is the topic-header failure in another medium: it is <cite data-video="9WCPpEIIdrE" data-chunk="4" data-quote="it's a tad descriptive i think it's it's insightful but it doesn't it doesn't put out a point of view">descriptive with no point of view</cite>. Write the header as the finding, with the number in it — <cite data-video="3bVc_-m_fMg" data-chunk="14" data-quote="12% maybe you even add it here in the title">“sales down 12%”</cite>.</li>
+        <li id="screens-li2">One goal per screen, exactly as one goal per slide: <cite data-video="3bVc_-m_fMg" data-chunk="12" data-quote="you need to know your main goal of that slide">know the main goal</cite> and cut every tile that doesn't serve it.</li>
+        <li id="screens-li3">Drill-downs are your appendix. Put the focal metric up front and <cite data-video="3bVc_-m_fMg" data-chunk="13" data-quote="you can add that to appendix">push the nitty-gritty tables behind it</cite> for the data-minded.</li>
+        <li id="screens-li4">This one is a direct warning about screens you send rather than narrate: a minimal, visual-only page needs <cite data-video="nAlR78kKSTs" data-chunk="12" data-quote="i would also probably had would have to include you know some descriptive text that helps the audience to understand what you mean with that headlines">descriptive text under each headline</cite> if the people reading it weren't in the room.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="screens-h32">Traceability is the trust mechanism</h3>
+      <ul>
+        <li id="screens-li5">Show the provenance beside the output: good systems present <cite data-video="uaiq1HvQKoI" data-chunk="21" data-quote="citations or links to the original uh source documents">citations or links to the original source documents</cite>.</li>
+        <li id="screens-li6">Being able to show <cite data-video="uaiq1HvQKoI" data-chunk="17" data-quote="which documents were used to generate an answer">which documents produced an answer</cite> is what makes an AI-derived insight verifiable to a business audience rather than a matter of faith.</li>
+        <li id="screens-li7">Structure synthesised findings as a report that highlights the flagged sections <cite data-video="uaiq1HvQKoI" data-chunk="31" data-quote="compile a compliance report highlighting the sections">with explanations and citations back to source</cite>.</li>
+        <li id="screens-li8">Give the reviewer a risk read so they know how hard to look — an explicit risk assessment <cite data-video="Ukju3maxbEQ" data-chunk="31" data-quote="this risk assessment is uh super helpful because it tells me how much I need to actually look into the code">tells me how much I need to actually look into it</cite>. Attach evidence, not assertions: hand over screenshots rather than asking the reader to reproduce.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="screens-h33">Report quality, not uptime</h3>
+      <ul>
+        <li id="screens-li9">Ongoing reporting should carry <cite data-video="uaiq1HvQKoI" data-chunk="37" data-quote="quality uh metrics uh for example uh relevance in rag or hallucination rates">relevance and hallucination rates</cite> alongside cost and alerting — not just whether the service was up.</li>
+        <li id="screens-li10">A metric on a review screen doesn't have to be a number: <cite data-video="kIvjiH8yJoU" data-chunk="16" data-quote="a metric could also be some text or a label that helps you understand something">a text or label that helps you understand something</cite> counts, and a judge's free-text reasoning is often the most useful column.</li>
+        <li id="screens-li11">Keep a human path into the raw rows. <cite data-video="kIvjiH8yJoU" data-chunk="11" data-quote="eyeballing this gives us just a very easy way of looking at what is happening">Eyeballing individual results</cite> caught a model <cite data-video="kIvjiH8yJoU" data-chunk="18" data-quote="GP5 mini will kind of cheat with the with the queries">gaming retrieval with quoted exact-phrase queries</cite> that the scored dashboard did not surface.</li>
+        <li id="screens-li12">Don't trust aggregate scores alone: single-answer LLM judges are <cite data-video="kIvjiH8yJoU" data-chunk="6" data-quote="LLMs are a bit too optimistic and they will kind of agree">too optimistic</cite>, and quality monitoring should <cite data-video="uaiq1HvQKoI" data-chunk="41" data-quote="combines uh an automated evaluation with a human review">combine automated evaluation with human review</cite>.</li>
+        <li id="screens-li13">Budget realistically for the human half: handing <cite data-video="kIvjiH8yJoU" data-chunk="5" data-quote="50 to 100 queries to an expert">50 to 100 queries to an expert</cite> typically returns one or two before they say they're too busy.</li>
+        <li id="screens-li14">Build the feedback loop into the surface — <cite data-video="uaiq1HvQKoI" data-chunk="41" data-quote="thumbs up, thumbs down, comments uh to add">thumbs up, thumbs down, comments</cite> — so context accrues instead of being lost.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="screens-h34">Demo the thing, cheaply, early</h3>
+      <ul>
+        <li id="screens-li15">Render the real candidates instead of describing them. Generating a page of options so <cite data-video="Ukju3maxbEQ" data-chunk="7" data-quote="generate a just a simple HTML page with some options for spinners so that we can choose the best one">we can choose the best one</cite> converts a debate into a decision.</li>
+        <li id="screens-li16">A clickable prototype you can <cite data-video="r-MPiu0E4W4" data-chunk="54" data-quote="deploy it to Verscell and share it with other people in my organization">deploy and share with your organisation</cite> gets direction agreed before you spend on fidelity.</li>
+        <li id="screens-li17">But reconnect it to the real design system before executives see it, or the verdict is <cite data-video="r-MPiu0E4W4" data-chunk="64" data-quote="this is very off-brand">“this is very off-brand”</cite> regardless of the thinking underneath.</li>
+        <li id="screens-li18">Set the expectation gap explicitly. <cite data-video="uaiq1HvQKoI" data-chunk="38" data-quote="proof of concepts often showcase the wow factor">Proofs of concept showcase the wow factor</cite>; production meets complexity, limits and cost the demo audience never saw.</li>
+        <li id="screens-li19">Ship the smallest version that wins. Choose the <cite data-video="Ck-LeYlAVbY" data-chunk="13" data-quote="smallest piece of scope that would lead to a net increase in conversion">smallest scope that produces a net increase</cite> — and be honest that the advice is <cite data-video="Ck-LeYlAVbY" data-chunk="13" data-quote="build a shitty first version and then iterate from there">build a rough first version and iterate</cite>.</li>
+        <li id="screens-li20">Chasing the symptom forever is a trap: latency is <cite data-video="Ck-LeYlAVbY" data-chunk="11" data-quote="latency is also a bit of a swamp">a bit of a swamp</cite>, where solving it once just raises the next ask.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="screens-h35">Documentation and written updates</h3>
+      <ul>
+        <li id="screens-li21">For anything read rather than presented, <cite data-video="r-MPiu0E4W4" data-chunk="68" data-quote="your priority here is consistency">consistency is the priority</cite> — the same structure every time, or some readers get a different shape of information than others.</li>
+        <li id="screens-li22">Get consistency from a saved spec, not from prompting afresh: define <cite data-video="r-MPiu0E4W4" data-chunk="70" data-quote="read the skill to understand the types of information that we want included">the types of information that must be included</cite> and reuse it.</li>
+        <li id="screens-li23">Structure written status the same way: recap first, plain language, one question, <cite data-video="Ukju3maxbEQ" data-chunk="18" data-quote="end with the next action">end with the next action</cite>.</li>
+        <li id="screens-li24">You still have to own the reasoning. A generated system can't be defended by someone who didn't decide it — asked whether AI can build a design system end to end, the answer is <cite data-video="r-MPiu0E4W4" data-chunk="92" data-quote="The answer, no, it cannot">no, it cannot</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="screens-h36">Claiming impact in writing</h3>
+      <ul>
+        <li id="screens-li25">Use the formula for every claim you make about your own work: <cite data-video="5gLVxMKeSGM" data-chunk="18" data-quote="I accomplished X, as measured by Y, by doing Z">I accomplished X, as measured by Y, by doing Z</cite> — result, metric, method.</li>
+        <li id="screens-li26">Never assume the reader infers significance. <cite data-video="5gLVxMKeSGM" data-chunk="2" data-quote="if you don't tell them why what you did actually mattered">If you don't tell them why what you did mattered</cite>, they won't work it out, and they decide whether to keep reading in <cite data-video="5gLVxMKeSGM" data-chunk="2" data-quote="hooked in five to seven seconds">five to seven seconds</cite>.</li>
+        <li id="screens-li27">When exact figures are confidential, use <cite data-video="5gLVxMKeSGM" data-chunk="15" data-quote="percentages or multipliers when I can't share real numbers">percentages or multipliers</cite>, or an <cite data-video="5gLVxMKeSGM" data-chunk="16" data-quote="there are different orders of magnitude that I need to use">order of magnitude</cite> like “millions of rows” — never omit scale.</li>
+        <li id="screens-li28">Write the summary last, after the evidence exists: <cite data-video="5gLVxMKeSGM" data-chunk="4" data-quote="you should definitely write this part of your resume last">write that part last</cite>, and treat it as <cite data-video="5gLVxMKeSGM" data-chunk="4" data-quote="it's almost like a thesis that the rest of your resume must prove">a thesis the rest must prove</cite>.</li>
+        <li id="screens-li29">Tailor to the stated requirements — it should be like <cite data-video="5gLVxMKeSGM" data-chunk="3" data-quote="tailoring your resume to the job description should be like taking an open book quiz">taking an open-book quiz</cite> — and let repetition tell you what to lead with, because <cite data-video="5gLVxMKeSGM" data-chunk="12" data-quote="Repetition matters to me">repetition matters</cite>.</li>
+        <li id="screens-li30">Check the fit mechanically before you send: paste the document and the audience's stated requirements into a model and <cite data-video="5gLVxMKeSGM" data-chunk="21" data-quote="use ChatGPT to just compare the resume to the job descriptions">compare the two</cite>. In the worked case, iterating on the score moved it <cite data-video="5gLVxMKeSGM" data-chunk="24" data-quote="bump up my score from 63 and some change">from about 63% to 83%</cite>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="templates">
+  <h2 id="templates-h21">Copy these</h2>
+
+  <p id="templates-p1">Four artefacts. The first two are yours to fill in before you build; the last two are review instruments you can paste into a pull request, a design review, or a model.</p>
+
+  <figure class="prompt" id="templates-fig1">
+    <div class="label">Pre-readout brief — fill this in before opening any tool <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre1">GOAL      (pick one) alignment / education / problem-solving
+          By the end they must THINK ______, FEEL ______, DO ______.
+
+AUDIENCE  Decision-maker (who signs off): ______
+          Others in the room + what each one fears / wants: ______
+          Context level: assume ZERO. Opening recap = 2 sentences: ______
+
+APPROACH  (pick one)
+          PYRAMID — answer first, then 3 MECE reasons, then evidence.
+          SCR     — situation (agreed facts) / complication (the tension)
+                    / resolution (a structured 3-part response).
+          Use SCR when the material is data-heavy or the room is sceptical.
+
+FRAMING   Rewrite the recommendation so it does not accuse anyone:
+          not "X isn't working" but "directing resources to the
+          highest-impact opportunities".</pre>
+    <div class="note" id="templates-p2">Built from the goal/audience/approach structure and the three goal buckets — <cite data-video="c7_riQh50UE" data-chunk="4" data-quote="Alignment, education, and problem">alignment, education, and problem</cite> — plus the collaborative reframe in the same talk.</div>
+  </figure>
+
+  <figure class="prompt" id="templates-fig2">
+    <div class="label">Storyline skeleton — dot-dash, in a document, before any slide <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre2">THREE-SENTENCE TEST (write this first, revise it last)
+  Situation:    ______
+  Complication: ______
+  Resolution:   ______
+
+DOT-DASH
+  • Dot 1 — [full-sentence claim, the future action title]
+      – [data point + its comparison]  → becomes chart
+      – [data point + its comparison]  → becomes chart
+  • Dot 2 — [full-sentence claim]
+      – ...
+  • Dot 3 — [full-sentence claim]
+      – ...
+  • Close   — implication + next steps + owner
+
+TWO CHECKS BEFORE YOU OPEN POWERPOINT
+  Horizontal: read the dots only. Do they tell the whole argument?
+  Vertical:   is anything in a dot unjustified by a dash beneath it?</pre>
+    <div class="note" id="templates-p3">Dot-dash and the two flow checks come from the McKinsey storylining walkthrough, where <cite data-video="CY1Y367KEko" data-chunk="9" data-quote="the dots are the action titles and the dashes turn into charts that sit in the slide body">the dots are the action titles and the dashes turn into charts</cite>; the three-sentence compression is its stated sanity check.</div>
+  </figure>
+
+  <figure class="prompt" id="templates-fig3">
+    <div class="label">Review checklist — paste into the PR or the review doc <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre3">MESSAGE      [ ] Title is a full sentence with the number in it
+             [ ] Reading titles alone gives the whole argument
+STRUCTURE    [ ] Answer appears in the first minute / first screen
+             [ ] Exactly 3 supporting reasons, MECE
+             [ ] Long deck opens with an executive summary
+EVIDENCE     [ ] Every claim sits on visible data
+             [ ] Source note present: how did we get these numbers?
+             [ ] Scope defined (which market? which users? which period?)
+COMPARISON   [ ] No number stands alone
+             [ ] Comparison is like-for-like (not new vs. existing)
+PAGE         [ ] One goal per page; everything else cut or appendixed
+             [ ] One body font size; hierarchy by size, not boxes
+             [ ] One accent colour + black/grey; every colour has meaning
+             [ ] Chart type matches the comparison being made
+             [ ] All rows on the grid; no jitter page to page
+AUDIENCE     [ ] Opens with context; assumes zero
+             [ ] No jargon the least technical person can't parse
+             [ ] Each stakeholder's fear addressed before it's raised
+ACTION       [ ] Closes with implication + next step + owner
+             [ ] Impact stated in business terms, not method terms
+HONESTY      [ ] Limits, risks and unknowns stated by you
+             [ ] Nothing asserted you cannot defend under questioning
+
+SCORE  __/16   (0 absent · 1 partial · 2 strong; below 12 = send back)</pre>
+    <div class="note" id="templates-p4">The scale is this guide's; every line item traces to a cited claim in <a href="#rubric">the rubric</a> above. The “no jitter” line in particular is the final polish pass — <cite data-video="YXQWfTPQoSg" data-chunk="4" data-quote="make sure that you have no jarring on your pages">make sure that you have no jarring on your pages</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="templates-fig4">
+    <div class="label">Model prompt — adversarial review of a deck, screen or report <button type="button" data-copy>Copy</button></div>
+    <pre id="templates-pre4">You are reviewing work I am about to present to [AUDIENCE, ROLE].
+My goal in the meeting is [alignment | education | problem-solving].
+
+Here is the material: [PASTE TEXT / ATTACH SCREENSHOTS]
+
+Do four passes and report each separately.
+
+1. TITLES ONLY. List every title/header in order and nothing else.
+   Read that list back to me. Does it tell a complete argument?
+   Where does it break, and which title is descriptive rather than a claim?
+
+2. NAKED NUMBERS. List every figure with no comparison point, every
+   percentage with no "of what", and every claim with no source note.
+
+3. AUDIENCE. Given the role above, name the three things this person
+   will worry about that the material does not address. Name every
+   piece of jargon they will not parse.
+
+4. SCORE. Score 0-2 on: message, structure, evidence, comparison,
+   page, audience fit, action, honesty. Total out of 16.
+   For any dimension under 2, give the single edit that raises it.
+
+Be blunt. Do not compliment the work.</pre>
+    <div class="note" id="templates-p5">The pattern — check your artefact against the audience's stated requirements before sending — is the corpus's, applied to review instead of résumés: <cite data-video="5gLVxMKeSGM" data-chunk="21" data-quote="use ChatGPT to just compare the resume to the job descriptions">compare the document to what the audience asked for</cite>. Pair it with a human read; automated judgement alone runs <cite data-video="kIvjiH8yJoU" data-chunk="6" data-quote="LLMs are a bit too optimistic and they will kind of agree">too optimistic</cite>.</div>
+  </figure>
+</section>
+
+<section id="tensions">
+  <h2 id="tensions-h21">Where the corpus disagrees</h2>
+
+  <p id="tensions-p1">Four live disagreements. Each is a real judgement call, not a defect in the evidence — and the resolution depends on your room.</p>
+
+  <div class="tension">
+    <h3 id="tensions-h31">Lead with the answer, or build to it?</h3>
+    <p id="tensions-p2">The pyramid principle says the answer goes first, always — <cite data-video="c7_riQh50UE" data-chunk="11" data-quote="start with the answer first">start with the answer first</cite>. The same talk then says that for data-heavy presentations or a sceptical audience you should use <cite data-video="c7_riQh50UE" data-chunk="16" data-quote="situation complication and resolution">situation, complication, resolution</cite> and hold the recommendation until it feels earned. <span class="verdict">Call:</span> pyramid by default; SCR when the audience has to be moved off a position they already hold. Pairing them is explicitly endorsed as making a message <cite data-video="c7_riQh50UE" data-chunk="19" data-quote="logically bulletproof and is emotionally engaging">logically bulletproof and emotionally engaging</cite>.</p>
+  </div>
+
+  <div class="tension">
+    <h3 id="tensions-h32">Finish before you show, or show rough and iterate?</h3>
+    <p id="tensions-p3">The storylining discipline says settle everything in the document, because <cite data-video="CY1Y367KEko" data-chunk="8" data-quote="any changes that we make later in PowerPoint are probably going to mean that we rebuild slides">later changes mean rebuilding slides</cite>. The forward-deployed engineer says over-polishing before showing work loses deals, so <cite data-video="Ck-LeYlAVbY" data-chunk="13" data-quote="build a shitty first version and then iterate from there">build a rough first version and iterate</cite>. <span class="verdict">Call:</span> they're about different objects. Finalise the <em>argument</em> before you build; ship the <em>artefact</em> rough and let the customer shape it.</p>
+  </div>
+
+  <div class="tension">
+    <h3 id="tensions-h33">How many colours can a data page carry?</h3>
+    <p id="tensions-p4">One review argues a six-colour McKinsey chart actually lowers effort, because matching hues let a viewer group series instinctively and <cite data-video="nuosoMyf0eA" data-chunk="6" data-quote="your cognitive load has actually been reduced compared to black and white">cognitive load is reduced compared to black and white</cite>. Another, on a BCG page, wanted a second green replaced with <cite data-video="nAlR78kKSTs" data-chunk="9" data-quote="i would have done it probably in a more decent gray because you know this makes this light just very busy">a more decent grey</cite>. <span class="verdict">Call:</span> colours that encode a grouping earn their place; colours that merely decorate or add a shade do not. Highlight colours should stay <cite data-video="nAlR78kKSTs" data-chunk="7" data-quote="those colors are kind of decent so they are not very aggressive">decent, not aggressive</cite>.</p>
+  </div>
+
+  <div class="tension">
+    <h3 id="tensions-h34">How technical should you get?</h3>
+    <p id="tensions-p5">In a technical assessment, interviewers deliberately probe deeper as seniority rises, rewarding demonstrated depth on <cite data-video="hahPTeXJEBk" data-chunk="16" data-quote="fundamentals that of why these technologies exist">why the technologies exist</cite>. In the situational interview at the same company, leaning on technical depth with a mixed audience is marked down; the job there is discovery, and you should <cite data-video="eyGUsY1f2a8" data-chunk="7" data-quote="do most of the talking">let them do most of the talking</cite>. <span class="verdict">Call:</span> depth is what you prove when asked; it is not what you lead with. And note the parallel warning from consulting — a page banking readers expect can be one <cite data-video="YXQWfTPQoSg" data-chunk="13" data-quote="in most consulting contexts, pages like that would never go into the main deck">that would never go into a consulting main deck</cite>.</p>
+  </div>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h21">Sources</h2>
+
+  <p id="sources-p1">Eighteen talks, 497 chunks, read in full across six extraction passes. Grouped by what they contribute.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Storyline and structure</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=CY1Y367KEko" target="_blank" rel="noopener"><cite data-video="CY1Y367KEko">Storytelling in PowerPoint: Learn McKinsey's 3-Step Framework</cite></a> <span class="tk">— Dan Galletta. SCQA/SCR, the Word-first dot-dash drafting process, and the horizontal/vertical flow checks that turn analysis into a deck.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=c7_riQh50UE" target="_blank" rel="noopener"><cite data-video="c7_riQh50UE">Communicate like McKinsey: top 3 consulting frameworks</cite></a> <span class="tk">— Olaide TM. Goal / audience / approach, the pyramid principle, the rule of three, MECE, and SCR for sceptical rooms.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=jUFFkh5YSU8" target="_blank" rel="noopener"><cite data-video="jUFFkh5YSU8">How to create presentations like a consultant (ex-BCG consultant explains)</cite></a> <span class="tk">— Matt Huang. Define the meeting's goal, write every title before building, the fullest account of the pyramid principle, and the only advice on inviting live input.</span></li>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=nuosoMyf0eA" target="_blank" rel="noopener"><cite data-video="nuosoMyf0eA">5 Small Changes to Improve Your Presentations Forever!</cite></a> <span class="tk">— Jeff Su. Never an isolated data point, SCQA across 50+ MBB decks, intentional colour, and when a table beats a chart.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Slide teardowns</h3>
+    <ol>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=WZuDhxS40qo" target="_blank" rel="noopener"><cite data-video="WZuDhxS40qo">How Bain &amp; Co. builds million dollar presentations for their clients</cite></a> <span class="tk">— Analyst Academy. A single-slide teardown: title-as-conclusion, chart-type choice, a three-colour palette, and why bolding everything backfires.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=nAlR78kKSTs" target="_blank" rel="noopener"><cite data-video="nAlR78kKSTs">Strategy consultant explains BCG presentation!</cite></a> <span class="tk">— Johannes Sommer. Slide-by-slide through a real public BCG deck: executive summary, action titles, thirds, legends, footnotes, think-in-tables — including where the deck itself falls short.</span></li>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=YXQWfTPQoSg" target="_blank" rel="noopener"><cite data-video="YXQWfTPQoSg">Consulting Presentation Tips from former McKinsey Consultant</cite></a> <span class="tk">— Firm Learning. Six live deck reviews: font consistency, dewording, jitter, animation, and the banking-versus-consulting density split.</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=9WCPpEIIdrE" target="_blank" rel="noopener"><cite data-video="9WCPpEIIdrE">McKinsey Presentation Slide Review: Consulting Slide Review From Former Bain &amp; Company Consultant</cite></a> <span class="tk">— Felix. Four review lenses — title/message, structure, evidence, formatting — applied to a published McKinsey exhibit, including where its title is only descriptive.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">From data to insight</h3>
+    <ol>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=3bVc_-m_fMg" target="_blank" rel="noopener"><cite data-video="3bVc_-m_fMg">How to Turn Data into Actionable Insights (6-Step System)</cite></a> <span class="tk">— Clicks Don't Lie. The most direct playbook here for presenting analysis: question-first, like-for-like comparison, punchy slides, appendix, narrative arc.</span></li>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=5gLVxMKeSGM" target="_blank" rel="noopener"><cite data-video="5gLVxMKeSGM">How to Write a Winning Tech Resume</cite></a> <span class="tk">— Anthony D. Mays. Impact discipline in written form: the X/Y/Z formula, orders of magnitude when numbers are confidential, and writing the thesis last.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">The room, the customer, the objection</h3>
+    <ol>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=eyGUsY1f2a8" target="_blank" rel="noopener"><cite data-video="eyGUsY1f2a8">Interviewing for Databricks? Nailing the situational interview for Solutions Architect!</cite></a> <span class="tk">— VectorLab. The richest source on mixed technical/non-technical rooms: discovery over pitching, jargon-free explanation, objection handling, trusted advisor.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=Ck-LeYlAVbY" target="_blank" rel="noopener"><cite data-video="Ck-LeYlAVbY">What is a Forward Deployed Engineer? (with Founding Rippling FDE)</cite></a> <span class="tk">— Exponent. Finding the real problem behind the reported one, scoping the smallest proof, quality versus completeness, and preparation as the source of clarity.</span></li>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=hahPTeXJEBk" target="_blank" rel="noopener"><cite data-video="hahPTeXJEBk">How to Ace the Databricks Solutions Architect Technical Interview</cite></a> <span class="tk">— VectorLab. Explaining a technical project so an evaluator can follow it: admit limits, diagram for your own clarity, tie reasoning to business need, know when to stop.</span></li>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=Z9S9oxvYUvk" target="_blank" rel="noopener"><cite data-video="Z9S9oxvYUvk">Solutions Architect Interview: "Solve a Complex Problem for a Customer"</cite></a> <span class="tk">— Exponent. Stakeholder mapping, quantifying pain, naming the true decision-maker, and a candid self-critique of the delivery.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h35">Evidence, evaluation and the working artefact</h3>
+    <ol>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=uaiq1HvQKoI" target="_blank" rel="noopener"><cite data-video="uaiq1HvQKoI">GenAI in Production: How RAG &amp; AI Agents Are Shaping the Future</cite></a> <span class="tk">— Xgrid. Making generated insights reportable: citations, automated plus human evaluation, quality metrics, and value stated in business terms.</span></li>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=kIvjiH8yJoU" target="_blank" rel="noopener"><cite data-video="kIvjiH8yJoU">From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluation</cite></a> <span class="tk">— OpenSearch. Pairwise judging, ELO ranking, and an eyeballing UI that surfaces the judge's qualitative reasoning next to the score.</span></li>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=Ukju3maxbEQ" target="_blank" rel="noopener"><cite data-video="Ukju3maxbEQ">A Meta Engineer's Agentic Engineering Workflow</cite></a> <span class="tk">— Jason Ku. Recap-first updates, one question at a time, plain language, an explicit next action, and evidence attached to a report.</span></li>
+      <li id="sources-li18"><a href="https://www.youtube.com/watch?v=r-MPiu0E4W4" target="_blank" rel="noopener"><cite data-video="r-MPiu0E4W4">Design with AI - Full Guide (Tools, Workflows, Design Systems)</cite></a> <span class="tk">— UI Collective. Cheap clickable demos for early buy-in, documentation consistency, and why you can't defend a decision you didn't make.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h21">What this corpus does not answer</h2>
+
+  <p id="gaps-p1">Honest gaps. Where you need these, go somewhere else — do not treat the guide above as covering them.</p>
+
+  <ul>
+    <li id="gaps-li1"><strong>Dashboard and app design.</strong> No talk here covers laying out a dashboard, designing a report screen, or choosing charts for an interactive surface. Everything in <a href="#screens">Apps &amp; dashboards</a> is slide and document advice transferred by argument, not by evidence.</li>
+    <li id="gaps-li2"><strong>Live delivery mechanics.</strong> Nothing on pacing, vocal tone, body language, or how to open and close a live presentation. The closest the corpus gets is one presenter noticing his own filler words on replay.</li>
+    <li id="gaps-li3"><strong>Remote and asynchronous presenting.</strong> No screen-share etiquette, no camera framing, no guidance on a recorded walkthrough or a written memo replacing a live readout.</li>
+    <li id="gaps-li4"><strong>Hostile Q&amp;A over a chart.</strong> Objection handling here is framed around sales conversations. There is no worked example of defending a forecast or a contested number under live pushback.</li>
+    <li id="gaps-li5"><strong>Statistical rigour.</strong> Nothing on sample size, significance, or confidence — so nothing on deciding when a difference is a real insight rather than noise, and nothing on presenting uncertainty to non-technical stakeholders.</li>
+    <li id="gaps-li6"><strong>Accessibility.</strong> Every source leans on colour coding as a core technique; none mention colourblind-safe palettes or any other accessibility consideration.</li>
+    <li id="gaps-li7"><strong>Deck length and slide budgets.</strong> No numbers on how many slides a 30-minute meeting should carry, how many words are too many for a page, or how long a dewording pass should take.</li>
+    <li id="gaps-li8"><strong>Proof that any of this works.</strong> No win rates, time-to-approval, or lift metrics comparing a structured deck against an unstructured one. The case for SCR and the pyramid principle in this corpus is practitioner authority, not measurement.</li>
+    <li id="gaps-li9"><strong>Pre-meeting iteration.</strong> Plenty on inviting input during the meeting, nothing on how to gather and fold in stakeholder feedback on a draft before it.</li>
+    <li id="gaps-li10"><strong>Did it change anything?</strong> No source addresses tracking whether a presentation actually moved a decision or a behaviour afterwards — the one measurement that would close the loop on everything above.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  <p id="footer-p1">The Executive Readout — a field guide compiled from 18 source videos, 497 transcript chunks read in full, across 6 parallel extraction passes. Compiled 2026-09-16. Every claim above resolves to a chunk you can open; where the corpus is silent, it says so.</p>
+</div></footer>
+
+<script>
+(function () {
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var fig = btn.closest('figure');
+      if (!fig) return;
+      var pre = fig.querySelector('pre');
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.textContent).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      });
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

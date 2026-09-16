@@ -1,0 +1,467 @@
+{
+ "cluster": "cluster-6",
+ "videos": [
+  "hahPTeXJEBk",
+  "eyGUsY1f2a8",
+  "uaiq1HvQKoI"
+ ],
+ "video_notes": [
+  {
+   "video_id": "hahPTeXJEBk",
+   "title": "How to Ace the Databricks Solutions Architect Technical Interview | Tips from an Insider!",
+   "contributed": "How to explain a technical project so an evaluator can follow it: admit limits, tie reasoning to business need, use a diagram for clarity, and know when to stop talking."
+  },
+  {
+   "video_id": "eyGUsY1f2a8",
+   "title": "Interviewing for Databricks? Nailing the situational interview for Solutions Architect!",
+   "contributed": "The richest source on presenting to a mixed technical/non-technical audience: discovery over pitching, jargon-free explanation, objection handling, and building a 'trusted advisor' relationship."
+  },
+  {
+   "video_id": "uaiq1HvQKoI",
+   "title": "GenAI in Production: How RAG & AI Agents Are Shaping the Future",
+   "contributed": "How to make AI-generated insights trustworthy and reportable to stakeholders: cite sources, combine automated + human evaluation, and communicate business value through measurable outcomes rather than model sophistication."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Own a narrative spike, not a generalist pitch",
+   "claim": "When presenting your background or project, anchor it to one specialization ('spike') you can go deep on rather than trying to cover everything, since the platform/topic is too broad to be strong everywhere.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 3,
+   "quote": "it's always good to think about a particular spike",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Admit the limits of your knowledge",
+   "claim": "Evaluators value candidates who visibly know their limits and don't bluff an answer, because bluffing erodes trust that would matter in front of a real customer.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 5,
+   "quote": "know their limits and not try to just basically answer",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Script for 'I don't know yet'",
+   "claim": "Have a ready phrase for gaps in knowledge ('this is not something an area I know about, let me get back to you') instead of guessing in the moment.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 6,
+   "quote": "this is not something an area I know about",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Let the audience do the storytelling",
+   "claim": "A good technical conversation shifts from interviewer-asks/candidate-answers into the candidate telling the story of their work while the interviewer just probes details — apply the same shift when presenting insights: get the audience narrating their own problem back to you.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 7,
+   "quote": "them doing a lot of the storytelling",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Explain the 'why', not just the tool name",
+   "claim": "Deep questions target the fundamentals of why a technology exists (e.g., distributed computing concepts behind Spark), not trivia about the specific tool — prepare to explain principles, not just name-drop tools.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 16,
+   "quote": "fundamentals that of why these technologies exist",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Diagram for your own clarity",
+   "claim": "Prepare an architecture diagram before presenting, even if not required, purely to force clarity in your own mind about what you're describing.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 18,
+   "quote": "prepare one just to have like clarity in your mind",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Visuals buy goodwill",
+   "claim": "Displaying a diagram or visual makes it easier for the audience to follow along, and the more they understand what you're describing, the more favorably they judge the presentation.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 19,
+   "quote": "the more they understand what you do",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Tie technical reasoning to business need",
+   "claim": "The single most important skill is explaining your technical approach and reasoning while explicitly connecting it to business requirements — not just describing the tech.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 20,
+   "quote": "explaining your technical approach and reasoning well",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Know when to stop talking",
+   "claim": "Alongside strong explanation, know when to stop — don't invent or overstate something you're not confident in, since that's what breaks trust.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 20,
+   "quote": "know when to stop",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reframe uncertainty as pragmatism",
+   "claim": "Saying 'this is something I may not be able to answer at this time, let me get back to you' — instead of a flat 'I don't know' — reads as pragmatic and can add credibility points rather than lose them.",
+   "video_id": "hahPTeXJEBk",
+   "chunk_index": 21,
+   "quote": "this is something I may not be able to answer it at this time",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Pre-sales needs a second skill layer",
+   "claim": "Presenting technical insight to a business well requires layering communication skills, listening skills, and curiosity about how the business works on top of a solid technical foundation — technical depth alone isn't enough.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 1,
+   "quote": "communication skills particularly around listening skills",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Ask questions instead of pitching",
+   "claim": "The easiest way to win a room is to get the audience talking more than you do — ask good discovery questions so they feed you the ideas you then respond to, rather than leaping straight to your solution.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 7,
+   "quote": "do most of the talking",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Technical skill isn't the bottleneck",
+   "claim": "Fewer than half of technically excellent people can successfully do the layered communication role of a solutions architect — the soft-skill layer is the actual differentiator, not raw technical knowledge.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 9,
+   "quote": "less than half right let's put it that way",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Success = mutual value from the meeting",
+   "claim": "The measure of a good presenter is someone who takes control of and orchestrates the meeting so the audience feels they got real value AND the presenter learned what they needed.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 10,
+   "quote": "somebody who takes control of the situation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Overpreparing facts backfires",
+   "claim": "Candidates/presenters who overprepare technical facts tend to retreat to that comfort zone under pressure — but with a mixed audience you have to deliberately set that aside rather than lean on it.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 13,
+   "quote": "almost overprepared on the technical aspects",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Give every audience segment a hook",
+   "claim": "Build a narrative like a Disney movie — content for the technical people and separate themes the non-technical/business people in the room can relate to, so nobody switches off.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 14,
+   "quote": "think about going to watch a Disney movie",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Room control over slide monologue",
+   "claim": "Taking control of the room is not the same as delivering a long monologue through your deck — presence and adaptive control matter more than plowing through prepared slides.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 15,
+   "quote": "taking control of the room",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Simplify: fewer words, less jargon",
+   "claim": "The best presenters explain something very complex in very simple terms — using fewer words and less jargon — so the audience gets the value without needing to be experts.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 16,
+   "quote": "using fewer words less jargon",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Blend technical and soft skill seamlessly",
+   "claim": "Excellent communicators blend listening, storytelling, and technical expertise so smoothly that the audience can't see the join between a 'technical' conversation and a 'business' conversation — it just feels like one conversation.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 16,
+   "quote": "you can't see the join between the two",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Aim to become the trusted advisor",
+   "claim": "The end goal of repeated good presentations/meetings is becoming the 'trusted advisor' — the person the customer thinks to ask first because they trust you, not just because you have information.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 17,
+   "quote": "we often use this term trusted advisor",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Objections are information, not attacks",
+   "claim": "Treat every objection as an opportunity: dig into what's really behind it — often a fear or perceived risk — rather than reacting defensively.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 19,
+   "quote": "an objection is an opportunity right",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reframe a limitation as a feature",
+   "claim": "Use the reframe 'if you can't fix it, feature it' — turn a known limitation into a deliberate design reason rather than hiding or apologizing for it.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 20,
+   "quote": "if you can't fix it feature it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Watch for competitor-seeded objections",
+   "claim": "Learn to recognize objections that were planted by a competitor (FUD) versus genuine concerns, and treat those as intelligence about the competitor's strategy.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 20,
+   "quote": "objections that are have been planted by competitors",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "The 'no' starts the real conversation",
+   "claim": "\"When you hear the no is when the negotiation starts\" — a pushback signals the real conversation is beginning, not that the meeting has failed.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 21,
+   "quote": "when you hear the no is when the negotiation starts",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Respect the emotional ownership of prior work",
+   "claim": "When presenting a change to something someone spent a year or two building, remember it's 'their baby' emotionally — be diplomatic and factor in change management, not just technical superiority.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 21,
+   "quote": "we sell technology but we sell change",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Myth: presenters must be maximally technical",
+   "claim": "A persistent myth is that solutions architects/presenters need to be extremely technical above all — in reality the technical depth is necessary but far from sufficient.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 22,
+   "quote": "Solutions Architects um need to be very technical",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "No single 'perfect' presenter mold",
+   "claim": "There is no single ideal solutions-architect archetype — strength comes from diversity of backgrounds and styles, matched deliberately to accounts and teams.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 23,
+   "quote": "the strength is in diversity right",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Don't go it alone",
+   "claim": "The 'lone wolf' image of a solutions architect is a myth to bust — the best pre-sales teams collaborate and route each other to whoever's strength fits the moment.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 24,
+   "quote": "Solutions Architects are kind of Lone wolves",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Plan your window of time",
+   "claim": "A situational/discovery meeting is a short, fixed window (roughly 35–40 minutes) — candidates and presenters need an explicit plan for how to use that time rather than winging it.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 8,
+   "quote": "usually kind of 35 maybe 40 minutes",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Catch the steering cue",
+   "claim": "When a presenter struggles, the room will sometimes throw a 'lifeline' (a steering question) — watch for it and use it to correct course rather than digging in further off-track.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 11,
+   "quote": "throwing them a Lifeline right",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Coordinate with your co-presenter",
+   "claim": "Real customer meetings are rarely solo — a technical presenter typically works with a salesperson/account executive, so you need to understand meeting dynamics well enough to steer the room together.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 12,
+   "quote": "typically have a salesperson with them an account executive",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Ask for help explicitly",
+   "claim": "When you need a teammate's help presenting or solving something, be specific about exactly what help you need and why — vague asks waste people's time.",
+   "video_id": "eyGUsY1f2a8",
+   "chunk_index": 26,
+   "quote": "really be good at explaining uh what help you need",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cite sources in generated answers",
+   "claim": "Good RAG systems present citations or links back to the original source documents alongside the generated answer, so the output can be checked rather than taken on faith.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 21,
+   "quote": "citations or links to the original uh source documents",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Traceability builds trust",
+   "claim": "Being able to show which documents were used to generate an answer is vital for verification and trust when communicating an AI-derived insight to a business audience.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 17,
+   "quote": "which documents were used to generate an answer",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pair automated eval with human review",
+   "claim": "Quality monitoring for an insight-generating system should combine automated evaluation with human review, not rely on automated metrics alone.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 41,
+   "quote": "combines uh an automated evaluation with a human review",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Build in lightweight feedback capture",
+   "claim": "Give the audience/users of a reporting or answer system built-in feedback mechanisms — thumbs up, thumbs down, comments — to add context and tune outputs over time.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 41,
+   "quote": "thumbs up, thumbs down, comments uh to add",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Report value in business terms",
+   "claim": "Communicate the value of a system in business terms — faster task completion, lower operational costs, fewer support tickets, higher customer satisfaction — not model sophistication.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 42,
+   "quote": "faster uh task completion lower optional operational costs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Quantify benefits with A/B tests or pilots",
+   "claim": "Use A/B testing or pilot rollouts to actually quantify the benefits you claim, rather than asserting impact anecdotally.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 42,
+   "quote": "AB testings uh or pilot rollouts can definitely help quantify",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Lead with the problem, not the hype",
+   "claim": "The single biggest closing takeaway for stakeholder buy-in: lead with the problem and not the hype — technology framed around a clear tangible business need lands better.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 51,
+   "quote": "lead with the problem and not the hype",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Anchor the audience on measurable outcomes",
+   "claim": "Keep the audience's attention on measurable outcomes — time saved, cost cut, happier users — and let those metrics guide the technology narrative, not the other way around.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 51,
+   "quote": "time saves, cost cut, happier users",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Lead with a concrete proof-point number",
+   "claim": "A reported 60% reduction in documentation-retrieval time was the concrete proof point used to demonstrate impact to stakeholders after a RAG rollout.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 11,
+   "quote": "60% of the time uh that they spent initially was reduced",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Manage the demo-to-production expectation gap",
+   "claim": "Set stakeholder expectations explicitly: proof-of-concept demos are built to showcase a 'wow factor', but production systems face real-world complexity, limitations, and cost that a demo audience hasn't seen.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 38,
+   "quote": "proof of concepts often showcase the wow factor",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Use small pilots to earn trust",
+   "claim": "Start with small, human-augmented pilots to build stakeholder trust and learn quickly before scaling — trust is built incrementally through visible small wins, not a single big presentation.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 48,
+   "quote": "you uh build trust and learn fast",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Structure findings as a cited report",
+   "claim": "When an AI agent synthesizes findings for a business audience (e.g. a compliance review), structure the output as a report highlighting risk/compliant sections with explanations and citations back to source documents.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 31,
+   "quote": "compile a compliance report highlighting the sections",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Report quality metrics, not just uptime",
+   "claim": "Ongoing monitoring/communication to stakeholders should include quality metrics like relevance and hallucination rate, alongside cost tracking and alerting — not just system uptime.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 37,
+   "quote": "quality uh metrics uh for example uh relevance in rag or hallucination rates",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Name explainability as a communicable risk",
+   "claim": "Lack of explainability in a model or agent's output is itself a business risk to surface to stakeholders, alongside more obvious risks like hallucination or data leaks.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 44,
+   "quote": "lack of explanability can also uh pose a lot of challenges",
+   "kind": "pitfall",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much technical depth should be foregrounded when presenting to an evaluator",
+   "positions": [
+    {
+     "video_id": "hahPTeXJEBk",
+     "chunk_index": 11,
+     "position": "In the technical assessment, interviewers deliberately probe deeper technical detail (ingestion patterns, CDC, MLOps specifics) the more senior the candidate, rewarding demonstrated depth."
+    },
+    {
+     "video_id": "eyGUsY1f2a8",
+     "chunk_index": 8,
+     "position": "In the situational/pre-sales interview, the same company explicitly de-prioritizes technical knowledge display — candidates who lean on technical depth with a mixed audience are marked down, because the evaluation is about discovery and soft-skill orchestration, not technical proof."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No guidance on structuring an actual slide deck, choosing chart types, or laying out a dashboard/report for presenting data insights visually.",
+  "No treatment of written communication conventions — how to write an executive summary or a one-page insight memo.",
+  "No concrete techniques for holding attention on video/remote calls beyond naming the risk that people 'switch off' online; no advice on interactive tactics (polls, pauses, screen-share cues).",
+  "No guidance on presenting statistical uncertainty (confidence, model accuracy, error margins) to non-technical stakeholders.",
+  "No worked example of Q&A handling in a pure data/analytics-insight presentation — objection handling here is framed around sales conversations, not around defending a chart or a forecast.",
+  "No mention of specific diagramming or presentation tools practitioners actually use, beyond a passing reference to 'open a tool where they can start mocking the architecture'."
+ ],
+ "verified_claims": 45
+}

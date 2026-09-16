@@ -1,0 +1,468 @@
+{
+ "cluster": "cluster-3",
+ "videos": [
+  "9WCPpEIIdrE",
+  "YXQWfTPQoSg",
+  "Ukju3maxbEQ"
+ ],
+ "video_notes": [
+  {
+   "video_id": "9WCPpEIIdrE",
+   "title": "McKinsey Presentation Slide Review: Consulting Slide Review From Former Bain & Company Consultant",
+   "contributed": "A single-slide teardown of a real McKinsey exhibit that turns four review lenses (title/message, structure, evidence, formatting) into a repeatable checklist for critiquing your own slides."
+  },
+  {
+   "video_id": "YXQWfTPQoSg",
+   "title": "Consulting Presentation Tips from former McKinsey Consultant",
+   "contributed": "Reviews six audience-submitted decks live, surfacing a wider catalog of concrete slide-writing fixes (font consistency, action titles, dewording, alignment/jitter, animation, banking vs. consulting norms) than a single-slide teardown can show."
+  },
+  {
+   "video_id": "Ukju3maxbEQ",
+   "title": "A Meta Engineer's Agentic Engineering Workflow",
+   "contributed": "Not a presentation-design talk — it's a coding-agent workflow demo — but it documents a concrete pattern for communicating status/insights to a person juggling many concurrent threads: recap-first updates, one question at a time, plain language, an explicit next action, and evidence (screenshots, risk assessment) attached to a report instead of raw claims."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "message and title come first",
+   "claim": "Before designing any slide, do the analysis needed to know the one message you want to communicate — an unclear message produces an unclear slide.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 2,
+   "quote": "the title and the message is so important",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "message and title come first",
+   "claim": "Slides fail most often because the author skipped the work of distilling data into a single clear takeaway before building the visual.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 2,
+   "quote": "you need to collect the data do the analysis and then you know the message",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "message and title come first",
+   "claim": "A strong title is one line, states exactly what to take away, and prioritizes only the most important points rather than listing everything.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 3,
+   "quote": "it's one line it's not too long it clearly states",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "message and title come first",
+   "claim": "When trends or facts differ in importance, say so explicitly in the title — pick the ones that matter instead of presenting them as equal.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 3,
+   "quote": "they focusing on on the key ones",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "message and title come first",
+   "claim": "A title that only describes the topic (\"five major trends\") without naming the standout insight (which trend matters most) is merely descriptive, not insightful — push for a point of view.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 4,
+   "quote": "it's a tad descriptive i think it's it's insightful but it doesn't it doesn't put out a point of view",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "layout and structure",
+   "claim": "Keep slide structure simple — a small number of clearly divided zones (e.g., labels on the left, data on the right) beats a complex layout meant to impress.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 5,
+   "quote": "it's a simple slide which which i love",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "layout and structure",
+   "claim": "Don't give a chart legend its own column — move it to the bottom so it doesn't eat space that should go to content.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 5,
+   "quote": "i think we they could have moved it down",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "evidence and sourcing",
+   "claim": "Back claims with visible data in a simplified chart rather than bare assertions — it adds credibility even without commentary.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 6,
+   "quote": "it's always strong when your slides are full of data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "evidence and sourcing",
+   "claim": "Note where a data point or assessment came from (interviews, surveys, expert judgment) directly on the slide — omitting a source line undercuts credibility.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 6,
+   "quote": "i would have liked in the source some notes how they got to these numbers",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "formatting and hierarchy",
+   "claim": "Create visual hierarchy primarily through font size (largest for the title, next for section labels, smallest for detail) instead of boxes or extra chrome.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 7,
+   "quote": "they use primarily the size of the text to to show hierarchy",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "formatting and hierarchy",
+   "claim": "Use connector lines to make the relationship between a label and its data point explicit rather than leaving readers to infer it.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 7,
+   "quote": "these little lines here to to clearly make the connection between the trend and the impact",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "formatting and hierarchy",
+   "claim": "Keep every row/element aligned to the same grid — even one row out of alignment reads as a slide error.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 7,
+   "quote": "the digitalization trend the internet of things trend is not fully aligned with all the other trends",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "formatting and hierarchy",
+   "claim": "When using a color gradient to encode a scale (e.g., low-to-high impact), make the shade steps distinct enough to actually read as different values, not just position.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 8,
+   "quote": "there could be a little bit more differences between the color shades here",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "review method",
+   "claim": "To improve your own slide-writing, deliberately study strong examples (e.g., consulting-firm published exhibits) and name the specific tactics they use before applying them to your own work.",
+   "video_id": "9WCPpEIIdrE",
+   "chunk_index": 0,
+   "quote": "learn from the best observing the way people present",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "font consistency",
+   "claim": "Keep every part of a slide body (everything except the title and footnotes) at one consistent font size — mixed sizes are a top cause of a slide looking messy.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 2,
+   "quote": "the body of your slide, so everything except for the title and maybe some footnotes, should be the same font size",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "font consistency",
+   "claim": "A single slide mixing seven-plus font sizes (28, 24, 20, 18, 12 in one example) is the concrete signature of an unorganized page.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 2,
+   "quote": "the action title 28. Here this title, 24",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "chart craft",
+   "claim": "Dotted lines in a chart should stay light and recede into the background — thick, dominant dotted lines look wrong and draw the eye to the wrong element.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 3,
+   "quote": "usually if you make dotted lines, you don't want them to be so dominant",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "chart craft",
+   "claim": "Any color used on a page must carry either an inherent, self-evident meaning or be explained with a legend — arbitrary color choices look unsophisticated.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 3,
+   "quote": "whenever you use colors on your page, it either has a direct meaning or the needs to be legend",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "alignment and polish",
+   "claim": "Elements (action titles, bullets, footers) that shift position between adjacent slides — jittering when you scroll a PDF — read as unaligned and unprofessional.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 3,
+   "quote": "several elements are jittering, are moving",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "alignment and polish",
+   "claim": "Check for page-to-page jitter across your whole deck (titles, bullets, footers) as a final polish pass — it's a quiet tell of unprofessional work.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 4,
+   "quote": "make sure that you have no jarring on your pages",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "layout and structure",
+   "claim": "Add thin separator lines between grouped elements on an otherwise decent slide — their absence is often exactly what makes a page feel unfinished.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 5,
+   "quote": "these separator lines that you could include between these elements to make it look a bit more organized",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "layout and structure",
+   "claim": "When a slide introduces a set of elements (e.g., a company's competitive advantages), give that group an explicit label or subtitle instead of making the reader infer the organizing principle from the action title alone.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 5,
+   "quote": "what is the title, or the organizing principle, of these elements",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "data labeling",
+   "claim": "Whenever you show a percentage or market share, always state percentage of what (units vs. dollars, etc.) — an unlabeled percentage leaves the metric ambiguous.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 6,
+   "quote": "always add the percentage of what are you looking at",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "action titles",
+   "claim": "The action title — a full-sentence takeaway, not a topic label — is described as a fundamental piece of every slide presentation.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 7,
+   "quote": "action title's our fundamental piece of every slide presentation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "action titles",
+   "claim": "A slide titled with just a topic header (e.g., \"Market and Industry\") instead of an action title is the single clearest reason a reader can't tell what the slide's message is.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 7,
+   "quote": "the clearest thing that is missing is the action title",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "chart craft",
+   "claim": "Never copy-paste a chart straight from a source report into a professional deck; if you already have the underlying numbers, rebuild the chart natively — it will always look cleaner.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 8,
+   "quote": "never just copy paste charts like that",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "context before data",
+   "claim": "Define the scope of an industry, market, or metric (e.g., what \"the industry\" or \"user penetration\" refers to) before showing sizing charts about it — undefined scope makes even correct data unreadable.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 8,
+   "quote": "so much remains in the dark. So pains of the industry. What industry exactly are you talking about here",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "dewording",
+   "claim": "Deword dense slides: say as much as possible with as few words as possible, replacing full sentences with tight bullet fragments that preserve full meaning.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 9,
+   "quote": "you usually wanna say as much as possible with as little words as possible",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "dewording",
+   "claim": "Worked example of dewording: cut \"The value of this information depends on the trust within the network\" down to the bullet \"Information value depends on network trust.\"",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 9,
+   "quote": "Information value depends on network trust",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "dewording",
+   "claim": "Full-sentence, paragraph-style slides will not be read even when handed out as printed reports — audiences skip dense text regardless of delivery format.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 9,
+   "quote": "this is just something that will not be read",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "dewording",
+   "claim": "A quick dewording trick: delete articles like \"the\" from bullet text to cut words without losing meaning.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 10,
+   "quote": "delete articles like \"the\" to deword the page",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "restraint in visuals",
+   "claim": "Excess animation and decorative color drown out the actual message a slide is trying to communicate — use graphical flourishes very selectively.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 11,
+   "quote": "so many animations, so many colors that do not really add much to the actual content",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "restraint in visuals",
+   "claim": "Animation is inappropriate for C-level presentations and will read as unprofessional — leading firms don't use it.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 12,
+   "quote": "animations is just not the look and feel that you should go for for C level presentations",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "restraint in visuals",
+   "claim": "Many consulting/executive presentations are never delivered live — they're printed and handed out for a meeting, which is part of why they favor a static, non-animated style.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 12,
+   "quote": "often these presentations are not even getting presented, but they're just printed out as documents",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "audience-specific conventions",
+   "claim": "Banking's \"football field\" chart (valuation ranges across methods) is standard inside banking but is understood by essentially no outside audience — the presenter never found a client who could read one.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 13,
+   "quote": "nobody understands this outside of banking",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "audience-specific conventions",
+   "claim": "Banking decks tolerate far more on-slide text than consulting decks; in a consulting main deck, an equally text-heavy page would be relegated to the appendix/backup.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 13,
+   "quote": "in most consulting contexts, pages like that would never go into the main deck",
+   "kind": "disagreement",
+   "verified": true
+  },
+  {
+   "theme": "audience-specific conventions",
+   "claim": "For communicating insights up to leadership in C-level or boardroom settings, the sparser consulting slide style is a more reliable choice than the denser banking style.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 14,
+   "quote": "the consulting style probably will be a bit more successful for you",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "review method",
+   "claim": "There is no single universal rulebook for slide presentations — treat these fixes as one practitioner's calibrated opinion, not law, and expect reasonable disagreement.",
+   "video_id": "YXQWfTPQoSg",
+   "chunk_index": 14,
+   "quote": "there is no such thing as the law of slide presentations",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "status updates to a busy stakeholder",
+   "claim": "When reporting back to someone juggling several concurrent workstreams, open the update with a recap of what's been happening in this thread before asking anything new.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 17,
+   "quote": "first open with a recap",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "status updates to a busy stakeholder",
+   "claim": "Write recaps and explanations in plain language rather than the jargon or shorthand built up during deep work — the reader isn't holding the same context you are.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 18,
+   "quote": "explain things very simply so that I can quickly ramp back up on exactly what we're working on",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "status updates to a busy stakeholder",
+   "claim": "Ask one question at a time in a status update instead of bundling three or four — a batch of simultaneous questions is heavily taxing to process.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 18,
+   "quote": "ask one question at a time",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "status updates to a busy stakeholder",
+   "claim": "Every update or summary should end by stating the next action explicitly, so the recipient knows exactly what moves the work forward without re-deriving it.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 18,
+   "quote": "end with the next action",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "evidence over claims",
+   "claim": "Attach concrete evidence (e.g., screenshots of the working feature) to a change report instead of asking the reader to reproduce and verify it themselves.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 32,
+   "quote": "the agent actually does all of that and provides me with some screenshots",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "evidence over claims",
+   "claim": "A review report should include an explicit risk assessment so the reader knows how deeply they personally need to scrutinize it before trusting the summary.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 31,
+   "quote": "this risk assessment is uh super helpful because it tells me how much I need to actually look into the code",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "presenting options for a decision",
+   "claim": "When a stakeholder needs to choose between visual/design options, render the real candidates (e.g., a page of spinner variations) instead of describing them in words — decisions on concrete visuals happen faster and more confidently.",
+   "video_id": "Ukju3maxbEQ",
+   "chunk_index": 7,
+   "quote": "generate a just a simple HTML page with some options for spinners so that we can choose the best one",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Whether McKinsey's own real-world exhibits meet the \"action title\" ideal that McKinsey-trained consultants teach",
+   "positions": [
+    {
+     "video_id": "9WCPpEIIdrE",
+     "chunk_index": 4,
+     "position": "A published McKinsey slide's title (\"five major trends could change the packaging industry\") is judged too descriptive — it states a topic, not a point of view or standout insight."
+    },
+    {
+     "video_id": "YXQWfTPQoSg",
+     "chunk_index": 7,
+     "position": "The consulting-taught standard is that every slide needs a true action title (a full-sentence takeaway); a topic-only header is called out as the clearest cause of an unreadable page."
+    }
+   ]
+  },
+  {
+   "topic": "How much on-slide text is acceptable",
+   "positions": [
+    {
+     "video_id": "YXQWfTPQoSg",
+     "chunk_index": 13,
+     "position": "Banking presentations tolerate and expect much denser text than consulting decks, where equally text-heavy pages would be moved to backup/appendix."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks cover live verbal delivery — pacing, body language, vocal tone, handling live Q&A, or presenting on a video call — only static slide/document design and written status updates.",
+  "No guidance on how to open or close a live presentation, structure a narrative arc across many slides, or manage a room's attention over time.",
+  "No discussion of presenting data insights to non-expert, non-corporate audiences (e.g., customers, the general public) — the examples are all consulting/banking/university-project decks.",
+  "No metrics on how long a dewording pass should take, how many words per slide is 'too many,' or how to test whether a slide's message actually lands with a reader.",
+  "The agentic-workflow video's recap/one-question-at-a-time/next-action pattern is designed for a person supervising several AI agents, not for presenting insights to a human audience or client — it's unclear how directly that pattern transfers to stakeholder presentations rather than async status pings.",
+  "No coverage of remote/virtual presentation tools (screen share etiquette, slide-to-video pacing) or of presenting with data-heavy dashboards instead of static slides."
+ ],
+ "verified_claims": 43
+}

@@ -1,0 +1,296 @@
+{
+  "slug": "deep-dive-into-front-end-ui-design-i-wanna-use",
+  "title": "The Interface Scorecard",
+  "topic": "deep dive into front end ui design. i wanna use",
+  "subtitle": "Twelve dimensions, each with a written Low / Medium / High descriptor, drawn from twenty talks by working designers, design-system leads, front-end system-design interviewers and AI-build practitioners. Use it to grade an app you already own, then to specify the version that grades higher. Distilled from Jesse Showalter, UI Collective, Ras Mic, Envato Tuts+, Eric Tech, theSeniorDev, uxpeak, Self-Made Web Designer, DesignCode, Dave Ebbelaar, Yashica Jain, AI Foundations, Codex Community and GroundZero.",
+  "question": "Can you do a deep dive into front end UI design. I wanna use this guide as a rubric to apply to my other projects front ends, and use this guide as a critical review of those apps front ends so that there's a rubric, and it and it is scored high, medium, low. And that enables, the LLM to score where it's at today and then propose a solution that would score highly on the rubric So this needs to be an in-depth guide of building high quality front end UIs.",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-09-16",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "B-ytMSuwbf8",
+    "gXwF0VbTKvs",
+    "bkTY9gYkWis",
+    "qF5il_9IwME",
+    "G-F5Qvy-7KM",
+    "XZf5A0wcruE",
+    "lsgVRCJ4fko",
+    "r-MPiu0E4W4",
+    "vpU9lZY69O4",
+    "TTeMU5iOE84",
+    "omU3zR3K7-U",
+    "vYvzOyTA2z4",
+    "23lJ2YAnlC8",
+    "Oo-5AWdQAt8",
+    "a3SMraZWNNs",
+    "yAOzupIW87E",
+    "wLJ40GV2XEc",
+    "YO7R0rYWDl8",
+    "hgIonrdRTSE",
+    "NovNcsKX8AU"
+  ],
+  "sources": [
+    {
+      "video_id": "B-ytMSuwbf8",
+      "title": "Web Design for Beginners | FREE COURSE",
+      "channel": "Envato Tuts+",
+      "contributed": "The only source that teaches manual UI/UX design fundamentals end-to-end — project briefs, wireframes, color theory, typography, the eight-point spacing system, common UI patterns (headers, heroes, buttons, galleries, footers, testimonials, tabs, accordions, forms), and responsive breakpoints — applied to a real Figma project.",
+      "url": "https://www.youtube.com/watch?v=B-ytMSuwbf8"
+    },
+    {
+      "video_id": "gXwF0VbTKvs",
+      "title": "Real Senior Frontend System Design Interview 2026 (AI Coding Included)",
+      "channel": "theSeniorDev",
+      "contributed": "A full mock senior front-end system-design interview transcript covering requirements gathering, state architecture, performance/caching strategy, and how to credibly answer questions about which AI models, harnesses, and guardrails to use.",
+      "url": "https://www.youtube.com/watch?v=gXwF0VbTKvs"
+    },
+    {
+      "video_id": "bkTY9gYkWis",
+      "title": "How I Build INSANELY Beautiful Websites Using Claude Code",
+      "channel": "Yashica Jain",
+      "contributed": "An 8-step, tool-by-tool build process (skills to kill AI slop, plan mode, inspiration images, section-by-section build starting with hero, motion rhythm, responsiveness pass, self-audit score, one-command Hostinger deploy) for turning a default Claude Code output into a premium-feeling site.",
+      "url": "https://www.youtube.com/watch?v=bkTY9gYkWis"
+    },
+    {
+      "video_id": "qF5il_9IwME",
+      "title": "Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "Shows front-end UI work embedded inside a full custom-coded stack: scaffolding React+TS+Tailwind+shadcn/ui, invoking Anthropic's 'front-end design' skill, and iterating on chat UI details (loading states, citation panels, logo padding) via screenshot-annotated prompts.",
+      "url": "https://www.youtube.com/watch?v=qF5il_9IwME"
+    },
+    {
+      "video_id": "G-F5Qvy-7KM",
+      "title": "How I Build Insane Three.js Websites With Claude Opus 5",
+      "channel": "DesignCode",
+      "contributed": "A concrete AI-assisted design workflow for building striking Three.js/3D landing pages with Claude Code (Opus 5): reference-first prompting, MCP-driven inspiration gathering, effort-level settings, and turning repeatable techniques into reusable skills.",
+      "url": "https://www.youtube.com/watch?v=G-F5Qvy-7KM"
+    },
+    {
+      "video_id": "XZf5A0wcruE",
+      "title": "Amateur vs Pro UI Design | with examples",
+      "channel": "Jesse Showalter",
+      "contributed": "A junior-to-senior critique ladder across login, dashboard, and complex-app screens showing exactly which color, hierarchy, spacing, and contrast choices separate amateur from professional UI.",
+      "url": "https://www.youtube.com/watch?v=XZf5A0wcruE"
+    },
+    {
+      "video_id": "lsgVRCJ4fko",
+      "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+      "channel": "UI Collective",
+      "contributed": "The deepest, most skeptical treatment of AI in design-system work: exact math for building token/color scales by hand, the case for why AI cannot build tokens or components correctly, and a measured workaround (per-grouping skills) that still only gets ~80-85% there.",
+      "url": "https://www.youtube.com/watch?v=lsgVRCJ4fko"
+    },
+    {
+      "video_id": "r-MPiu0E4W4",
+      "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+      "channel": "UI Collective",
+      "contributed": "A hands-on, token/time-benchmarked comparison of AI design tools (Grok, Claude Fable/Opus, Codex, Figma AI, Stitch, paper.design) plus a staged AI workflow (iterate → prototype/QA → sync to design system) and a taxonomy of Claude/Figma skills.",
+      "url": "https://www.youtube.com/watch?v=r-MPiu0E4W4"
+    },
+    {
+      "video_id": "vpU9lZY69O4",
+      "title": "Building beautiful UI using AI (My design workflow)",
+      "channel": "Ras Mic",
+      "contributed": "A concrete, repeatable workflow for generating a consistent design system and tokens with AI (Claude Design) and porting it into an AI coding agent (Claude Code) so every generated page matches.",
+      "url": "https://www.youtube.com/watch?v=vpU9lZY69O4"
+    },
+    {
+      "video_id": "TTeMU5iOE84",
+      "title": "Build AMAZING Websites Using Claude Code! (Full Guide)",
+      "channel": "AI Foundations",
+      "contributed": "The only video showing a fully no-code pipeline where an AI (Claude Design) generates an entire visual design system — colors, typography, components, wireframes — from a five-question brand brief, then Claude Code builds and deploys it.",
+      "url": "https://www.youtube.com/watch?v=TTeMU5iOE84"
+    },
+    {
+      "video_id": "omU3zR3K7-U",
+      "title": "The Best AI Automation Stack to Learn in 2026",
+      "channel": "Dave Ebbelaar",
+      "contributed": "Names the specific front-end stack (React + Vite + shadcn/ui) recommended for building AI-automation UIs, and frames the claim that AI has largely solved front-end coding while UX/design taste remains a human bottleneck.",
+      "url": "https://www.youtube.com/watch?v=omU3zR3K7-U"
+    },
+    {
+      "video_id": "vYvzOyTA2z4",
+      "title": "How to Be A Web Designer in 2026 (Free Resources & My Best Advice)",
+      "channel": "Self-Made Web Designer",
+      "contributed": "A beginner-facing roadmap covering the four skills (dev, brand, UX, marketing) needed to charge more than a couple hundred dollars per site, with concrete rules of thumb (60-30-10, contrast ratios, SEO structure) rather than AI-tool comparisons.",
+      "url": "https://www.youtube.com/watch?v=vYvzOyTA2z4"
+    },
+    {
+      "video_id": "23lJ2YAnlC8",
+      "title": "Figma Website Design Tutorial 2026",
+      "channel": "Codex Community",
+      "contributed": "The only video where a human manually builds the design system inside a dedicated design tool: naming type styles, defining color variables, constructing button components with variants, and using auto layout for responsive sections — then migrates the file into Wix Studio.",
+      "url": "https://www.youtube.com/watch?v=23lJ2YAnlC8"
+    },
+    {
+      "video_id": "Oo-5AWdQAt8",
+      "title": "Use AI Like a Senior Designer (3 Workflows)",
+      "channel": "UI Collective",
+      "contributed": "Three concrete workflows senior designers at Meta/Google actually use: widget-first generation before page generation, persona-driven AI flow testing, and AI-assisted reading-order for developer handoff.",
+      "url": "https://www.youtube.com/watch?v=Oo-5AWdQAt8"
+    },
+    {
+      "video_id": "a3SMraZWNNs",
+      "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "Not about front-end UI design at all — a crash course on evaluating LLM/agent applications (unit tests, human/LLM-judge alignment, A/B testing); contributes no citable UI-design claims to this guide.",
+      "url": "https://www.youtube.com/watch?v=a3SMraZWNNs"
+    },
+    {
+      "video_id": "yAOzupIW87E",
+      "title": "Data Scientist to AI Engineer Roadmap for 2026",
+      "channel": "Dave Ebbelaar",
+      "contributed": "Frames front-end/full-stack skill as one step in a six-part AI-engineer roadmap and names it the area data scientists find least familiar; contributes career-sequencing context rather than concrete UI technique.",
+      "url": "https://www.youtube.com/watch?v=yAOzupIW87E"
+    },
+    {
+      "video_id": "wLJ40GV2XEc",
+      "title": "Top UI/UX Design Tips - How to Design a Great Bottom Mobile Navigation Bar",
+      "channel": "uxpeak",
+      "contributed": "A checklist of concrete, numeric UI specs (icon sizes, tap targets, tab counts, contrast ratios) specifically for designing a mobile bottom navigation bar.",
+      "url": "https://www.youtube.com/watch?v=wLJ40GV2XEc"
+    },
+    {
+      "video_id": "YO7R0rYWDl8",
+      "title": "14 Front End System Design Concepts | Explained in 10 Minutes",
+      "channel": "Eric Tech",
+      "contributed": "The engineering side of front end: rendering strategy choice, re-render/caching/pagination techniques that make a UI fast, independent of how it looks.",
+      "url": "https://www.youtube.com/watch?v=YO7R0rYWDl8"
+    },
+    {
+      "video_id": "hgIonrdRTSE",
+      "title": "These UI libraries + AI = beautiful looking web apps",
+      "channel": "Ras Mic",
+      "contributed": "A rapid-fire tour of nine free component/template libraries plus the one workflow trick that matters: download a component you like, then have your AI agent extract a design system from it.",
+      "url": "https://www.youtube.com/watch?v=hgIonrdRTSE"
+    },
+    {
+      "video_id": "NovNcsKX8AU",
+      "title": "The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)",
+      "channel": "GroundZero YT",
+      "contributed": "How to configure the AI coding agent itself (prompting, verification hooks, file-system context, sub-agent sizing) that a designer relies on when generating and iterating UI code with tools like Claude Code.",
+      "url": "https://www.youtube.com/watch?v=NovNcsKX8AU"
+    }
+  ],
+  "chunk_count": 1307,
+  "cluster_count": 5,
+  "cite_total": 301,
+  "cite_valid": 301,
+  "gaps": [
+    "No corpus video discusses accessibility (WCAG contrast/keyboard navigation/screen-reader support) for any of the interfaces built.",
+    "No guidance on mobile-first design or touch-target sizing beyond ad hoc per-viewport adjustments made after the fact in Wix Studio.",
+    "No discussion of page-speed, Core Web Vitals, or front-end performance budgeting for any of the shipped sites.",
+    "No usability or user testing methodology is shown — all design decisions are validated by the builder's own eye, never by watching a real user.",
+    "No systematic rationale for a typographic scale or spacing grid (e.g., a ratio system or 8-point grid) beyond ad hoc pixel choices like 36px/24px headings.",
+    "No treatment of dark mode or multi-theme support in any of the design systems built.",
+    "No cost/time benchmark exists for the manual Figma-build path comparable to the detailed Claude+Hostinger cost table, so a reader can't directly compare no-code vs. hand-crafted design economics.",
+    "No discussion of design handoff to developers when the designer and coder are different people/teams (all examples are one person doing both roles, often via AI).",
+    "No source covers accessibility beyond basic color-contrast checking — no guidance on ARIA, keyboard navigation, screen-reader support, or focus management.",
+    "No source explains how a finished Figma design or an AI-cloned reference actually gets translated into production HTML/CSS/component code, or what a design-to-dev handoff process looks like in practice.",
+    "No source compares component/design-system tooling beyond a single mention of shadcn/ui — no discussion of design tokens, Storybook, or maintaining a design system at scale.",
+    "No source discusses user testing, usability testing, or validating a UI design with real users before shipping.",
+    "No source gives any data connecting specific design decisions (color, layout, copy) to measurable business outcomes like conversion rate or engagement.",
+    "The AI-driven workflow videos (G-F5Qvy-7KM, omU3zR3K7-U) don't explain how to evaluate whether an AI-generated design is actually usable/accessible, only whether it looks distinctive ('non-slop').",
+    "No source covers motion/animation design principles systematically — the Three.js video shows effects (weather, cloth, orbiting) as anecdotal outcomes without a framework for when/how much motion to use.",
+    "No source addresses design work for non-marketing UI (e.g., dense data tables, enterprise dashboards, forms with complex validation) — B-ytMSuwbf8's patterns are all marketing/portfolio-site oriented.",
+    "No concrete accessibility guidance (contrast ratios, screen reader patterns, keyboard navigation specifics) beyond a single passing mention of 'optimize for mobile and accessibilities.'",
+    "No coverage of responsive/mobile-specific layout patterns or breakpoints for the UI designs critiqued.",
+    "No typography guidance beyond token category names (display size, H1/H2/H3) — no advice on font pairing, line height, or reading measure.",
+    "No motion/animation design principles (easing curves, durations, when to animate) beyond naming a couple of example micro-interactions (BUI accordion bounce, tilt card).",
+    "No discussion of design-to-dev handoff process, versioning of a design system over time, or how teams keep a design system in sync as it evolves post-launch.",
+    "No data tying specific design decisions (color, hierarchy, spacing) to measurable outcomes like conversion rate or task completion time — critique in the corpus is qualitative/visual only.",
+    "No evaluation or comparison of specific component libraries/CSS frameworks (e.g. Tailwind, shadcn) beyond a single passing name-drop of 'BUI.'",
+    "No guidance on how to price, pitch, or present this kind of UI work to clients, despite the corpus repeatedly referencing freelance/agency and portfolio contexts.",
+    "None of the four videos give concrete subscription pricing or a cost-per-design comparison across the AI tools they benchmark (Grok, Claude Fable/Opus, Codex, paper.design) — only relative token/time figures, so a reader can't build an actual budget from this corpus alone.",
+    "Native mobile app design systems (iOS/Android-specific component libraries, platform HIG differences) are not covered — only responsive 'mobile optimized' variants of web components are addressed.",
+    "There's no guidance on multi-designer or team collaboration workflows when several people are prompting AI against the same shared design system at once.",
+    "Accessibility testing coverage stops at contrast ratios (Chrome DevTools) and Claude's built-in accessibility-review skill — no specific screen-reader software or manual testing protocol is discussed.",
+    "No video addresses versioning or migrating design tokens across breaking changes/app releases once a system is in production.",
+    "AI-generated logo or illustration quality for branding work is never benchmarked — all AI-quality comparisons in this cluster are about UI screens/dashboards, not brand assets.",
+    "No corpus content on choosing a specific color system (hex values, palette-generation method) beyond naming 'design tokens' and 'brand palette' as concepts.",
+    "No guidance on desktop or tablet primary navigation patterns — wLJ40GV2XEc is scoped entirely to mobile bottom navigation.",
+    "No concrete detail on how to raise a website's 'trust and conversion' score once a self-audit flags it low (bkTY9gYkWis's own audit scored trust 3/10 with no follow-up fix shown).",
+    "No cost or time benchmarks for the AI design workflows described (e.g. how long widget-generation exploration takes, how much the Claude Code / Codex / image-generation combo costs per project).",
+    "No discussion of design-system tooling implementation (e.g. Storybook) beyond a passing mention that it's worth considering.",
+    "No comparison of how the persona-driven AI flow-testing prompt performs across different coding-agent tools beyond one Google Antigravity demo.",
+    "No guidance on accessibility beyond reading order and nav contrast ratios — no coverage of keyboard navigation, ARIA patterns, or screen-reader testing workflows."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "rubric",
+      "ban",
+      "surface",
+      "system",
+      "engineering",
+      "slop",
+      "audit",
+      "prompts",
+      "contested",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20260916T044645Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0811790000000001,
+        "duration_ms": 295718,
+        "turns": 7,
+        "tool_calls": 6
+      },
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.5566170000000001,
+        "duration_ms": 304529,
+        "turns": 15,
+        "tool_calls": 14
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.874838,
+        "duration_ms": 326599,
+        "turns": 17,
+        "tool_calls": 16
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.6205186,
+        "duration_ms": 334348,
+        "turns": 16,
+        "tool_calls": 15
+      },
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.2155795999999999,
+        "duration_ms": 384936,
+        "turns": 15,
+        "tool_calls": 14
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 4.033797,
+        "duration_ms": 880155,
+        "turns": 19,
+        "tool_calls": 18
+      }
+    ]
+  }
+}
