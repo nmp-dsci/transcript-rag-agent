@@ -1,0 +1,640 @@
+{
+ "cluster": "cluster-3",
+ "videos": [
+  "tLK5jyhQOgA",
+  "1LhvqZvDT5w",
+  "1jvxxa7tdjw"
+ ],
+ "video_notes": [
+  {
+   "video_id": "tLK5jyhQOgA",
+   "title": "Make GenAI Production-Ready With Kubernetes Patterns - Roland Huss, Red Hat & Bilgin Ibryam, Diagrid",
+   "contributed": "Maps established Kubernetes patterns onto GenAI workloads: model-data loading tricks (init container, model-car sidecar hack, image volumes), LLM-state-aware request routing (prefix/KV-cache-aware, prefill/decode disaggregation), and RAG as a composed pattern of existing primitives."
+  },
+  {
+   "video_id": "1LhvqZvDT5w",
+   "title": "From GenAI Pilots to Production - Nikita Kozodoi",
+   "contributed": "Field-tested, project-grounded advice from AWS's GenAI Innovation Center: layered/independent guardrail architecture, red-teaming practice, human-then-LLM-judge evaluation pipelines, concrete fine-tuning cost and data-volume thresholds, and organizational discipline (scoping, 'simplest tool first') for getting pilots into production."
+  },
+  {
+   "video_id": "1jvxxa7tdjw",
+   "title": "Exploring MLOps and LLMOps: Architectures and Best Practices",
+   "contributed": "Databricks' platform-level view: the deploy-code-not-deploy-models pattern, Unity Catalog governance/lineage, Lakehouse Monitoring driving automated drift-triggered retraining, and a framework for what specifically changes in LLMOps (model selection, data, evaluation, deploy/monitor) versus classic MLOps, plus MLflow tracing/packaging specifics for chains."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "models are unlike ordinary workloads",
+   "claim": "A served model is typically 10-100GB of read-only trained data, which creates operational challenges (data loading time, GPU-only nodes, need for a model server) that ordinary web-app deployments never face.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 3,
+   "quote": "10 to 100 GB of read-only trained data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "controller pattern for model serving",
+   "claim": "KServe implements the Kubernetes controller pattern for inference: you declare model, source, and runtime and it creates the deployments, services, scaling rules, and routing behind the scenes.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 4,
+   "quote": "K Serve is incubating a CNCF project that basically implements",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "GPU resource requests",
+   "claim": "Requesting GPUs exclusively per pod is inflexible; use affinities or Dynamic Resource Allocation (DRA) for a more flexible way to request GPU capacity from Kubernetes.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 6,
+   "quote": "affinities to select how much GPU you need",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "protecting GPU nodes",
+   "claim": "In heterogeneous clusters, taint GPU nodes as a baseline so regular (non-GPU) workloads can't accidentally get scheduled on expensive GPU capacity.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 7,
+   "quote": "paint them and prevent other applications",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "unified LLM access API",
+   "claim": "The OpenAI-style API is emerging as the common unified interface for accessing LLMs behind sidecars like Dapr or an LLM stack.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 7,
+   "quote": "the OpenAI responses API",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "declarative deployment for long-running requests",
+   "claim": "LLM deployments must account for requests that run much longer than normal web requests and startup times that can reach 10+ minutes; fixed deployment with brief downtime can beat rolling deployment when resources are constrained.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 9,
+   "quote": "startup can be, you know, up to 10 minutes or more",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "gang scheduling for batch fine-tuning",
+   "claim": "For fine-tuning batch jobs, use gang scheduling so the job only runs once all required tasks/infrastructure can run simultaneously, avoiding partial allocation.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 9,
+   "quote": "gang scheduling, which means you run the batch job only if you can run all",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "model data doesn't scale per-pod",
+   "claim": "Downloading tens of gigabytes of model weights on every pod start does not scale and dominates pod startup time — this is the core problem the model-data-initialization pattern solves.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 10,
+   "quote": "download 50 GB of model data for every pod start",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "persistent volumes still dominant in practice",
+   "claim": "Despite better options existing, pre-populated persistent volumes remain the most common way teams actually deploy model weights in production today.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 12,
+   "quote": "the most common way how you deploy models in production",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "model-car sidecar trick",
+   "claim": "Before image volumes existed, teams worked around Kubernetes' inability to mount OCI images directly by enabling shared process namespace so a sleep-infinity 'model car' sidecar's filesystem (containing baked-in model weights) is reachable by the main container via /proc — at the cost of weakened container isolation.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 14,
+   "quote": "Docker had this already from the very beginning since 2014",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "image volumes are the end-game",
+   "claim": "Image volume types (enabled by default, beta, in Kubernetes 1.35) let you mount an OCI image's filesystem directly as a pod volume — this is the recommended long-term solution over init-container copying or the model-car hack.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 16,
+   "quote": "enabled by default in Kubernetes 1.35",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "request cost is invisible to traditional routers",
+   "claim": "Traditional Kubernetes load balancing (kube-proxy, zone affinity, Gateway API path routing) assumes equal-cost requests, which breaks for LLMs where a short completion and a multi-minute 'thinking' generation look identical to the router.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 18,
+   "quote": "produces couple hundred tokens might take you know few hundred milliseconds",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "endpoint picker for LLM-aware routing",
+   "claim": "The Gateway API inference extension's endpoint picker continuously scrapes LLM server state (in-flight requests, queue depth, KV-cache quality) to choose the best replica instead of blindly load-balancing.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 19,
+   "quote": "least amount of in-flight requests, has the shortest queue",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "advanced routing policies",
+   "claim": "The most advanced endpoint-picker implementation (from LMD/llm-d) can route by request priority, model fine-tune capability, and current load.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 19,
+   "quote": "route traffic based on the priority of the request",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "prefix/KV-cache-aware routing",
+   "claim": "Because LLMs cache attention state (KV cache) per prefix, the router needs cache-awareness — LLM servers notify the endpoint picker as cache keys are computed or evicted so future requests with a matching prefix route to the instance that already holds that cache.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 21,
+   "quote": "prefill is can be parallelized, so it's actually quite compute intensive",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "prefill/decode disaggregation",
+   "claim": "Prefill (compute-intensive, parallelizable) and decode (sequential, memory-intensive, one token at a time) can be split into separate pod pools, and a state-aware router can direct requests to the right pool.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 21,
+   "quote": "split these two phases into different group of pods",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "RAG as an ingestion+query pipeline",
+   "claim": "RAG breaks into two Kubernetes-native phases: an ingestion phase (vector DB population) and a query phase (retrieve similar documents, add them to the prompt) — both map cleanly onto existing job/stateful-service/stateless-service patterns.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 23,
+   "quote": "retrieval augmented generation, which means it's a way how you can include domain knowledge",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "embedding service placement options",
+   "claim": "Embedding generation can be run in-process with the orchestrator, as a sidecar, or as an independently scalable separate pod, depending on how much you need to scale it apart from the rest of the RAG pipeline.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 24,
+   "quote": "have it as a sidecar, or you can even go further and have it as a separate pod",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "readiness probes change scope",
+   "claim": "Health/readiness probes for LLM servers grow from seconds up to multiple minutes and must also signal whether model weights are loaded and warm-up (graph compilation, KV-cache allocation) has completed.",
+   "video_id": "tLK5jyhQOgA",
+   "chunk_index": 8,
+   "quote": "help probe also grows",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "sequential classical ML for time-series",
+   "claim": "For demand/sales forecasting, classical transformer/time-series models still outperform prompting a frontier LLM like Claude Opus — don't reach for a giant model to predict a time series value.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 9,
+   "quote": "you don't need you know to to run claude oppus to uh to predict",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "guardrails use small classifiers, not the LLM itself",
+   "claim": "Guardrails are usually implemented with small, fine-tuned classifier models (not the generative model) trained to detect specific risks like violence or prompt attacks.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 10,
+   "quote": "fine-tuned to detect certain things like violence or prompt attacks",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "managed guardrail service",
+   "claim": "AWS Bedrock Guardrails is a managed service where you tick boxes to filter content or redact PII before it reaches the model.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 11,
+   "quote": "manage service called bedro guardrails where you can basically just tick a couple of boxes",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "single guardrail layer is not enough",
+   "claim": "A single guardrail (even a managed one) is insufficient in practice — production systems need multiple layers of defense (prompt instructions + guardrail service + observability to catch what slips through).",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 11,
+   "quote": "usually not enough. You usually need to have multiple layers of defense",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "cross-lingual jailbreak pattern",
+   "claim": "A recurring attack pattern is issuing the malicious request in a language underrepresented in the model's training data, which makes guardrails work far less reliably than in English.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 13,
+   "quote": "not in English language but in some uh language that is not so widespread",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "hidden-instruction injection via uploaded files",
+   "claim": "Attackers hide malicious instructions inside uploaded documents (e.g., a book to summarize) so the agent treats them as legitimate instructions rather than obviously malicious input.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 14,
+   "quote": "as part of that book there are some instructions hidden",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "parallel zero-shot classifier fleet",
+   "claim": "A common guardrail architecture runs a fleet of parallel zero-shot classifiers, each flagging a different risk dimension (prompt attack, violence, disallowed topic) for the incoming user input.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 15,
+   "quote": "fleet of different classifiers, usually zero shot classifiers",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "guardrail classifiers are fast",
+   "claim": "Because guardrail classifiers run in parallel and are small, the added latency is roughly 50-100 milliseconds.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 16,
+   "quote": "maybe it takes like 100 milliseconds or 50 milliseconds",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "guardrails on both sides of the LLM",
+   "claim": "Guardrail classifiers must run both before the LLM (filtering user input) and after it (filtering the LLM's response), since hallucinated or web-search-derived output can itself contain harmful content.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 16,
+   "quote": "set them between the LLM response and the user",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "red teaming before production",
+   "claim": "Red teaming — human teams or LLM-agent teams that actively try to break the system — is used to stress test guardrails and safety before deployment.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 17,
+   "quote": "methods to stress test your system before you deploy it to production",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "red-team pass-rate metric",
+   "claim": "Red-teaming produces a concrete pass-rate metric (e.g., passing only 5-6 of 20 stress scenarios), which tells you whether guardrails and security need more work before launch.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 18,
+   "quote": "out of 20 different stress scenarios, maybe our system only passes five or six",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "evaluation before building the pipeline",
+   "claim": "Build an evaluation framework (a scoring rubric with explicit dimensions) as one of the very first steps of a project — even before the pipeline produces real output — because you can't optimize a system without metrics.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 25,
+   "quote": "one of the very first things we try to do is to actually build some kind of evaluation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "human eval as gold standard, LLM-as-judge for iteration",
+   "claim": "Human experts scoring outputs against a rubric serve as the golden standard; a separate LLM-as-judge (reusing the same rubric) is used for fast, cheap iteration since you can't use human experts on every prompt change.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 25,
+   "quote": "we also used LLM as a judge evaluation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "aligning the LLM judge with humans",
+   "claim": "Aligning an LLM judge with human judgments can take a large number of few-shot examples — one engagement used almost 50 examples of human judging behavior, cached in the system prompt to control cost.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 29,
+   "quote": "almost 50 examples showing uh you know how different human judges judge",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "two reasons to fine-tune",
+   "claim": "Fine-tuning is worth doing for one of two reasons: to push accuracy beyond what prompting achieves, or to replace a large model with a smaller, cheaper, lower-latency model for a narrow task.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 30,
+   "quote": "two main reasons for fine-tuning",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning data volume threshold",
+   "claim": "Taking task accuracy to the next level via fine-tuning typically requires on the order of a couple thousand labeled examples, not tens of thousands.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 32,
+   "quote": "a couple of thousand examples to take the accuracy to the next level",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning cost and infra",
+   "claim": "Small models (≤9B params, e.g. AWS G5/G6 xlarge instances) can be fine-tuned for under $2/hour, take a couple of hours, and cost roughly $10 total for one or two model variants using LoRA/QLoRA rather than full fine-tuning.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 34,
+   "quote": "the cost of it is below $2 per hour",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "RAG and fine-tuning are complementary, not competing",
+   "claim": "RAG and fine-tuning solve different problems: fine-tuning is like memorizing for an exam (bakes in domain expertise) while RAG is like being allowed to check the textbook (keeps answers grounded in current documents) — most production systems need both.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 36,
+   "quote": "I always think about it as a like a student passing exam",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "combining classical ML and GenAI",
+   "claim": "In a maritime-anomaly-detection project, a classical ML system flagged anomalies (e.g., unusual vessel clustering) while an agentic LLM performed web search and API calls to explain why the anomaly occurred.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 39,
+   "quote": "merging classical ML that detects the anomaly and generative AI that explains",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "start with the simplest tool",
+   "claim": "Always pick the simplest tool that solves the business problem before reaching for a multi-agent solution — some use cases are better solved with logistic regression or a plain business heuristic.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 45,
+   "quote": "you should always pick up the simplest tool possible",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "logging every step of an agentic pipeline",
+   "claim": "Every step in an agentic pipeline (including individual tool calls, e.g. a Lambda-hosted calculator tool) needs its own attached logging service — observability has to be per-step, not just end-to-end.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 51,
+   "quote": "every step in your agentic pipeline has a certain service attached to it for logging",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "retry and resume logic for agent pipelines",
+   "claim": "Production agent pipelines need retry-with-exponential-backoff for LLM throttling errors, plus the ability to retrieve session memory and resume mid-conversation if the pipeline fails partway through a multi-turn exchange.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 52,
+   "quote": "certain logic to do retry and exponential",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "field is maturing away from glue code",
+   "claim": "A year prior, GenAI stacks were chaotic — fast-changing LangChain versions and custom Python glue code; the field has since matured toward structured, higher-level abstractions for agent deployment and monitoring.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 54,
+   "quote": "take length chain uh that was updating probably every couple of days",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "GenAI is a small slice of the architecture",
+   "claim": "In successful deployments, the GenAI call is a small piece of the overall architecture — the surrounding pieces (vector store, front end, business logic services, observability) dominate the engineering effort.",
+   "video_id": "1LhvqZvDT5w",
+   "chunk_index": 50,
+   "quote": "there is a genai component as a Lego block as part of the architecture",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "MLOps definition",
+   "claim": "MLOps is the combination of three disciplines — DataOps (ETL/transformations), DevOps (CI/CD), and ModelOps (managing a model through dev/staging/prod) — brought together to give ML systems performance, stability, and efficiency.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 1,
+   "quote": "mlops is basically a combination of three things",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "why MLOps: risk reduction",
+   "claim": "MLOps exists primarily to reduce two categories of risk: technical risk (broken infra, poorly performing models from an unreviewed push) and compliance risk (missing guardrails, PII exposure).",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 2,
+   "quote": "one of the major uh aspects of envelops is that it helps you actually reduce risk",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "roles collapse in practice",
+   "claim": "Of the five canonical MLOps roles (business stakeholder, data engineer, data scientist, ML engineer, data governance officer), in practice data scientists usually absorb the data engineer role and ML engineers absorb the governance/business-stakeholder roles due to staffing constraints.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 5,
+   "quote": "data scientists usually pick up the data engineer role",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "deploy code, not deploy models",
+   "claim": "Of the two deployment patterns (deploy models vs. deploy code), deploy code — promoting training code through dev/staging/prod and retraining in each environment — is the recommended pattern over promoting a trained model artifact directly.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 7,
+   "quote": "what we actually recommend is deploy code",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "why deploy-code wins",
+   "claim": "Deploy-code locks production training data away from the dev environment (preventing sensitive-data leaks) and makes retraining automatic and reproducible, since the model is always regenerated from the same source-of-truth code.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 8,
+   "quote": "only the production environment has access to production data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Unity Catalog for governance and lineage",
+   "claim": "A unified catalog gives centralized access control and one governance solution across raw data, features, models, and monitoring tables, plus lineage tracking so you always know which table trained which model.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 10,
+   "quote": "centralized access control and a single government solution",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "safe rollout: A/B and canary",
+   "claim": "Production-grade model serving should support online strategies like A/B testing (gradually ramping traffic between model versions) and canary deployments at the same endpoint.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 12,
+   "quote": "we support online strategies um like AB testing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "request/response logging feeds monitoring and retraining",
+   "claim": "Automatically logging every model request and response is what enables downstream monitoring, retraining, and debugging — without it, teams are effectively blind to how customers actually use the model.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 12,
+   "quote": "we automatically log each request and response",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "champion/challenger alias pattern",
+   "claim": "Assign new model versions a 'challenger' alias to validate them in place while the current 'champion' alias keeps serving production traffic, keeping a human in the loop before promotion.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 15,
+   "quote": "assign a challenger Alias and use that as well",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cost of building MLOps infra from scratch",
+   "claim": "80% of customers complain about the amount of resources required to stand up production ML infrastructure from scratch, which motivates using a templated framework (e.g. MLOps Stacks) instead.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 15,
+   "quote": "80% of our customers generally complain about how many resources it takes",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "drift-triggered automatic retraining threshold",
+   "claim": "A concrete monitoring config: track R² as the target metric with a 0.7 threshold and a 5-of-24-window detection rule — if 5 of the last 24 monitoring windows show R² below 0.7, retraining is automatically triggered.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 29,
+   "quote": "we're going to monitor R square and the R square threshold is 7",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LLMOps architecture barely changes at the top level",
+   "claim": "At a high level, moving from MLOps to LLMOps doesn't change much architecturally: code might define a chain instead of training a model, data may be unstructured plus a vector index instead of labels, but the same asset types (code, data, models) and CI/CD infra still apply.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 36,
+   "quote": "code might not include training a model might include defining a chain",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "four things that actually change with GenAI",
+   "claim": "What genuinely changes with GenAI clusters into four components: selecting models, leveraging your own data, evaluation, and deploying/monitoring — everything else in the ops stack largely carries over.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 37,
+   "quote": "selecting models leveraging your data evaluation and deploying and monitoring",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "wide cost/performance range across models",
+   "claim": "Model cost/performance tradeoffs span an enormous range — some applications justify a few dollars per query for the best model, while others need to get below 1 cent per query to make the ROI work, so plan to use a variety of models across the org.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 38,
+   "quote": "cut below 1 cent per query",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning license gotcha across model families",
+   "claim": "Model licenses restrict cross-architecture fine-tuning: e.g. outputs generated by Llama 3 can be used to fine-tune Llama 3-architecture models (which you then own), but you cannot use those same outputs to fine-tune a different model architecture — an app blending outputs from two model families produces data that's legally unusable for future custom-model fine-tuning.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 40,
+   "quote": "you can't use those outputs to F tune some other architectures",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "rough data-volume thresholds by technique",
+   "claim": "Rough data volume guidelines: continued pretraining for domain specialization needs on the order of millions of tokens; instruction fine-tuning for a specific task can work with on the order of thousands of examples; full pretraining needs billions of tokens.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 43,
+   "quote": "the order of thousands of examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "plan for customization early",
+   "claim": "Even if you're not fine-tuning yet, choose a platform that supports fine-tuning and training from the start so you avoid migrating later, and start collecting proprietary usage/feedback data now.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 44,
+   "quote": "work on platforms which do support fine tuning and training",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "evaluate components, not just end-to-end",
+   "claim": "Evaluation should cover both the whole system (did the user's question get answered) and individual components (did retrieval fetch the right context, was the response faithful to that context) — treat it like debugging code.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 45,
+   "quote": "both the components and the system as a whole",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "packaging code, not just model weights",
+   "claim": "Because fast-moving GenAI libraries (like LangChain) have incomplete native Python serialization support, MLflow added support for packaging a model as the code that generated it, rather than relying solely on the library's own serialization.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 56,
+   "quote": "packaging the model using the code which generated it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "auto-syncing vector index",
+   "claim": "A vector index can auto-sync with its source gold Delta table and auto-call the configured embedding endpoint (e.g. a managed BGE-large deployment) on ingest or query, removing manual re-indexing.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 58,
+   "quote": "vector index automatically syncs with that uh gold table",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "config-based chain architecture",
+   "claim": "As compound AI systems get more complex, separate the chain's configuration (YAML: prompts, endpoints, thresholds) from its orchestration code (a Python script) so components like the target model or embedding endpoint can be swapped without touching deployment logic.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 55,
+   "quote": "a yamamo file of configs and then a python script",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "guided vs. DIY fine-tuning tooling",
+   "claim": "Teams choose between a guided managed API (Mosaic AI Model Training) for continued pretraining and instruction fine-tuning, or DIY tooling (Spark, Ray, DeepSpeed) when requirements fall outside what the guided option supports.",
+   "video_id": "1jvxxa7tdjw",
+   "chunk_index": 60,
+   "quote": "guided API for continued pre-training and instruction fine-tuning",
+   "kind": "tool",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How proactively should teams invest in fine-tuning infrastructure?",
+   "positions": [
+    {
+     "video_id": "1LhvqZvDT5w",
+     "chunk_index": 30,
+     "position": "Nikita Kozodoi (AWS): in most cases, prompting plus agent/prompt setup and few-shot examples gets you to the needed accuracy without fine-tuning; fine-tune reactively, only when you need an extra accuracy boost or must cut cost/latency with a smaller model."
+    },
+    {
+     "video_id": "1jvxxa7tdjw",
+     "chunk_index": 44,
+     "position": "Joseph Bradley (Databricks): plan toward customization proactively — choose a platform that supports fine-tuning and training from the start, and begin collecting proprietary data/feedback now, even before you need to fine-tune, to avoid a painful migration later."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks give concrete production inference cost figures (e.g. $ per million tokens or $/GPU-hour at serving scale) — only fine-tuning hourly costs are quantified.",
+  "No comparison of specific vector database products or benchmarks for RAG retrieval quality/latency at production scale.",
+  "The Kubernetes talk describes prefix/KV-cache-aware routing conceptually but does not detail the protocol or latency cost of the cache-eviction signaling between LLM servers and the endpoint picker.",
+  "No guidance on GPU cluster autoscaling thresholds or capacity-planning numbers for handling production traffic spikes.",
+  "No discussion of multi-region failover or disaster-recovery strategy specific to GenAI serving.",
+  "No data on false-positive/false-negative rates for the guardrail classifier fleets described by Nikita — only latency and layering, not accuracy tradeoffs.",
+  "No guidance on team sizing, budget, or ROI-measurement benchmarks for standing up a scoping/'AI strategist' function.",
+  "The evaluation walkthroughs (score sheets, LLM-as-judge) are demonstrated mainly on a translation use case; no detail on how the same rubric-based approach generalizes to open-ended agentic or multi-turn chat evaluation."
+ ],
+ "verified_claims": 62
+}

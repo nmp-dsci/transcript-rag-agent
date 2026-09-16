@@ -1,0 +1,627 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "T0HhO4YtTfE",
+  "vSx5IULvBns",
+  "vW8wLsb3Nnc"
+ ],
+ "video_notes": [
+  {
+   "video_id": "T0HhO4YtTfE",
+   "title": "AI System Design: From Idea to Production - Apoorva Joshi, MongoDB",
+   "contributed": "A repeatable four-phase framework (product requirements -> system design -> evaluation/monitoring -> cost/latency/reliability optimization) walked step-by-step through a hypothetical health-insurance claims review system, including how to pick retrieval patterns and set concrete guardrail metrics."
+  },
+  {
+   "video_id": "vSx5IULvBns",
+   "title": "Always-on agents run production without the on-call tax - Justin Smith, Resolve AI",
+   "contributed": "The 'background agent' pattern for production operations: always-on, cloud-sandboxed agents triggered by schedule/event/message that absorb the uncounted long tail of on-call work (deployment monitoring, health checks, handoffs, Slack triage), with the agent itself deciding how long and how often to keep checking."
+  },
+  {
+   "video_id": "vW8wLsb3Nnc",
+   "title": "POC to PROD: Hard Lessons from 200+ Enterprise GenAI Deployments - Randall Hunt, Caylent",
+   "contributed": "Tactical, war-story lessons from 200+ enterprise deployments: concrete cost/speed tradeoffs across AWS vector stores and custom silicon, prompt-caching mechanics, generative UI, and 'know your user' field failures (low-connectivity PDFs, nurses rejecting voice bots)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "four-phase system design framework",
+   "claim": "Break AI system design into four repeatable phases: product requirements, system design, evaluation and monitoring, and cost/latency/reliability optimization.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 1,
+   "quote": "Four phases. You start with product requirements",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "specs are the new code",
+   "claim": "The product spec, system design, and evaluation criteria are now the hard, high-value part of building an AI system, not the code itself.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 1,
+   "quote": "Specs are the new code",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "write a solution-agnostic business problem",
+   "claim": "A good business problem statement names the user, states a measurable current-state baseline, and stays solution-agnostic -- it should not yet say whether the fix is an agent, a multi-agent system, or something else.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 3,
+   "quote": "It should not prescribe what the system is going to be",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "quantify the pain point",
+   "claim": "The example claims-review business problem quantifies the baseline precisely: reviewers spend 2 days per claim, 4x the industry standard for non-urgent cases and 12x for urgent ones.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 3,
+   "quote": "four times the industry standard for non-urgent cases",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "surface business constraints before designing",
+   "claim": "Gather regulatory, data-residency, procurement, and mandatory-human-review constraints before any system design -- e.g. patient data must stay in the approved cloud, and every claim denial must go through a human reviewer.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 4,
+   "quote": "denial decisions must be uh reviewed by a human reviewer",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "classify AI's role along three axes",
+   "claim": "Before designing, classify the AI's role along three dimensions: critical vs. complementary to the product, reactive vs. proactive trigger, and the maximum allowed level of autonomy.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 5,
+   "quote": "is AI critical to your product or complementary",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "write a SMART success metric",
+   "claim": "Tie the success metric to the business problem with a SMART framing, e.g. reduce urgent claim processing time from 2 days to 1 hour within 90 days of launch.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 6,
+   "quote": "reduce the average processing time for urgent claim review requests",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "map data sources before building",
+   "claim": "For every data source, ask what data is needed, whether you have access, where it lives, and whether it's ready for consumption in raw form.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 7,
+   "quote": "is it ready for consumption in its raw form",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "match pipeline cadence to data freshness",
+   "claim": "Pipeline refresh cadence must match each source's real update frequency (guidelines annually, policies quarterly, claims history hourly to hit a 1-hour SLA), or the system works off stale data.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 8,
+   "quote": "our system is going to work off of stale information",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "route each data source to the right retrieval technique",
+   "claim": "Use vector search with metadata pre-filtering or hybrid search for documents containing codes/terminology (clinical guidelines, coverage policies), and exact match on patient ID for structured claims history.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 9,
+   "quote": "either want to use vector search with metadata pre-filtering or hybrid search",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "start with the simplest architecture, not an agent",
+   "claim": "Don't default to an agent or let a coding agent pick the architecture -- start with the simplest design, evaluate it, find gaps, and iterate, or you risk over-engineering.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 10,
+   "quote": "you risk ending up with an over-engineered system by doing this",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "map the request flow before choosing an architecture",
+   "claim": "Trace how a single request actually flows end-to-end through the system before picking design patterns -- the flow should inform the architecture, not the reverse.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 10,
+   "quote": "map out how an insurance claim would flow through the system",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "fine-tune only for behavioral failures",
+   "claim": "Reach for fine-tuning only when failures are behavioral rather than data or orchestration issues, or when you need superior performance on a narrow domain-specific task.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 12,
+   "quote": "if the LLM's failures are behavioral rather than data or orchestration issues",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "design the UX and feedback loop explicitly",
+   "claim": "Explicitly answer: what's the input, what's the output, where does the system live, what triggers it, what's the human's role, how does it explain itself, and how does it collect feedback.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 14,
+   "quote": "what does the system take as input",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "let humans flag hallucinated citations",
+   "claim": "Build the feedback mechanism around the humans already in the loop: let reviewers override the verdict with a logged reason and flag irrelevant or hallucinated citations.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 15,
+   "quote": "have them flag any irrelevant citations",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "guardrails exist because LLMs are probabilistic",
+   "claim": "Guardrails matter because, unlike traditional software, LLM systems are probabilistic and can produce unexpected, incorrect, or harmful output -- so you must explicitly define acceptable input/output boundaries.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 17,
+   "quote": "are probabilistic systems and can produce outputs that are unexpected, incorrect, or even harmful",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "measure guardrail compliance and faithfulness",
+   "claim": "Track a missing-citation rate for output-guardrail compliance and a faithfulness score for whether the decision is actually rooted in retrieved evidence, alongside a claim-rejection rate for input-guardrail compliance.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 18,
+   "quote": "we can have something like a missing citation rate",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "track system-health metrics alongside accuracy",
+   "claim": "Track system-level health metrics too: average token cost, token usage, and average number of turns in a conversation.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 18,
+   "quote": "average token cost, token usage, uh average number of turns",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "monitor human-override rate as a proxy for AI quality",
+   "claim": "In production, track how often a human reviewer overrides the AI's verdict -- a rising override rate signals the system isn't doing its job and needs investigation.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 19,
+   "quote": "how often a human reviewer overrides the AI verdict",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "rerank retrieved evidence for accuracy",
+   "claim": "For accuracy, layer prompt engineering with a reranker so retrieved guidance surfaces in the right order of relevance before it reaches the LLM.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 20,
+   "quote": "reranking is another good one because uh retrieval is a big component of it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cache similar past cases to cut cost and latency",
+   "claim": "For cost and latency, use semantic caching to expedite decisions on requests similar to past ones, and batch-process requests instead of handling them one at a time.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 21,
+   "quote": "semantic caching could be useful to expedite decisions based on uh similar claims from the past",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "force structured output for reliability",
+   "claim": "For reliability, use structured outputs so the system always returns a decision plus citations rather than free text that might silently drop required fields.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 21,
+   "quote": "structured outputs, which would be a good one to make sure that our system is always producing a structured output",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "you can't improve what you can't measure",
+   "claim": "Closing principle: design the simplest system, evaluate it, and build evaluation in from the start -- the most common mistake is over-engineering before knowing what's actually failing.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 22,
+   "quote": "You can't improve what you can't measure",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "engineers spend most of their time running code, not writing it",
+   "claim": "A survey found 70% of an engineer's time goes to running already-shipped code -- maintaining platforms, scaling infra, debugging incidents, on-call, hotfixes -- not writing it.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 1,
+   "quote": "70% of the time from an engineer is actually not",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "the on-call tax: the hidden ops workload",
+   "claim": "The uncounted operational burden includes maintaining platforms, scaling infrastructure, debugging incidents, being on-call, shipping hotfixes, updating runbooks, and handling escalations.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 1,
+   "quote": "maintaining all the the platforms, scaling the infrastructure, debugging all the incidents, and being on call",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI coding velocity is creating more production incidents",
+   "claim": "As AI-generated code volume rises, AI is creating more issues in production, even as token limits tighten and companies grow stricter about AI usage and cost.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 2,
+   "quote": "AI is creating a lot more issues in production",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "an always-on agent triages and root-causes every alert",
+   "claim": "Resolve's on-call agent triages every incoming alert and can run a full root-cause investigation automatically, addressing the fact that on-call engineers often don't fully understand recent changes or the systems they're paged into.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 4,
+   "quote": "we can do a triage of that alert",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "model capability isn't the bottleneck, environment understanding is",
+   "claim": "Models are already highly capable; the unsolved problem is giving an agent a true understanding of how your specific services interact and where the hotspots are, kept current as the system evolves.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 6,
+   "quote": "truly understanding your environment um and the way that your services interact",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "a task is execution plus production context",
+   "claim": "A task equals execution (doing the thing) plus production context (knowing something 'feels wrong' before you can even explain why) -- and context matters more than the execution engine itself.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 10,
+   "quote": "a task is just execution and the context to understand how to actually execute the task",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "background agents trigger four ways",
+   "claim": "Background agents can be triggered on a schedule, on a recurring weekly event (e.g. a Thursday on-call handover), off an event stream (CI/CD deploys, Slack), or by a direct message.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 11,
+   "quote": "It can just do it on a schedule",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "always-on agents run in a persistent cloud sandbox with shared memory",
+   "claim": "Background agents run continuously in the cloud in a sandboxed filesystem independent of the engineer's laptop, and share a learning/memory system across tasks so lessons from one task carry into another.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 12,
+   "quote": "runs inside of a sandbox, so it has kind of a file system underneath it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "CI/CD health checks aren't exhaustive enough",
+   "claim": "Most teams' CI/CD checks are good baselines but not exhaustive for every type of change -- deployment-monitoring agents fill the gap by sanity-checking every change event as it happens.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 14,
+   "quote": "the checks that it does are good. They're good baselines, but it's not exhaustive",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "feature flags and infra changes often go unmonitored",
+   "claim": "Feature-flag flips and infrastructure changes frequently bypass the CI/CD pipeline entirely and get zero monitoring, leaving teams simply trusting that an alert will fire if something breaks.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 15,
+   "quote": "which maybe don't get any monitoring at all",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "run a time-boxed watcher agent after a risky change",
+   "claim": "You can spin up a background agent to watch a specific system for a bounded window (e.g. 'watch this third-party integration for the next week') and have it stand down once satisfied.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 15,
+   "quote": "let me just kind of set an agent to kind of watch that maybe for the next week",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "a Slack agent answers only when confident, and DMs to confirm",
+   "claim": "A first-responder agent passively watches critical Slack channels, decides whether it's confident enough to answer, and can DM the engineer to confirm an answer before posting it publicly.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 17,
+   "quote": "determine whether it has enough sort of confidence to answer the question or not",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "build a custom monitoring plan per release based on what changed",
+   "claim": "Rather than a fixed checklist, the deployment agent inspects what actually changed in a release and builds a custom monitoring plan targeting the specific downstream systems implicated, like a Kafka pipeline.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 18,
+   "quote": "look at the changes that are going in, understand what telemetry might help us evaluate whether those changes are",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "let the agent decide its own monitoring cadence",
+   "claim": "The agent isn't hard-coded to a fixed wait interval -- it can decide to keep checking a deploy hourly, or return in three days for an intermittent failure mode, based on the type of risk.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 20,
+   "quote": "none of this is hard-coded in",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "give feedback in-thread and the agent updates its own task",
+   "claim": "You can reply directly in an agent's report thread (e.g. 'too verbose, make it shorter') and the agent updates its underlying task definition so future runs match the request.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 21,
+   "quote": "the agent is able to update its task underneath",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "expose the agent platform via MCP to plug into your own harness",
+   "claim": "Resolve's on-call/background-agent capabilities are exposed through MCP servers, so teams with their own agent harness can graft Resolve in instead of duplicating the work.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 24,
+   "quote": "everything that I showed is accessible uh, through kind of MCP servers",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "operational cost lives in environment complexity, not task execution",
+   "claim": "Closing principle: the expensive part of production AI ops isn't executing a task, it's the complexity of the environment the task runs inside of.",
+   "video_id": "vSx5IULvBns",
+   "chunk_index": 25,
+   "quote": "it's it's it's not just in the task execution, it's in the environment complexity",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "generative AI is not a magic fix",
+   "claim": "Across 200+ enterprise deployments, the top lesson is that generative AI is not the magic pill that solves everything, and the trendy tool your CTO read about is often not the right fit.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 0,
+   "quote": "generative AI is not the the magical pill that solves everything",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "pooled frame embeddings enable multimodal video search",
+   "claim": "For a stock-footage customer, Caylent generated per-frame understanding with Nova Pro and pooled frame-sampled embeddings with Titan v2 multimodal embeddings to make video searchable by text, storing everything in Elasticsearch.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 2,
+   "quote": "we can do a multimodal embedding and search with text for the images",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "a little manual annotation beats an unmodified video for SOTA models",
+   "claim": "Annotating video frames (e.g. drawing a line on the court for the three-point line) lets current SOTA video models answer questions far more accurately than feeding them unmodified footage.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 4,
+   "quote": "the soda models still just with a little tiny bit of uh augmentation on the video will outperform",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "enterprise GenAI work falls into three buckets",
+   "claim": "Enterprise gen-AI engagements fall into three buckets: self-service productivity tools (often bought, sometimes fine-tuned), automating an existing business function, and monetization (bolting a new paid AI SKU onto an existing product).",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 6,
+   "quote": "these self-service productivity tools",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "a bare chatbot alone won't survive",
+   "claim": "Building just a chatbot without tying it to a durable business function is a dead end -- 'sayonara' -- your product ends up like Polaroid or Kodak.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 7,
+   "quote": "if you just build a chatbot, you know, sayanara",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "your input/output spec is the moat; architecture is incidental",
+   "claim": "The durable, fundamental part of an AI system is the specification of its inputs and outputs; the system architecture and specific LLMs/tools used are incidental and should be expected to change.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 8,
+   "quote": "That is the most fundamental part your inputs and your outputs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "evals prove robustness, not a vibe check",
+   "claim": "The evals layer is where you prove the system is robust and not just a vibe check that got lucky on one unique prompt.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 8,
+   "quote": "this is where we prove that the system is robust and not just a vibe check",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "custom silicon delivers ~60% better price-performance than Nvidia GPUs",
+   "claim": "AWS's Trainium and Inferentia chips deliver roughly a 60% price-performance improvement over Nvidia GPUs, at the cost of less HBM RAM and requiring the Neuron SDK to target them.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 9,
+   "quote": "these come at about a 60% price performance improvement over using Nvidia GPUs",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Redis vector search is fast but RAM-expensive",
+   "claim": "Redis-based vector search (MemoryDB) is extremely fast but expensive because the index must sit in RAM; Postgres (pgvector) and OpenSearch can use disk-based HNSW indexes for a cheaper tradeoff.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 11,
+   "quote": "it is extremely fast. The bad news is that it is extremely expensive because it has to sit in RAM",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "context is the real product differentiator",
+   "claim": "Model choice and prompt versioning are no longer differentiating; injecting real user context (current page, browsing history, session data) into inference is what separates your product from a competitor's.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 11,
+   "quote": "if your competitor doesn't have the context of the user and additional information",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "embeddings alone can't do faceted search",
+   "claim": "Embeddings alone do not make a great query system -- you still need something like OpenSearch or Postgres to layer faceted search and filters on top of vector similarity.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 12,
+   "quote": "Embeddings alone do not a great query system make",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "if you're slow and expensive, you won't get used",
+   "claim": "Speed matters, and UX (a good loading spinner, entertaining the user) can mitigate slow inference, but being both slower and more expensive than the alternative is a losing combination.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 12,
+   "quote": "if you are slower and more expensive, you will not be used",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "don't build a get_current_date tool",
+   "claim": "Stop wiring up a custom 'get current date' tool call -- it's literally time.now; just format the date as a string directly into the prompt you already control.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 13,
+   "quote": "the number of times I see people defining a tool called get current date is infuriating to me",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "put volatile content at the bottom of the prompt to preserve caching",
+   "claim": "Putting time-sensitive or per-request info high up in the prompt breaks prompt caching; placing it at the bottom, after the instructions, keeps caching effective.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 13,
+   "quote": "if you can put some of that information at the bottom of the prompt after the instructions, you can often",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "prompt engineering has outperformed expectations across model upgrades",
+   "claim": "Prompt engineering has proven 'unreasonably effective' as models improved; moving the same prompts from Claude 3.7 to Claude 4 was a drop-in replacement with zero regressions, though the 3.5-to-3.7 move did regress on some evals.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 13,
+   "quote": "prompt engineering has proven unreasonably effective for us",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "know your economics before picking a model tier",
+   "claim": "Know your inference economics up front -- for some use cases, running the priciest (e.g. Opus-tier) model 'may not always be the best thing to run.'",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 14,
+   "quote": "is this inference going to bankrupt my company",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "build evals in minutes, not months",
+   "claim": "Eval workflow: your first vibe-check becomes your first eval; vary the input data; a usable eval set exists roughly 20 minutes later, then you iterate.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 15,
+   "quote": "20 minutes later, you do have some form of eval set that you can begin running",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "generate and cache UI components per response, not just text",
+   "claim": "For one customer, Caylent moved from a chatbot to generative UI, crafting and injecting a React component just-in-time for each response, then caching those components for reuse.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 16,
+   "quote": "we will craft a react component and inject it into the uh the rendering of the response",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "send a screenshot, not the whole document, for low-connectivity users",
+   "claim": "For remote-area users on poor connections, the backend screenshots just the relevant PDF page instead of sending a 200MB manual, paired with a text summary.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 16,
+   "quote": "we could take a screenshot essentially of the PDF and just send that one page",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "hospital nurses rejected a voice bot for a chat interface",
+   "claim": "A voice bot built for hospital nurses failed because hospitals are loud and transcription picked up other people talking -- nurses preferred a plain chat interface instead.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 17,
+   "quote": "hate voice bots because hospitals are loud and noisy",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "never do math inside the LLM",
+   "claim": "Don't do math in an LLM -- it is the most expensive possible way of doing math; hand calculations off to deterministic code instead.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 17,
+   "quote": "It is the most expensive possible way of doing math",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "batch inference on Bedrock costs half price",
+   "claim": "Batch inference on Amazon Bedrock costs 50% off standard on-demand pricing across any model.",
+   "video_id": "vW8wLsb3Nnc",
+   "chunk_index": 18,
+   "quote": "batch on bedrock is a 50% off whatever model inference you're trying to make",
+   "kind": "metric",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much autonomy should a production agent have?",
+   "positions": [
+    {
+     "video_id": "T0HhO4YtTfE",
+     "chunk_index": 10,
+     "position": "Start with the simplest, most controlled architecture (control flow, human-in-the-loop) and avoid jumping straight to an autonomous agent -- over-engineering with agents before evaluating is the most common mistake."
+    },
+    {
+     "video_id": "vSx5IULvBns",
+     "chunk_index": 20,
+     "position": "Give background agents real autonomy over their own operating cadence -- e.g. deciding to keep checking a deploy for hours or return in three days -- rather than hard-coding behavior, because that's where the value comes from."
+    }
+   ]
+  },
+  {
+   "topic": "Fine-tuning vs. prompt engineering as the lever to pull",
+   "positions": [
+    {
+     "video_id": "T0HhO4YtTfE",
+     "chunk_index": 12,
+     "position": "Fine-tuning is presented as a legitimate, distinct design pattern to reach for once failures are shown to be behavioral rather than data or orchestration problems."
+    },
+    {
+     "video_id": "vW8wLsb3Nnc",
+     "chunk_index": 13,
+     "position": "After expecting to need fine-tuning, Caylent found prompt engineering alone 'unreasonably effective' as models improved, and never needed to fine-tune across the deployments described."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks give concrete guidance on who owns or is on-call for the AI agent itself once it's in production (who debugs the debugger).",
+  "No talk details how to red-team, adversarially test, or defend against prompt injection for a production agent with real autonomy.",
+  "The claims-review system in T0HhO4YtTfE is a hypothetical walkthrough, not a shipped case study -- there are no real production latency, cost, or accuracy numbers for it once live.",
+  "vSx5IULvBns doesn't explain how Resolve evaluates or scores whether a background agent's own actions/investigations were actually correct -- no eval methodology for the agent's judgment is given.",
+  "vW8wLsb3Nnc doesn't describe how prompts or evals are version-controlled, reviewed, or rolled back in CI for the 200+ deployments referenced.",
+  "None of the talks name specific multi-agent orchestration frameworks (e.g. LangGraph, CrewAI) -- 'orchestration frameworks' is mentioned only generically in T0HhO4YtTfE.",
+  "No talk addresses how to handle model deprecation or migration risk at scale beyond the single anecdote of Claude 3.7 to 4 being a drop-in upgrade."
+ ],
+ "verified_claims": 61
+}

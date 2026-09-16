@@ -1,0 +1,198 @@
+{
+  "slug": "ship-like-a-studio",
+  "title": "Ship Like a Studio",
+  "topic": "Ship Like a Studio",
+  "subtitle": "How to agentically build webpages that are beautiful, unique, and engineered to scale — distilled from 23 videos indexed in the transcript-rag-agent corpus: the Claude Code web-design creators, the working web designers, the premium-feel app builders, and the principal-level agentic engineers.",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-08-31",
+  "model": {
+    "composer": "hand-run (imported)"
+  },
+  "video_ids": [
+    "TTeMU5iOE84",
+    "2Gda_ZvV1V4",
+    "bkTY9gYkWis",
+    "G-F5Qvy-7KM",
+    "IR1tzLU-r_4",
+    "zTuV3chQCus",
+    "y2n1NMrMNBo",
+    "kEN4pp-UFf0",
+    "pbhLsV-Dyho",
+    "nZ2BJt9PgKE",
+    "s2DVOZ62F8w",
+    "RGWXVbkrYKM",
+    "1NTKwpAVcHg",
+    "MXLF8b15GhQ",
+    "8mMH6Pq8qnE",
+    "hgIonrdRTSE",
+    "vpU9lZY69O4",
+    "iQyg-KypKAA",
+    "5N-okeDdIuI",
+    "Ukju3maxbEQ",
+    "xgkjtF89-44",
+    "FU5_kpTAVDo",
+    "Cu8kUBwLoTM"
+  ],
+  "sources": [
+    {
+      "video_id": "TTeMU5iOE84",
+      "title": "Build AMAZING Websites Using Claude Code! (Full Guide)",
+      "contributed": "brand essence brief → design system → build → database/admin → security pass",
+      "url": "https://www.youtube.com/watch?v=TTeMU5iOE84"
+    },
+    {
+      "video_id": "2Gda_ZvV1V4",
+      "title": "Claude Code Web Design: 10 Years Covered In 66 Minutes",
+      "contributed": "brand extraction, the 300ms detail checklist, deploy via GitHub + Vercel",
+      "url": "https://www.youtube.com/watch?v=2Gda_ZvV1V4"
+    },
+    {
+      "video_id": "bkTY9gYkWis",
+      "title": "How I Build INSANELY Beautiful Websites Using Claude Code",
+      "contributed": "8-rule process, skills as taste-injection, motion rhythm, the 80/100 audit",
+      "url": "https://www.youtube.com/watch?v=bkTY9gYkWis"
+    },
+    {
+      "video_id": "G-F5Qvy-7KM",
+      "title": "How I Build Insane Three.js Websites With Claude Opus 5",
+      "contributed": "replicate-then-mold, max effort, 3D scenes under 1MB, workflows into skills",
+      "url": "https://www.youtube.com/watch?v=G-F5Qvy-7KM"
+    },
+    {
+      "video_id": "IR1tzLU-r_4",
+      "title": "Fable 5 for 3D Web Design is Next Level!!!",
+      "contributed": "asset pipelines (image→video→3D), the \"four horsemen,\" blend-mode & mask tricks",
+      "url": "https://www.youtube.com/watch?v=IR1tzLU-r_4"
+    },
+    {
+      "video_id": "zTuV3chQCus",
+      "title": "Claude Code just changed Website Design Forever (Relume)",
+      "contributed": "substance first: research, sitemap, wireframes, then style and the scroll-stopper",
+      "url": "https://www.youtube.com/watch?v=zTuV3chQCus"
+    },
+    {
+      "video_id": "y2n1NMrMNBo",
+      "title": "How to Use Claude Design To Make Sites 10X More Beautiful",
+      "contributed": "the refinement loop: specific brief, big-before-small, variations, export",
+      "url": "https://www.youtube.com/watch?v=y2n1NMrMNBo"
+    },
+    {
+      "video_id": "kEN4pp-UFf0",
+      "title": "The Only Web Design Video You Will Ever Need",
+      "contributed": "hierarchy, 60/30/10, hero formula, social proof, conversion architecture",
+      "url": "https://www.youtube.com/watch?v=kEN4pp-UFf0"
+    },
+    {
+      "video_id": "pbhLsV-Dyho",
+      "title": "6 EASY Tips to 10x Any Site's Design",
+      "contributed": "anchor fonts, star of the show, visual rhyming, opacity hierarchy, 12 versions",
+      "url": "https://www.youtube.com/watch?v=pbhLsV-Dyho"
+    },
+    {
+      "video_id": "nZ2BJt9PgKE",
+      "title": "33 UNIQUE Website Layouts with Real World Project Examples",
+      "contributed": "the 3/4/5-column pattern library and when each works",
+      "url": "https://www.youtube.com/watch?v=nZ2BJt9PgKE"
+    },
+    {
+      "video_id": "s2DVOZ62F8w",
+      "title": "Ultimate Website Layout Guide: 17 Swipeable Examples",
+      "contributed": "hierarchy, variation, balance; layouts guide attention or lose it",
+      "url": "https://www.youtube.com/watch?v=s2DVOZ62F8w"
+    },
+    {
+      "video_id": "RGWXVbkrYKM",
+      "title": "Impressive 2025 Website Design Inspiration",
+      "contributed": "award-site teardowns; spectacle vs. comprehension",
+      "url": "https://www.youtube.com/watch?v=RGWXVbkrYKM"
+    },
+    {
+      "video_id": "1NTKwpAVcHg",
+      "title": "Give Me 7 Minutes & Your Web Design Skills Will Take Off",
+      "contributed": "hierarchy, 60/30/10, ghost buttons banned, conversion beats pretty",
+      "url": "https://www.youtube.com/watch?v=1NTKwpAVcHg"
+    },
+    {
+      "video_id": "MXLF8b15GhQ",
+      "title": "How I Make Apps FEEL Premium (5 examples)",
+      "contributed": "iteration budgets, the four levels of feedback, invisible craft",
+      "url": "https://www.youtube.com/watch?v=MXLF8b15GhQ"
+    },
+    {
+      "video_id": "8mMH6Pq8qnE",
+      "title": "How I Make Apps FEEL 10x Better (5 Design Secrets)",
+      "contributed": "decomposed animations, haptic tiers, icon systems, taste-building",
+      "url": "https://www.youtube.com/watch?v=8mMH6Pq8qnE"
+    },
+    {
+      "video_id": "hgIonrdRTSE",
+      "title": "These UI libraries + AI = beautiful looking web apps",
+      "contributed": "component libraries as foundations; extract the system, propagate the look",
+      "url": "https://www.youtube.com/watch?v=hgIonrdRTSE"
+    },
+    {
+      "video_id": "vpU9lZY69O4",
+      "title": "Building beautiful UI using AI (My design workflow)",
+      "contributed": "design tokens, Claude Design → codebase handoff, consistency by system",
+      "url": "https://www.youtube.com/watch?v=vpU9lZY69O4"
+    },
+    {
+      "video_id": "iQyg-KypKAA",
+      "title": "L8 Principal's Agentic Engineering Workflow",
+      "contributed": "planning surfaces, adversarial gates, evidence PRs, parallel worktrees",
+      "url": "https://www.youtube.com/watch?v=iQyg-KypKAA"
+    },
+    {
+      "video_id": "5N-okeDdIuI",
+      "title": "L8 Principal's Agentic Dev Environment From Scratch",
+      "contributed": "reproducible environment, one agent-agnostic rules file, quality-over-cost rule",
+      "url": "https://www.youtube.com/watch?v=5N-okeDdIuI"
+    },
+    {
+      "video_id": "Ukju3maxbEQ",
+      "title": "A Meta Engineer's Agentic Engineering Workflow",
+      "contributed": "grill-me specs, TDD conventions, cross-model review gates, 40-PR weekends",
+      "url": "https://www.youtube.com/watch?v=Ukju3maxbEQ"
+    },
+    {
+      "video_id": "xgkjtF89-44",
+      "title": "Agentic Engineering Workflow (HumanLayer / 12-Factor Agents)",
+      "contributed": "context engineering, program design, vertical slices, test-validity checks",
+      "url": "https://www.youtube.com/watch?v=xgkjtF89-44"
+    },
+    {
+      "video_id": "FU5_kpTAVDo",
+      "title": "Agentic Engineering, explained by a 10x developer",
+      "contributed": "first-principles async workflow, information-complete prompts, proof by screenshot",
+      "url": "https://www.youtube.com/watch?v=FU5_kpTAVDo"
+    },
+    {
+      "video_id": "Cu8kUBwLoTM",
+      "title": "Agentic AI made me an 100x engineer!",
+      "contributed": "expert supervision, real harnesses, agents that cheat, hybrid not vibe coding",
+      "url": "https://www.youtube.com/watch?v=Cu8kUBwLoTM"
+    }
+  ],
+  "chunk_count": 838,
+  "cluster_count": 0,
+  "cite_total": 25,
+  "cite_valid": 25,
+  "gaps": [],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "imported_from": ".lavish/s20_ship-like-a-studio.html",
+    "imported_at": "2026-09-14T10:59:58+00:00",
+    "cite_level": "video",
+    "sections": [
+      "thesis",
+      "pipeline",
+      "beautiful",
+      "unique",
+      "scale",
+      "prompts",
+      "sources"
+    ]
+  }
+}

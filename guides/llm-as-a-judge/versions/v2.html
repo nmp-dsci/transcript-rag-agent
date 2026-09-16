@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM-as-a-Judge — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  table.ban { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.95rem; }
+  table.ban th { text-align: left; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.6; padding: 0 0 0.6rem; border-bottom: 1px solid currentColor; }
+  table.ban td { vertical-align: top; padding: 0.7rem 1.2rem 0.7rem 0; border-bottom: 1px solid rgba(128,128,128,0.22); }
+  table.ban td:first-child { width: 42%; }
+  table.ban td:first-child code { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.86em; }
+  .split { border-left: 2px solid rgba(128,128,128,0.35); padding-left: 1rem; margin: 1.4rem 0; }
+  .split h3 { margin: 0 0 0.5rem; }
+  .split p { margin: 0.35rem 0; }
+  .split p .side { font-weight: 600; }
+  .verdict { font-style: italic; opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections">
+  <div class="bar">
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>LLM-as-a-Judge</a>
+    <div class="links">
+      <a href="#thesis">The thesis</a>
+      <a href="#pipeline">The build</a>
+      <a href="#scoring">Scoring</a>
+      <a href="#ban">Delete on sight</a>
+      <a href="#instrument">Validate the instrument</a>
+      <a href="#production">In production</a>
+      <a href="#prompts">Copy these</a>
+      <a href="#disagreements">Where the corpus</a>
+      <a href="#sources">Sources</a>
+      <a href="#gaps">What this corpus does</a>
+    </div>
+  </div>
+</nav>
+<header class="hero wrap" id="hero">
+  <p class="eyebrow" id="hero-p1">A field guide from the transcript corpus</p>
+  <h1 id="hero-h1">Your judge is an <em>instrument</em>, not an oracle</h1>
+  <p class="sub" id="hero-p2">How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.</p>
+  <div class="provenance" id="hero-prov">
+    <span>19 source videos</span>
+    <span>703 transcript chunks read in full</span>
+    <span>5 parallel extraction passes</span>
+    <span>compiled 2026-09-14</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h2">The thesis: narrow it, calibrate it, characterise its error</h2>
+
+  <p id="thesis-p1">Everyone reaches for LLM-as-a-judge for the same reason. Deterministic code evals work only when the success criteria are clear-cut and the data is well structured <cite data-video="pnlT_xatpVQ" data-chunk="2" data-quote="Code evals are useful when you have very clear criteria for success">code evals</cite>, and human annotation — hands-down the best signal you can collect — is either sparse or slow and expensive <cite data-video="pnlT_xatpVQ" data-chunk="3" data-quote="sparse in the case of user feedback or time consuming and expensive to collect">human evals</cite>. The judge is the middle ground: the thing you use when a task is too ambiguous for a regex and too costly for a person <cite data-video="uQFLY8rQVYA" data-chunk="22" data-quote="प्रोग्रामेटिक और ह्यूमन के बीच में क्या चीज आ सकती है">the gap</cite>. And it does buy real speed — with prompt tuning and the right model you get to roughly 90% of what you need very fast <cite data-video="EjFsjfOBZFE" data-chunk="11" data-quote="you can probably get to sort of 90% of what you need incredibly fast">fast start</cite>.</p>
+
+  <p id="thesis-p2">The failure is always the same too. The dev loop is bottlenecked on evaluation, so you swap the human for a judge and the loop gets fast — but if the judge doesn't correlate with human annotation you end up with useless signal and the loop "won't go anywhere" <cite data-video="X4dEHRzBLmc" data-chunk="1" data-quote="you'll end up with useless signal">useless signal</cite>. A first-pass judge rates every sampled output "good" <cite data-video="TL527yTpxlk" data-chunk="35" data-quote="it's just giving everything good">everything good</cite>; a naive seed judge scores 61% and calls the trajectory compliant 98% of the time, which is just the majority class with extra steps <cite data-video="X4dEHRzBLmc" data-chunk="23" data-quote="saying it's compliant 98% of the time">majority collapse</cite>. The most common mistake in the field is assuming the judge works out of the box <cite data-video="a3SMraZWNNs" data-chunk="35" data-quote="you cannot just assume the judge works">assume nothing</cite>.</p>
+
+  <blockquote class="epigraph" id="thesis-bq1">
+    Before you create a judge, you have to be the judge.
+    <cite data-video="kP_aaFnXLmY" data-chunk="2" data-quote="Before you create a judge, you have to be the judge">Evidently AI</cite>
+  </blockquote>
+
+  <p id="thesis-p3">The corpus converges on one reframing that makes everything else follow. An evaluator is a measurement instrument with a failure profile, not simply a scoring function <cite data-video="PjCwlX0XT8o" data-chunk="9" data-quote="An evaluator is a measurement instrument with a failure profile">instrument</cite>. Instruments get narrowed so they can be calibrated, calibrated against a reference you trust, and characterised — sensitivity, specificity, bias, repeatability — before anyone reads a number off them. Three moves, in that order.</p>
+
+  <div class="triptych" id="thesis-trip">
+    <div class="panel">
+      <h3 id="thesis-h31">1 · Narrow it</h3>
+      <p id="thesis-p4">You do not need an overall judge for your product; you can create multiple small judges where each evaluates one specific thing <cite data-video="kP_aaFnXLmY" data-chunk="0" data-quote="create multiple small judges where each of them evaluates one specific thing">many small judges</cite>. Netflix builds a prompt per criterion because one overloaded prompt degrades quality <cite data-video="mX9HzIRdBpw" data-chunk="10" data-quote="we create per criteria judges more or less creating a prompt for each">per-criteria judges</cite>. Combining concerns in one judge makes a failure impossible to diagnose <cite data-video="PjCwlX0XT8o" data-chunk="27" data-quote="Combining them here would make a failure impossible to diagnose">one decision</cite>.</p>
+    </div>
+    <div class="panel">
+      <h3 id="thesis-h32">2 · Calibrate it</h3>
+      <p id="thesis-p5">Compare judge labels to human labels on a golden set and compute exact-match accuracy — human alignment — then read the disagreements and fix the prompt <cite data-video="pnlT_xatpVQ" data-chunk="17" data-quote="This is what we call human alignment">human alignment</cite>. It is a five-step loop: predictions, critiques, human labels, comparison, iterate <cite data-video="a3SMraZWNNs" data-chunk="20" data-quote="you collect model predictions, you generate model critiques">the loop</cite>.</p>
+    </div>
+    <div class="panel">
+      <h3 id="thesis-h33">3 · Characterise it</h3>
+      <p id="thesis-p6">Report TP/FP/TN/FN with sensitivity, specificity and balanced accuracy instead of one headline number <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">confusion matrix</cite>, test the four known biases <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">bias card</cite>, and re-run — one successful trace does not establish a reliable workflow <cite data-video="PjCwlX0XT8o" data-chunk="85" data-quote="One successful trace does not establish a reliable workflow">repeatability</cite>.</p>
+    </div>
+  </div>
+
+  <p id="thesis-p7">The prize for doing this is compounding, not linear. Getting through four eval iterations in a month instead of two produces an exponentially better product <cite data-video="spvXj9tnWAQ" data-chunk="10" data-quote="get through four iterations in a month rather than two">iteration velocity</cite>. The scale is real: Arize runs over 100 million evals a month, the average customer runs about 12 eval jobs, and the top teams run more than 3,800 distinct evaluators <cite data-video="q2JrUKBMf0w" data-chunk="0" data-quote="top teams running over 3,800 different evaluators">eval scale</cite>, with Duolingo running roughly 20 evals per trace <cite data-video="spvXj9tnWAQ" data-chunk="1" data-quote="tend to run about 20 evals per per like">20 per trace</cite>.</p>
+</section>
+
+<section id="pipeline">
+  <h2 id="pipeline-h2">The build: seven stages from raw traces to a release gate</h2>
+  <p id="pipeline-p1">Every talk in the corpus that actually shipped a judge walks some version of this path. Skipping stages 1–3 is why judges fail; the teams who rushed metric design and annotation all report those as the hardest part in hindsight <cite data-video="X4dEHRzBLmc" data-chunk="11" data-quote="getting your data um is the hardest thing">data is hardest</cite>.</p>
+
+  <div class="stage" id="pipeline-stage1">
+    <div class="no">01</div>
+    <h3 id="pipeline-h31">Look at your data before you define anything</h3>
+    <p class="why" id="pipeline-p2">You cannot write criteria for failure modes you have not seen. This stage is deliberately informal.</p>
+    <ul>
+      <li id="pipeline-li1">Observe real inputs and outputs and note failure modes — no formal annotation yet. "This is more of a vibe check." <cite data-video="pnlT_xatpVQ" data-chunk="6" data-quote="This is more of a vibe check">vibe check</cite></li>
+      <li id="pipeline-li2">But a vibe check alone is not enough; it doesn't tell you the whole story and you need rigorous methods and metrics on top of it <cite data-video="cRz0BWkuwHg" data-chunk="1" data-quote="it doesn't tell you the whole story we need more rigorous methods and metrics">not sufficient</cite>.</li>
+      <li id="pipeline-li3">Sample real traffic — especially downvoted or rejected responses — rather than synthetic data or public benchmarks <cite data-video="vBJF2sy1Pyw" data-chunk="13" data-quote="look at your traffic like you know take 50 samples from them">real traffic</cite>. Public benchmarks decay because they leak into training data <cite data-video="vBJF2sy1Pyw" data-chunk="13" data-quote="there is always problems of like you know them leaking into the training data">leakage</cite>.</li>
+      <li id="pipeline-li4">Topic-cluster your logged queries before you decide what to evaluate. One client found around 80% of their questions fell into a narrow subset of topics <cite data-video="cRz0BWkuwHg" data-chunk="8" data-quote="around 80% of the questions were about a very specific subset of topics">80/20</cite>.</li>
+      <li id="pipeline-li5">This never stops, and it is not beneath you: a principal engineer at Zapier spends three hours per day looking at traces and data <cite data-video="a3SMraZWNNs" data-chunk="34" data-quote="spends three hours per day looking at traces and data">three hours a day</cite>, and manual inspection has the highest value-to-prestige ratio of any eval activity <cite data-video="a3SMraZWNNs" data-chunk="36" data-quote="Manual inspection has the highest value to prestige ratio">value to prestige</cite>.</li>
+      <li id="pipeline-li6">Read transcripts, not just scores — that is how you catch a support agent telling a user their 45-minute-old order had passed a 60-minute cancellation window <cite data-video="TL527yTpxlk" data-chunk="21" data-quote="because it's been 45 minutes, you've passed the 60-minute window">arithmetic failure</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage2">
+    <div class="no">02</div>
+    <h3 id="pipeline-h32">Derive the metric from a failure, not from a template</h3>
+    <p class="why" id="pipeline-p3">Generic criteria produce generic results. The metric is the product decision; everything downstream is plumbing.</p>
+    <ul>
+      <li id="pipeline-li7">Start with a failure, not with a favour evaluator — a general-purpose judge will happily report that your assistant improved while it is quietly rewarding length <cite data-video="PjCwlX0XT8o" data-chunk="0" data-quote="Start with a failure, not with a favor evaluator">start from failure</cite>.</li>
+      <li id="pipeline-li8">Metrics must be specific, answerable and actionable — finer-grained beats general, a human must be able to label it from the context, and a low score must point at what to fix <cite data-video="pnlT_xatpVQ" data-chunk="9" data-quote="they should be specific, answerable, and actionable">three tests</cite>.</li>
+      <li id="pipeline-li9">Kill the catch-all. One metric called "quality" gives the judge nothing to focus on and gives you no direction when it drops <cite data-video="pnlT_xatpVQ" data-chunk="10" data-quote="having one catch-all metric like quality">no catch-all</cite>. A single omnibus score cannot show whether retrieval failed, extraction over-generated, or the evaluator just prefers verbosity <cite data-video="PjCwlX0XT8o" data-chunk="6" data-quote="A single score cannot show whether retrieval failed">omnibus</cite>.</li>
+      <li id="pipeline-li10">Kill the sprawl too. Ten overlapping metrics — fluency, style, tone, politeness — waste tokens and cause cognitive overload, and LLMs are already fluent out of the box <cite data-video="pnlT_xatpVQ" data-chunk="11" data-quote="it also leads to cognitive overload">metric sprawl</cite>.</li>
+      <li id="pipeline-li11">Derive criteria from the business use case, ideally with subject-matter experts, rather than reaching for "hallucination" <cite data-video="X4dEHRzBLmc" data-chunk="7" data-quote="the metrics need to come from uh the use case itself">from the use case</cite>. Error analysis on real support transcripts surfaced four distinct error types — policy adherence, response style, information delivery, tool-call correctness — and each wants its own judge <cite data-video="X4dEHRzBLmc" data-chunk="8" data-quote="issues with policy adherance uh sometimes issue with the response style">four error types</cite>.</li>
+      <li id="pipeline-li12">Define the positive class explicitly. A claim is not positive merely because it is plausible; and decide your unit of analysis — claim-level and response-level are different measurements <cite data-video="PjCwlX0XT8o" data-chunk="1" data-quote="A claim is not positive merely because it is plausible">positive class</cite>.</li>
+      <li id="pipeline-li13">Write the spec to a machine-readable file and have a repository test load it, confirm the positive class is declared, and reject an empty evidence contract <cite data-video="PjCwlX0XT8o" data-chunk="3" data-quote="The specification must be tested rather than used to hide ambiguity">tested spec</cite>.</li>
+      <li id="pipeline-li14">For a new RAG app, four or five metrics are the right starting set: response relevance, response completeness, context relevance, hallucination/groundedness, conversation satisfaction <cite data-video="vBJF2sy1Pyw" data-chunk="11" data-quote="these four 4 five matrices are the best way for any developer to start">RAG starter set</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage3">
+    <div class="no">03</div>
+    <h3 id="pipeline-h33">Be the judge yourself — build the golden set</h3>
+    <p class="why" id="pipeline-p4">Annotating does double duty: it proves your guidelines are unambiguous, and it gives you the reference the judge is measured against.</p>
+    <ul>
+      <li id="pipeline-li15">Both purposes matter. If you cannot unambiguously label your own data on your own criteria, the LLM will struggle too; and the labels are what let you quantify how well the judge performs <cite data-video="pnlT_xatpVQ" data-chunk="8" data-quote="these labels will enable you to easily quantify">two jobs</cite>.</li>
+      <li id="pipeline-li16">Use binary or very few classes. A 1–10 scale is hard to apply consistently; binary labels make annotation far easier <cite data-video="kP_aaFnXLmY" data-chunk="2" data-quote="much easier to stick to binary or few classes">binary labels</cite>. Netflix names the switch from a 1–4 Likert scale to pass/fail as a key change that lifted inter-annotator agreement <cite data-video="mX9HzIRdBpw" data-chunk="7" data-quote="using binary scores, basically a pass fail score instead of a liyker score">Likert to binary</cite>.</li>
+      <li id="pipeline-li17">Record <em>why</em>, not just the label. Without the annotator's reasoning, a prompt-optimisation algorithm has no way to recover the underlying rule <cite data-video="X4dEHRzBLmc" data-chunk="10" data-quote="without the reasoning we will see uh the optimization algorithm">reasons required</cite>.</li>
+      <li id="pipeline-li18">Run two graders against the same rubric. Frequent disagreement means the rubric is ambiguous, not that the graders are bad <cite data-video="uQFLY8rQVYA" data-chunk="16" data-quote="देयर इज सम एंबिग्विटी इन योर रब्रिक">rubric diagnostic</cite>.</li>
+      <li id="pipeline-li19">Treat calibration as iterative: annotate, measure disagreement, refine written guidelines with concrete examples, repeat. Netflix collected roughly 1,000 synopsis evaluations this way <cite data-video="mX9HzIRdBpw" data-chunk="5" data-quote="about a thousand diverse synopsis evaluations that we collect">calibration rounds</cite>, landing a 600-item golden set sampled uniformly across content categories and genres for diversity rather than raw count <cite data-video="mX9HzIRdBpw" data-chunk="27" data-quote="sampled pretty uniformly across different content categories, genres">diversity over size</cite>.</li>
+      <li id="pipeline-li20">Sizing, honestly: around 10 examples is enough to decide whether to invest further <cite data-video="TL527yTpxlk" data-chunk="23" data-quote="usually it's around 10 or more examples">start at 10</cite>, roughly 100+ before production depending on your regulatory bar <cite data-video="TL527yTpxlk" data-chunk="24" data-quote="you might need maybe a 100 examples or more">100 for production</cite>, and 50–100 samples is a good starting test set <cite data-video="vBJF2sy1Pyw" data-chunk="12" data-quote="a test data sets of like 50 to 100 samples">50–100</cite>. Do not let sizing stop you: "five is better than nothing" <cite data-video="TL527yTpxlk" data-chunk="29" data-quote="five is better than nothing">start tiny</cite>.</li>
+      <li id="pipeline-li21">Balance the classes so you can see both error directions — the code-review study used 27 bad and 23 good examples <cite data-video="kP_aaFnXLmY" data-chunk="8" data-quote="27 bad examples and 23 good examples">balanced set</cite>.</li>
+      <li id="pipeline-li22">Deliberately include hard cases — typos, long threads, conflicting fields, negation, near-duplicates, correct-but-less-verbose answers — because random sampling alone can produce an easy test <cite data-video="PjCwlX0XT8o" data-chunk="48" data-quote="Random sampling alone can produce an easy test">hard cases</cite>.</li>
+      <li id="pipeline-li23">Split the labels <em>before</em> you touch the judge prompt. One worked allocation: 108 for judge design, 36 for development checks, 36 sealed for the final test <cite data-video="PjCwlX0XT8o" data-chunk="44" data-quote="uses 108 for judge design, 36 for development checks">frozen split</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage4">
+    <div class="no">04</div>
+    <h3 id="pipeline-h34">Write the judge prompt as guidelines for a human</h3>
+    <p class="why" id="pipeline-p5">Keep it minimal, keep it one decision, and make the output machine-checkable at the API level rather than by pleading in prose.</p>
+    <ul>
+      <li id="pipeline-li24">The standard anatomy: role, task description, evaluation criteria, a scoring rubric per criterion, optional few-shot rubric examples, the candidate output, explicit instructions, and a structured JSON output spec <cite data-video="N_DwZR--XCc" data-chunk="30" data-quote="specify the evaluation criteria and scoring rubrics">prompt anatomy</cite>.</li>
+      <li id="pipeline-li25">Scope it to one decision and explicitly exclude helpfulness or writing quality if that is not what you are measuring <cite data-video="PjCwlX0XT8o" data-chunk="27" data-quote="Combining them here would make a failure impossible to diagnose">one decision</cite>, and use explicit labels like supported / unsupported / not_verifiable instead of vague scores <cite data-video="PjCwlX0XT8o" data-chunk="28" data-quote="Use the label supported, unsupported, and not underserlicable rather than vague scores">explicit labels</cite>.</li>
+      <li id="pipeline-li26">Ask only what a model can actually assess. "Is this answer medically correct?" is out of scope; "is this answer based on the context?" is in scope <cite data-video="kP_aaFnXLmY" data-chunk="1" data-quote="Is this answer medically correct?">scope limits</cite>.</li>
+      <li id="pipeline-li27">Cap the judge's context at 4,000 tokens or less — even million-token models struggle to reason over the full length, so trim rather than dumping your knowledge base in <cite data-video="pnlT_xatpVQ" data-chunk="13" data-quote="limit your context window to 4,000 tokens or less">4K cap</cite>. The rule comes from a benchmark where reasoning performance dropped steeply after about 4,000 tokens regardless of advertised window <cite data-video="pnlT_xatpVQ" data-chunk="29" data-quote="performance really kind of steeply drops off after about 4,000 tokens">the study</cite>.</li>
+      <li id="pipeline-li28">Bound the evidence. Give the judge the task instruction, the retrieved records and the target output in delimited fields — never hidden application metadata or the variant's name <cite data-video="PjCwlX0XT8o" data-chunk="29" data-quote="It should not receive hidden application metadata, the systems chosen variant name">evidence contract</cite>.</li>
+      <li id="pipeline-li29">Demand reasoning before the score. Rationale-first mirrors chain-of-thought and empirically improves the judgment <cite data-video="8fNP4N46RRo" data-chunk="18" data-quote="typically ask the model to first output the rationale and then">rationale first</cite>; requiring a rationale makes judges better at the whole task, not just more explainable <cite data-video="N_DwZR--XCc" data-chunk="13" data-quote="makes judges even better uh at the entire task">accuracy gain</cite>. Adding the single line "Always explain your reasoning" to an already-detailed prompt moved accuracy from 95% to 98% <cite data-video="kP_aaFnXLmY" data-chunk="19" data-quote="Always explain your reasoning">one extra line</cite>.</li>
+      <li id="pipeline-li30">Write general criteria, not your examples. Pasting labelled examples in makes the judge score those correctly and fail to generalise <cite data-video="kP_aaFnXLmY" data-chunk="17" data-quote="will score them correctly but will not generalize outside these examples">no memorisation</cite>. In the GEPA study, a seed prompt that did <em>not</em> contain the agent's policy text beat one that did, because pasting it trapped the optimiser in a local minimum <cite data-video="X4dEHRzBLmc" data-chunk="30" data-quote="did not have access to the policy did uh better">policy trap</cite>.</li>
+      <li id="pipeline-li31">Tell it not to suggest improvements. Left unsaid, judges default to giving improvement feedback instead of a clean label, which breaks parsing <cite data-video="N_DwZR--XCc" data-chunk="35" data-quote="avoid suggesting improvements">no advice</cite>.</li>
+      <li id="pipeline-li32">Force structure at the API, not in prose. Prompting alone does not guarantee a parseable response — use constrained/guided decoding and structured output <cite data-video="8fNP4N46RRo" data-chunk="20" data-quote="we saw a technique called constrained guided decoding">guided decoding</cite>, and stop spending tokens telling the judge to "respond in exactly one word" <cite data-video="pnlT_xatpVQ" data-chunk="14" data-quote="you don't need to prompt for a specific response format most of the time">skip format prose</cite>.</li>
+      <li id="pipeline-li33">Reject bad output loudly. A parser that rejects unknown labels, missing keys or malformed evidence arrays must trigger retry or review — never a silent pass <cite data-video="PjCwlX0XT8o" data-chunk="30" data-quote="Parse failure must trigger retry or review">strict parsing</cite>. Without an explicit structure constraint, a judge LLM can return a response of any shape <cite data-video="3FcYdRQPMCo" data-chunk="19" data-quote="the judge LLM can give you any response of any structure">any shape</cite>.</li>
+      <li id="pipeline-li34">A little domain knowledge in the prompt goes a long way <cite data-video="kP_aaFnXLmY" data-chunk="3" data-quote="Even a little bit of domain knowledge can improve the results greatly">domain knowledge</cite>, and punish the things you don't want: the UPSC grading prompt explicitly instructs the judge not to reward verbosity or keyword stuffing <cite data-video="uQFLY8rQVYA" data-chunk="32" data-quote="डू नॉट रिवॉर्ड वर्बोसिटी कीवर्ड स्टफिंग">no padding</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage5">
+    <div class="no">05</div>
+    <h3 id="pipeline-h35">Choose the judge model — and don't let it grade itself</h3>
+    <p class="why" id="pipeline-p6">Judge quality is prompt and model together. The corpus disagrees on tier; it does not disagree on family.</p>
+    <ul>
+      <li id="pipeline-li35">Never use the same model for the application and its judge. Intuitively it is "letting a student grade their own essay" <cite data-video="pnlT_xatpVQ" data-chunk="15" data-quote="letting a student grade their own essay">student grading themselves</cite>; formally it is self-enhancement bias, where a model prefers responses generated by itself <cite data-video="8fNP4N46RRo" data-chunk="26" data-quote="the model will tend to prefer responses that are generated by itself">self-enhancement</cite>, and the remedy is a different model for generation and judging <cite data-video="8fNP4N46RRo" data-chunk="26" data-quote="use the same model that you use for generation and for judges">different family</cite>.</li>
+      <li id="pipeline-li36">Model tier is not free. The same winning prompt on GPT-3.5 Turbo instead of GPT-4 mini collapsed to 48% recall and 72% accuracy <cite data-video="kP_aaFnXLmY" data-chunk="20" data-quote="we got only 48% recall, 72% accuracy">tier collapse</cite>, and in the GEPA study small or older models as judge or refiner were "a complete failure" on complex-policy work <cite data-video="X4dEHRzBLmc" data-chunk="28" data-quote="smaller models really are very bad at least">small models fail</cite>.</li>
+      <li id="pipeline-li37">Where the corpus splits: use the most powerful model you can afford <cite data-video="a3SMraZWNNs" data-chunk="18" data-quote="use the most powerful model that you can afford">most powerful</cite> versus don't use an expensive frontier model for routine evaluation because the cost adds up <cite data-video="vBJF2sy1Pyw" data-chunk="5" data-quote="you don't want to use like an expensive model like gp4 for evaluation">cheap judge</cite>. The workable synthesis from the GEPA run: a bigger model for the refinement/reflection step, a smaller cheaper model for the judge itself, because the judge runs at online volume <cite data-video="X4dEHRzBLmc" data-chunk="31" data-quote="bigger model for the refinement prompt and smaller model">big refiner, small judge</cite>.</li>
+      <li id="pipeline-li38">Don't start with reasoning models. Their extra reasoning overhead is often overkill for eval when the metrics are well defined <cite data-video="pnlT_xatpVQ" data-chunk="16" data-quote="they're often overkill for evaluation">skip reasoning models</cite>. Bigger and proprietary models do tend to align better with humans <cite data-video="pnlT_xatpVQ" data-chunk="23" data-quote="bigger models are better">alignment scaling</cite>.</li>
+      <li id="pipeline-li39">Consider the cheaper tier entirely. Encoder-only (BERT-style) evaluators run about 10× cheaper and one to two orders of magnitude faster than judge calls <cite data-video="spvXj9tnWAQ" data-chunk="5" data-quote="about 10 times cheaper um about one or two orders of magnitude">encoder-only</cite>, and a trained classifier sits between rules and a judge — people skip it because of a lack of labelled data, not because it doesn't work <cite data-video="EjFsjfOBZFE" data-chunk="23" data-quote="So the reason why people often skip through that particular option is because of a lack of data">classifiers</cite>.</li>
+      <li id="pipeline-li40">Run the judge cold. Low temperature (roughly 0.0–0.2) keeps scores reproducible across repeated runs <cite data-video="8fNP4N46RRo" data-chunk="31" data-quote="you will see a temperature value of something">low temperature</cite>, and pin candidate models at 0.0 so the same question returns the same answer <cite data-video="3FcYdRQPMCo" data-chunk="11" data-quote="0.0 of temperature means every time for a given question you're going">deterministic candidates</cite>.</li>
+      <li id="pipeline-li41">Speed is a selection criterion too: with the same winning prompt, Claude performed nearly as well as GPT-4 mini as a judge but OpenAI ran noticeably faster <cite data-video="kP_aaFnXLmY" data-chunk="22" data-quote="the OpenAI was actually much faster">latency differs</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage6">
+    <div class="no">06</div>
+    <h3 id="pipeline-h36">Meta-evaluate: measure the judge against your labels</h3>
+    <p class="why" id="pipeline-p7">This is the step that converts a plausible prompt into a trusted instrument. It is also the step teams skip.</p>
+    <ul>
+      <li id="pipeline-li42">The simplest version: exact-match accuracy of judge labels against human labels, then read the judge's explanations on the disagreements and roll the fix into a new evaluator version <cite data-video="pnlT_xatpVQ" data-chunk="17" data-quote="This is what we call human alignment">meta-eval</cite>.</li>
+      <li id="pipeline-li43">Track agreement as an explicit metric. A first-pass judge hit only 70% agreement with human labels on 10 examples <cite data-video="a3SMraZWNNs" data-chunk="25" data-quote="There is a 70% agreement score">70% first pass</cite>.</li>
+      <li id="pipeline-li44">Prefer classification metrics over a single correlation number: accuracy, precision and recall are intuitive and let you weight the error direction that matters <cite data-video="kP_aaFnXLmY" data-chunk="4" data-quote="classification metrics like accuracy, precision, recall">classification metrics</cite>.</li>
+      <li id="pipeline-li45">Watch for a judge that is precise but blind. The first code-review prompt had 100% precision and 36% recall — it caught almost nothing <cite data-video="kP_aaFnXLmY" data-chunk="15" data-quote="the recall is only 36%">precision trap</cite>. Rewriting it with explicit generalised criteria took it to 95% accuracy and 92% recall <cite data-video="kP_aaFnXLmY" data-chunk="18" data-quote="95% accuracy and 92% recall">the fix</cite>, from a starting point of 64% <cite data-video="kP_aaFnXLmY" data-chunk="12" data-quote="we got a 64% accuracy">the baseline</cite>.</li>
+      <li id="pipeline-li46">Measure alignment per criterion, not in aggregate. In one walkthrough, product-knowledge labels matched humans 100% of the time while tone matched only once — same judge, wildly different reliability <cite data-video="TL527yTpxlk" data-chunk="39" data-quote="the tone only matches once in from our human labels">per-criterion match rate</cite>.</li>
+      <li id="pipeline-li47">Do not report raw agreement. Two raters guessing at random already agree 50% of the time <cite data-video="8fNP4N46RRo" data-chunk="7" data-quote="we would already have an agreement rate of 50%">chance baseline</cite>, so use chance-corrected metrics — Cohen's kappa for two raters, Fleiss' kappa or Krippendorff's alpha for more <cite data-video="8fNP4N46RRo" data-chunk="9" data-quote="cohen scappa that people use for cases">kappa</cite>.</li>
+      <li id="pipeline-li48">For numeric graders, mean absolute error against the human marks is the alignment metric: an MAE of 2.3 means the judge deviates from the human by ±2.3 marks on average, and you iterate the model, system prompt or rubric to drive it down <cite data-video="uQFLY8rQVYA" data-chunk="34" data-quote="ऑन एन एवरेज मेरा एलएलएम आंसर्स को इवैलुएट करते टाइम ह्यूमन से प्लस माइनस 2.3 डेविएट कर रहा है">MAE</cite>.</li>
+      <li id="pipeline-li49">Close the gap with a meta-prompt: hand a powerful model the inputs, outputs, human critiques, the judge's current outcomes and the current judge prompt, and ask it to rewrite the prompt to maximise agreement <cite data-video="a3SMraZWNNs" data-chunk="26" data-quote="help me optimize the prompt so that the next time we run this system">meta-prompting</cite>.</li>
+      <li id="pipeline-li50">Automated optimisation works but is not magic. GEPA lifted validation accuracy from 69% to 74% and dropped the judge's bias toward "compliant" from 98% to 64% <cite data-video="X4dEHRzBLmc" data-chunk="26" data-quote="the accuracy increased from 69% to 74%">GEPA delta</cite> — still far from the ~95% you would want to call it human-aligned <cite data-video="X4dEHRzBLmc" data-chunk="27" data-quote="still quite far from kind of 95% accuracy">still short</cite>, at roughly $200–300 of tokens for a small-scale run <cite data-video="X4dEHRzBLmc" data-chunk="31" data-quote="bigger model for the refinement prompt and smaller model">cost</cite>. And a prompt optimiser that makes the prompt longer and more rule-laden is not automatically better — check its output by hand <cite data-video="TL527yTpxlk" data-chunk="27" data-quote="it's like not clear to me that this was better">check the optimiser</cite>.</li>
+      <li id="pipeline-li51">Always test a fancy method from a paper against the simple baseline on your own labels <cite data-video="kP_aaFnXLmY" data-chunk="3" data-quote="Always test it against the more simple baseline">baseline first</cite>.</li>
+      <li id="pipeline-li52">Where this can land: Netflix reached an 85% agreement rate with expert creative writers on an extremely subjective task <cite data-video="mX9HzIRdBpw" data-chunk="2" data-quote="achieve an 85% agreement rate">85% on subjective work</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage" id="pipeline-stage7">
+    <div class="no">07</div>
+    <h3 id="pipeline-h37">Gate on it — with a threshold you chose from costs</h3>
+    <p class="why" id="pipeline-p8">A score becomes a release signal only when the instrument has a documented error profile and a maintenance policy.</p>
+    <ul>
+      <li id="pipeline-li53">Report the confusion matrix. A worked example on 200 held-out responses (40 unsupported, 160 supported) where the judge catches 34 and wrongly flags 16 gives TPR 0.85, TNR 0.90, balanced accuracy 0.875 <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">worked matrix</cite>.</li>
+      <li id="pipeline-li54">Pick the threshold from documented costs of false negatives versus false positives, not from observed accuracy — for a safety floor, first retain only thresholds with TPR ≥ 0.90, then minimise cost among those <cite data-video="PjCwlX0XT8o" data-chunk="59" data-quote="first retain thresholds with TPR">cost-weighted threshold</cite>.</li>
+      <li id="pipeline-li55">Never ship the judge's observed positive rate as the true rate. Correct it with sensitivity and specificity: a 78% judge positive rate with sensitivity 0.90 and specificity 0.80 corrects to roughly 83% <cite data-video="PjCwlX0XT8o" data-chunk="66" data-quote="A 78% judge positive rate can correspond to an estimated">prevalence correction</cite>.</li>
+      <li id="pipeline-li56">And know when correction is impossible: at sensitivity and specificity near 0.50 the correction denominator collapses, and bootstrap resampling cannot repair an uninformative instrument <cite data-video="PjCwlX0XT8o" data-chunk="70" data-quote="Bootstrap resampling cannot repair an uninformative instrument">uninformative</cite>.</li>
+      <li id="pipeline-li57">Compare variants with paired, case-level differences and a paired bootstrap interval — resample the differences between paired cases, not A and B independently <cite data-video="PjCwlX0XT8o" data-chunk="80" data-quote="resample differences between paired cases, not A and B independently">paired bootstrap</cite>.</li>
+      <li id="pipeline-li58">Predeclare the primary metric, the evaluation set and the minimum worthwhile improvement before you run the comparison; keep the full ledger including discarded trials <cite data-video="PjCwlX0XT8o" data-chunk="83" data-quote="Predeclare the primary metric comparison evaluation set and minimum worthwhile improvement">predeclare</cite>.</li>
+      <li id="pipeline-li59">Run each case multiple times — five is a starting protocol — to separate difficulty (consistent failure) from instability (alternating pass/fail on identical runs) <cite data-video="PjCwlX0XT8o" data-chunk="85" data-quote="One successful trace does not establish a reliable workflow">five runs</cite>. With an 0.8 single-run success rate over five attempts, "at least one passes" is 0.99968 while "all five pass" is 0.32768 — a retryable product cares about the first number, an unattended workflow about the second <cite data-video="PjCwlX0XT8o" data-chunk="87" data-quote="0.99968 probability that at least one attempt succeeds">pass@1 vs pass-all</cite>.</li>
+      <li id="pipeline-li60">Repeat runs are also a discovery tool: run the same eval 10, 20, 50 times over a subset to find the examples the judge is unstable on, and turn those into clearer criteria <cite data-video="pnlT_xatpVQ" data-chunk="26" data-quote="run it 10, 20, 50 times and look at where is the judge responding with different answers">instability hunt</cite>. Raising temperature deliberately amplifies the signal while you probe <cite data-video="pnlT_xatpVQ" data-chunk="26" data-quote="setting a higher temperature like one or um two for open eye models can increase the the variability">probe with heat</cite>.</li>
+      <li id="pipeline-li61">Ship the evaluator like production code — package boundary, tests, version, cost record, validation results, maintenance policy. Without those artefacts, a score is an observation, not a dependable release signal <cite data-video="PjCwlX0XT8o" data-chunk="91" data-quote="Without those artifacts, a score is an observation, not yet a dependable">evaluator as code</cite>.</li>
+      <li id="pipeline-li62">Define maintenance triggers in advance — excessive disagreement with human review, a new high-risk failure mode, changed provider behaviour, a score-distribution shift, rising cost, repeated evaluator errors — and never silently retune thresholds to preserve a green dashboard <cite data-video="PjCwlX0XT8o" data-chunk="97" data-quote="Thresholds must not be silently retuned to preserve a green dashboard">triggers</cite>.</li>
+      <li id="pipeline-li63">Then roll out behind a real experiment: dogfood internally and launch as an A/B test on a small slice (~10%, or ~1% at large companies) rather than straight to full production <cite data-video="TL527yTpxlk" data-chunk="43" data-quote="launch this thing as like a AB test first">A/B first</cite>. Decide in advance how you break the tie when the eval says good and the business metric goes down <cite data-video="TL527yTpxlk" data-chunk="45" data-quote="when the eval is good, but the business metric goes down">tie-break policy</cite>.</li>
+      <li id="pipeline-li64">Run two loops, not one: one improving the application from eval signal, a second annotating eval failures to improve the eval prompt template itself <cite data-video="spvXj9tnWAQ" data-chunk="9" data-quote="you'll want to improve the eval prompt template">two virtuous cycles</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="scoring">
+  <h2 id="scoring-h2">Scoring: what you ask the judge to output</h2>
+  <p id="scoring-p1">The output format is not cosmetic. It determines how consistently a human can produce ground truth, how consistently the model can reproduce it, and whether a disagreement is interpretable.</p>
+
+  <div class="levers" id="scoring-levers">
+    <div class="lever">
+      <h3 id="scoring-h31">Binary over Likert</h3>
+      <p id="scoring-p2">Move away from 1–5 scores and percentages toward binary pass/fail; even binary is hard to calibrate, and two human annotators often disagree on a 1–5 score anyway <cite data-video="X4dEHRzBLmc" data-chunk="9" data-quote="move away from one to five scores or like percentages">go binary</cite>. The academic consensus agrees: binary is easier for both the judge and the human raters to apply consistently <cite data-video="8fNP4N46RRo" data-chunk="29" data-quote="typically what people would tend to prefer is actually the binary one">binary preferred</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h32">Word labels over numbers</h3>
+      <p id="scoring-p3">Numeric ratings don't work well for LLM judges; use a small set of discrete word labels — yes/no, positive/negative/neutral <cite data-video="pnlT_xatpVQ" data-chunk="9" data-quote="numeric ratings don't work very well for LLM as a judge">word labels</cite>. If your evaluation can be answered with yes/no, that is a sign your specificity is right.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h33">Pairwise beats scoring in isolation</h3>
+      <p id="scoring-p4">Judges scoring a single answer tend to be too optimistic and agree with whatever they're shown <cite data-video="kIvjiH8yJoU" data-chunk="6" data-quote="a bit too optimistic and they will kind of agree with you">too agreeable</cite>, so ask "left or right — which one is better?" like an eye exam <cite data-video="kIvjiH8yJoU" data-chunk="8" data-quote="Left or right? Which one is better?">eye exam</cite>. Pairwise gives the model a baseline and a clearer benchmark of quality <cite data-video="cRz0BWkuwHg" data-chunk="5" data-quote="it's often more effective to have it compare two responses rather than evaluate a single response in isolation">comparison</cite>. Pairwise evals are a sports tournament; direct scoring is Olympic gymnastics <cite data-video="pnlT_xatpVQ" data-chunk="4" data-quote="pair wise evals are like sports uh team sports">two formats</cite>. What it buys in discrimination it gives back in order sensitivity: the judge can pick response A purely because A was mentioned first <cite data-video="8fNP4N46RRo" data-chunk="23" data-quote="responds with response A just because it it was the first one">position bias</cite>. Control for that before you believe a win rate — next card.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h311">Pairwise's own bias: position</h3>
+      <p id="scoring-p12">Position bias is the tax on the format: judges "always favor one or the other, the first or the second, depending on the ordering" <cite data-video="N_DwZR--XCc" data-chunk="46" data-quote="always favors one or the other the first or the second">order, not content</cite>. Four controls, cheapest first. <strong>Randomise</strong> which response appears first, and allow ties so the judge is never forced to invent a winner between two equally good answers <cite data-video="cRz0BWkuwHg" data-chunk="6" data-quote="you need to randomize the order you give them">randomise order</cite><cite data-video="cRz0BWkuwHg" data-chunk="6" data-quote="you need to allow for ties">allow ties</cite>. <strong>Run both orderings</strong> — ask A vs B, then B vs A, and take the majority across the two runs; if the two disagree, you do not have a verdict <cite data-video="8fNP4N46RRo" data-chunk="24" data-quote="is B or A better and then take the majority voting">swap and vote</cite>. <strong>Keep the swap paired</strong>: hold rubric, evidence, decoding settings and whitespace fixed so the only thing that changed is position — a new seed or altered context makes the diagnosis ambiguous, and a flipped verdict then means neither answer has demonstrated superiority <cite data-video="PjCwlX0XT8o" data-chunk="37" data-quote="neither answer has demonstrated superiority">a flip is not a winner</cite>. <strong>Predeclare the aggregation rule</strong>: a production comparison either aggregates both orders or excludes and separately reports unresolved reversals under a documented rule <cite data-video="PjCwlX0XT8o" data-chunk="37" data-quote="either aggregate both orders or exclude and separately report">documented rule</cite>. Anonymise candidates as response_A / response_B while you are at it, and randomise their order during the experiment <cite data-video="PjCwlX0XT8o" data-chunk="32" data-quote="Randomize their order during pair-wise experiments">anonymous pairs</cite>. If you train a judge rather than prompt one, the training-time mitigation is shuffling candidate positions intentionally so the model cannot overfit to "first" <cite data-video="N_DwZR--XCc" data-chunk="46" data-quote="shuffling through their positions intentionally">train-time shuffle</cite>. The flip rate belongs on the model card as a measured number, not an assumption <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">on the card</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h34">ELO when you have more than two variants</h3>
+      <p id="scoring-p5">Treat each system variant as a chess player and apply ELO to the pairwise outcomes for a global ranking <cite data-video="kIvjiH8yJoU" data-chunk="8" data-quote="called the uh ELO ranking system">ELO</cite>. The open-sourced ragelo toolkit scores retrieved-hit relevance, feeds that plus both answers to a pairwise judge, then runs ELO to rank agents <cite data-video="kIvjiH8yJoU" data-chunk="9" data-quote="developed this toolkit called write elo">ragelo</cite>. Do not average per-query ELO — that is not what ELO means <cite data-video="kIvjiH8yJoU" data-chunk="24" data-quote="ELO is not just the average of the per query">don't average</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h35">Pointwise, pairwise, listwise</h3>
+      <p id="scoring-p6">Judge design inherits the pointwise/pairwise/listwise learning-to-rank paradigms from IR <cite data-video="N_DwZR--XCc" data-chunk="15" data-quote="one example being graded uh in independently in isolation">LTR roots</cite>. Pointwise is cheap and scalable but its absolute scores can be inconsistent or miscalibrated <cite data-video="N_DwZR--XCc" data-chunk="21" data-quote="because these scores are absolute they can be inconsistent">pointwise</cite>; pairwise correlates better with human judgment at higher comparison cost <cite data-video="N_DwZR--XCc" data-chunk="26" data-quote="shown to have higher correlation with human judgments">pairwise</cite>; listwise ranks whole lists with NDCG but is the most expensive and hardest to scale <cite data-video="N_DwZR--XCc" data-chunk="28" data-quote="computationally expensive and harder to scale">listwise</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h36">Score atomic facts, not whole passages</h3>
+      <p id="scoring-p7">Decompose the output into a list of atomic facts with one LLM call, then check each <cite data-video="8fNP4N46RRo" data-chunk="35" data-quote="one LLM call that transforms our original multi-sentence">atomic facts</cite>, weighting by importance if you need partial credit — a 4-fact passage with 2 correct facts scored 6 out of 10 <cite data-video="8fNP4N46RRo" data-chunk="37" data-quote="we obtain a score of 6">partial credit</cite>. The same move fixes relevance: break the response into facts and score each fact's relevance, then aggregate into a ratio, rather than asking for a subjective holistic label <cite data-video="vBJF2sy1Pyw" data-chunk="7" data-quote="you have to break down the response into like individual facts">fact-level relevance</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h37">Never collapse to one number</h3>
+      <p id="scoring-p8">Averaging metrics into a single weighted quality score loses the diagnostic signal about where the app is failing; plot several metrics together instead <cite data-video="pnlT_xatpVQ" data-chunk="22" data-quote="you lose a lot of important signal">keep them apart</cite>. Keep dimensions separate and independently owned; a composite decision may be useful but must be built visibly from component results with an explicit policy <cite data-video="PjCwlX0XT8o" data-chunk="7" data-quote="A composite decision may eventually be useful">visible composition</cite>. A scorer should report check-level evidence — name, expected, observed, pass/fail — rather than an aggregate like 0.75 <cite data-video="PjCwlX0XT8o" data-chunk="20" data-quote="A scorer should report check level evidence rather than only an aggregate">check-level evidence</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h38">Longer reasoning, then a short summary</h3>
+      <p id="scoring-p9">Netflix asked for a reasoning trace first because the reasoning becomes context for the score <cite data-video="mX9HzIRdBpw" data-chunk="11" data-quote="giving the reasoning trace first allows a model to use this reasoning">reason first</cite>; pushing the trace from a couple of sentences to four or five paragraphs improved judge accuracy by about 7% absolute, with diminishing returns at the longest setting <cite data-video="mX9HzIRdBpw" data-chunk="13" data-quote="we improve performance by like 7% absolute">+7%</cite>. Then summarise the long trace into ~2 readable sentences — the summarisation step itself improved accuracy further <cite data-video="mX9HzIRdBpw" data-chunk="14" data-quote="extra summary of the reasoning trace before the final score actually improved">tiered rationale</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h39">Consensus and panels</h3>
+      <p id="scoring-p10">Generating five judge outputs and taking the rounded average gave a noticeable accuracy boost, and paired best with the longer rationale that introduces the variance worth aggregating over <cite data-video="mX9HzIRdBpw" data-chunk="15" data-quote="performing this consensus scoring yielded a pretty noticeable accuracy boost">consensus</cite>. A panel of different judge models aggregated by vote reduces individual-model bias, trading compute for reliability <cite data-video="N_DwZR--XCc" data-chunk="44" data-quote="trading off compute here for better reliability">panel of judges</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="scoring-h310">Confidence, when the API gives it to you</h3>
+      <p id="scoring-p11">For autoregressive judges the log-probability of the returned label token is a solid confidence proxy; small encoder-only models hand you a classification probability directly <cite data-video="spvXj9tnWAQ" data-chunk="22" data-quote="a really good way to start for auto reggressive models">log-prob confidence</cite>. And remember a useful metric need not be a number at all — a label or explanation string surfaced to a human is a metric <cite data-video="kIvjiH8yJoU" data-chunk="16" data-quote="a metric could also be some text or a label">text as metric</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ban">
+  <h2 id="ban-h2">Delete on sight</h2>
+  <p id="ban-p1">Thirteen things the corpus tells you to stop doing, and what to do instead. Every row is someone's published mistake.</p>
+  <table class="ban" id="ban-table1">
+    <thead><tr><th>Delete on sight</th><th>Replace with</th></tr></thead>
+    <tbody>
+      <tr id="ban-tr1"><td><code>You are an AI evaluator</code></td><td><code>You are an expert evaluator</code> — the first primes the model to behave the way an AI would <cite data-video="pnlT_xatpVQ" data-chunk="14" data-quote="setting role to you are an AI evaluator">role priming</cite></td></tr>
+      <tr id="ban-tr2"><td>A single <code>quality</code> metric scored 1–10</td><td>A named failure mode with a binary label the judge can actually apply <cite data-video="pnlT_xatpVQ" data-chunk="10" data-quote="having one catch-all metric like quality">catch-all</cite></td></tr>
+      <tr id="ban-tr3"><td>The same model generating and judging</td><td>A judge from a different model family, chosen before you look at the scores <cite data-video="pnlT_xatpVQ" data-chunk="15" data-quote="letting a student grade their own essay">self-grading</cite></td></tr>
+      <tr id="ban-tr4"><td>Your labelled examples pasted into the judge prompt</td><td>Generalised written criteria that describe the rule behind the examples <cite data-video="kP_aaFnXLmY" data-chunk="17" data-quote="will score them correctly but will not generalize outside these examples">overfitting</cite></td></tr>
+      <tr id="ban-tr5"><td>The agent's full policy pasted into the seed judge prompt</td><td>A policy-free seed the optimiser can still move away from <cite data-video="X4dEHRzBLmc" data-chunk="30" data-quote="did not have access to the policy did uh better">local minimum</cite></td></tr>
+      <tr id="ban-tr6"><td>Ten overlapping metrics (fluency, style, tone, politeness…)</td><td>A handful tied to business-critical failure modes <cite data-video="pnlT_xatpVQ" data-chunk="11" data-quote="it also leads to cognitive overload">sprawl</cite></td></tr>
+      <tr id="ban-tr7"><td><code>Respond in exactly one word</code></td><td>Structured outputs / constrained decoding enforced by the provider <cite data-video="8fNP4N46RRo" data-chunk="21" data-quote="the key word here is structured output">structured output</cite></td></tr>
+      <tr id="ban-tr8"><td>Dumping the knowledge base into the judge's context</td><td>≤ 4,000 tokens of deliberately trimmed context <cite data-video="pnlT_xatpVQ" data-chunk="13" data-quote="limit your context window to 4,000 tokens or less">4K cap</cite></td></tr>
+      <tr id="ban-tr9"><td>One headline accuracy number</td><td>TPR, TNR and balanced accuracy off a confusion matrix <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">matrix</cite></td></tr>
+      <tr id="ban-tr10"><td>Raw human agreement rate</td><td>Cohen's kappa, Fleiss' kappa or Krippendorff's alpha <cite data-video="8fNP4N46RRo" data-chunk="9" data-quote="cohen scappa that people use for cases">chance-corrected</cite></td></tr>
+      <tr id="ban-tr11"><td>An LLM judge for PII detection</td><td>A rule-based matcher — cheap, fast, free <cite data-video="EjFsjfOBZFE" data-chunk="22" data-quote="for identifying PII in your responses there's just there are a lot of rule-based systems">don't over-reach</cite></td></tr>
+      <tr id="ban-tr12"><td>Averaging per-query ELO into an aggregate</td><td>The ELO algorithm, run properly over the pairwise outcomes <cite data-video="kIvjiH8yJoU" data-chunk="24" data-quote="ELO is not just the average of the per query">ELO misuse</cite></td></tr>
+      <tr id="ban-tr13"><td>Quietly retuning the threshold when the dashboard goes red</td><td>A predeclared maintenance trigger and a new judge version <cite data-video="PjCwlX0XT8o" data-chunk="97" data-quote="Thresholds must not be silently retuned to preserve a green dashboard">green dashboard</cite></td></tr>
+    </tbody>
+  </table>
+  <p id="ban-p2">One more that is easy to miss: out-of-the-box eval templates produce generic, low-value results, so customise criteria heavily to your application <cite data-video="spvXj9tnWAQ" data-chunk="12" data-quote="if you use out of the box evals">out-of-the-box</cite>.</p>
+</section>
+
+<section id="instrument">
+  <h2 id="instrument-h2">Validate the instrument</h2>
+  <p id="instrument-p1">A judge that agrees with your labels can still be measuring the wrong thing. Two suites belong in every judge's model card: bias diagnostics and statistical reliability.</p>
+
+  <h3 id="instrument-h31">The bias suite</h3>
+  <p id="instrument-p2">Bias here is not only an incorrect label — it is a systematic tendency to reward an irrelevant property. Four diagnostics belong on the card: position bias, verbosity bias, self-preference, and task-specific bias <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">four diagnostics</cite>.</p>
+  <div class="levers" id="instrument-levers1">
+    <div class="lever">
+      <h3 id="instrument-h32">Position bias → the swap test</h3>
+      <p id="instrument-p3">In pairwise judging the model can pick response A just because it was first <cite data-video="8fNP4N46RRo" data-chunk="23" data-quote="responds with response A just because it it was the first one">position bias</cite>. Ask both orderings and take the majority across the two runs <cite data-video="8fNP4N46RRo" data-chunk="24" data-quote="ask the model is A or B better and then ask">both orders</cite>, or simply randomise which appears first <cite data-video="cRz0BWkuwHg" data-chunk="6" data-quote="llms tend to have a bias with order like always fing the first option">randomise</cite>. Make it a paired operation, not a fresh sample: if the verdict changes when only the positions change, that is evidence of position sensitivity <cite data-video="PjCwlX0XT8o" data-chunk="37" data-quote="If the verdict changes when only the positions change">paired swap</cite>. At training time, shuffling candidate order intentionally is the mitigation <cite data-video="N_DwZR--XCc" data-chunk="46" data-quote="shuffling through their positions intentionally">train-time shuffle</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h33">Verbosity bias → matched length slices</h3>
+      <p id="instrument-p4">Judges prefer longer, more elaborate responses even when they aren't more correct <cite data-video="8fNP4N46RRo" data-chunk="25" data-quote="prefer responses that are just more verbose">verbosity bias</cite>. Keep compared responses similar in length so the comparison is fair <cite data-video="cRz0BWkuwHg" data-chunk="7" data-quote="try to ensure that responses are similar in length When comparing them">match length</cite>, and diagnose properly with matched slices — concise vs verbose carrying equivalent facts — reporting preference within each slice rather than the aggregate win rate <cite data-video="PjCwlX0XT8o" data-chunk="38" data-quote="Report judge preference within each slice">slice it</cite>. This is not theoretical: in one dry run the judge favoured longer answers, letting verbose responses with unsupported claims beat short correct ones <cite data-video="PjCwlX0XT8o" data-chunk="91" data-quote="Without those artifacts, a score is an observation, not yet a dependable">observed</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h34">Self-preference → cross-family checks</h3>
+      <p id="instrument-p5">A judge gives elevated scores to its own family's style and instruction conventions <cite data-video="8fNP4N46RRo" data-chunk="26" data-quote="the model will tend to prefer responses that are generated by itself">self-preference</cite>. Run the same fixture suite through a judge from the generator's family and one from a different family, and against non-LLM checks — agreement across families is useful evidence of stability but not proof of correctness <cite data-video="PjCwlX0XT8o" data-chunk="41" data-quote="Agreement across families is useful evidence, but not proof of correctness">cross-family</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h35">Task-specific bias → strip the surface</h3>
+      <p id="instrument-p6">Judges reward features that correlate with quality but aren't quality: polished greetings, disclaimers, a particular formatting style <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">surface features</cite>. A 2024-era study of four leading judge models found none reliable across the board, including judges that flipped their verdict on formatting changes that left meaning unchanged <cite data-video="EjFsjfOBZFE" data-chunk="9" data-quote="none of them to be particularly reliable across the board">none reliable</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h36">Leakage → anonymise the candidates</h3>
+      <p id="instrument-p7">Present candidates as anonymous response_A / response_B, randomise order, and evaluate each independently against the same context. Hidden identity removes one obvious source of preference leakage but does not eliminate the other three biases <cite data-video="PjCwlX0XT8o" data-chunk="32" data-quote="Hidden identity reduces one obvious source of preference leakage">anonymise</cite>. Keep every test item, paraphrase and label rationale out of the judge's few-shot prompt and regression fixtures <cite data-video="PjCwlX0XT8o" data-chunk="48" data-quote="Random sampling alone can produce an easy test">no leakage</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h37">Vague rubrics → reward hacking</h3>
+      <p id="instrument-p8">A judge's reliability depends entirely on how objectively its criteria and rubrics are specified; ambiguity there is a direct path to reward hacking <cite data-video="N_DwZR--XCc" data-chunk="48" data-quote="go through reward hacking as well">reward hacking</cite>. And the rationale is not a defence — the judge's rationale is also model output and must be validated like the verdict <cite data-video="PjCwlX0XT8o" data-chunk="29" data-quote="The judge's rationale is also model output and must be validated like the verdict">rationale is not proof</cite>, coming out of the same tangled generation path as the verdict rather than a trace of real reasoning <cite data-video="EjFsjfOBZFE" data-chunk="12" data-quote="it's more of like a post hawk explanation">post-hoc</cite>.</p>
+    </div>
+  </div>
+
+  <h3 id="instrument-h38">The reliability suite</h3>
+  <p id="instrument-p9">Bias tests tell you what the judge is measuring. These tell you how much to believe the number it produced.</p>
+  <div class="levers" id="instrument-levers2">
+    <div class="lever">
+      <h3 id="instrument-h39">Freeze a test split first</h3>
+      <p id="instrument-p10">Split labelled data before touching the judge prompt, and treat the final partition as a sealed decision surface opened only after the configuration is frozen — otherwise it is no longer a clean estimate on unseen cases <cite data-video="PjCwlX0XT8o" data-chunk="44" data-quote="uses 108 for judge design, 36 for development checks">sealed split</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h310">Correct for the judge's own error</h3>
+      <p id="instrument-p11">The observed positive rate is not the true rate. Correct it with sensitivity and specificity — P = (Q + C − 1) / (S + C − 1) — and know that when both approach 0.50 the correction carries no information <cite data-video="PjCwlX0XT8o" data-chunk="66" data-quote="A 78% judge positive rate can correspond to an estimated">correction</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h311">Pair your comparisons</h3>
+      <p id="instrument-p12">Pairing removes baseline task-difficulty noise that independent samples leave in; predeclare a minimum improvement (e.g. 0.03) before calling a variant a release candidate <cite data-video="PjCwlX0XT8o" data-chunk="80" data-quote="resample differences between paired cases, not A and B independently">pairing</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h312">Measure the distribution, not one run</h3>
+      <p id="instrument-p13">Don't check whether a single run gave the answer you wanted — run it multiple times and dig into the distribution of outcomes <cite data-video="EjFsjfOBZFE" data-chunk="14" data-quote="It's about running it multiple times and really really digging into those results">distribution</cite>. Re-running the same evaluation can give different results from non-determinism alone, observed frequently on 4o-mini-class models <cite data-video="kIvjiH8yJoU" data-chunk="26" data-quote="we saw this happen a lot with photo mini">non-determinism</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h313">Mutation-test the scorer</h3>
+      <p id="instrument-p14">Remove a required key, change a number's type, empty the recommendations list, add an unallowed amenity, raise the price above the limit, change the recipient — each mutation should produce the intended failure and matching evidence, not a false pass <cite data-video="PjCwlX0XT8o" data-chunk="24" data-quote="Each mutation should produce the intended failure and evidence">mutation testing</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="instrument-h314">Keep a human in the loop, forever</h3>
+      <p id="instrument-p15">LLM evals scale human judgment; they do not replace it, so some human-in-the-loop is always required for the best results <cite data-video="pnlT_xatpVQ" data-chunk="16" data-quote="they're often overkill for evaluation">scale, not replace</cite>. Even where a judge is not strictly required, periodically collect human ratings alongside judge scores and run a correlation analysis so you don't over-optimise against a flawed proxy <cite data-video="8fNP4N46RRo" data-chunk="31" data-quote="collect the human ratings output the LM as a judge scores">periodic correlation</cite>. Human judgment remains the gold standard for fluency, naturalness and real-world usefulness <cite data-video="cRz0BWkuwHg" data-chunk="9" data-quote="human judgment is still the gold standard">gold standard</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="production">
+  <h2 id="production-h2">In production: cost, guardrails and agents</h2>
+  <p id="production-p1">Offline calibration is the easy half. The hard half is what the judge costs, where it sits in the request path, which way it fails, and whether a fixed rubric can describe an agent at all.</p>
+
+  <div class="levers" id="production-levers">
+    <div class="lever">
+      <h3 id="production-h31">Price it at production volume</h3>
+      <p id="production-p2">Judge checks run in seconds, not milliseconds, and you pay per check forever — stacking multiple judges scales expensively fast <cite data-video="EjFsjfOBZFE" data-chunk="17" data-quote="these things work in order of seconds not order of milliseconds">seconds, not ms</cite>. Price at actual production call volume, not demo volume: a chatbot check runs on every message and may need several checks per message <cite data-video="EjFsjfOBZFE" data-chunk="28" data-quote="pricing it at your actual production volume, not just at your demo volume">real volume</cite>. Even a toy harness makes three paid calls per test question <cite data-video="3FcYdRQPMCo" data-chunk="27" data-quote="you will be charged. So pay attention to that.">three calls</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h32">Budget the tail, not the mean</h3>
+      <p id="production-p3">When a check sits in the user's critical path, consistency matters as much as average latency — measure the 95th percentile, because one person waiting two minutes ruins the experience even if most get sub-five-second responses <cite data-video="EjFsjfOBZFE" data-chunk="29" data-quote="it's actually your sort of like 95th percentile">p95</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h33">Evals are not guardrails</h3>
+      <p id="production-p4">Guardrails act at inference time to prevent problems; evals are a check after the fact, good for offline evaluation and continuous monitoring — an eval can detect a prompt injection but not prevent it <cite data-video="pnlT_xatpVQ" data-chunk="31" data-quote="more of a check after the fact">the distinction</cite>. Practically, only safety and jailbreak checks are cheap enough to run in the moment; relevance, hallucination and completeness run post-hoc <cite data-video="vBJF2sy1Pyw" data-chunk="3" data-quote="you can do this evaluation in parallel to the generation">when to check</cite>. Fire the guardrail on the query in parallel with generation rather than checking the response afterwards, so you don't add a latency layer for the 95% of users who aren't misusing the product <cite data-video="vBJF2sy1Pyw" data-chunk="19" data-quote="fire a query evaluate like you know few of these key matrices and in parallel generate your responses">run in parallel</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h34">Decide which way you fail</h3>
+      <p id="production-p5">Nondeterministic guardrails tend to fail toward leniency — letting a bad output through rather than holding it back, which is the more dangerous direction <cite data-video="EjFsjfOBZFE" data-chunk="17" data-quote="they can often fail the wrong way">fail lenient</cite>. Overblocking costs an annoyed customer and a contact-centre call; a breach reaching a regulator costs vastly more. Decide explicitly: do you fail open or fail closed, and does that argue for two independent checks? <cite data-video="EjFsjfOBZFE" data-chunk="27" data-quote="Do you fail open or do you fail closed?">open or closed</cite> A judge is best used as one voice among several rather than the single decision-maker <cite data-video="EjFsjfOBZFE" data-chunk="18" data-quote="maybe relying on just them as a single check is uh you know, not the best approach">one voice</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h35">Decompose the hard question</h3>
+      <p id="production-p6">Instead of asking one frontier judge "is this message a breach", decompose the policy into small narrow checks a model answers reliably — "did you name a specific product?" — which lets you use smaller, cheaper models and shrinks latency <cite data-video="EjFsjfOBZFE" data-chunk="35" data-quote="did you name a specific product? You know, very very simple cases that you can answer reliably">decompose</cite>. Push as much of the criterion as possible into deterministic checks; they are fast, reproducible and easier to debug than a global quality score <cite data-video="PjCwlX0XT8o" data-chunk="12" data-quote="Deterministic checks should carry as much of the criterion as possible">deterministic first</cite>. Hard requirements need explicit code, because without it a judge will reward longer and more persuasive answers that still violate the task <cite data-video="PjCwlX0XT8o" data-chunk="18" data-quote="Without explicit checks, a judge can reward longer and more persuasive answers">hard requirements</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h36">Pick the least interpretive instrument</h3>
+      <p id="production-p7">Choose the least interpretive tool that can answer the criterion — executable check, reference check, classifier, judge, human — and add others only when the criterion has independent parts <cite data-video="PjCwlX0XT8o" data-chunk="9" data-quote="An evaluator is a measurement instrument with a failure profile">least interpretive</cite>. The compact rule: output shape → executable check; exact identity or database state → reference check; known policy categories → classifier; borderline meaning, relevance or evidence support → a judge with reference checks and sampled human review; high-consequence ambiguity → humans plus deterministic checks <cite data-video="PjCwlX0XT8o" data-chunk="12" data-quote="For borderline cases">selection rule</cite>. The toolbox is bigger than the judge: encoder-only classifiers, human feedback, golden datasets and code heuristics all belong in it <cite data-video="spvXj9tnWAQ" data-chunk="5" data-quote="you don't just have LLM at your disposal">the toolbox</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h37">Make it survivable in an audit</h3>
+      <p id="production-p8">Audit fitness rests on three things: did the guardrail explain <em>why</em> it failed, is that explanation stable over time, and is the decision stored and retrievable — could you defend a verdict pulled from eight months ago? <cite data-video="EjFsjfOBZFE" data-chunk="30" data-quote="if you pull a conversation from eight months ago, could you defend that verdict effectively">eight months on</cite> You need to name the exact rule and condition, and store the verbatim customer message rather than a summary <cite data-video="EjFsjfOBZFE" data-chunk="36" data-quote="the ability to evidence uh the actual stored verbatim um response from a customer is super super important">verbatim evidence</cite>. Keep the system model-agnostic so it survives deprecations — heavily prompt-tuned systems are the most fragile to a model swap <cite data-video="EjFsjfOBZFE" data-chunk="39" data-quote="keeping your system as sort of model agnostic as possible">model-agnostic</cite>. And prompt tuning has a ceiling: it moves metrics but cannot fix the black-box problem, and there will always be cases outside the expected boundaries <cite data-video="EjFsjfOBZFE" data-chunk="16" data-quote="There's always going to be cases where it falls outside those boundaries">the ceiling</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h38">Route failures to a root-cause battery</h3>
+      <p id="production-p9">Take the 10–20% of production cases that fail a high-level quality check and run a battery of 5–10 targeted checks on just those, to tell retrieval failure from citation failure from hallucination from a bad embedding model <cite data-video="vBJF2sy1Pyw" data-chunk="6" data-quote="take this 10 20% cases run like a a battery of checks on them">root-cause battery</cite>. Filter all zero-scoring failures and cluster their common topics to turn a pile of failures into a diagnosis <cite data-video="vBJF2sy1Pyw" data-chunk="25" data-quote="filter cases where let's say the model is failing">cluster failures</cite>. Instrument every stage — query rewrite, sub-query generation, retrieval, reranking — not just the final response <cite data-video="vBJF2sy1Pyw" data-chunk="16" data-quote="we plug with every part so even if you start with r retrieval">every stage</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h39">Skip evaluating what's already broken</h3>
+      <p id="production-p10">If an agent's control-flow step fails, don't evaluate everything downstream of it — those results are likely invalid anyway, and skipping saves compute <cite data-video="spvXj9tnWAQ" data-chunk="12" data-quote="why eval anything down the line">conditional evals</cite>. And when a guardrail fires, the fix is almost always in the orchestration and prompt, not more guardrail tuning <cite data-video="spvXj9tnWAQ" data-chunk="19" data-quote="you need to adjust system one">fix system one</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h310">Judging agents and trajectories</h3>
+      <p id="production-p11">What is being evaluated has changed — from single prompt-answering, to tool calls and deep research, to long-horizon loops with sub-agents on real-world data <cite data-video="q2JrUKBMf0w" data-chunk="1" data-quote="teams running loops on real-world data with sub-agents kicked off">moving target</cite>. One camp says an LLM judge handles it: feed it what happened and what was expected, with or without a reference path <cite data-video="spvXj9tnWAQ" data-chunk="16" data-quote="here's what we did here's what we expected into an LLM">trajectory eval</cite>. The other says a fixed rubric with fixed scores fundamentally cannot cover adaptive behaviour <cite data-video="q2JrUKBMf0w" data-chunk="3" data-quote="LLM as a judge just gives you a fixed rubric with these fixed scores">fixed rubric limit</cite> and proposes agent-as-judge — a long-running agent that reads traces and discovers patterns a rubric would never catch <cite data-video="q2JrUKBMf0w" data-chunk="4" data-quote="a long-running agent that can read traces sent in">Signal</cite>, such as an agent calling the same tool repeatedly in a loop <cite data-video="q2JrUKBMf0w" data-chunk="4" data-quote="calling the same tool for repeatedly long time">loop detection</cite>, and can then open a PR with a fix <cite data-video="q2JrUKBMf0w" data-chunk="4" data-quote="it can go put up a PR and put up a fix">self-remediation</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h311">The decomposition that actually won</h3>
+      <p id="production-p12">Netflix's largest single gain came from the same move in miniature: split factuality into narrow sub-types (plot, metadata, talent, awards), run a targeted judge-agent per sub-type, and take the minimum score across them — over a 10% boost, the biggest of all their interventions <cite data-video="mX9HzIRdBpw" data-chunk="17" data-quote="we see over a 10% boost by using these factuality agents">factuality agents</cite>. And they validated the whole thing against reality: causal inference showed synopses with higher judge precision or clarity scores had significantly higher take fractions <cite data-video="mX9HzIRdBpw" data-chunk="19" data-quote="high precision or clarity scores tend to have much higher take fractions">judge predicts behaviour</cite> — a signal available before a show ever launches, unlike behavioural metrics which are inherently retroactive <cite data-video="mX9HzIRdBpw" data-chunk="21" data-quote="these LMS judge scores can be collected before a show even launches">proactive</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="production-h312">What happens with no evaluation at all</h3>
+      <p id="production-p13">A car dealership chatbot with no real-time evaluation agreed that a competitor's car was better and then agreed to sell a car for a dollar <cite data-video="vBJF2sy1Pyw" data-chunk="18" data-quote="is Tesla better than GM and the bot would say yeah">the dollar car</cite>. Jailbreak attempts carry telltale signs — unusually long prompts, bursts of repeated traffic, lower sentiment and coherence than genuine queries <cite data-video="vBJF2sy1Pyw" data-chunk="21" data-quote="the length of their question or the length of their prompt typically is like much larger">jailbreak signals</cite>. Human review handles genuine ambiguity well, but it doesn't scale — design for what fraction of decisions escalate, because that governs cost and response time <cite data-video="EjFsjfOBZFE" data-chunk="19" data-quote="it does work that it just doesn't scale">escalation budget</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="prompts">
+  <h2 id="prompts-h2">Copy these</h2>
+  <p id="prompts-p1">Four artefacts. The first is the judge; the second closes the gap with your humans; the third and fourth are what turn a score into a release signal.</p>
+
+  <figure class="prompt" id="prompts-fig1">
+    <div class="label">Narrow judge prompt — one decision, explicit labels, bounded evidence <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre1">ROLE
+You are an expert evaluator of real-estate assistant emails, applying a
+written rubric. (Do not say "AI evaluator" — it primes AI-like behaviour.)
+
+THE ONE DECISION
+Does this email contain a material claim about a listing that is NOT
+entailed by the retrieved listing records below?
+You are NOT assessing helpfulness, tone, or writing quality. Other judges
+own those. Do not suggest improvements.
+
+EVIDENCE CONTRACT — nothing outside these fields is evidence
+&lt;task_instruction&gt; ... &lt;/task_instruction&gt;
+&lt;retrieved_records&gt; ... &lt;/retrieved_records&gt;
+&lt;response&gt;          ... &lt;/response&gt;
+A claim is not supported merely because it is plausible or conventional.
+Total context here must stay under ~4,000 tokens. Trim, don't dump.
+
+LABELS — use these exact strings, nothing else
+  supported | unsupported | not_verifiable
+"unsupported" means the claim lacks support in the evidence, NOT that it
+is known to be false. "not_verifiable" means no permitted field addresses it.
+
+PROCEDURE
+1. Write your reasoning first, then the labels.
+2. List each material claim in the response.
+3. For each claim, name the exact field in &lt;retrieved_records&gt; that
+   entails it. If no field entails it, say so.
+4. Label each claim.
+5. Derive the response label MECHANICALLY:
+     response_label = unsupported  if ANY claim is unsupported
+   Do not form an independent holistic opinion of the response.
+
+OUTPUT
+JSON only, enforced by the provider's structured-output API — not by this
+instruction:
+{"reasoning": str,
+ "claims": [{"text": str, "label": str, "evidence_field": str}],
+ "response_label": str}</pre>
+    <div class="note" id="prompts-p2">Built from the standard judge-prompt anatomy <cite data-video="N_DwZR--XCc" data-chunk="30" data-quote="specify the evaluation criteria and scoring rubrics">anatomy</cite>, the one-decision rule <cite data-video="PjCwlX0XT8o" data-chunk="27" data-quote="Combining them here would make a failure impossible to diagnose">narrow it</cite>, the explicit-label vocabulary <cite data-video="PjCwlX0XT8o" data-chunk="28" data-quote="Use the label supported, unsupported, and not underserlicable rather than vague scores">labels</cite>, the 4K context cap <cite data-video="pnlT_xatpVQ" data-chunk="13" data-quote="limit your context window to 4,000 tokens or less">cap</cite>, rationale-before-score <cite data-video="8fNP4N46RRo" data-chunk="18" data-quote="typically ask the model to first output the rationale and then">rationale</cite>, and structured output enforced at the API <cite data-video="8fNP4N46RRo" data-chunk="21" data-quote="the key word here is structured output">structured</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-fig2">
+    <div class="label">Meta-prompt — rewrite the judge to agree with your humans <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre2">You are optimising an LLM judge prompt so that it agrees with human labels.
+
+INPUTS
+- CURRENT_JUDGE_PROMPT: &lt;paste verbatim&gt;
+- EXAMPLES: for each case —
+    the model input
+    the model output
+    the HUMAN label
+    the HUMAN's written reason for that label   (required — not optional)
+    the CURRENT judge's label and rationale
+
+TASK
+1. Read ONLY the disagreements. For each one, name the pattern behind it in
+   a single sentence. Group the patterns.
+2. Rewrite CURRENT_JUDGE_PROMPT so the next run maximises exact-match
+   agreement with the HUMAN labels.
+3. Express every fix as GENERAL criteria. Do NOT paste any case from
+   EXAMPLES into the new prompt: a prompt that memorises these cases will
+   score them correctly and fail on everything else.
+4. Do not add instructions that are not justified by an observed
+   disagreement. Minimal prompt, maximal agreement.
+5. Return: the new prompt, plus a changelog of what changed and which
+   disagreement motivated it.
+
+THEN, BEFORE YOU BELIEVE IT
+Re-run on the development split (never the frozen test split) and report
+accuracy, precision, recall — per criterion, not in aggregate.</pre>
+    <div class="note" id="prompts-p3">This is the meta-prompting loop <cite data-video="a3SMraZWNNs" data-chunk="26" data-quote="help me optimize the prompt so that the next time we run this system">meta-prompt</cite> with the annotator-reasoning requirement <cite data-video="X4dEHRzBLmc" data-chunk="10" data-quote="without the reasoning we will see uh the optimization algorithm">reasons</cite> and the no-memorisation rule <cite data-video="kP_aaFnXLmY" data-chunk="17" data-quote="will score them correctly but will not generalize outside these examples">generalise</cite>. Check what it returns by hand — optimisers happily produce longer, more rule-laden prompts that aren't better <cite data-video="TL527yTpxlk" data-chunk="27" data-quote="it's like not clear to me that this was better">verify</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-fig3">
+    <div class="label">Metric spec + data split + release gate <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre3"># metric spec — checked into the repo, loaded by a repository test
+id:               listing_claim_support_v1
+criterion:        "material listing claim entailed by retrieved records"
+positive_class:   "claim entailed by permitted evidence"   # must be declared
+unit_of_analysis: [claim, response]                        # both, explicitly
+evidence_sources: [retrieved_listing_records]              # must be non-empty
+boundary_policy:  "not_verifiable when no permitted field addresses the claim"
+aggregation:      "response = unsupported if any claim is unsupported"
+
+# the test that loads this file must FAIL on:
+#   - missing positive_class
+#   - wrong unit_of_analysis
+#   - empty evidence_sources
+#   - missing entailment/boundary policy
+
+# data split — frozen BEFORE the judge prompt is touched
+design:      108   # prompt iteration happens here
+development:  36   # development checks happen here
+final_test:   36   # sealed; opened once, after the config is frozen
+composition: include typos, long threads, conflicting fields, negation,
+             near-duplicates, correct-but-less-verbose answers
+leakage:     no test item, paraphrase or label rationale may appear in the
+             judge's few-shot prompt, rubric, or regression fixtures
+
+# release gate
+report:   TP FP TN FN, TPR (sensitivity), TNR (specificity), balanced_accuracy
+floor:    TPR &gt;= 0.90            # safety floor first...
+then:     minimise C_FN*FN + C_FP*FP among surviving thresholds
+correct:  P = (Q + C - 1) / (S + C - 1)   # observed rate -> estimated true rate
+compare:  paired bootstrap on case-level differences, not independent means
+predeclare: primary metric, eval set, minimum worthwhile improvement (0.03)
+runs_per_case: 5          # separates difficulty from instability
+ledger:   keep discarded trials; reporting only the favourable interval is
+          selection bias</pre>
+    <div class="note" id="prompts-p4">Assembled from the tested metric spec <cite data-video="PjCwlX0XT8o" data-chunk="3" data-quote="The specification must be tested rather than used to hide ambiguity">spec test</cite>, the frozen split <cite data-video="PjCwlX0XT8o" data-chunk="44" data-quote="uses 108 for judge design, 36 for development checks">split</cite>, hard-case composition <cite data-video="PjCwlX0XT8o" data-chunk="48" data-quote="Random sampling alone can produce an easy test">hard cases</cite>, the confusion matrix <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">matrix</cite>, cost-weighted thresholds <cite data-video="PjCwlX0XT8o" data-chunk="59" data-quote="first retain thresholds with TPR">threshold</cite>, prevalence correction <cite data-video="PjCwlX0XT8o" data-chunk="66" data-quote="A 78% judge positive rate can correspond to an estimated">correction</cite>, paired bootstrap <cite data-video="PjCwlX0XT8o" data-chunk="80" data-quote="resample differences between paired cases, not A and B independently">bootstrap</cite> and predeclaration <cite data-video="PjCwlX0XT8o" data-chunk="83" data-quote="Predeclare the primary metric comparison evaluation set and minimum worthwhile improvement">predeclare</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-fig4">
+    <div class="label">Judge model card + maintenance triggers <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre4">judge_id:          listing_claim_support_v1
+judge_model:       &lt;family, version&gt;     temperature: 0.0-0.2
+generator_family:  &lt;MUST differ from judge_model's family&gt;
+context_budget:    &lt;= 4000 tokens
+output:            structured JSON, strict parser; parse failure => retry or
+                   review, NEVER a silent pass
+
+bias_diagnostics                       # hold everything fixed but one property
+  position:        same pair as A/B and B/A; verdict flip rate .......... __
+  verbosity:       matched-length slices, equal facts; pref within slice . __
+  self_preference: same fixtures via an out-of-family judge; agreement ... __
+  task_specific:   fixtures differing only in greeting / formatting ...... __
+
+calibration
+  human_alignment (exact match) ......................................... __
+  cohen_kappa (chance-corrected — raw agreement is not a number) ........ __
+  TPR ____   TNR ____   balanced_accuracy ____
+  per-criterion match rate (NOT aggregate — tone and factuality differ) .. __
+
+cost
+  $ per judgement at production volume (not demo volume) ................ __
+  p95 latency if in the user's critical path ............................ __
+
+failure_direction
+  fail_open or fail_closed on ambiguity? ................................ __
+  second independent check required? .................................... __
+
+maintenance_triggers          # any one fires a re-validation, not a retune
+  - disagreement with sampled human review exceeds ____
+  - a new high-risk failure mode appears
+  - the provider or judge model version changes
+  - the score distribution shifts unexpectedly
+  - evaluator cost per run rises above ____
+  - repeated evaluator errors or parse failures
+policy: thresholds are NEVER silently retuned to preserve a green dashboard</pre>
+    <div class="note" id="prompts-p5">The four bias diagnostics <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">diagnostics</cite>, chance-corrected agreement <cite data-video="8fNP4N46RRo" data-chunk="9" data-quote="cohen scappa that people use for cases">kappa</cite>, per-criterion match rate <cite data-video="TL527yTpxlk" data-chunk="39" data-quote="the tone only matches once in from our human labels">per criterion</cite>, production pricing <cite data-video="EjFsjfOBZFE" data-chunk="28" data-quote="pricing it at your actual production volume, not just at your demo volume">pricing</cite>, p95 latency <cite data-video="EjFsjfOBZFE" data-chunk="29" data-quote="it's actually your sort of like 95th percentile">p95</cite>, fail-open/fail-closed <cite data-video="EjFsjfOBZFE" data-chunk="27" data-quote="Do you fail open or do you fail closed?">direction</cite>, and predeclared maintenance triggers <cite data-video="PjCwlX0XT8o" data-chunk="97" data-quote="Thresholds must not be silently retuned to preserve a green dashboard">triggers</cite>.</div>
+  </figure>
+</section>
+
+<section id="disagreements">
+  <h2 id="disagreements-h2">Where the corpus disagrees</h2>
+  <p id="disagreements-p1">Four live splits. Ignore anyone who tells you these are settled.</p>
+
+  <div class="split" id="disagreements-split1">
+    <h3 id="disagreements-h31">How big should the judge model be?</h3>
+    <p id="disagreements-p2"><span class="side">Big:</span> use the most powerful model you can afford, not mini-tier <cite data-video="a3SMraZWNNs" data-chunk="18" data-quote="use the most powerful model that you can afford">Ebbelaar</cite>; the Stanford position is a judge with much bigger capacity than what it evaluates, so it cannot be fooled by plausible-but-wrong answers <cite data-video="8fNP4N46RRo" data-chunk="26" data-quote="use the same model that you use for generation and for judges">Stanford</cite>.</p>
+    <p id="disagreements-p3"><span class="side">Small:</span> don't use an expensive frontier model for routine evaluation — the cost defeats the purpose of automating it <cite data-video="vBJF2sy1Pyw" data-chunk="5" data-quote="you don't want to use like an expensive model like gp4 for evaluation">UpTrain</cite>. Evidently's data splits the difference: GPT-4 mini hit 95–98% accuracy once the prompt was detailed enough <cite data-video="kP_aaFnXLmY" data-chunk="18" data-quote="95% accuracy and 92% recall">mid-tier works</cite>, but one step down to GPT-3.5 Turbo collapsed it <cite data-video="kP_aaFnXLmY" data-chunk="20" data-quote="we got only 48% recall, 72% accuracy">until it doesn't</cite>.</p>
+    <p class="verdict" id="disagreements-p4">Our read: the tier floor is real and task-dependent, so find it empirically on your own labels. Use the expensive model for offline prompt refinement and the cheapest model that clears your calibration bar for the online judge <cite data-video="X4dEHRzBLmc" data-chunk="31" data-quote="bigger model for the refinement prompt and smaller model">split the roles</cite>.</p>
+  </div>
+
+  <div class="split" id="disagreements-split2">
+    <h3 id="disagreements-h32">Numeric scores: broken, or fine?</h3>
+    <p id="disagreements-p5"><span class="side">Broken:</span> numeric ratings don't work well for LLM judges — use discrete word labels <cite data-video="pnlT_xatpVQ" data-chunk="9" data-quote="numeric ratings don't work very well for LLM as a judge">Arize</cite>, and move away from 1–5 scores and percentages entirely <cite data-video="X4dEHRzBLmc" data-chunk="9" data-quote="move away from one to five scores or like percentages">Agenta</cite>.</p>
+    <p id="disagreements-p6"><span class="side">Fine:</span> the UPSC grading case study runs entirely on continuous marks with MAE against human scores and reports no reliability problem <cite data-video="uQFLY8rQVYA" data-chunk="34" data-quote="ऑन एन एवरेज मेरा एलएलएम आंसर्स को इवैलुएट करते टाइम ह्यूमन से प्लस माइनस 2.3 डेविएट कर रहा है">CampusX</cite>, and Bedrock's built-in metrics are all continuous 0–1 scores used directly <cite data-video="HI5b0g_mELA" data-chunk="18" data-quote="closer to one is higher score closer to zero is lower score">Bedrock</cite>.</p>
+    <p class="verdict" id="disagreements-p7">Our read: the split tracks whether a human reference already uses numbers. Exam marking has a real numeric ground truth; "quality 1–10" does not. Netflix's result is the tiebreaker for subjective criteria — switching annotators from a 1–4 Likert scale to binary was a key agreement win <cite data-video="mX9HzIRdBpw" data-chunk="7" data-quote="using binary scores, basically a pass fail score instead of a liyker score">Netflix</cite>.</p>
+  </div>
+
+  <div class="split" id="disagreements-split3">
+    <h3 id="disagreements-h33">Score one answer, or compare two?</h3>
+    <p id="disagreements-p8"><span class="side">Compare:</span> single-answer judges are too optimistic and agree with whatever they're shown, so use pairwise plus ELO for complex RAG and agent systems <cite data-video="kIvjiH8yJoU" data-chunk="6" data-quote="a bit too optimistic and they will kind of agree with you">OpenSearch</cite>. Even when absolute scores disagree with humans, sorting variants worst-to-best shows real correlation with expert rankings <cite data-video="kIvjiH8yJoU" data-chunk="6" data-quote="there seems to be some correlation">rank, don't score</cite>.</p>
+    <p id="disagreements-p9"><span class="side">Score:</span> a single-answer binary judge reached 95–98% accuracy against human labels through iterative prompt refinement, no pairwise needed <cite data-video="kP_aaFnXLmY" data-chunk="18" data-quote="95% accuracy and 92% recall">Evidently</cite>.</p>
+    <p class="verdict" id="disagreements-p10">Our read: pairwise for choosing between variants, pointwise for monitoring one system in production — you cannot rank a live trace against anything. Note that pairwise output doubles as synthetic preference data for reward-model training <cite data-video="8fNP4N46RRo" data-chunk="22" data-quote="is response A better or is response B better">bonus use</cite>.</p>
+  </div>
+
+  <div class="split" id="disagreements-split4">
+    <h3 id="disagreements-h34">Can a fixed rubric evaluate an agent?</h3>
+    <p id="disagreements-p11"><span class="side">Yes:</span> trajectory evaluation is just another application of LLM-as-judge — grade against a reference path, or without one by matching hit nodes to the expected process <cite data-video="spvXj9tnWAQ" data-chunk="16" data-quote="here's what we did here's what we expected into an LLM">Arize/Ngo</cite>.</p>
+    <p id="disagreements-p12"><span class="side">No:</span> classical fixed-rubric judging could not catch the failures Arize's own agent produced — forgetting context, getting stuck in loops, generating different dynamic UI every turn <cite data-video="q2JrUKBMf0w" data-chunk="2" data-quote="just weren't for us to be able to catch all the types of failures">Arize/Dhinakaran</cite> — so a third eval category is needed alongside deterministic checks and LLM-as-judge <cite data-video="q2JrUKBMf0w" data-chunk="3" data-quote="the best way to an evaluate an agent was actually with an agent">agent-as-judge</cite>.</p>
+    <p class="verdict" id="disagreements-p13">Our read: both camps are describing the same fix at different granularity — decompose the judgment until each piece is answerable. Netflix's factuality agents did exactly that and produced their biggest gain <cite data-video="mX9HzIRdBpw" data-chunk="17" data-quote="we see over a 10% boost by using these factuality agents">decomposition wins</cite>.</p>
+  </div>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h2">Sources</h2>
+  <p id="sources-p1">Nineteen talks, 703 chunks, read in full across five parallel extraction passes. Each line says what that talk uniquely contributed.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Cluster 1 — production scale, optimisation, theory</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=spvXj9tnWAQ" target="_blank" rel="noopener"><cite data-video="spvXj9tnWAQ">Engineering Better Evals: Scalable LLM Evaluation Pipelines That Work — Dat Ngo, Aman Khan, Arize</cite></a> <span class="tk">— the full production toolbox (judge, encoder-only classifiers, code evals, human feedback, golden datasets), conditional eval strategy for agents, guardrail-vs-root-cause framing.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=X4dEHRzBLmc" target="_blank" rel="noopener"><cite data-video="X4dEHRzBLmc">Judge the Judge: Building LLM Evaluators That Actually Work with GEPA — Mahmoud Mabrouk, Agenta AI</cite></a> <span class="tk">— the only fully worked judge-calibration case study with before/after accuracy, dollar cost, and a catalogue of failed experiments.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=q2JrUKBMf0w" target="_blank" rel="noopener"><cite data-video="q2JrUKBMf0w">The Future of Evals: From LLM as a Judge to Agent as a Judge — Aparna Dhinakaran, Arize AI</cite></a> <span class="tk">— production eval statistics and the argument that fixed-rubric judging breaks on long-horizon multi-agent trajectories.</span></li>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=N_DwZR--XCc" target="_blank" rel="noopener"><cite data-video="N_DwZR--XCc">LLM-as-a-Judge / Autoraters • Guest Lecture at @Northeastern University • March 24, 2026</cite></a> <span class="tk">— the academic backbone: pointwise/pairwise/listwise taxonomy, canonical judge-prompt anatomy, APO and RL training methods, the three canonical bias sources.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Cluster 2 — the build process and the platforms</h3>
+    <ol>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=pnlT_xatpVQ" target="_blank" rel="noopener"><cite data-video="pnlT_xatpVQ">LLM-as-a-Judge 101</cite></a> <span class="tk">— the four-step build (data, metrics, prompt/model, meta-eval), the prompting and model-selection pitfalls, the 4K-token rule and its source study.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=qoPYlLg7_rY" target="_blank" rel="noopener"><cite data-video="qoPYlLg7_rY">LLM-as-a-Judge Evals with LangSmith</cite></a> <span class="tk">— datasets/evaluators/experiments as building blocks, plus a controlled multi-model experiment where the model ranking flipped on a bigger test set.</span></li>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=uQFLY8rQVYA" target="_blank" rel="noopener"><cite data-video="uQFLY8rQVYA">LLM Eval Methods | LLM-as-a-Judge | Reference Based Evals Vs Reference Free Evals</cite></a> <span class="tk">— the programmatic/human/model-graded taxonomy worked through three parallel case studies, plus the reference-based vs reference-free distinction and MAE as an alignment metric.</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=HI5b0g_mELA" target="_blank" rel="noopener"><cite data-video="HI5b0g_mELA">Amazon Bedrock RAG Evaluation ( LLM as a Judge ) | Step-by-Step Guide</cite></a> <span class="tk">— cloud implementation mechanics: golden-dataset JSONL schema, IAM/CORS requirements, the built-in metric catalogue, comparing configurations before rollout.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Cluster 3 — alignment with human labels</h3>
+    <ol>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=a3SMraZWNNs" target="_blank" rel="noopener"><cite data-video="a3SMraZWNNs">How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)</cite></a> <span class="tk">— the three-level framework (unit tests → human/model eval → A/B), and the human-vs-model alignment workflow with meta-prompting to close the gap.</span></li>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=kP_aaFnXLmY" target="_blank" rel="noopener"><cite data-video="kP_aaFnXLmY">3. Tutorial: How to create an LLM judge and align with human labels</cite></a> <span class="tk">— the numbers-heavy code-review case study: exact accuracy/precision/recall deltas across three prompt iterations and two model swaps.</span></li>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=kIvjiH8yJoU" target="_blank" rel="noopener"><cite data-video="kIvjiH8yJoU">From LLM-as-a-Judge To Human-in-the-Loop: Rethinking Evaluat... - Eric Pugh &amp; Fernando Rejon Barrera</cite></a> <span class="tk">— the case for pairwise/ELO over single-answer scoring, and for surfacing judge explanations to humans as an exploration tool rather than a dashboard number.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=TL527yTpxlk" target="_blank" rel="noopener"><cite data-video="TL527yTpxlk">Complete Beginner's Course on AI Evaluations in 50 Minutes (2025) | Aman Khan</cite></a> <span class="tk">— the PM-oriented live build of a golden dataset and rubric in a spreadsheet before any judge exists, including a caught arithmetic failure and per-criterion match rates.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">Cluster 4 — operations, code, theory, and an industrial case study</h3>
+    <ol>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=vBJF2sy1Pyw" target="_blank" rel="noopener"><cite data-video="vBJF2sy1Pyw">The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013</cite></a> <span class="tk">— where in the request lifecycle to run judge calls, cost control, root-cause analysis on failure clusters, and the RAG starter metric set.</span></li>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=3FcYdRQPMCo" target="_blank" rel="noopener"><cite data-video="3FcYdRQPMCo">LLM as a Judge Explained | Hands-On GenAI Evaluation with Real Code</cite></a> <span class="tk">— the fully worked code walkthrough: two candidate models plus one judge, a structured-JSON judge prompt, and a scored comparison loop.</span></li>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=8fNP4N46RRo" target="_blank" rel="noopener"><cite data-video="8fNP4N46RRo">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 8 - LLM Evaluation</cite></a> <span class="tk">— why raw agreement misleads, why BLEU/ROUGE/METEOR fail, the bias taxonomy with remedies, constrained decoding, and atomic-fact factuality scoring.</span></li>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=mX9HzIRdBpw" target="_blank" rel="noopener"><cite data-video="mX9HzIRdBpw">Evaluating Netflix Show Synopses with LLM-as-a-Judge</cite></a> <span class="tk">— the most detailed industrial case study: expert-calibrated golden dataset, per-criteria judges, inference-time scaling, factuality agents, and causal validation against real member behaviour.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h35">Cluster 5 — regulated production and statistical rigour</h3>
+    <ol>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=EjFsjfOBZFE" target="_blank" rel="noopener"><cite data-video="EjFsjfOBZFE">UnlikelyAI Webinar: Is LLM-as-a-Judge Ready for Production in Financial Services?</cite></a> <span class="tk">— the regulated-industry lens: black-box audit risk, fail-open vs fail-closed, production pricing and p95 latency, and decomposition into narrow deterministic sub-checks.</span></li>
+      <li id="sources-li18"><a href="https://www.youtube.com/watch?v=cRz0BWkuwHg" target="_blank" rel="noopener"><cite data-video="cRz0BWkuwHg">Key Metrics and Evaluation Methods for RAG</cite></a> <span class="tk">— the RAG metric checklist (precision, recall, hit rate, MRR, NDCG; faithfulness, answer relevancy, answer correctness) plus concrete pairwise-judging practice.</span></li>
+      <li id="sources-li19"><a href="https://www.youtube.com/watch?v=PjCwlX0XT8o" target="_blank" rel="noopener"><cite data-video="PjCwlX0XT8o">Chapter 6: Metrics, LLM Judges, and Statistical Confidence | Evals For AI Engineers</cite></a> <span class="tk">— the engineering playbook: criterion-first judge prompts, frozen calibration splits, bias diagnostics, sensitivity/specificity correction, paired bootstrap, and evaluator-as-production-code.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h2">What this corpus does not tell you</h2>
+  <p id="gaps-p1">Nineteen talks, and these questions still go unanswered. Where you see a confident answer elsewhere, ask for the evidence.</p>
+  <ul>
+    <li id="gaps-li1"><strong>When is a judge calibrated enough?</strong> No generalisable threshold — no required correlation, kappa or agreement score — for trusting a judge in production. The only figure offered is one presenter's informal ~95% aspiration on a single narrow case study <cite data-video="X4dEHRzBLmc" data-chunk="27" data-quote="still quite far from kind of 95% accuracy">the only number</cite>.</li>
+    <li id="gaps-li2"><strong>How many labels are enough?</strong> No sample-size formula or power analysis anywhere. The rules of thumb range from 10 to 600 and are all explicitly presented as informal; Arize declines to give a rule at all <cite data-video="pnlT_xatpVQ" data-chunk="6" data-quote="This is more of a vibe check">no rule</cite>.</li>
+    <li id="gaps-li3"><strong>What does a judge actually cost?</strong> No dollar-per-call or token-per-call figures at volume. The corpus offers "seconds, not milliseconds" <cite data-video="EjFsjfOBZFE" data-chunk="17" data-quote="these things work in order of seconds not order of milliseconds">qualitative only</cite> and one $200–300 optimisation run <cite data-video="X4dEHRzBLmc" data-chunk="31" data-quote="bigger model for the refinement prompt and smaller model">one figure</cite>. You cannot budget from this.</li>
+    <li id="gaps-li4"><strong>Which model is the best judge?</strong> No head-to-head benchmark of specific judge models on bias or accuracy. Recommendations stay generic — bigger, cheaper, different family.</li>
+    <li id="gaps-li5"><strong>Judge drift.</strong> No cadence, trigger or worked monitoring example for re-validating a judge once live, or for what to do when a provider silently updates the model you calibrated against. PjCwlX0XT8o names maintenance triggers but no video runs the loop <cite data-video="PjCwlX0XT8o" data-chunk="97" data-quote="Thresholds must not be silently retuned to preserve a green dashboard">triggers only</cite>.</li>
+    <li id="gaps-li6"><strong>Combining narrow judges into one decision.</strong> The corpus insists on many small judges but never works an example of aggregating tone, policy and factuality into a release gate beyond a passing mention of averaging.</li>
+    <li id="gaps-li7"><strong>Adversarial pressure on the judge.</strong> Nothing on defending a judge prompt against prompt injection, or on a generator learning to exploit judge biases during RLHF-style optimisation — despite reward hacking being named as the risk <cite data-video="N_DwZR--XCc" data-chunk="48" data-quote="go through reward hacking as well">named, not solved</cite>.</li>
+    <li id="gaps-li8"><strong>Self-hosted judges.</strong> No cost, latency or quality comparison of open-weight judge models against hosted APIs, and no comparison of eval frameworks — Ragas is named <cite data-video="cRz0BWkuwHg" data-chunk="9" data-quote="human judgment is still the gold standard">one pointer</cite> but never compared to alternatives.</li>
+    <li id="gaps-li9"><strong>Cost of the judging paradigms.</strong> No concrete dollar or millisecond comparison across pointwise, pairwise and listwise judging, and the ELO/ragelo approach is described without its K-factor or scoring maths, so you cannot reproduce it from the transcript.</li>
+    <li id="gaps-li10"><strong>Statistical significance in the platform demos.</strong> A jump from 79% to 94% on 20 examples is reported without any significance treatment <cite data-video="qoPYlLg7_rY" data-chunk="14" data-quote="It scored 79% and then we tested our agent using GPT-5.4 and it scored 94%">small-n</cite> — and on a 168-example set the ranking reversed, with the older GPT-4o-mini beating the newer model <cite data-video="qoPYlLg7_rY" data-chunk="16" data-quote="one of the older Open AI models, AKA GPT-4o-mini, performed better than one of the newer Open AI models">the reversal</cite>. Treat every small-n eval result this way.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site" id="footer">
+  <p id="footer-p1">LLM-as-a-Judge · a field guide compiled from the transcript corpus.</p>
+  <p id="footer-p2">19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14.</p>
+  <p id="footer-p3">Every claim on this page resolves to a chunk you can open. Where it does not, it is in the gaps.</p>
+</footer>
+
+<script>
+(function () {
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var fig = btn.closest('figure');
+      var pre = fig && fig.querySelector('pre');
+      if (!pre || !navigator.clipboard) return;
+      navigator.clipboard.writeText(pre.innerText).then(function () {
+        var prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      });
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

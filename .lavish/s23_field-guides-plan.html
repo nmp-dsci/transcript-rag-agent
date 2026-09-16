@@ -1,0 +1,593 @@
+<title>Field Guides — build plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FAF9F5; --panel: #FFFFFF; --panel-2: #F3F1EA;
+    --ink: #16181D; --body: rgba(22,24,29,.87); --caption: rgba(22,24,29,.60); --muted: #5C6270;
+    --line: #E5E2D8; --line-strong: #C9C5B8;
+    --accent: #2434C9; --accent-soft: rgba(36,52,201,.10);
+    --good: #1a7f37; --good-soft: rgba(26,127,55,.10);
+    --warn: #9a6700; --warn-soft: rgba(154,103,0,.12);
+    --bad: #cf222e; --bad-soft: rgba(207,34,46,.10);
+    --console: #14161B; --console-text: #E9E8E2; --console-label: #9BA1AE;
+    --nav-bg: rgba(250,249,245,.85);
+    --shadow: 0 1px 2px rgba(22,24,29,.05), 0 8px 28px rgba(22,24,29,.07);
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+    --mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+    /* workbench mock tokens (dark theme of frontend/src/theme.css) */
+    --wb-bg:#0d1017; --wb-panel:#12151e; --wb-panel2:#1b2130; --wb-border:#242936; --wb-text:#e7ebf3; --wb-text2:#c7ccd9;
+    --wb-muted:#8a90a0; --wb-dim:#6d7383; --wb-accent:#5b7cf0; --wb-accent-dim:#171d33; --wb-accent-border:#33437e;
+    --wb-good:#3fb950; --wb-warn:#d29922; --wb-on-accent:#0b1020;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  } }
+  :root[data-theme="dark"] {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; min-width: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin:0; background:var(--paper); color:var(--body); font-family:var(--sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; padding-inline:16px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  nav.top { position: sticky; top:0; z-index:10; background:var(--nav-bg); backdrop-filter: blur(10px); border-bottom:1px solid var(--line); margin-inline:-16px; padding-inline:16px; }
+  nav.top .wrap { display:flex; gap:18px; align-items:center; height:52px; flex-wrap:wrap; }
+  nav.top .brand { font-family:var(--serif); font-size:20px; color:var(--ink); display:flex; align-items:center; gap:8px; }
+  .diamond { width:9px; height:9px; background:var(--accent); transform:rotate(45deg); display:inline-block; }
+  nav.top a { color:var(--muted); text-decoration:none; font-size:13px; font-weight:500; }
+  nav.top a:hover { color:var(--ink); }
+  header.hero { padding: 56px 0 28px; border-bottom:1px solid var(--line); }
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:10px; }
+  h1 { font-family:var(--serif); font-weight:400; font-size: clamp(38px, 6vw, 60px); line-height:1.05; color:var(--ink); margin: 14px 0 12px; letter-spacing:-.01em; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size:19px; color:var(--body); max-width: 760px; margin:0; }
+  .facts { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:22px; font-family:var(--mono); font-size:12.5px; color:var(--caption); }
+  .facts b { color:var(--ink); font-weight:500; }
+  section { padding: 44px 0 8px; }
+  .section-head { display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:34px; color:var(--ink); margin:0; line-height:1.1; }
+  h3 { font-family:var(--sans); font-weight:600; font-size:17px; color:var(--ink); margin:26px 0 8px; }
+  p { margin: 0 0 12px; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow); }
+  .card h4 { margin:0 0 8px; font-size:15px; color:var(--ink); font-weight:600; display:flex; align-items:center; gap:8px; }
+  .card p { font-size:14.5px; color:var(--body); margin:0; }
+  .num { font-family:var(--mono); font-size:12px; color:var(--accent); }
+  .k { font-family:var(--mono); font-size:12.5px; background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--ink); white-space:nowrap; }
+  code { font-family:var(--mono); font-size:.9em; }
+  pre { background:var(--console); color:var(--console-text); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55; margin: 10px 0 16px; }
+  pre .c { color:var(--console-label); }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin: 8px 0 18px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--caption); font-weight:500; }
+  .tablewrap { overflow-x:auto; }
+  .tag { display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 7px; border-radius:99px; border:1px solid var(--line-strong); color:var(--muted); }
+  .tag.good { color:var(--good); border-color:var(--good); background:var(--good-soft); }
+  .tag.warn { color:var(--warn); border-color:var(--warn); background:var(--warn-soft); }
+  .tag.bad { color:var(--bad); border-color:var(--bad); background:var(--bad-soft); }
+  .tag.acc { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+  .note { border-left:3px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:14.5px; margin:12px 0 18px; }
+  .note.warn { border-color:var(--warn); background:var(--warn-soft); }
+  ul { padding-left: 20px; margin: 0 0 12px; } li { margin: 4px 0; }
+  .slice { display:grid; grid-template-columns: 64px minmax(0,1fr); gap: 14px; padding: 16px 0; border-top:1px solid var(--line); }
+  .slice .v { font-family:var(--serif); font-size:30px; color:var(--accent); line-height:1; }
+  .slice h4 { margin:2px 0 6px; font-size:16px; color:var(--ink); }
+  .slice p, .slice li { font-size:14.5px; }
+  .slice .ship { font-family:var(--mono); font-size:12px; color:var(--caption); margin-top:6px; }
+  /* svg figure */
+  figure { margin: 10px 0 22px; }
+  figure svg { width:100%; height:auto; display:block; }
+  figcaption { font-size:13.5px; color:var(--caption); margin-top:8px; }
+  /* workbench mock */
+  .mock { background:var(--wb-bg); color:var(--wb-text); border-radius:12px; border:1px solid var(--wb-border); overflow:hidden; font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size:12.5px; box-shadow:var(--shadow); }
+  .mock .bar { display:flex; gap:4px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--wb-border); background:var(--wb-panel); flex-wrap:wrap; }
+  .mock .bar .b { font-family:"Instrument Sans", system-ui, sans-serif; font-size:14px; margin-right:12px; color:var(--wb-text); }
+  .mock .bar .b i { font-family:var(--serif); font-style:italic; }
+  .mock .tab { padding:4px 9px; border-radius:6px; color:var(--wb-muted); }
+  .mock .tab.on { background:var(--wb-accent-dim); color:var(--wb-text); border:1px solid var(--wb-accent-border); }
+  .mock .body { display:grid; grid-template-columns: 250px minmax(0,1fr) 250px; min-height:360px; }
+  @media (max-width: 820px) { .mock .body { grid-template-columns: 1fr; } .mock .rail { border-right:0; border-bottom:1px solid var(--wb-border);} }
+  .mock .rail { background:var(--wb-panel); border-right:1px solid var(--wb-border); padding:10px; }
+  .mock .rail.right { border-right:0; border-left:1px solid var(--wb-border); }
+  .mock .rh { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--wb-dim); margin: 6px 4px 8px; }
+  .mock .g { padding:8px 9px; border-radius:7px; border:1px solid transparent; margin-bottom:4px; }
+  .mock .g.on { background:var(--wb-panel2); border-color:var(--wb-border); }
+  .mock .g .t { color:var(--wb-text); font-weight:500; }
+  .mock .g .m { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); margin-top:2px; }
+  .mock .btn { display:inline-block; padding:5px 10px; border-radius:6px; background:var(--wb-accent); color:var(--wb-on-accent); font-weight:600; font-size:12px; margin-top:8px; }
+  .mock .btn.ghost { background:var(--wb-panel2); color:var(--wb-text2); border:1px solid var(--wb-border); font-weight:500; }
+  .mock .doc { background:#FAF9F5; color:#16181D; margin:12px; border-radius:8px; padding:22px 26px; font-family:var(--sans); box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .mock .doc .ey { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:#2434C9; }
+  .mock .doc h5 { font-family:var(--serif); font-weight:400; font-size:26px; margin:6px 0 8px; line-height:1.1; }
+  .mock .doc p { font-size:12.5px; line-height:1.55; color:rgba(22,24,29,.87); margin:0 0 8px; }
+  .mock .doc mark { background: rgba(36,52,201,.16); color:inherit; padding:0 2px; }
+  .mock .doc cite { font-style:normal; font-family:var(--mono); font-size:10px; color:#2434C9; background:rgba(36,52,201,.08); border-radius:4px; padding:0 4px; }
+  .mock .cm { background:var(--wb-panel2); border:1px solid var(--wb-border); border-radius:7px; padding:8px 9px; margin-bottom:6px; }
+  .mock .cm .q { color:var(--wb-muted); font-style:italic; font-size:11.5px; }
+  .mock .cm .x { color:var(--wb-text2); margin-top:4px; }
+  .mock .cm .s { font-family:ui-monospace, Menlo, monospace; font-size:10px; margin-top:4px; }
+  .mock .s.open { color:var(--wb-warn);} .mock .s.done { color:var(--wb-good);}
+  .mock textarea { width:100%; background:var(--wb-bg); color:var(--wb-text); border:1px solid var(--wb-border); border-radius:6px; font: inherit; font-size:12px; padding:6px; resize:vertical; }
+
+  /* flow mocks */
+  .flow { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:8px; margin: 14px 0 22px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .flow .st { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; position:relative; }
+  .flow .st b { display:block; color:var(--ink); font-size:13.5px; margin-bottom:2px; }
+  .flow .st .n { font-family:var(--mono); font-size:11px; color:var(--accent); }
+  .screen { margin: 18px 0 26px; }
+  .screen .sh { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .screen .sh b { color:var(--ink); font-size:15.5px; }
+  .screen .sh span { font-family:var(--mono); font-size:11.5px; color:var(--caption); }
+  .mock .body2 { display:grid; grid-template-columns: 250px minmax(0,1fr); min-height: 300px; }
+  @media (max-width: 820px) { .mock .body2 { grid-template-columns: 1fr; } }
+  .mock .main { padding: 14px 16px; }
+  .mock .h { font-family:"Instrument Sans", system-ui, sans-serif; font-size:15px; color:var(--wb-text); margin-bottom:6px; }
+  .mock .sub { color:var(--wb-muted); font-size:12px; margin-bottom:10px; }
+  .mock .inp { background:var(--wb-bg); border:1px solid var(--wb-border); border-radius:6px; padding:7px 9px; color:var(--wb-text); font-size:12.5px; }
+  .mock .vl { display:grid; grid-template-columns: 18px minmax(0,1fr) 80px; gap:6px 8px; align-items:center; padding:5px 0; border-bottom:1px solid var(--wb-border); font-size:12px; }
+  .mock .vl .cb { width:12px; height:12px; border:1px solid var(--wb-accent-border); border-radius:3px; background:var(--wb-accent); }
+  .mock .vl .cb.off { background:transparent; }
+  .mock .vl .ch { color:var(--wb-muted); font-size:10.5px; }
+  .mock .vl .hits { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); text-align:right; }
+  .mock .vl .hits i { display:inline-block; height:6px; background:var(--wb-accent); border-radius:2px; vertical-align:middle; margin-right:5px; }
+  .mock .stages { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .mock .stg { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; padding:3px 8px; border-radius:99px; border:1px solid var(--wb-border); color:var(--wb-dim); }
+  .mock .stg.done { color:var(--wb-good); border-color:var(--wb-good); }
+  .mock .stg.live { color:var(--wb-text); border-color:var(--wb-accent); background:var(--wb-accent-dim); }
+  .mock .log { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-text2); background:var(--wb-bg); border:1px solid var(--wb-border); border-radius:6px; padding:8px 10px; line-height:1.6; }
+  .mock .log .q { color:var(--wb-accent); }
+  .mock .log .dim { color:var(--wb-dim); }
+  .mock .kpis { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:8px; margin: 10px 0; }
+  @media (max-width: 720px) { .mock .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .mock .kpi { background:var(--wb-panel); border:1px solid var(--wb-border); border-radius:7px; padding:7px 9px; }
+  .mock .kpi .v { font-family:ui-monospace, Menlo, monospace; font-size:15px; color:var(--wb-text); }
+  .mock .kpi .l { font-size:10.5px; color:var(--wb-muted); }
+  .mock .sec { display:grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap:8px; padding:7px 0; border-bottom:1px solid var(--wb-border); font-size:12px; align-items:center; }
+  .mock .sec .t { color:var(--wb-text); }
+  .mock .sec .src { display:flex; gap:3px; flex-wrap:wrap; }
+  .mock .sec .src i { display:inline-block; height:8px; width:8px; border-radius:2px; }
+  .mock .sec .cr { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); }
+  .cl-a{background:#5b7cf0}.cl-b{background:#3fb950}.cl-c{background:#d29922}.cl-d{background:#e06c9f}.cl-e{background:#39c5cf}.cl-f{background:#b58cff}
+  .mock .split { display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:12px; }
+  @media (max-width: 820px) { .mock .split { grid-template-columns: 1fr; } }
+  /* input controls */
+  form.q { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin: 10px 0 16px; box-shadow:var(--shadow); }
+  form.q legend, form.q .qt { font-weight:600; color:var(--ink); font-size:15px; margin-bottom:8px; display:block; }
+  form.q label { display:block; padding:6px 0; font-size:14.5px; cursor:pointer; }
+  form.q label small { color:var(--caption); display:block; margin-left:24px; font-size:13px; }
+  form.q input[type=radio], form.q input[type=checkbox] { margin-right:8px; accent-color: var(--accent); }
+  form.q button { margin-top:8px; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+  form.q button:hover { filter:brightness(1.08); }
+  .rec { font-family:var(--mono); font-size:11px; color:var(--good); border:1px solid var(--good); border-radius:99px; padding:1px 7px; margin-left:6px; }
+  footer { border-top:1px solid var(--line); margin-top:48px; padding:22px 0 40px; font-family:var(--mono); font-size:12px; color:var(--caption); }
+</style>
+
+<nav class="top"><div class="wrap">
+  <span class="brand"><span class="diamond"></span>Field Guides · plan</span>
+  <a href="#goal">Goal</a><a href="#shape">Shape</a><a href="#pipeline">Pipeline</a><a href="#app">In-app</a><a href="#backend">Backend</a><a href="#slices">Slices</a><a href="#risks">Risks</a><a href="#decide">Decide</a>
+</div></nav>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow"><span class="diamond"></span>transcript·lab · branch <span class="k">writeups</span></div>
+  <h1>Field Guides: articles the corpus <em>writes</em>, and the reader edits</h1>
+  <p class="lede">A new workbench tab where a Claude Agent SDK pipeline reads transcript chunks in full, writes a long-form guide with per-claim references, and then revises it from your in-page commentary. Ship Like a Studio is the first entry; LLM-as-a-Judge and Production GenAI Systems are next.</p>
+  <div class="facts">
+    <span>tab <b>Field Guides</b> (decided)</span>
+    <span>first three <b>ship-like-a-studio · llm-as-a-judge · production-genai-systems</b></span>
+    <span>engine <b>claude-agent-sdk (subscription OAuth) · stateless · corpus-only tools</b></span>
+    <span>models <b>Sonnet 5 extractors · Opus 5 composer + reviser</b></span>
+    <span>delivery <b>one PR from writeups, six commits V0–V5</b></span>
+    <span>corpus match <b>17 judge videos · 15 production videos</b></span>
+  </div>
+</header>
+
+<section id="goal">
+  <div class="section-head"><span class="num">01</span><h2>Goal and current state</h2></div>
+  <div class="cards">
+    <div class="card"><h4>What exists</h4><p><span class="k">.lavish/s20_ship-like-a-studio.html</span> is a hand-run artifact: 23 videos, 838 chunks read in full, six parallel extraction passes, a Sources appendix that maps each video to the line it contributed. Nothing in the repo reproduces it. The closest code analogue is the pack builder and deep-research loop under <span class="k">src/rag/</span>, and the Agent SDK is already used with a subscription token in <span class="k">demo/generator.py</span>.</p></div>
+    <div class="card"><h4>What you asked for</h4><p>A tab that showcases the coding agent writing in-depth guides from chunks, with references, usable by humans for learning and by AI agents as guides. You add commentary in the page, submit it, and the agent applies it. New guides can be started in-app or from the terminal, billed to your Claude subscription.</p></div>
+    <div class="card"><h4>What this plan adds</h4><p>A committed <span class="k">guides/</span> artifact directory, a <span class="k">src/guides/</span> module (writer, verifier, reviser, catalog), four API routes plus one job stream, a <span class="k">guides</span> CLI, and a <span class="k">Field Guides</span> tab with a sandboxed reader, comment rail and compose panel. Six vertical slices, V0 to V5, each shippable on its own.</p></div>
+  </div>
+  <div class="note"><b>Naming, decided.</b> The tab is "Field Guides", the module is <span class="k">src/guides/</span>, the artifact directory is <span class="k">guides/</span>. Ship Like a Studio already calls itself "a field guide from the transcript corpus", and it fits the tab row: Chat · RAG Pipeline · Scoreboard · Experiments · Field Guides · System Design.</div>
+</section>
+
+<section id="shape">
+  <div class="section-head"><span class="num">02</span><h2>The shape of a guide</h2></div>
+  <p>Every guide is one directory, committed to git like <span class="k">experts/&lt;topic&gt;/</span> and <span class="k">evals/runs/</span> are today. It holds three outputs from one run: the human page, the agent-readable guide, and the machine-checkable claims. Revisions add versions; they never overwrite.</p>
+<pre><span class="c"># repo root</span>
+guides/
+  index.json                         <span class="c"># catalog: slug, title, status, versions, source counts, cite-valid %</span>
+  guide.css                          <span class="c"># the shared editorial stylesheet, extracted from s20 (paper/ink/ultramarine, Instrument Serif + Geist)</span>
+  ship-like-a-studio/
+    manifest.json                    <span class="c"># topic, video_ids, chunk_count, model, compiled_at, current_version, provenance</span>
+    guide.html                       <span class="c"># current version, human page (what the iframe renders)</span>
+    guide.md                         <span class="c"># current version, agent guide: frontmatter + same sections + citations as [video_id@chunk_index]</span>
+    claims.json                      <span class="c"># every &lt;cite&gt; in the page: claim text, video_id, chunk_id, verified bool</span>
+    evidence/                        <span class="c"># extraction pass outputs, one JSON per cluster (the "6 parallel passes")</span>
+    corpus/                          <span class="c"># exported chunks, one .md per video, gitignored (rebuildable from Chroma)</span>
+    comments.jsonl                   <span class="c"># reader commentary: id, anchor, quote, body, status, resolved_in_version</span>
+    versions/v1.html  v2.html ...    <span class="c"># immutable history; guide.html is a copy of the latest</span>
+    receipts/v2.json                 <span class="c"># per-comment outcome the reviser wrote: addressed / deferred / rejected + reason</span></pre>
+  <h3>Free HTML with a contract, not a rigid template</h3>
+  <p>Ship Like a Studio is good because it is bespoke: its own sections, levers, kill-lists, prompts. Forcing every guide through one JSON schema would flatten that. So the agent writes HTML, but under three rules a Python verifier enforces before anything is published:</p>
+  <ul>
+    <li><b>Citations are markup.</b> Every sourced claim carries <code>&lt;cite data-video="…" data-chunk="…"&gt;</code>. The verifier resolves each to a real chunk in Chroma and checks the quoted span (when present) occurs in that chunk. Invalid cites fail the run; the pass rate is stored in <span class="k">index.json</span> and shown on the card.</li>
+    <li><b>Stylesheet is shared.</b> The page links <span class="k">../guide.css</span> and may add scoped extras. That keeps guides visually one family, as the six views of the workbench are.</li>
+    <li><b>Sections are addressable.</b> Every section and paragraph has a stable <code>id</code> (<code>s2-p4</code>), so comments anchor to ids and the reviser edits in place instead of regenerating the page.</li>
+  </ul>
+  <p>The same run emits <span class="k">guide.md</span>, the version an AI agent consumes. It is a faithful markdown rendering of the same sections with YAML frontmatter (title, topic, sources, compiled_at, version) and citations as <code>[video_id@chunk]</code>. Dropping it into a <span class="k">skills/</span> folder makes it a Claude Code skill with no extra work.</p>
+</section>
+
+<section id="pipeline">
+  <div class="section-head"><span class="num">03</span><h2>The writing pipeline</h2></div>
+  <p>The pipeline reproduces how s20 was actually made: whole-video reads, parallel extraction, one composer, sources traced per claim. Retrieval is used only to pick the videos; once chosen, the agent reads every chunk of every chosen video, not a top-k.</p>
+  <figure>
+  <svg viewBox="0 0 1000 300" role="img" aria-labelledby="pipe-t"><title id="pipe-t">Guide writing pipeline: scope, export, extract in parallel, compose, verify, publish</title>
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <g font-family="Geist, sans-serif" font-size="13" fill="currentColor" style="color: var(--ink)">
+      <!-- stage boxes -->
+      <g id="st-scope"><title>Scope</title><rect x="10" y="110" width="140" height="70" rx="10" fill="var(--panel)" stroke="var(--line-strong)"/><text x="80" y="138" text-anchor="middle" font-weight="600">1 · Scope</text><text x="80" y="158" text-anchor="middle" font-size="11.5" fill="var(--muted)">topic → video set</text></g>
+      <g id="st-export"><title>Export</title><rect x="180" y="110" width="140" height="70" rx="10" fill="var(--panel)" stroke="var(--line-strong)"/><text x="250" y="138" text-anchor="middle" font-weight="600">2 · Export</text><text x="250" y="158" text-anchor="middle" font-size="11.5" fill="var(--muted)">chunks → corpus/*.md</text></g>
+      <g id="st-extract"><title>Extract, N parallel subagents</title>
+        <rect x="350" y="20" width="150" height="46" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="425" y="48" text-anchor="middle" font-size="12">extractor · cluster A</text>
+        <rect x="350" y="80" width="150" height="46" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="425" y="108" text-anchor="middle" font-size="12">extractor · cluster B</text>
+        <rect x="350" y="140" width="150" height="46" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="425" y="168" text-anchor="middle" font-size="12">extractor · cluster C</text>
+        <rect x="350" y="200" width="150" height="46" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-dasharray="4 3"/><text x="425" y="228" text-anchor="middle" font-size="12">… up to 6</text>
+        <text x="425" y="275" text-anchor="middle" font-size="11.5" fill="var(--muted)">3 · claims + chunk ids → evidence/*.json</text>
+      </g>
+      <g id="st-compose"><title>Compose</title><rect x="540" y="110" width="140" height="70" rx="10" fill="var(--panel)" stroke="var(--line-strong)"/><text x="610" y="138" text-anchor="middle" font-weight="600">4 · Compose</text><text x="610" y="158" text-anchor="middle" font-size="11.5" fill="var(--muted)">guide.html + guide.md</text></g>
+      <g id="st-verify"><title>Verify</title><rect x="710" y="110" width="130" height="70" rx="10" fill="var(--panel)" stroke="var(--line-strong)"/><text x="775" y="138" text-anchor="middle" font-weight="600">5 · Verify</text><text x="775" y="158" text-anchor="middle" font-size="11.5" fill="var(--muted)">cites resolve? no LLM</text></g>
+      <g id="st-publish"><title>Publish</title><rect x="870" y="110" width="120" height="70" rx="10" fill="var(--good-soft)" stroke="var(--good)"/><text x="930" y="138" text-anchor="middle" font-weight="600">6 · Publish</text><text x="930" y="158" text-anchor="middle" font-size="11.5" fill="var(--muted)">manifest, index</text></g>
+      <!-- edges -->
+      <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#ar)" style="color: var(--line-strong)">
+        <path d="M150,145 L178,145"/><path d="M320,145 L348,43"/><path d="M320,145 L348,103"/><path d="M320,145 L348,163"/><path d="M320,145 L348,223"/>
+        <path d="M500,43 L538,140"/><path d="M500,103 L538,142"/><path d="M500,163 L538,146"/><path d="M500,223 L538,150"/>
+        <path d="M680,145 L708,145"/><path d="M840,145 L868,145"/>
+      </g>
+      <!-- verify fail loop -->
+      <path d="M775,180 C775,230 640,230 612,182" stroke="var(--bad)" stroke-width="1.5" fill="none" marker-end="url(#ar)" style="color: var(--bad)"/>
+      <text x="700" y="238" text-anchor="middle" font-size="11.5" fill="var(--bad)">invalid cites → fix pass (max 2)</text>
+      <!-- labels -->
+      <text x="80" y="200" text-anchor="middle" font-size="11" fill="var(--muted)">hybrid retrieval + titles</text>
+      <text x="80" y="215" text-anchor="middle" font-size="11" fill="var(--muted)">user confirms the list</text>
+      <text x="250" y="200" text-anchor="middle" font-size="11" fill="var(--muted)">TranscriptChunkStore</text>
+      <text x="250" y="215" text-anchor="middle" font-size="11" fill="var(--muted)">.chunks_for_videos()</text>
+    </g>
+  </svg>
+  <figcaption>Stages 1, 2, 5 and 6 are plain Python and deterministic. Stages 3 and 4 are Agent SDK sessions: one parent session whose subagents do the extraction. Every stage writes its output to disk, so a killed job resumes at the last completed stage.</figcaption>
+  </figure>
+
+  <div class="tablewrap"><table>
+    <tr><th>Stage</th><th>Implementation</th><th>Reuses</th></tr>
+    <tr><td><b>1 Scope</b></td><td>Topic string → candidate videos: title/routing-text match plus hybrid retrieval of 8 probe questions the topic implies, ranked by how many probes each video answers. Returns a checklist the user edits (UI) or accepts with <span class="k">--yes</span> (CLI). Explicit <span class="k">--videos</span> skips this.</td><td><span class="k">src/api/corpus.py list_corpus</span>, <span class="k">src/rag/context.py get_context</span>, pack routing in <span class="k">experts/packs.json</span></td></tr>
+    <tr><td><b>2 Export</b></td><td>Writes <span class="k">corpus/&lt;video_id&gt;.md</span>: title, channel, URL, then each chunk as a heading with its chunk id and timestamp, in order. Clusters videos into ≤6 groups of similar size by channel/title similarity.</td><td><span class="k">TranscriptChunkStore.chunks_for_videos</span> (<span class="k">src/rag/storage.py</span>)</td></tr>
+    <tr><td><b>3 Extract</b></td><td>Fresh <span class="k">query()</span> with <span class="k">agents={"extractor": AgentDefinition(...)}</span>, tools Read/Write/Glob/Grep + <code>retrieve_chunks</code> only, no web, <span class="k">cwd=guides/&lt;slug&gt;</span>. The parent is told to spawn one extractor per cluster in parallel; each writes <span class="k">evidence/&lt;cluster&gt;.json</span>: claims, each with video_id, chunk_id, verbatim quote, and a "what it contributed" line. Model: Sonnet 5 for extractors (decided).</td><td>Pattern from <span class="k">demo/generator.py:214-236</span></td></tr>
+    <tr><td><b>4 Compose</b></td><td>A fresh Opus 5 session with the evidence files (decided; the reviser is Opus 5 too): writes <span class="k">guide.html</span> and <span class="k">guide.md</span> following the <b>field-guide-writer skill</b>: thesis → pipeline/stages → checklists → copyable prompts → sources appendix, cite markup, stable ids, shared stylesheet. The skill file is the versioned prompt.</td><td>New <span class="k">skills/field-guide-writer/SKILL.md</span></td></tr>
+    <tr><td><b>5 Verify</b></td><td>Parse the HTML, resolve every cite against Chroma, check quotes, check every section has an id, check no external scripts. Writes <span class="k">claims.json</span>. On failure, one bounded fix pass back to the agent with the list of bad cites; after two failures the job errors with the report.</td><td>New <span class="k">src/guides/verify.py</span>, deterministic, fully unit-tested with a fake store</td></tr>
+    <tr><td><b>6 Publish</b></td><td>Snapshot to <span class="k">versions/vN.html</span>, update manifest and <span class="k">index.json</span>. Nothing is served until this step.</td><td>Same commit-the-artifact convention as <span class="k">evals/runs</span></td></tr>
+  </table></div>
+
+  <h3>The agent contract: stateless, corpus-only</h3>
+  <p>Every write and every revision is a fresh <code>query()</code> with no session carried over. The agent's whole world is what is on disk in <span class="k">guides/&lt;slug&gt;/</span> plus one retrieval tool. It cannot remember a previous run, and it cannot reach the internet.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Rule</th><th>How it is enforced</th></tr>
+    <tr><td><b>Stateless</b></td><td>No <code>resume</code> / <code>continue_conversation</code>; no session ids stored. All state the next run needs is a file: <span class="k">guide.html</span>, <span class="k">claims.json</span>, <span class="k">evidence/</span>, <span class="k">comments.jsonl</span>, <span class="k">corpus/</span>. A run that dies leaves those files; the next run simply starts over from them. The runner passes the same prompt shape every time, so a revision is reproducible from the repo alone.</td></tr>
+    <tr><td><b>Corpus-only evidence</b></td><td><code>allowed_tools</code> is exactly <code>Read, Write, Edit, Glob, Grep</code> scoped to <span class="k">cwd=guides/&lt;slug&gt;</span>, plus one in-process MCP tool <code>retrieve_chunks</code>. <code>WebSearch</code>, <code>WebFetch</code> and <code>Bash</code> are not in the list, and <code>disallowed_tools</code> names them too, so the SDK refuses them even if the model asks. The system prompt states the rule in one line: <em>evidence comes from the exported corpus and the retrieval tool only; if the corpus does not support a claim, say so rather than fill the gap.</em></td></tr>
+    <tr><td><b>The retrieval tool</b></td><td><code>retrieve_chunks(question, video_ids?, top_k=10)</code> is registered with <code>create_sdk_mcp_server</code> in <span class="k">src/guides/tools.py</span> and wraps the same hybrid retriever the Chat tab uses (<span class="k">MultiTranscriptRagContextProvider.get_context</span>, semantic + BM25 fusion, reranked). It returns chunk id, video, timestamp and text, so anything it surfaces is citeable as-is. Default scope is the guide's own video set; the whole corpus is one flag away when a comment asks for evidence the guide's videos do not hold.</td></tr>
+    <tr><td><b>Web only on request</b></td><td>A per-run <code>--allow-web</code> flag (CLI) or checkbox (UI) adds <code>WebSearch</code>/<code>WebFetch</code> to the tool list and stamps <code>web_allowed: true</code> plus every fetched URL into the manifest and receipt. Off by default; web-sourced claims must carry an <code>&lt;a&gt;</code> reference, never a <code>&lt;cite&gt;</code>, so corpus citations stay pure.</td></tr>
+    <tr><td><b>Tool use is logged</b></td><td>Every tool call (file reads, retrieval queries, and the questions they asked) streams as a stage event and is stored in <span class="k">runs/&lt;timestamp&gt;.jsonl</span> next to the receipt, so "how did the agent decide this" is answerable after the fact.</td></tr>
+  </table></div>
+
+  <h3>Revision is the same pipeline from stage 4</h3>
+  <p>Open comments are a tracked batch. A fresh reviser session gets the current page, <span class="k">claims.json</span>, the evidence files, and the comments with their anchors. It must edit in place, may re-read <span class="k">corpus/</span> or call <code>retrieve_chunks</code> for new evidence, and must return a receipt giving every comment id exactly one outcome: addressed (with the section id changed), deferred (reason), or rejected (reason, typically "the corpus does not cover this"). Verify runs again; publish bumps the version and marks comments resolved-in-vN. Missing ids in the receipt fail the job, which is the same rule the Lavish input playbook applies to its own tracked batches.</p>
+
+  <h3>Terminal path</h3>
+<pre>uv sync --group guides                              <span class="c"># claude-agent-sdk lives in an optional group, like demo</span>
+uv run python -m src.cli guides import .lavish/s20_ship-like-a-studio.html --slug ship-like-a-studio
+uv run python -m src.cli guides write --topic "LLM-as-a-judge" --slug llm-as-a-judge          <span class="c"># interactive video checklist</span>
+uv run python -m src.cli guides write --topic "production generative AI systems" --slug production-genai-systems --yes
+uv run python -m src.cli guides verify llm-as-a-judge
+uv run python -m src.cli guides comment llm-as-a-judge --anchor s3-p2 "Add the pairwise vs pointwise tradeoff here"
+uv run python -m src.cli guides revise llm-as-a-judge                                        <span class="c"># applies all open comments, writes v2 + receipt</span>
+uv run python -m src.cli guides list</pre>
+  <p>Auth is <span class="k">CLAUDE_CODE_OAUTH_TOKEN</span> from <span class="k">~/.env</span>, exactly as the demo recorder does it, so runs bill to your subscription rather than an API key. The SDK shells out to the installed <span class="k">claude</span> binary (2.1.270 is on this machine), which is why the dependency stays optional: the Docker demo image has neither the binary nor a token and only ever serves the read routes.</p>
+</section>
+
+<section id="app">
+  <div class="section-head"><span class="num">04</span><h2>The tab</h2></div>
+  <p>Three regions: a library rail, the reader, and a commentary rail. The chrome is workbench: theme tokens, <span class="k">--t</span> scale, 200ms motion, dense rails. The guide itself is an editorial document with its own stylesheet, so it renders inside a sandboxed iframe and cannot leak fonts or reveals into the app. The landing page is already the one allowed hero; the iframe document is the second, and it is a document, not a tab.</p>
+  <div class="mock">
+    <div class="bar"><span class="b">transcript·<i>lab</i></span><span class="tab">Chat</span><span class="tab">RAG Pipeline</span><span class="tab">Scoreboard</span><span class="tab">Experiments</span><span class="tab on">Field Guides</span><span class="tab">System Design</span></div>
+    <div class="body">
+      <div class="rail">
+        <div class="rh">Guides · 3</div>
+        <div class="g on"><div class="t">Ship Like a Studio</div><div class="m">23 videos · 838 chunks · v1 · cites 100%</div></div>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">17 videos · 612 chunks · v2 · cites 98%</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">15 videos · 540 chunks · v1 · cites 97%</div></div>
+        <div class="rh" style="margin-top:14px">New guide</div>
+        <textarea rows="2" readonly>topic, e.g. "context engineering for agents"</textarea>
+        <span class="btn">Find sources</span>
+        <div class="m" style="margin-top:8px">→ checklist of candidate videos, then <b>Write guide</b>; progress streams here (scope · export · extract 3/6 · compose · verify · publish)</div>
+      </div>
+      <div>
+        <div class="doc">
+          <div class="ey">Part one · The operating principle</div>
+          <h5>The operating principle</h5>
+          <p id="m1">Every creator in the corpus converges on the same diagnosis. "AI slop" isn't a model failure; it's what happens when you accept the default. <cite>How I Make Apps FEEL Premium @c17</cite></p>
+          <p><mark>The corollary is the moat: iteration budgets. Thirty-plus prompts for one illustration, thirty color trials for one gradient.</mark> <cite>FEEL Premium @c41</cite> A result you got in two prompts is a result everyone else can get in two prompts.</p>
+          <p style="font-size:11px;color:#5C6270;margin:0">↑ select text → "Comment" pops at the selection → anchored to <span style="font-family:var(--mono)">s1-p2</span></p>
+        </div>
+      </div>
+      <div class="rail right">
+        <div class="rh">Commentary · 2 open · 1 addressed</div>
+        <div class="cm"><div class="q">"iteration budgets … thirty color trials"</div><div class="x">Cite the actual numbers per creator; this reads as one source.</div><div class="s open">c-07 · open · s1-p2</div></div>
+        <div class="cm"><div class="q">Part two, stage 04</div><div class="x">Add the plan-mode prompt from the Meta engineer video.</div><div class="s open">c-08 · open · s2-st4</div></div>
+        <div class="cm"><div class="q">Sources</div><div class="x">Group by channel not theme.</div><div class="s done">c-05 · addressed in v2</div></div>
+        <span class="btn">Send 2 comments to the agent</span> <span class="btn ghost">v1 · v2 ▾</span>
+        <div class="m" style="margin-top:8px;color:var(--wb-muted)">Revision streams stage events, then shows the receipt: every comment id addressed / deferred / rejected with reason.</div>
+      </div>
+    </div>
+  </div>
+  <figcaption>Mock uses the workbench's dark tokens from <span class="k">frontend/src/theme.css</span>. Light theme uses the same components with the light token set.</figcaption>
+  <h3>The flow, screen by screen</h3>
+  <p>Four screens, one tab. Everything below uses workbench components and tokens; nothing animates except the live counters in screen B, which are progress, not data, so the no-animated-numbers rule in DESIGN.md is not touched.</p>
+  <div class="flow">
+    <div class="st"><span class="n">A</span><b>Request</b>topic → candidate videos with probe hits → confirm set</div>
+    <div class="st"><span class="n">B</span><b>Research, live</b>stage rail, chunks read, retrieval queries as they happen, claims per cluster</div>
+    <div class="st"><span class="n">C</span><b>Consolidated view</b>the guide plus its evidence map: every section → clusters → videos, cite rate</div>
+    <div class="st"><span class="n">D</span><b>Commentary</b>select, comment, send batch, receipt, versions (the mock above)</div>
+  </div>
+
+  <div class="screen"><div class="sh"><b>A · New guide request</b><span>POST /api/guides/scope, then POST /api/guides</span></div>
+  <div class="mock">
+    <div class="bar"><span class="b">transcript·<i>lab</i></span><span class="tab">Chat</span><span class="tab">RAG Pipeline</span><span class="tab">Scoreboard</span><span class="tab">Experiments</span><span class="tab on">Field Guides</span><span class="tab">System Design</span></div>
+    <div class="body2">
+      <div class="rail">
+        <div class="rh">Guides · 3</div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">17 videos · v2</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">15 videos · v1</div></div>
+        <div class="g on"><div class="t">+ New guide</div><div class="m">draft · not started</div></div>
+      </div>
+      <div class="main">
+        <div class="h">New field guide</div>
+        <div class="sub">The agent will read every chunk of the videos you confirm, then compose. Web access stays off unless you tick it.</div>
+        <div class="inp">context engineering for coding agents</div>
+        <div class="sub" style="margin-top:8px">8 probe questions derived from the topic, run through hybrid retrieval · 159 videos scanned · 14 candidates ranked by how many probes each answers</div>
+        <div class="vl"><span class="cb"></span><span>L8 Principal's Agentic Engineering Workflow <span class="ch">· principal eng · 41 chunks</span></span><span class="hits"><i style="width:56px"></i>7/8</span></div>
+        <div class="vl"><span class="cb"></span><span>Agentic Engineering Workflow (HumanLayer / 12-Factor Agents) <span class="ch">· 38 chunks</span></span><span class="hits"><i style="width:48px"></i>6/8</span></div>
+        <div class="vl"><span class="cb"></span><span>A Meta Engineer's Agentic Engineering Workflow <span class="ch">· 44 chunks</span></span><span class="hits"><i style="width:40px"></i>5/8</span></div>
+        <div class="vl"><span class="cb"></span><span>Omnigent: Open-Source Meta-Harness for AI Agents <span class="ch">· 52 chunks</span></span><span class="hits"><i style="width:32px"></i>4/8</span></div>
+        <div class="vl"><span class="cb off"></span><span style="color:var(--wb-muted)">The Multi-Agent Architecture That Actually Ships <span class="ch">· 29 chunks</span></span><span class="hits"><i style="width:8px"></i>1/8</span></div>
+        <div class="sub" style="margin-top:10px">☐ allow web search this run &nbsp;·&nbsp; model: Sonnet 5 extract → Opus 5 compose &nbsp;·&nbsp; est. 11 videos · ~430 chunks · 3 clusters · 10–15 min</div>
+        <span class="btn">Write guide</span> <span class="btn ghost">Add a video by URL</span>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="screen"><div class="sh"><b>B · Research in progress</b><span>GET /api/guides/job/stream · SSE stage events</span></div>
+  <div class="mock">
+    <div class="bar"><span class="b">transcript·<i>lab</i></span><span class="tab">Chat</span><span class="tab">RAG Pipeline</span><span class="tab">Scoreboard</span><span class="tab">Experiments</span><span class="tab on">Field Guides</span><span class="tab">System Design</span></div>
+    <div class="body2">
+      <div class="rail">
+        <div class="rh">Guides · 3 + 1 writing</div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">17 videos · v2</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">15 videos · v1</div></div>
+        <div class="g on"><div class="t">Context Engineering for Coding Agents</div><div class="m" style="color:var(--wb-warn)">● extracting · 6m 12s</div></div>
+      </div>
+      <div class="main">
+        <div class="stages"><span class="stg done">✓ scope 11 videos</span><span class="stg done">✓ export 430 chunks</span><span class="stg live">● extract 2/3 clusters</span><span class="stg">compose</span><span class="stg">verify</span><span class="stg">publish</span></div>
+        <div class="split">
+          <div>
+            <svg viewBox="0 0 520 210" style="width:100%;height:auto;display:block" role="img" aria-label="Research map: three clusters of videos, chunks read and claims found per video">
+              <g font-family="system-ui, sans-serif" font-size="10" fill="#c7ccd9">
+                <text x="6" y="14" fill="#8a90a0" font-family="ui-monospace, Menlo, monospace" font-size="9.5" letter-spacing=".06em">RESEARCH MAP · chunks read → claims found</text>
+                <!-- cluster A -->
+                <rect x="6" y="24" width="160" height="176" rx="8" fill="#12151e" stroke="#33437e"/><text x="14" y="40" fill="#5b7cf0" font-weight="600">Cluster A · workflows</text><text x="158" y="40" text-anchor="end" fill="#3fb950" font-family="ui-monospace, Menlo, monospace" font-size="9.5">done · 61 claims</text>
+                <g><rect x="14" y="52" width="144" height="8" rx="2" fill="#1b2130"/><rect x="14" y="52" width="144" height="8" rx="2" fill="#5b7cf0"/><text x="14" y="72">L8 Principal workflow · 41/41</text></g>
+                <g><rect x="14" y="80" width="144" height="8" rx="2" fill="#1b2130"/><rect x="14" y="80" width="144" height="8" rx="2" fill="#5b7cf0"/><text x="14" y="100">HumanLayer 12-factor · 38/38</text></g>
+                <g><rect x="14" y="108" width="144" height="8" rx="2" fill="#1b2130"/><rect x="14" y="108" width="144" height="8" rx="2" fill="#5b7cf0"/><text x="14" y="128">Meta engineer workflow · 44/44</text></g>
+                <g><rect x="14" y="136" width="144" height="8" rx="2" fill="#1b2130"/><rect x="14" y="136" width="144" height="8" rx="2" fill="#5b7cf0"/><text x="14" y="156">10x developer · 36/36</text></g>
+                <!-- cluster B -->
+                <rect x="180" y="24" width="160" height="176" rx="8" fill="#12151e" stroke="#33437e"/><text x="188" y="40" fill="#5b7cf0" font-weight="600">Cluster B · harnesses</text><text x="332" y="40" text-anchor="end" fill="#d29922" font-family="ui-monospace, Menlo, monospace" font-size="9.5">reading · 23 claims</text>
+                <g><rect x="188" y="52" width="144" height="8" rx="2" fill="#1b2130"/><rect x="188" y="52" width="144" height="8" rx="2" fill="#5b7cf0"/><text x="188" y="72">Omnigent meta-harness · 52/52</text></g>
+                <g><rect x="188" y="80" width="144" height="8" rx="2" fill="#1b2130"/><rect x="188" y="80" width="79" height="8" rx="2" fill="#5b7cf0"/><text x="188" y="100">Agentic dev env from scratch · 26/47</text></g>
+                <g><rect x="188" y="108" width="144" height="8" rx="2" fill="#1b2130"/><text x="188" y="128" fill="#6d7383">100x engineer · 0/33</text></g>
+                <g><rect x="188" y="136" width="144" height="8" rx="2" fill="#1b2130"/><text x="188" y="156" fill="#6d7383">Multi-agent that ships · 0/29</text></g>
+                <!-- cluster C -->
+                <rect x="354" y="24" width="160" height="176" rx="8" fill="#12151e" stroke="#242936"/><text x="362" y="40" fill="#8a90a0" font-weight="600">Cluster C · context</text><text x="506" y="40" text-anchor="end" fill="#6d7383" font-family="ui-monospace, Menlo, monospace" font-size="9.5">queued</text>
+                <g><rect x="362" y="52" width="144" height="8" rx="2" fill="#1b2130"/><text x="362" y="72" fill="#6d7383">Context engineering talk · 0/31</text></g>
+                <g><rect x="362" y="80" width="144" height="8" rx="2" fill="#1b2130"/><text x="362" y="100" fill="#6d7383">Claude Code memory & skills · 0/28</text></g>
+                <g><rect x="362" y="108" width="144" height="8" rx="2" fill="#1b2130"/><text x="362" y="128" fill="#6d7383">Prompt caching deep dive · 0/25</text></g>
+              </g>
+            </svg>
+            <div class="kpis">
+              <div class="kpi"><div class="v">277 / 430</div><div class="l">chunks read in full</div></div>
+              <div class="kpi"><div class="v">84</div><div class="l">claims with a chunk id</div></div>
+              <div class="kpi"><div class="v">9</div><div class="l">retrieval queries</div></div>
+              <div class="kpi"><div class="v">0</div><div class="l">web fetches (off)</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="rh" style="margin-top:0">Agent activity · live</div>
+            <div class="log">
+              <div><span class="dim">06:08</span> read corpus/omnigent.md <span class="dim">(52 chunks)</span></div>
+              <div><span class="dim">06:10</span> <span class="q">retrieve_chunks</span> "how do harnesses cap tokens and iterations?" <span class="dim">→ 10 chunks, 3 videos</span></div>
+              <div><span class="dim">06:11</span> claim +1 <span class="dim">omnigent@c17</span> "every loop has a governor: token cap, iteration cap, stop condition"</div>
+              <div><span class="dim">06:11</span> claim +1 <span class="dim">l8-principal@c29</span> "adversarial reviewer in a fresh context"</div>
+              <div><span class="dim">06:12</span> read corpus/agentic-dev-env.md <span class="dim">26/47</span></div>
+              <div><span class="dim">06:12</span> <span class="q">retrieve_chunks</span> "what goes in CLAUDE.md vs a skill?" <span class="dim">→ 10 chunks, 4 videos</span></div>
+              <div><span class="dim">06:13</span> gap noted: <span class="dim">"no source covers cost per token of caching"</span> → will be flagged, not filled</div>
+            </div>
+            <div class="sub" style="margin-top:8px">The log is the SSE stream, persisted to <span style="font-family:ui-monospace,Menlo,monospace">runs/&lt;ts&gt;.jsonl</span>. Closing the tab does not stop the job; reopening resubscribes from the snapshot.</div>
+            <span class="btn ghost">Cancel job</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="screen"><div class="sh"><b>C · Consolidated view</b><span>after verify + publish · GET /api/guides/{slug}</span></div>
+  <div class="mock">
+    <div class="bar"><span class="b">transcript·<i>lab</i></span><span class="tab">Chat</span><span class="tab">RAG Pipeline</span><span class="tab">Scoreboard</span><span class="tab">Experiments</span><span class="tab on">Field Guides</span><span class="tab">System Design</span></div>
+    <div class="body2">
+      <div class="rail">
+        <div class="rh">Guides · 4</div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">17 videos · v2</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">15 videos · v1</div></div>
+        <div class="g on"><div class="t">Context Engineering for Coding Agents</div><div class="m" style="color:var(--wb-good)">✓ published v1 · 12m 40s</div></div>
+        <div class="rh" style="margin-top:14px">This guide</div>
+        <div class="m">11 videos · 430 chunks · 3 clusters<br>131 claims · cites valid 128/131 (97.7%)<br>3 gaps flagged · web: off<br>Sonnet 5 extract · Opus 5 compose</div>
+        <span class="btn ghost">Read guide</span> <span class="btn ghost">guide.md</span>
+      </div>
+      <div class="main">
+        <div class="h">Evidence map</div>
+        <div class="sub">What each section rests on. Click a section to open it in the reader; click a source square to see its claims. This is the "consolidated view" the research produced, and it is the first thing you check before reading.</div>
+        <div class="kpis">
+          <div class="kpi"><div class="v">6</div><div class="l">sections</div></div>
+          <div class="kpi"><div class="v">131</div><div class="l">claims cited</div></div>
+          <div class="kpi"><div class="v">97.7%</div><div class="l">cites resolve to a chunk</div></div>
+          <div class="kpi"><div class="v">3</div><div class="l">gaps the corpus doesn't cover</div></div>
+        </div>
+        <div class="sec"><span class="t">01 · Thesis: context is the only lever</span><span class="src"><i class="cl-a"></i><i class="cl-a"></i><i class="cl-a"></i><i class="cl-b"></i><i class="cl-c"></i><i class="cl-c"></i> <span class="cr">18 claims · 6 videos</span></span></div>
+        <div class="sec"><span class="t">02 · The context contract (CLAUDE.md, memory, skills)</span><span class="src"><i class="cl-a"></i><i class="cl-a"></i><i class="cl-c"></i><i class="cl-c"></i><i class="cl-c"></i> <span class="cr">34 claims · 5 videos</span></span></div>
+        <div class="sec"><span class="t">03 · Plan before build</span><span class="src"><i class="cl-a"></i><i class="cl-a"></i><i class="cl-a"></i><i class="cl-a"></i> <span class="cr">22 claims · 4 videos</span></span></div>
+        <div class="sec"><span class="t">04 · Harnesses and governors</span><span class="src"><i class="cl-b"></i><i class="cl-b"></i><i class="cl-b"></i><i class="cl-a"></i> <span class="cr">27 claims · 4 videos</span></span></div>
+        <div class="sec"><span class="t">05 · Evidence over claims</span><span class="src"><i class="cl-a"></i><i class="cl-a"></i><i class="cl-b"></i> <span class="cr">19 claims · 3 videos</span></span></div>
+        <div class="sec"><span class="t">06 · Prompts you can copy</span><span class="src"><i class="cl-a"></i><i class="cl-b"></i><i class="cl-c"></i> <span class="cr">11 claims · 3 videos · <span style="color:var(--wb-warn)">1 gap</span></span></span></div>
+        <div class="sub" style="margin-top:10px"><i class="cl-a" style="display:inline-block;width:8px;height:8px;border-radius:2px"></i> workflows &nbsp; <i class="cl-b" style="display:inline-block;width:8px;height:8px;border-radius:2px"></i> harnesses &nbsp; <i class="cl-c" style="display:inline-block;width:8px;height:8px;border-radius:2px"></i> context &nbsp;·&nbsp; a section leaning on one cluster only is worth a comment.</div>
+      </div>
+    </div>
+  </div></div>
+  <p class="sub" style="font-size:14px;color:var(--caption)">Screen D, commentary and revision, is the three-column mock at the top of this section: the reader in the middle, the commentary rail on the right, "Send N comments to the agent", then the receipt and version switcher.</p>
+
+
+  <h3>Frontend pieces</h3>
+  <div class="tablewrap"><table>
+    <tr><th>File</th><th>Role</th></tr>
+    <tr><td><span class="k">frontend/src/App.tsx</span></td><td>Add <code>'guides'</code> to the <code>Tab</code> union, <code>TABS</code> (after Experiments), and the render switch. Stays visible in demo mode: the catalog and pages are GETs. Compose and comment controls hide when <code>DemoContext</code> is demo, like the composer does.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/GuidesView.tsx</span></td><td>Layout, catalog load via <code>api.guides()</code>, selection by <code>?guide=slug</code> query (not the hash; the hash is the router).</td></tr>
+    <tr><td><span class="k">frontend/src/guides/GuideReader.tsx</span></td><td><code>&lt;iframe sandbox="allow-scripts" srcdoc=…&gt;</code> of <span class="k">guide.html</span> with a tiny injected script: forwards <code>data-theme</code>, reports selection (quote, nearest ancestor id) by <code>postMessage</code>, scrolls to an anchor on request. Origin is <code>null</code> under sandbox, so the parent validates the <code>source</code> window instead.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/CommentRail.tsx</span></td><td>Lists comments with status pills (word + colour, per DESIGN.md), composer bound to the current selection, "Send N to the agent" button, version switcher, receipt view after a revision.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/ComposePanel.tsx</span></td><td>Screen A: topic input → candidate checklist with probe-hit bars → start job. Mirrors <span class="k">MatrixRunPanel.tsx</span>'s AbortController + subscribe pattern.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/ResearchMap.tsx</span></td><td>Screen B: stage rail, per-cluster/per-video chunks-read bars (inline SVG, tokens only), four counters, live activity log reduced from SSE events. Pure function of the job snapshot, so it is unit-testable with a fixture snapshot.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/EvidenceMap.tsx</span></td><td>Screen C: sections → cluster squares → claim counts, cite-valid rate, gaps. Reads <span class="k">claims.json</span> via the guide route; clicking a section scrolls the reader iframe by postMessage.</td></tr>
+    <tr><td><span class="k">frontend/src/guides/styles.ts</span></td><td>Injected <code>&lt;style id="tlab-guides"&gt;</code> written only against tokens, same as <span class="k">experiments/styles.ts</span>.</td></tr>
+    <tr><td><span class="k">frontend/src/api/client.ts</span>, <span class="k">types.ts</span></td><td><code>guides()</code>, <code>guide(slug)</code>, <code>guideComments(slug)</code>, <code>postGuideComment</code>, <code>startGuideJob</code>, <code>subscribeGuideJob</code>, <code>guideVersions</code>.</td></tr>
+    <tr><td>tests</td><td>Co-located vitest: catalog render, demo hides mutating controls, selection message → comment draft, receipt render, stage stream reduces to progress. Mock <code>api</code> as in <span class="k">ExperimentsView.test.tsx</span>.</td></tr>
+  </table></div>
+</section>
+
+<section id="backend">
+  <div class="section-head"><span class="num">05</span><h2>Backend and routes</h2></div>
+  <p>New module <span class="k">src/guides/</span>, a fourth boundary beside transcripts, agents, rag and evals. The server imports the Agent SDK lazily inside the job runner; when it is missing the write routes answer 503 with a one-line install hint and everything else works.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Module</th><th>Contents</th></tr>
+    <tr><td><span class="k">src/guides/catalog.py</span></td><td><code>load_index</code>, <code>load_guide(slug)</code>, <code>versions(slug)</code>, mtime-fingerprint cache copied from <span class="k">matrix_runs.py</span>.</td></tr>
+    <tr><td><span class="k">src/guides/scope.py</span></td><td><code>candidate_videos(topic, corpus, retriever) → list[Candidate]</code> with per-video probe hits; <code>cluster(videos, n=6)</code>.</td></tr>
+    <tr><td><span class="k">src/guides/export.py</span></td><td><code>export_corpus(slug, video_ids, store) → Path</code>.</td></tr>
+    <tr><td><span class="k">src/guides/writer.py</span></td><td><code>write_guide(slug, topic, video_ids, *, model, allow_web=False, on_event)</code>: stages 3–4 via a fresh <code>claude_agent_sdk.query</code> per stage; <code>revise_guide(slug, comment_ids, …)</code>. Both take an <code>agent_fn</code> seam so tests inject a fake that writes canned files, and a test asserts the tool list never contains web tools unless <code>allow_web</code>.</td></tr>
+    <tr><td><span class="k">src/guides/tools.py</span></td><td><code>retrieve_chunks</code> MCP tool over the hybrid retriever, registered with <code>create_sdk_mcp_server</code>; unit-tested against a fake context provider.</td></tr>
+    <tr><td><span class="k">src/guides/verify.py</span></td><td><code>verify(html, store) → Report(claims, invalid, pass_rate)</code>; pure, no LLM.</td></tr>
+    <tr><td><span class="k">src/guides/comments.py</span></td><td>jsonl append/list/resolve; receipt validation (every id exactly once).</td></tr>
+    <tr><td><span class="k">src/api/guide_runner.py</span></td><td><code>GuideJob</code> + <code>GuideRunner</code>: one job at a time, <code>start/snapshot/subscribe</code>, daemon thread, stage events, copied from <span class="k">matrix_runner.py</span>.</td></tr>
+    <tr><td><span class="k">src/cli.py</span></td><td><code>guides</code> subcommand group: import, write, verify, comment, revise, list.</td></tr>
+  </table></div>
+
+  <div class="tablewrap"><table>
+    <tr><th>Route</th><th>Demo</th><th>Returns</th></tr>
+    <tr><td><code>GET /api/guides</code></td><td><span class="tag good">allowed</span></td><td>index.json</td></tr>
+    <tr><td><code>GET /api/guides/{slug}</code></td><td><span class="tag good">allowed</span></td><td>manifest + <code>html</code> (current or <code>?version=N</code>) + comments</td></tr>
+    <tr><td><code>GET /api/guides/{slug}/guide.md</code></td><td><span class="tag good">allowed</span></td><td>text/markdown, the agent-facing copy</td></tr>
+    <tr><td><code>POST /api/guides/scope</code></td><td><span class="tag bad">403</span></td><td>candidate videos for a topic</td></tr>
+    <tr><td><code>POST /api/guides</code></td><td><span class="tag bad">403</span></td><td>start a write job {slug, topic, video_ids}; 409 if one is running; 503 if SDK missing</td></tr>
+    <tr><td><code>POST /api/guides/{slug}/comments</code></td><td><span class="tag bad">403</span></td><td>append a comment {anchor, quote, body}</td></tr>
+    <tr><td><code>POST /api/guides/{slug}/revise</code></td><td><span class="tag bad">403</span></td><td>start a revise job over open comment ids</td></tr>
+    <tr><td><code>GET /api/guides/job</code>, <code>/job/stream</code></td><td><span class="tag warn">stream blocked</span></td><td>snapshot / SSE stage events, added to <code>demo_blocked_gets</code> like the matrix stream</td></tr>
+  </table></div>
+  <p>Static serving: <span class="k">guides/</span> is mounted read-only at <span class="k">/guides/</span> so the iframe can also load <span class="k">guide.css</span> by relative path, and so the Docker image bakes guides in like it bakes <span class="k">evals/runs</span>. The <span class="k">corpus/</span> subfolders are gitignored and excluded from the image.</p>
+</section>
+
+<section id="slices">
+  <div class="section-head"><span class="num">06</span><h2>Vertical slices</h2></div>
+  <p><b>Decided: the whole build lands as one PR from <span class="k">writeups</span>.</b> The slices below are the commit order inside that PR, each one end-to-end and green on its own (ruff, mypy, pytest, tsc, vitest, build, contrast audit), so the PR can be reviewed commit by commit and bisected if anything regresses. The two generated guides are committed with their evidence in the V1 and V2 commits, after you have read them. The PR runs through no-mistakes before it opens.</p>
+
+  <div class="slice"><div class="v">V0</div><div><h4>Read-only Field Guides tab with Ship Like a Studio</h4>
+    <ul><li><span class="k">guides/</span> directory, <span class="k">guide.css</span> extracted from s20, <span class="k">guides import</span> command that takes the existing s20 page as v1 without regenerating it (decided): rewrites its inline styles to the shared sheet, assigns section ids, converts its Sources appendix into cite markup resolved to video level (chunk level where a quote is recoverable), and writes manifest + index. The card shows the resulting cite rate honestly.</li>
+    <li>Catalog module, two GET routes, tab, library rail, iframe reader, theme forwarding. Demo-visible.</li>
+    <li>Tests: catalog load, routes (TestClient), App tab switch, reader renders srcdoc and forwards theme.</li></ul>
+    <div class="ship">commit 1 · the tab exists with one guide · no SDK needed</div></div></div>
+
+  <div class="slice"><div class="v">V1</div><div><h4>Writer pipeline in the terminal, producing LLM-as-a-Judge</h4>
+    <ul><li>scope, export, writer (stages 3–4), <code>retrieve_chunks</code> tool, verify, publish; <span class="k">skills/field-guide-writer/SKILL.md</span> as the versioned prompt; optional <span class="k">guides</span> dependency group; readme section.</li>
+    <li>Run it for real on the 17 judge videos. The output is reviewed by you before it is committed; the run's evidence files are committed with it.</li>
+    <li>Tests: scope ranking with a fake retriever, export format, verify against a fake store (valid, invalid, quote mismatch), writer with an injected fake agent, receipt validation.</li></ul>
+    <div class="ship">commit 2 · two guides · the pipeline is reproducible from a topic string</div></div></div>
+
+  <div class="slice"><div class="v">V2</div><div><h4>Production GenAI Systems, plus the agent-facing copy</h4>
+    <ul><li>Run the pipeline on the 15 production videos. Add <span class="k">guide.md</span> emission and the <code>/guide.md</code> route; a "for agents" link in the reader header; cite-valid % on the library card.</li>
+    <li>Backfill <span class="k">guide.md</span> for the two earlier guides via a short compose-only run.</li></ul>
+    <div class="ship">commit 3 · three guides · each usable as a skill file</div></div></div>
+
+  <div class="slice"><div class="v">V3</div><div><h4>Compose in-app</h4>
+    <ul><li><span class="k">GuideRunner</span>, scope + start routes, job snapshot + SSE stream, ComposePanel with candidate checklist and stage progress; 503 when SDK absent; hidden in demo.</li>
+    <li>Tests: runner with fake writer (stage events, one-at-a-time 409), stream endpoint, panel reduces events to progress, demo hides the panel.</li></ul>
+    <div class="ship">commit 4 · a new guide can be started from the tab</div></div></div>
+
+  <div class="slice"><div class="v">V4</div><div><h4>Commentary and revision</h4>
+    <ul><li>Selection → anchored comment (postMessage bridge), comments jsonl + routes, CommentRail, revise job, receipts, versions and the version switcher, resolved-in-vN pills. CLI <code>comment</code> and <code>revise</code> share the same modules.</li>
+    <li>Tests: anchor extraction, receipt completeness (missing id fails), version snapshot immutability, rail states.</li></ul>
+    <div class="ship">commit 5 · the interactive loop, in-app and in the terminal</div></div></div>
+
+  <div class="slice"><div class="v">V5</div><div><h4>Hardening and showcase</h4>
+    <ul><li>Resume a killed job from its last completed stage; PostHog events for guide opens in demo; a "How this guide was written" details block (videos, chunks, passes, model, cite rate) written as the question it answers, per DESIGN.md; optional Lavish bridge: <code>guides comment --from-lavish</code> imports annotations from a lavish review session as comments.</li></ul>
+    <div class="ship">commit 6 · the tab reads as a finished portfolio piece · then no-mistakes → PR</div></div></div>
+</section>
+
+<section id="risks">
+  <div class="section-head"><span class="num">07</span><h2>Risks and how the plan handles them</h2></div>
+  <div class="cards">
+    <div class="card"><h4><span class="tag warn">agent</span> Fabricated citations</h4><p>The verifier is a hard gate, not a score: a guide with an unresolvable cite does not publish. Extractors must copy verbatim quotes with chunk ids, and the composer may only cite claims that exist in <span class="k">evidence/</span>. Pass rate is shown on the card so the portfolio claim is auditable.</p></div>
+    <div class="card"><h4><span class="tag warn">agent</span> Agent reaching outside the corpus</h4><p>Tool allowlist plus explicit disallow of web and shell tools, cwd-scoped file access, and a system prompt that tells the agent to report gaps instead of filling them. Web access is opt-in per run and audited in the manifest. Sessions are stateless, so nothing from a previous run can leak into a new one unnoticed; every input is a committed file.</p></div>
+    <div class="card"><h4><span class="tag warn">agent</span> Untrusted HTML in the app</h4><p>The page is agent-written. It renders in a sandboxed iframe with scripts allowed but no same-origin, and the verifier rejects external script tags and inline event handlers. The parent trusts only structured postMessage payloads.</p></div>
+    <div class="card"><h4><span class="tag warn">ops</span> Long jobs inside the server process</h4><p>A write is 10–25 minutes and a few hundred thousand input tokens across subagents. The runner is one-at-a-time with stage checkpoints on disk, so a restart loses at most one stage. Subscription rate limits surface as a job error with the SDK message, not a hang; the runner gets a per-stage timeout.</p></div>
+    <div class="card"><h4><span class="tag warn">ops</span> SDK and binary on the host</h4><p>The SDK spawns the <span class="k">claude</span> CLI. It is an optional dependency group; the server degrades to read-only with a 503 hint. The demo container is unaffected by construction.</p></div>
+    <div class="card"><h4><span class="tag acc">design</span> Guides drifting apart visually</h4><p>Shared <span class="k">guide.css</span> plus the skill file's structure rules keep them one family while leaving section design free. Import of s20 proves the stylesheet against the reference guide first.</p></div>
+    <div class="card"><h4><span class="tag acc">design</span> Revisions that rewrite instead of edit</h4><p>Stable ids, in-place edit instructions, and a diff summary in the receipt (which section ids changed). The version switcher lets you compare, and a revision that touches sections no comment anchored to is flagged in the receipt.</p></div>
+    <div class="card"><h4><span class="tag">scope</span> Corpus coverage for the two new topics</h4><p>17 judge videos and 15 production videos are already indexed. That is the same scale as s20, so no ingestion is needed before V1 and V2. A guide's manifest records held-out or excluded videos with a reason, mirroring <span class="k">experts/packs.json</span>.</p></div>
+    <div class="card"><h4><span class="tag">scope</span> Repo size</h4><p>Each guide commits html, md, claims, evidence and versions: roughly 200–400 KB per guide. Exported chunk corpora are not committed; they rebuild from Chroma.</p></div>
+  </div>
+</section>
+
+<section id="decide">
+  <div class="section-head"><span class="num">08</span><h2>Decisions</h2></div>
+  <p>Decided so far: tab name Field Guides · Sonnet 5 extractors with Opus 5 composer and reviser · import Ship Like a Studio as v1 without regenerating · one PR with V0–V5 as its commits. One question left.</p>
+
+
+
+
+
+  <form class="q" data-lavish-question="scope-review" onsubmit="event.preventDefault(); const selected=[...event.currentTarget.querySelectorAll('input[name=items]:checked')].map(i=>({id:i.value,label:i.dataset.label,disposition:'cut'})); window.lavish.queuePrompt(selected.length? 'Cut these items from the plan and return an item-by-item receipt. Account for every submitted ID.' : 'Keep the full plan scope as written.', {tag:'tracked-batch', text: selected.length? 'Cut '+selected.length+' plan items' : 'Keep full scope', element:event.currentTarget, data:{items:selected}});">
+    <span class="qt">Anything to cut? (leave unchecked to keep)</span>
+    <label><input type="checkbox" name="items" value="P-01" data-label="guide.md agent-facing copy"> P-01 — <span class="k">guide.md</span> agent-facing copy (V2)</label>
+    <label><input type="checkbox" name="items" value="P-02" data-label="in-app compose panel"> P-02 — In-app compose panel (V3); terminal only</label>
+    <label><input type="checkbox" name="items" value="P-03" data-label="version history and switcher"> P-03 — Version history and switcher (V4)</label>
+    <label><input type="checkbox" name="items" value="P-04" data-label="lavish annotation import"> P-04 — Lavish annotation import (V5)</label>
+    <label><input type="checkbox" name="items" value="P-05" data-label="quote-in-chunk check in verifier"> P-05 — Quote-in-chunk check in the verifier (keep cite-resolves only)</label>
+    <button type="submit">Queue selection</button>
+  </form>
+</section>
+
+<footer>Field Guides plan · branch writeups · compiled 2026-09-14 · sources: frontend/src/App.tsx, src/api/main.py, src/api/matrix_runner.py, src/rag/storage.py, demo/generator.py, experts/packs.json, .lavish/s20_ship-like-a-studio.html</footer>
+</div>

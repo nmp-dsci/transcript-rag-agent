@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { Corpus, RetrievalMode, SetupSpec, Video } from '../api/types';
-import { joinSpeech, useSpeechToText } from './useSpeechToText';
+import { MicButton } from '../speech/MicButton';
+import { useDictation } from '../speech/useDictation';
 
 /**
  * What retrieval is allowed to look at.
@@ -174,26 +175,11 @@ export function Composer({
     () => readAskPrefs().filterTranscripts,
   );
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const speech = useSpeechToText();
-  // Connecting counts as a voice session too: the textarea is mic-owned from
-  // the moment the button is pressed, not from the first transcript.
-  const listening = speech.status !== 'idle';
-  const wasListening = useRef(false);
-
-  // When the voice session ends, fold everything spoken into the question
-  // exactly once — during the session the words render as an overlay only.
-  useEffect(() => {
-    if (wasListening.current && !listening) {
-      const spoken = joinSpeech(speech.transcript.committed, speech.transcript.interim);
-      if (spoken) setQuestion((current) => joinSpeech(current, spoken));
-      speech.reset();
-    }
-    wasListening.current = listening;
-  }, [listening, speech]);
-
-  const displayValue = listening
-    ? joinSpeech(question, speech.transcript.committed, speech.transcript.interim)
-    : question;
+  // Speech lands through the shared dictation contract: overlay while
+  // listening, folded into the question exactly once when the mic stops.
+  const dictation = useDictation(question, setQuestion);
+  const { listening, speech } = dictation;
+  const displayValue = dictation.display;
 
   useEffect(() => {
     localStorage.setItem(AUTOJUDGE_KEY, autoJudge ? '1' : '0');
@@ -415,43 +401,13 @@ export function Composer({
           <span className="spacer" />
 
           {stt ? (
-            <button
-              type="button"
-              className={`micbtn${listening ? ' rec' : ''}`}
-              onClick={() => (listening ? speech.stop() : speech.start())}
-              disabled={busy || !speech.supported}
-              aria-pressed={listening}
-              aria-label={listening ? 'Stop voice input' : 'Start voice input'}
-              title={
-                !speech.supported
-                  ? 'Voice input needs a browser with microphone and AudioWorklet support'
-                  : listening
-                    ? 'Stop voice input'
-                    : 'Ask by voice'
-              }
-            >
-              {listening ? (
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-              ) : (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="9" y="2" width="6" height="12" rx="3" />
-                  <path d="M5 10a7 7 0 0 0 14 0" />
-                  <line x1="12" y1="19" x2="12" y2="22" />
-                </svg>
-              )}
-            </button>
+            <MicButton
+              listening={listening}
+              supported={speech.supported}
+              disabled={busy}
+              onToggle={dictation.toggle}
+              idleTitle="Ask by voice"
+            />
           ) : null}
           {busy ? (
             <button type="button" className="btn danger" onClick={onCancel}>

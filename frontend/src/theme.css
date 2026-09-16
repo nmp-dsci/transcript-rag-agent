@@ -185,8 +185,8 @@ button, input, select, textarea { font-family: inherit; }
 }
 .brand:hover { background: var(--btn-hover); }
 .brand svg { flex: 0 0 auto; }
-/* The one decorated keyword in the app, in the one italic serif it owns. */
-.brand em { color: var(--accent2); font-family: var(--serif); font-style: italic; font-weight: 400; }
+/* The brand keyword: same face and weight as the rest of the mark, accent-coloured. */
+.brand em { color: var(--accent); font-style: normal; font-weight: inherit; }
 .nav { display: flex; gap: 2px; }
 .nav button {
   background: none; border: none; color: var(--muted); font-size: var(--t0);
@@ -466,6 +466,7 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
   animation: mic-glow 2s ease-in-out infinite;
 }
 .micbtn:disabled { animation: none; opacity: 0.45; cursor: default; }
+.micbtn.sm { width: 26px; height: 26px; }
 .micbtn.rec {
   border-color: var(--bad-border); background: var(--bad-dim); color: var(--bad);
   animation: mic-rec 1.4s ease-in-out infinite;
@@ -883,7 +884,7 @@ tr.legacyrow td { opacity: 0.6; }
 }
 .l-title { font-size: clamp(2.1rem, 5vw, 2.9rem); letter-spacing: -0.035em; margin: 0;
   color: var(--text); font-family: var(--display); font-weight: 700; }
-.l-title em { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--accent2); }
+.l-title em { font-style: normal; font-weight: inherit; color: var(--accent); }
 .l-tag { color: var(--muted); margin: 6px 0 14px; font-size: 1.02rem; }
 .l-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }
 .l-chip {

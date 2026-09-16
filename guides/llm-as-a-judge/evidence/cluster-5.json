@@ -1,0 +1,647 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "EjFsjfOBZFE",
+  "cRz0BWkuwHg",
+  "PjCwlX0XT8o"
+ ],
+ "video_notes": [
+  {
+   "video_id": "EjFsjfOBZFE",
+   "title": "UnlikelyAI Webinar: Is LLM-as-a-Judge Ready for Production in Financial Services?",
+   "contributed": "Regulated-industry lens: treats LLM-as-judge as a black-box guardrail with audit and consistency risk, and argues for decomposing complex policy checks into small, narrow, deterministic/symbolic sub-checks instead of one big frontier-model judgment."
+  },
+  {
+   "video_id": "cRz0BWkuwHg",
+   "title": "Key Metrics and Evaluation Methods for RAG",
+   "contributed": "Practical RAG evaluation checklist: names the standard retrieval metrics (precision, recall, hit rate, MRR, NDCG) and generation metrics (faithfulness, answer relevancy, answer correctness), then gives concrete LLM-as-judge best practices (pairwise, randomize order, allow ties, chain-of-thought, length-matching) plus the Ragas tooling pointer."
+  },
+  {
+   "video_id": "PjCwlX0XT8o",
+   "title": "Chapter 6: Metrics, LLM Judges, and Statistical Confidence | Evals For AI Engineers",
+   "contributed": "The deep engineering playbook: how to write a narrow, criterion-first judge prompt, calibrate it against a frozen held-out label split, measure its bias (position/verbosity/self-preference), correct observed rates with sensitivity/specificity, and run paired bootstrap comparisons and multi-run reliability checks before treating a judge as a release gate."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "judge reliability study",
+   "claim": "A 2024-era study tested four leading LLM-as-judge models and found none reliable across the board, including judges that changed their verdict in response to formatting/layout changes even though the meaning was unchanged.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 9,
+   "quote": "none of them to be particularly reliable across the board",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "how LLM-as-judge works",
+   "claim": "LLM-as-judge is structurally simple: you hand the pass/fail decision directly to a model via a prompt (e.g. 'is this message compliant or a breach? explain why'), and with prompt tuning and the right model you can reach roughly 90% of what you need very fast.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 11,
+   "quote": "you can probably get to sort of 90% of what you need incredibly fast",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "black-box explanation risk",
+   "claim": "An LLM judge's verdict and explanation come out of the same tangled generation path, so the explanation is a post-hoc rationalization, not a trace of real reasoning — a serious problem when you need a reproducible audit trail.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 12,
+   "quote": "it's more of like a post hawk explanation",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "probabilistic instability",
+   "claim": "Because judge models are probabilistic pattern-matchers, edge cases near the decision boundary can sit close to 50/50, so a tiny prompt or formatting tweak can flip the verdict, and even identical repeated runs can disagree with each other.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 13,
+   "quote": "a very, very small tweak to the prompt... could just push it over that boundary",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "measure consistency, not one run",
+   "claim": "Don't just check whether a single run gave the answer you wanted — measure the distribution of outcomes across repeated runs to see if you get the desired answer every time.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 14,
+   "quote": "It's about running it multiple times and really really digging into those results",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "prompt tuning has a ceiling",
+   "claim": "Prompt tuning can move your metrics, but it cannot fix the fundamental black-box/auditability problem of an LLM judge — even a 'perfect' prompt will still have cases that fall outside expected boundaries.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 16,
+   "quote": "There's always going to be cases where it falls outside those boundaries",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "cost and latency of LLM judges",
+   "claim": "LLM-as-judge checks run in seconds, not milliseconds, and you pay per check forever — with frontier models this scales expensively fast, especially if you stack multiple LLM judges on top of each other.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 17,
+   "quote": "these things work in order of seconds not order of milliseconds",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "guardrails fail the wrong way",
+   "claim": "Nondeterministic LLM-based guardrails tend to fail toward leniency — letting a bad output through to the customer rather than holding it back — which is the more dangerous failure direction for a guardrail.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 17,
+   "quote": "they can often fail the wrong way",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "judge as one voice among several",
+   "claim": "LLM-as-judge is well suited to prototyping and works best as one voice among several checks rather than the single decision-maker in a guardrail system.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 18,
+   "quote": "maybe relying on just them as a single check is uh you know, not the best approach",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "human-in-the-loop doesn't scale",
+   "claim": "Human review handles genuine ambiguity and accountability well, but it doesn't scale — teams should design for what fraction of decisions actually need to escalate to a human, since that governs cost and response time.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 20,
+   "quote": "it does work that it just doesn't scale",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "deterministic rules as cheap alternative",
+   "claim": "Rule-based systems are cheap, auditable by design, and explainable, but brittle — they can't cover the flexibility of natural language, and rewriting rules for every new language or case doesn't scale.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 21,
+   "quote": "it's uh auditable by design and explainable",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "don't reach for an LLM for simple rules",
+   "claim": "For simple, well-defined checks like PII identification, cheap rule-based systems handle it fast and for free — you don't need to reach for an LLM judge for tasks like that.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 22,
+   "quote": "for identifying PII in your responses there's just there are a lot of rule-based systems",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuned classifier middle ground",
+   "claim": "A trained classifier sits between rules and an LLM judge — more constrained than a judge but flexible, and can get very solid, cheap coverage on a specific task if you have enough labeled data; lack of labeled data is why people skip this option and default to LLMs.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 22,
+   "quote": "The reason why people often skip through that particular option is because of a lack of data",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "five questions before deploying a guardrail",
+   "claim": "Before any guardrail (including an LLM judge) goes near production, verify you can reliably demonstrate it does what you expect — build a quality evaluation set with cases that should pass, cases that should fail, and near-misses in between, so you can tell whether a prompt or model change improved or broke the system.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 25,
+   "quote": "can you demonstrate really reliably that your guardrail does what you expect before you deploy it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "fail open vs fail closed",
+   "claim": "Guardrails fail in two different-cost ways — overblocking (annoyed customer, contact-center cost) versus letting a breach through (regulator-facing, far more costly) — decide explicitly which way you fail on ambiguity, and whether that argues for two independent checks.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 27,
+   "quote": "Do you fail open or do you fail closed?",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "price at production volume",
+   "claim": "Price your guardrail/judge system at actual production call volume, not demo volume — a chatbot check runs on every message and can require multiple checks per message, so cost scales extremely fast.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 28,
+   "quote": "pricing it at your actual production volume, not just at your demo volume",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "latency budget and tail latency",
+   "claim": "When a check sits in the user's critical path (e.g. live chat), consistency matters as much as average latency — measure the 95th-percentile response time, not just the mean, since someone waiting two minutes ruins the experience even if most people get sub-five-second responses.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 29,
+   "quote": "it's actually your sort of like 95th percentile",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "audit survivability test",
+   "claim": "For regulated use, a guardrail's audit fitness rests on three things: did it explain why it failed (not just that it failed), is that explanation stable over time (same input, same answer tomorrow/next year), and is the decision stored and retrievable — could you defend a verdict pulled from eight months ago?",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 30,
+   "quote": "if you pull a conversation from eight months ago, could you defend that verdict effectively",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "decompose into narrow checks",
+   "claim": "Instead of asking one frontier LLM judge 'is this message a breach', decompose complex policy into small narrow checks the model can answer reliably (e.g. 'did you name a specific product?'), which lets you use much smaller/cheaper models and shrinks latency.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 35,
+   "quote": "did you name a specific product? You know, very very simple cases that you can answer reliably",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "need verbatim evidence for audit",
+   "claim": "For audit purposes, you need to be able to name the exact rule and condition that made something a recommendation or a non-recommendation, and store the actual verbatim customer message — not a summary of what they said.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 36,
+   "quote": "the ability to evidence uh the actual stored verbatim um response from a customer is super super important",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "stay model-agnostic",
+   "claim": "Keep guardrail systems as model-agnostic as possible so they survive model deprecations; systems that depend on a heavily-tuned prompt are the most fragile to a model swap because the tuning may stop working.",
+   "video_id": "EjFsjfOBZFE",
+   "chunk_index": 39,
+   "quote": "keeping your system as sort of model agnostic as possible",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "vibe checking isn't enough",
+   "claim": "Manually testing an app yourself ('vibe checking') is necessary but not sufficient — you need rigorous metrics to confirm the system performs optimally, because vibe checks don't tell the whole story.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 1,
+   "quote": "it doesn't tell you the whole story we need more rigorous methods and metrics",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "retrieval metrics: precision and recall",
+   "claim": "Precision (proportion of relevant docs among retrieved) matters most where false positives are dangerous, like a medical diagnosis tool; recall (proportion of relevant docs successfully retrieved) matters most where missing information is costly, like overlooking a legal precedent.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 2,
+   "quote": "false positives could be dangerous",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "retrieval metrics: hit rate, MRR",
+   "claim": "Hit rate measures the proportion of queries where at least one relevant document appears in the top-k results; mean reciprocal rank (MRR) evaluates how high the first relevant document ranks, and is especially valuable for search engines where users focus on the top few results.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 3,
+   "quote": "main reciprocal rank or Mr it evaluates how high the first relevant document appears",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "retrieval metric: NDCG",
+   "claim": "Normalized discounted cumulative gain (NDCG) accounts for both relevance and rank position of all retrieved documents, making it the right metric for recommendation-style applications where the whole ordered list matters (e.g. a top-10 list).",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 3,
+   "quote": "ndcg provides a more holistic measure of ranking quality",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "generation metrics",
+   "claim": "The three core RAG generation metrics are faithfulness (does the answer stay true to the retrieved context without adding false/unrelated info), answer relevancy (does it address the original query), and answer correctness (does it align with a ground-truth reference answer).",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 4,
+   "quote": "faithfulness measures the Integrity of the answer concerning the retrieved context",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "building an eval dataset",
+   "claim": "Build an evaluation dataset from domain-expert knowledge or by having a powerful LLM generate complex, contextually rich questions from your indexed data — but always review and refine the generated questions yourself so they reflect real-world usage.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 5,
+   "quote": "remember to review and refine these questions yourself to ensure they reflect real word usage",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "pairwise comparison over isolated scoring",
+   "claim": "It's more effective to have an LLM judge compare two responses (pairwise) than to score one response in isolation, because pairwise comparison gives it a baseline and produces a clearer benchmark of quality.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 5,
+   "quote": "it's often more effective to have it compare two responses rather than evaluate a single response in isolation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "randomize pair order to fight bias",
+   "claim": "When presenting pairs of responses to an LLM judge, randomize which one appears first — LLMs have a documented order bias where they tend to favor whichever option they see first.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 6,
+   "quote": "llms tend to have a bias with order like always fing the first option",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "allow ties and use chain-of-thought",
+   "claim": "Let the LLM judge declare a tie when two answers are equally good, and ask it to explain its reasoning step-by-step before giving a final verdict — since LLMs generate one token at a time with no pre-formed mental plan, writing out reasoning first acts as artificial planning and measurably improves reliability.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 6,
+   "quote": "use a Chain of Thought approach when evaluating asking the llm to explain its reasoning before making a final decision",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "match response length in comparisons",
+   "claim": "Keep the compared responses similar in length — length can unfairly influence a judge's perceived quality, so equalizing it makes the comparison fairer.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 7,
+   "quote": "try to ensure that responses are similar in length When comparing them",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "log and cluster real user queries",
+   "claim": "Log and topic-cluster every real user query to find where to focus evaluation and optimization; one client discovered that around 80% of their questions fell into a narrow subset of topics, letting them target their eval dataset and vibe checks at what users actually ask instead of the whole possible space.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 8,
+   "quote": "around 80% of the questions were about a very specific subset of topics",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "use eval tooling and humans",
+   "claim": "Use existing libraries like Ragas to automate and scale RAG evaluation across both retrieval and generation metrics instead of coding every metric yourself, but still treat human judgment as the gold standard for fluency, naturalness, and real-world usefulness — via A/B testing or paid human evaluators.",
+   "video_id": "cRz0BWkuwHg",
+   "chunk_index": 9,
+   "quote": "human judgment is still the gold standard",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "define the metric from the failure",
+   "claim": "Start metric design from a concrete operational failure, not from a general-purpose 'favor evaluator' — a judge can report a real estate assistant improved while quietly rewarding longer answers, hiding the actual failure (unsupported listing claims).",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 0,
+   "quote": "Start with a failure, not with a favor evaluator",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "explicit positive class and claim vs response units",
+   "claim": "Define an explicit positive class for the criterion (e.g., a claim is only 'supported' when entailed by permitted evidence, not merely plausible or consistent with convention), and evaluate at two separate units: claim-level (how many unsupported details) and response-level (does the response contain at least one unsupported claim) — the response label should be derived mechanically from claim labels, not an independent holistic judgment.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 1,
+   "quote": "A claim is not positive merely because it is plausible",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "machine-readable metric spec",
+   "claim": "Record the metric's criterion, positive class, evidence source, boundary policy, and aggregation rule in a machine-readable (YAML) file, and write a repository test that loads it, confirms the positive class is declared, requires the correct unit of analysis, and rejects an empty evidence contract or missing entailment policy.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 3,
+   "quote": "The specification must be tested rather than used to hide ambiguity in one number",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "omnibus scores fail",
+   "claim": "A single omnibus quality score (e.g. 'quality 8.4') combines factual support, relevance, completeness, tone, and policy compliance into one number that can't show whether retrieval failed, extraction over-generated claims, or the evaluator simply prefers verbosity.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 6,
+   "quote": "A single score cannot show whether retrieval failed, extraction over generated claims, the response exceeded the evidence contract, or the evaluator prefer verbosity",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "keep evaluation dimensions separate",
+   "claim": "Keep evaluation dimensions separate and independently owned (e.g., listing_claim_support_v1 alongside answer relevance, disclaimer behavior, tool-use correctness) — a composite decision can exist, but it must be built visibly from component results with an explicit policy, not substituted for them.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 7,
+   "quote": "A composite decision may eventually be useful, but it should be built from visible component results with an explicit policy",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "an evaluator is a measurement instrument",
+   "claim": "An evaluator is a measurement instrument with a failure profile, not simply a scoring function — choose the least interpretive instrument (executable check, reference check, classifier, judge, human) that can actually answer the specific criterion, and add others only when the criterion has independent parts.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 9,
+   "quote": "An evaluator is a measurement instrument with a failure profile, not simply a scoring function",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "evaluator selection decision rule",
+   "claim": "Compact selection rule: for output shape/required fields use an executable check plus human review for exceptions; for exact identity/database state use a reference/database check plus human review for stale records; for known policy categories use a classifier plus human adjudication; for borderline meaning/relevance/evidence use a judge with reference checks and sampled human review; for high-consequence ambiguity use human evaluation plus deterministic checks.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 11,
+   "quote": "For borderline cases, for meaning, relevance, or evidence support, use a judge with reference checks and sampled human review",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "deterministic checks first",
+   "claim": "Push as much of a criterion as possible into deterministic checks (compare cited IDs against approved search results, resolve prices against the current record, search for required disclosures) — these are fast, reproducible, and easier to debug than a global quality score, and should not be replaced by a single semantic evaluator.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 12,
+   "quote": "Deterministic checks should carry as much of the criterion as possible",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "hard requirements need explicit code",
+   "claim": "Without explicit executable checks, a judge can reward longer and more persuasive answers that still violate the task (wrong budget, wrong bedroom count, wrong recipient) — hard requirements should fail loudly, explain why, and remain inspectable without invoking an LLM at all.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 18,
+   "quote": "Without explicit checks, a judge can reward longer and more persuasive answers that still violate the task",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "check-level evidence, not one score",
+   "claim": "A scorer should report check-level evidence — each check's name, expected value, observed value, and pass/fail status — rather than collapsing everything into an aggregate number like 0.75, so failures are actionable and reviewers can tell a bad recommendation from a broken fixture.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 20,
+   "quote": "A scorer should report check level evidence rather than only an aggregate such as 0.75",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "mutation testing for scorers",
+   "claim": "Validate a scorer with mutation testing: remove a required key, replace a number with the wrong type, empty the recommendations list, add an unallowed amenity, raise the price above the limit, change the recipient — each mutation should produce the intended failure and matching evidence, not a false pass.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 23,
+   "quote": "Each mutation should produce the intended failure and evidence",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "narrow the judge to one decision",
+   "claim": "Design the judge around one narrow decision (e.g. 'does this email contain a material claim unsupported by the retrieved listings') and explicitly exclude other concerns like helpfulness or writing quality — combining them makes a failure impossible to diagnose.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 27,
+   "quote": "Combining them here would make a failure impossible to diagnose",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "explicit labels over vague scores",
+   "claim": "Use explicit labels like supported / unsupported / not_verifiable rather than vague scores such as 'good' or 'mostly accurate' — 'unsupported' means the claim lacks support, not that it's known to be false.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 28,
+   "quote": "Use the label supported, unsupported, and not underserlicable rather than vague scores",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "bound the evidence given to the judge",
+   "claim": "Give the judge only the task instruction, retrieved records, and target output in clearly delimited fields — never hidden application metadata, the variant's name, or any signal about which answer is expected to win.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 28,
+   "quote": "It should not receive hidden application metadata, the systems chosen variant name",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "rationale is not proof",
+   "claim": "Require an evidence trail identifying which supplied field supports each claim so a human can inspect the decision, but treat the judge's rationale as diagnostic annotation only — it is model output and must be validated like the verdict, not accepted as proof of correctness.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 29,
+   "quote": "The judge's rationale is also model output and must be validated like the verdict",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "structured output with strict parsing",
+   "claim": "Use structured/exact JSON output for the judge, with a downstream parser that rejects unknown labels, missing keys, or malformed evidence arrays — a parse failure must trigger a retry or review, and must never be silently converted into a pass.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 30,
+   "quote": "Parse failure must trigger retry or review rather than being silently converted to a pass",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "hide identity, randomize order in pairwise",
+   "claim": "In pairwise experiments, present candidates as anonymous response_A/response_B, randomize their order, and evaluate each independently against the same context before comparing — hidden identity reduces preference leakage but does not eliminate verbosity, position, or self-preference bias.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 32,
+   "quote": "Hidden identity reduces one obvious source of preference leakage. It does not eliminate verbosity, position or self-preference biases",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "four judge bias diagnostics",
+   "claim": "A judge's model card should test four bias diagnostics: position bias (preferring the response shown first/second), verbosity bias (preferring longer responses when length isn't part of the criterion), self-preference (favoring its own model family's style), and task-specific bias (rewarding surface features like polished greetings that correlate with, but aren't, quality).",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 35,
+   "quote": "Position bias, verbosity bias, self-preference, and task specific bias",
+   "kind": "metric",
+   "verified": false
+  },
+  {
+   "theme": "position-swap test",
+   "claim": "Test position bias by submitting the same two responses twice — once as A vs B, once as B vs A — with everything else fixed; if the verdict flips, that's evidence of position sensitivity, and it must be a paired operation (not a fresh independent sample) so the reversal is interpretable.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 37,
+   "quote": "If the verdict changes when only the positions change, the disagreement is evidence of position sensitivity",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "measure length bias with matched slices",
+   "claim": "Diagnose verbosity bias with matched length slices — concise vs. verbose responses carrying equivalent facts — and report judge preference within each slice, because a judge that favors verbose answers overall may be correctly rewarding required detail in some cases and wrongly rewarding padding in others.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 38,
+   "quote": "Report judge preference within each slice rather than relying only on the aggregate win rate",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cross-family judge checks",
+   "claim": "Run the same fixture suite through a judge from the generator model's own family and one from a different family, and also compare against non-LLM checks — agreement across families is useful evidence of stability but not proof of correctness, and disagreement can reveal self-preference or rubric ambiguity.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 41,
+   "quote": "Agreement across families is useful evidence, but not proof of correctness",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "frozen calibration split",
+   "claim": "Split labeled calibration data before touching the judge prompt — in this example, 180 labeled emails are split into 108 for judge design, 36 for development checks, and 36 for a frozen final test; the test partition is a sealed decision surface used only after the judge configuration is frozen, or the result is no longer a clean estimate on unseen cases.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 44,
+   "quote": "An illustrative allocation uses 108 for judge design, 36 for development checks, and 36 for the final test",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "include hard cases, prevent leakage",
+   "claim": "Deliberately include difficult cases (typo'd requests, long threads, conflicting fields, negation, near-duplicates, correct-but-less-verbose answers) since random sampling alone produces an easy test, and keep every test item, paraphrase, and label rationale out of the judge's few-shot prompt/rubric/regression fixtures to prevent leakage.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 48,
+   "quote": "Random sampling alone can produce an easy test",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "confusion matrix over one accuracy number",
+   "claim": "Use a confusion matrix (TP/FP/TN/FN) with TPR (sensitivity), TNR (specificity), and balanced accuracy instead of one headline accuracy figure — a worked example with 200 held-out responses (40 unsupported, 160 supported) where the judge catches 34 and wrongly flags 16 yields TPR 0.85, TNR 0.90, balanced accuracy 0.875.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 57,
+   "quote": "TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "cost-weighted threshold selection",
+   "claim": "Choose the judge's decision threshold from the documented costs of false negatives vs. false positives (Cost(T) = C_FN·FN(T) + C_FP·FP(T)) rather than from observed accuracy alone — for a safety floor, first restrict to thresholds with TPR ≥ 0.90, then minimize cost among those.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 59,
+   "quote": "For a safety floor, first retain thresholds with TPR T greater than or equal to 0.90",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "correcting an observed rate for judge error",
+   "claim": "Do not ship a judge's observed positive rate as the true rate — correct it using sensitivity/specificity via P = (Q + C − 1)/(S + C − 1); worked example: an observed 78% positive rate with sensitivity 0.90 and specificity 0.80 corrects to roughly 82.9%.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 66,
+   "quote": "A 78% judge positive rate can correspond to an estimated supported answer rate of about 83%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "uninformative judge can't be corrected",
+   "claim": "When sensitivity and specificity are both around 0.50, the correction's denominator (the Youden index) approaches zero and the observed rate carries no identifiable information about the true rate — bootstrap resampling cannot repair an uninformative judge.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 70,
+   "quote": "Bootstrap resampling cannot repair an uninformative instrument",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "paired comparison for A/B variants",
+   "claim": "Compare two prompt/model variants using paired, case-level score differences (not independent averages) and a paired bootstrap confidence interval — pairing removes baseline task-difficulty noise that independent samples leave in; predeclare a minimum-improvement threshold (e.g. 0.03) before calling a variant a release candidate.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 80,
+   "quote": "resample differences between paired cases, not A and B independently",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "predeclare metrics to avoid selection bias",
+   "claim": "Predeclare the primary metric, evaluation set, and minimum worthwhile improvement before running a comparison; trying many prompts/judges/slices/thresholds and reporting only the favorable interval is selection bias — preserve the full experiment ledger including discarded trials.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 83,
+   "quote": "Predeclare the primary metric comparison evaluation set and minimum worthwhile improvement",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "repeat runs to test reliability",
+   "claim": "Run each task multiple times (5 runs is a starting protocol) before trusting a result — one successful trace doesn't establish a reliable workflow, and you must distinguish 'difficulty' (consistent failure) from 'instability' (alternating pass/fail behavior across identical runs).",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 85,
+   "quote": "One successful trace does not establish a reliable workflow",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "pass@1 vs pass-every-run",
+   "claim": "Distinguish 'probability at least one attempt passes' from 'probability all attempts pass' — with a single-run success rate of 0.8 and 5 attempts, independence gives 0.9997 odds at least one succeeds but only 0.328 odds all five succeed; a retryable product cares about the first number, an unattended workflow should be alarmed by the second.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 87,
+   "quote": "0.99968 probability that at least one attempt succeeds while all five succeed with probability 0.32768",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "evaluator is production code",
+   "claim": "Treat an evaluator suite as production code with a package boundary, tests, a version, a cost record, validation results, and an explicit maintenance policy — without those artifacts a score is just an observation, not a dependable release signal. In an early dry run, the judge favored longer answers, letting verbose responses with unsupported claims beat short correct ones.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 91,
+   "quote": "Without those artifacts, a score is an observation, not yet a dependable",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "define maintenance triggers in advance",
+   "claim": "Define maintenance triggers for a judge in advance — excessive disagreement with human review, a new high-risk failure mode, changed provider/judge behavior, an unexpected score-distribution shift, rising cost, repeated evaluator errors — and never silently retune thresholds just to keep a dashboard green.",
+   "video_id": "PjCwlX0XT8o",
+   "chunk_index": 97,
+   "quote": "Thresholds must not be silently retuned to preserve a green dashboard",
+   "kind": "pitfall",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How trustworthy/central should LLM-as-judge be in a production evaluation pipeline?",
+   "positions": [
+    {
+     "video_id": "EjFsjfOBZFE",
+     "chunk_index": 18,
+     "position": "Frames LLM-as-judge as inherently risky for regulated production use because it is a black box that fails the costly way (letting breaches through) — recommends it be 'one voice among several' rather than the decision-maker, and for complex financial-services policy, decompose the decision into small narrow deterministic/symbolic sub-checks rather than trusting one frontier-model judgment."
+    },
+    {
+     "video_id": "cRz0BWkuwHg",
+     "chunk_index": 5,
+     "position": "Presents LLM-as-judge (with pairwise comparison, randomized order, ties, chain-of-thought) as 'one of the cool new approaches' to be used directly for generation evaluation alongside retrieval metrics, without treating black-box/audit risk as a blocking concern."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks give concrete dollar-per-call pricing or benchmark latency numbers for LLM-as-judge calls beyond EjFsjfOBZFE's qualitative 'seconds, not milliseconds' — a reader can't budget precisely from this corpus alone.",
+  "No comparison of specific judge-model choices (e.g. which frontier or open-source model tends to be the least biased judge) is offered anywhere in the cluster.",
+  "cRz0BWkuwHg names Ragas as a tool but the cluster gives no comparison of Ragas against other eval frameworks (e.g. DeepEval, TruLens, promptfoo), so a reader can't choose a tool from this corpus.",
+  "EjFsjfOBZFE's financial-services guardrail framing never engages with the statistical rigor (confusion matrices, bias correction, bootstrap comparisons) that PjCwlX0XT8o develops in depth — a reader wanting to apply that rigor to a regulated guardrail system has to bridge the two talks themselves.",
+  "None of the videos address how to evaluate a judge's own drift over time in a live production system beyond stating that judge configuration changes should get a new version — no worked example of ongoing production monitoring cadence is given.",
+  "cRz0BWkuwHg does not discuss judge bias (position, verbosity, self-preference) at all, despite recommending pairwise LLM-as-judge use — a reader following only that video would miss the bias-testing methodology PjCwlX0XT8o considers essential."
+ ],
+ "verified_claims": 58
+}

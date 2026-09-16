@@ -1,0 +1,617 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "pnlT_xatpVQ",
+  "qoPYlLg7_rY",
+  "uQFLY8rQVYA",
+  "HI5b0g_mELA"
+ ],
+ "video_notes": [
+  {
+   "video_id": "pnlT_xatpVQ",
+   "title": "LLM-as-a-Judge 101 (Arize AI)",
+   "contributed": "The general conceptual framework: a four-step build process (data, metrics, prompt/model, meta-eval), concrete prompting and model-selection pitfalls, the 4K-token context rule with its source study, and meta-evaluation via human alignment."
+  },
+  {
+   "video_id": "qoPYlLg7_rY",
+   "title": "LLM-as-a-Judge Evals with LangSmith (COMMAND)",
+   "contributed": "A live platform tutorial (datasets/evaluators/experiments in LangSmith) plus a real multi-model controlled experiment showing model-choice results can be counterintuitive, and the 'auto research' automation concept."
+  },
+  {
+   "video_id": "uQFLY8rQVYA",
+   "title": "LLM Eval Methods | LLM-as-a-Judge | Reference Based Evals Vs Reference Free Evals (CampusX)",
+   "contributed": "The clearest three-method taxonomy (programmatic/human/model-graded) worked through three parallel case studies -- retriever Recall@K, chatbot helpfulness rubric, and UPSC exam auto-grading with MAE -- plus the reference-based vs reference-free distinction."
+  },
+  {
+   "video_id": "HI5b0g_mELA",
+   "title": "Amazon Bedrock RAG Evaluation (LLM as a Judge) | Step-by-Step Guide (Data Science Basics)",
+   "contributed": "Hands-on cloud implementation mechanics: golden dataset JSONL schema, IAM/CORS permission requirements, Bedrock's built-in metric catalog, and comparing evaluation runs across configurations before production rollout."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Code evals for clear criteria",
+   "claim": "Code (deterministic/programmatic) evals work best when success criteria are clear-cut and data is well structured, since they run out of the box without tuning.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 2,
+   "quote": "Code evals are useful when you have very clear criteria for success",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Human eval strengths and limits",
+   "claim": "Human evaluation gives the highest-quality signal but is either sparse (implicit user feedback) or slow and expensive to collect (formal annotations).",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 3,
+   "quote": "sparse in the case of user feedback or time consuming and expensive to collect",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Two LLM-judge formats",
+   "claim": "LLM evals split into pairwise (judge picks the better of two outputs) and direct scoring (judge rates one output against a rubric) -- pairwise is like a sports tournament, direct scoring is like Olympic gymnastics judging.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 4,
+   "quote": "pair wise evals are like sports uh team sports",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Anatomy of an LLM judge",
+   "claim": "An LLM judge has three parts: a reusable prompt template with placeholders for the data being evaluated, a chosen eval model, and a scoring schema that defines the valid output labels.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 5,
+   "quote": "you have your scoring schema, which basically just tells the judge",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Start with an informal data review",
+   "claim": "Before defining any metric, informally review real inputs/outputs to note failure modes -- this 'vibe check' doesn't require formal annotation yet.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 6,
+   "quote": "This is more of a vibe check",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Golden dataset has two jobs",
+   "claim": "Annotating a golden dataset does double duty: it exposes whether your labeling guidelines are unambiguous, and it lets you quantify how well the LLM judge aligns with human labels.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 8,
+   "quote": "these labels will enable you to easily quantify uh how well your judge is performing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Numeric 1-10 ratings underperform",
+   "claim": "Numeric ratings (e.g. scoring 1-10) don't work well for LLM judges; use a small set of discrete word labels instead (yes/no, positive/negative/neutral).",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 9,
+   "quote": "numeric ratings don't work very well for LLM as a judge",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Three tests for a good metric",
+   "claim": "Good eval metrics must be specific (fine-grained, not broad), answerable (a human could label real examples from context), and actionable (a low score points to what to fix).",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 9,
+   "quote": "they should be specific, answerable, and actionable",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Avoid catch-all metrics",
+   "claim": "A single catch-all metric like 'quality' is too broad -- the judge doesn't know what to focus on, and a low score gives no actionable direction on what to fix.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 10,
+   "quote": "having one catch-all metric like quality",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Avoid metric sprawl",
+   "claim": "Ten-plus overlapping metrics (fluency, style, tone, politeness) waste tokens and cause cognitive overload; most are redundant since LLMs are already fluent out of the box.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 11,
+   "quote": "it also leads to cognitive overload",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Cap judge context at 4K tokens",
+   "claim": "Limit an LLM judge's context window to 4,000 tokens or less -- even models with million-token windows struggle to reason over more, so trim context rather than dumping a whole knowledge base into the prompt.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 13,
+   "quote": "limit your context window to 4,000 tokens or less",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Source of the 4K-token rule",
+   "claim": "The 4,000-token cap is based on a benchmark study ('Babylon') that tested state-of-the-art LLMs, including million-token-context models, and found reasoning performance drops steeply after about 4,000 tokens regardless of the advertised window size.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 29,
+   "quote": "performance really kind of steeply drops off after about 4,000 tokens",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Never call the judge 'an AI evaluator'",
+   "claim": "Don't set the judge's role to 'you are an AI evaluator' -- it primes AI-like behavior; use a role like 'expert evaluator' instead, which is fine and encouraged.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 14,
+   "quote": "setting role to you are an AI evaluator",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Skip manual response-format prompting",
+   "claim": "With structured outputs / tool calling available, you don't need to prompt the judge for a specific response format (e.g. 'respond in exactly one word') -- it wastes tokens and can even confuse the model if it contradicts the schema.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 14,
+   "quote": "you don't need to prompt for a specific response format most of the time",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Don't reuse the app's model as judge",
+   "claim": "Never use the same model for your application and its judge -- intuitively it's like letting a student grade their own essay; use a different model/provider for judging.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 15,
+   "quote": "letting a student grade their own essay",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Skip reasoning models as judges",
+   "claim": "Don't start with reasoning models (OpenAI o3, DeepSeek R1) as judges -- their extra reasoning overhead is usually overkill for eval when metrics are well defined; a traditional large model is sufficient.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 16,
+   "quote": "they're often overkill for evaluation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Bigger, proprietary models align better",
+   "claim": "Studies comparing GPT-4o to GPT-3.5 and open-source models (Llama, Qwen) show bigger models tend to have higher human alignment as judges, and proprietary models (OpenAI, Claude) tend to beat open-source variants.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 23,
+   "quote": "bigger models are better",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Meta-eval means human alignment",
+   "claim": "Meta-evaluation compares LLM judge labels against human-annotated golden labels and computes exact-match accuracy -- this is called 'human alignment' -- then disagreements are read to fix the prompt or criteria.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 17,
+   "quote": "This is what we call human alignment",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Don't collapse metrics into one score",
+   "claim": "Averaging multiple metrics into a single weighted quality score loses important diagnostic signal about where the application is actually failing; visualize several metrics together with a spider/radar plot instead.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 22,
+   "quote": "you lose a lot of important signal",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Repeat runs to surface unstable examples",
+   "claim": "Running the same eval 10-50 times over a data subset reveals which examples the judge is unstable on -- variability signals hard or ambiguous cases that need clearer criteria, not a reason to distrust the judge.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 26,
+   "quote": "run it 10, 20, 50 times and look at where is the judge responding with different answers",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Raise temperature to expose instability",
+   "claim": "Setting judge temperature to 1 or 2 (for OpenAI models) increases response variability, which is useful specifically when you're deliberately probing for unstable/ambiguous examples via repeated runs.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 26,
+   "quote": "setting a higher temperature like one or um two for open eye models can increase the the variability",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Evals are not guardrails",
+   "claim": "Evals are a check after the fact for offline evaluation and continuous monitoring (e.g. detecting a prompt injection that occurred); guardrails act at inference time to prevent problems from happening in the first place.",
+   "video_id": "pnlT_xatpVQ",
+   "chunk_index": 31,
+   "quote": "evals are more of a check after the fact",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Four-step LLM-as-judge workflow",
+   "claim": "The general LLM-as-judge workflow: pick a target system, feed it inputs and record outputs, score the outputs with an LLM judge, then run controlled experiments adjusting the system to see how high a score you can get.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 2,
+   "quote": "you will adjust various aspects of your system to see how high of a score you can get",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pick a judge model you trust",
+   "claim": "Choose an LLM judge whose outputs you generally respect -- if the judge model itself is inaccurate, the whole LLM-as-judge technique falls apart.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 2,
+   "quote": "if the LLM judge you choose is not good or is inaccurate, then this whole technique falls apart",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Three LangSmith building blocks",
+   "claim": "LangSmith organizes LLM-as-judge work around three concepts: datasets (input-output pairs), evaluators (scoring logic), and experiments (the result of running an evaluator against a dataset).",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 4,
+   "quote": "three fundamental concepts for understanding LLM as a judge",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Simple keyword evaluator as a baseline",
+   "claim": "A minimal non-LLM evaluator can just check whether the target system's output contains the expected keyword, scoring each example 1/100% on a match, then averaging across the dataset for a final score.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 9,
+   "quote": "we're just checking that the output generated by the system contains the text",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "A minimal LLM-judge prompt",
+   "claim": "A working LLM-judge prompt used in practice: 'You're an impartial evaluator. Score whether the predicted answer is correct for the given question and reference answer' with a score between zero and one.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 12,
+   "quote": "score whether the predicted answer is correct for the given question and reference answer",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Model swap raised the judge score",
+   "claim": "Swapping an agent's backing model from GPT-4o mini to GPT-5.4 on a 20-example test raised the same judge's score from 79% to 94%.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 14,
+   "quote": "It scored 79% and then we tested our agent using GPT-5.4 and it scored 94%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Bigger test flipped the model ranking",
+   "claim": "On an expanded 168-example dataset comparing four backing models, Gemini 3.1 Pro scored highest and the older GPT-4o-mini actually outscored the newer GPT-5.4 -- a counterintuitive result versus assuming 'newer is better'.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 16,
+   "quote": "one of the older Open AI models, AKA GPT-4o-mini, performed better than one of the newer Open AI models",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Use multiple evaluators for different angles",
+   "claim": "A single evaluator only tests one angle of quality; production setups should run multiple evaluators to assess results from different angles rather than relying on one score.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 16,
+   "quote": "Sometimes you'll do multiple evaluators in order to test your results from different angles",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Auto research: automate the tweak-and-eval loop",
+   "claim": "Karpathy's 'auto research' concept extends LLM-as-judge by delegating the tweak-then-rerun-evaluations loop to an AI agent, which can run unattended for hours, days, or weeks to hyper-optimize a system against the evals.",
+   "video_id": "qoPYlLg7_rY",
+   "chunk_index": 17,
+   "quote": "we could delegate an AI agent to tweak our target system for us",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Three eval execution methods",
+   "claim": "Every eval pipeline is executed by exactly one of three methods: programmatic/deterministic code, a human, or a model (LLM-as-judge, also called model-graded).",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 0,
+   "quote": "प्राइमरीली स्पीकिंग आप कोई भी इवैल्यूएशन पाइपलाइन जब बनाओगे तो उसमें तीन में से कोई एक ही मेथड होता है",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Retriever eval target: Recall@K",
+   "claim": "To evaluate a RAG retriever component in isolation, define the target as the retriever alone and the success metric as Recall@K -- the fraction of all correct documents retrieved in the top K results.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 4,
+   "quote": "आउट ऑफ ऑल द करेक्ट आइटम्स दैट एकिस्ट हाउ मेनी डड द सिस्टम रिट्रीव इन इट्स टॉप के रिजल्ट्स",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Recall@K worked example",
+   "claim": "With 2 correct documents (1001, 1003) and a retriever returning 5 documents that includes only 1 of them, Recall@5 for that question is 50%.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 5,
+   "quote": "द आंसर इज 1/2 बेसिकली मेरा रिकॉल इज 50%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Retriever eval overall result",
+   "claim": "Running the Recall@K program over the full golden dataset of sampled questions produced an overall recall of 67%.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 8,
+   "quote": "इवैल्यूएट किया रिजल्ट तो 67% हमारा रिकॉल आया",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Levers to fix a weak retriever",
+   "claim": "When Recall@K comes in low, the fixes to try are: improve the embedding model, expand the query with an LLM before retrieval, raise K, or add a reranker.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 9,
+   "quote": "आप सबसे पहले तो अपना एंबेडिंग मॉडल है उसको इंप्रूव कर सकते हो",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Relevance has three aspects",
+   "claim": "Retrieval relevance has three distinct aspects -- how many correct docs were retrieved, how many retrieved docs were irrelevant, and whether the retrieved docs were properly ranked -- and Recall@K only captures the first.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 10,
+   "quote": "रेलेवेंसी के कई एस्पेक्ट्स हो सकते हैं",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "No single metric for 'helpfulness'",
+   "claim": "For an open-ended chatbot, there is no single correct metric for 'helpfulness' -- it varies business to business, so teams must define their own rubric (e.g. a 1-5 scale where 5 means accurate, complete, and correctly toned).",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 13,
+   "quote": "देयर इज नो करेक्ट मैट्रिक। ये बिजनेस टू बिनेस वेरीरी करेगा",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Multiple graders expose rubric ambiguity",
+   "claim": "Running two or more human graders against the same rubric and comparing scores is a diagnostic: frequent disagreement between graders means the rubric instructions are ambiguous and need refining.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 16,
+   "quote": "देयर इज सम एंबिग्विटी इन योर रब्रिक",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Five kinds of human evaluation",
+   "claim": "Humans perform five distinct kinds of LLM evaluation: direct grading/rating, red teaming, A/B testing in production, golden-dataset and rubric creation, and human-in-the-loop escalation for ambiguous cases.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 20,
+   "quote": "डायरेक्ट ग्रेडिंग एंड रेटिंग जो मैंने आपको ऊपर ये दिखाया। रेड टीमिंग, एबी टेस्टिंग",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Human eval's cost tradeoff",
+   "claim": "Human evaluation's biggest advantage is reliable, trusted judgment; its biggest disadvantage is cost, which rules it out for applications serving millions of users at scale.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 21,
+   "quote": "सबसे बड़ा डिसएडवांटेज इज़ कॉस्ट",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "LLM-as-judge fills the programmatic/human gap",
+   "claim": "LLM-as-judge is the middle ground between programmatic and human evaluation -- used precisely when a task is too ambiguous for deterministic code checks but too costly to have humans grade at scale.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 22,
+   "quote": "प्रोग्रामेटिक और ह्यूमन के बीच में क्या चीज आ सकती है",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "UPSC case study: matching human expert grading",
+   "claim": "For automating subjective exam-answer grading at scale, the success criteria set for an LLM grading platform was that it evaluate answers exactly the way a human subject-matter expert would.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 26,
+   "quote": "मेरा प्लेटफार्म यूपीएससी के आंसर्स को बिल्कुल वैसे इवैलुएट कर पाए जैसे ह्यूमन एक्सपर्ट्स करते हैं",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge prompt should punish padding, reward substance",
+   "claim": "The UPSC grading prompt explicitly instructs the judge, for each rubric dimension, not to reward verbosity or keyword stuffing, and to reward structure, relevant examples, and balanced argumentation instead.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 32,
+   "quote": "डू नॉट रिवॉर्ड वर्बोसिटी कीवर्ड स्टफिंग",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "MAE as the judge-alignment metric",
+   "claim": "Success for the LLM grader was measured as mean absolute error (MAE) between the LLM's marks and the human's marks across the golden set; an MAE of 2.3 means the LLM deviates from the human by plus-or-minus 2.3 marks on average, and the goal is to drive it toward zero.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 34,
+   "quote": "ऑन एन एवरेज मेरा एलएलएम आंसर्स को इवैलुएट करते टाइम ह्यूमन से प्लस माइनस 2.3 डेविएट कर रहा है",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Levers to reduce judge-human MAE",
+   "claim": "To drive down the judge-vs-human MAE, iterate in a loop trying a better LLM, a changed system prompt, or a revised rubric.",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 35,
+   "quote": "यू कैन ब्रिंग अ बेटर एलएलएम इन द पिक्चर। यू कैन चेंज द सिस्टम प्र्ट",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reference-based vs reference-free test",
+   "claim": "To classify any eval pipeline, check whether the golden dataset supplies a predefined correct answer: if yes it's reference-based (retriever recall, UPSC grading); if no, it's reference-free (chatbot helpfulness rubric).",
+   "video_id": "uQFLY8rQVYA",
+   "chunk_index": 39,
+   "quote": "अगर नहीं दिया जा रहा है इट इज़ अ रेफरेंस V1। अगर दिया जा रहा है तो इट्स अ रेफरेंस बेस्ड वन",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Golden dataset must be strict JSONL",
+   "claim": "Amazon Bedrock RAG evaluation requires the golden dataset in JSONL format with a specific schema (conversation turns, prompt content, reference response text), uploaded to S3.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 6,
+   "quote": "that golden data set is in the jonl file format",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Root-user and region gotchas",
+   "claim": "Amazon Bedrock throws an error creating a knowledge base under the AWS root user, and not every AWS region supports Bedrock evaluations -- the walkthrough uses US East (N. Virginia) specifically for that reason.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 2,
+   "quote": "it throws the error if you are a root user",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Sync required after connecting a data source",
+   "claim": "After pointing a Bedrock knowledge base at an S3 data source, you must explicitly sync it before the retriever can answer questions correctly.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 7,
+   "quote": "you just pointed which data you want to use and now it is synced",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Two Bedrock evaluation types",
+   "claim": "Bedrock offers two evaluation job types -- model evaluations and RAG evaluations -- and RAG evaluations can run retrieval-only or retrieval-plus-response-generation, using separate evaluator and response-generator models.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 9,
+   "quote": "there is two evaluations model evaluations and rag evaluations",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Built-in Bedrock RAG metrics",
+   "claim": "Bedrock's RAG evaluation offers built-in quality metrics -- helpfulness, correctness, faithfulness, logical coherence, completeness -- plus responsible-AI metrics (refusal, stereotyping, harmfulness), selectable per run.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 12,
+   "quote": "there is the helpfulness you can choose the correctness faithfulness logical coherence completeness",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Query splitting for complex questions",
+   "claim": "Bedrock's evaluation configuration lets you enable query decomposition -- splitting a complex query into multiple sub-queries -- to get more relevant retrieved responses.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 11,
+   "quote": "split complex queries into multiple parts to get more relevant responses",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "CORS permission required on the results bucket",
+   "claim": "The S3 bucket storing Bedrock evaluation results must have cross-origin resource sharing (CORS) permission configured at the bucket level, or the evaluation job fails to run.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 14,
+   "quote": "the evaluation job requires that the S3 location is configured with the cross origin resource sharing permission",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "IAM service role needed for the eval job",
+   "claim": "Bedrock evaluation jobs need an IAM service role granting Bedrock access to the S3 resources -- both the golden dataset and the results bucket -- used by the evaluation.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 16,
+   "quote": "allows access to the Amazon bedrock n S3 resources used by the evaluation",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Score direction conventions",
+   "claim": "Bedrock RAG eval scores run 0 to 1: for helpfulness and correctness, closer to 1 is better; for harmfulness, closer to 0 is better.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 18,
+   "quote": "closer to one is higher score closer to zero is lower score",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Judge explains every score",
+   "claim": "Clicking any individual score in the Bedrock evaluation report shows the LLM judge's own explanation for why it assigned that score.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 20,
+   "quote": "if you click on this answers or the scores that is being provided it shows you why it provided that",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Compare configurations before shipping",
+   "claim": "Bedrock lets you run RAG evaluations against different configurations (embedding model, chunking strategy, parsing) and compare them side by side to pick the best-performing setup before deploying to production.",
+   "video_id": "HI5b0g_mELA",
+   "chunk_index": 22,
+   "quote": "go back and forth changing the embedding model or you can change the chunking mechanism",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Should the judge model differ from the model being tested?",
+   "positions": [
+    {
+     "video_id": "pnlT_xatpVQ",
+     "chunk_index": 15,
+     "position": "Never use the same model for your application and its judge -- intuitively it's like letting a student grade their own essay; use a different model as judge."
+    },
+    {
+     "video_id": "qoPYlLg7_rY",
+     "chunk_index": 2,
+     "position": "Uses GPT-4o mini as the LLM judge while also testing an agent variant whose backing model is GPT-4o mini -- the same model judges itself in that condition, without flagging it as a concern."
+    }
+   ]
+  },
+  {
+   "topic": "Do numeric scores work well for LLM judges?",
+   "positions": [
+    {
+     "video_id": "pnlT_xatpVQ",
+     "chunk_index": 9,
+     "position": "Numeric ratings (e.g. 1-10 scales) don't work well for LLM judges; recommends a small set of discrete word labels instead."
+    },
+    {
+     "video_id": "uQFLY8rQVYA",
+     "chunk_index": 34,
+     "position": "Builds the entire UPSC-grading evaluation around continuous numeric marks (0-15 per question) and a mean-absolute-error metric between LLM and human scores, with no reliability problems reported."
+    },
+    {
+     "video_id": "HI5b0g_mELA",
+     "chunk_index": 18,
+     "position": "Bedrock's built-in metrics (helpfulness, correctness, harmfulness) are all continuous 0-1 numeric scores, used directly without converting to word labels."
+    }
+   ]
+  },
+  {
+   "topic": "Is a bigger/newer model always a better judge or backing model?",
+   "positions": [
+    {
+     "video_id": "pnlT_xatpVQ",
+     "chunk_index": 23,
+     "position": "Studies cited show bigger, more capable models generally have higher human alignment as judges."
+    },
+    {
+     "video_id": "qoPYlLg7_rY",
+     "chunk_index": 16,
+     "position": "Empirically, the older/smaller GPT-4o-mini outscored the newer GPT-5.4 as an agent's backing model under the same judge, on a 168-example dataset -- a concrete counterexample to 'bigger/newer is better'."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four talks gives a firm number for how many labeled examples a golden dataset needs -- pnlT_xatpVQ explicitly declines to give a rule, and the 50-100 figures used in uQFLY8rQVYA and HI5b0g_mELA are presented as informal, small-scale demo choices, not a validated minimum.",
+  "pnlT_xatpVQ promises deeper coverage of meta-evaluation statistics and pairwise-judge design in a 'future session' that isn't part of this corpus, so rigorous methodology for those two areas is missing here.",
+  "uQFLY8rQVYA explicitly flags 'offline vs online evaluation' as the next topic to cover but the available chunks end before that discussion, so how to run judges continuously against a live production system isn't answered in this cluster.",
+  "None of the four videos gives quantitative cost/latency figures for running an LLM judge at volume (e.g. $ per judgment, tokens per call, throughput limits) beyond qualitative statements that humans are 'costly'.",
+  "No video addresses judge drift -- what to do when a provider silently updates or deprecates the judge model version you calibrated against.",
+  "No video discusses statistical significance when comparing experiment scores between configurations (e.g. is a 79% vs 94% gap meaningful given a sample of only 20-70 examples).",
+  "Multi-turn or full agentic-trajectory evaluation (judging an entire tool-calling trajectory rather than a single final answer) is mentioned only in passing (pnlT_xatpVQ's Q&A) and never worked through as a case study in this cluster."
+ ],
+ "verified_claims": 55
+}

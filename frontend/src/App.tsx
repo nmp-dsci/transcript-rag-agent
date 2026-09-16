@@ -8,15 +8,17 @@ import { DemoContext } from './demo';
 import { Landing } from './landing/Landing';
 import { SystemDesignView } from './design/SystemDesignView';
 import { ExperimentsView } from './experiments/ExperimentsView';
+import { GuidesView } from './guides/GuidesView';
 import { Logo } from './Logo';
 import { PipelineView } from './pipeline/PipelineView';
 import { ScoreboardView } from './scoreboard/ScoreboardView';
 import { type Theme, initialTheme, setTheme } from './theme';
 
-export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'design';
+export type Tab = 'chat' | 'pipeline' | 'board' | 'experiments' | 'guides' | 'design';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Chat' },
+  { id: 'guides', label: 'Field Guides' },
   { id: 'pipeline', label: 'RAG Pipeline' },
   { id: 'board', label: 'Scoreboard' },
   { id: 'experiments', label: 'Experiments' },
@@ -191,7 +193,17 @@ export function App() {
             </button>
           ))}
         </nav>
-        <div className="topstat">
+        <div
+          className="topstat"
+          // The judge model and stack state matter only when something is
+          // wrong or someone asks, so they live in the tooltip; the bar keeps
+          // the corpus size and the health dot.
+          title={
+            health && !demo
+              ? `judge ${health.judge_model} · ${health.runner_loaded ? 'stack loaded' : 'stack cold'}`
+              : undefined
+          }
+        >
           <span className={`hdot ${offline ? 'err' : health ? 'ok' : ''}`} />
           <span className="topstat-text">
             {offline
@@ -199,9 +211,7 @@ export function App() {
               : demo
                 ? `${corpusBit}demo replay`
                 : health
-                  ? `${corpusBit}judge ${health.judge_model}${
-                      health.runner_loaded ? ' · stack loaded' : ' · stack cold'
-                    }`
+                  ? corpusBit.replace(/\s·\s$/, '') || 'ready'
                   : 'connecting…'}
           </span>
           <button
@@ -242,6 +252,7 @@ export function App() {
         )}
         {activeTab === 'board' && <ScoreboardView />}
         {activeTab === 'experiments' && <ExperimentsView />}
+        {activeTab === 'guides' && <GuidesView stt={health?.stt === true} />}
         {activeTab === 'design' && !demo && <SystemDesignView />}
         </DemoContext.Provider>
       </main>

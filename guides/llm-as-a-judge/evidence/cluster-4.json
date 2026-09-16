@@ -1,0 +1,635 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "vBJF2sy1Pyw",
+  "3FcYdRQPMCo",
+  "8fNP4N46RRo",
+  "mX9HzIRdBpw"
+ ],
+ "video_notes": [
+  {
+   "video_id": "vBJF2sy1Pyw",
+   "title": "The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013",
+   "contributed": "Production-ops framing: where in the request lifecycle to run judge calls, cost control via cheap judge models, root-cause analysis on failure clusters, and a live demo of UpTrain's API/dashboard."
+  },
+  {
+   "video_id": "3FcYdRQPMCo",
+   "title": "LLM as a Judge Explained | Hands-On GenAI Evaluation with Real Code",
+   "contributed": "The only fully worked code walkthrough: two candidate LLMs + one judge LLM via llama-index, a structured-JSON judge prompt, and a scored comparison loop over a fixed question set."
+  },
+  {
+   "video_id": "8fNP4N46RRo",
+   "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 8 - LLM Evaluation",
+   "contributed": "Academic grounding: why raw human agreement is misleading, why reference-based metrics (BLEU/ROUGE/METEOR) fail, the taxonomy of judge biases (position, verbosity, self-enhancement) with remedies, structured-output enforcement, atomic-fact factuality scoring, and how judges relate to benchmarks like MMLU."
+  },
+  {
+   "video_id": "mX9HzIRdBpw",
+   "title": "Evaluating Netflix Show Synopses with LLM-as-a-Judge",
+   "contributed": "The most detailed industrial case study: building a calibrated golden dataset with expert annotators, per-criteria judges, inference-time scaling (long reasoning + consensus), an agent-as-judge decomposition for factuality, and causal-inference validation of judge scores against real user behavior."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Judge model cost control",
+   "claim": "Don't use an expensive frontier model (e.g. GPT-4) as the judge for routine evaluation — cost adds up fast, so rely on smaller/cheaper models instead.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 5,
+   "quote": "you don't want to use like an expensive model like gp4 for evaluation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "When to evaluate in the pipeline",
+   "claim": "Only safety/jailbreak checks are cheap enough to run in the moment (in parallel with generation); most quality metrics (relevance, hallucination, completeness) have to run post-hoc via experimentation or production monitoring because they'd add latency if run before showing the response.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 3,
+   "quote": "you can do this evaluation in parallel to the generation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Root-cause analysis on failures",
+   "claim": "Take the ~10-20% of production cases that fail a high-level quality check and run a battery of 5-10 targeted checks on just those to pinpoint whether the failure is retrieval, citation, utilization, hallucination, an unclear query, or a bad embedding model.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 6,
+   "quote": "take this 10 20% cases run like a a battery of checks on them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Objective fact-level scoring beats holistic labels",
+   "claim": "Instead of asking the judge LLM for a holistic relevant/irrelevant label (subjective, prone to egocentric bias), decompose the response into individual facts and score each fact's relevance, then aggregate into a ratio.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 7,
+   "quote": "you have to break down the response into like individual facts",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Starter metric set for RAG",
+   "claim": "For any new RAG application, start with four or five metrics: response relevance, response completeness, context relevance (retrieval quality), hallucination/groundedness, and conversation satisfaction.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 11,
+   "quote": "these four 4 five matrices are the best way for any developer to start",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Eval dataset size",
+   "claim": "A test set of just 50-100 samples is a good, sufficient starting point for evaluation — you don't need a huge labeled corpus to get going.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 12,
+   "quote": "a test data sets of like 50 to 100 samples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Best eval data source",
+   "claim": "Sample real user traffic — especially downvoted or rejected responses — for your evaluation set rather than synthetic data or public benchmarks; real usage surfaces issues you can't anticipate.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 13,
+   "quote": "look at your traffic like you know take 50 samples from them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Public benchmarks unreliable",
+   "claim": "Public evaluation benchmarks become unreliable over time because of training-data leakage — models effectively get trained on the benchmark.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 13,
+   "quote": "there is always problems of like you know them leaking into the training data",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Handling subjective golden responses",
+   "claim": "When a golden/reference response is subjective, check recall (is all key information from the golden response contained in the generated response) and conciseness, rather than exact string match.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 15,
+   "quote": "whether all information in the golden response is contained in the in the in the generated response",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Evaluate every pipeline stage, not just output",
+   "claim": "Instrument evaluation at every stage of the RAG pipeline — query rewrite, reranking, sub-query generation, retrieval — not only the final generated response.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 16,
+   "quote": "we plug with every part so even if you start with r retrieval",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Real-world failure without evaluation",
+   "claim": "A car dealership chatbot without real-time evaluation agreed that 'Tesla is better than GM' and then agreed to sell a car for a dollar — a cited real-world example of what happens without guardrail evaluation.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 18,
+   "quote": "is Tesla better than GM and the bot would say yeah",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Run guardrail checks in parallel, not after",
+   "claim": "Fire the guardrail/jailbreak evaluation on the query at the same time as generating the response (in parallel) rather than checking the response afterward, because checking-after adds a full extra layer of latency for the 95% of users who aren't misusing the product.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 19,
+   "quote": "fire a query evaluate like you know few of these key matrices and in parallel generate your responses",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Signals of jailbreak attempts",
+   "claim": "Jailbreak attempts tend to show telltale signs: unusually long prompts/questions, bursts of repeated traffic as the attacker tries multiple techniques, and lower sentiment/coherence than genuine queries.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 21,
+   "quote": "the length of their question or the length of their prompt typically is like much larger",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Model-purpose-scoped jailbreak detection",
+   "claim": "UpTrain's jailbreak check is configured against a defined 'model purpose' string; any query outside the scope of that stated purpose is tagged as a jailbreak attempt.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 29,
+   "quote": "it takes something what you call as a model purpose",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Clustering failures for diagnosis",
+   "claim": "UpTrain lets you filter all zero-scoring failure cases and automatically pull out their common topics/themes, turning a pile of failures into an actionable diagnosis.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 25,
+   "quote": "filter cases where let's say the model is failing",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Model comparison reveals tradeoffs",
+   "claim": "Comparing GPT-3.5 vs Claude 2 on the same task showed Claude 2 gives more concise responses while GPT-3.5 is more factually accurate — illustrating why you pick the model per the metric that matters most to your use case rather than a single 'best' model.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 26,
+   "quote": "claw 2 is giving more concise responses but",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Open-source evaluation tool",
+   "claim": "UpTrain is open source, offering both pre-configured checks and custom-guideline / custom-python-function evaluators.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 27,
+   "quote": "up train is like open source",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Context-only fact verification",
+   "claim": "UpTrain's hallucination check (based on the 'FactScore' paper) verifies facts against the retrieved context only, rather than searching the open internet.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 36,
+   "quote": "based on this paper called like fact score",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Two candidates plus one judge",
+   "claim": "The core hands-on pattern: generate answers from two candidate LLMs on the same prompt set, then send both answers plus the question to a third, separate LLM configured as an impartial judge to pick a winner.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 7,
+   "quote": "we are going to use this LLM A and LLM B as our candidate LLMs",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Provider abstraction for swapping models",
+   "claim": "Using llama-index as a common interface (instead of provider-specific SDKs) lets you swap in Ollama, Gemini, or other models without changing application code — only the import/library changes.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 2,
+   "quote": "you don't have to replace any codes",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Deterministic evaluation runs",
+   "claim": "Set candidate LLM temperature to 0.0 so the same question returns the same answer every time, making comparisons reproducible.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 11,
+   "quote": "0.0 of temperature means every time for a given question you're going",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Never commit API keys",
+   "claim": "Keep API keys in a .env file loaded via python-dotenv and share an env-template instead of the real .env; never push secrets to a repository.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 8,
+   "quote": "you shouldn't push your env file and your secret information to github",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Force structured judge output",
+   "claim": "Explicitly instruct the judge prompt to 'return only valid JSON in this exact format' with fixed keys (e.g. winner, reason) so the output can be parsed programmatically.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 16,
+   "quote": "you should return only valid JSON data in this exact format",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Unconstrained judge output is unusable",
+   "claim": "Without an explicit output-structure constraint, a judge LLM can return a response of any shape, making it impossible to reliably extract which answer won.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 19,
+   "quote": "the judge LLM can give you any response of any structure",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Explicit judge criteria",
+   "claim": "The demo's judge prompt scores answers on four explicit criteria: correctness, completeness, clarity, and safety/best practices.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 30,
+   "quote": "correctness of the response completeness clarity and safety and best practices",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Handle ties explicitly",
+   "claim": "When tallying wins, use elif rather than else for the second branch so that a 'tie' verdict doesn't accidentally get counted as a win for one side.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 25,
+   "quote": "don't use else because we also have a tie condition",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Judge calls cost money",
+   "claim": "Each evaluation round makes three paid LLM calls per test question (two candidates + one judge) — be mindful of API costs before scaling up the test set.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 27,
+   "quote": "you will be charged. So pay attention to that.",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Worked example result",
+   "claim": "In the demo run over five AWS/DevOps questions, the smaller model (Llama 3.1 8B) scored 2 wins and the larger model (Llama 3.3 70B) scored 3, so the judge declared the 70B model the overall winner for that use case.",
+   "video_id": "3FcYdRQPMCo",
+   "chunk_index": 31,
+   "quote": "LLM A scored two points and B scored three points",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Raw agreement rate is misleading",
+   "claim": "Two independent raters guessing randomly with probability 0.5 each already produce a 50% agreement rate by pure chance, so a raw human-agreement number is meaningless without a chance baseline.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 7,
+   "quote": "we would already have an agreement rate of 50%",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Chance-corrected agreement metrics",
+   "claim": "Use chance-corrected inter-rater metrics — Cohen's kappa for two raters, Fleiss' kappa or Krippendorff's alpha for more — rather than raw agreement rate.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 9,
+   "quote": "cohen scappa that people use for cases where there are tool raiders",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Reference metrics penalize valid rewording",
+   "claim": "Rule-based reference metrics like BLEU, ROUGE, and METEOR score a stylistically different but equally correct rewrite very poorly, because they primarily match n-grams against a fixed reference.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 16,
+   "quote": "the metrics that we saw would you would really perform very poorly",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge definition",
+   "claim": "LLM-as-judge means using an LLM's pretrained knowledge of human preferences to grade another model's output, taking the prompt, the response, and the grading criteria as input.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 17,
+   "quote": "the idea here is to use an LLM for rating purposes",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Rationale before score",
+   "claim": "Ask the judge to output its rationale before its score — this mirrors chain-of-thought prompting and empirically improves judgment quality.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 18,
+   "quote": "typically ask the model to first output the rationale and then",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Guaranteeing parseable output",
+   "claim": "Prompting alone does not guarantee a parseable judge response — use constrained/guided decoding (structured output APIs, e.g. OpenAI's text_format) to force a fixed JSON schema.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 20,
+   "quote": "we saw a technique called constrained guided decoding",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Structured output as the fix",
+   "claim": "Whenever you need a response in a given format from a judge, use the provider's structured-output feature rather than relying on prompt instructions alone.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 21,
+   "quote": "the key word here is structured output",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Pointwise vs pairwise judges",
+   "claim": "There are two main LLM-judge setups: pointwise (score a single response) and pairwise (ask which of two responses is better); pairwise output doubles as synthetic preference data for reward-model training.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 22,
+   "quote": "is response A better or is response B better",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Position bias",
+   "claim": "In pairwise judging, the model can favor whichever response is listed first, independent of quality — this is called position bias.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 23,
+   "quote": "responds with response A just because it it was the first one",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Position bias remedy",
+   "claim": "Mitigate position bias by asking the judge both orderings (A,B) and (B,A) and taking the majority vote across the two runs.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 24,
+   "quote": "ask the model is A or B better and then ask",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Verbosity bias",
+   "claim": "LLM judges tend to prefer longer, more detailed responses even when they aren't more correct — this is verbosity bias.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 25,
+   "quote": "prefer responses that are just more verbose",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Self-enhancement bias",
+   "claim": "A judge model tends to prefer outputs generated by itself, regardless of actual quality relative to alternatives — self-enhancement bias.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 26,
+   "quote": "the model will tend to prefer responses that are generated by itself",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Self-enhancement bias remedy",
+   "claim": "Best-practice remedy for self-enhancement bias: don't use the exact same model for generation and for judging; use a different model (often a bigger one with stronger reasoning) as judge.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 26,
+   "quote": "use the same model that you use for generation and for judges",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Prefer binary scoring scales",
+   "claim": "Prefer a binary pass/fail scale over granular Likert scales — it's easier for both the LLM judge and human raters to apply consistently.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 29,
+   "quote": "typically what people would tend to prefer is actually the binary one",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Low temperature for reproducible evals",
+   "claim": "Run judge evaluations at low temperature (roughly 0.0-0.2) so scores stay reproducible across repeated evaluation runs over time.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 31,
+   "quote": "you will see a temperature value of something",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Calibrate the judge against humans",
+   "claim": "Even though LLM-as-judge doesn't require human ratings to get started, best practice is to periodically collect human ratings alongside judge scores and run a correlation analysis so you don't over-optimize against a flawed proxy.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 31,
+   "quote": "collect the human ratings output the LM as a judge scores",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Atomic-fact factuality scoring",
+   "claim": "Factuality scoring should decompose the output into a list of atomic facts (via an LLM call) before checking each one, rather than scoring the whole passage as one unit.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 35,
+   "quote": "one LLM call that transforms our original multi-sentence",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Weighted fact aggregation",
+   "claim": "Facts can be weighted by importance when aggregating a factuality score, though equal weights are a reasonable simplification.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 36,
+   "quote": "having weights that quantifies the importance of each fact",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Worked factuality example",
+   "claim": "Worked example: a 4-fact passage with 2 correct facts and importance weighting produced an aggregate factuality score of 6 (out of 10), illustrating partial-credit scoring instead of all-or-nothing.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 37,
+   "quote": "we obtain a score of 6",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Benchmarks avoid judge-on-judge error",
+   "claim": "Multiple-choice benchmarks like MMLU deliberately use hard-coded answer extraction instead of an LLM judge, because adding a judge would introduce another layer of potential error.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 56,
+   "quote": "introduces um you know another layer of potential errors",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Agent tool-routing failure mode",
+   "claim": "When an agent fails to select an available tool it needed, the root cause is usually a recall failure in the tool router/selector, not the final LLM call.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 40,
+   "quote": "we say tool wer error we actually mean a recall error",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Tool hallucination failure mode",
+   "claim": "Tool hallucination is when the model calls a function name that was never defined; common causes are a too-weak model or poorly written tool descriptions/instructions.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 41,
+   "quote": "model comes up with a function name that just simply doesn't exist",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Return empty JSON, not None",
+   "claim": "When a tool call finds nothing, return an explicit empty JSON object rather than None/null — an empty JSON is meaningful (\"found nothing\") while None leaves the downstream model unable to tell what happened.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 50,
+   "quote": "actually better to output an empty JSON than just outputting none",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Two-axis quality definition",
+   "claim": "Netflix defines synopsis quality on two axes: implicit member feedback (take fraction — the rate members start watching after seeing a synopsis — and abandonment rate) and creative quality (rubric-based expert judgment).",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 3,
+   "quote": "take fraction which respond basically captures how many members will watch a show",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Headline agreement result",
+   "claim": "Netflix's LLM-as-judge system for synopsis quality reached an 85% agreement rate with expert creative writers on an extremely subjective task.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 2,
+   "quote": "achieve an 85% agreement rate",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Building a golden dataset via calibration",
+   "claim": "Build the golden evaluation dataset through iterative calibration rounds: annotate, measure disagreement, refine written guidelines with concrete examples, repeat — Netflix collected about 1,000 initial evaluations this way.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 5,
+   "quote": "about a thousand diverse synopsis evaluations that we collect",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Binary beats Likert for agreement",
+   "claim": "Switching human annotators from a 1-4 Likert scale to a binary pass/fail scale was a key change that improved inter-annotator agreement.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 7,
+   "quote": "using binary scores, basically a pass fail score instead of a liyker score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "One judge prompt per criterion",
+   "claim": "Build a separate LLM-judge prompt per evaluation criterion instead of one prompt that scores everything at once — a single overloaded prompt degrades judge quality.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 10,
+   "quote": "we create per criteria judges more or less creating a prompt for each",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reasoning before score improves quality",
+   "claim": "Ask each per-criteria judge to produce a reasoning trace before its final score, since the reasoning becomes context the model uses when deciding the score.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 11,
+   "quote": "giving the reasoning trace first allows a model to use this reasoning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Longer reasoning traces boost accuracy",
+   "claim": "Explicitly requesting a longer reasoning trace (toggling from a couple of sentences to ~4-5 paragraphs) before the final score improved judge accuracy by about 7% absolute, with diminishing returns at the longest setting.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 13,
+   "quote": "we improve performance by like 7% absolute",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Tiered rationale for readability",
+   "claim": "Because long reasoning traces aren't human-readable, generate the long trace first, then have the model summarize it into a short (~2-sentence) rationale for display — this summarization step itself further improved accuracy.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 14,
+   "quote": "extra summary of the reasoning trace before the final score actually improved",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Consensus scoring",
+   "claim": "Consensus scoring — generating 5 judge outputs and taking the rounded-average/mode — gave a noticeable accuracy boost, and was most valuable when paired with longer rationale (which introduces score variance to aggregate over).",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 15,
+   "quote": "performing this consensus scoring yielded a pretty noticeable accuracy boost",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Agent-as-judge for factuality",
+   "claim": "Splitting factuality into narrow sub-types (plot, metadata, talent, awards), running a separate targeted judge-agent per sub-type, and taking the minimum score across them delivered the single biggest accuracy gain of all interventions — a 10%+ boost on factuality.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 17,
+   "quote": "we see over a 10% boost by using these factuality agents",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge scores predict real behavior",
+   "claim": "Causal-inference analysis showed synopses with higher LLM-judge precision or clarity scores had statistically significantly higher take fractions (and lower abandonment), validating that the judge's scores track real member behavior, not just internal rubric agreement.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 19,
+   "quote": "high precision or clarity scores tend to have much higher take fractions",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Proactive pre-launch quality detection",
+   "claim": "Because LLM-judge scores can be computed before a show ever launches, they enable proactive quality detection, unlike behavioral metrics which are inherently retroactive.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 21,
+   "quote": "these LMS judge scores can be collected before a show even launches",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Golden set sizing and diversity",
+   "claim": "The final 600-item golden dataset was deliberately sampled uniformly across content categories and genres to ensure diversity, rather than just scaled up in raw count.",
+   "video_id": "mX9HzIRdBpw",
+   "chunk_index": 27,
+   "quote": "sampled pretty uniformly across different content categories, genres",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How big/expensive should the judge model be?",
+   "positions": [
+    {
+     "video_id": "vBJF2sy1Pyw",
+     "chunk_index": 5,
+     "position": "Sourabh Agrawal (UpTrain) argues against using an expensive model like GPT-4 as the judge because the added cost defeats the purpose of automating evaluation — prefer smaller, cheaper judge models."
+    },
+    {
+     "video_id": "8fNP4N46RRo",
+     "chunk_index": 28,
+     "position": "The Stanford lecture recommends using a judge model with much bigger capacity and stronger reasoning than the models being evaluated, so it can't be fooled by plausible-but-wrong responses — implying cost is secondary to judge quality."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four talks give concrete dollar or token-cost figures for running an LLM judge at scale, beyond general warnings that judge calls 'add up' or 'you will be charged' — a reader can't budget from this corpus alone.",
+  "No video compares specific judge models against each other with benchmark numbers (e.g. which model is empirically the best judge) — recommendations stay generic ('use a bigger model', 'use a cheaper model').",
+  "No discussion of how to detect or prevent adversarial gaming of the judge itself (e.g. a generator model learning to exploit judge biases during RLHF-style optimization).",
+  "Netflix describes doing calibration up front but doesn't give a concrete cadence or trigger for re-calibrating human raters or the judge prompt once the system is live long-term.",
+  "No video discusses self-hosted/open-weight judge models as an alternative to API-based judges (cost, latency, or quality tradeoffs of running your own judge model).",
+  "No rigorous treatment of how large a golden/meta-evaluation dataset needs to be for statistical confidence — Netflix calls 600 'pretty diverse' but doesn't give a power-analysis style justification, and UpTrain's '50-100 samples' guidance is anecdotal."
+ ],
+ "verified_claims": 62
+}

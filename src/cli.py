@@ -744,6 +744,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Matcher repeats resolved by per-criterion vote (default: 5)",
     )
 
+    from src.guides.cli import add_guides_parser
+
+    add_guides_parser(subparsers)
+
     return parser
 
 
@@ -1743,7 +1747,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        settings = load_settings(require_keys=args.command != "eval-ablation")
+        settings = load_settings(require_keys=args.command not in ("eval-ablation", "guides"))
+        if args.command == "guides":
+            from src.guides.cli import run_guides
+
+            return run_guides(args, settings)
         if args.command == "chat":
             from src.chat.session import run_session
 

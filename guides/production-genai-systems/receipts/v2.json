@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "created_at": "2026-09-16T01:29:22+00:00",
+  "summary": "Version 2 answers the single open comment by making the guide multimodal: seven hand-drawn-style whiteboards are now interleaved with the prose, one per major argument — the five-layer stack the model sits inside (thesis), the overdraft-request trace waterfall (pipeline stage 05), the guardrail sandwich (pipeline stage 06), the three eval layers with their CI budget (evals), the two-stage retrieval funnel (retrieval), the orchestrator/worker/validator loop (agents), and the router plus prefill/decode pools (serving). Each board is self-contained inline SVG — no external scripts, no iframes, no Excalidraw embed — styled with a new .board block in the page's own <style>, drawn with currentColor so it reads in light and dark, and given a full aria-label so the diagram is legible to screen readers and to an agent reading the DOM. Every box, number and arrow label is sourced: each board carries a <figcaption> whose cites resolve to the chunks the drawing was reconstructed from (7YYVgH0_9CA@3/6/7, ObTPqBGsEbA@8/9/10/12/13/33, 1LhvqZvDT5w@11/15/16, _2tZaDs-w5s@9/10/11/12/13, ow1we5PzK-o@3/4/6/7, hBzUokVYQkI@22/34/35/36). guide.md gets the same seven boards as fenced ASCII diagrams in the same positions with [VIDEO_ID@N] cites. A new gap (gaps-li13) states plainly that the corpus is transcript text only — no slides or images — so these boards are reconstructions from what speakers said aloud, and any detail that lived only on a slide is not recoverable. Hero provenance, footer and md frontmatter now record the v2 revision. No existing id was changed or removed; all new ids follow their section's sequence.",
+  "items": [
+    {
+      "id": "c-aaaf08",
+      "outcome": "addressed",
+      "reason": "Added seven whiteboard-style architecture/system diagrams interleaved with the text, one per major section, so the page can be read and seen at once. Drawn as inline SVG rather than an Excalidraw embed: the guide may not load external scripts or third-party iframes, so an embedded Excalidraw canvas was not an option — the boards instead use the same whiteboard idiom (open boxes, dashed annotations, mono labels) natively in the page, scale to any width, and inherit the reader's light/dark theme. Content is constrained to what the corpus supports: every board's caption cites the chunks it was reconstructed from, and gaps-li13 now records that the corpus contains no slide images, so the boards are reconstructions of spoken descriptions rather than reproductions of the speakers' own diagrams.",
+      "sections": [
+        "thesis-figure1",
+        "thesis-p7",
+        "pipeline-figure1",
+        "pipeline-p8",
+        "pipeline-figure2",
+        "pipeline-p9",
+        "evals-figure1",
+        "evals-p12",
+        "retrieval-figure1",
+        "retrieval-p11",
+        "agents-figure1",
+        "agents-p16",
+        "serving-figure1",
+        "serving-p14",
+        "gaps-li13"
+      ]
+    }
+  ],
+  "changed_sections": [
+    "top",
+    "thesis-figure1",
+    "thesis-p7",
+    "pipeline-figure1",
+    "pipeline-p8",
+    "pipeline-figure2",
+    "pipeline-p9",
+    "evals-figure1",
+    "evals-p12",
+    "retrieval-figure1",
+    "retrieval-p11",
+    "agents-figure1",
+    "agents-p16",
+    "serving-figure1",
+    "serving-p14",
+    "gaps-li13",
+    "footer-p1"
+  ]
+}

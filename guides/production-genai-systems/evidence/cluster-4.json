@@ -1,0 +1,594 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "sk6HBdmVmL8",
+  "E8zpgNPx8jE",
+  "Q679gH7oszg"
+ ],
+ "video_notes": [
+  {
+   "video_id": "sk6HBdmVmL8",
+   "title": "Omnigent: Open-Source Meta-Harness for AI Agents | Matei Zaharia",
+   "contributed": "The only talk on infrastructure for running many coding agents together: session portability across models, contextual (state-aware) security policies, per-agent spend caps, and the case for open-sourcing the orchestration layer."
+  },
+  {
+   "video_id": "E8zpgNPx8jE",
+   "title": "Build a Complete End-to-End GenAI Project in 3 Hours",
+   "contributed": "A real-time, warts-and-all build of an AI news aggregator from brainstorm to Render deployment — shows the actual AI-assisted planning workflow, the specific production failures hit (OOM from a heavy library, duplicate digests, exposed database, env-mixups) and how each was fixed."
+  },
+  {
+   "video_id": "Q679gH7oszg",
+   "title": "How I Build and Ship Custom AI Solutions for Clients",
+   "contributed": "The only talk with the business/process layer around production GenAI: discovery-call red flags, accuracy-expectation management (70/80% to 90%), PoC vs MVP framing, sprint pricing, and the standardized deploy/monitor/secure stack (Hetzner, Caddy, Langfuse, Sentry)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "meta-harness wraps agents, doesn't replace them",
+   "claim": "Omnigen is a meta-harness / orchestration and control layer built on top of existing coding agents (Claude Code, Codex, etc.) rather than a replacement for them, so teams get shared governance, collaboration and history without standardizing on one agent.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 1,
+   "quote": "many coding agents today that you can use",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "session portability across models",
+   "claim": "A session/chat can be moved from one underlying coding agent to another mid-task (e.g. switch from Claude to Codex when you hit your daily quota) without losing context, because the harness sits above both.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 4,
+   "quote": "you can move your session from one to the other",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "route tasks to the model that's best at them",
+   "claim": "Different models have known strength profiles worth routing on: Claude is considered better at front-end work, GPT is considered better at debugging, so an orchestrator agent can be told explicit rules for which model/agent to use per task.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 5,
+   "quote": "GPT is like widely considered to be better at debugging",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "single long chat session is wasteful",
+   "claim": "Running one long chat session with one agent for an entire project is wasteful and degrades quality: as the context window grows the model has to attend to everything in it, gets worse at the task, and you pay for the full context on every turn.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 6,
+   "quote": "When the context window gets bigger, the model gets stupider",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "sub-agents get fresh context per task",
+   "claim": "Kicking off sub-agents for discrete tasks instead of continuing one giant session gives each sub-agent a fresh, unpolluted context, with a planner/orchestrator agent coordinating above them.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 6,
+   "quote": "they each have like a fresh start",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cloud sandboxes for isolated agent execution",
+   "claim": "Omnigen supports launching agent sessions into cloud sandboxes (Databricks sandbox, Daytona, Modal, Kubernetes) so you can close your laptop, get better security isolation, and even share a credential-free sandbox with another developer for collaborative debugging.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 8,
+   "quote": "spins up quickly so you can code in an isolated environment",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "static allow/deny policies are too coarse",
+   "claim": "Most agent tool-call policies (including auto-approve modes) only check whether a tool call matches a static pattern and allow or disallow it, which is too restrictive/coarse to be both safe and usable.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 10,
+   "quote": "does the tool call it's making match this pattern and like allow or disallow",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "contextual policies use session history to judge risk",
+   "claim": "Whether an action (like sending an email) is safe depends on what happened earlier in the session — e.g. an agent that just pulled a brand-new npm package and read 10,000 internal docs and then tries to email is suspicious even though 'send email' alone is normally fine; policies should track state across the session, not judge single calls in isolation.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 11,
+   "quote": "read 10,000 company docs, and now it's trying to send an email",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "risk-scoring escalates to human review",
+   "claim": "A practical contextual-policy pattern is risk scoring: an agent's risk score rises as it takes actions, and once it crosses a threshold the session requires human supervision before continuing.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 12,
+   "quote": "As you take actions, your score goes up",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scope tool access to the stated task",
+   "claim": "Narrowing what an agent is allowed to do based on its initial task prompt (e.g. a 'review this code' agent shouldn't be allowed to send emails) turns any attempt to act outside that scope into a signal of possible prompt injection.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 12,
+   "quote": "narrow down what it can do based on that initial prompt",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "runaway agents can burn real money fast",
+   "claim": "Agents doing something dumb (like generating a giant log file) can rack up roughly $1,000 in unintended spend even though it's hard to hit that scale doing reasonable work.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 13,
+   "quote": "spend like $1,000 by mistake because they decided to like create a giant log file",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "per-agent spend caps with checkpoints",
+   "claim": "You can tell an agent to self-impose a spend policy, e.g. ask for permission after every $10 spent, so it pauses and notifies you at $10, $20, etc. instead of running unchecked.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 13,
+   "quote": "ask me for permission after like every $10 spent",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "trace everything to find waste",
+   "claim": "Looking at full traces of agent runs surfaces concrete waste, such as skill and tool-description text that was needlessly long and burned tokens on every call without adding value.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 14,
+   "quote": "some of the skills and some of the tool descriptions and stuff for our engineers were just like super long",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "why open-source the orchestration layer",
+   "claim": "Databricks open-sourced Omnigen because a common control/orchestration layer above all agents and harnesses benefits everyone the way MLflow did for MLOps — building it proprietary would mean falling behind the constantly-shifting agent ecosystem within months.",
+   "video_id": "sk6HBdmVmL8",
+   "chunk_index": 15,
+   "quote": "there's going to be this new software layer above agents and above harnesses",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "brain-dump then let AI draft the plan, stay the architect",
+   "claim": "Start a new build by voice-dumping the idea into a planning tool, then feed that into an AI coding agent's plan mode before writing any code — but stay specific about the concrete stack choices (Postgres, SQLAlchemy, folder layout) up front so you remain the architect, not the agent.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 10,
+   "quote": "I'm going to plan mode. So I'm not going to build just yet",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "be specific to keep the agent on your architecture",
+   "claim": "Giving the agent explicit constraints (Postgres, SQLAlchemy, a specific folder structure) in the plan prompt keeps you in control of the architecture instead of letting the agent invent its own structure.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 10,
+   "quote": "We are the architect",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "ask AI to scaffold structure and dependencies before code",
+   "claim": "Have the agent lay out project folders and produce the dependency install command (e.g. `uv add ...`) before generating any files, then run the install yourself — this keeps setup reviewable and fast.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 11,
+   "quote": "give me the u add command with all of the libraries",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "de-risk the riskiest integration first",
+   "claim": "Before building database models or any scaffolding, test the piece that could make or break the whole project first — in this case, whether the data sources (YouTube RSS, transcripts) can actually be scraped at all.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 12,
+   "quote": "what's going to make or break this application is getting the actual sources",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "check library docs when the agent guesses wrong",
+   "claim": "When an agent misuses even a well-established library's API (e.g. calling `get_transcript` instead of `fetch`), stop and reference the library's quick-start docs directly rather than letting it keep guessing.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 19,
+   "quote": "always try and reference some kind of like quick start documentation",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "prefer RSS/feed endpoints over page scraping",
+   "claim": "Before scraping a website's HTML, check for an RSS/XML feed (OpenAI and community-maintained feeds for Anthropic) — a single structured feed endpoint is far easier and more reliable to parse than scraping arbitrary pages.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 26,
+   "quote": "scraping is generally a lot easier if you have a single page",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Python import pitfall: filename shadows package",
+   "claim": "Naming a project file the same as a package you import (e.g. `openai.py` in a project that might import `openai`) is a common source of confusing import errors — check for this whenever an import behaves strangely.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 27,
+   "quote": "don't accidentally have a file name in Python that is similar to a package",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "convert scraped HTML to markdown for LLM consumption",
+   "claim": "Use a page-to-markdown converter (Docling) on scraped web content before feeding it to an LLM — cleaner markdown input measurably helps downstream AI analysis quality.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 32,
+   "quote": "convert a web page to yeah to a markdown which is going to really help us for our AI analysis",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "some sites actively block scraping",
+   "claim": "OpenAI's website is heavily protected by Cloudflare, which blocked page-content scraping outright — the workaround was to fall back to the RSS feed's title/link/description instead of full-page content.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 33,
+   "quote": "very much restricted by Cloudflare",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "two-stage ingest-then-process pipeline",
+   "claim": "Split ingestion into two stages: first store lightweight metadata for all items quickly (no transcript/content fetch), then run a separate background processing stage to fetch transcripts/markdown for only the items that need it — an explicit architectural decision made mid-build.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 40,
+   "quote": "store metadata no transfer fast get all the items and then process",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "repository pattern around SQLAlchemy models",
+   "claim": "Wrap raw SQLAlchemy database access in a CRUD/repository interface layer rather than scattering queries through the codebase, so the agent (and you) have one place to check for data-access logic.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 41,
+   "quote": "create a simple CRUD interface or repository",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "primary key as dedup mechanism",
+   "claim": "Use the natural unique ID (e.g. video ID) as the database primary key and skip-on-conflict rather than overwrite, as a simple way to avoid duplicate scraped records on repeated pipeline runs — noted as an explicit architectural choice, not obviously correct for content that can be edited later.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 52,
+   "quote": "we just want to skip it we don't want to override it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "create_tables is not a migration tool",
+   "claim": "A `create_tables` script that only creates tables if they don't already exist will silently do nothing when you add a new column to an existing model — you need a temporary one-off script or a real migration tool (Alembic) to apply schema changes in an existing database.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 59,
+   "quote": "this only creates tables if they don't exist",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "rotating residential proxy avoids IP blocks",
+   "claim": "Scraping YouTube transcripts at volume risks temporary IP blocks from YouTube's internal API; a cheap rotating-residential-proxy service (Webshare, roughly $4-5/month for a basic plan) routes each request through a different IP and avoids the block.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 65,
+   "quote": "rotating residential. This is the one that you need",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "structured LLM output via Pydantic + Responses API",
+   "claim": "Use OpenAI's Responses API with a Pydantic schema to force structured output (title + summary) for every LLM summarization step, rather than parsing free-text completions.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 68,
+   "quote": "use the responses API...structured output using the text format",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "fix an accidentally-committed .env",
+   "claim": "If a `.env` file gets committed before it's gitignored, adding it to `.gitignore` afterward isn't enough — you must explicitly remove it from git's tracking/remote history while keeping the local file, then re-check the ignore rule works going forward.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 79,
+   "quote": "I accidentally pushed my file to GitHub",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "use content date, not job-run date, for time-window filters",
+   "claim": "A daily digest's `created_at` timestamp should be set to the source article's original publish date, not the date the digest job ran — otherwise every item scraped in one run shares the same timestamp and later date-range filtering breaks.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 93,
+   "quote": "I want that to be the original date of the article itself",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "a heavy dependency can OOM a small production instance",
+   "claim": "Deploying with Docling (which loads local OCR/ML models under the hood) ran the production server out of memory on a starter-tier instance — the failure only appeared in the deployed environment, not locally.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 103,
+   "quote": "we ran out of memory",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "swap heavy libraries for lightweight ones in production",
+   "claim": "Replacing Docling with a lightweight, Rust-based HTML-to-markdown library resolved the out-of-memory failure, trading off some markdown extraction quality for a much smaller memory footprint.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 104,
+   "quote": "a very lightweight library. It's written in it's written in Rust",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "defensively ensure tables exist on cold deploy",
+   "claim": "A fresh production deploy failed because scheduled jobs ran before the database tables were created; the fix was to have the daily runner itself check for and create missing tables at startup rather than relying on a separate provisioning step.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 107,
+   "quote": "if the database tables aren't there, we manually create them in the daily runner",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "explicit local vs. production environment switch",
+   "claim": "Set up an explicit environment flag/config (local vs. production database URL) rather than relying on incidental signals, because ambiguity here caused a migration to silently run against the wrong (production) database while the developer thought they were local.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 113,
+   "quote": "best practice to set that up so we can easily switch",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "extract shared logic into a base class once duplication is visible",
+   "claim": "After building several near-identical scrapers, a code review pass found the Anthropic and OpenAI scrapers shared roughly 80% of their RSS-parsing logic, justifying a refactor into a base scraper/article class with per-source subclasses and a scraper registry.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 125,
+   "quote": "share 80% identical RSS parsing logic",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "restrict database access by IP once it holds real data",
+   "claim": "A freshly deployed production database defaults to accepting connections from any IP (0.0.0.0); before it holds anything beyond throwaway public data, restrict inbound IP ranges to your own static/VPN IP.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 141,
+   "quote": "inbound IP restrictions",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "backend language standardization",
+   "claim": "The agency standardizes on Python as the backend language for every client project, regardless of what else changes in the stack.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 1,
+   "quote": "We always build with Python as our programming language",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "most GenAI pilots don't reach production impact",
+   "claim": "Most GenAI pilots and LLM-based projects still fail to achieve measurable impact even as the underlying models keep improving — it remains genuinely hard to do at scale.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 1,
+   "quote": "most tools and projects that people kind of like set up with LLMs still fail",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "failure is almost never the model",
+   "claim": "When a GenAI project fails, the cause is almost never the model itself — it's the execution, scoping, or the starting point of the project.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 2,
+   "quote": "it's almost never the model but always rather the kind of like the execution",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "pick quick wins over moonshot use cases",
+   "claim": "During use-case selection, prioritize simple, high-impact automations over large, ambitious 'moonshot' projects — most organizations have unrecognized low-hanging fruit that simple automation (or no AI at all) can already solve.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 6,
+   "quote": "always pick the quick wins over the moonshots",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "red flag: no measurable success criteria",
+   "claim": "A discovery-call red flag is a project with no real way to track impact or tell what's good vs. bad — without clear success criteria, building the AI solution becomes very tricky to justify or course-correct.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 6,
+   "quote": "there is no real way to kind of like track the impact",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "red flag: client expects 100% accuracy from day one",
+   "claim": "Some clients expect near-perfect ('magic') results starting on day one, especially on complex builds; for some tasks an 80% first build is genuinely not good enough to ship, so this expectation must be corrected during discovery.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 7,
+   "quote": "expect magic from day one",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "recurring project categories",
+   "claim": "Over two years of client work, projects consistently fall into five categories: document processing, content generation, customer support, internal knowledge assistants, and data extraction.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 8,
+   "quote": "document processing, content generation, customer support, internal knowledge assistance and data extractions",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "accuracy trajectory: 70-80% to 90%",
+   "claim": "A first build of an LLM-based system typically reaches 70-80% accuracy; iteration typically gets it to about 90% — clients need to be told this up front because some expect 99% from the first iteration, coming from a deterministic-software mindset.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 10,
+   "quote": "Your first build typically gets to 70 or 80% accuracy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "scope with must-haves, nice-to-haves, and risk",
+   "claim": "Scoping a first iteration means defining a single core workflow (input/output), listing must-haves vs. nice-to-haves, identifying technical risk early, and setting clear acceptance criteria before writing a proposal.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 14,
+   "quote": "list must haves and nice nice to haves and we identify the technical risk early",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "proof of concept vs. MVP framing",
+   "claim": "A proof of concept is deliberately framed as not adding real value — it's a local demo/script that proves a capability works, distinct from an MVP, which is scoped to be a real, deployable, value-adding first version; being upfront about which one a client is paying for avoids mismatched expectations.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 15,
+   "quote": "a proof of concept is usually not something that adds value",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "two-week sprint pricing",
+   "claim": "Sprints are scoped and priced in two-week increments at roughly €10,000-20,000 per sprint depending on size/complexity, which also enables running multiple sprints in parallel across a small team.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 18,
+   "quote": "price that between 10k to 20k in euros per sprint",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "standard sprint shape",
+   "claim": "A two-week sprint follows a fixed shape: days 1-2 set up architecture/scaffolding, days 3-8 are core development (build workflow, integrate LLMs, iterate on quality), and the final days are for testing, polish, and a client demo.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 20,
+   "quote": "day three to eight is pretty much core development",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "async communication over standups",
+   "claim": "The team deliberately avoids recurring meetings like standups, pushing for async updates instead, and pushes back when clients propose standups, to keep meeting overhead near zero.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 21,
+   "quote": "We don't want to do standups",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "post-delivery gaps hurt cash flow",
+   "claim": "After delivering a sprint, clients typically go quiet to internally test/assess before the next sprint can be planned, and this gap can stretch anywhere from two to eight weeks — a predictable cash-flow risk for a sprint-based agency model.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 22,
+   "quote": "this can take anywhere from two sometimes oh sorry sometimes even like up to eight weeks",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Azure OpenAI chosen for compliance, not developer experience",
+   "claim": "The team almost always uses Azure OpenAI for LLM access on client work specifically because it's the path to data compliance/security clients require, despite disliking its frequently-changing interface and hard-to-manage quota.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 27,
+   "quote": "Not the happiest with it",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "5-10x output using Claude Code vs. three years ago",
+   "claim": "With a very small team (two co-founders plus subcontractors) using Claude Code as the primary development tool, the agency can produce roughly 5-10x the output compared to three years earlier, avoiding the need to scale headcount.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 32,
+   "quote": "we can literally five to 10 create more output than almost three than three years ago",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "stay in control: 1-3 Claude Code sessions at a time",
+   "claim": "Rather than running many parallel agents/worktrees, the deliberate practice is to run only one to three Claude Code sessions at once, always plan-mode-first-then-execute, to stay able to oversee what the agent is doing.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 33,
+   "quote": "I usually like to work with one or three sessions at a time",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "keep CLAUDE.md current for fresh sessions",
+   "claim": "Since every coding-agent session starts with zero memory of the codebase, keep CLAUDE.md files (including in subfolders) up to date and maintain a docs folder the agent can be pointed to, to avoid the agent re-indexing and burning context on every new task.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 34,
+   "quote": "make sure you keep your cloudmd files up to date",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "deploy to a bare-metal VM, not managed services",
+   "claim": "Production deployment pushes to a Hetzner bare-metal VM (no managed services), roughly 10x cheaper than the Azure/AWS setup used previously, cloned via CI/CD and run with Docker Compose commands.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 36,
+   "quote": "we put everything on a Hetner VM",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "block all inbound traffic by default",
+   "claim": "Every deployment is secured by blocking all inbound IPs by default, then whitelisting only what needs access (e.g. a VPN-assigned static team IP, and the app's own front end/integrations), plus a firewall restricting the server to ports 80/443.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 38,
+   "quote": "block all IPs by default",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Langfuse + Sentry as the observability stack",
+   "claim": "LLM-specific observability runs through Langfuse (full traces of every LLM call in the pipeline), while application error tracking runs through Sentry piped into a Slack channel — described as a 'must' since without it you're flying blind on what an agent did in production.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 40,
+   "quote": "Langfuse for all our LLM traces",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "feed production error traces straight into the coding agent",
+   "claim": "A Sentry error can be copied as markdown directly from the dashboard and pasted into Claude Code, which then fixes the bug on the spot — closing the loop from production error to fix without manual triage.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 43,
+   "quote": "you chug it into cloud code and it fixes fixes it on the spot",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "keep the surrounding stack stable, swap only the model",
+   "claim": "The agency has run the same core stack (FastAPI, Celery, Postgres, self-hosted Supabase, Redis) for roughly two years across client projects; the LLM changes, but the surrounding architecture and patterns deliberately don't, so coding agents stay predictable within a known scaffold.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 50,
+   "quote": "we just swap out the model",
+   "kind": "principle",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "how many agents/sessions to run in parallel",
+   "positions": [
+    {
+     "video_id": "sk6HBdmVmL8",
+     "chunk_index": 4,
+     "position": "Matei Zaharia frames spinning up multiple parallel sub-agents or orchestrator-coordinated agent swarms (e.g. two or three agents hunting the same bug, or an orchestrator mixing Claude/GPT per task) as a maturity pattern worth building infrastructure for, and expects multi-agent orchestration to keep growing."
+    },
+    {
+     "video_id": "Q679gH7oszg",
+     "chunk_index": 33,
+     "position": "Dave Ebbelaar deliberately limits himself to one to three Claude Code sessions at a time and avoids worktrees/multi-agent swarms, saying anything beyond that means he can no longer oversee what the agent is doing."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks give a worked methodology for LLM evaluation scoring (e.g. how accuracy percentages like the '70-80% to 90%' figures were actually measured) beyond mentioning that evals exist.",
+  "No discussion of fine-tuning versus prompting/RAG as a lever for improving accuracy on a stuck use case.",
+  "No detail on how Omnigen's 'intelligent routing' heuristics are trained or how reliable that routing actually is.",
+  "No discussion of latency or SLA requirements for production agent responses, or how those trade off against cost/accuracy.",
+  "The client-facing playbook (Q679gH7oszg) is agency/freelancer-specific (proposals, sprint billing); none of the talks address how the same discovery-to-production process maps onto an internal enterprise platform team without external client billing.",
+  "No breakdown of ongoing per-token / per-request LLM API costs at production volume, despite spend-cap tooling being discussed (only a $1,000 mistaken-spend anecdote is given).",
+  "No discussion of how to roll out or roll back changes to prompts/agents already in production (canary releases, A/B testing, versioning of prompts)."
+ ],
+ "verified_claims": 59
+}

@@ -1878,3 +1878,175 @@ export interface ResearchReport {
    *  three-arm experiment unchanged when it is not there. */
   frontier?: ResearchFrontier;
 }
+
+/* ── Field guides ── */
+
+export interface GuideSource {
+  video_id: string;
+  title: string;
+  contributed: string;
+  url: string;
+}
+
+export interface GuideClaim {
+  cite_index: number;
+  section_id: string | null;
+  video_id: string;
+  chunk_index: number | null;
+  chunk_id: string | null;
+  quote: string | null;
+  text: string;
+  video_ok: boolean;
+  chunk_ok: boolean | null;
+  quote_ok: boolean | null;
+  valid: boolean;
+}
+
+export interface GuideClaims {
+  total: number;
+  valid: number;
+  pass_rate: number;
+  sections: string[];
+  structure_errors: string[];
+  claims: GuideClaim[];
+}
+
+export type GuideCommentStatus = 'open' | 'addressed' | 'deferred' | 'rejected';
+
+export interface GuideComment {
+  id: string;
+  created_at: string;
+  anchor: string | null;
+  section_id: string | null;
+  quote: string;
+  body: string;
+  status: GuideCommentStatus;
+  resolved_in_version: number | null;
+  reason?: string | null;
+}
+
+export interface GuideReceiptItem {
+  id: string;
+  outcome: 'addressed' | 'deferred' | 'rejected';
+  reason: string;
+  sections: string[];
+}
+
+export interface GuideReceipt {
+  version: number;
+  created_at: string;
+  items: GuideReceiptItem[];
+  changed_sections: string[];
+  summary: string;
+}
+
+/** One row of the catalog: the manifest plus derived counts and URLs. */
+export interface GuideSummary {
+  slug: string;
+  title: string;
+  topic: string;
+  subtitle: string;
+  /** The question the guide was asked for, when it was asked rather than configured. */
+  question?: string;
+  status: 'published' | 'draft' | 'error';
+  current_version: number;
+  compiled_at: string;
+  model: Record<string, string>;
+  video_ids: string[];
+  sources: GuideSource[];
+  chunk_count: number;
+  cluster_count: number;
+  cite_total: number;
+  cite_valid: number;
+  gaps: string[];
+  web_allowed: boolean;
+  web_urls: string[];
+  provenance: Record<string, unknown>;
+  videos: number;
+  versions: number[];
+  comments_open: number;
+  comments_total: number;
+  html_url: string;
+  markdown_url: string | null;
+}
+
+export interface GuideList {
+  guides: GuideSummary[];
+  write_command: string;
+}
+
+export interface GuideDetail extends GuideSummary {
+  comments: GuideComment[];
+  claims: GuideClaims | null;
+  version_urls: Record<string, string>;
+  receipts: Record<string, GuideReceipt>;
+}
+
+export interface GuideCandidate {
+  video_id: string;
+  title: string;
+  channel_name: string;
+  chunk_count: number;
+  probe_hits: number;
+  probes: string[];
+  title_match: boolean;
+  score: number;
+}
+
+export interface GuideScope {
+  topic: string;
+  question?: string;
+  probes: string[];
+  candidates: GuideCandidate[];
+  total_videos: number;
+}
+
+export interface GuideActivity {
+  at: string;
+  label: string;
+  name: string;
+  message: string;
+  question?: string | null;
+  results?: number | null;
+}
+
+export interface GuideStageState {
+  status: 'pending' | 'start' | 'progress' | 'done' | 'skip' | 'error';
+  message?: string;
+  at?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface GuideClusterState {
+  status: 'pending' | 'reading' | 'done' | 'skipped';
+  claims: number;
+}
+
+export interface GuideJob {
+  id: string;
+  kind: 'write' | 'revise' | 'markdown';
+  slug: string;
+  topic: string;
+  title: string;
+  /** The plain-language ask, when the guide was asked for rather than configured. */
+  question?: string;
+  video_ids: string[];
+  allow_web: boolean;
+  comment_ids: string[];
+  status: 'running' | 'done' | 'error';
+  stage: string | null;
+  stage_order: string[];
+  stages: Record<string, GuideStageState>;
+  message: string | null;
+  counters: Record<string, number>;
+  /** Per-cluster progress keyed `cluster-N`, plus a `videos` map of exported videos. */
+  clusters: Record<string, GuideClusterState | Record<string, { video_id: string; title: string; channel_name: string; chunk_count: number }>>;
+  activity: GuideActivity[];
+  gaps: string[];
+  version: number | null;
+  cite_valid: number | null;
+  cite_total: number | null;
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+}
