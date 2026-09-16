@@ -93,4 +93,13 @@ files = [
     "src/guides/verify.py",
     "src/guides/importer.py",
     "src/guides/cli.py",
+    "src/guides/comments.py",
+    "src/guides/export.py",
+    "src/guides/normalize.py",
+    "src/guides/prompts.py",
+    "src/guides/scope.py",
+    "src/guides/service.py",
+    "src/guides/tools.py",
+    "src/guides/writer.py",
+    "src/api/guide_runner.py",
 ]

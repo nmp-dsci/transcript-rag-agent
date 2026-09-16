@@ -281,6 +281,39 @@ def test_ask_a_question_scopes_and_starts_at_once(settings: Settings, tmp_path: 
     assert snap["status"] == "done" and snap["title"] == "Calibrating LLM Judges"
 
 
+def test_ask_a_degenerate_question_is_rejected(settings: Settings, tmp_path: Path):
+    """A question with no words in it (only punctuation/emoji) must not be
+    allowed to derive a slug — two such questions would otherwise both
+    degrade to the same 'guide' slug and silently collide."""
+    from types import SimpleNamespace
+
+    from src.api.main import create_app
+
+    app = create_app(
+        replace(settings, demo_mode=False),
+        runner_factory=lambda: SimpleNamespace(provider=None),
+        judge_factory=forbidden,
+        graph_store_factory=forbidden,
+        corpus_fn=lambda: {"videos": [], "channels": [], "totals": {}, "insights": []},
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        runs_dir=tmp_path / "runs",
+        frontend_dist=tmp_path / "no-bundle",
+        guides_dir=tmp_path / "guides",
+        guide_run_fn=lambda job, on_event: {},
+        guide_sdk_check=lambda: None,
+    )
+    client = TestClient(app)
+
+    scoped = client.post("/api/guides/scope", json={"question": "???"})
+    assert scoped.status_code == 422
+    assert "words" in scoped.json()["detail"]
+
+    started = client.post("/api/guides", json={"question": "\U0001f680\U0001f680\U0001f680"})
+    assert started.status_code == 422
+    assert "words" in started.json()["detail"]
+
+
 def test_demo_blocks_starting_and_streaming_guide_jobs(settings: Settings, tmp_path: Path):
     client = make_client(settings, tmp_path, seeded(tmp_path), demo=True)
     assert client.post("/api/guides/scope", json={"topic": "x"}).status_code == 403

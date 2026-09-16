@@ -159,6 +159,14 @@ def topic_from_question(question: str) -> str:
     return " ".join(words[:10]) or " ".join(question.split())[:80]
 
 
+def topic_has_words(topic: str) -> bool:
+    """False when a topic (typically ``topic_from_question``'s fallback)
+    carries no alphanumeric content, e.g. a question made only of
+    punctuation or emoji — such a topic would degrade to the same
+    catalog slug for any two unrelated questions."""
+    return bool(re.search(r"[a-z0-9]", topic, re.IGNORECASE))
+
+
 def probes_for(question: str) -> list[str]:
     """The retrieval probes for a question: the question itself, then the
     topic templates over its subject phrase."""

@@ -259,14 +259,16 @@ def run_guides(args: argparse.Namespace, settings: Settings) -> int:
     if command == "scope":
         known, _lookup, _counts, videos = _corpus_videos(settings)
         provider = _provider(settings)
-        from src.guides.scope import candidate_videos, probes_for, topic_from_question
+        from src.guides.scope import candidate_videos, probes_for, topic_from_question, topic_has_words
 
         question = " ".join((args.question or "").split())
-        topic = " ".join((args.topic or "").split()) or (
-            topic_from_question(question) if question else ""
-        )
+        explicit_topic = " ".join((args.topic or "").split())
+        topic = explicit_topic or (topic_from_question(question) if question else "")
         if not topic:
             print("Give --question or --topic.")
+            return 2
+        if question and not explicit_topic and not topic_has_words(topic):
+            print("Ask a question with some words in it.")
             return 2
         if question:
             print(f"topic: {topic}")
@@ -520,16 +522,18 @@ def _run_write(args: argparse.Namespace, settings: Settings, guides_dir: Path) -
         print(problem)
         return 2
 
-    from src.guides.scope import candidate_videos, probes_for, topic_from_question
+    from src.guides.scope import candidate_videos, probes_for, topic_from_question, topic_has_words
     from src.guides.service import build_writer, retrieval_fns
     from src.guides.writer import WriterConfig
 
     question = " ".join((args.question or "").split())
-    topic = " ".join((args.topic or "").split()) or (
-        topic_from_question(question) if question else ""
-    )
+    explicit_topic = " ".join((args.topic or "").split())
+    topic = explicit_topic or (topic_from_question(question) if question else "")
     if not topic:
         print("Give --question or --topic.")
+        return 2
+    if question and not explicit_topic and not topic_has_words(topic):
+        print("Ask a question with some words in it.")
         return 2
     # Asked: the question is the working title until the composer names the page.
     title = args.title or question or topic.title()

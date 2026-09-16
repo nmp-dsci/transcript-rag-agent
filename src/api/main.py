@@ -1017,14 +1017,17 @@ def create_app(
         but no LLM, and writes nothing — the candidate list is a checklist
         the user edits before anything starts.
         """
-        from src.guides.scope import probe_questions, probes_for, topic_from_question
+        from src.guides.scope import probe_questions, probes_for, topic_from_question, topic_has_words
 
         question = " ".join(payload.question.split())
-        topic = " ".join(payload.topic.split()) or (
-            topic_from_question(question) if question else ""
-        )
+        explicit_topic = " ".join(payload.topic.split())
+        topic = explicit_topic or (topic_from_question(question) if question else "")
         if not topic:
             raise HTTPException(status_code=422, detail="a question or topic is required")
+        if question and not explicit_topic and not topic_has_words(topic):
+            raise HTTPException(
+                status_code=422, detail="ask a question with some words in it"
+            )
         probes = probes_for(question) if question else probe_questions(topic)
         ranked, total = _scope_corpus(topic, probes, payload.limit)
         return {
@@ -1053,17 +1056,20 @@ def create_app(
         absent, with the one-line fix in ``detail``.
         """
         from src.guides.catalog import is_slug, slugify
-        from src.guides.scope import probes_for, topic_from_question
+        from src.guides.scope import probes_for, topic_from_question, topic_has_words
 
         problem = guide_sdk_check()
         if problem:
             raise HTTPException(status_code=503, detail=problem)
         question = " ".join(payload.question.split())
-        topic = " ".join(payload.topic.split()) or (
-            topic_from_question(question) if question else ""
-        )
+        explicit_topic = " ".join(payload.topic.split())
+        topic = explicit_topic or (topic_from_question(question) if question else "")
         if not topic:
             raise HTTPException(status_code=422, detail="a question or topic is required")
+        if question and not explicit_topic and not topic_has_words(topic):
+            raise HTTPException(
+                status_code=422, detail="ask a question with some words in it"
+            )
         video_ids = list(dict.fromkeys(payload.video_ids))
         if question and not video_ids:
             # Asked, not configured: scope here and start at once. The research
