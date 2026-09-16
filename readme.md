@@ -1324,7 +1324,10 @@ ranks videos by how many probes surfaced them (plus a title match). A
 question with "how do teams…" scaffolding stripped, no LLM) fills the
 templates and becomes the slug, and the composer names the guide itself — the
 manifest keeps the question, and the question stands in as the title until the
-page's `<title>` replaces it at publish. On the CLI the checklist is confirmed
+page's `<title>` replaces it at publish. A question with no alphanumeric
+content (only punctuation or emoji) is rejected rather than degrading to a
+slug that would collide with any other such question — 422 in the app, exit 2
+on the CLI. On the CLI the checklist is confirmed
 before anything is read (`--yes` skips it). Extraction clusters
 same-channel videos together (at most six passes, none smaller than three
 videos) and runs the passes concurrently; each pass's claims are verified
@@ -2751,7 +2754,7 @@ session.
 ```bash
 uv run pytest                        # Python: pipeline, API, evals
 uv run ruff check src tests scripts  # lint
-uv run mypy                          # types, scoped to the retrieval + eval core (see pyproject.toml)
+uv run mypy                          # types, scoped to the retrieval + eval core and the guides pipeline (see pyproject.toml)
 cd frontend && npm test              # TypeScript: renderer, SSE, tree, chat UI, theme
 ```
 
