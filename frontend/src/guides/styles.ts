@@ -161,6 +161,10 @@ const CSS = `
 .cr-dim { color: var(--dim); font: var(--t-2) var(--mono); }
 .cr-compose { border-top: 1px solid var(--border); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .cr-compose textarea { width: 100%; resize: vertical; font: inherit; font-size: var(--t0); }
+.cr-box { position: relative; }
+.cr-box textarea { display: block; padding-right: 36px; }
+.cr-box.rec textarea { border-color: var(--bad-border); }
+.cr-box .micbtn { position: absolute; right: 6px; bottom: 8px; }
 .cr-draft-quote { position: relative; padding: 6px 26px 6px 8px; background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 6px; font-size: var(--t-1); color: var(--text2); font-style: italic; }
 .cr-clear { position: absolute; top: 2px; right: 4px; background: none; border: 0; color: var(--muted); cursor: pointer; font-size: var(--t1); }
 .cr-actions { display: flex; gap: 6px; flex-wrap: wrap; }

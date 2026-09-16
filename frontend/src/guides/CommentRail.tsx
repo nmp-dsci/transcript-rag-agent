@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '../api/client';
 import type { GuideComment, GuideDetail, GuideJob } from '../api/types';
 import type { GuideSelection } from './GuideReader';
+import { MicButton } from '../speech/MicButton';
+import { useDictation } from '../speech/useDictation';
 
 interface Props {
   guide: GuideDetail;
@@ -10,6 +12,8 @@ interface Props {
   running: GuideJob | null;
   sdkProblem: string | null;
   demo: boolean;
+  /** Server-decided (health `stt`): whether the voice mic renders in the box. */
+  stt?: boolean;
   onAdded: (comment: GuideComment) => void;
   onRevisionStarted: (job: GuideJob) => void;
   onJump: (anchor: string | null) => void;
@@ -31,7 +35,7 @@ export function commentCounts(comments: GuideComment[]): Record<GuideComment['st
 /** Screen D: the commentary rail. Comments are local until "Add"; a
  *  revision sends every open comment as one batch and the receipt that comes
  *  back gives each id exactly one outcome. */
-export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdded, onRevisionStarted, onJump }: Props) {
+export function CommentRail({ guide, selection, running, sdkProblem, demo, stt = false, onAdded, onRevisionStarted, onJump }: Props) {
   const [body, setBody] = useState('');
   const [anchor, setAnchor] = useState<string | null>(null);
   const [sectionId, setSectionId] = useState<string | null>(null);
@@ -51,13 +55,13 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
   const counts = commentCounts(guide.comments);
   const blocked = !!running && running.status === 'running';
 
-  const add = async () => {
-    if (!body.trim()) return;
+  const add = useCallback(async (text: string) => {
+    if (!text.trim()) return;
     setBusy('add');
     setError(null);
     try {
       const created = await api.addGuideComment(guide.slug, {
-        body: body.trim(),
+        body: text.trim(),
         anchor,
         section_id: sectionId,
         quote,
@@ -72,7 +76,12 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
     } finally {
       setBusy(null);
     }
-  };
+  }, [guide.slug, anchor, sectionId, quote, onAdded]);
+
+  // Stop = Add: a spoken comment is on the record the moment the mic stops,
+  // with whatever quote was selected when it started. Typed text still
+  // needs the button.
+  const dictation = useDictation(body, setBody, (folded) => void add(folded));
 
   const revise = async () => {
     setBusy('revise');
@@ -129,7 +138,7 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
           className="cr-compose"
           onSubmit={(event) => {
             event.preventDefault();
-            void add();
+            void add(body);
           }}
         >
           {quote && (
@@ -140,15 +149,37 @@ export function CommentRail({ guide, selection, running, sdkProblem, demo, onAdd
               </button>
             </div>
           )}
-          <textarea
-            value={body}
-            rows={3}
-            placeholder={anchor ? `comment on ${anchor}` : 'comment on the whole guide'}
-            aria-label="Comment"
-            onChange={(event) => setBody(event.target.value)}
-          />
+          <div className={`cr-box ${dictation.listening ? 'rec' : ''}`}>
+            <textarea
+              value={dictation.display}
+              rows={3}
+              readOnly={dictation.listening}
+              placeholder={
+                dictation.listening
+                  ? 'listening… stop to add the comment'
+                  : anchor
+                    ? `comment on ${anchor}`
+                    : stt
+                      ? 'comment on the whole guide, or press the mic'
+                      : 'comment on the whole guide'
+              }
+              aria-label="Comment"
+              onChange={(event) => setBody(event.target.value)}
+            />
+            {stt && (
+              <MicButton
+                size="sm"
+                listening={dictation.listening}
+                supported={dictation.speech.supported}
+                disabled={busy !== null}
+                onToggle={dictation.toggle}
+                idleTitle="Comment by voice — stop adds it"
+              />
+            )}
+          </div>
+          {dictation.speech.error && <p className="gc-err">{dictation.speech.error}</p>}
           <div className="cr-actions">
-            <button type="submit" className="btn ghost" disabled={busy !== null || !body.trim()}>
+            <button type="submit" className="btn ghost" disabled={busy !== null || dictation.listening || !body.trim()}>
               {busy === 'add' ? 'adding…' : 'Add comment'}
             </button>
             <button

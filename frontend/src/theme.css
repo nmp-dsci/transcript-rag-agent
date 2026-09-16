@@ -466,6 +466,7 @@ select:focus, input:focus, textarea:focus { border-color: var(--accent); outline
   animation: mic-glow 2s ease-in-out infinite;
 }
 .micbtn:disabled { animation: none; opacity: 0.45; cursor: default; }
+.micbtn.sm { width: 26px; height: 26px; }
 .micbtn.rec {
   border-color: var(--bad-border); background: var(--bad-dim); color: var(--bad);
   animation: mic-rec 1.4s ease-in-out infinite;

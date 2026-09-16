@@ -244,7 +244,7 @@ export function App() {
         )}
         {activeTab === 'board' && <ScoreboardView />}
         {activeTab === 'experiments' && <ExperimentsView />}
-        {activeTab === 'guides' && <GuidesView />}
+        {activeTab === 'guides' && <GuidesView stt={health?.stt === true} />}
         {activeTab === 'design' && !demo && <SystemDesignView />}
         </DemoContext.Provider>
       </main>

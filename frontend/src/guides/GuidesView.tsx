@@ -139,7 +139,7 @@ function Provenance({ guide }: { guide: GuideDetail }) {
   );
 }
 
-export function GuidesView() {
+export function GuidesView({ stt = false }: { stt?: boolean } = {}) {
   useGuidesStyles();
   const demo = useDemo();
   const [guides, setGuides] = useState<GuideSummary[] | null>(null);
@@ -404,6 +404,7 @@ export function GuidesView() {
                     running={job}
                     sdkProblem={sdkProblem}
                     demo={demo}
+                    stt={stt}
                     onAdded={(comment) =>
                       setDetail((prev) =>
                         prev ? { ...prev, comments: [...prev.comments, comment], comments_open: prev.comments_open + 1, comments_total: prev.comments_total + 1 } : prev,

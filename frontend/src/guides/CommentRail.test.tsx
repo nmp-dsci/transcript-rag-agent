@@ -9,6 +9,21 @@ import { job } from './ResearchMap.test';
 
 const addGuideComment = vi.fn();
 const reviseGuide = vi.fn();
+const speech = {
+  current: {
+    supported: true,
+    status: 'idle' as 'idle' | 'connecting' | 'listening',
+    transcript: { committed: '', interim: '' },
+    error: null as string | null,
+    start: vi.fn(),
+    stop: vi.fn(),
+    reset: vi.fn(),
+  },
+};
+vi.mock('../speech/useSpeechToText', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../speech/useSpeechToText')>();
+  return { ...actual, useSpeechToText: () => speech.current };
+});
 vi.mock('../api/client', () => ({
   api: {
     addGuideComment: (slug: string, payload: unknown) => addGuideComment(slug, payload),
@@ -84,6 +99,7 @@ function guide(overrides: Partial<GuideDetail> = {}): GuideDetail {
 beforeEach(() => {
   addGuideComment.mockReset();
   reviseGuide.mockReset();
+  speech.current = { ...speech.current, status: 'idle', transcript: { committed: '', interim: '' } };
 });
 
 describe('CommentRail', () => {
@@ -128,6 +144,46 @@ describe('CommentRail', () => {
       quote: 'pairwise beats',
     });
     expect((screen.getByLabelText('Comment') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('adds a spoken comment the moment the mic stops, with the selected quote', async () => {
+    const onAdded = vi.fn();
+    addGuideComment.mockResolvedValue(comment({ id: 'c-4', body: 'is that the same eval set', anchor: 'pipeline-p4', quote: 'pairwise beats' }));
+    const props = {
+      guide: guide(),
+      selection: { quote: 'pairwise beats', anchor: 'pipeline-p4', sectionId: 'pipeline', rect: null },
+      running: null,
+      sdkProblem: null,
+      demo: false,
+      stt: true,
+      onAdded,
+      onRevisionStarted: vi.fn(),
+      onJump: vi.fn(),
+    };
+    const { rerender } = render(<CommentRail {...props} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Start voice input' }));
+    expect(speech.current.start).toHaveBeenCalled();
+    speech.current = { ...speech.current, status: 'listening', transcript: { committed: 'is that the same', interim: 'eval set' } };
+    rerender(<CommentRail {...props} />);
+    const box = screen.getByLabelText('Comment') as HTMLTextAreaElement;
+    expect(box.value).toBe('is that the same eval set');
+    expect(box.readOnly).toBe(true);
+    expect(screen.getByRole('button', { name: 'Add comment' })).toBeDisabled();
+    speech.current = { ...speech.current, status: 'idle' };
+    rerender(<CommentRail {...props} />);
+    await waitFor(() => expect(onAdded).toHaveBeenCalled());
+    expect(addGuideComment).toHaveBeenCalledWith('ship-like-a-studio', {
+      body: 'is that the same eval set',
+      anchor: 'pipeline-p4',
+      section_id: 'pipeline',
+      quote: 'pairwise beats',
+    });
+    expect(box.value).toBe('');
+  });
+
+  it('renders no mic when the server has no speech relay', () => {
+    render(<CommentRail guide={guide()} selection={null} running={null} sdkProblem={null} demo={false} onAdded={vi.fn()} onRevisionStarted={vi.fn()} onJump={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /voice input/ })).not.toBeInTheDocument();
   });
 
   it('sends the open comments to the agent as one batch', async () => {
