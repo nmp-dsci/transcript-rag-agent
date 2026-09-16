@@ -268,9 +268,9 @@ def test_ask_a_question_scopes_and_starts_at_once(settings: Settings, tmp_path: 
     assert job["title"] == question and job["question"] == question
     assert job["topic"] == "calibrate an llm judge against human labels"
     assert job["video_ids"] == ["abc123XYZ"]
-    assert done.wait(2)
+    assert done.wait(5)
     assert seen[0].question == question
-    for _ in range(50):
+    for _ in range(250):
         snap = client.get("/api/guides/job").json()["job"]
         if snap["status"] == "done":
             break

@@ -1028,8 +1028,8 @@ Endpoints (JSON unless noted):
 | `/api/graph/knowledge/videos/{video_id}/chunks` | GET | Per-chunk entities and claims for one video — the chunk detail's graph enrichment |
 | `/api/guides` | GET | Every committed field guide (`guides/<slug>/manifest.json`) with its provenance, versions, comment counts and cite rate |
 | `/api/guides/{slug}` | GET | One guide: manifest, version URLs, comments, verified `claims.json`, revision receipts (404 if unknown) |
-| `/api/guides/scope` | POST | Rank the corpus for a topic: candidate videos with probe hits and title matches (loads retrieval, no LLM) |
-| `/api/guides` | POST | Start writing a guide from a confirmed video set (202; 409 while a guide job runs; 503 without the SDK or its token) |
+| `/api/guides/scope` | POST | Rank the corpus for a `question` (topic and probes derived) or a bare `topic`: candidate videos with probe hits and title matches (loads retrieval, no LLM) |
+| `/api/guides` | POST | Start writing a guide: `{question}` scopes and starts at once, `{topic, video_ids}` writes a confirmed set (202; 409 while a guide job runs; 503 without the SDK or its token) |
 | `/api/guides/{slug}/comments` | POST | Append a reader comment anchored to an element id in the page |
 | `/api/guides/{slug}/revise` | POST | Start a revision over the guide's open comments as one tracked batch |
 | `/api/guides/job` | GET | The current or last guide job (stages, counters, per-cluster progress, activity log) and whether the SDK can run |
@@ -1303,7 +1303,9 @@ LLM-as-a-Judge and Production GenAI Systems were written by the pipeline.
 ```bash
 uv sync --group guides                                                      # claude-agent-sdk (optional, like demo)
 uv run python -m src.cli guides list                                        # slugs, versions, cite rates
-uv run python -m src.cli guides scope --topic "LLM-as-a-judge"              # rank the corpus for a topic (no LLM)
+uv run python -m src.cli guides scope --question "how do teams calibrate an LLM judge?"   # rank the corpus for a question (no LLM)
+uv run python -m src.cli guides write --question "how do teams calibrate an LLM judge?" --yes   # ask → the composer names the guide
+uv run python -m src.cli guides scope --topic "LLM-as-a-judge"              # or rank for a bare topic
 uv run python -m src.cli guides write --topic "LLM-as-a-judge" --slug llm-as-a-judge          # interactive checklist → write
 uv run python -m src.cli guides write --topic "..." --videos ID1,ID2 --yes  # explicit set, no prompt
 uv run python -m src.cli guides verify llm-as-a-judge                       # re-resolve every cite; exit 1 on any failure
@@ -1317,19 +1319,29 @@ uv run python -m src.cli guides import page.html --slug my-guide --force    # ov
 ```
 
 Scoping runs eight templated probe questions through hybrid retrieval and
-ranks videos by how many probes surfaced them (plus a title match); the
-checklist is confirmed before anything is read. Extraction clusters
+ranks videos by how many probes surfaced them (plus a title match). A
+`--question` is asked as-is as the first probe, its subject phrase (the
+question with "how do teams…" scaffolding stripped, no LLM) fills the
+templates and becomes the slug, and the composer names the guide itself — the
+manifest keeps the question, and the question stands in as the title until the
+page's `<title>` replaces it at publish. On the CLI the checklist is confirmed
+before anything is read (`--yes` skips it). Extraction clusters
 same-channel videos together (at most six passes, none smaller than three
 videos) and runs the passes concurrently; each pass's claims are verified
 (chunk exists, quote occurs) before composition. A page whose cites do not
 resolve gets at most two bounded fix passes, then the run errors — nothing
 unverified is published.
 
-In the app the same pipeline runs from the tab's **New guide** panel (topic →
-candidate checklist → write), streams stage events and agent activity to a
-research map, and opens the published guide when done. The reader iframe is
+In the app you ask for a guide the way you ask Chat a question: **+ New
+guide** opens one box in the main stage (typed, or spoken through the same
+microphone Chat uses), and Enter or **Build guide** sends the question. The
+server scopes the corpus and starts at once — there is no checklist in the
+app; the research map opens headed by the question, lists the videos it
+chose, streams stage events and agent activity, and opens the published guide
+(under the name the composer gave it) when done. The reader iframe is
 sandboxed without `allow-same-origin`; selecting text in the page fills an
-anchored comment in the commentary rail, and **Send N to the agent** starts
+anchored comment in the commentary rail, which has the mic too — a spoken
+comment is added the moment the mic stops — and **Send N to the agent** starts
 the revision. A revision never takes over the window: the page stays open
 and the side rail's **Revisions** tab shows the live stage, tool log and
 receipt, plus a table of every published version. The tab stays visible in demo mode (catalog, pages, claims and
