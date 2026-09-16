@@ -1,0 +1,709 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "hgIonrdRTSE",
+  "vYvzOyTA2z4",
+  "r-MPiu0E4W4",
+  "lsgVRCJ4fko"
+ ],
+ "video_notes": [
+  {
+   "video_id": "hgIonrdRTSE",
+   "title": "These UI libraries + AI = beautiful looking web apps",
+   "contributed": "A rapid-fire tour of nine free component/template libraries plus the one workflow trick that matters: download a component you like, then have your AI agent extract a design system from it."
+  },
+  {
+   "video_id": "vYvzOyTA2z4",
+   "title": "How to Be A Web Designer in 2026 (Free Resources & My Best Advice)",
+   "contributed": "A beginner-facing roadmap covering the four skills (dev, brand, UX, marketing) needed to charge more than a couple hundred dollars per site, with concrete rules of thumb (60-30-10, contrast ratios, SEO structure) rather than AI-tool comparisons."
+  },
+  {
+   "video_id": "r-MPiu0E4W4",
+   "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+   "contributed": "A hands-on, token/time-benchmarked comparison of AI design tools (Grok, Claude Fable/Opus, Codex, Figma AI, Stitch, paper.design) plus a staged AI workflow (iterate → prototype/QA → sync to design system) and a taxonomy of Claude/Figma skills."
+  },
+  {
+   "video_id": "lsgVRCJ4fko",
+   "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+   "contributed": "The deepest, most skeptical treatment of AI in design-system work: exact math for building token/color scales by hand, the case for why AI cannot build tokens or components correctly, and a measured workaround (per-grouping skills) that still only gets ~80-85% there."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Free component libraries",
+   "claim": "Liquid Metal offers a free animated liquid-metal border component that reads as premium; use it sparingly (e.g. only on hero borders) or it stops feeling special.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 1,
+   "quote": "an animated liquid metal border component",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Free component libraries",
+   "claim": "style.dev gives away two full free templates (Access for B2B SaaS, Noha for consumer apps) with light mode and multiple color variants like forest green and sunny orange.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 2,
+   "quote": "forest green and sunny orange",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Free component libraries",
+   "claim": "Skipper UI's standout free component is a video player that expands from a small square into a full player on click, held up as the best-in-class example from the whole roundup.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 5,
+   "quote": "definitely going to be using, is the video player",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Free component libraries",
+   "claim": "Ali Mom's kit includes drop-in hero shaders, bento grids, logo-reel marquees, and a typewriter effect that are all free and copy-paste ready for marketing pages.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 6,
+   "quote": "shaders are cool nowadays",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "Free component libraries",
+   "claim": "Watermelon UI's onboarding-style component has spring animations tight enough to feel like a native Apple interaction, not a web page.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 7,
+   "quote": "feels like an Apple component",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Free component libraries",
+   "claim": "Cult UI ships dot-matrix loading animations specifically meant to make long data-load waits feel intentional rather than dead time.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 8,
+   "quote": "these dot matrix loaders",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI + component workflow",
+   "claim": "The real workflow for using any of these libraries: download the one component whose look you want, then instruct your AI agent to 'create a design system based on this component' so the rest of the app matches automatically instead of hand-matching styles.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 11,
+   "quote": "create a design system. Design system based on this component",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI + component workflow",
+   "claim": "Don't let a signature treatment (e.g. the liquid-metal border) spread across the whole UI — reserve it for a small number of unique moments like call-to-action buttons so it stays distinctive.",
+   "video_id": "hgIonrdRTSE",
+   "chunk_index": 12,
+   "quote": "should be unique and maybe your call to action buttons",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Four core web-designer skills",
+   "claim": "To charge more than a couple hundred dollars per site, a designer needs four stacked skills: web development, brand design, UX design, and digital marketing — not just a finished website.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 0,
+   "quote": "four core skills that you need",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Learning path",
+   "claim": "Skip deep dives into React or Tailwind early on — that path takes much longer to start earning money and isn't necessary if you're building client sites with a website builder.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 1,
+   "quote": "gonna take much longer to start making money",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Learning path",
+   "claim": "Pick a website builder early — Showit, Framer, Webflow, and Wix are all solid, and picking the right tool matters less than good beginner resources and actually enjoying using it.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 2,
+   "quote": "Framer and Webflow and Wix are all solid options as well",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Learning path",
+   "claim": "Learn HTML/CSS/JS fundamentals for free on a platform like Code Academy — don't buy courses, and don't try to master everything, just enough to target elements and add interactions.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 3,
+   "quote": "learn the basics of H-T-M-L-C-S-S and JavaScript on a platform like Code Academy",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Learning path",
+   "claim": "Budget one to two weeks for coding fundamentals and another one to two weeks to get comfortable with a website builder before moving to real projects.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 4,
+   "quote": "This should take you one or two weeks",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Learning path",
+   "claim": "Skip fake/personal portfolio projects at the start — make your very first project a real client site, even a tiny one, since fake projects stall most beginners for 6-12 months.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 4,
+   "quote": "Your goal is actually to make your first project an actual client site",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Finding first clients",
+   "claim": "Find your first client by asking people who already trust you (friends, family, coworkers) if they know anyone who needs a website, then offer a steep discount or a service trade in exchange for the reference/experience.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 5,
+   "quote": "do you know? Anyone who needs a website",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Color and brand",
+   "claim": "Use the 60-30-10 rule as a starting palette framework: ~60% neutral colors, 30% one main brand color, 10% one accent color.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 8,
+   "quote": "shows up as the 60, 30 10 rule",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Typography",
+   "claim": "Cap a site at two font families, three at the absolute max, and make sure paired fonts contrast intentionally (serif with sans, not sans with sans) so pairing doesn't read as accidental.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 10,
+   "quote": "three should be the absolute max",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Image selection",
+   "claim": "Choose images that fit the brand tone, then keep every image on a site consistent in lighting and color, as if the same photographer shot them all in one session.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 11,
+   "quote": "they should all kind of look like they were taken by the same photographer at the same photo shoot",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Brand tools",
+   "claim": "Beginners should start brand work with Kittl or Canva before moving to the Adobe Suite (or the free alternative Affinity) once they need Photoshop/Illustrator-level control.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 12,
+   "quote": "platforms like Kittle or Canva",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "UX vs UI",
+   "claim": "UI is how a site looks (visual design); UX is how people move through and understand it — and the best way to expose UX gaps is real think-aloud user testing where a stranger narrates what they see and attempts a specific task.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 13,
+   "quote": "UX is actually different than ui",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "UX testing",
+   "claim": "Run cheap user tests by asking someone unconnected to the project to scroll the homepage, narrate what they see and expect next, then complete a specific task (sign up, fill a form) while you watch for silent assumptions.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 15,
+   "quote": "Have them scroll through the homepage and just kind of think out loud",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "User flow design",
+   "claim": "Design a user flow backwards: start from the final destination (e.g. checkout confirmation) and trace the path back to entry, fixing any dead end or hesitation point along the way.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 17,
+   "quote": "you trace the path backwards until you get to the place",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Accessibility",
+   "claim": "Minimum accessible contrast ratio is about 4.5:1 for small text (3:1 for large text); check any site's contrast by opening Chrome DevTools' inspect tool and hovering text.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 17,
+   "quote": "about 4.5 to one of a contrast ratio",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "SEO structure",
+   "claim": "Every page should have exactly one H1 that clearly states the page's topic — it's the only HTML heading element you should never duplicate on a page.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 23,
+   "quote": "Each page should have one H one",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Performance",
+   "claim": "Compress images and use modern formats like WebP instead of raw PNG/JPEG — the same image can go from several megabytes down to ~100KB with no visible quality loss.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 25,
+   "quote": "the other is a compressed WebP image",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "SEO / broken links",
+   "claim": "Any time a page is deleted or a URL changes, add a redirect — otherwise incoming links from elsewhere send visitors to a 404, which is both a bad user experience and a negative signal to Google.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 26,
+   "quote": "it sends them to a 4 0 4 page",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "E-commerce tooling",
+   "claim": "Shopify is an all-in-one e-commerce platform best for product-heavy stores (recommended once a client has ~50+ products), but it's stable at the cost of design flexibility and its own coding language (Liquid).",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 29,
+   "quote": "Shopify is actually an all-in one e-commerce",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "E-commerce tooling",
+   "claim": "WooCommerce runs on WordPress and is more flexible/customizable than Shopify, but means piecing together plugins, hosting, and updates yourself rather than one packaged platform.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 30,
+   "quote": "Woo Commerce actually runs on WordPress",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "E-commerce minimum",
+   "claim": "Any e-commerce setup needs three things minimum: a product system, a cart, and a payment processor (Stripe or PayPal) — cover those and you're generally fine.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 31,
+   "quote": "something like Stripe or PayPal",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Conversion tracking",
+   "claim": "Set up Google Analytics 'key events' (purchases, form fills, booked calls) for every client — if that number rises after a change, you have proof you're moving in the right direction instead of guessing.",
+   "video_id": "vYvzOyTA2z4",
+   "chunk_index": 35,
+   "quote": "anytime somebody maybe buys a product or fills out a form",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Role shift",
+   "claim": "Designers are moving from a typical product/UX-designer role into a 'design engineer' role — knowing Figma auto layout and design systems is no longer enough on its own to get or keep a design job.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 1,
+   "quote": "moving more towards this design engineer role rather than just your typical product UX designer",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI tool myths",
+   "claim": "No single AI tool one-prompts an entire world-class UX flow — viral 'one line prompt' demos are always the result of significant unseen manual polish beforehand.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 5,
+   "quote": "no tool that one prompts an entire worldass UX",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Platform vs model",
+   "claim": "The same underlying model gives noticeably worse results run through a third-party platform (e.g. Grok via Cursor) than through its native platform — always prefer the tool a model was built for.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 18,
+   "quote": "platform is not the same as model",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI dashboard generation weak spots",
+   "claim": "Figma AI and Google Stitch struggle when given a custom prompt for an individual screen — they only produce good results when you use their pre-built system prompts or ask for full flows instead of single pages.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 20,
+   "quote": "when you use their system prompts or asked them to design full flows",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Token/time benchmark",
+   "claim": "In a controlled dashboard-generation test, Grok returned a great-quality design in 2 minutes for 47,000 tokens, Claude Fable took 17 minutes and 128,000 tokens for similarly great quality, and Claude Opus took 8 minutes and 75,000 tokens for only average quality.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 21,
+   "quote": "the Grock result took 2 minutes and 47,000 tokens with an great design quality",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Token cost of canvas tools",
+   "claim": "Canvas-native AI design tools like paper.design burn tokens at an extreme rate — a single initial dashboard design (before any iteration) used 155,400 tokens in one run.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 28,
+   "quote": "That one dashboard burned through 155.4,000 tokens",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Iteration tools",
+   "claim": "ChatGPT is best for cheap, fast rough-iteration image mockups early in a project — it's excellent at generating layout inspiration but produces flat images with no real layers, so it can't be built on directly.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 30,
+   "quote": "chat GPT is really really good at generating images",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Wireframing",
+   "claim": "Claude Design's wireframe template mode produces client-ready low-fidelity wireframes distinct from its normal hi-fi output — useful for early-stage layout buy-in before committing to visual polish.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 31,
+   "quote": "select the wireframe template here",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Design research via MCP",
+   "claim": "Mobin's MCP connector lets you dialogue with AI inside Claude/Codex to search its entire screen repository and even have Claude synthesize the visual themes (layout archetypes, color/accent strategy, data-viz vocabulary) of a chosen design direction.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 37,
+   "quote": "break down the visual direction of Bright Analytics into key themes",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Aspirational design skills",
+   "claim": "When you have no existing design system, build an 'aspirational' AI skill from competitor screenshots and extracted design themes (e.g. from a Mobin mood-board PDF) to give AI a consistent direction to draft toward.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 43,
+   "quote": "help to maintain some level of consistency and give AI some direction",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI prototyping/QA",
+   "claim": "Google Anti-gravity is distinct from Claude Code/Codex for prototyping because it can drive a real browser: it builds a design, runs it locally, screenshots its own output, checks responsiveness, and iterates based on what it sees — closer to the build-look-fix loop a human does.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 59,
+   "quote": "it can drive a browser really well",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Tool choice for design-system sync",
+   "claim": "For connecting a rough design to an established design system, Claude gives the most accurate results at handling large design-system context, more than Codex, in this creator's experience.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 65,
+   "quote": "Claude is generally the best",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Accessibility audits",
+   "claim": "Anthropic's built-in accessibility-review skill (via the design plugin) found 22 issues on a single frame — 3 critical, 13 major, 6 minor — going deeper into minor issues than most AI tools bother with.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 74,
+   "quote": "it found 22 issues, three critical, 13 major, and six minor",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Design system skills structure",
+   "claim": "Don't ask AI to build one skill covering an entire component library at once — it causes it to bounce between components and make mistakes; instead build one skill per component category (form elements, navigation, data display, etc.).",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 85,
+   "quote": "one skill for each component category",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Variable descriptions",
+   "claim": "When documenting Figma variables for AI, the written description of when to use each variable matters more than the variable's name or value — without it, AI (and humans) can't tell a 'default surface' from a 'secondary surface.'",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 84,
+   "quote": "That description is the most important part here",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI limits on design systems",
+   "claim": "AI cannot build you a true design system — clickbait claiming otherwise is really just AI producing some styles, some variables, and maybe one button, which is a tiny fraction of an actual design system.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 92,
+   "quote": "The answer, no, it cannot",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Tokens need full context",
+   "claim": "Building design tokens with AI is like hiring someone to build a kitchen from the vague brief 'make it dark' — without full specification of materials, finishes, and brand context, AI (like a contractor) will build it wrong.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 95,
+   "quote": "hiring someone to build you a kitchen",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "AI component construction gaps",
+   "claim": "AI-generated components (e.g. a table) usually skip proper atomic sub-components — you should have separate cell-atom and heading-atom components with variants, not one rigid table baked around a specific column set.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 103,
+   "quote": "You should have cell atom components. You should have heading atom components.",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Interactive hero workflow",
+   "claim": "To build a scroll-controlled interactive hero: generate a start/end image pair (e.g. Nano Banana), animate between them with a video model (Cling 3.0), break the resulting video into individual frames with ffmpeg, then have AI wire frame-swapping to scroll position.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 110,
+   "quote": "Break out the video into individual frames using ffmpeg",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Design token definition",
+   "claim": "A design token is not a raw hex code or number — it becomes a token only once you assign it a reusable role (e.g. 'text-on-action') that gets applied consistently across components.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 1,
+   "quote": "colors and attributes that are assigned to components",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI limits on tokens",
+   "claim": "AI cannot properly define your design tokens because it doesn't know your brand, your components, or your product context — designers who let AI generate a token set end up spending more time reverse-engineering it than they would have spent building it themselves.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 6,
+   "quote": "AI cannot do those things. Not in the way that you need them to.",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Token architecture",
+   "claim": "There are two common token architectures: two-tier primitive/semantic, or three-tier brand/alias/mapped — they accomplish the same thing, but the three-tier split scales better for large enterprises with many brand scales.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 10,
+   "quote": "The first is primitive and semantic. You might have seen these names before.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Building color scales",
+   "claim": "Build a color scale by opacity-blending a base hex against white and black (80/60/40/20/10%) rather than guessing values — the resulting jump sizes (e.g. a clean 20% step) determine which numeric token name (100, 200, 950, etc.) each shade earns, avoiding arbitrary AI-picked in-between colors.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 17,
+   "quote": "we're using the math behind building the color scales to inform what that 100 value actually is",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Token anti-pattern",
+   "claim": "Never create component-specific tokens (a token owned by just one component) — connect every component back to shared/parent tokens so a single brand-color change propagates everywhere instead of requiring dozens of manual edits.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 36,
+   "quote": "component specific tokens are always a bad idea",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Mapped token categories",
+   "claim": "Every component's variables fall into four categories — surface, border, icon, and text — and those four categories cover every possible component in a design system.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 38,
+   "quote": "those four categories cover every possible component",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Type scale math",
+   "claim": "Base paragraph size should always be 16px for accessibility — anything smaller risks failing contrast/legibility checks depending on font weight and family.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 61,
+   "quote": "your base paragraph size should always be 16",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Type scale math",
+   "claim": "Generate a type scale using a mathematical ratio (e.g. major third, 1.25) with line-height set to 1.2x font size, then round every value to the nearest multiple of four to avoid unnatural jumps between styles.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 63,
+   "quote": "round each value to the nearest multiple of four",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Minimal token counts",
+   "claim": "Border width and border radius rarely need more than three or four values each (none/small/medium/large) — most design systems don't need finer granularity than that.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 69,
+   "quote": "do you really need more than four border widths",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Icon components",
+   "claim": "Icons must be built as components with a consistent bounding box (e.g. 24x24) around the vector, not the raw irregular vector shape, so every icon in a component set occupies the same container size.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 79,
+   "quote": "make sure that all your icons roughly sort of have the approximate same container size",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Focus state accessibility",
+   "claim": "A visible focus state (a distinct outer border, e.g. 2px, tied to its own border-focus token) is an accessibility requirement for keyboard/tab navigation and screen readers, not a cosmetic variant.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 86,
+   "quote": "it's an accessibility variant that you need more than anything",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Mobile design systems",
+   "claim": "You do not need a completely separate mobile design system — instead, add a 'mobile optimized' variant only to the specific components whose layout genuinely changes on mobile (e.g. a nav that collapses into a menu), keeping it inside the same component.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 204,
+   "quote": "you do not need a completely different design system for your mobile components",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Responsive spacing",
+   "claim": "Layout ('jumper') variables — t-shirt-sized values (extra-small through extra-large) stored per breakpoint — let a single semantic spacing value (e.g. page margin) resolve to different numbers on desktop vs. mobile without duplicating tokens per use case.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 205,
+   "quote": "these are used for things like padding uh and gap",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "When to componentize",
+   "claim": "A good rule for whether something should become a reusable component: if it's used more than once, make it a component — but don't push single-use flow elements up into the shared design-system library.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 210,
+   "quote": "A good way to look at it is if it's used more than once it should be a component",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI design-system sync limits",
+   "claim": "Out-of-the-box AI design-system sync features (e.g. Claude Design's claimed design-system sync) do not really work — they pick up roughly 28% of components correctly and miss or misunderstand the rest.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 214,
+   "quote": "it works like 28%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI design-system sync workaround",
+   "claim": "The workaround that actually helps: build separate AI skills per component grouping, per token collection, and per type-scale rather than one skill for the whole system — gets AI to about 80-85% design-system accuracy, with the remaining 15% needing manual polish.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 215,
+   "quote": "it's going to work about 80%, 85%",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Publishing design systems",
+   "claim": "Publishing a Figma component library so other files can pull from it requires being inside a paid Figma workspace — it's a paid-tier feature, and a full publish with many components/icons can take 10-15 minutes.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 200,
+   "quote": "you need to be inside of a paid Figma workspace in order to do that",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Open-source framework alignment",
+   "claim": "Adopting a dev-side component framework like Radix means every variant/property name in Figma must be renamed to exactly match the framework's documentation, or designers and developers will see conflicting sources of truth and rack up technical debt.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 229,
+   "quote": "the dev side will not be as good and your developers going to get upset",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Open-source framework alignment",
+   "claim": "When a developer compares Figma's dev-mode spec against a framework's own docs (e.g. Radix) and doesn't see one-to-one alignment in variant naming, confusion and technical debt follow.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 232,
+   "quote": "if they don't see onetoone alignment, what's going to happen is they're going to get confused",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Don't copy big-company design systems",
+   "claim": "Never copy a public design system like IBM Carbon or Shopify Polaris wholesale — those systems encode legacy technical debt and organizational history you don't have context for, so copying it one-to-one sets your own system up wrong.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 235,
+   "quote": "I always say absolutely do not do that",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Developer handoff",
+   "claim": "Figma dev mode is a separate paid seat — if leadership won't pay for it permanently, negotiate temporary access (e.g. one to two months) just to fully document the design system's handoff specs.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 226,
+   "quote": "it's like a separate seat for your developers",
+   "kind": "tool",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Whether AI can build or extract a working design system from a reference",
+   "positions": [
+    {
+     "video_id": "hgIonrdRTSE",
+     "chunk_index": 11,
+     "position": "Download a component you like and tell your AI agent to 'extract the design system from this component and make the rest of my app site look the exact same' — treated as a straightforward, reliable workflow."
+    },
+    {
+     "video_id": "lsgVRCJ4fko",
+     "chunk_index": 6,
+     "position": "AI cannot properly build your design tokens or design system 'not in the way that you need them to' — designers who let AI do it spend more time reverse-engineering the output than they'd have spent building it manually."
+    },
+    {
+     "video_id": "r-MPiu0E4W4",
+     "chunk_index": 92,
+     "position": "AI cannot build you a true design system; clickbait claiming otherwise is really just AI producing a few styles/variables and maybe one button, a tiny fraction of an actual system."
+    }
+   ]
+  },
+  {
+   "topic": "Which AI tool/model is 'best' for design work",
+   "positions": [
+    {
+     "video_id": "r-MPiu0E4W4",
+     "chunk_index": 21,
+     "position": "In a head-to-head test, Grok produced great-quality results in the least time and fewest tokens (2 min, 47k tokens), making it the most efficient choice for iteration — with the caveat that not every enterprise has access to it."
+    },
+    {
+     "video_id": "r-MPiu0E4W4",
+     "chunk_index": 65,
+     "position": "For connecting a design to an established brand/design system specifically, Claude gives the most accurate results despite being far more token- and time-expensive elsewhere in the workflow."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four videos give concrete subscription pricing or a cost-per-design comparison across the AI tools they benchmark (Grok, Claude Fable/Opus, Codex, paper.design) — only relative token/time figures, so a reader can't build an actual budget from this corpus alone.",
+  "Native mobile app design systems (iOS/Android-specific component libraries, platform HIG differences) are not covered — only responsive 'mobile optimized' variants of web components are addressed.",
+  "There's no guidance on multi-designer or team collaboration workflows when several people are prompting AI against the same shared design system at once.",
+  "Accessibility testing coverage stops at contrast ratios (Chrome DevTools) and Claude's built-in accessibility-review skill — no specific screen-reader software or manual testing protocol is discussed.",
+  "No video addresses versioning or migrating design tokens across breaking changes/app releases once a system is in production.",
+  "AI-generated logo or illustration quality for branding work is never benchmarked — all AI-quality comparisons in this cluster are about UI screens/dashboards, not brand assets."
+ ],
+ "verified_claims": 69
+}

@@ -1,0 +1,461 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "WZuDhxS40qo",
+  "5gLVxMKeSGM",
+  "3bVc_-m_fMg"
+ ],
+ "video_notes": [
+  {
+   "video_id": "WZuDhxS40qo",
+   "title": "How Bain & Co. builds million dollar presentations for their clients (Consulting Slide Breakdown)",
+   "contributed": "A single-slide teardown of a real Bain deck showing how title-as-conclusion, chart-type choice, and a tightly limited color palette combine to make one insight instantly legible."
+  },
+  {
+   "video_id": "5gLVxMKeSGM",
+   "title": "How to Write a Winning Tech Resume | Resume Tips from a Software Engineer & Career Coach",
+   "contributed": "Applies impact-communication discipline to a written self-marketing document: quantify results with a formula, tailor content to what the specific reader (audience) is scanning for, and write the summary/thesis only after the evidence is assembled."
+  },
+  {
+   "video_id": "3bVc_-m_fMg",
+   "title": "How to Turn Data into Actionable Insights (6-Step System)",
+   "contributed": "Lays out a 6-step data-to-insight system whose final steps (audience-first framing, punchy slides, appendix for detail, narrative story arc) are the corpus's most direct, worked playbook for presenting analysis to stakeholders."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Title states the full conclusion",
+   "claim": "Write slide titles as a complete sentence that states the specific insight, not a generic topic label like 'Customer growth.'",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 1,
+   "quote": "they've written the title out in a full sentence",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Pyramid principle for slide structure",
+   "claim": "Lead with the highest-level conclusion first, then let the rest of the slide supply the supporting detail — the title is the conclusion, the chart is the evidence.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 2,
+   "quote": "start with the highest level idea first",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Chart type changes the takeaway",
+   "claim": "The chart type itself carries a message: a waterfall chart isolates 'where growth came from,' while a stacked column chart would shift attention to total market size instead.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 4,
+   "quote": "Can you still see the insight?",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Wrong chart buries the point",
+   "claim": "Swapping to a stacked column chart would make the height of each column (total size) the visual focus, obscuring the intended point about the source of growth.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 4,
+   "quote": "the focus becomes the height of each of these columns",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Color as a guide, not decoration",
+   "claim": "Don't make the audience hunt for what matters — use one attention-grabbing color (bright red) only on the bars and title bar tied to the main message.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 5,
+   "quote": "you don't want your audience to go searching for the important information",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Restrict the palette to three colors",
+   "claim": "Limit a data slide to essentially one accent color plus black and gray so the eye isn't split across competing signals.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 6,
+   "quote": "besides this black and this gray",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Audience is overloaded during live delivery",
+   "claim": "In a live presentation the audience is simultaneously listening to the speaker, reading the slide, and forming a response — design slides assuming attention is scarce, even for smart audiences.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 6,
+   "quote": "trying to listen to the speaker, read the words and numbers",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Explain the 'why' behind the data",
+   "claim": "A dedicated 'key insights' callout should go beyond what the chart shows and explain why the trend is happening (e.g., new stores opening, store-level performance gains).",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 7,
+   "quote": "helping me understand why it's growing the way it is",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Quotes humanize quantitative data",
+   "claim": "Include a customer or field quote alongside the chart — it gives the audience a non-numeric, personal way into the same insight.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 7,
+   "quote": "it brings a personal element to the data",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Overusing bold defeats emphasis",
+   "claim": "Bolding an entire quote or bullet block removes the contrast that makes bold text useful — reviewers end up skipping it entirely because it reads as 'too much work.'",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 7,
+   "quote": "the overuse of bolded text",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Use a light box instead of full bold",
+   "claim": "To set a quote apart without overloading attention, put a simple light-gray box behind it rather than bolding the whole passage.",
+   "video_id": "WZuDhxS40qo",
+   "chunk_index": 8,
+   "quote": "just put a simple box behind them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Aimless data mining backfires",
+   "claim": "Digging through analytics without a defined question leads to false patterns — 'if you torture data long enough it will confess to anything.'",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 0,
+   "quote": "if you torture data long enough it will confess to anything",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Start with a goal or question",
+   "claim": "Before opening any dashboard, set an explicit goal or question to answer — without it you'll wander or bend the data to say what you want.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 1,
+   "quote": "you set a goal or a question that you need to answer",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Match depth of detail to audience",
+   "claim": "Decide who the analysis is for before building it: technical audiences want methodology and sample size, business audiences don't care about the 'nitty-gritty.'",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 1,
+   "quote": "you need to also think about who is your target audience",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Good questions are narrow and answerable",
+   "claim": "A well-formed analysis question is specific enough to point directly to the data source, e.g. 'what were our three top-selling products in April?'",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 1,
+   "quote": "what were our three top selling products in April",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Comparative questions add depth",
+   "claim": "Layer in a comparison (period-over-period, channel-over-channel) once the base question is answered to move from a fact to an insight, e.g. 'why is Google Ads conversion rate down 5% from the previous month?'",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 2,
+   "quote": "conversion rate down by 5% from the previous month",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Revenue's three levers",
+   "claim": "Frame any revenue change against its three components — traffic, conversion rate, and average order value — before diagnosing further.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 3,
+   "quote": "traffic conversion rate or average order value",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Investigate from the top of the funnel",
+   "claim": "When revenue drops, start at the beginning of the user journey (traffic acquisition/landing pages) rather than the end of the funnel — most changes originate upstream.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 3,
+   "quote": "start from the beginning of the user Journey",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "A number means nothing without a benchmark",
+   "claim": "A metric like '3% conversion rate' is meaningless in isolation — you must always have a comparison point (industry, prior period, or another campaign) to judge good vs. bad.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 5,
+   "quote": "you always have to have data to compare with",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Compare like-for-like segments",
+   "claim": "Only compare similar cohorts (e.g. new vs. new, existing vs. existing) — comparing new customers to existing customers is unfair since existing customers convert higher simply from trust already built.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 5,
+   "quote": "compare apples to apples",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Differences are where insights live",
+   "claim": "Once you compare similar data sets, the differences that appear are the actual insights — the job is then explaining why the difference exists.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 6,
+   "quote": "those differences are the insights",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Worked example: checkout drop-off",
+   "claim": "In a real GA4 purchase-journey report, only 45% of shoppers who began checkout completed it — a completion rate flagged as clearly low for any e-commerce shop and worth digging into.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 7,
+   "quote": "only 45% completed it this is really low",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Drill into segments to find root cause",
+   "claim": "Segmenting checkout completion by country surfaced that Canadian shoppers dropped off because shipping cost, shown only at the payment step, was between $50 and $80.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 8,
+   "quote": "between $50 and $80",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Pattern spotting is a trained skill",
+   "claim": "Recognizing patterns and anomalies in data improves with repeated practice and with deeper domain expertise in the specific business area.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 9,
+   "quote": "sporting patterns comes with practice",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Visualization step 5",
+   "claim": "Step 5 of the system is to visualize the data in graphs and charts — the same weekly sales table that's hard to read becomes obvious (best day, weekend dips) once charted.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 10,
+   "quote": "the fifth step is to visualize your data in graphs and charts",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Dense slides lose the room",
+   "claim": "A slide packed with full paragraphs (e.g., a long explainer on browser cookies) is too long for an audience to absorb while also listening to the presenter.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 11,
+   "quote": "this is just way too long for people to understand",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Reading slides forfeits attention",
+   "claim": "If the audience is left reading a boring, text-heavy slide instead of listening, the presenter loses the room and fails to communicate the insight regardless of how good the analysis was.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 11,
+   "quote": "you're not going to be able to communicate your insights if it's just too boring",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Every slide needs one goal",
+   "claim": "Before adding data to a slide, define what that specific slide is meant to say — cut everything that doesn't serve that one point (e.g., isolate only click-through rate, not every metric on the page).",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 12,
+   "quote": "you need to know your main goal of that slide",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Push detail to an appendix",
+   "claim": "Keep the main slide to just the focal metric and move the exhaustive, nitty-gritty tables into an appendix for the data-minded people on the team who want it.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 13,
+   "quote": "you can add that to appendix",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Structure the deck as a story",
+   "claim": "Sequence slides as a mini-narrative — problem (sales down 12%), cause (lower clicks on pricing page), resolution (disabled the January email campaign) — instead of a flat series of unconnected fact slides.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 14,
+   "quote": "you can tell a story within the slides",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Narrative aids retention",
+   "claim": "Giving a presentation a clear story structure (problem → cause → conclusion) makes it far easier for the audience to remember and follow than a list of disconnected facts.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 14,
+   "quote": "so much easier to remember and also follow along",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Put the key number in the title",
+   "claim": "State the headline number directly in the slide title (e.g., 'sales down 12%') so the audience grasps the point before parsing the chart.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 14,
+   "quote": "12% maybe you even add it here in the title",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Communication is a distinct, learnable skill",
+   "claim": "Presenting data to stakeholders is a separate skill from analyzing it — without it, stakeholders can't act on the insights or be convinced to change course.",
+   "video_id": "3bVc_-m_fMg",
+   "chunk_index": 15,
+   "quote": "presenting your data to your stakeholders is a skill on itself",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Readers give you seconds, not minutes",
+   "claim": "A reader (recruiter or hiring manager) decides to keep reading or move on within five to seven seconds — the opening must hook immediately.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 2,
+   "quote": "hooked in five to seven seconds",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "State why it mattered, don't assume it",
+   "claim": "Never assume the reader will infer significance from where you worked or what you did — spell out explicitly why the accomplishment mattered.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 2,
+   "quote": "if you don't tell them why what you did actually mattered",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Tailor the message to the specific reader",
+   "claim": "Treat matching your document to your audience's stated requirements (a job description) like an open-book quiz — the answers the audience wants are already given, you just have to map to them.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 3,
+   "quote": "tailoring your resume to the job description should be like taking an open book quiz",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Write the summary after the evidence",
+   "claim": "Draft the professional summary last, only once the full body of evidence exists, so you never state a claim you haven't backed up.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 4,
+   "quote": "you should definitely write this part of your resume last",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "The summary is a thesis the body must prove",
+   "claim": "Treat the opening summary as a thesis statement — everything that follows exists to prove it, mirroring the 'conclusion first, evidence after' structure used in consulting slides.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 4,
+   "quote": "it's almost like a thesis that the rest of your resume must prove",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Skip decorative visuals the audience doesn't need",
+   "claim": "A skills list doesn't need bar charts, sparklines, or rating systems — that decoration doesn't help the reader and isn't what the format calls for.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 5,
+   "quote": "There's no need for fancy bar charts, spark lines",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Lead every claim with impact",
+   "claim": "The core content section should be about one thing only — impact (money made, money saved, time saved, productivity gained) — not a restatement of job duties.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 5,
+   "quote": "your experience section is about one thing and one thing only",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Repetition signals what to prioritize",
+   "claim": "When scanning source material (job descriptions) for what to emphasize, use word-frequency counts — a term repeated across documents (e.g. 'ambiguity' 4 times, 'design' 15 times) tells you what the audience prioritizes.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 12,
+   "quote": "Repetition matters to me",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Resume Formula for quantified claims",
+   "claim": "Frame every accomplishment with the formula 'I accomplished X, as measured by Y, by doing Z' so each claim has a result, a metric, and a method.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 18,
+   "quote": "I accomplished X, as measured by Y, by doing Z",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Use orders of magnitude when precision isn't available",
+   "claim": "When you can't cite an exact figure, use an order-of-magnitude descriptor (e.g. 'millions of rows') rather than omitting scale entirely.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 16,
+   "quote": "there are different orders of magnitude that I need to use",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Obscure confidential numbers with ratios",
+   "claim": "When exact internal metrics are confidential, communicate impact using percentages or multipliers instead of raw numbers.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 15,
+   "quote": "percentages or multipliers when I can't share real numbers",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Maximize information density, minimize whitespace",
+   "claim": "Favor a layout that minimizes vertical whitespace so more real information fits without adding pages — every bit of blank space is space that could carry content.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 20,
+   "quote": "you don't want a lot of whitespace on your resume",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Use AI to check audience fit before shipping",
+   "claim": "Run the finished document against the target audience's stated requirements (paste resume plus job description into ChatGPT) to catch gaps before sending it out.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 21,
+   "quote": "use ChatGPT to just compare the resume to the job descriptions",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Iteratively optimize the match score",
+   "claim": "Scoring the document against a target role and then revising (via an auto-optimize pass) measurably raised the match score from roughly 63% to 83%, showing tailoring content to the audience has a quantifiable effect.",
+   "video_id": "5gLVxMKeSGM",
+   "chunk_index": 24,
+   "quote": "bump up my score from 63 and some change",
+   "kind": "metric",
+   "verified": true
+  }
+ ],
+ "disagreements": [],
+ "gaps": [
+  "None of the three videos cover live delivery mechanics for verbal presentations — pacing, body language, tone, or handling Q&A when presenting an insight in person.",
+  "There's no guidance on designing or presenting slides for a virtual/remote meeting versus an in-room presentation.",
+  "No discussion of statistical rigor (sample size, significance, confidence) for deciding when a data difference is real enough to present as an 'insight' versus noise.",
+  "5gLVxMKeSGM's principles (thesis-last writing, audience tailoring, quantified impact) apply to a written self-marketing document, not a live data presentation — the corpus doesn't confirm how directly these translate to presenting analysis out loud to stakeholders.",
+  "3bVc_-m_fMg references an 'appendix' slide for detail-seeking audiences but never shows a worked example of building one.",
+  "No coverage of how to structure a full multi-slide executive deck beyond a handful of individual slide examples — the corpus doesn't show a complete end-to-end presentation.",
+  "No guidance on presenting insights when the data is inconclusive or contradicts the story the audience wants to hear."
+ ],
+ "verified_claims": 47
+}

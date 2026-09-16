@@ -1,0 +1,593 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "nuosoMyf0eA",
+  "nAlR78kKSTs",
+  "jUFFkh5YSU8"
+ ],
+ "video_notes": [
+  {
+   "video_id": "nuosoMyf0eA",
+   "title": "5 Small Changes to Improve Your Presentations Forever! (Jeff Su)",
+   "contributed": "Five concrete slide-craft techniques reverse-engineered from real MBB decks: never show an isolated data point, SCQA, the pyramid principle, intentional color, and when a table beats a chart."
+  },
+  {
+   "video_id": "nAlR78kKSTs",
+   "title": "Strategy consultant explains BCG presentation! (Johannes Sommer)",
+   "contributed": "A slide-by-slide walkthrough of one real, public BCG deck that names the anatomy of a consulting slide (action title, thirds/quarters layout, legend, footnotes, think-in-tables) and critiques specific slides where the deck itself falls short."
+  },
+  {
+   "video_id": "jUFFkh5YSU8",
+   "title": "How to create presentations like a consultant (ex-BCG consultant explains) (Matt Huang)",
+   "contributed": "A three-step upstream process — define the meeting's goal, storyline the deck by writing takeaway titles before building any slides, then build and present top-down — plus the fullest explanation of the pyramid principle's origin and mechanics, and the only mention of inviting live audience input."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "never present an isolated data point",
+   "claim": "Never show a single data point without a comparison point, or the audience has no basis to judge whether it's good, bad, high, or low.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 0,
+   "quote": "never share a single data point in isolation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "prior-year comparison reveals the real story",
+   "claim": "Adding the 5-years-ago figure next to today's 52% optimistic / 30% concerned turns flat numbers into a trend: a 17-point jump in optimism and a 10-point drop in concern.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 0,
+   "quote": "there's even a 17% jump in optimism",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "benchmark against category or industry average",
+   "claim": "Compare a metric to the industry average to show relative performance: Ethiopia's food-production metric rose 63% versus a 12% industry-wide increase.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 1,
+   "quote": "Ethiopia has a 63% increase in this food production metric versus a 12% increase for the industry as a whole",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "three ways to compare data points",
+   "claim": "Give any data point a comparison using one of three methods: same-metric time frame (YoY/WoW), benchmark within the same category, or benchmark against a category/industry average.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 1,
+   "quote": "common ways to compare data points include time frames benchmarking within the same category or against the",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "SCQA framework structures the whole deck",
+   "claim": "Every MBB deck studied (50+ presentations) opens with Situation, adds a Complication, poses the resulting Question, then spends the rest of the deck on the Answer.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 2,
+   "quote": "situation complication question and answer framework",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "spot the complication by its signal words",
+   "claim": "You can usually locate the complication in a slide by scanning for 'but' or 'however' — that's the pivot from situation to problem.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 2,
+   "quote": "you can usually recognize the complication when you see the words but or however",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "answer sections end in numbered recommendations",
+   "claim": "The Answer portion of SCQA typically culminates in a final slide with three enumerated recommendations, as seen in both the BCG and McKinsey reports analyzed.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 3,
+   "quote": "final slide with three key recommendations one two and three",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "pyramid principle: conclusion before reasoning",
+   "claim": "State the main point first, then follow with the supporting reasoning — the opposite of building up to a conclusion.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 4,
+   "quote": "you start with the main point then follow up with sound reasoning",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "juniors under-invest in synthesis time",
+   "claim": "Teams spend most of a project on research and analysis and comparatively little time synthesizing findings — yet synthesis is the only part the client executive actually wants.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 5,
+   "quote": "we don't actually spend that much time summarizing our findings since we already know the answer by the end",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "flip chronological order for executive audiences",
+   "claim": "Don't present chronologically (question → what I did → what I found → recommended action); flip it to lead with the action/answer, then the supporting findings.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 5,
+   "quote": "flip that around here's actually we need to take and here's what I found",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "lead with the conclusion, example: metaverse timeline",
+   "claim": "Bain's metaverse deck states the answer (5–10 years to mainstream adoption) immediately, before walking through the comparable-technology analysis (smartphones, consoles, internet, PCs) that produced it.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 5,
+   "quote": "according to Bain though they tell us right away it'll take another five to ten years",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "use color with intention, not decoration",
+   "claim": "Color should always carry meaning — the eye is drawn to color before the explanation, so if color has no purpose it misdirects attention.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 6,
+   "quote": "use color with intention",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "more colors can lower cognitive load if grouped meaningfully",
+   "claim": "A six-color McKinsey chart reduces cognitive load versus a black-and-white version because matching colors (dark blue-to-dark blue, light blue-to-light blue) let the viewer instinctively group related series.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 6,
+   "quote": "your cognitive load has actually been reduced compared to black and white",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "color triggers instinctive meaning",
+   "claim": "Use green/red for yes/no because it matches preconceptions (green = go, red = stop), letting the viewer parse a text-heavy slide without reading it fully.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 7,
+   "quote": "the green Yes red no aligns with our preconceptions that green is for go and red is for stop",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "chart type must match the comparison purpose",
+   "claim": "Match chart type to intent: basic bar chart to compare categories, clustered bar chart to compare subcategories, stacked bar chart to show overall size plus subcategory change.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 7,
+   "quote": "we use the clustered bar chart when we want to compare",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "line chart for trend over time",
+   "claim": "Use a line chart specifically to show trend and change over time, since connecting the points forces the viewer to read the data as a continuous whole.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 8,
+   "quote": "the line chart is best used to show Trend and changes over time",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "use a table, not a chart, for precise values",
+   "claim": "Contrary to the conventional advice to always chart data, use a data-heavy table instead of a chart when the audience needs to read precise values (e.g., BCG's ranked list of the 50 most innovative companies with year-over-year rank change).",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 8,
+   "quote": "that instance is when you need to show precise values",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "decide chart vs table by the question you're answering",
+   "claim": "Before visualizing data, ask: comparing specific points → bar chart; showing a trend → line chart; calling out a precise value → table.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 9,
+   "quote": "if you want to call out a precise value stick to a table",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "free tools for building decks",
+   "claim": "Use free tools — Flaticon for icons, SlidesCarnival for templates, and Color Hunt for palettes — to build presentations without design skill.",
+   "video_id": "nuosoMyf0eA",
+   "chunk_index": 9,
+   "quote": "use free tools like flaticons SlidesCarnival and Color Hunt",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "open with an executive summary",
+   "claim": "Longer, high-stakes decks open with a plain-bullet executive summary of all main findings so time-pressed executives can skip the meeting and still know the content.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 1,
+   "quote": "they start with the results at eight glance and this is what we would typically refer to as a executive summary",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "executive summaries exist to save leadership time",
+   "claim": "An executive summary's purpose is efficiency: top management can grasp the whole deck without attending the full meeting.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 1,
+   "quote": "it just makes work and top management much more efficient",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "top-down communication principle",
+   "claim": "Top-down communication means leading with the key message and only then breaking it down into the supporting arguments — the reverse of an academic paper's analysis-then-conclusion structure.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 2,
+   "quote": "you start with the key message first and that you then only break it down into the single arguments",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "consulting inverts academic writing order",
+   "claim": "University writing builds to a conclusion at the end; consulting reverses this, opening with the conclusion and laying out the argumentation afterward, because top management's time is scarce.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 2,
+   "quote": "in consulting it's directly the other way around you start with the key message and then you lay out the augmentation",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "action titles state the one-sentence takeaway",
+   "claim": "The action title sits at the top of a slide and summarizes its key message in one very clear sentence — it is not a topic label.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 3,
+   "quote": "the action title is typically a title as you see here which is on the top of the slide that summarizes the key message of the slide in one very clear sentence",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "example action title",
+   "claim": "A real BCG action title reads 'French companies are lagging behind in leveraging AI' — short, declarative, and it is the finding, not a description of the chart below it.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 3,
+   "quote": "french companies are lagging behind in leveraging ai",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "think in thirds for slide layout",
+   "claim": "Divide a slide into thirds (e.g., chart across the first two-thirds, commentary text in the final third) to create a visually structured, clean layout.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 4,
+   "quote": "this principle means that you think your slides in third which means that if you structure your slide that you always try to divide your slide in thirds",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "thirds, quarters, or halves as layout grids",
+   "claim": "Beyond thirds, structure slides in halves or quarters as alternative grid systems for organizing content cleanly.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 5,
+   "quote": "you always try to structure your slide in thirds or in quarters",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "always include and double-check the legend",
+   "claim": "Every chart needs a legend explaining the color code; explicitly double-check it's present since it's an item people forget.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 5,
+   "quote": "i highly recommend to always double check if this is included and this is a legend",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "footnotes carry sourcing and secondary detail",
+   "claim": "Use footnotes at the bottom of a slide to hold source references and extra data/comments that would otherwise clutter the main chart and make it too busy.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 6,
+   "quote": "it's a very elegant way to just use a footnote and include it on the bottom of the slide",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "don't overdo footnotes",
+   "claim": "Footnotes help until there are too many — five, six, seven footnotes on one slide look just as busy as an overloaded chart.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 6,
+   "quote": "be cautious don't overdo footnotes",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "color-code tables to highlight extremes",
+   "claim": "In a dense country-by-cluster data table, use color coding to highlight the high and low percentages so the audience isn't left parsing raw numbers unaided.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 7,
+   "quote": "what they do here is that they use some colors in order to highlight the high percentages and the low ones",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "restrained, decent color reads as clean",
+   "claim": "Highlight colors in a data table should be decent/muted rather than aggressive so the slide still reads as clean despite being numbers-heavy.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 7,
+   "quote": "those colors are kind of decent so they are not very aggressive",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "color must support the message, not decorate",
+   "claim": "Never use color just to add visual variety — every color choice should support the key message and transport information, not merely 'visualize something.'",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 8,
+   "quote": "if you use colors it's very important that they support a message",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "think in tables to organize chart layout",
+   "claim": "When filling a two-thirds/one-third or quartered layout, structure the content itself as rows and columns ('think in tables') even inside chart sections, for clarity.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 8,
+   "quote": "they apply a principle that is called think in tables and this means that every chart is also a table",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "pitfall: extra color shades read as busy",
+   "claim": "Using a second, lighter shade of green for average percentages next to a darker highlight green makes a slide busier and harder to scan than using plain gray for the non-highlighted values would.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 9,
+   "quote": "i would have done it probably in a more decent gray because you know this makes this light just very busy",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "pitfall: decorative flag colors confuse rather than clarify",
+   "claim": "Using French-flag colored arrows purely to signal 'this is about France' backfired — it took a second look to understand the intent, so a plain flag icon plus decent arrows would have communicated the same point without the added complexity.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 10,
+   "quote": "this makes the slide very busy and this would be something where i would say okay this is very a very unnecessary use of colors",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "not every slide will be perfect",
+   "claim": "Even experienced consultants ship imperfect slides sometimes because there isn't time to polish every one — it's acceptable as long as the key message still lands.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 11,
+   "quote": "not every table in not every sliding consulting is perfect",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "visual-only slides need more text if sent standalone",
+   "claim": "A minimal, image-heavy slide (three circles + headlines) works when you're presenting live and narrating it, but if the deck will be sent to people who weren't in the room, add descriptive text under each headline so it stands alone.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 12,
+   "quote": "i would also probably had would have to include you know some descriptive text that helps the audience to understand what you mean with that headlines",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "close every deck with next steps and 'so what'",
+   "claim": "Almost every consulting deck closes with next steps and implications, applying the 'so what' test — the last slide must answer why the presentation mattered and what happens now.",
+   "video_id": "nAlR78kKSTs",
+   "chunk_index": 13,
+   "quote": "make it a habit that if you have a presentation that you always close with a core message with an implication",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "slides should stand secondary to your spoken narrative",
+   "claim": "Treat slides as a communication tool, not a crutch — you should be able to convey your ideas even without them.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 11,
+   "quote": "slides are really just a tool",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "top-down presenting exists to fight audience disengagement",
+   "claim": "Most slide decks 'put people to sleep' because they cram too much content into a long, chronological narrative; the top-down approach is the fix.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 0,
+   "quote": "most slide decks put people to sleep",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "step 1: define the meeting's goal before opening slide software",
+   "claim": "Before opening PowerPoint or Google Slides, clarify the goal of the meeting — e.g., convincing stakeholders of a new direction versus a routine performance update — because that goal dictates the whole deck's structure.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 2,
+   "quote": "understand what the goal of the meeting even is",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "storylining: write every slide title before building any slide",
+   "claim": "Storylining means deciding the story the deck will tell and writing the title of every single slide before creating slides or doing analysis.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 3,
+   "quote": "you write the titles of every single slide in the presentation before you've even made any slides or even done any analysis",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "storyline is a hypothesis, not a permanent plan",
+   "claim": "Start the storyline as a hypothesis of what the data will show; it's expected to change as new information surfaces during the project, and that's fine.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 3,
+   "quote": "it's important to go in to starting the presentation and starting to build out the slides with at least some kind of hypothesis of what you think the story is going to tell",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "titles must be key-takeaway statements",
+   "claim": "Slide titles should not be a topic word — they should be full key-takeaway statements a first-time reader can grasp instantly without reading the rest of the slide.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 4,
+   "quote": "these titles should be key takeaway titles",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "the slide's job is to lower the listener's cognitive load",
+   "claim": "A slide should supplement your spoken words, not add mental load — hand the audience the conclusion, then let them check the supporting data if they want it.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 4,
+   "quote": "it's not to add an additional layer of mental cognitive load onto the listener",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "every slide must fight to exist or move to the appendix",
+   "claim": "Only include slides absolutely necessary to make the point in the main flow; if you're questioning whether a slide is needed, move it to the appendix — you can always pull it back.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 5,
+   "quote": "every single slide, especially in the main flow... should fight to exist in that presentation",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "each slide must logically build on the one before it",
+   "claim": "There should never be a moment where the viewer wonders why a slide follows the previous one — each slide should build logically on the last.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 6,
+   "quote": "each slide should build on the last one",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "framework slides lay out the top-level buckets",
+   "claim": "A framework slide lays out at a high level all the main buckets of a topic (e.g., 'three pillars for next year'), and every slide after it should be a deep-dive into one bucket, one level more detailed.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 6,
+   "quote": "a framework slide is just a fancy word for a page that basically lays out at a high level all the main buckets of whatever it is you're talking about today",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "less is always more on a slide",
+   "claim": "The instinct to fill empty space or pile on data (especially common for students/early professionals) produces slides nobody reads; the best slides convey the key idea faster because they have less on them.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 7,
+   "quote": "less is always more on a slide",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "only include the most relevant data, and cite sources",
+   "claim": "Resist throwing every piece of data onto a slide; include only what's most relevant to the slide's idea, and always cite your sources.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 8,
+   "quote": "make sure you're citing your sources",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "slides divide into quadrants, halves, or columns",
+   "claim": "Every slide is a rectangle that can be organized as a single block, a left/right split, quadrants, or multiple columns, depending on the idea being conveyed.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 9,
+   "quote": "recognize that all slides are split into four quadrants",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Gamma as an AI slide-building tool",
+   "claim": "Gamma (gamma.app) is an AI slidemaking tool that builds a formatted deck from a Word doc or a chat description; its 3.0 version adds an agent mode that acts as a design partner and an API for building automations, and it has a free plan.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 10,
+   "quote": "with the 3.0 version, there's an agent mode which basically acts as your design partner",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "pyramid principle origin",
+   "claim": "The pyramid principle was developed by Barbara Minto, a former McKinsey consultant, and is taught at essentially every top management consulting firm as its core executive-communication technique.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 11,
+   "quote": "the pyramid principle was developed by a woman named Barbara Mento",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "pyramid structure: core idea, then reasons, then evidence",
+   "claim": "Present the core idea first, then the (typically two) reasons supporting it, then within each reason the supporting evidence one level further down — top-down, not bottom-up.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 11,
+   "quote": "your core idea is supported by, let's say, two",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "top-down beats bottom-up because attention spans are short",
+   "claim": "Take a top-down approach rather than building to the conclusion because executive audiences have short attention spans and need the main idea before they tune out or get distracted.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 12,
+   "quote": "people have short attention spans",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "worked example: pyramid principle applied to 'visit Japan'",
+   "claim": "Concrete pyramid-principle example: core idea 'Japan is the best country to visit,' two reasons (amazing food, phenomenal public transit), each backed by specific evidence (a 3-Michelin-star restaurant and Wagyu, and Tokyo vs. NYC train-delay data).",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 13,
+   "quote": "in new york city, trains are delayed all the time, every single weekend for 5, 10, 15, 20 minutes at a time",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "top-down framing lets evidence make sense as it comes",
+   "claim": "Leading with the conclusion means later evidence is presented with context already established (audience knows why you're talking about food/transit), whereas bottom-up forces listeners to guess the conclusion themselves.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 14,
+   "quote": "it's providing a level of context that the later pieces of evidence and reasons are framed with",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "invite audience input after every section",
+   "claim": "Make the presentation a two-way conversation: after every slide or section, explicitly pause and invite reactions or questions rather than only talking at the audience.",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 15,
+   "quote": "after every slide or after every section, create ways for them to chime in",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scripted line to invite feedback mid-presentation",
+   "claim": "Use a concrete phrase to prompt engagement: 'this is how we are thinking about it and this is the analysis that we did, but want to pause here now in case anyone has any questions.'",
+   "video_id": "jUFFkh5YSU8",
+   "chunk_index": 15,
+   "quote": "want to pause here now in case anyone has any questions",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much color variation a data-heavy slide can tolerate",
+   "positions": [
+    {
+     "video_id": "nuosoMyf0eA",
+     "chunk_index": 6,
+     "position": "A six-color McKinsey chart actually reduces cognitive load versus black-and-white, because matching hues let viewers instinctively group related series (dark blue with dark blue, light blue with light blue)."
+    },
+    {
+     "video_id": "nAlR78kKSTs",
+     "chunk_index": 9,
+     "position": "A second shade of green added next to a highlight green on the same BCG slide made it busier and harder to scan; a plain gray for the non-highlighted values would have been cleaner."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three videos cover delivery mechanics during the live moment — vocal tone, pacing, body language, or how to handle a hostile or skeptical stakeholder's pushback beyond generically 'inviting questions.'",
+  "No guidance on remote/virtual presenting (screen-share etiquette, webinar tools, camera framing) — all three creators discuss only in-room or slide-content advice.",
+  "No discussion of accessibility, e.g., colorblind-safe palettes, despite all three videos leaning heavily on color-coding as a core technique.",
+  "No numbers on ideal deck length or slide count for a given meeting duration — Matt Huang's 'less than 20 minutes' refers to his own video length, not a presentation-length benchmark.",
+  "No coverage of how to gather or incorporate stakeholder feedback on a draft deck before the live meeting (iteration process), only how to invite input during the meeting itself.",
+  "No comparison of presentation software (PowerPoint vs. Keynote vs. Figma/Canva) beyond Jeff Su's free asset tools (Flaticon, SlidesCarnival, Color Hunt) and Matt Huang's plug for Gamma AI."
+ ],
+ "verified_claims": 57
+}

@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Interface Scorecard — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  .score { width: 100%; border-collapse: collapse; margin: 0.75rem 0 1.75rem; font-size: 0.92rem; }
+  .score th, .score td { text-align: left; vertical-align: top; padding: 0.7rem 0.8rem; border-top: 1px solid var(--rule, rgba(0,0,0,.12)); }
+  .score thead th { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.7rem; letter-spacing: .08em; text-transform: uppercase; opacity: .65; border-top: 0; }
+  .score tbody td { width: 33.33%; }
+  .score .lo { border-left: 3px solid #c2413a; }
+  .score .md { border-left: 3px solid #c08a2e; }
+  .score .hi { border-left: 3px solid #2f7d55; }
+  .dim { margin-top: 2.25rem; }
+  .dim h3 { margin-bottom: .2rem; }
+  .tally { font-family: "Geist Mono", ui-monospace, monospace; font-size: .8rem; letter-spacing: .04em; opacity: .7; }
+  @media (max-width: 720px) { .score, .score tbody, .score tr, .score td { display: block; width: 100%; } .score thead { display: none; } .score tbody td { width: auto; } }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>The Interface Scorecard</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#rubric">Rubric</a>
+    <a href="#ban">Delete on sight</a>
+    <a href="#surface">Surface</a>
+    <a href="#system">System</a>
+    <a href="#engineering">Engineering</a>
+    <a href="#slop">AI slop</a>
+    <a href="#audit">Review pass</a>
+    <a href="#prompts">Prompts</a>
+    <a href="#contested">Contested</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>A front end is not a taste argument. It is a <em>scored</em> one.</h1>
+  <p class="sub">Twelve dimensions, each with a written Low / Medium / High descriptor, drawn from twenty talks by working designers, design-system leads, front-end system-design interviewers and AI-build practitioners. Use it to grade an app you already own, then to specify the version that grades higher. Distilled from Jesse Showalter, UI Collective, Ras Mic, Envato Tuts+, Eric Tech, theSeniorDev, uxpeak, Self-Made Web Designer, DesignCode, Dave Ebbelaar, Yashica Jain, AI Foundations, Codex Community and GroundZero.</p>
+  <div class="provenance">20 source videos · 1,307 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-16</div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h21">The answer: score the surface, but fix the system</h2>
+
+  <p id="thesis-p1">Yes — front-end quality is rubric-able, and this guide is the rubric. But the scoring only works if you separate two things the corpus keeps separating. What a reviewer <em>sees</em> is colour, hierarchy, type, spacing, motion. What is actually <em>wrong</em> is almost always one layer down: a token that was never given a role, a component that was never given a state, an accent colour that was never given a budget. Score the surface. Then write the remediation against the system, because with a real design system <cite data-video="vpU9lZY69O4" data-chunk="19" data-quote="once you fix one thing, it affects the entire thing">one fix propagates</cite>, and without one you get a dashboard button and a chat button with different corner radii in the same product <cite data-video="vpU9lZY69O4" data-chunk="1" data-quote="there's inconsistency in my app">inside the same app</cite>.</p>
+
+  <p id="thesis-p2">The corpus is unusually consistent about what separates junior work from senior work, and it is not decoration. It is restraint: one accent colour with a job, one primary action per screen, one content focal point, and a spacing system that is arithmetic rather than opinion. The top-tier login screen in the corpus wins on <cite data-video="XZf5A0wcruE" data-chunk="5" data-quote="using Color hierarchy spacing layout bringing in some imagery">colour, hierarchy, spacing, layout and imagery</cite> — five nouns, no novelty. The senior dashboard wins by removing things, having <cite data-video="XZf5A0wcruE" data-chunk="9" data-quote="Stripped Away a lot of the brand color">stripped away a lot of the brand colour</cite> so the data can speak.</p>
+
+  <blockquote class="epigraph" id="thesis-blockquote1">
+    <p id="thesis-p3">“The old adage is that if everything is on fire then nothing is on fire, and the firefighter doesn't know which area to address.” <cite data-video="XZf5A0wcruE" data-chunk="1" data-quote="if everything is on fire then nothing is on fire">Jesse Showalter, Amateur vs Pro UI Design</cite></p>
+  </blockquote>
+
+  <div class="triptych">
+    <div class="pane">
+      <h3 id="thesis-h31">Score cold, twelve times</h3>
+      <p id="thesis-p4">Run all twelve dimensions before proposing anything. Low = 0, Medium = 1, High = 2, out of 24. The corpus's own self-audit habit is to score out of 100 with a deliberately strict prompt, treat <cite data-video="bkTY9gYkWis" data-chunk="32" data-quote="gave us a score of 67 on 100">67/100 as a real first build</cite>, and treat <cite data-video="bkTY9gYkWis" data-chunk="32" data-quote="anything above 80 is amazing">anything above 80 as launch-ready</cite>. That maps to 19/24 here.</p>
+    </div>
+    <div class="pane">
+      <h3 id="thesis-h32">Name the tier tell</h3>
+      <p id="thesis-p5">Every Low has a signature. Heavy drop shadows everywhere are not a style choice; they are what happens <cite data-video="XZf5A0wcruE" data-chunk="15" data-quote="they start to add too much drop shadow">when someone can't create separation with contrast</cite>. Name the tell, not the vibe.</p>
+    </div>
+    <div class="pane">
+      <h3 id="thesis-h33">Propose at token level</h3>
+      <p id="thesis-p6">A remediation that says “make the buttons nicer” is unscoreable. One that says “introduce <code>border-focus</code> at 2px, retire the three component-specific greys” is. Tokens exist precisely so that <cite data-video="vpU9lZY69O4" data-chunk="2" data-quote="do not need to manually search and replace hex codes">nobody hunts hex codes by hand</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="rubric">
+  <h2 id="rubric-h21">The twelve-dimension scorecard</h2>
+
+  <p id="rubric-p1">Score each dimension Low (0), Medium (1) or High (2). The dimensions are equally weighted — that is an editorial call, not a corpus claim; no source in this corpus weights design dimensions against each other. <span class="tally">Total 0–24 · &lt;10 rebuild · 10–18 remediate · 19+ ship</span></p>
+
+  <p id="rubric-p2">Read the Low column as a detector, not an insult. Most of these failures are one variable away from their High.</p>
+
+  <div class="dim">
+    <h3 id="rubric-h31">1 · Colour discipline</h3>
+    <p class="why" id="rubric-p3">Does the palette have a budget, and does the accent have a job?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">The accent colour appears on icons, labels, input outlines, headers and tertiary links at once, so nothing reads as primary <cite data-video="XZf5A0wcruE" data-chunk="1" data-quote="if everything is on fire then nothing is on fire">everything on fire</cite>. Brand colour is painted onto every chart and box regardless of value <cite data-video="XZf5A0wcruE" data-chunk="8" data-quote="brand color does not have to be used in every pie chart">every pie chart</cite>. Body text is pure <code>#000</code> <cite data-video="B-ytMSuwbf8" data-chunk="47" data-quote="against doing is to use pure black">never pure black</cite>.</td>
+        <td class="md">Accent is reserved for CTAs <cite data-video="XZf5A0wcruE" data-chunk="0" data-quote="reserved for primary calls to action">reserved for CTAs</cite> and roughly follows a 60/30/10 split of neutral, brand and accent <cite data-video="vYvzOyTA2z4" data-chunk="8" data-quote="shows up as the 60, 30 10 rule">60-30-10</cite>, but data visualisation still borrows the brand palette and greys are picked ad hoc.</td>
+        <td class="hi">One purposeful accent threaded through primary, secondary and tertiary actions <cite data-video="XZf5A0wcruE" data-chunk="17" data-quote="Punchy blue that probably in color theory represents professionalism">one purposeful accent</cite>; a tonal “black” built by mixing the brand hue into grey with reusable 75/50/25/10/5% tints <cite data-video="B-ytMSuwbf8" data-chunk="48" data-quote="mixing my primary hue with a bit of gray">tinted black scale</cite>; data viz has its own palette; inside the product, brand colour is largely stripped out <cite data-video="XZf5A0wcruE" data-chunk="9" data-quote="Stripped Away a lot of the brand color">content does the talking</cite>. A black-and-white interface with controlled contrast scores High here <cite data-video="XZf5A0wcruE" data-chunk="3" data-quote="very controlled use of color there's actually no color here">no colour is fine</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h32">2 · Hierarchy and emphasis</h3>
+    <p class="why" id="rubric-p4">Can a first-time user tell, in one second, what this screen is for and what to click?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Two equally weighted, equally sized CTAs force the user to stop and guess <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="equally weighted equally sized call to action button">two equal CTAs</cite>. Text links are indistinguishable from placeholder text <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="no difference in the treatment of this text">invisible links</cite>. In a dashboard, the logo and a giant top bar are the focal point <cite data-video="XZf5A0wcruE" data-chunk="6" data-quote="allow the information to be the thing that's the focal point">chrome outranks content</cite>.</td>
+        <td class="md">One clear primary action, but secondary and tertiary levels are still muddy; heading and label treatments are consistent within a screen but not across screens.</td>
+        <td class="hi">A readable ladder — primary action, secondary action, tertiary text link — each with its own treatment (case, opacity, underline, weight). The interface is treated as a tool, so it is allowed to be plain: <cite data-video="XZf5A0wcruE" data-chunk="7" data-quote="tools should be simple easy straightforward">simple, easy, straightforward</cite>, with <cite data-video="XZf5A0wcruE" data-chunk="10" data-quote="keep the main thing the main thing">the main thing kept the main thing</cite>. Search and filters sit where their scope implies: global controls in the global nav, section filters inside the section <cite data-video="XZf5A0wcruE" data-chunk="18" data-quote="we have some of that Global navigation here">scope by placement</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h33">3 · Typography</h3>
+    <p class="why" id="rubric-p5">Is the type scale generated, or guessed?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Four or more font families; sizes chosen per component; body copy below 16px. Base paragraph size <cite data-video="lsgVRCJ4fko" data-chunk="61" data-quote="your base paragraph size should always be 16">should always be 16</cite>, because at 14 legibility becomes font-and-weight dependent.</td>
+        <td class="md">Two families with intentional contrast — cap the site at two, <cite data-video="vYvzOyTA2z4" data-chunk="10" data-quote="three should be the absolute max">three at the absolute max</cite> — and named heading styles that <cite data-video="23lJ2YAnlC8" data-chunk="4" data-quote="which decrease in size at each increment">decrease at each increment</cite>, but the increments are eyeballed.</td>
+        <td class="hi">Scale generated from a ratio — a major third (1.25) or an <cite data-video="B-ytMSuwbf8" data-chunk="67" data-quote="an augmented fourth scale or 1.414">augmented fourth at 1.414</cite> — with line-height at 1.2× the size and every value <cite data-video="lsgVRCJ4fko" data-chunk="63" data-quote="round each value to the nearest multiple of four">rounded to the nearest multiple of four</cite>. Roles are assigned deliberately: the face with greatest small-size readability carries body, buttons, menus and captions <cite data-video="B-ytMSuwbf8" data-chunk="60" data-quote="the fonts with the greatest readability for smaller elements">readability drives the pairing</cite>; a serif headline is a luxury signal, not a default <cite data-video="B-ytMSuwbf8" data-chunk="58" data-quote="go for a serif font as the big headliner">serif reads premium</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h34">4 · Spacing and alignment</h3>
+    <p class="why" id="rubric-p6">Is whitespace arithmetic, or vibes?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Arbitrary pixel values; ambiguous proximity, where a logo lockup looks half-attached to its heading and grouping reads accidental <cite data-video="XZf5A0wcruE" data-chunk="4" data-quote="put this inside of an auto layout in figma">put it in an auto layout</cite>.</td>
+        <td class="md">An eight-point system is applied to components — <cite data-video="B-ytMSuwbf8" data-chunk="71" data-quote="every dimension is basically a multiple of eight">every dimension a multiple of eight</cite>, e.g. a button at <cite data-video="B-ytMSuwbf8" data-chunk="71" data-quote="a padding of 16 pixels on top and bottom">16px vertical, 32px horizontal</cite> — but section rhythm is inconsistent.</td>
+        <td class="hi">Component spacing and section rhythm both come from the scale, and the rhythm is deliberately re-scaled per breakpoint rather than inherited: <cite data-video="B-ytMSuwbf8" data-chunk="188" data-quote="distance between each major section on large screens is 256">256px between major sections on large screens</cite>, stepping down to 168 on tablet and 96 on phone. A formal grid system is optional and can add unnecessary complexity <cite data-video="B-ytMSuwbf8" data-chunk="74" data-quote="grids can add a certain degree of complexity to a project">grids are optional</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h35">5 · Tokens and design system</h3>
+    <p class="why" id="rubric-p7">Is there one source of truth, and does changing it change the product?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Hex codes and pixel values inline in components. No shared vocabulary, so the same button drifts between screens <cite data-video="vpU9lZY69O4" data-chunk="1" data-quote="there's inconsistency in my app">visible drift</cite>.</td>
+        <td class="md">Variables exist and are named — <code>padding: spacing-medium</code>, <code>color: brand-primary</code> <cite data-video="vpU9lZY69O4" data-chunk="2" data-quote="the design token would look like padding spacing medium">named, not raw</cite> — but some are component-specific, which is always a bad idea because it breaks propagation <cite data-video="lsgVRCJ4fko" data-chunk="36" data-quote="component specific tokens are always a bad idea">no component-only tokens</cite>.</td>
+        <td class="hi">A tiered architecture — primitive/semantic, or brand/alias/mapped for large orgs <cite data-video="lsgVRCJ4fko" data-chunk="10" data-quote="The first is primitive and semantic">two tiers or three</cite> — where every mapped variable falls into surface, border, icon or text, the four categories that <cite data-video="lsgVRCJ4fko" data-chunk="38" data-quote="those four categories cover every possible component">cover every possible component</cite>. Colour scales are derived by opacity-blending the base against white and black so the step size earns the numeric name <cite data-video="lsgVRCJ4fko" data-chunk="17" data-quote="the math behind building the color scales">scales by maths</cite>. Every token carries a written description of when to use it — <cite data-video="r-MPiu0E4W4" data-chunk="84" data-quote="That description is the most important part here">the most important part</cite>, and the thing that lets an agent tell a default surface from a secondary one. Dark mode is a token swap <cite data-video="vpU9lZY69O4" data-chunk="2" data-quote="Global theming tokens make it incredibly easy to introduce a dark mode">theming is free</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h36">6 · Components and states</h3>
+    <p class="why" id="rubric-p8">Does every interactive thing have a full state set, and is anything reused twice a component?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Buttons with a default state only. Copy-pasted markup instead of components. Icons dropped in as raw vectors of different sizes.</td>
+        <td class="md">Default, hover, active and disabled are designed, plus a subdued secondary style — <cite data-video="B-ytMSuwbf8" data-chunk="115" data-quote="consider the different states that element can be in">consider every state</cite> — and variants are merged into one switchable component rather than five near-duplicates <cite data-video="23lJ2YAnlC8" data-chunk="10" data-quote="we have combine as variations">combine as variations</cite>.</td>
+        <td class="hi">All of Medium, plus a visible focus state on its own <code>border-focus</code> token, treated as an accessibility requirement rather than a cosmetic variant <cite data-video="lsgVRCJ4fko" data-chunk="86" data-quote="it's an accessibility variant that you need more than anything">focus is required</cite>. Icons are components with a consistent bounding box so every icon occupies <cite data-video="lsgVRCJ4fko" data-chunk="79" data-quote="the approximate same container size">the same container size</cite>, and share one style — all outline or all solid <cite data-video="B-ytMSuwbf8" data-chunk="79" data-quote="over 1,600 icons. It's free to use">one icon set</cite>. Complex components decompose into atoms: a table has cell and heading atoms, not one rigid table baked around today's columns <cite data-video="r-MPiu0E4W4" data-chunk="103" data-quote="You should have cell atom components">atomic sub-components</cite>. The rule for promotion is blunt — <cite data-video="lsgVRCJ4fko" data-chunk="210" data-quote="if it's used more than once it should be a component">used more than once, it's a component</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h37">7 · Responsive and touch</h3>
+    <p class="why" id="rubric-p9">Does the layout survive the phone, and can a thumb hit it?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Desktop layout squeezed down. Tap targets sized for a cursor, though a finger is much larger <cite data-video="B-ytMSuwbf8" data-chunk="114" data-quote="easy to click but also more importantly easy to tap">easy to tap, not just click</cite>. Mobile nav overlaps the home indicator <cite data-video="wLJ40GV2XEc" data-chunk="6" data-quote="You should not overlap your navigation bar onto it">safe area ignored</cite>.</td>
+        <td class="md">Breakpoints exist — e.g. laptop above 1200px, tablet 1200–600, phone <cite data-video="B-ytMSuwbf8" data-chunk="184" data-quote="phone range with screen sizes of less than 600 pixels">under 600px</cite> — and type scale shifts with them, but spacing and component behaviour are hand-patched per screen.</td>
+        <td class="hi">A single system with per-breakpoint layout variables, so one semantic value like page margin resolves differently on desktop and mobile without duplicating tokens <cite data-video="lsgVRCJ4fko" data-chunk="205" data-quote="used for things like padding uh and gap">breakpoint-scoped padding and gap</cite>; you do not maintain <cite data-video="lsgVRCJ4fko" data-chunk="204" data-quote="a completely different design system for your mobile components">a completely different mobile design system</cite>, only mobile-optimised variants on the components that genuinely change. Bottom nav holds <cite data-video="wLJ40GV2XEc" data-chunk="7" data-quote="aim for three to five tabs, max six tabs">three to five tabs, six at most</cite>, carrying only <cite data-video="wLJ40GV2XEc" data-chunk="2" data-quote="The bottom navigation should only contain the most essential destinations">the most essential destinations</cite>, each with <cite data-video="wLJ40GV2XEc" data-chunk="8" data-quote="a tap area of at least 44 pixels x 44 pixels">at least a 44×44px tap area</cite> and roughly <cite data-video="wLJ40GV2XEc" data-chunk="5" data-quote="an icon size of 24 pixels strikes a good balance">24px icons</cite>. Responsive components degrade gracefully rather than shrinking: strip repeated labels, then stack, then swap labels for icons <cite data-video="B-ytMSuwbf8" data-chunk="184" data-quote="phone range with screen sizes of less than 600 pixels">per-range treatment</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h38">8 · Accessibility</h3>
+    <p class="why" id="rubric-p10">Does it pass contrast, focus and reading order — the three things this corpus actually measures?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">No contrast pass. Muted text picked by eye. Focus ring removed. Multiple H1s per page — an H1 is the one heading element you never duplicate <cite data-video="vYvzOyTA2z4" data-chunk="23" data-quote="Each page should have one H one">one H1 per page</cite>.</td>
+        <td class="md">Text hits roughly <cite data-video="vYvzOyTA2z4" data-chunk="17" data-quote="about 4.5 to one of a contrast ratio">4.5:1 for small text, 3:1 for large</cite>, checked in DevTools, and every palette tint was contrast-checked before the palette was locked <cite data-video="B-ytMSuwbf8" data-chunk="51" data-quote="it has proper contrast compared to its background">checked against its background</cite>.</td>
+        <td class="hi">All of Medium, plus graphical elements such as inactive nav icons clearing the <cite data-video="wLJ40GV2XEc" data-chunk="20" data-quote="minimum contrast ratio of 3:1 for graphical elements">3:1 minimum for graphical elements</cite> via controlled opacity rather than eyeballed washes; a visible focus state tied to a token <cite data-video="lsgVRCJ4fko" data-chunk="86" data-quote="it's an accessibility variant that you need more than anything">focus token</cite>; and an explicit reading order in handoff, because the designer's default left-to-right-then-down is not always <cite data-video="Oo-5AWdQAt8" data-chunk="11" data-quote="the reading order is the logical order">the logical order</cite>. Run an automated accessibility review as a gate — one such pass on a single frame surfaced <cite data-video="r-MPiu0E4W4" data-chunk="74" data-quote="it found 22 issues, three critical, 13 major, and six minor">22 issues: 3 critical, 13 major, 6 minor</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h39">9 · Motion and feedback</h3>
+    <p class="why" id="rubric-p11">Does motion carry information, or is it decoration applied everywhere?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Either no motion at all, or wall-to-wall animation and scroll effects, which makes a site <cite data-video="bkTY9gYkWis" data-chunk="26" data-quote="the website feels playful and visually exhausting">playful and visually exhausting</cite>. Long waits shown as a bare spinner. A signature treatment — a liquid-metal border, a shader — smeared across the whole UI instead of reserved for <cite data-video="hgIonrdRTSE" data-chunk="12" data-quote="should be unique and maybe your call to action buttons">a few unique moments</cite>.</td>
+        <td class="md">Hover and tap feedback exist on primary controls; transitions are present but unmodulated across the page.</td>
+        <td class="hi">Motion has rhythm: high-motion sections alternate with calm static ones, and purposeful motion is what <cite data-video="bkTY9gYkWis" data-chunk="2" data-quote="purposeful animation, purposeful motion really takes the website">turns a layout into an experience</cite>. State changes are legible — an active tab gets <cite data-video="wLJ40GV2XEc" data-chunk="11" data-quote="apply at least two visual changes">at least two simultaneous visual changes</cite>, plus <cite data-video="wLJ40GV2XEc" data-chunk="21" data-quote="add a small sliding underline">a sliding underline between tabs</cite>. Waiting is narrated, not spun: a per-phase text label with <cite data-video="qF5il_9IwME" data-chunk="145" data-quote="a gradient wipe of color of gray">a gradient wipe</cite> rather than dots, or intentional loaders that make dead time <cite data-video="hgIonrdRTSE" data-chunk="8" data-quote="these dot matrix loaders">feel deliberate</cite>. Stylised shadows are allowed when they are <cite data-video="XZf5A0wcruE" data-chunk="12" data-quote="they're thick they're bold they're on purpose">thick, bold and on purpose</cite> and confined to elements that deserve attention.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h310">10 · Performance and data</h3>
+    <p class="why" id="rubric-p12">Are the non-functional requirements quantified, or asserted?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">“It feels fast.” Uncompressed PNG/JPEG heroes. Every keystroke fires an API call. Live widgets poll on a timer, which at scale means clients <cite data-video="gXwF0VbTKvs" data-chunk="25" data-quote="They will DDoS your back end.">DDoS your own back end</cite>.</td>
+        <td class="md">Some measurement — First Contentful Paint and Time to Interactive tracked in DevTools before optimising <cite data-video="YO7R0rYWDl8" data-chunk="2" data-quote="track the first contentful paint and time to interactive">measure first</cite> — plus compressed WebP assets that take a multi-megabyte image down to about 100KB <cite data-video="vYvzOyTA2z4" data-chunk="25" data-quote="the other is a compressed WebP image">WebP</cite>.</td>
+        <td class="hi">Goals stated as <cite data-video="gXwF0VbTKvs" data-chunk="3" data-quote="you quantify that with core web vitals">Core Web Vitals plus real-user monitoring</cite> and broken into the three named dimensions — <cite data-video="gXwF0VbTKvs" data-chunk="21" data-quote="the three dimensions, which are basically loading speed">loading speed, input responsiveness, layout stability</cite>. A deliberate rendering strategy chosen from the <cite data-video="YO7R0rYWDl8" data-chunk="0" data-quote="five main different strategies that we can use">five available</cite>. Re-render discipline via memoised components <cite data-video="YO7R0rYWDl8" data-chunk="3" data-quote="memorize the component so that it only rerenders if the props change">React.memo</cite>, lazy loading so heavy charts <cite data-video="YO7R0rYWDl8" data-chunk="4" data-quote="load components when the user needs them">load on demand</cite>, caching by read/write ratio <cite data-video="gXwF0VbTKvs" data-chunk="29" data-quote="what we call the read write ratio of a resource">read/write ratio</cite>, and search inputs debounced by <cite data-video="YO7R0rYWDl8" data-chunk="11" data-quote="wait 500 milliseconds after user stop typing">500ms</cite>. Visual richness is not an excuse for weight: a fully 3D landing page in the corpus shipped at <cite data-video="G-F5Qvy-7KM" data-chunk="0" data-quote="less than 1 meg in term of file size">under 1MB</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h311">11 · Content, trust and conversion</h3>
+    <p class="why" id="rubric-p13">Is the page honest, and does it have one job?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">Fabricated testimonials — <cite data-video="B-ytMSuwbf8" data-chunk="138" data-quote="not use fake testimonials ever">never, it's unethical and illegal</cite>. Generic “people at work” stock <cite data-video="B-ytMSuwbf8" data-chunk="81" data-quote="stay away from stock photos as much as possible">stock clichés</cite>. A ten-field contact form. Deleted URLs that <cite data-video="vYvzOyTA2z4" data-chunk="26" data-quote="it sends them to a 4 0 4 page">404 instead of redirecting</cite>.</td>
+        <td class="md">Real copy and real photography; a hero that carries the strongest message and a CTA in the <cite data-video="B-ytMSuwbf8" data-chunk="100" data-quote="the area immediately below or next to the header">prime above-the-fold real estate</cite>; a minimal contact form of <cite data-video="B-ytMSuwbf8" data-chunk="166" data-quote="all you need is their name, email address, and their message">name, email, message</cite>.</td>
+        <td class="hi">All of Medium, plus imagery that looks <cite data-video="vYvzOyTA2z4" data-chunk="11" data-quote="taken by the same photographer at the same photo shoot">shot by one photographer in one session</cite>, a hero carrying a real image or video because <cite data-video="bkTY9gYkWis" data-chunk="16" data-quote="text-only heroes look plain">text-only heroes look plain</cite>, and instrumented outcomes: analytics key events fired <cite data-video="vYvzOyTA2z4" data-chunk="35" data-quote="anytime somebody maybe buys a product or fills out a form">on purchase or form fill</cite> so a redesign can be proven rather than argued.</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <div class="dim">
+    <h3 id="rubric-h312">12 · Distinctiveness</h3>
+    <p class="why" id="rubric-p14">Could you tell this product from the other forty built the same week?</p>
+    <table class="score">
+      <thead><tr><th>Low (0)</th><th>Medium (1)</th><th>High (2)</th></tr></thead>
+      <tbody><tr>
+        <td class="lo">The default generated look — <cite data-video="bkTY9gYkWis" data-chunk="5" data-quote="same purple gradients, same inter font">same purple gradients, same Inter font</cite> — recognisable on sight as <cite data-video="vpU9lZY69O4" data-chunk="0" data-quote="you can tell if it's just fully been designed with AI">fully AI-designed</cite>. Produced by a vague brief: ask for something too vague and <cite data-video="G-F5Qvy-7KM" data-chunk="5" data-quote="you ask something too vague, and then you get something extremely standard">you get something extremely standard</cite>.</td>
+        <td class="md">A stated aesthetic direction chosen before code, with real typography pairing and a cohesive colour system rather than default components <cite data-video="bkTY9gYkWis" data-chunk="7" data-quote="pick an actual aesthetic direction before writing the code">direction first</cite>.</td>
+        <td class="hi">A specific reference was curated, then moulded rather than cloned — the skill is growing enough <cite data-video="G-F5Qvy-7KM" data-chunk="15" data-quote="grow your vocabulary, your taste, your ability to">vocabulary and taste</cite> to turn a copy into something of your own — and the builder's own judgement is visibly in it, because with <cite data-video="vpU9lZY69O4" data-chunk="11" data-quote="no sauce or input from you">no sauce or input from you</cite> the product looks like everybody else's. One or two signature moments (a shader hero, a liquid-metal CTA border) are held in reserve <cite data-video="hgIonrdRTSE" data-chunk="1" data-quote="an animated liquid metal border component">used sparingly</cite>.</td>
+      </tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="ban">
+  <h2 id="ban-h21">Delete on sight</h2>
+  <p id="ban-p1">Findings that need no debate. If the reviewing agent sees the left column, it writes the right column into the remediation plan without asking.</p>
+  <table class="ban" id="ban-table1">
+    <thead><tr><th>Delete on sight</th><th>Replace with</th></tr></thead>
+    <tbody>
+      <tr><td>Accent colour on icons, labels, borders and links simultaneously <cite data-video="XZf5A0wcruE" data-chunk="1" data-quote="if everything is on fire then nothing is on fire">everything on fire</cite></td><td>Accent reserved for primary CTAs only <cite data-video="XZf5A0wcruE" data-chunk="0" data-quote="reserved for primary calls to action">one job</cite></td></tr>
+      <tr><td>A second CTA with equal size and weight <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="equally weighted equally sized call to action button">guess which</cite></td><td>A text link: “Don't have an account? Register”</td></tr>
+      <tr><td>Pure <code>#000</code> body text <cite data-video="B-ytMSuwbf8" data-chunk="47" data-quote="against doing is to use pure black">too harsh</cite></td><td>A brand-tinted grey with derived 75/50/25/10/5% tints <cite data-video="B-ytMSuwbf8" data-chunk="48" data-quote="mixing my primary hue with a bit of gray">tonal scale</cite></td></tr>
+      <tr><td>Drop shadows and line separators on everything <cite data-video="XZf5A0wcruE" data-chunk="15" data-quote="they start to add too much drop shadow">a contrast tell</cite></td><td>Separation by colour and contrast; shadows only where attention belongs <cite data-video="XZf5A0wcruE" data-chunk="12" data-quote="they're thick they're bold they're on purpose">on purpose</cite></td></tr>
+      <tr><td>Brand colour applied to every chart series <cite data-video="XZf5A0wcruE" data-chunk="8" data-quote="brand color does not have to be used in every pie chart">meaningless data viz</cite></td><td>A data-visualisation palette where value drives hue</td></tr>
+      <tr><td>Component-specific tokens <cite data-video="lsgVRCJ4fko" data-chunk="36" data-quote="component specific tokens are always a bad idea">always a bad idea</cite></td><td>Mapped tokens in surface / border / icon / text <cite data-video="lsgVRCJ4fko" data-chunk="38" data-quote="those four categories cover every possible component">four categories</cite></td></tr>
+      <tr><td>Body text under 16px <cite data-video="lsgVRCJ4fko" data-chunk="61" data-quote="your base paragraph size should always be 16">accessibility floor</cite></td><td>16px base with a ratio-derived scale rounded to multiples of four <cite data-video="lsgVRCJ4fko" data-chunk="63" data-quote="round each value to the nearest multiple of four">rounded</cite></td></tr>
+      <tr><td>Removed focus rings <cite data-video="lsgVRCJ4fko" data-chunk="86" data-quote="it's an accessibility variant that you need more than anything">not cosmetic</cite></td><td>A 2px focus border on its own <code>border-focus</code> token</td></tr>
+      <tr><td>Mixed outline and solid icons at varying sizes <cite data-video="lsgVRCJ4fko" data-chunk="79" data-quote="the approximate same container size">inconsistent boxes</cite></td><td>One icon set, one bounding box, built as components</td></tr>
+      <tr><td>Help, log out and legal in the bottom nav <cite data-video="wLJ40GV2XEc" data-chunk="3" data-quote="No one logs out that frequently">nobody needs those at hand</cite></td><td>Three to five essential destinations; everything else in profile or a side menu <cite data-video="wLJ40GV2XEc" data-chunk="7" data-quote="aim for three to five tabs, max six tabs">3–5 tabs</cite></td></tr>
+      <tr><td>Per-keystroke API calls and interval polling <cite data-video="gXwF0VbTKvs" data-chunk="25" data-quote="They will DDoS your back end.">self-inflicted load</cite></td><td>500ms debounce <cite data-video="YO7R0rYWDl8" data-chunk="11" data-quote="wait 500 milliseconds after user stop typing">debounce</cite> and Server-Sent Events for one-way live data <cite data-video="gXwF0VbTKvs" data-chunk="27" data-quote="This is a native API where you listen to an URL">SSE</cite></td></tr>
+      <tr><td>Inline citations or detail links that open a new browser tab <cite data-video="qF5il_9IwME" data-chunk="147" data-quote="click on the inline citations it opens a new browser tab">context lost</cite></td><td>A slide-over panel that reveals the source in place <cite data-video="qF5il_9IwME" data-chunk="123" data-quote="a slide out panel from the side where we can">slide-over</cite></td></tr>
+      <tr><td>Fake testimonials <cite data-video="B-ytMSuwbf8" data-chunk="138" data-quote="not use fake testimonials ever">never</cite></td><td>Nothing, until a real client says something real</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="surface">
+  <h2 id="surface-h21">Moving the surface dimensions up a tier</h2>
+  <p id="surface-p1">Dimensions 1–4 are where a reviewer forms their verdict in the first second. Each one has a small number of levers that reliably move a Low to a High.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="surface-h31">Colour</h3>
+      <ul>
+        <li id="surface-li1">Give the accent a budget before you pick it. It is for primary calls to action and primary areas of concern <cite data-video="XZf5A0wcruE" data-chunk="0" data-quote="reserved for primary calls to action">nothing else</cite>.</li>
+        <li id="surface-li2">Start from three core colours — primary, secondary, background — before any accent exists <cite data-video="23lJ2YAnlC8" data-chunk="5" data-quote="I want to have three main colors">three main colours</cite>, and store each as a variable, not a filled shape <cite data-video="23lJ2YAnlC8" data-chunk="6" data-quote="This is now stored as a color variable.">as a variable</cite>.</li>
+        <li id="surface-li3">Allocate roughly 60% neutral, 30% brand, 10% accent <cite data-video="vYvzOyTA2z4" data-chunk="8" data-quote="shows up as the 60, 30 10 rule">60-30-10</cite>.</li>
+        <li id="surface-li4">Build tints, shades and tones deliberately — white, black and grey mixed into the base <cite data-video="B-ytMSuwbf8" data-chunk="25" data-quote="a tint is when you add white to a specific color">tint, shade, tone</cite> — and work in RGB/HSB for screens, with hex as the exchange format <cite data-video="B-ytMSuwbf8" data-chunk="33" data-quote="the hex format is the most popular">hex for the web</cite>.</li>
+        <li id="surface-li5">In practice, only three harmonies get used: analogous, monochromatic, complementary <cite data-video="B-ytMSuwbf8" data-chunk="39" data-quote="monochromatic and complimentary are the most used">the three that matter</cite>. Blue is the internet's most-used colour because it reads as trust <cite data-video="B-ytMSuwbf8" data-chunk="36" data-quote="the most used color on the internet, fun fact">most used</cite> — which is an argument for choosing it deliberately, not by default.</li>
+        <li id="surface-li6">Internal and enterprise tools earn a restricted palette. One team deliberately shipped black, white and grey because simplicity read as more proper for the use case <cite data-video="qF5il_9IwME" data-chunk="131" data-quote="we just simply use black and white">black and white on purpose</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="surface-h32">Hierarchy</h3>
+      <ul>
+        <li id="surface-li7">One primary action per screen. A second equally weighted CTA is the single most common junior tell <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="equally weighted equally sized call to action button">demote it to a link</cite>.</li>
+        <li id="surface-li8">Differentiate every text role: label, placeholder, body, link. Uppercase, opacity, underline — pick a treatment, but pick one <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="no difference in the treatment of this text">links must look like links</cite>.</li>
+        <li id="surface-li9">In dense tools, cut the chrome. Shrink the top bar and sidebar until the charts, not the logo, are the focal point <cite data-video="XZf5A0wcruE" data-chunk="6" data-quote="allow the information to be the thing that's the focal point">content first</cite>. Once the user is inside the product, <cite data-video="XZf5A0wcruE" data-chunk="11" data-quote="it's not a branding moment anymore">it's not a branding moment anymore</cite>.</li>
+        <li id="surface-li10">Place controls by scope: global search in the global nav, section filters in the section, so users can predict what a control will affect <cite data-video="XZf5A0wcruE" data-chunk="18" data-quote="we have some of that Global navigation here">scope reads from position</cite>.</li>
+        <li id="surface-li11">Choose the right disclosure pattern: tabs show exactly one panel; accordions can show several and suit simple text, which is why FAQs use them <cite data-video="B-ytMSuwbf8" data-chunk="158" data-quote="accordians can display multiple panels at once">tabs vs accordions</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="surface-h33">Type</h3>
+      <ul>
+        <li id="surface-li12">Anchor the scale at a 16px base, then generate upward with a ratio and 1.2× line-height, rounding to multiples of four <cite data-video="lsgVRCJ4fko" data-chunk="63" data-quote="round each value to the nearest multiple of four">no unnatural jumps</cite>.</li>
+        <li id="surface-li13">If you need airier display type, raise the base deliberately — one worked example uses a 21px base <cite data-video="B-ytMSuwbf8" data-chunk="66" data-quote="use a base font size of 21 pixels">21px base</cite> with an augmented fourth ratio.</li>
+        <li id="surface-li14">Every size becomes a named style, never a one-off. Build H1 through H5 as reusable styles so a change is one edit <cite data-video="23lJ2YAnlC8" data-chunk="4" data-quote="which decrease in size at each increment">named styles</cite>, starting around <cite data-video="23lJ2YAnlC8" data-chunk="3" data-quote="maybe something like 36 pixels">36px for H1</cite>.</li>
+        <li id="surface-li15">Pair by contrast and by role. Brandon Grotesque over Proxima Nova works because Proxima stays legible at 16–18px where the display face does not <cite data-video="B-ytMSuwbf8" data-chunk="64" data-quote="pairs very well with Proximanova">a worked pairing</cite>.</li>
+        <li id="surface-li16">Source from Google Fonts or Adobe Fonts; the paid library buys you filtering by weight, width and x-height <cite data-video="B-ytMSuwbf8" data-chunk="55" data-quote="get your fonts from either Google Fonts or Adobe Fonts">two sources</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="surface-h34">Space</h3>
+      <ul>
+        <li id="surface-li17">Adopt eight-point spacing and apply it to margins, padding, widths and heights alike — the payoff is consistency and an easier developer handoff <cite data-video="B-ytMSuwbf8" data-chunk="71" data-quote="every dimension is basically a multiple of eight">multiples of eight</cite>.</li>
+        <li id="surface-li18">Fix grouping with layout, not nudging. Putting a lockup inside an auto layout with consistent spacing makes the grouping read as intentional <cite data-video="XZf5A0wcruE" data-chunk="4" data-quote="put this inside of an auto layout in figma">auto layout</cite>; auto layout behaves like flexbox <cite data-video="23lJ2YAnlC8" data-chunk="12" data-quote="using flex if you've ever used that in web design">like flex</cite>, and text blocks set to hug their container re-space themselves as copy changes <cite data-video="23lJ2YAnlC8" data-chunk="18" data-quote="get it to hug its container">hug contents</cite>.</li>
+        <li id="surface-li19">Re-scale section rhythm per breakpoint rather than letting desktop whitespace ride down to the phone: 256 → 168 → 96 <cite data-video="B-ytMSuwbf8" data-chunk="188" data-quote="distance between each major section on large screens is 256">stepped rhythm</cite>.</li>
+        <li id="surface-li20">A formal grid is optional; rulers and guides are often enough and are easier to keep honest <cite data-video="B-ytMSuwbf8" data-chunk="74" data-quote="grids can add a certain degree of complexity to a project">optional complexity</cite>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="system">
+  <h2 id="system-h21">The system underneath the score</h2>
+
+  <p id="system-p1">Dimensions 5 and 6 are where remediation should be written, because they are the only place a fix becomes permanent. A design system is <cite data-video="vpU9lZY69O4" data-chunk="1" data-quote="A design system is a single source of truth">a single source of truth for all things design</cite>: components, guidelines and brand identity in one place. A token is not a hex code — it is a hex code that has been given <cite data-video="lsgVRCJ4fko" data-chunk="1" data-quote="colors and attributes that are assigned to components">a role and assigned to components</cite>.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="system-h31">Build the token layer</h3>
+      <ul>
+        <li id="system-li1">Pick an architecture and stick to it: two-tier primitive/semantic, or three-tier brand/alias/mapped when many brand scales must coexist <cite data-video="lsgVRCJ4fko" data-chunk="10" data-quote="The first is primitive and semantic">two or three tiers</cite>.</li>
+        <li id="system-li2">Derive colour scales by blending the base against white and black at 80/60/40/20/10% so the numeric names (100, 200, 950) are earned by the step size rather than guessed <cite data-video="lsgVRCJ4fko" data-chunk="17" data-quote="the math behind building the color scales">scale maths</cite>.</li>
+        <li id="system-li3">Keep the small token families genuinely small. You rarely need more than three or four border widths or radii <cite data-video="lsgVRCJ4fko" data-chunk="69" data-quote="do you really need more than four border widths">none/small/medium/large</cite>.</li>
+        <li id="system-li4">Write the usage description for every variable. Without it neither a human nor an agent can tell a default surface from a secondary one — <cite data-video="r-MPiu0E4W4" data-chunk="84" data-quote="That description is the most important part here">the description is the most important part</cite>.</li>
+        <li id="system-li5">Never let one component own a token <cite data-video="lsgVRCJ4fko" data-chunk="36" data-quote="component specific tokens are always a bad idea">always bad</cite>. The whole return on tokens is that a brand change propagates and nobody <cite data-video="vpU9lZY69O4" data-chunk="2" data-quote="do not need to manually search and replace hex codes">search-and-replaces hex codes</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="system-h32">Build the component layer</h3>
+      <ul>
+        <li id="system-li6">Componentise on the second use <cite data-video="lsgVRCJ4fko" data-chunk="210" data-quote="if it's used more than once it should be a component">used twice, componentise</cite> — but don't push single-use flow elements into the shared library.</li>
+        <li id="system-li7">Design the state set before the styling: default, hover, active, disabled, plus a subdued secondary <cite data-video="B-ytMSuwbf8" data-chunk="115" data-quote="consider the different states that element can be in">every state</cite>.</li>
+        <li id="system-li8">Merge near-duplicates into one component with switchable variants rather than shipping a component per variant <cite data-video="23lJ2YAnlC8" data-chunk="10" data-quote="we have combine as variations">combine as variations</cite>.</li>
+        <li id="system-li9">Decompose complex components into atoms — cell atoms, heading atoms — so a table isn't welded to one column set <cite data-video="r-MPiu0E4W4" data-chunk="103" data-quote="You should have cell atom components">atoms, not monoliths</cite>.</li>
+        <li id="system-li10">For mobile, add a mobile-optimised variant to the components that actually change; don't fork the system <cite data-video="lsgVRCJ4fko" data-chunk="204" data-quote="a completely different design system for your mobile components">one system</cite>.</li>
+        <li id="system-li11">Name every layer and group as you create it. Waiting leaves you with dozens of indistinguishable groups <cite data-video="23lJ2YAnlC8" data-chunk="8" data-quote="I always prefer to set the group names immediately">name immediately</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="system-h33">Keep it in sync</h3>
+      <ul>
+        <li id="system-li12">If the dev side adopts a framework like Radix, rename every Figma variant and property to match its documentation exactly, or <cite data-video="lsgVRCJ4fko" data-chunk="229" data-quote="the dev side will not be as good">the dev side suffers</cite> and you accrue technical debt from two conflicting sources of truth <cite data-video="lsgVRCJ4fko" data-chunk="232" data-quote="if they don't see onetoone alignment">one-to-one or confusion</cite>.</li>
+        <li id="system-li13">Do not clone a public design system wholesale. Carbon and Polaris encode years of another organisation's debt and history — <cite data-video="lsgVRCJ4fko" data-chunk="235" data-quote="I always say absolutely do not do that">absolutely do not do that</cite>.</li>
+        <li id="system-li14">Budget for the tooling reality: publishing a Figma library requires a paid workspace <cite data-video="lsgVRCJ4fko" data-chunk="200" data-quote="you need to be inside of a paid Figma workspace">paid tier</cite>, and dev mode is a separate seat you may need to negotiate temporary access to <cite data-video="lsgVRCJ4fko" data-chunk="226" data-quote="it's like a separate seat for your developers">separate seat</cite>.</li>
+        <li id="system-li15">Keep design-system CSS separable from app code at the build level: it changes far less often, so it caches independently <cite data-video="gXwF0VbTKvs" data-chunk="29" data-quote="the CSS in the design system, it's usually more stable">more stable than the app</cite>. CSS-in-JS injects style tags into the document and defeats that.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p id="system-p2">Two paths into the system exist in the corpus and both are legitimate. You can hand-build it: a dedicated style-guide page split into typography, colour and illustration frames <cite data-video="23lJ2YAnlC8" data-chunk="1" data-quote="size at 1440 x1024 for the height and width">on a 1440×1024 canvas</cite>, before any real page layout. Or you can seed it: download the one component whose look you want and tell the agent to <cite data-video="hgIonrdRTSE" data-chunk="11" data-quote="create a design system. Design system based on this component">create a design system based on this component</cite>, or feed a full-page screenshot with <cite data-video="vpU9lZY69O4" data-chunk="5" data-quote="Please create a design system with the attached page">“please create a design system with the attached page”</cite>. If you have no reference at all, Vercel publishes its own design.md in light and dark as a starting base <cite data-video="vpU9lZY69O4" data-chunk="11" data-quote="they basically have their design system">a public base</cite>. What the corpus disputes is how far the seeded version gets you — see <a href="#contested">Contested</a>.</p>
+</section>
+
+<section id="engineering">
+  <h2 id="engineering-h21">The non-functional half</h2>
+
+  <p id="engineering-p1">Dimensions 7, 8 and 10 fail silently. A designer reviewing screenshots will never catch them, which is exactly why they belong in a rubric. Separate what the UI must do from how well it does it at the very start — the difference between whether a car <cite data-video="gXwF0VbTKvs" data-chunk="2" data-quote="does it take me from A to B">takes you from A to B</cite> and how efficiently it does so.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="engineering-h31">Rendering and bundle</h3>
+      <ul>
+        <li id="engineering-li1">Choose deliberately among static generation, incremental static regeneration, server-side rendering, client-side rendering and partial pre-rendering <cite data-video="YO7R0rYWDl8" data-chunk="0" data-quote="five main different strategies that we can use">five strategies</cite>.</li>
+        <li id="engineering-li2">Measure before optimising: First Contentful Paint and Time to Interactive in the DevTools performance tab <cite data-video="YO7R0rYWDl8" data-chunk="2" data-quote="track the first contentful paint and time to interactive">FCP and TTI</cite>.</li>
+        <li id="engineering-li3">Stop cascade re-renders with memoised components <cite data-video="YO7R0rYWDl8" data-chunk="3" data-quote="memorize the component so that it only rerenders if the props change">React.memo</cite>, memoised callbacks <cite data-video="YO7R0rYWDl8" data-chunk="3" data-quote="memorize the functions to prevent the unnecessary function Recreations">useCallback</cite> and cached computations <cite data-video="YO7R0rYWDl8" data-chunk="3" data-quote="cach the expensive calculations of a function to avoid recompute">useMemo</cite>.</li>
+        <li id="engineering-li4">Lazy-load heavy analytics and chart components on demand <cite data-video="YO7R0rYWDl8" data-chunk="4" data-quote="load components when the user needs them">on demand</cite>, and shrink what's left with <cite data-video="YO7R0rYWDl8" data-chunk="4" data-quote="tree shakings to remove the unus code and split bundles">tree shaking and bundle splitting</cite>.</li>
+        <li id="engineering-li5">Prefer Vite for new builds; reach for a Webpack-compatible Rust bundler only when you're speeding up an existing Webpack setup <cite data-video="gXwF0VbTKvs" data-chunk="18" data-quote="nowadays most people use things like Vite">Vite by default</cite>. When a front end grows past safe deploys, split it into independently deployable micro-frontends <cite data-video="YO7R0rYWDl8" data-chunk="1" data-quote="splitting the application into independent and Deployable pieces">micro-frontends</cite> loaded via <cite data-video="YO7R0rYWDl8" data-chunk="1" data-quote="module federations using webpack 5">Module Federation</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="engineering-h32">Data and state</h3>
+      <ul>
+        <li id="engineering-li6">Keep state shapes simple. When two values are always fetched and used together, merge them — <cite data-video="gXwF0VbTKvs" data-chunk="12" data-quote="simple is always better than complex">simple beats complex</cite>.</li>
+        <li id="engineering-li7">Don't write custom fetch hooks. Plain <code>useState</code> for component state, a library like TanStack for fetching and caching <cite data-video="gXwF0VbTKvs" data-chunk="15" data-quote="use an external library like TanStack">TanStack</cite>.</li>
+        <li id="engineering-li8">Cache server responses in client state so repeat reads don't re-fetch <cite data-video="YO7R0rYWDl8" data-chunk="5" data-quote="use State Management to reduce the number of calls">fewer calls</cite>, but set an expiry, because other users mutate the same data <cite data-video="YO7R0rYWDl8" data-chunk="7" data-quote="setting an expiration on our cache">expire it</cite> — in React Query that's <cite data-video="YO7R0rYWDl8" data-chunk="8" data-quote="setting a stale time which is a expiration">staleTime</cite>.</li>
+        <li id="engineering-li9">Cut overfetching at the API shape: request only the fields the UI renders <cite data-video="YO7R0rYWDl8" data-chunk="9" data-quote="reduce the over fashion data">GraphQL</cite>, with in-memory caching on repeat queries <cite data-video="YO7R0rYWDl8" data-chunk="9" data-quote="aollo client also supports in memory caching as well">Apollo cache</cite>.</li>
+        <li id="engineering-li10">Paginate with a cursor for feeds: fetch N+1 so the extra row tells you whether more exists, accepting that you lose arbitrary page jumps <cite data-video="YO7R0rYWDl8" data-chunk="13" data-quote="take 11 items and the reason why we take 11 items">11 for 10</cite>.</li>
+        <li id="engineering-li11">Insert a backend-for-frontend when the upstream API shape is volatile or you don't own it, so the UI depends on <cite data-video="gXwF0VbTKvs" data-chunk="24" data-quote="a BFF to provide like a stable interface for the front end">a stable interface</cite> — which also narrows the search space when an agent does root-cause analysis.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="engineering-h33">Live data and weight</h3>
+      <ul>
+        <li id="engineering-li12">Never poll from the client for live widgets. Ten graphs on one screen at a two-second interval is ten requests per client per tick — <cite data-video="gXwF0VbTKvs" data-chunk="25" data-quote="They will DDoS your back end.">they will DDoS your back end</cite>.</li>
+        <li id="engineering-li13">For server-to-client-only updates, Server-Sent Events are the native fit; WebSockets are overkill unless the client also pushes <cite data-video="gXwF0VbTKvs" data-chunk="27" data-quote="This is a native API where you listen to an URL">SSE</cite>.</li>
+        <li id="engineering-li14">Decide what to cache by read/write ratio: yesterday's time-series point never changes, so cache it hard; only the newest point can't be <cite data-video="gXwF0VbTKvs" data-chunk="29" data-quote="what we call the read write ratio of a resource">read/write ratio</cite>.</li>
+        <li id="engineering-li15">Compress and convert images; the same asset drops from megabytes to around 100KB with no visible loss <cite data-video="vYvzOyTA2z4" data-chunk="25" data-quote="the other is a compressed WebP image">WebP</cite>. Rich does not mean heavy: an interactive 3D landing page in this corpus shipped <cite data-video="G-F5Qvy-7KM" data-chunk="0" data-quote="less than 1 meg in term of file size">under 1MB</cite>.</li>
+        <li id="engineering-li16">Size the deployment for the traffic. A chat-style app for around 40 concurrent users was sized at <cite data-video="qF5il_9IwME" data-chunk="182" data-quote="two vCPUs and then four gigs of RAM">2 vCPUs and 4GB RAM</cite>, with 1GB called out as too low.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="engineering-h34">Accessibility and handoff</h3>
+      <ul>
+        <li id="engineering-li17">Check contrast before the palette is locked, not after — several tints in a tonal scale will fail <cite data-video="B-ytMSuwbf8" data-chunk="51" data-quote="it has proper contrast compared to its background">proper contrast against its background</cite>.</li>
+        <li id="engineering-li18">Targets: roughly <cite data-video="vYvzOyTA2z4" data-chunk="17" data-quote="about 4.5 to one of a contrast ratio">4.5:1 for small text</cite>, 3:1 for large text, and <cite data-video="wLJ40GV2XEc" data-chunk="20" data-quote="minimum contrast ratio of 3:1 for graphical elements">3:1 for graphical elements</cite> including inactive nav icons.</li>
+        <li id="engineering-li19">One H1 per page, stating the page's topic — the one heading you never duplicate <cite data-video="vYvzOyTA2z4" data-chunk="23" data-quote="Each page should have one H one">one H1</cite>.</li>
+        <li id="engineering-li20">Annotate reading order in handoff files. Free stamps exist for it <cite data-video="Oo-5AWdQAt8" data-chunk="13" data-quote="the web accessibility annotation kit by CVS Health">the CVS Health annotation kit</cite> — but place the numbers yourself, because <cite data-video="Oo-5AWdQAt8" data-chunk="14" data-quote="never ever ever just take the output that AI gives you">never forward raw AI annotations</cite>.</li>
+        <li id="engineering-li21">Prototype the journey before handoff by linking screens so navigation problems surface early <cite data-video="B-ytMSuwbf8" data-chunk="204" data-quote="an interactive mockup of your design that allows you">an interactive mockup</cite>. Test mobile on a real device; a preview that looks fine on your monitor can feel wrong under a thumb <cite data-video="wLJ40GV2XEc" data-chunk="6" data-quote="You should not overlap your navigation bar onto it">safe area</cite>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="slop">
+  <h2 id="slop-h21">Dimension 12, in detail: what AI slop actually is</h2>
+
+  <p id="slop-p1">Distinctiveness is the dimension most reviewers skip and most users notice. The corpus is specific about the tell: the default output is <cite data-video="bkTY9gYkWis" data-chunk="5" data-quote="same purple gradients, same inter font">the same purple gradients, the same Inter font</cite>, and a fully AI-designed app is visually identifiable by its <cite data-video="vpU9lZY69O4" data-chunk="0" data-quote="you can tell if it's just fully been designed with AI">smell</cite> — odd borders, generic components, no point of view. The root cause is upstream of the model: <cite data-video="G-F5Qvy-7KM" data-chunk="5" data-quote="you ask something too vague, and then you get something extremely standard">ask something too vague and you get something extremely standard</cite>.</p>
+
+  <p id="slop-p2">There is also an honest cost. Getting non-slop output is not the cheap path — high-fidelity AI design costs meaningfully more in tokens, money and time <cite data-video="G-F5Qvy-7KM" data-chunk="14" data-quote="yes, it will lose a lot of tokens">it will lose a lot of tokens</cite>. In one controlled dashboard-generation test, one model returned great quality in <cite data-video="r-MPiu0E4W4" data-chunk="21" data-quote="took 2 minutes and 47,000 tokens">2 minutes and 47,000 tokens</cite> while a canvas-native tool burned <cite data-video="r-MPiu0E4W4" data-chunk="28" data-quote="That one dashboard burned through 155.4,000 tokens">155,400 tokens on a single dashboard</cite>. Budget for it or accept the score.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="slop-h31">Raise the floor</h3>
+      <ul>
+        <li id="slop-li1">Install a design skill that forces a decision before code: pick a real aesthetic direction, require genuine typography pairing, block generic components, enforce CSS variables <cite data-video="bkTY9gYkWis" data-chunk="7" data-quote="pick an actual aesthetic direction before writing the code">direction before code</cite>.</li>
+        <li id="slop-li2">Hand-pick two or three skills. Installing everything from a repository burns context and <cite data-video="bkTY9gYkWis" data-chunk="6" data-quote="it might just confuse Claude Code">confuses the agent</cite>.</li>
+        <li id="slop-li3">Run design work at high reasoning effort. Extra-high is described as <cite data-video="G-F5Qvy-7KM" data-chunk="13" data-quote="extra is my bare minimum here">the bare minimum</cite> for non-slop output — though see <a href="#contested">Contested</a> on the cost of maxing it everywhere.</li>
+        <li id="slop-li4">Once a technique works, capture it as a reusable skill instead of re-prompting it <cite data-video="G-F5Qvy-7KM" data-chunk="23" data-quote="you want to tell your AI to turn that into skills">turn it into skills</cite>; directories exist for finding them <cite data-video="G-F5Qvy-7KM" data-chunk="24" data-quote="really good for finding the skills">skill directories</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="slop-h32">Raise the ceiling</h3>
+      <ul>
+        <li id="slop-li5">Seed with real references — three to five screenshots from sites you admire, so the model infers taste instead of guessing from adjectives <cite data-video="bkTY9gYkWis" data-chunk="13" data-quote="you can share screenshots you like">share screenshots</cite>.</li>
+        <li id="slop-li6">Or let the agent fetch them: an inspiration MCP server can be asked to <cite data-video="G-F5Qvy-7KM" data-chunk="9" data-quote="find the top UI for a mobile design for a travel app">find the top UI for a mobile travel app</cite>, and then to <cite data-video="r-MPiu0E4W4" data-chunk="37" data-quote="break down the visual direction of Bright Analytics into key themes">break a visual direction down into key themes</cite>.</li>
+        <li id="slop-li7">Clone, then mould. Pasting a reference URL with <cite data-video="G-F5Qvy-7KM" data-chunk="11" data-quote="recreate this in a single HTML file. Self-verify until it's perfect">“recreate this in a single HTML file, self-verify until it's perfect”</cite> is a starting point, not a deliverable.</li>
+        <li id="slop-li8">Generate options before committing. Five style directions from one brief, then converge by grafting across them <cite data-video="TTeMU5iOE84" data-chunk="16" data-quote="we have five different options">five options</cite>, telling the tool to <cite data-video="TTeMU5iOE84" data-chunk="17" data-quote="tell Claude to go deeper on one of these designs">go deeper on one</cite> while borrowing nav and type from the others.</li>
+        <li id="slop-li9">Start at the widget, not the page. Senior practice is to generate <cite data-video="Oo-5AWdQAt8" data-chunk="3" data-quote="Create eight distinctively different versions">eight distinctively different versions</cite> of the single most important widget first <cite data-video="Oo-5AWdQAt8" data-chunk="1" data-quote="they're starting off with widget generation">widget generation first</cite>, then build the surrounding page yourself — and only repeat the exploration on widgets you're stuck on <cite data-video="Oo-5AWdQAt8" data-chunk="5" data-quote="He doesn't do it for every widget">not every widget</cite>.</li>
+        <li id="slop-li10">Build section by section, hero first, rather than generating the whole site at once <cite data-video="bkTY9gYkWis" data-chunk="16" data-quote="the next rule is to build it in pieces">build it in pieces</cite>. Brief on feeling and objective and let the model propose the how <cite data-video="bkTY9gYkWis" data-chunk="11" data-quote="what you're looking for instead of how it should do it">what, not how</cite>.</li>
+      </ul>
+    </div>
+
+    <div class="lever">
+      <h3 id="slop-h33">Know the ceiling</h3>
+      <ul>
+        <li id="slop-li11">No current coding model has strong visual judgement despite vendor claims — <cite data-video="gXwF0VbTKvs" data-chunk="33" data-quote="they lack any visual intelligence">they lack any visual intelligence</cite> — so anchor them with stable artefacts (a design system, a state diagram) and let them interpolate between checkpoints.</li>
+        <li id="slop-li12">No tool one-prompts a world-class flow; viral demos hide significant manual polish <cite data-video="r-MPiu0E4W4" data-chunk="5" data-quote="no tool that one prompts an entire worldass UX">no one-prompt UX</cite>.</li>
+        <li id="slop-li13">AI has largely commoditised front-end <em>code</em>, not front-end <em>judgement</em>: there is a real gap between <cite data-video="omU3zR3K7-U" data-chunk="9" data-quote="the actual exercise of creating the front end versus the design">creating the front end and doing the design and UX</cite>.</li>
+        <li id="slop-li14">Always inject your own taste on top of the generated base, or the product looks like everybody else's <cite data-video="vpU9lZY69O4" data-chunk="11" data-quote="no sauce or input from you">no sauce</cite>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="audit">
+  <h2 id="audit-h21">The review pass</h2>
+  <p id="audit-p1">Six stages. Run them in order; the order is what stops an agent from proposing a redesign before it has a diagnosis.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="audit-h31">Inventory the surface</h3>
+    <p class="why" id="audit-p2">You cannot score what you haven't enumerated.</p>
+    <ul>
+      <li id="audit-li1">List every distinct screen, every colour actually used, every font family, every spacing value, every component that appears more than once.</li>
+      <li id="audit-li2">Build a flow home base — one page linking every flow you want reviewed — so an agent can navigate between them and back <cite data-video="Oo-5AWdQAt8" data-chunk="6" data-quote="flow home base, where you have all the different flows">flow home base</cite>.</li>
+      <li id="audit-li3">Capture screenshots with numbered annotations; numbering produces far more precise, itemised findings than prose <cite data-video="qF5il_9IwME" data-chunk="144" data-quote="I attached a screenshot with numbers">numbered screenshots</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="audit-h32">Score cold, before any fix</h3>
+    <p class="why" id="audit-p3">Scoring and solving in the same breath produces flattery.</p>
+    <ul>
+      <li id="audit-li4">Assign Low / Medium / High to all twelve dimensions with a one-sentence justification and a screen reference each. No recommendations yet.</li>
+      <li id="audit-li5">Make the rubric deliberately strict and treat the number as relative: above 50% is not bad, above 80% is launch-ready <cite data-video="bkTY9gYkWis" data-chunk="32" data-quote="anything above 80 is amazing">above 80 is amazing</cite>.</li>
+      <li id="audit-li6">Expect the first honest score on a working product to land mid-range — the corpus's own first self-audit came back at <cite data-video="bkTY9gYkWis" data-chunk="32" data-quote="gave us a score of 67 on 100">67/100</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="audit-h33">Locate the tier tell</h3>
+    <p class="why" id="audit-p4">Every Low has a named cause in this corpus. Use the name.</p>
+    <ul>
+      <li id="audit-li7">Colour Low is almost always accent overuse <cite data-video="XZf5A0wcruE" data-chunk="1" data-quote="if everything is on fire then nothing is on fire">everything on fire</cite>; hierarchy Low is usually two equal CTAs or undifferentiated link text <cite data-video="XZf5A0wcruE" data-chunk="2" data-quote="no difference in the treatment of this text">no treatment difference</cite>.</li>
+      <li id="audit-li8">Separator-and-shadow clutter is a contrast-skill tell, not a style <cite data-video="XZf5A0wcruE" data-chunk="15" data-quote="they start to add too much drop shadow">the tell</cite>.</li>
+      <li id="audit-li9">Cross-screen inconsistency is a missing-system tell, not a carelessness tell <cite data-video="vpU9lZY69O4" data-chunk="1" data-quote="there's inconsistency in my app">inconsistency</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="audit-h34">Test the flows, not just the frames</h3>
+    <p class="why" id="audit-p5">Dimensions 2, 7 and 11 only fail in motion.</p>
+    <ul>
+      <li id="audit-li10">Run a think-aloud test with someone unconnected to the project: have them <cite data-video="vYvzOyTA2z4" data-chunk="15" data-quote="scroll through the homepage and just kind of think out loud">scroll the homepage and think out loud</cite>, then attempt one specific task while you watch for silent assumptions.</li>
+      <li id="audit-li11">If no user is available, run a persona-driven agent pass: give it a role, experience level and goal, and ask it to narrate expectations, hesitations and <cite data-video="Oo-5AWdQAt8" data-chunk="8" data-quote="your confidence on one to five">confidence on a 1–5 scale</cite> per step, then compare two flows <cite data-video="Oo-5AWdQAt8" data-chunk="9" data-quote="recommending flow B and gave some reasons why">with reasons</cite>.</li>
+      <li id="audit-li12">Treat that verdict as a lens, not a truth — <cite data-video="Oo-5AWdQAt8" data-chunk="10" data-quote="never just take an AI suggestion and take it 100%">never take an AI suggestion 100%</cite>.</li>
+      <li id="audit-li13">Design the critical flow backwards from its destination, fixing every dead end on the way back to entry <cite data-video="vYvzOyTA2z4" data-chunk="17" data-quote="you trace the path backwards">trace it backwards</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="audit-h35">Write the remediation at token and component level</h3>
+    <p class="why" id="audit-p6">A proposal that can't be diffed can't be scored.</p>
+    <ul>
+      <li id="audit-li14">Ask for a gap analysis against current state and a plan built from reusable design-system components rather than one-off pieces <cite data-video="qF5il_9IwME" data-chunk="132" data-quote="perform kind of like a gap analysis and create a plan">gap analysis then plan</cite>.</li>
+      <li id="audit-li15">Express every fix as a token added, retired or re-scoped, or a component variant added — so one edit propagates <cite data-video="vpU9lZY69O4" data-chunk="19" data-quote="once you fix one thing, it affects the entire thing">it affects the entire thing</cite>.</li>
+      <li id="audit-li16">Give the agent the design system as context, not instructions. Once a system is attached, generated pages follow <cite data-video="vpU9lZY69O4" data-chunk="19" data-quote="it followed the colors, it followed the font, it followed the spacing">the colours, the font, the spacing</cite> without being re-told.</li>
+      <li id="audit-li17">Escalate model tier as the work spans more interacting components; fast models that handled scaffolding start failing <cite data-video="qF5il_9IwME" data-chunk="130" data-quote="switch to a beefier model at this point">switch to a beefier model</cite>.</li>
+      <li id="audit-li18">Split system work into one skill per component category — form elements, navigation, data display — rather than one skill for the library, which makes the agent bounce between components <cite data-video="r-MPiu0E4W4" data-chunk="85" data-quote="one skill for each component category">one per category</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">6</div>
+    <h3 id="audit-h36">Re-score, and force verification</h3>
+    <p class="why" id="audit-p7">Agents grade themselves generously unless the harness forbids it.</p>
+    <ul>
+      <li id="audit-li19">Re-run the identical rubric after each round of fixes and diff the scores; the audit is only useful as a repeated measurement.</li>
+      <li id="audit-li20">Add a hook that fires before the agent is allowed to finish, forcing it to <cite data-video="NovNcsKX8AU" data-chunk="32" data-quote="force it to like recheck the work">recheck the work</cite> — agents are prone to <cite data-video="NovNcsKX8AU" data-chunk="33" data-quote="picking the easy way out in verification">picking the easy way out in verification</cite>. Deterministic hooks that constrain bad behaviour are among the most underrated harness features <cite data-video="NovNcsKX8AU" data-chunk="70" data-quote="hooks that sort of like control bad model behavior">control, not just tools</cite>.</li>
+      <li id="audit-li21">Keep each remediation sub-task bounded to roughly <cite data-video="NovNcsKX8AU" data-chunk="35" data-quote="a 50k to like a 150k token range">50k–150k tokens</cite>; larger subtasks drift into a high-context zone where quality degrades. Use files as the handoff surface between passes — <cite data-video="NovNcsKX8AU" data-chunk="39" data-quote="the file system is arguably the most foundational harness primitive">the file system is the most foundational harness primitive</cite>.</li>
+      <li id="audit-li22">Stop treating public benchmarks as evidence; build your own representative set of tasks <cite data-video="NovNcsKX8AU" data-chunk="83" data-quote="a representative set of like evals and tasks">your own bench</cite>. This rubric, applied to your own screens, is that set.</li>
+      <li id="audit-li23">If you pipe a review agent's findings straight back into a coding agent, supervise it: the two can <cite data-video="gXwF0VbTKvs" data-chunk="37" data-quote="they just correct each other and they go into an infinite loop">correct each other into an infinite loop</cite>.</li>
+      <li id="audit-li24">Preview locally and never redeploy without explicit approval, so the live product can't drift from what was reviewed <cite data-video="TTeMU5iOE84" data-chunk="46" data-quote="never deploy without asking me">never deploy without asking</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="prompts">
+  <h2 id="prompts-h21">Prompts to copy</h2>
+  <p id="prompts-p1">Four prompts: score, remediate, self-audit in a loop, and user-test without users. Paste them with your screenshots attached and the design system, if one exists, in context.</p>
+
+  <figure class="prompt" id="prompts-figure1">
+    <div class="label">Prompt 1 — Cold score<button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre1">You are reviewing a front end against a fixed rubric. Do not propose solutions
+in this pass. Scoring only.
+
+CONTEXT
+- Screens: [attach screenshots, numbered]
+- Repo / URL: [...]
+- Design system or tokens, if any: [attach or state "none"]
+- Product type: [marketing site | internal tool | consumer app | dashboard]
+
+RUBRIC — score each dimension Low (0), Medium (1) or High (2):
+ 1. Colour discipline       — does the accent have exactly one job?
+ 2. Hierarchy and emphasis  — one primary action; links look like links
+ 3. Typography              — 16px base, ratio-derived scale, <=2 families
+ 4. Spacing and alignment   — 8pt system; section rhythm re-scaled per breakpoint
+ 5. Tokens and design system— tiered tokens with written usage descriptions
+ 6. Components and states   — default/hover/active/disabled/focus; atoms not monoliths
+ 7. Responsive and touch    — 44x44 targets, safe area, per-breakpoint layout vars
+ 8. Accessibility           — 4.5:1 text, 3:1 graphics, visible focus, one H1, reading order
+ 9. Motion and feedback     — rhythm not saturation; two changes on state change
+10. Performance and data    — Core Web Vitals stated; no polling; no per-keystroke calls
+11. Content, trust, convert — real copy and imagery; minimal forms; instrumented events
+12. Distinctiveness         — a chosen aesthetic direction, not the default generated look
+
+OUTPUT (markdown table, then a summary line):
+| # | Dimension | Score | Evidence (screen + what you saw) | Tier tell |
+
+Then: TOTAL x/24. Under 10 = rebuild. 10-18 = remediate. 19+ = ship.
+Be strict. A dimension you cannot verify from the evidence provided is scored
+Low with the reason "unverifiable", not skipped.</pre>
+    <div class="note">Strictness is the point: the corpus's own audit prompt is deliberately harsh, which is why 67/100 counts as a real first build and 80 is the launch bar <cite data-video="bkTY9gYkWis" data-chunk="32" data-quote="anything above 80 is amazing">above 80 is amazing</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-figure2">
+    <div class="label">Prompt 2 — Remediation plan<button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre2">Using the scorecard you just produced, write a remediation plan that would move
+every Low to Medium and every Medium to High.
+
+RULES
+- First research current UX best practice for this product type, then perform a
+  gap analysis against the current app, then plan.
+- Every fix must be expressed as one of: a token added / retired / re-scoped,
+  a component variant added, a state added, or a layout variable added.
+  "Make it look more premium" is not a fix. Reject it in your own output.
+- Plan reusable design-system components, never one-off isolated pieces.
+- Order the work by score delta per unit of effort. Show the ordering.
+- Name the single highest-leverage change first and justify why it is highest.
+- For each dimension, state the expected new score and the one observation a
+  reviewer would make to confirm it.
+
+OUTPUT
+1. Highest-leverage change (one paragraph)
+2. Token diff: table of | token | action | value | usage description |
+3. Component diff: table of | component | variants added | states added |
+4. Per-dimension plan: | # | current | target | changes | confirming observation |
+5. Anything you could NOT fix without information you don't have.</pre>
+    <div class="note">The gap-analysis-then-plan ordering, and the insistence on reusable components over isolated pieces, both come straight from the corpus <cite data-video="qF5il_9IwME" data-chunk="132" data-quote="perform kind of like a gap analysis and create a plan">gap analysis then plan</cite>. Section 5 is the honesty clause; the corpus's own gaps list is the model for it.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-figure3">
+    <div class="label">Prompt 3 — Self-audit loop<button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre3">Audit the build you just produced against the twelve-dimension rubric.
+
+- Run the app locally, screenshot each route at 1440px and at 390px, and score
+  from what you actually see, not from the code you intended to write.
+- Score out of 24. List concrete pre-launch fixes, ordered.
+- Do not stop at the trivial check. Verify the hard cases: the longest label,
+  the empty state, the error state, the slowest network path, keyboard-only
+  navigation through the primary flow.
+- Then apply the fixes and re-score. Report both scores and the diff.
+- Do not deploy. Preview locally and wait for explicit approval.
+
+Stop condition: total >= 19/24 AND no dimension scored Low.</pre>
+    <div class="note">Two corpus constraints are wired in on purpose: agents default to <cite data-video="NovNcsKX8AU" data-chunk="33" data-quote="picking the easy way out in verification">the easy way out in verification</cite>, and local-preview-then-approve is what stops the live site drifting from what was reviewed <cite data-video="TTeMU5iOE84" data-chunk="46" data-quote="never deploy without asking me">never deploy without asking</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-figure4">
+    <div class="label">Prompt 4 — Persona flow test<button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre4">You are a specific user, not an assistant. Stay in character.
+
+PERSONA
+- Role: [e.g. operations manager at a 40-person logistics firm]
+- Experience level with tools like this: [low / medium / high]
+- Constraints: [on a phone, in a hurry, colour-blind, first time in the product]
+- Goal for this session: [the one task]
+
+TASK
+Navigate from the flow home base and attempt the goal. At every step, state:
+1. What you expected to happen
+2. What actually happened
+3. Where you hesitated, and for how long
+4. Your confidence that you are on the right path, 1-5
+
+Then repeat the whole run on Flow B. Finish with: which flow you recommend,
+why, and the three moments that most damaged confidence in the losing flow.
+Do not soften your critique.</pre>
+    <div class="note">Modelled on the corpus's persona-driven flow review, including the 1–5 confidence scale <cite data-video="Oo-5AWdQAt8" data-chunk="8" data-quote="your confidence on one to five">confidence 1–5</cite> and the flow home base that lets an agent move between flows <cite data-video="Oo-5AWdQAt8" data-chunk="6" data-quote="flow home base, where you have all the different flows">home base</cite>. Its output is a lens, not a verdict <cite data-video="Oo-5AWdQAt8" data-chunk="10" data-quote="never just take an AI suggestion and take it 100%">not 100%</cite>.</div>
+  </figure>
+</section>
+
+<section id="contested">
+  <h2 id="contested-h21">Where the corpus disagrees</h2>
+  <p id="contested-p1">Three splits matter enough to change how you apply the rubric. Don't paper over them.</p>
+  <ul>
+    <li id="contested-li1"><strong>Can AI build your design system?</strong> One position: download a component you like and tell the agent to <cite data-video="hgIonrdRTSE" data-chunk="11" data-quote="create a design system. Design system based on this component">create a design system based on this component</cite>, treated as reliable. The opposing position, from the two deepest design-system sources: <cite data-video="lsgVRCJ4fko" data-chunk="6" data-quote="AI cannot do those things">AI cannot do those things</cite>, because it doesn't know your brand, your components or your product; and <cite data-video="r-MPiu0E4W4" data-chunk="92" data-quote="The answer, no, it cannot">no, it cannot</cite> — what gets called a generated design system is a few styles, some variables and maybe one button. Asking AI to build tokens is compared to <cite data-video="r-MPiu0E4W4" data-chunk="95" data-quote="hiring someone to build you a kitchen">hiring someone to build you a kitchen</cite> on the brief "make it dark". The measured middle: out-of-the-box design-system sync <cite data-video="lsgVRCJ4fko" data-chunk="214" data-quote="it works like 28%">works about 28%</cite>, while per-grouping skills get you to <cite data-video="lsgVRCJ4fko" data-chunk="215" data-quote="it's going to work about 80%, 85%">roughly 80–85%</cite> with the last 15% manual. <em>Rubric implication:</em> a generated system scores Medium on dimension 5 at best until a human has assigned roles and written usage descriptions.</li>
+    <li id="contested-li2"><strong>How much personality should an interface carry?</strong> One side: interfaces are tools and <cite data-video="XZf5A0wcruE" data-chunk="7" data-quote="tools should be simple easy straightforward">should be simple, easy, straightforward</cite> and sometimes a little boring, with brand stripped out. The other: hover micro-interactions, gradient and liquid-metal treatments and playful motion are what mark an exceptional, non-generic product <cite data-video="bkTY9gYkWis" data-chunk="2" data-quote="purposeful animation, purposeful motion really takes the website">motion takes it to the next level</cite>. <em>Rubric implication:</em> dimensions 9 and 12 are scored against product type. A dense internal dashboard scores High on motion by being restrained; a marketing landing page does not.</li>
+    <li id="contested-li3"><strong>Is maximum reasoning effort always right?</strong> One source calls extra-high <cite data-video="G-F5Qvy-7KM" data-chunk="13" data-quote="extra is my bare minimum here">the bare minimum</cite> for design output. Another measured the opposite under a time budget: max effort throughout <cite data-video="NovNcsKX8AU" data-chunk="36" data-quote="scored 53.9% due to timeouts">scored 53.9% due to timeouts</cite> against 63.6% at high. <em>Rubric implication:</em> max effort for the scoring and the design-direction passes; high for mechanical remediation.</li>
+    <li id="contested-li4"><strong>A fourth, smaller split:</strong> whether the craft must be hand-built at all. One source teaches the whole system manually — style guide, colour variables, type styles, component variants — before anything ships <cite data-video="23lJ2YAnlC8" data-chunk="1" data-quote="size at 1440 x1024 for the height and width">manual style guide first</cite>. Another argues that being purely a front-end builder is no longer valuable because the build step is commoditised <cite data-video="omU3zR3K7-U" data-chunk="9" data-quote="just being a front-end developer, like you're cooked">you're cooked</cite>, while conceding AI still lacks the design and UX judgement. The role the corpus converges on is <cite data-video="r-MPiu0E4W4" data-chunk="1" data-quote="moving more towards this design engineer role">design engineer</cite>.</li>
+  </ul>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h21">Sources</h2>
+  <p id="sources-p1">Twenty talks, read in full across five extraction passes. Grouped by what they contribute to the rubric.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Craft and critique — the scoring dimensions</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=XZf5A0wcruE" target="_blank" rel="noopener"><cite data-video="XZf5A0wcruE">Amateur vs Pro UI Design | with examples</cite></a> <span class="tk">— the junior-to-senior ladder across login, dashboard and complex screens; the source of most Low descriptors in dimensions 1, 2 and 9.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=B-ytMSuwbf8" target="_blank" rel="noopener"><cite data-video="B-ytMSuwbf8">Web Design for Beginners | FREE COURSE</cite></a> <span class="tk">— the only end-to-end fundamentals course: briefs, wireframes, colour theory, type scales, the eight-point system, UI patterns, responsive breakpoints.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=wLJ40GV2XEc" target="_blank" rel="noopener"><cite data-video="wLJ40GV2XEc">Top UI/UX Design Tips - How to Design a Great Bottom Mobile Navigation Bar</cite></a> <span class="tk">— the numeric touch specs: 44×44 targets, 24px icons, 3–5 tabs, 3:1 graphical contrast, safe area.</span></li>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=vYvzOyTA2z4" target="_blank" rel="noopener"><cite data-video="vYvzOyTA2z4">How to Be A Web Designer in 2026 (Free Resources &amp; My Best Advice)</cite></a> <span class="tk">— 60-30-10, font-count caps, contrast ratios, one-H1 SEO structure, think-aloud user testing, conversion instrumentation.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Design systems and tokens — where fixes get written</h3>
+    <ol>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=lsgVRCJ4fko" target="_blank" rel="noopener"><cite data-video="lsgVRCJ4fko">Learn Design Systems: Figma Variables, Components, AI, and More</cite></a> <span class="tk">— the deepest token treatment: tier architectures, colour-scale maths, the four mapped categories, focus states, mobile variants, and the sharpest limits on AI.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=r-MPiu0E4W4" target="_blank" rel="noopener"><cite data-video="r-MPiu0E4W4">Design with AI - Full Guide (Tools, Workflows, Design Systems)</cite></a> <span class="tk">— token/time benchmarks across AI design tools, per-category skills, variable descriptions, the accessibility-review pass that found 22 issues.</span></li>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=vpU9lZY69O4" target="_blank" rel="noopener"><cite data-video="vpU9lZY69O4">Building beautiful UI using AI (My design workflow)</cite></a> <span class="tk">— the token definition used throughout, the propagation argument, and the AI-design "smell".</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=23lJ2YAnlC8" target="_blank" rel="noopener"><cite data-video="23lJ2YAnlC8">Figma Website Design Tutorial 2026</cite></a> <span class="tk">— the hand-built path: style-guide page, named type styles, colour variables, combined component variants, auto layout, and the SVG-fidelity migration pitfall.</span></li>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=hgIonrdRTSE" target="_blank" rel="noopener"><cite data-video="hgIonrdRTSE">These UI libraries + AI = beautiful looking web apps</cite></a> <span class="tk">— free component sources, and the "extract a design system from one component" workflow plus the reserve-your-signature rule.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Front-end engineering — the non-functional dimensions</h3>
+    <ol>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=YO7R0rYWDl8" target="_blank" rel="noopener"><cite data-video="YO7R0rYWDl8">14 Front End System Design Concepts | Explained in 10 Minutes</cite></a> <span class="tk">— rendering strategies, re-render control, lazy loading, caching, debouncing, cursor pagination.</span></li>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=gXwF0VbTKvs" target="_blank" rel="noopener"><cite data-video="gXwF0VbTKvs">Real Senior Frontend System Design Interview 2026 (AI Coding Included)</cite></a> <span class="tk">— functional vs non-functional framing, Core Web Vitals, the polling/SSE decision, read-write-ratio caching, and the visual-intelligence limit on models.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=qF5il_9IwME" target="_blank" rel="noopener"><cite data-video="qF5il_9IwME">Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)</cite></a> <span class="tk">— a coded stack in practice: shadcn/ui theming, numbered-screenshot bug reports, loading-state and citation-panel patterns, deployment sizing.</span></li>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=NovNcsKX8AU" target="_blank" rel="noopener"><cite data-video="NovNcsKX8AU">The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)</cite></a> <span class="tk">— the harness side of the review loop: verification hooks, sub-agent sizing, the file system as primitive, and build-your-own-evals.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">AI build workflows — how the remediation gets executed</h3>
+    <ol>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=bkTY9gYkWis" target="_blank" rel="noopener"><cite data-video="bkTY9gYkWis">How I Build INSANELY Beautiful Websites Using Claude Code</cite></a> <span class="tk">— the seven premium traits, anti-slop skills, plan-first briefing, section-by-section building, motion rhythm, and the self-audit score that this guide's thresholds borrow.</span></li>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=Oo-5AWdQAt8" target="_blank" rel="noopener"><cite data-video="Oo-5AWdQAt8">Use AI Like a Senior Designer (3 Workflows)</cite></a> <span class="tk">— widget-first generation, the persona-driven flow test, and reading-order handoff with mandatory human verification.</span></li>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=G-F5Qvy-7KM" target="_blank" rel="noopener"><cite data-video="G-F5Qvy-7KM">How I Build Insane Three.js Websites With Claude Opus 5</cite></a> <span class="tk">— the definition of AI slop, reference-first prompting, reasoning-effort settings, and the under-1MB proof that rich isn't heavy.</span></li>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=TTeMU5iOE84" target="_blank" rel="noopener"><cite data-video="TTeMU5iOE84">Build AMAZING Websites Using Claude Code! (Full Guide)</cite></a> <span class="tk">— brand-brief-first design, generating five directions then converging, and the local-preview-before-deploy rule.</span></li>
+      <li id="sources-li18"><a href="https://www.youtube.com/watch?v=omU3zR3K7-U" target="_blank" rel="noopener"><cite data-video="omU3zR3K7-U">The Best AI Automation Stack to Learn in 2026</cite></a> <span class="tk">— the React + Vite + shadcn/ui baseline, component ownership, and the claim that AI solved front-end code but not UX.</span></li>
+      <li id="sources-li19"><a href="https://www.youtube.com/watch?v=yAOzupIW87E" target="_blank" rel="noopener"><cite data-video="yAOzupIW87E">Data Scientist to AI Engineer Roadmap for 2026</cite></a> <span class="tk">— career sequencing: shipping complete projects with a real front end, and front end as the least familiar layer for backend-leaning engineers.</span></li>
+      <li id="sources-li20"><a href="https://www.youtube.com/watch?v=a3SMraZWNNs" target="_blank" rel="noopener"><cite data-video="a3SMraZWNNs">How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)</cite></a> <span class="tk">— read in full; contributed no citable UI-design claims. Listed for provenance completeness, not cited above.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h21">What this rubric cannot score</h2>
+  <p id="gaps-p1">Honest limits. Every item below is something a reader would reasonably expect and the corpus does not supply. If your reviewing agent tries to score these, it is inventing.</p>
+  <ul>
+    <li id="gaps-li1"><strong>Accessibility beyond contrast, focus and reading order.</strong> No source in the corpus covers ARIA patterns, keyboard-navigation specifics, screen-reader testing protocol, or focus management in modals and dialogs. Dimension 8 is therefore narrower than WCAG.</li>
+    <li id="gaps-li2"><strong>Outcome evidence.</strong> No source ties a specific design decision — a colour, a hierarchy change, a layout — to a measured conversion rate or task-completion time. Every High in this rubric is a craft judgement, not a proven lift.</li>
+    <li id="gaps-li3"><strong>Dense enterprise UI.</strong> The pattern vocabulary in the corpus is marketing- and portfolio-oriented. Data tables, complex validation, bulk actions, permissions UI and empty/error states at scale are unaddressed.</li>
+    <li id="gaps-li4"><strong>Motion as a discipline.</strong> Easing curves, durations and a framework for when to animate never appear. The corpus offers examples and a rhythm heuristic, nothing measurable.</li>
+    <li id="gaps-li5"><strong>Desktop and tablet navigation patterns.</strong> The only navigation source scoped to numbers is mobile bottom nav. Sidebar, mega-menu and command-palette patterns are uncovered.</li>
+    <li id="gaps-li6"><strong>Design-system versioning and migration.</strong> How to version tokens across breaking changes, or keep a system in sync post-launch across releases, is never discussed.</li>
+    <li id="gaps-li7"><strong>Team workflows.</strong> No source covers several designers prompting against one shared system simultaneously, or handoff when designer and builder are different people — nearly every example is one person doing both roles.</li>
+    <li id="gaps-li8"><strong>Native mobile.</strong> iOS and Android platform guidelines and platform-specific component libraries are absent; only responsive web variants are covered.</li>
+    <li id="gaps-li9"><strong>Real budgets.</strong> The corpus gives relative token and time figures for AI design tools but no subscription pricing or cost-per-design, so you cannot build a budget from it alone.</li>
+    <li id="gaps-li10"><strong>Dark mode in practice.</strong> Tokens are said to make theming easy, but no source works through an actual dark-mode palette, contrast re-check, or elevation model.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  The Interface Scorecard — a field guide from the transcript corpus. 20 source videos · 1,307 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-16. Every cite resolves to a chunk you can open; claims the corpus does not support are listed under Gaps rather than filled in.
+</div></footer>
+
+<script>
+(function () {
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var fig = btn.closest('figure');
+      var pre = fig && fig.querySelector('pre');
+      if (!pre) return;
+      var done = function () {
+        var prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.textContent).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = pre.textContent;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>
