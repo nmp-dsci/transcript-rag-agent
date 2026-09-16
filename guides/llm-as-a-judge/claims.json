@@ -1,6 +1,6 @@
 {
-  "total": 308,
-  "valid": 308,
+  "total": 362,
+  "valid": 362,
   "pass_rate": 1.0,
   "sections": [
     "thesis",
@@ -9,6 +9,7 @@
     "ban",
     "instrument",
     "production",
+    "architecture",
     "prompts",
     "disagreements",
     "sources",
@@ -291,6 +292,149 @@
     },
     {
       "cite_index": 21,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 54,
+      "chunk_id": "chunk:PjCwlX0XT8o:54",
+      "quote": "Before calculating the confusion matrix, name the positive class",
+      "text": "name the positive class",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 22,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 55,
+      "chunk_id": "chunk:PjCwlX0XT8o:55",
+      "quote": "the reference label identifies an unsupported claim and the judge flags",
+      "text": "true positive",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 23,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 55,
+      "chunk_id": "chunk:PjCwlX0XT8o:55",
+      "quote": "the response is supported but the judge flags it",
+      "text": "false positive",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 24,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 55,
+      "chunk_id": "chunk:PjCwlX0XT8o:55",
+      "quote": "the response is supported and the judge passes it",
+      "text": "true negative",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 25,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 55,
+      "chunk_id": "chunk:PjCwlX0XT8o:55",
+      "quote": "the response contains an unsupported claim",
+      "text": "false negative",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 26,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 60,
+      "chunk_id": "chunk:PjCwlX0XT8o:60",
+      "quote": "may allow an ungrounded statement into a user-facing answer",
+      "text": "the cost of a miss",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 27,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 56,
+      "chunk_id": "chunk:PjCwlX0XT8o:56",
+      "quote": "TPR or sensitivity is the proportion of genuinely unsupported",
+      "text": "sensitivity",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 28,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 56,
+      "chunk_id": "chunk:PjCwlX0XT8o:56",
+      "quote": "TNR or specificity is the proportion of supported responses",
+      "text": "specificity",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 29,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 56,
+      "chunk_id": "chunk:PjCwlX0XT8o:56",
+      "quote": "Balanced accuracy gives equal weight to the positive and negative classes",
+      "text": "balanced accuracy",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 30,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 57,
+      "chunk_id": "chunk:PjCwlX0XT8o:57",
+      "quote": "can be high when unsupported claims are rare",
+      "text": "why not accuracy",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 31,
+      "section_id": "thesis",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 57,
+      "chunk_id": "chunk:PjCwlX0XT8o:57",
+      "quote": "TP is 34, FN is six, FP is 16",
+      "text": "the four counts",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 32,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 11,
@@ -303,7 +447,7 @@
       "valid": true
     },
     {
-      "cite_index": 22,
+      "cite_index": 33,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 6,
@@ -316,7 +460,7 @@
       "valid": true
     },
     {
-      "cite_index": 23,
+      "cite_index": 34,
       "section_id": "pipeline",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 1,
@@ -329,7 +473,7 @@
       "valid": true
     },
     {
-      "cite_index": 24,
+      "cite_index": 35,
       "section_id": "pipeline",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 13,
@@ -342,7 +486,7 @@
       "valid": true
     },
     {
-      "cite_index": 25,
+      "cite_index": 36,
       "section_id": "pipeline",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 13,
@@ -355,7 +499,7 @@
       "valid": true
     },
     {
-      "cite_index": 26,
+      "cite_index": 37,
       "section_id": "pipeline",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 8,
@@ -368,7 +512,7 @@
       "valid": true
     },
     {
-      "cite_index": 27,
+      "cite_index": 38,
       "section_id": "pipeline",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 34,
@@ -381,7 +525,7 @@
       "valid": true
     },
     {
-      "cite_index": 28,
+      "cite_index": 39,
       "section_id": "pipeline",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 36,
@@ -394,7 +538,7 @@
       "valid": true
     },
     {
-      "cite_index": 29,
+      "cite_index": 40,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 21,
@@ -407,7 +551,7 @@
       "valid": true
     },
     {
-      "cite_index": 30,
+      "cite_index": 41,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 0,
@@ -420,7 +564,7 @@
       "valid": true
     },
     {
-      "cite_index": 31,
+      "cite_index": 42,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 9,
@@ -433,7 +577,7 @@
       "valid": true
     },
     {
-      "cite_index": 32,
+      "cite_index": 43,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 10,
@@ -446,7 +590,7 @@
       "valid": true
     },
     {
-      "cite_index": 33,
+      "cite_index": 44,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 6,
@@ -459,7 +603,7 @@
       "valid": true
     },
     {
-      "cite_index": 34,
+      "cite_index": 45,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 11,
@@ -472,7 +616,7 @@
       "valid": true
     },
     {
-      "cite_index": 35,
+      "cite_index": 46,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 7,
@@ -485,7 +629,7 @@
       "valid": true
     },
     {
-      "cite_index": 36,
+      "cite_index": 47,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 8,
@@ -498,7 +642,7 @@
       "valid": true
     },
     {
-      "cite_index": 37,
+      "cite_index": 48,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 1,
@@ -511,7 +655,7 @@
       "valid": true
     },
     {
-      "cite_index": 38,
+      "cite_index": 49,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 3,
@@ -524,7 +668,7 @@
       "valid": true
     },
     {
-      "cite_index": 39,
+      "cite_index": 50,
       "section_id": "pipeline",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 11,
@@ -537,7 +681,7 @@
       "valid": true
     },
     {
-      "cite_index": 40,
+      "cite_index": 51,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 8,
@@ -550,7 +694,7 @@
       "valid": true
     },
     {
-      "cite_index": 41,
+      "cite_index": 52,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 2,
@@ -563,7 +707,7 @@
       "valid": true
     },
     {
-      "cite_index": 42,
+      "cite_index": 53,
       "section_id": "pipeline",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 7,
@@ -576,7 +720,7 @@
       "valid": true
     },
     {
-      "cite_index": 43,
+      "cite_index": 54,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 10,
@@ -589,7 +733,7 @@
       "valid": true
     },
     {
-      "cite_index": 44,
+      "cite_index": 55,
       "section_id": "pipeline",
       "video_id": "uQFLY8rQVYA",
       "chunk_index": 16,
@@ -602,7 +746,7 @@
       "valid": true
     },
     {
-      "cite_index": 45,
+      "cite_index": 56,
       "section_id": "pipeline",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 5,
@@ -615,7 +759,7 @@
       "valid": true
     },
     {
-      "cite_index": 46,
+      "cite_index": 57,
       "section_id": "pipeline",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 27,
@@ -628,7 +772,7 @@
       "valid": true
     },
     {
-      "cite_index": 47,
+      "cite_index": 58,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 23,
@@ -641,7 +785,7 @@
       "valid": true
     },
     {
-      "cite_index": 48,
+      "cite_index": 59,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 24,
@@ -654,7 +798,7 @@
       "valid": true
     },
     {
-      "cite_index": 49,
+      "cite_index": 60,
       "section_id": "pipeline",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 12,
@@ -667,7 +811,7 @@
       "valid": true
     },
     {
-      "cite_index": 50,
+      "cite_index": 61,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 29,
@@ -680,7 +824,7 @@
       "valid": true
     },
     {
-      "cite_index": 51,
+      "cite_index": 62,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 8,
@@ -693,7 +837,7 @@
       "valid": true
     },
     {
-      "cite_index": 52,
+      "cite_index": 63,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 48,
@@ -706,7 +850,7 @@
       "valid": true
     },
     {
-      "cite_index": 53,
+      "cite_index": 64,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 44,
@@ -719,7 +863,7 @@
       "valid": true
     },
     {
-      "cite_index": 54,
+      "cite_index": 65,
       "section_id": "pipeline",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 30,
@@ -732,7 +876,7 @@
       "valid": true
     },
     {
-      "cite_index": 55,
+      "cite_index": 66,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 27,
@@ -745,7 +889,7 @@
       "valid": true
     },
     {
-      "cite_index": 56,
+      "cite_index": 67,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 28,
@@ -758,7 +902,7 @@
       "valid": true
     },
     {
-      "cite_index": 57,
+      "cite_index": 68,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 1,
@@ -771,7 +915,7 @@
       "valid": true
     },
     {
-      "cite_index": 58,
+      "cite_index": 69,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 13,
@@ -784,7 +928,7 @@
       "valid": true
     },
     {
-      "cite_index": 59,
+      "cite_index": 70,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 29,
@@ -797,7 +941,7 @@
       "valid": true
     },
     {
-      "cite_index": 60,
+      "cite_index": 71,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 29,
@@ -810,7 +954,7 @@
       "valid": true
     },
     {
-      "cite_index": 61,
+      "cite_index": 72,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 18,
@@ -823,7 +967,7 @@
       "valid": true
     },
     {
-      "cite_index": 62,
+      "cite_index": 73,
       "section_id": "pipeline",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 13,
@@ -836,7 +980,7 @@
       "valid": true
     },
     {
-      "cite_index": 63,
+      "cite_index": 74,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 19,
@@ -849,7 +993,7 @@
       "valid": true
     },
     {
-      "cite_index": 64,
+      "cite_index": 75,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 17,
@@ -862,7 +1006,7 @@
       "valid": true
     },
     {
-      "cite_index": 65,
+      "cite_index": 76,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 30,
@@ -875,7 +1019,7 @@
       "valid": true
     },
     {
-      "cite_index": 66,
+      "cite_index": 77,
       "section_id": "pipeline",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 35,
@@ -888,7 +1032,7 @@
       "valid": true
     },
     {
-      "cite_index": 67,
+      "cite_index": 78,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 20,
@@ -901,7 +1045,7 @@
       "valid": true
     },
     {
-      "cite_index": 68,
+      "cite_index": 79,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 14,
@@ -914,7 +1058,7 @@
       "valid": true
     },
     {
-      "cite_index": 69,
+      "cite_index": 80,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 30,
@@ -927,7 +1071,7 @@
       "valid": true
     },
     {
-      "cite_index": 70,
+      "cite_index": 81,
       "section_id": "pipeline",
       "video_id": "3FcYdRQPMCo",
       "chunk_index": 19,
@@ -940,7 +1084,7 @@
       "valid": true
     },
     {
-      "cite_index": 71,
+      "cite_index": 82,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 3,
@@ -953,7 +1097,7 @@
       "valid": true
     },
     {
-      "cite_index": 72,
+      "cite_index": 83,
       "section_id": "pipeline",
       "video_id": "uQFLY8rQVYA",
       "chunk_index": 32,
@@ -966,7 +1110,7 @@
       "valid": true
     },
     {
-      "cite_index": 73,
+      "cite_index": 84,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 15,
@@ -979,7 +1123,7 @@
       "valid": true
     },
     {
-      "cite_index": 74,
+      "cite_index": 85,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 26,
@@ -992,7 +1136,7 @@
       "valid": true
     },
     {
-      "cite_index": 75,
+      "cite_index": 86,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 26,
@@ -1005,7 +1149,7 @@
       "valid": true
     },
     {
-      "cite_index": 76,
+      "cite_index": 87,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 20,
@@ -1018,7 +1162,7 @@
       "valid": true
     },
     {
-      "cite_index": 77,
+      "cite_index": 88,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 28,
@@ -1031,7 +1175,7 @@
       "valid": true
     },
     {
-      "cite_index": 78,
+      "cite_index": 89,
       "section_id": "pipeline",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 18,
@@ -1044,7 +1188,7 @@
       "valid": true
     },
     {
-      "cite_index": 79,
+      "cite_index": 90,
       "section_id": "pipeline",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 5,
@@ -1057,7 +1201,7 @@
       "valid": true
     },
     {
-      "cite_index": 80,
+      "cite_index": 91,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 31,
@@ -1070,7 +1214,7 @@
       "valid": true
     },
     {
-      "cite_index": 81,
+      "cite_index": 92,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 16,
@@ -1083,7 +1227,7 @@
       "valid": true
     },
     {
-      "cite_index": 82,
+      "cite_index": 93,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 23,
@@ -1096,7 +1240,7 @@
       "valid": true
     },
     {
-      "cite_index": 83,
+      "cite_index": 94,
       "section_id": "pipeline",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 5,
@@ -1109,7 +1253,7 @@
       "valid": true
     },
     {
-      "cite_index": 84,
+      "cite_index": 95,
       "section_id": "pipeline",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 23,
@@ -1122,7 +1266,7 @@
       "valid": true
     },
     {
-      "cite_index": 85,
+      "cite_index": 96,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 31,
@@ -1135,7 +1279,7 @@
       "valid": true
     },
     {
-      "cite_index": 86,
+      "cite_index": 97,
       "section_id": "pipeline",
       "video_id": "3FcYdRQPMCo",
       "chunk_index": 11,
@@ -1148,7 +1292,7 @@
       "valid": true
     },
     {
-      "cite_index": 87,
+      "cite_index": 98,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 22,
@@ -1161,7 +1305,7 @@
       "valid": true
     },
     {
-      "cite_index": 88,
+      "cite_index": 99,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 17,
@@ -1174,7 +1318,7 @@
       "valid": true
     },
     {
-      "cite_index": 89,
+      "cite_index": 100,
       "section_id": "pipeline",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 25,
@@ -1187,7 +1331,7 @@
       "valid": true
     },
     {
-      "cite_index": 90,
+      "cite_index": 101,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 4,
@@ -1200,7 +1344,7 @@
       "valid": true
     },
     {
-      "cite_index": 91,
+      "cite_index": 102,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 15,
@@ -1213,7 +1357,7 @@
       "valid": true
     },
     {
-      "cite_index": 92,
+      "cite_index": 103,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 18,
@@ -1226,7 +1370,7 @@
       "valid": true
     },
     {
-      "cite_index": 93,
+      "cite_index": 104,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 12,
@@ -1239,7 +1383,7 @@
       "valid": true
     },
     {
-      "cite_index": 94,
+      "cite_index": 105,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 39,
@@ -1252,7 +1396,7 @@
       "valid": true
     },
     {
-      "cite_index": 95,
+      "cite_index": 106,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 7,
@@ -1265,7 +1409,7 @@
       "valid": true
     },
     {
-      "cite_index": 96,
+      "cite_index": 107,
       "section_id": "pipeline",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 9,
@@ -1278,7 +1422,7 @@
       "valid": true
     },
     {
-      "cite_index": 97,
+      "cite_index": 108,
       "section_id": "pipeline",
       "video_id": "uQFLY8rQVYA",
       "chunk_index": 34,
@@ -1291,7 +1435,7 @@
       "valid": true
     },
     {
-      "cite_index": 98,
+      "cite_index": 109,
       "section_id": "pipeline",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 26,
@@ -1304,7 +1448,7 @@
       "valid": true
     },
     {
-      "cite_index": 99,
+      "cite_index": 110,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 26,
@@ -1317,7 +1461,7 @@
       "valid": true
     },
     {
-      "cite_index": 100,
+      "cite_index": 111,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 27,
@@ -1330,7 +1474,7 @@
       "valid": true
     },
     {
-      "cite_index": 101,
+      "cite_index": 112,
       "section_id": "pipeline",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 31,
@@ -1343,7 +1487,7 @@
       "valid": true
     },
     {
-      "cite_index": 102,
+      "cite_index": 113,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 27,
@@ -1356,7 +1500,7 @@
       "valid": true
     },
     {
-      "cite_index": 103,
+      "cite_index": 114,
       "section_id": "pipeline",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 3,
@@ -1369,7 +1513,7 @@
       "valid": true
     },
     {
-      "cite_index": 104,
+      "cite_index": 115,
       "section_id": "pipeline",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 2,
@@ -1382,7 +1526,7 @@
       "valid": true
     },
     {
-      "cite_index": 105,
+      "cite_index": 116,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 57,
@@ -1395,7 +1539,7 @@
       "valid": true
     },
     {
-      "cite_index": 106,
+      "cite_index": 117,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 59,
@@ -1408,7 +1552,7 @@
       "valid": true
     },
     {
-      "cite_index": 107,
+      "cite_index": 118,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 66,
@@ -1421,7 +1565,7 @@
       "valid": true
     },
     {
-      "cite_index": 108,
+      "cite_index": 119,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 70,
@@ -1434,7 +1578,7 @@
       "valid": true
     },
     {
-      "cite_index": 109,
+      "cite_index": 120,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 80,
@@ -1447,7 +1591,7 @@
       "valid": true
     },
     {
-      "cite_index": 110,
+      "cite_index": 121,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 83,
@@ -1460,7 +1604,7 @@
       "valid": true
     },
     {
-      "cite_index": 111,
+      "cite_index": 122,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 85,
@@ -1473,7 +1617,7 @@
       "valid": true
     },
     {
-      "cite_index": 112,
+      "cite_index": 123,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 87,
@@ -1486,7 +1630,7 @@
       "valid": true
     },
     {
-      "cite_index": 113,
+      "cite_index": 124,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 26,
@@ -1499,7 +1643,7 @@
       "valid": true
     },
     {
-      "cite_index": 114,
+      "cite_index": 125,
       "section_id": "pipeline",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 26,
@@ -1512,7 +1656,7 @@
       "valid": true
     },
     {
-      "cite_index": 115,
+      "cite_index": 126,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 91,
@@ -1525,7 +1669,7 @@
       "valid": true
     },
     {
-      "cite_index": 116,
+      "cite_index": 127,
       "section_id": "pipeline",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 97,
@@ -1538,7 +1682,7 @@
       "valid": true
     },
     {
-      "cite_index": 117,
+      "cite_index": 128,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 43,
@@ -1551,7 +1695,7 @@
       "valid": true
     },
     {
-      "cite_index": 118,
+      "cite_index": 129,
       "section_id": "pipeline",
       "video_id": "TL527yTpxlk",
       "chunk_index": 45,
@@ -1564,7 +1708,7 @@
       "valid": true
     },
     {
-      "cite_index": 119,
+      "cite_index": 130,
       "section_id": "pipeline",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 9,
@@ -1577,7 +1721,7 @@
       "valid": true
     },
     {
-      "cite_index": 120,
+      "cite_index": 131,
       "section_id": "scoring",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 9,
@@ -1590,7 +1734,7 @@
       "valid": true
     },
     {
-      "cite_index": 121,
+      "cite_index": 132,
       "section_id": "scoring",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 29,
@@ -1603,7 +1747,7 @@
       "valid": true
     },
     {
-      "cite_index": 122,
+      "cite_index": 133,
       "section_id": "scoring",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 9,
@@ -1616,7 +1760,7 @@
       "valid": true
     },
     {
-      "cite_index": 123,
+      "cite_index": 134,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 6,
@@ -1629,7 +1773,7 @@
       "valid": true
     },
     {
-      "cite_index": 124,
+      "cite_index": 135,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 8,
@@ -1642,7 +1786,7 @@
       "valid": true
     },
     {
-      "cite_index": 125,
+      "cite_index": 136,
       "section_id": "scoring",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 5,
@@ -1655,7 +1799,7 @@
       "valid": true
     },
     {
-      "cite_index": 126,
+      "cite_index": 137,
       "section_id": "scoring",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 4,
@@ -1668,7 +1812,7 @@
       "valid": true
     },
     {
-      "cite_index": 127,
+      "cite_index": 138,
       "section_id": "scoring",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 23,
@@ -1681,7 +1825,7 @@
       "valid": true
     },
     {
-      "cite_index": 128,
+      "cite_index": 139,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 46,
@@ -1694,7 +1838,7 @@
       "valid": true
     },
     {
-      "cite_index": 129,
+      "cite_index": 140,
       "section_id": "scoring",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 6,
@@ -1707,7 +1851,7 @@
       "valid": true
     },
     {
-      "cite_index": 130,
+      "cite_index": 141,
       "section_id": "scoring",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 6,
@@ -1720,7 +1864,7 @@
       "valid": true
     },
     {
-      "cite_index": 131,
+      "cite_index": 142,
       "section_id": "scoring",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 24,
@@ -1733,7 +1877,7 @@
       "valid": true
     },
     {
-      "cite_index": 132,
+      "cite_index": 143,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 37,
@@ -1746,7 +1890,7 @@
       "valid": true
     },
     {
-      "cite_index": 133,
+      "cite_index": 144,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 37,
@@ -1759,7 +1903,7 @@
       "valid": true
     },
     {
-      "cite_index": 134,
+      "cite_index": 145,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 32,
@@ -1772,7 +1916,7 @@
       "valid": true
     },
     {
-      "cite_index": 135,
+      "cite_index": 146,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 46,
@@ -1785,7 +1929,7 @@
       "valid": true
     },
     {
-      "cite_index": 136,
+      "cite_index": 147,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 36,
@@ -1798,7 +1942,7 @@
       "valid": true
     },
     {
-      "cite_index": 137,
+      "cite_index": 148,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 8,
@@ -1811,7 +1955,7 @@
       "valid": true
     },
     {
-      "cite_index": 138,
+      "cite_index": 149,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 9,
@@ -1824,7 +1968,7 @@
       "valid": true
     },
     {
-      "cite_index": 139,
+      "cite_index": 150,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 24,
@@ -1837,7 +1981,7 @@
       "valid": true
     },
     {
-      "cite_index": 140,
+      "cite_index": 151,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 15,
@@ -1850,7 +1994,7 @@
       "valid": true
     },
     {
-      "cite_index": 141,
+      "cite_index": 152,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 21,
@@ -1863,7 +2007,7 @@
       "valid": true
     },
     {
-      "cite_index": 142,
+      "cite_index": 153,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 26,
@@ -1876,7 +2020,7 @@
       "valid": true
     },
     {
-      "cite_index": 143,
+      "cite_index": 154,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 28,
@@ -1889,7 +2033,7 @@
       "valid": true
     },
     {
-      "cite_index": 144,
+      "cite_index": 155,
       "section_id": "scoring",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 35,
@@ -1902,7 +2046,7 @@
       "valid": true
     },
     {
-      "cite_index": 145,
+      "cite_index": 156,
       "section_id": "scoring",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 37,
@@ -1915,7 +2059,7 @@
       "valid": true
     },
     {
-      "cite_index": 146,
+      "cite_index": 157,
       "section_id": "scoring",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 7,
@@ -1928,7 +2072,7 @@
       "valid": true
     },
     {
-      "cite_index": 147,
+      "cite_index": 158,
       "section_id": "scoring",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 22,
@@ -1941,7 +2085,7 @@
       "valid": true
     },
     {
-      "cite_index": 148,
+      "cite_index": 159,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 7,
@@ -1954,7 +2098,7 @@
       "valid": true
     },
     {
-      "cite_index": 149,
+      "cite_index": 160,
       "section_id": "scoring",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 20,
@@ -1967,7 +2111,7 @@
       "valid": true
     },
     {
-      "cite_index": 150,
+      "cite_index": 161,
       "section_id": "scoring",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 11,
@@ -1980,7 +2124,7 @@
       "valid": true
     },
     {
-      "cite_index": 151,
+      "cite_index": 162,
       "section_id": "scoring",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 13,
@@ -1993,7 +2137,7 @@
       "valid": true
     },
     {
-      "cite_index": 152,
+      "cite_index": 163,
       "section_id": "scoring",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 14,
@@ -2006,7 +2150,7 @@
       "valid": true
     },
     {
-      "cite_index": 153,
+      "cite_index": 164,
       "section_id": "scoring",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 15,
@@ -2019,7 +2163,7 @@
       "valid": true
     },
     {
-      "cite_index": 154,
+      "cite_index": 165,
       "section_id": "scoring",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 44,
@@ -2032,7 +2176,7 @@
       "valid": true
     },
     {
-      "cite_index": 155,
+      "cite_index": 166,
       "section_id": "scoring",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 22,
@@ -2045,7 +2189,7 @@
       "valid": true
     },
     {
-      "cite_index": 156,
+      "cite_index": 167,
       "section_id": "scoring",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 16,
@@ -2058,7 +2202,7 @@
       "valid": true
     },
     {
-      "cite_index": 157,
+      "cite_index": 168,
       "section_id": "ban",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 14,
@@ -2071,7 +2215,7 @@
       "valid": true
     },
     {
-      "cite_index": 158,
+      "cite_index": 169,
       "section_id": "ban",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 10,
@@ -2084,7 +2228,7 @@
       "valid": true
     },
     {
-      "cite_index": 159,
+      "cite_index": 170,
       "section_id": "ban",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 15,
@@ -2097,7 +2241,7 @@
       "valid": true
     },
     {
-      "cite_index": 160,
+      "cite_index": 171,
       "section_id": "ban",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 17,
@@ -2110,7 +2254,7 @@
       "valid": true
     },
     {
-      "cite_index": 161,
+      "cite_index": 172,
       "section_id": "ban",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 30,
@@ -2123,7 +2267,7 @@
       "valid": true
     },
     {
-      "cite_index": 162,
+      "cite_index": 173,
       "section_id": "ban",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 11,
@@ -2136,7 +2280,7 @@
       "valid": true
     },
     {
-      "cite_index": 163,
+      "cite_index": 174,
       "section_id": "ban",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 21,
@@ -2149,7 +2293,7 @@
       "valid": true
     },
     {
-      "cite_index": 164,
+      "cite_index": 175,
       "section_id": "ban",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 13,
@@ -2162,7 +2306,7 @@
       "valid": true
     },
     {
-      "cite_index": 165,
+      "cite_index": 176,
       "section_id": "ban",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 57,
@@ -2175,7 +2319,7 @@
       "valid": true
     },
     {
-      "cite_index": 166,
+      "cite_index": 177,
       "section_id": "ban",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 9,
@@ -2188,7 +2332,7 @@
       "valid": true
     },
     {
-      "cite_index": 167,
+      "cite_index": 178,
       "section_id": "ban",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 22,
@@ -2201,7 +2345,7 @@
       "valid": true
     },
     {
-      "cite_index": 168,
+      "cite_index": 179,
       "section_id": "ban",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 24,
@@ -2214,7 +2358,7 @@
       "valid": true
     },
     {
-      "cite_index": 169,
+      "cite_index": 180,
       "section_id": "ban",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 97,
@@ -2227,7 +2371,7 @@
       "valid": true
     },
     {
-      "cite_index": 170,
+      "cite_index": 181,
       "section_id": "ban",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 12,
@@ -2240,7 +2384,7 @@
       "valid": true
     },
     {
-      "cite_index": 171,
+      "cite_index": 182,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 36,
@@ -2253,7 +2397,7 @@
       "valid": true
     },
     {
-      "cite_index": 172,
+      "cite_index": 183,
       "section_id": "instrument",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 23,
@@ -2266,7 +2410,7 @@
       "valid": true
     },
     {
-      "cite_index": 173,
+      "cite_index": 184,
       "section_id": "instrument",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 24,
@@ -2279,7 +2423,7 @@
       "valid": true
     },
     {
-      "cite_index": 174,
+      "cite_index": 185,
       "section_id": "instrument",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 6,
@@ -2292,7 +2436,7 @@
       "valid": true
     },
     {
-      "cite_index": 175,
+      "cite_index": 186,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 37,
@@ -2305,7 +2449,7 @@
       "valid": true
     },
     {
-      "cite_index": 176,
+      "cite_index": 187,
       "section_id": "instrument",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 46,
@@ -2318,7 +2462,7 @@
       "valid": true
     },
     {
-      "cite_index": 177,
+      "cite_index": 188,
       "section_id": "instrument",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 25,
@@ -2331,7 +2475,7 @@
       "valid": true
     },
     {
-      "cite_index": 178,
+      "cite_index": 189,
       "section_id": "instrument",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 7,
@@ -2344,7 +2488,7 @@
       "valid": true
     },
     {
-      "cite_index": 179,
+      "cite_index": 190,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 38,
@@ -2357,7 +2501,7 @@
       "valid": true
     },
     {
-      "cite_index": 180,
+      "cite_index": 191,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 91,
@@ -2370,7 +2514,7 @@
       "valid": true
     },
     {
-      "cite_index": 181,
+      "cite_index": 192,
       "section_id": "instrument",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 26,
@@ -2383,7 +2527,7 @@
       "valid": true
     },
     {
-      "cite_index": 182,
+      "cite_index": 193,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 41,
@@ -2396,7 +2540,7 @@
       "valid": true
     },
     {
-      "cite_index": 183,
+      "cite_index": 194,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 36,
@@ -2409,7 +2553,7 @@
       "valid": true
     },
     {
-      "cite_index": 184,
+      "cite_index": 195,
       "section_id": "instrument",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 9,
@@ -2422,7 +2566,7 @@
       "valid": true
     },
     {
-      "cite_index": 185,
+      "cite_index": 196,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 32,
@@ -2435,7 +2579,7 @@
       "valid": true
     },
     {
-      "cite_index": 186,
+      "cite_index": 197,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 48,
@@ -2448,7 +2592,7 @@
       "valid": true
     },
     {
-      "cite_index": 187,
+      "cite_index": 198,
       "section_id": "instrument",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 48,
@@ -2461,7 +2605,7 @@
       "valid": true
     },
     {
-      "cite_index": 188,
+      "cite_index": 199,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 29,
@@ -2474,7 +2618,7 @@
       "valid": true
     },
     {
-      "cite_index": 189,
+      "cite_index": 200,
       "section_id": "instrument",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 12,
@@ -2487,7 +2631,7 @@
       "valid": true
     },
     {
-      "cite_index": 190,
+      "cite_index": 201,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 44,
@@ -2500,7 +2644,7 @@
       "valid": true
     },
     {
-      "cite_index": 191,
+      "cite_index": 202,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 66,
@@ -2513,7 +2657,7 @@
       "valid": true
     },
     {
-      "cite_index": 192,
+      "cite_index": 203,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 80,
@@ -2526,7 +2670,7 @@
       "valid": true
     },
     {
-      "cite_index": 193,
+      "cite_index": 204,
       "section_id": "instrument",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 14,
@@ -2539,7 +2683,7 @@
       "valid": true
     },
     {
-      "cite_index": 194,
+      "cite_index": 205,
       "section_id": "instrument",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 26,
@@ -2552,7 +2696,7 @@
       "valid": true
     },
     {
-      "cite_index": 195,
+      "cite_index": 206,
       "section_id": "instrument",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 24,
@@ -2565,7 +2709,7 @@
       "valid": true
     },
     {
-      "cite_index": 196,
+      "cite_index": 207,
       "section_id": "instrument",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 16,
@@ -2578,7 +2722,7 @@
       "valid": true
     },
     {
-      "cite_index": 197,
+      "cite_index": 208,
       "section_id": "instrument",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 31,
@@ -2591,7 +2735,7 @@
       "valid": true
     },
     {
-      "cite_index": 198,
+      "cite_index": 209,
       "section_id": "instrument",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 9,
@@ -2604,7 +2748,7 @@
       "valid": true
     },
     {
-      "cite_index": 199,
+      "cite_index": 210,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 17,
@@ -2617,7 +2761,7 @@
       "valid": true
     },
     {
-      "cite_index": 200,
+      "cite_index": 211,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 28,
@@ -2630,7 +2774,7 @@
       "valid": true
     },
     {
-      "cite_index": 201,
+      "cite_index": 212,
       "section_id": "production",
       "video_id": "3FcYdRQPMCo",
       "chunk_index": 27,
@@ -2643,7 +2787,7 @@
       "valid": true
     },
     {
-      "cite_index": 202,
+      "cite_index": 213,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 29,
@@ -2656,7 +2800,7 @@
       "valid": true
     },
     {
-      "cite_index": 203,
+      "cite_index": 214,
       "section_id": "production",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 31,
@@ -2669,7 +2813,7 @@
       "valid": true
     },
     {
-      "cite_index": 204,
+      "cite_index": 215,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 3,
@@ -2682,7 +2826,7 @@
       "valid": true
     },
     {
-      "cite_index": 205,
+      "cite_index": 216,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 19,
@@ -2695,7 +2839,7 @@
       "valid": true
     },
     {
-      "cite_index": 206,
+      "cite_index": 217,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 17,
@@ -2708,7 +2852,7 @@
       "valid": true
     },
     {
-      "cite_index": 207,
+      "cite_index": 218,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 27,
@@ -2721,7 +2865,7 @@
       "valid": true
     },
     {
-      "cite_index": 208,
+      "cite_index": 219,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 18,
@@ -2734,7 +2878,7 @@
       "valid": true
     },
     {
-      "cite_index": 209,
+      "cite_index": 220,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 35,
@@ -2747,7 +2891,7 @@
       "valid": true
     },
     {
-      "cite_index": 210,
+      "cite_index": 221,
       "section_id": "production",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 12,
@@ -2760,7 +2904,7 @@
       "valid": true
     },
     {
-      "cite_index": 211,
+      "cite_index": 222,
       "section_id": "production",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 18,
@@ -2773,7 +2917,7 @@
       "valid": true
     },
     {
-      "cite_index": 212,
+      "cite_index": 223,
       "section_id": "production",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 9,
@@ -2786,7 +2930,7 @@
       "valid": true
     },
     {
-      "cite_index": 213,
+      "cite_index": 224,
       "section_id": "production",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 12,
@@ -2799,7 +2943,7 @@
       "valid": true
     },
     {
-      "cite_index": 214,
+      "cite_index": 225,
       "section_id": "production",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 5,
@@ -2812,7 +2956,7 @@
       "valid": true
     },
     {
-      "cite_index": 215,
+      "cite_index": 226,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 30,
@@ -2825,7 +2969,7 @@
       "valid": true
     },
     {
-      "cite_index": 216,
+      "cite_index": 227,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 36,
@@ -2838,7 +2982,7 @@
       "valid": true
     },
     {
-      "cite_index": 217,
+      "cite_index": 228,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 39,
@@ -2851,7 +2995,7 @@
       "valid": true
     },
     {
-      "cite_index": 218,
+      "cite_index": 229,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 16,
@@ -2864,7 +3008,7 @@
       "valid": true
     },
     {
-      "cite_index": 219,
+      "cite_index": 230,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 6,
@@ -2877,7 +3021,7 @@
       "valid": true
     },
     {
-      "cite_index": 220,
+      "cite_index": 231,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 25,
@@ -2890,7 +3034,7 @@
       "valid": true
     },
     {
-      "cite_index": 221,
+      "cite_index": 232,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 16,
@@ -2903,7 +3047,7 @@
       "valid": true
     },
     {
-      "cite_index": 222,
+      "cite_index": 233,
       "section_id": "production",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 12,
@@ -2916,7 +3060,7 @@
       "valid": true
     },
     {
-      "cite_index": 223,
+      "cite_index": 234,
       "section_id": "production",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 19,
@@ -2929,7 +3073,7 @@
       "valid": true
     },
     {
-      "cite_index": 224,
+      "cite_index": 235,
       "section_id": "production",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 1,
@@ -2942,7 +3086,7 @@
       "valid": true
     },
     {
-      "cite_index": 225,
+      "cite_index": 236,
       "section_id": "production",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 16,
@@ -2955,7 +3099,7 @@
       "valid": true
     },
     {
-      "cite_index": 226,
+      "cite_index": 237,
       "section_id": "production",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 3,
@@ -2968,7 +3112,7 @@
       "valid": true
     },
     {
-      "cite_index": 227,
+      "cite_index": 238,
       "section_id": "production",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 4,
@@ -2981,7 +3125,7 @@
       "valid": true
     },
     {
-      "cite_index": 228,
+      "cite_index": 239,
       "section_id": "production",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 4,
@@ -2994,7 +3138,7 @@
       "valid": true
     },
     {
-      "cite_index": 229,
+      "cite_index": 240,
       "section_id": "production",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 4,
@@ -3007,7 +3151,7 @@
       "valid": true
     },
     {
-      "cite_index": 230,
+      "cite_index": 241,
       "section_id": "production",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 17,
@@ -3020,7 +3164,7 @@
       "valid": true
     },
     {
-      "cite_index": 231,
+      "cite_index": 242,
       "section_id": "production",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 19,
@@ -3033,7 +3177,7 @@
       "valid": true
     },
     {
-      "cite_index": 232,
+      "cite_index": 243,
       "section_id": "production",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 21,
@@ -3046,7 +3190,7 @@
       "valid": true
     },
     {
-      "cite_index": 233,
+      "cite_index": 244,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 18,
@@ -3059,7 +3203,7 @@
       "valid": true
     },
     {
-      "cite_index": 234,
+      "cite_index": 245,
       "section_id": "production",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 21,
@@ -3072,7 +3216,7 @@
       "valid": true
     },
     {
-      "cite_index": 235,
+      "cite_index": 246,
       "section_id": "production",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 19,
@@ -3085,7 +3229,540 @@
       "valid": true
     },
     {
-      "cite_index": 236,
+      "cite_index": 247,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 16,
+      "chunk_id": "chunk:vBJF2sy1Pyw:16",
+      "quote": "we plug with every part so even if you start with r retrieval",
+      "text": "every stage",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 248,
+      "section_id": "architecture",
+      "video_id": "spvXj9tnWAQ",
+      "chunk_index": 1,
+      "chunk_id": "chunk:spvXj9tnWAQ:1",
+      "quote": "tend to run about 20 evals per per like",
+      "text": "20 per trace",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 249,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 19,
+      "chunk_id": "chunk:vBJF2sy1Pyw:19",
+      "quote": "fire a query evaluate like you know few of these key matrices and in parallel generate your responses",
+      "text": "parallel guardrail",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 250,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 21,
+      "chunk_id": "chunk:vBJF2sy1Pyw:21",
+      "quote": "the length of their question or the length of their prompt typically is like much larger",
+      "text": "what to look for",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 251,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 11,
+      "chunk_id": "chunk:vBJF2sy1Pyw:11",
+      "quote": "these four 4 five matrices are the best way for any developer to start",
+      "text": "RAG starter set",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 252,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 16,
+      "chunk_id": "chunk:vBJF2sy1Pyw:16",
+      "quote": "we plug with every part so even if you start with r retrieval",
+      "text": "every stage",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 253,
+      "section_id": "architecture",
+      "video_id": "X4dEHRzBLmc",
+      "chunk_index": 8,
+      "chunk_id": "chunk:X4dEHRzBLmc:8",
+      "quote": "issues with policy adherance uh sometimes issue with the response style",
+      "text": "four error types",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 254,
+      "section_id": "architecture",
+      "video_id": "8fNP4N46RRo",
+      "chunk_index": 40,
+      "chunk_id": "chunk:8fNP4N46RRo:40",
+      "quote": "we say tool wer error we actually mean a recall error",
+      "text": "router recall",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 255,
+      "section_id": "architecture",
+      "video_id": "a3SMraZWNNs",
+      "chunk_index": 9,
+      "chunk_id": "chunk:a3SMraZWNNs:9",
+      "quote": "you block bad outputs in real time",
+      "text": "block in real time",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 256,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 27,
+      "chunk_id": "chunk:EjFsjfOBZFE:27",
+      "quote": "Do you fail open or do you fail closed?",
+      "text": "open or closed",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 257,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 17,
+      "chunk_id": "chunk:EjFsjfOBZFE:17",
+      "quote": "they can often fail the wrong way",
+      "text": "fail lenient",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 258,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 3,
+      "chunk_id": "chunk:vBJF2sy1Pyw:3",
+      "quote": "you can do this evaluation in parallel to the generation",
+      "text": "post-hoc by default",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 259,
+      "section_id": "architecture",
+      "video_id": "pnlT_xatpVQ",
+      "chunk_index": 31,
+      "chunk_id": "chunk:pnlT_xatpVQ:31",
+      "quote": "more of a check after the fact",
+      "text": "check after the fact",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 260,
+      "section_id": "architecture",
+      "video_id": "spvXj9tnWAQ",
+      "chunk_index": 16,
+      "chunk_id": "chunk:spvXj9tnWAQ:16",
+      "quote": "here's what we did here's what we expected into an LLM",
+      "text": "trajectory eval",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 261,
+      "section_id": "architecture",
+      "video_id": "spvXj9tnWAQ",
+      "chunk_index": 12,
+      "chunk_id": "chunk:spvXj9tnWAQ:12",
+      "quote": "why eval anything down the line",
+      "text": "conditional evals",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 262,
+      "section_id": "architecture",
+      "video_id": "q2JrUKBMf0w",
+      "chunk_index": 4,
+      "chunk_id": "chunk:q2JrUKBMf0w:4",
+      "quote": "a long-running agent that can read traces sent in",
+      "text": "Signal",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 263,
+      "section_id": "architecture",
+      "video_id": "q2JrUKBMf0w",
+      "chunk_index": 4,
+      "chunk_id": "chunk:q2JrUKBMf0w:4",
+      "quote": "calling the same tool for repeatedly long time",
+      "text": "loop detection",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 264,
+      "section_id": "architecture",
+      "video_id": "q2JrUKBMf0w",
+      "chunk_index": 1,
+      "chunk_id": "chunk:q2JrUKBMf0w:1",
+      "quote": "teams running loops on real-world data with sub-agents kicked off",
+      "text": "moving target",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 265,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 36,
+      "chunk_id": "chunk:EjFsjfOBZFE:36",
+      "quote": "the ability to evidence uh the actual stored verbatim um response from a customer is super super important",
+      "text": "verbatim evidence",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 266,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 17,
+      "chunk_id": "chunk:EjFsjfOBZFE:17",
+      "quote": "these things work in order of seconds not order of milliseconds",
+      "text": "seconds, not ms",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 267,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 29,
+      "chunk_id": "chunk:EjFsjfOBZFE:29",
+      "quote": "it's actually your sort of like 95th percentile",
+      "text": "p95",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 268,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 19,
+      "chunk_id": "chunk:vBJF2sy1Pyw:19",
+      "quote": "fire a query evaluate like you know few of these key matrices and in parallel generate your responses",
+      "text": "in parallel",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 269,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 3,
+      "chunk_id": "chunk:vBJF2sy1Pyw:3",
+      "quote": "you can do this evaluation in parallel to the generation",
+      "text": "post-hoc",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 270,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 6,
+      "chunk_id": "chunk:vBJF2sy1Pyw:6",
+      "quote": "take this 10 20% cases run like a a battery of checks on them",
+      "text": "battery",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 271,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 9,
+      "chunk_id": "chunk:PjCwlX0XT8o:9",
+      "quote": "An evaluator is a measurement instrument with a failure profile",
+      "text": "least interpretive",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 272,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 12,
+      "chunk_id": "chunk:PjCwlX0XT8o:12",
+      "quote": "Deterministic checks should carry as much of the criterion as possible",
+      "text": "deterministic first",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 273,
+      "section_id": "architecture",
+      "video_id": "EjFsjfOBZFE",
+      "chunk_index": 35,
+      "chunk_id": "chunk:EjFsjfOBZFE:35",
+      "quote": "did you name a specific product? You know, very very simple cases that you can answer reliably",
+      "text": "decompose",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 274,
+      "section_id": "architecture",
+      "video_id": "mX9HzIRdBpw",
+      "chunk_index": 17,
+      "chunk_id": "chunk:mX9HzIRdBpw:17",
+      "quote": "we see over a 10% boost by using these factuality agents",
+      "text": "factuality agents",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 275,
+      "section_id": "architecture",
+      "video_id": "spvXj9tnWAQ",
+      "chunk_index": 9,
+      "chunk_id": "chunk:spvXj9tnWAQ:9",
+      "quote": "you'll want to improve the eval prompt template",
+      "text": "two virtuous cycles",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 276,
+      "section_id": "architecture",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 13,
+      "chunk_id": "chunk:vBJF2sy1Pyw:13",
+      "quote": "look at your traffic like you know take 50 samples from them",
+      "text": "real traffic",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 277,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 48,
+      "chunk_id": "chunk:PjCwlX0XT8o:48",
+      "quote": "Random sampling alone can produce an easy test",
+      "text": "hard cases",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 278,
+      "section_id": "architecture",
+      "video_id": "pnlT_xatpVQ",
+      "chunk_index": 17,
+      "chunk_id": "chunk:pnlT_xatpVQ:17",
+      "quote": "This is what we call human alignment",
+      "text": "human alignment",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 279,
+      "section_id": "architecture",
+      "video_id": "8fNP4N46RRo",
+      "chunk_index": 9,
+      "chunk_id": "chunk:8fNP4N46RRo:9",
+      "quote": "cohen scappa that people use for cases",
+      "text": "kappa",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 280,
+      "section_id": "architecture",
+      "video_id": "TL527yTpxlk",
+      "chunk_index": 39,
+      "chunk_id": "chunk:TL527yTpxlk:39",
+      "quote": "the tone only matches once in from our human labels",
+      "text": "per criterion",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 281,
+      "section_id": "architecture",
+      "video_id": "a3SMraZWNNs",
+      "chunk_index": 26,
+      "chunk_id": "chunk:a3SMraZWNNs:26",
+      "quote": "help me optimize the prompt so that the next time we run this system",
+      "text": "meta-prompting",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 282,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 44,
+      "chunk_id": "chunk:PjCwlX0XT8o:44",
+      "quote": "uses 108 for judge design, 36 for development checks",
+      "text": "frozen split",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 283,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 83,
+      "chunk_id": "chunk:PjCwlX0XT8o:83",
+      "quote": "Predeclare the primary metric comparison evaluation set and minimum worthwhile improvement",
+      "text": "predeclare",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 284,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 54,
+      "chunk_id": "chunk:PjCwlX0XT8o:54",
+      "quote": "Before calculating the confusion matrix, name the positive class",
+      "text": "name the positive class",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 285,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 57,
+      "chunk_id": "chunk:PjCwlX0XT8o:57",
+      "quote": "TP is 34, FN is six, FP is 16",
+      "text": "the four counts",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 286,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 57,
+      "chunk_id": "chunk:PjCwlX0XT8o:57",
+      "quote": "TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875",
+      "text": "the rates",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 287,
+      "section_id": "architecture",
+      "video_id": "PjCwlX0XT8o",
+      "chunk_index": 60,
+      "chunk_id": "chunk:PjCwlX0XT8o:60",
+      "quote": "may allow an ungrounded statement into a user-facing answer",
+      "text": "the cost of a miss",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 288,
       "section_id": "prompts",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 30,
@@ -3098,7 +3775,7 @@
       "valid": true
     },
     {
-      "cite_index": 237,
+      "cite_index": 289,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 27,
@@ -3111,7 +3788,7 @@
       "valid": true
     },
     {
-      "cite_index": 238,
+      "cite_index": 290,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 28,
@@ -3124,7 +3801,7 @@
       "valid": true
     },
     {
-      "cite_index": 239,
+      "cite_index": 291,
       "section_id": "prompts",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 13,
@@ -3137,7 +3814,7 @@
       "valid": true
     },
     {
-      "cite_index": 240,
+      "cite_index": 292,
       "section_id": "prompts",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 18,
@@ -3150,7 +3827,7 @@
       "valid": true
     },
     {
-      "cite_index": 241,
+      "cite_index": 293,
       "section_id": "prompts",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 21,
@@ -3163,7 +3840,7 @@
       "valid": true
     },
     {
-      "cite_index": 242,
+      "cite_index": 294,
       "section_id": "prompts",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 26,
@@ -3176,7 +3853,7 @@
       "valid": true
     },
     {
-      "cite_index": 243,
+      "cite_index": 295,
       "section_id": "prompts",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 10,
@@ -3189,7 +3866,7 @@
       "valid": true
     },
     {
-      "cite_index": 244,
+      "cite_index": 296,
       "section_id": "prompts",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 17,
@@ -3202,7 +3879,7 @@
       "valid": true
     },
     {
-      "cite_index": 245,
+      "cite_index": 297,
       "section_id": "prompts",
       "video_id": "TL527yTpxlk",
       "chunk_index": 27,
@@ -3215,7 +3892,7 @@
       "valid": true
     },
     {
-      "cite_index": 246,
+      "cite_index": 298,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 3,
@@ -3228,7 +3905,7 @@
       "valid": true
     },
     {
-      "cite_index": 247,
+      "cite_index": 299,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 44,
@@ -3241,7 +3918,7 @@
       "valid": true
     },
     {
-      "cite_index": 248,
+      "cite_index": 300,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 48,
@@ -3254,7 +3931,7 @@
       "valid": true
     },
     {
-      "cite_index": 249,
+      "cite_index": 301,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 57,
@@ -3267,7 +3944,7 @@
       "valid": true
     },
     {
-      "cite_index": 250,
+      "cite_index": 302,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 59,
@@ -3280,7 +3957,7 @@
       "valid": true
     },
     {
-      "cite_index": 251,
+      "cite_index": 303,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 66,
@@ -3293,7 +3970,7 @@
       "valid": true
     },
     {
-      "cite_index": 252,
+      "cite_index": 304,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 80,
@@ -3306,7 +3983,7 @@
       "valid": true
     },
     {
-      "cite_index": 253,
+      "cite_index": 305,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 83,
@@ -3319,7 +3996,7 @@
       "valid": true
     },
     {
-      "cite_index": 254,
+      "cite_index": 306,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 36,
@@ -3332,7 +4009,7 @@
       "valid": true
     },
     {
-      "cite_index": 255,
+      "cite_index": 307,
       "section_id": "prompts",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 9,
@@ -3345,7 +4022,7 @@
       "valid": true
     },
     {
-      "cite_index": 256,
+      "cite_index": 308,
       "section_id": "prompts",
       "video_id": "TL527yTpxlk",
       "chunk_index": 39,
@@ -3358,7 +4035,7 @@
       "valid": true
     },
     {
-      "cite_index": 257,
+      "cite_index": 309,
       "section_id": "prompts",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 28,
@@ -3371,7 +4048,7 @@
       "valid": true
     },
     {
-      "cite_index": 258,
+      "cite_index": 310,
       "section_id": "prompts",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 29,
@@ -3384,7 +4061,7 @@
       "valid": true
     },
     {
-      "cite_index": 259,
+      "cite_index": 311,
       "section_id": "prompts",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 27,
@@ -3397,7 +4074,7 @@
       "valid": true
     },
     {
-      "cite_index": 260,
+      "cite_index": 312,
       "section_id": "prompts",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 97,
@@ -3410,7 +4087,7 @@
       "valid": true
     },
     {
-      "cite_index": 261,
+      "cite_index": 313,
       "section_id": "disagreements",
       "video_id": "a3SMraZWNNs",
       "chunk_index": 18,
@@ -3423,7 +4100,7 @@
       "valid": true
     },
     {
-      "cite_index": 262,
+      "cite_index": 314,
       "section_id": "disagreements",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 26,
@@ -3436,7 +4113,7 @@
       "valid": true
     },
     {
-      "cite_index": 263,
+      "cite_index": 315,
       "section_id": "disagreements",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": 5,
@@ -3449,7 +4126,7 @@
       "valid": true
     },
     {
-      "cite_index": 264,
+      "cite_index": 316,
       "section_id": "disagreements",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 18,
@@ -3462,7 +4139,7 @@
       "valid": true
     },
     {
-      "cite_index": 265,
+      "cite_index": 317,
       "section_id": "disagreements",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 20,
@@ -3475,7 +4152,7 @@
       "valid": true
     },
     {
-      "cite_index": 266,
+      "cite_index": 318,
       "section_id": "disagreements",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 31,
@@ -3488,7 +4165,7 @@
       "valid": true
     },
     {
-      "cite_index": 267,
+      "cite_index": 319,
       "section_id": "disagreements",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 9,
@@ -3501,7 +4178,7 @@
       "valid": true
     },
     {
-      "cite_index": 268,
+      "cite_index": 320,
       "section_id": "disagreements",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 9,
@@ -3514,7 +4191,7 @@
       "valid": true
     },
     {
-      "cite_index": 269,
+      "cite_index": 321,
       "section_id": "disagreements",
       "video_id": "uQFLY8rQVYA",
       "chunk_index": 34,
@@ -3527,7 +4204,7 @@
       "valid": true
     },
     {
-      "cite_index": 270,
+      "cite_index": 322,
       "section_id": "disagreements",
       "video_id": "HI5b0g_mELA",
       "chunk_index": 18,
@@ -3540,7 +4217,7 @@
       "valid": true
     },
     {
-      "cite_index": 271,
+      "cite_index": 323,
       "section_id": "disagreements",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 7,
@@ -3553,7 +4230,7 @@
       "valid": true
     },
     {
-      "cite_index": 272,
+      "cite_index": 324,
       "section_id": "disagreements",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 6,
@@ -3566,7 +4243,7 @@
       "valid": true
     },
     {
-      "cite_index": 273,
+      "cite_index": 325,
       "section_id": "disagreements",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": 6,
@@ -3579,7 +4256,7 @@
       "valid": true
     },
     {
-      "cite_index": 274,
+      "cite_index": 326,
       "section_id": "disagreements",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": 18,
@@ -3592,7 +4269,7 @@
       "valid": true
     },
     {
-      "cite_index": 275,
+      "cite_index": 327,
       "section_id": "disagreements",
       "video_id": "8fNP4N46RRo",
       "chunk_index": 22,
@@ -3605,7 +4282,7 @@
       "valid": true
     },
     {
-      "cite_index": 276,
+      "cite_index": 328,
       "section_id": "disagreements",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": 16,
@@ -3618,7 +4295,7 @@
       "valid": true
     },
     {
-      "cite_index": 277,
+      "cite_index": 329,
       "section_id": "disagreements",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 2,
@@ -3631,7 +4308,7 @@
       "valid": true
     },
     {
-      "cite_index": 278,
+      "cite_index": 330,
       "section_id": "disagreements",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": 3,
@@ -3644,7 +4321,7 @@
       "valid": true
     },
     {
-      "cite_index": 279,
+      "cite_index": 331,
       "section_id": "disagreements",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": 17,
@@ -3657,7 +4334,7 @@
       "valid": true
     },
     {
-      "cite_index": 280,
+      "cite_index": 332,
       "section_id": "sources",
       "video_id": "spvXj9tnWAQ",
       "chunk_index": null,
@@ -3670,7 +4347,7 @@
       "valid": true
     },
     {
-      "cite_index": 281,
+      "cite_index": 333,
       "section_id": "sources",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": null,
@@ -3683,7 +4360,7 @@
       "valid": true
     },
     {
-      "cite_index": 282,
+      "cite_index": 334,
       "section_id": "sources",
       "video_id": "q2JrUKBMf0w",
       "chunk_index": null,
@@ -3696,7 +4373,7 @@
       "valid": true
     },
     {
-      "cite_index": 283,
+      "cite_index": 335,
       "section_id": "sources",
       "video_id": "N_DwZR--XCc",
       "chunk_index": null,
@@ -3709,7 +4386,7 @@
       "valid": true
     },
     {
-      "cite_index": 284,
+      "cite_index": 336,
       "section_id": "sources",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": null,
@@ -3722,7 +4399,7 @@
       "valid": true
     },
     {
-      "cite_index": 285,
+      "cite_index": 337,
       "section_id": "sources",
       "video_id": "qoPYlLg7_rY",
       "chunk_index": null,
@@ -3735,7 +4412,7 @@
       "valid": true
     },
     {
-      "cite_index": 286,
+      "cite_index": 338,
       "section_id": "sources",
       "video_id": "uQFLY8rQVYA",
       "chunk_index": null,
@@ -3748,7 +4425,7 @@
       "valid": true
     },
     {
-      "cite_index": 287,
+      "cite_index": 339,
       "section_id": "sources",
       "video_id": "HI5b0g_mELA",
       "chunk_index": null,
@@ -3761,7 +4438,7 @@
       "valid": true
     },
     {
-      "cite_index": 288,
+      "cite_index": 340,
       "section_id": "sources",
       "video_id": "a3SMraZWNNs",
       "chunk_index": null,
@@ -3774,7 +4451,7 @@
       "valid": true
     },
     {
-      "cite_index": 289,
+      "cite_index": 341,
       "section_id": "sources",
       "video_id": "kP_aaFnXLmY",
       "chunk_index": null,
@@ -3787,7 +4464,7 @@
       "valid": true
     },
     {
-      "cite_index": 290,
+      "cite_index": 342,
       "section_id": "sources",
       "video_id": "kIvjiH8yJoU",
       "chunk_index": null,
@@ -3800,7 +4477,7 @@
       "valid": true
     },
     {
-      "cite_index": 291,
+      "cite_index": 343,
       "section_id": "sources",
       "video_id": "TL527yTpxlk",
       "chunk_index": null,
@@ -3813,7 +4490,7 @@
       "valid": true
     },
     {
-      "cite_index": 292,
+      "cite_index": 344,
       "section_id": "sources",
       "video_id": "vBJF2sy1Pyw",
       "chunk_index": null,
@@ -3826,7 +4503,7 @@
       "valid": true
     },
     {
-      "cite_index": 293,
+      "cite_index": 345,
       "section_id": "sources",
       "video_id": "3FcYdRQPMCo",
       "chunk_index": null,
@@ -3839,7 +4516,7 @@
       "valid": true
     },
     {
-      "cite_index": 294,
+      "cite_index": 346,
       "section_id": "sources",
       "video_id": "8fNP4N46RRo",
       "chunk_index": null,
@@ -3852,7 +4529,7 @@
       "valid": true
     },
     {
-      "cite_index": 295,
+      "cite_index": 347,
       "section_id": "sources",
       "video_id": "mX9HzIRdBpw",
       "chunk_index": null,
@@ -3865,7 +4542,7 @@
       "valid": true
     },
     {
-      "cite_index": 296,
+      "cite_index": 348,
       "section_id": "sources",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": null,
@@ -3878,7 +4555,7 @@
       "valid": true
     },
     {
-      "cite_index": 297,
+      "cite_index": 349,
       "section_id": "sources",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": null,
@@ -3891,7 +4568,7 @@
       "valid": true
     },
     {
-      "cite_index": 298,
+      "cite_index": 350,
       "section_id": "sources",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": null,
@@ -3904,7 +4581,7 @@
       "valid": true
     },
     {
-      "cite_index": 299,
+      "cite_index": 351,
       "section_id": "gaps",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 27,
@@ -3917,7 +4594,7 @@
       "valid": true
     },
     {
-      "cite_index": 300,
+      "cite_index": 352,
       "section_id": "gaps",
       "video_id": "pnlT_xatpVQ",
       "chunk_index": 6,
@@ -3930,7 +4607,7 @@
       "valid": true
     },
     {
-      "cite_index": 301,
+      "cite_index": 353,
       "section_id": "gaps",
       "video_id": "EjFsjfOBZFE",
       "chunk_index": 17,
@@ -3943,7 +4620,7 @@
       "valid": true
     },
     {
-      "cite_index": 302,
+      "cite_index": 354,
       "section_id": "gaps",
       "video_id": "X4dEHRzBLmc",
       "chunk_index": 31,
@@ -3956,7 +4633,7 @@
       "valid": true
     },
     {
-      "cite_index": 303,
+      "cite_index": 355,
       "section_id": "gaps",
       "video_id": "PjCwlX0XT8o",
       "chunk_index": 97,
@@ -3969,7 +4646,7 @@
       "valid": true
     },
     {
-      "cite_index": 304,
+      "cite_index": 356,
       "section_id": "gaps",
       "video_id": "N_DwZR--XCc",
       "chunk_index": 48,
@@ -3982,7 +4659,7 @@
       "valid": true
     },
     {
-      "cite_index": 305,
+      "cite_index": 357,
       "section_id": "gaps",
       "video_id": "cRz0BWkuwHg",
       "chunk_index": 9,
@@ -3995,7 +4672,7 @@
       "valid": true
     },
     {
-      "cite_index": 306,
+      "cite_index": 358,
       "section_id": "gaps",
       "video_id": "qoPYlLg7_rY",
       "chunk_index": 14,
@@ -4008,13 +4685,39 @@
       "valid": true
     },
     {
-      "cite_index": 307,
+      "cite_index": 359,
       "section_id": "gaps",
       "video_id": "qoPYlLg7_rY",
       "chunk_index": 16,
       "chunk_id": "chunk:qoPYlLg7_rY:16",
       "quote": "one of the older Open AI models, AKA GPT-4o-mini, performed better than one of the newer Open AI models",
       "text": "the reversal",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 360,
+      "section_id": "gaps",
+      "video_id": "vBJF2sy1Pyw",
+      "chunk_index": 16,
+      "chunk_id": "chunk:vBJF2sy1Pyw:16",
+      "quote": "we plug with every part so even if you start with r retrieval",
+      "text": "every stage",
+      "video_ok": true,
+      "chunk_ok": true,
+      "quote_ok": true,
+      "valid": true
+    },
+    {
+      "cite_index": 361,
+      "section_id": "gaps",
+      "video_id": "spvXj9tnWAQ",
+      "chunk_index": 12,
+      "chunk_id": "chunk:spvXj9tnWAQ:12",
+      "quote": "why eval anything down the line",
+      "text": "conditional",
       "video_ok": true,
       "chunk_ok": true,
       "quote_ok": true,

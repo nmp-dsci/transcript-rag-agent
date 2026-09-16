@@ -2,6 +2,8 @@
 title: LLM-as-a-Judge
 topic: "LLM-as-a-judge: using language models to evaluate language model outputs"
 compiled_at: 2026-09-14
+revised_at: 2026-09-15
+revision: 4
 videos: 19
 chunks: 703
 sources:
@@ -51,7 +53,7 @@ A field guide from the transcript corpus.
 
 How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.
 
-19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14.
+19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14 · revision 4, 2026-09-15.
 
 ## The thesis: narrow it, calibrate it, characterise its error
 
@@ -73,9 +75,20 @@ Compare judge labels to human labels on a golden set and compute exact-match acc
 
 ### 3 · Characterise it
 
-Report TP/FP/TN/FN with sensitivity, specificity and balanced accuracy instead of one headline number [PjCwlX0XT8o@57], test the four known biases [PjCwlX0XT8o@36], and re-run — one successful trace does not establish a reliable workflow [PjCwlX0XT8o@85].
+Report TP/FP/TN/FN — true and false positives and negatives, defined below — with sensitivity, specificity and balanced accuracy instead of one headline number [PjCwlX0XT8o@57], test the four known biases [PjCwlX0XT8o@36], and re-run — one successful trace does not establish a reliable workflow [PjCwlX0XT8o@85].
 
 The prize for doing this is compounding, not linear. Getting through four eval iterations in a month instead of two produces an exponentially better product [spvXj9tnWAQ@10]. The scale is real: Arize runs over 100 million evals a month, the average customer runs about 12 eval jobs, and the top teams run more than 3,800 distinct evaluators [q2JrUKBMf0w@0], with Duolingo running roughly 20 evals per trace [spvXj9tnWAQ@1].
+
+### The four cells, in plain terms
+
+TP, FP, TN and FN are the four cells of a confusion matrix: your human labels crosstabulated against the judge's calls, one cell per combination. Name the positive class before you compute anything — the class you pick decides how every prediction and every error is interpreted [PjCwlX0XT8o@54]. Take the worked example's positive class — "the human label says this response contains an unsupported claim", so a positive prediction means the judge flagged it:
+
+- **TP — true positive.** The label says unsupported and the judge flags the response. A catch [PjCwlX0XT8o@55].
+- **FP — false positive.** The response is supported and the judge flags it anyway. A false alarm; it costs human review capacity and can suppress a useful answer [PjCwlX0XT8o@55].
+- **TN — true negative.** The response is supported and the judge passes it. Correctly left alone [PjCwlX0XT8o@55].
+- **FN — false negative.** The response contains an unsupported claim and the judge passes it [PjCwlX0XT8o@55]. This is the dangerous cell: the ungrounded statement reaches the user, exactly where the evaluator was supposed to be the safety signal [PjCwlX0XT8o@60].
+
+The rates are just ratios of those cells. **Sensitivity (TPR) = TP / (TP + FN)** is the proportion of genuinely unsupported responses the judge flags [PjCwlX0XT8o@56]. **Specificity (TNR) = TN / (TN + FP)** is the proportion of supported responses it leaves unflagged [PjCwlX0XT8o@56]. **Balanced accuracy** is the mean of the two, giving equal weight to the positive and negative classes [PjCwlX0XT8o@56]. That is why the headline number is not enough: raw agreement can be high when unsupported claims are rare even while TPR is poor [PjCwlX0XT8o@57]. Stage 07 puts numbers in the cells — of 200 held-out responses, TP 34, FN 6, FP 16, TN 144, which is where TPR 0.85, TNR 0.90 and balanced accuracy 0.875 come from [PjCwlX0XT8o@57].
 
 ## The build: seven stages from raw traces to a release gate
 
@@ -314,6 +327,8 @@ LLM evals scale human judgment; they do not replace it, so some human-in-the-loo
 
 Offline calibration is the easy half. The hard half is what the judge costs, where it sits in the request path, which way it fails, and whether a fixed rubric can describe an agent at all.
 
+Those four questions are positional — they are answered by *where* the judge sits, not by how good its prompt is. Every placement in the cards below is drawn in "Draw the system: where the judge attaches": the attachment points on an agent (input, retrieval, tool calls, output, trajectory), the three request-path topologies and what each one does to p95, the instrument ladder, and the calibration loop that feeds them.
+
 ### Price it at production volume
 
 Judge checks run in seconds, not milliseconds, and you pay per check forever — stacking multiple judges scales expensively fast [EjFsjfOBZFE@17]. Price at actual production call volume, not demo volume: a chatbot check runs on every message and may need several checks per message [EjFsjfOBZFE@28]. Even a toy harness makes three paid calls per test question [3FcYdRQPMCo@27].
@@ -361,6 +376,133 @@ Netflix's largest single gain came from the same move in miniature: split factua
 ### What happens with no evaluation at all
 
 A car dealership chatbot with no real-time evaluation agreed that a competitor's car was better and then agreed to sell a car for a dollar [vBJF2sy1Pyw@18]. Jailbreak attempts carry telltale signs — unusually long prompts, bursts of repeated traffic, lower sentiment and coherence than genuine queries [vBJF2sy1Pyw@21]. Human review handles genuine ambiguity well, but it doesn't scale — design for what fraction of decisions escalate, because that governs cost and response time [EjFsjfOBZFE@19].
+
+## Draw the system: where the judge attaches
+
+A judge is not a stage in your app; it is a set of probes clipped onto one. Where you clip them decides cost, latency and what you can diagnose. Teams that do this well instrument every part of the pipeline — query rewrite, sub-query generation, retrieval, reranking — not just the final response [vBJF2sy1Pyw@16], which is how Duolingo ends up running roughly 20 evals per trace [spvXj9tnWAQ@1]. Five drawings: the attachment points, the request-path topologies, the instrument ladder, the calibration loop, and the four cells.
+
+**Figure 1 — an agent and its seven judge attachment points.** Solid boxes are your application; dashed (`+ +`) boxes are judges. Nothing in the corpus draws this diagram — it is assembled from the placements each talk describes, cited one by one below.
+
+```
+                      online . in the request path
+        + + + + + + + + + +            + + + + + + + + + + + + +
+        + J1 . input check +            + J4 . output guardrail  +
+        + jailbreak/PII/   +            + inline . blocking .    +
+        + topic            +            + fail open or closed    +
+        + + + + +|+ + + + +             + + + + + +|+ + + + + + +
+                 v                                 v
+  +----------+   +--------------------+   +----------------+
+  |User query|-->|     Agent loop     |-->| Final response |--> user
+  +----------+   |  plan . act . obs  |   +-------+--------+
+                 +--+-------+------+--+           | (spans)
+           +--------+       |      +-------+      v
+           v                v              v   +------------+
+    +-------------+  +------------+  +--------+|Trace store |
+    | Retrieval   |  | Tool calls |  |Sub-    ||every span  |
+    | rewrite .   |  | / APIs     |  |agents  |+-----+------+
+    | search.rank |  +-----+------+  +--------+      |
+    +------+------+        |                         |
+           v               v                         |
+    + + + + + + +   + + + + + + + +                  |
+    + J2 context+   + J3 tool-call+                  |
+    + relevance +   + check       +                  |
+    + + + + + + +   + + + + + + + +                  |
+                                                     |
+  offline . async . sampled traces <-----------------+
+        |                    |                    |
+        v                    v                    v
+  + + + + + + + +   + + + + + + + + +   + + + + + + + + + +
+  + J5 . response+   + J6 . trajectory+   + J7 . agent-as- +
+  + quality      +   + judge          +   + judge          +
+  + + + + + + + +   + + + + + + + + +   + + + + + + + + + +
+```
+
+- **J1 · input check** — fire the jailbreak/safety check on the query *in parallel* with generation, not after the response, so you don't add a latency layer for the 95% of users who aren't misusing the product [vBJF2sy1Pyw@19]. Jailbreak traffic has telltale shape — unusually long prompts, repeated bursts, lower sentiment and coherence [vBJF2sy1Pyw@21].
+- **J2 · context relevance** — clip a check onto retrieval itself, because context relevance is one of the four or five metrics any RAG app should start with [vBJF2sy1Pyw@11], and the platform should plug into every part of the pipeline rather than only the final response [vBJF2sy1Pyw@16].
+- **J3 · tool-call check** — tool-call correctness is one of the four error types error analysis surfaced on real support transcripts, and it wants its own judge [X4dEHRzBLmc@8]. Attribute the failure correctly: when an agent fails to pick an available tool, that is a recall error in the router, not a fault of the final LLM call [8fNP4N46RRo@40].
+- **J4 · output guardrail** — the only judge in the blocking path, because blocking bad outputs in real time is one of the three production uses of evals [a3SMraZWNNs@9]. Being here forces the two questions the other placements dodge: fail open or fail closed, and do you need a second independent check [EjFsjfOBZFE@27] — nondeterministic guardrails drift toward leniency on their own [EjFsjfOBZFE@17].
+- **J5 · response quality, post-hoc** — relevance, hallucination and completeness are too expensive to run before showing the response, so they run after the fact on stored traces [vBJF2sy1Pyw@3]; that is the difference between an eval and a guardrail — an eval can detect a prompt injection but not prevent it [pnlT_xatpVQ@31].
+- **J6 · trajectory judge** — feed the judge what the agent did and what was expected, with or without a reference path [spvXj9tnWAQ@16], and make it conditional: if a control-flow step failed, skip everything downstream because those results are invalid anyway [spvXj9tnWAQ@12].
+- **J7 · agent-as-judge** — a long-running agent that reads traces and discovers patterns a fixed rubric would never encode [q2JrUKBMf0w@4], such as the same tool being called repeatedly in a loop [q2JrUKBMf0w@4]. This box exists because the target moved: from single prompt-answering to tool calls to long-horizon loops with sub-agents on real-world data [q2JrUKBMf0w@1].
+- **The trace store is the load-bearing box.** Everything below the bus is optional until spans are recorded; and for audit, what you store must be the verbatim message, not a summary [EjFsjfOBZFE@36].
+
+**Figure 2 — three request-path topologies.**
+
+```
+A . inline      [input check] -> [generate] -> [output check] -> user sees answer
+  blocking      serial: every check lands inside the number the user feels (p95)
+
+B . parallel                 + input check +
+  non-blocking  [query] --+--                --+--> user sees answer
+                          +--   [generate]   --+
+                the check overlaps generation: no extra layer for the 95%
+                who aren't misusing it
+
+C . post-hoc    [query] -> [generate] -> user sees answer
+  async                        :
+                               v
+                 + sampled traces -> 5-10 targeted checks +
+                 the 10-20% that fail a high-level check get the battery
+```
+
+Judge checks run in seconds, not milliseconds, and you pay per check forever [EjFsjfOBZFE@17], so topology is a cost decision before it is a quality one. In lane A the number to watch is p95, not the mean — one person waiting two minutes ruins the experience even if most get sub-five-second responses [EjFsjfOBZFE@29]. Lane B is the recommended shape for safety checks [vBJF2sy1Pyw@19]; lane C is where relevance, hallucination and completeness belong [vBJF2sy1Pyw@3], feeding the root-cause battery on the 10–20% of cases that fail a high-level check [vBJF2sy1Pyw@6].
+
+**Figure 3 — the instrument ladder, and decomposition inside the judge column.**
+
+```
+                    [ one criterion, one decision ]
+         +------------+------------+------------+------------+
+         v            v            v            v            v
+  [executable  ] [reference  ] [classifier ] [LLM judge  ] [human review]
+  [check       ] [check      ] [           ] [ (judge)   ] [            ]
+   output shape   identity/DB   known cats    borderline    high-conseq.
+
+  <-- cheap . deterministic . debuggable ... interpretive . needs calibration -->
+
+  inside the judge column, decompose again:
+     [plot] [metadata] [talent] [awards]  ->  min() across sub-scores
+```
+
+Read the top row left to right and stop at the first instrument that can answer the criterion: an evaluator is a measurement instrument with a failure profile, so pick the least interpretive one that works [PjCwlX0XT8o@9], and push as much of the criterion as possible into deterministic checks [PjCwlX0XT8o@12]. When the judge column is unavoidable, decompose the hard question into narrow checks a smaller model answers reliably [EjFsjfOBZFE@35] — the bottom row is Netflix's factuality split, whose minimum-across-sub-types aggregation was their single biggest gain, over 10% [mX9HzIRdBpw@17].
+
+**Figure 4 — the two calibration loops.**
+
+```
+ [Production traces] --> [Sample + hard cases] --> [Human labels . frozen split]
+        ^                                                      |
+        |                                                      v
+        |                                             [ Judge prompt vN ] <--+
+        |                                                      |             |
+        |                                                      v             |
+        |                                             [ Judge labels ]       |
+        |                                               (design split)      |
+        |                                                      |             |
+        |             [Confusion matrix + kappa] <-------------+             |
+        |                        |                                           |
+        |                        v                                           |
+        |          [Disagreements -> meta-prompt] --- loop 2 ----------------+
+        |                        |
+        |                        v
+        +------ loop 1 ---- [Frozen test -> release gate]
+```
+
+Two loops, not one: one improving the application from eval signal, a second annotating eval failures to improve the eval prompt itself [spvXj9tnWAQ@9]. Sample from real traffic, not benchmarks [vBJF2sy1Pyw@13], and plant hard cases deliberately because random sampling alone produces an easy test [PjCwlX0XT8o@48]. The comparison box is exact-match human alignment [pnlT_xatpVQ@17] reported chance-corrected [8fNP4N46RRo@9] and per criterion, since tone and product knowledge can differ wildly on the same judge [TL527yTpxlk@39]. The rewrite arrow is the meta-prompt [a3SMraZWNNs@26]; the split is frozen before the judge prompt is touched [PjCwlX0XT8o@44] and the gate predeclares its minimum worthwhile improvement [PjCwlX0XT8o@83].
+
+**Figure 5 — the four cells with the worked numbers.**
+
+```
+ positive class = the human label says "contains an unsupported claim"
+
+                    human: unsupported  |  human: supported
+  judge flags       TP 34               |  FP 16                TPR = 34/40   = 0.85
+                    a catch             |  false alarm, review  TNR = 144/160 = 0.90
+  judge passes      FN 6  << danger     |  TN 144               balanced acc  = 0.875
+                    reaches the user    |  correctly left alone n = 200 held out
+```
+
+Name the positive class before you compute anything — the class you pick decides how every error is read [PjCwlX0XT8o@54]. These are the worked numbers: TP 34, FN 6, FP 16 out of 200 [PjCwlX0XT8o@57], giving TPR 0.85, TNR 0.90 and balanced accuracy 0.875 [PjCwlX0XT8o@57]. FN is the marked cell because a miss puts an ungrounded statement into a user-facing answer, exactly where the evaluator was supposed to be the safety signal [PjCwlX0XT8o@60].
+
+One honest caveat on all five. No talk in this corpus presents a reference architecture — every box above is a placement someone described in prose, drawn here and cited to the sentence that justifies it. Where the corpus is silent it stays silent: nothing here tells you how many judge calls a single agent turn should cost, how to combine J1–J7 into one release decision, or what the agent's own memory and planner should look like. Those are in the gaps.
 
 ## Copy these
 
@@ -616,11 +758,12 @@ Nineteen talks, and these questions still go unanswered. Where you see a confide
 - **Self-hosted judges.** No cost, latency or quality comparison of open-weight judge models against hosted APIs, and no comparison of eval frameworks — Ragas is named [cRz0BWkuwHg@9] but never compared to alternatives.
 - **Cost of the judging paradigms.** No concrete dollar or millisecond comparison across pointwise, pairwise and listwise judging, and the ELO/ragelo approach is described without its K-factor or scoring maths, so you cannot reproduce it from the transcript.
 - **Statistical significance in the platform demos.** A jump from 79% to 94% on 20 examples is reported without any significance treatment [qoPYlLg7_rY@14] — and on a 168-example set the ranking reversed, with the older GPT-4o-mini beating the newer model [qoPYlLg7_rY@16]. Treat every small-n eval result this way.
+- **A reference architecture.** No talk draws where judges sit in an agent, how many judge calls one agent turn should cost, or how J1–J7 in "Draw the system" combine into a single release decision. The placements are described one at a time — instrument every stage [vBJF2sy1Pyw@16], skip what is downstream of a failed step [spvXj9tnWAQ@12] — and never assembled into one diagram or costed as a whole.
 
 ---
 
 LLM-as-a-Judge · a field guide compiled from the transcript corpus.
 
-19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14.
+19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14 · revision 4, 2026-09-15.
 
 Every claim on this page resolves to a chunk you can open. Where it does not, it is in the gaps.

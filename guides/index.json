@@ -7,15 +7,17 @@
       "subtitle": "How to build an LLM that grades another LLM's output — and how to prove the grade means anything. Distilled from nineteen talks by Arize, Stanford CME295, Netflix, Agenta, Evidently, UnlikelyAI, OpenSearch, UpTrain, LangSmith practitioners, CampusX and others who have shipped judges, calibrated them against humans, and published the numbers where they failed.",
       "question": "",
       "status": "published",
-      "current_version": 2,
+      "current_version": 4,
       "compiled_at": "2026-09-14",
       "videos": 19,
       "chunk_count": 703,
-      "cite_total": 308,
-      "cite_valid": 308,
+      "cite_total": 362,
+      "cite_valid": 362,
       "versions": [
         1,
-        2
+        2,
+        3,
+        4
       ]
     },
     {

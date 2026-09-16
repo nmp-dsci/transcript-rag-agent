@@ -19,6 +19,18 @@
   .split p { margin: 0.35rem 0; }
   .split p .side { font-weight: 600; }
   .verdict { font-style: italic; opacity: 0.85; }
+  figure.diagram { margin: 2rem 0 1.6rem; padding: 0; }
+  figure.diagram svg { width: 100%; height: auto; display: block; }
+  figure.diagram figcaption { font-size: 0.92rem; opacity: 0.88; margin-top: 0.9rem; line-height: 1.55; }
+  .diagram text { fill: currentColor; font-family: "Geist", ui-sans-serif, system-ui, sans-serif; font-size: 14px; }
+  .diagram .tag { font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; opacity: 0.7; letter-spacing: 0.02em; }
+  .diagram .hd { font-weight: 600; }
+  .diagram .num { font-family: "Geist Mono", ui-monospace, monospace; font-size: 22px; font-weight: 500; }
+  .diagram .bx { fill: rgba(128,128,128,0.10); stroke: currentColor; stroke-width: 1.4; }
+  .diagram .bx.j { fill: rgba(128,128,128,0.20); stroke-dasharray: 6 4; }
+  .diagram .bx.hot { fill: rgba(128,128,128,0.30); }
+  .diagram .ln { stroke: currentColor; stroke-width: 1.4; fill: none; }
+  .diagram .ln.dash { stroke-dasharray: 5 4; opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -33,6 +45,7 @@
       <a href="#ban">Delete on sight</a>
       <a href="#instrument">Validate the instrument</a>
       <a href="#production">In production</a>
+      <a href="#architecture">Draw the system</a>
       <a href="#prompts">Copy these</a>
       <a href="#disagreements">Where the corpus</a>
       <a href="#sources">Sources</a>
@@ -48,7 +61,7 @@
     <span>19 source videos</span>
     <span>703 transcript chunks read in full</span>
     <span>5 parallel extraction passes</span>
-    <span>compiled 2026-09-14</span>
+    <span>compiled 2026-09-14 · revision 4, 2026-09-15</span>
   </div>
 </header>
 
@@ -79,11 +92,21 @@
     </div>
     <div class="panel">
       <h3 id="thesis-h33">3 · Characterise it</h3>
-      <p id="thesis-p6">Report TP/FP/TN/FN with sensitivity, specificity and balanced accuracy instead of one headline number <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">confusion matrix</cite>, test the four known biases <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">bias card</cite>, and re-run — one successful trace does not establish a reliable workflow <cite data-video="PjCwlX0XT8o" data-chunk="85" data-quote="One successful trace does not establish a reliable workflow">repeatability</cite>.</p>
+      <p id="thesis-p6">Report TP/FP/TN/FN — true and false positives and negatives, <a href="#thesis-h34">defined below</a> — with sensitivity, specificity and balanced accuracy instead of one headline number <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">confusion matrix</cite>, test the four known biases <cite data-video="PjCwlX0XT8o" data-chunk="36" data-quote="Position bias, verbosity bias, self-preference, and task specific bias">bias card</cite>, and re-run — one successful trace does not establish a reliable workflow <cite data-video="PjCwlX0XT8o" data-chunk="85" data-quote="One successful trace does not establish a reliable workflow">repeatability</cite>.</p>
     </div>
   </div>
 
   <p id="thesis-p7">The prize for doing this is compounding, not linear. Getting through four eval iterations in a month instead of two produces an exponentially better product <cite data-video="spvXj9tnWAQ" data-chunk="10" data-quote="get through four iterations in a month rather than two">iteration velocity</cite>. The scale is real: Arize runs over 100 million evals a month, the average customer runs about 12 eval jobs, and the top teams run more than 3,800 distinct evaluators <cite data-video="q2JrUKBMf0w" data-chunk="0" data-quote="top teams running over 3,800 different evaluators">eval scale</cite>, with Duolingo running roughly 20 evals per trace <cite data-video="spvXj9tnWAQ" data-chunk="1" data-quote="tend to run about 20 evals per per like">20 per trace</cite>.</p>
+
+  <h3 id="thesis-h34">The four cells, in plain terms</h3>
+  <p id="thesis-p8">TP, FP, TN and FN are the four cells of a confusion matrix: your human labels crosstabulated against the judge's calls, one cell per combination. Name the positive class before you compute anything — the class you pick decides how every prediction and every error is interpreted <cite data-video="PjCwlX0XT8o" data-chunk="54" data-quote="Before calculating the confusion matrix, name the positive class">name the positive class</cite>. Take the worked example's positive class — "the human label says this response contains an unsupported claim", so a positive prediction means the judge flagged it:</p>
+  <ul>
+    <li id="thesis-li1"><strong>TP — true positive.</strong> The label says unsupported and the judge flags the response. A catch <cite data-video="PjCwlX0XT8o" data-chunk="55" data-quote="the reference label identifies an unsupported claim and the judge flags">true positive</cite>.</li>
+    <li id="thesis-li2"><strong>FP — false positive.</strong> The response is supported and the judge flags it anyway. A false alarm; it costs human review capacity and can suppress a useful answer <cite data-video="PjCwlX0XT8o" data-chunk="55" data-quote="the response is supported but the judge flags it">false positive</cite>.</li>
+    <li id="thesis-li3"><strong>TN — true negative.</strong> The response is supported and the judge passes it. Correctly left alone <cite data-video="PjCwlX0XT8o" data-chunk="55" data-quote="the response is supported and the judge passes it">true negative</cite>.</li>
+    <li id="thesis-li4"><strong>FN — false negative.</strong> The response contains an unsupported claim and the judge passes it <cite data-video="PjCwlX0XT8o" data-chunk="55" data-quote="the response contains an unsupported claim">false negative</cite>. This is the dangerous cell: the ungrounded statement reaches the user, exactly where the evaluator was supposed to be the safety signal <cite data-video="PjCwlX0XT8o" data-chunk="60" data-quote="may allow an ungrounded statement into a user-facing answer">the cost of a miss</cite>.</li>
+  </ul>
+  <p id="thesis-p9">The rates are just ratios of those cells. <strong>Sensitivity (TPR) = TP / (TP + FN)</strong> is the proportion of genuinely unsupported responses the judge flags <cite data-video="PjCwlX0XT8o" data-chunk="56" data-quote="TPR or sensitivity is the proportion of genuinely unsupported">sensitivity</cite>. <strong>Specificity (TNR) = TN / (TN + FP)</strong> is the proportion of supported responses it leaves unflagged <cite data-video="PjCwlX0XT8o" data-chunk="56" data-quote="TNR or specificity is the proportion of supported responses">specificity</cite>. <strong>Balanced accuracy</strong> is the mean of the two, giving equal weight to the positive and negative classes <cite data-video="PjCwlX0XT8o" data-chunk="56" data-quote="Balanced accuracy gives equal weight to the positive and negative classes">balanced accuracy</cite>. That is why the headline number is not enough: raw agreement can be high when unsupported claims are rare even while TPR is poor <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="can be high when unsupported claims are rare">why not accuracy</cite>. Stage 07 puts numbers in the cells — of 200 held-out responses, TP 34, FN 6, FP 16, TN 144, which is where TPR 0.85, TNR 0.90 and balanced accuracy 0.875 come from <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TP is 34, FN is six, FP is 16">the four counts</cite>.</p>
 </section>
 
 <section id="pipeline">
@@ -354,6 +377,8 @@
   <h2 id="production-h2">In production: cost, guardrails and agents</h2>
   <p id="production-p1">Offline calibration is the easy half. The hard half is what the judge costs, where it sits in the request path, which way it fails, and whether a fixed rubric can describe an agent at all.</p>
 
+  <p id="production-p14">Those four questions are positional — they are answered by <em>where</em> the judge sits, not by how good its prompt is. Every placement in the cards below is drawn in <a href="#architecture">Draw the system</a>: the attachment points on an agent (input, retrieval, tool calls, output, trajectory), the three request-path topologies and what each one does to p95, the instrument ladder, and the calibration loop that feeds them.</p>
+
   <div class="levers" id="production-levers">
     <div class="lever">
       <h3 id="production-h31">Price it at production volume</h3>
@@ -404,6 +429,291 @@
       <p id="production-p13">A car dealership chatbot with no real-time evaluation agreed that a competitor's car was better and then agreed to sell a car for a dollar <cite data-video="vBJF2sy1Pyw" data-chunk="18" data-quote="is Tesla better than GM and the bot would say yeah">the dollar car</cite>. Jailbreak attempts carry telltale signs — unusually long prompts, bursts of repeated traffic, lower sentiment and coherence than genuine queries <cite data-video="vBJF2sy1Pyw" data-chunk="21" data-quote="the length of their question or the length of their prompt typically is like much larger">jailbreak signals</cite>. Human review handles genuine ambiguity well, but it doesn't scale — design for what fraction of decisions escalate, because that governs cost and response time <cite data-video="EjFsjfOBZFE" data-chunk="19" data-quote="it does work that it just doesn't scale">escalation budget</cite>.</p>
     </div>
   </div>
+</section>
+
+<section id="architecture">
+  <h2 id="architecture-h2">Draw the system: where the judge attaches</h2>
+  <p id="architecture-p1">A judge is not a stage in your app; it is a set of probes clipped onto one. Where you clip them decides cost, latency and what you can diagnose. Teams that do this well instrument every part of the pipeline — query rewrite, sub-query generation, retrieval, reranking — not just the final response <cite data-video="vBJF2sy1Pyw" data-chunk="16" data-quote="we plug with every part so even if you start with r retrieval">every stage</cite>, which is how Duolingo ends up running roughly 20 evals per trace <cite data-video="spvXj9tnWAQ" data-chunk="1" data-quote="tend to run about 20 evals per per like">20 per trace</cite>. Five drawings: the attachment points, the request-path topologies, the instrument ladder, the calibration loop, and the four cells.</p>
+
+  <figure class="diagram" id="architecture-fig1">
+    <svg viewBox="0 0 960 600" role="img" aria-labelledby="architecture-fig1-t architecture-fig1-d">
+      <title id="architecture-fig1-t">An agent with seven judge attachment points</title>
+      <desc id="architecture-fig1-d">A user query enters an agent loop that calls retrieval, tools and sub-agents and returns a final response. Dashed boxes mark judge attachment points: an input check and an output guardrail in the online request path; context-relevance and tool-call checks on the agent's internal steps; and, off the trace store, a post-hoc response-quality battery, a trajectory judge and a long-running agent-as-judge.</desc>
+      <defs>
+        <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+
+      <text class="tag" x="24" y="40">online · in the request path</text>
+      <rect class="bx j" x="190" y="50" width="250" height="60" rx="10"/>
+      <text class="hd" x="315" y="78" text-anchor="middle">J1 · input check</text>
+      <text class="tag" x="315" y="98" text-anchor="middle">jailbreak · PII · topic</text>
+      <rect class="bx j" x="640" y="50" width="280" height="60" rx="10"/>
+      <text class="hd" x="780" y="78" text-anchor="middle">J4 · output guardrail</text>
+      <text class="tag" x="780" y="98" text-anchor="middle">inline · blocking · fail open or closed</text>
+      <path class="ln dash" d="M250,110 L250,198" marker-end="url(#ar1)"/>
+      <path class="ln dash" d="M700,110 L700,198" marker-end="url(#ar1)"/>
+
+      <rect class="bx" x="24" y="176" width="130" height="64" rx="10"/>
+      <text x="89" y="214" text-anchor="middle">User query</text>
+      <rect class="bx" x="340" y="164" width="240" height="88" rx="10"/>
+      <text class="hd" x="460" y="200" text-anchor="middle">Agent loop</text>
+      <text class="tag" x="460" y="224" text-anchor="middle">plan · act · observe</text>
+      <rect class="bx" x="780" y="176" width="156" height="64" rx="10"/>
+      <text x="858" y="204" text-anchor="middle">Final response</text>
+      <text class="tag" x="858" y="226" text-anchor="middle">→ user</text>
+      <path class="ln" d="M154,208 L336,208" marker-end="url(#ar1)"/>
+      <path class="ln" d="M580,208 L776,208" marker-end="url(#ar1)"/>
+
+      <rect class="bx" x="150" y="330" width="220" height="64" rx="10"/>
+      <text x="260" y="356" text-anchor="middle">Retrieval</text>
+      <text class="tag" x="260" y="378" text-anchor="middle">rewrite · search · rerank</text>
+      <rect class="bx" x="410" y="330" width="180" height="64" rx="10"/>
+      <text x="500" y="368" text-anchor="middle">Tool calls / APIs</text>
+      <rect class="bx" x="630" y="330" width="160" height="64" rx="10"/>
+      <text x="710" y="362" text-anchor="middle">Sub-agents</text>
+      <text class="tag" x="710" y="382" text-anchor="middle">spawned per task</text>
+      <rect class="bx" x="806" y="330" width="130" height="64" rx="10"/>
+      <text x="871" y="356" text-anchor="middle">Trace store</text>
+      <text class="tag" x="871" y="378" text-anchor="middle">every span</text>
+      <path class="ln" d="M400,252 L292,326" marker-start="url(#ar1)" marker-end="url(#ar1)"/>
+      <path class="ln" d="M460,252 L500,326" marker-start="url(#ar1)" marker-end="url(#ar1)"/>
+      <path class="ln" d="M520,252 L688,326" marker-start="url(#ar1)" marker-end="url(#ar1)"/>
+      <path class="ln dash" d="M858,240 L858,326" marker-end="url(#ar1)"/>
+
+      <rect class="bx j" x="150" y="424" width="220" height="50" rx="10"/>
+      <text class="hd" x="260" y="448" text-anchor="middle">J2 · context relevance</text>
+      <text class="tag" x="260" y="466" text-anchor="middle">did retrieval earn the answer?</text>
+      <rect class="bx j" x="410" y="424" width="180" height="50" rx="10"/>
+      <text class="hd" x="500" y="448" text-anchor="middle">J3 · tool-call check</text>
+      <text class="tag" x="500" y="466" text-anchor="middle">router recall, not the LLM</text>
+      <path class="ln dash" d="M260,396 L260,420" marker-end="url(#ar1)"/>
+      <path class="ln dash" d="M500,396 L500,420" marker-end="url(#ar1)"/>
+
+      <text class="tag" x="24" y="482">offline · async · sampled traces</text>
+      <path class="ln dash" d="M871,394 L871,486"/>
+      <path class="ln dash" d="M275,486 L871,486"/>
+      <path class="ln dash" d="M275,486 L275,502" marker-end="url(#ar1)"/>
+      <path class="ln dash" d="M540,486 L540,502" marker-end="url(#ar1)"/>
+      <path class="ln dash" d="M808,486 L808,502" marker-end="url(#ar1)"/>
+      <rect class="bx j" x="150" y="506" width="250" height="64" rx="10"/>
+      <text class="hd" x="275" y="532" text-anchor="middle">J5 · response quality</text>
+      <text class="tag" x="275" y="554" text-anchor="middle">grounded · relevant · complete</text>
+      <rect class="bx j" x="420" y="506" width="240" height="64" rx="10"/>
+      <text class="hd" x="540" y="532" text-anchor="middle">J6 · trajectory judge</text>
+      <text class="tag" x="540" y="554" text-anchor="middle">did vs expected path</text>
+      <rect class="bx j" x="680" y="506" width="256" height="64" rx="10"/>
+      <text class="hd" x="808" y="532" text-anchor="middle">J7 · agent-as-judge</text>
+      <text class="tag" x="808" y="554" text-anchor="middle">reads traces, finds loops</text>
+    </svg>
+    <figcaption id="architecture-cap1">Solid boxes are your application; dashed boxes are judges. Nothing in the corpus draws this diagram — it is assembled from the placements each talk describes, listed with their sources below.</figcaption>
+  </figure>
+
+  <ul>
+    <li id="architecture-li1"><strong>J1 · input check</strong> — fire the jailbreak/safety check on the query <em>in parallel</em> with generation, not after the response, so you don't add a latency layer for the 95% of users who aren't misusing the product <cite data-video="vBJF2sy1Pyw" data-chunk="19" data-quote="fire a query evaluate like you know few of these key matrices and in parallel generate your responses">parallel guardrail</cite>. Jailbreak traffic has telltale shape — unusually long prompts, repeated bursts, lower sentiment and coherence <cite data-video="vBJF2sy1Pyw" data-chunk="21" data-quote="the length of their question or the length of their prompt typically is like much larger">what to look for</cite>.</li>
+    <li id="architecture-li2"><strong>J2 · context relevance</strong> — clip a check onto retrieval itself, because context relevance is one of the four or five metrics any RAG app should start with <cite data-video="vBJF2sy1Pyw" data-chunk="11" data-quote="these four 4 five matrices are the best way for any developer to start">RAG starter set</cite>, and the platform should plug into every part of the pipeline rather than only the final response <cite data-video="vBJF2sy1Pyw" data-chunk="16" data-quote="we plug with every part so even if you start with r retrieval">every stage</cite>.</li>
+    <li id="architecture-li3"><strong>J3 · tool-call check</strong> — tool-call correctness is one of the four error types error analysis surfaced on real support transcripts, and it wants its own judge <cite data-video="X4dEHRzBLmc" data-chunk="8" data-quote="issues with policy adherance uh sometimes issue with the response style">four error types</cite>. Attribute the failure correctly: when an agent fails to pick an available tool, that is a recall error in the router, not a fault of the final LLM call <cite data-video="8fNP4N46RRo" data-chunk="40" data-quote="we say tool wer error we actually mean a recall error">router recall</cite>.</li>
+    <li id="architecture-li4"><strong>J4 · output guardrail</strong> — the only judge that sits in the blocking path, because blocking bad outputs in real time is one of the three production uses of evals <cite data-video="a3SMraZWNNs" data-chunk="9" data-quote="you block bad outputs in real time">block in real time</cite>. Being here forces the two questions the other placements dodge: do you fail open or fail closed, and do you need a second independent check <cite data-video="EjFsjfOBZFE" data-chunk="27" data-quote="Do you fail open or do you fail closed?">open or closed</cite> — nondeterministic guardrails drift toward leniency on their own <cite data-video="EjFsjfOBZFE" data-chunk="17" data-quote="they can often fail the wrong way">fail lenient</cite>.</li>
+    <li id="architecture-li5"><strong>J5 · response quality, post-hoc</strong> — relevance, hallucination and completeness are too expensive to run before showing the response, so they run after the fact on stored traces <cite data-video="vBJF2sy1Pyw" data-chunk="3" data-quote="you can do this evaluation in parallel to the generation">post-hoc by default</cite>; that is the difference between an eval and a guardrail — an eval can detect a prompt injection but not prevent it <cite data-video="pnlT_xatpVQ" data-chunk="31" data-quote="more of a check after the fact">check after the fact</cite>.</li>
+    <li id="architecture-li6"><strong>J6 · trajectory judge</strong> — feed the judge what the agent did and what was expected, with or without a reference path <cite data-video="spvXj9tnWAQ" data-chunk="16" data-quote="here's what we did here's what we expected into an LLM">trajectory eval</cite>, and make it conditional: if a control-flow step failed, skip everything downstream because those results are invalid anyway <cite data-video="spvXj9tnWAQ" data-chunk="12" data-quote="why eval anything down the line">conditional evals</cite>.</li>
+    <li id="architecture-li7"><strong>J7 · agent-as-judge</strong> — a long-running agent that reads traces and discovers patterns a fixed rubric would never encode <cite data-video="q2JrUKBMf0w" data-chunk="4" data-quote="a long-running agent that can read traces sent in">Signal</cite>, such as the same tool being called repeatedly in a loop <cite data-video="q2JrUKBMf0w" data-chunk="4" data-quote="calling the same tool for repeatedly long time">loop detection</cite>. This box exists because the target moved: from single prompt-answering to tool calls to long-horizon loops with sub-agents on real-world data <cite data-video="q2JrUKBMf0w" data-chunk="1" data-quote="teams running loops on real-world data with sub-agents kicked off">moving target</cite>.</li>
+    <li id="architecture-li8"><strong>The trace store is the load-bearing box.</strong> Everything below the bus is optional until spans are recorded; and for audit, what you store must be the verbatim message, not a summary <cite data-video="EjFsjfOBZFE" data-chunk="36" data-quote="the ability to evidence uh the actual stored verbatim um response from a customer is super super important">verbatim evidence</cite>.</li>
+  </ul>
+
+  <figure class="diagram" id="architecture-fig2">
+    <svg viewBox="0 0 960 470" role="img" aria-labelledby="architecture-fig2-t architecture-fig2-d">
+      <title id="architecture-fig2-t">Three request-path topologies for a judge call</title>
+      <desc id="architecture-fig2-d">Lane A runs an input check, generation and an output check serially, so every check lands in the user-visible latency. Lane B runs the input check concurrently with generation. Lane C returns the answer first and judges sampled traces afterwards, routing failures to a battery of targeted checks.</desc>
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+
+      <text class="tag" x="16" y="56">A · inline</text>
+      <text class="tag" x="16" y="74">blocking</text>
+      <rect class="bx j" x="180" y="40" width="130" height="44" rx="8"/>
+      <text x="245" y="68" text-anchor="middle">input check</text>
+      <rect class="bx" x="340" y="40" width="140" height="44" rx="8"/>
+      <text x="410" y="68" text-anchor="middle">generate</text>
+      <rect class="bx j" x="510" y="40" width="150" height="44" rx="8"/>
+      <text x="585" y="68" text-anchor="middle">output check</text>
+      <rect class="bx" x="690" y="40" width="230" height="44" rx="8"/>
+      <text x="805" y="68" text-anchor="middle">user sees the answer</text>
+      <path class="ln" d="M310,62 L336,62" marker-end="url(#ar2)"/>
+      <path class="ln" d="M480,62 L506,62" marker-end="url(#ar2)"/>
+      <path class="ln" d="M660,62 L686,62" marker-end="url(#ar2)"/>
+      <text class="tag" x="180" y="106">serial — every check lands inside the number the user feels</text>
+
+      <text class="tag" x="16" y="178">B · parallel</text>
+      <text class="tag" x="16" y="196">non-blocking</text>
+      <rect class="bx" x="180" y="160" width="130" height="44" rx="8"/>
+      <text x="245" y="188" text-anchor="middle">query</text>
+      <rect class="bx j" x="340" y="134" width="140" height="44" rx="8"/>
+      <text x="410" y="162" text-anchor="middle">input check</text>
+      <rect class="bx" x="340" y="190" width="140" height="44" rx="8"/>
+      <text x="410" y="218" text-anchor="middle">generate</text>
+      <rect class="bx" x="690" y="160" width="230" height="44" rx="8"/>
+      <text x="805" y="188" text-anchor="middle">user sees the answer</text>
+      <path class="ln" d="M310,178 L336,158" marker-end="url(#ar2)"/>
+      <path class="ln" d="M310,190 L336,210" marker-end="url(#ar2)"/>
+      <path class="ln" d="M480,156 L686,176" marker-end="url(#ar2)"/>
+      <path class="ln" d="M480,212 L686,196" marker-end="url(#ar2)"/>
+      <text class="tag" x="180" y="258">the check overlaps generation — no extra layer for the 95% who aren't misusing it</text>
+
+      <text class="tag" x="16" y="318">C · post-hoc</text>
+      <text class="tag" x="16" y="336">async</text>
+      <rect class="bx" x="180" y="300" width="130" height="44" rx="8"/>
+      <text x="245" y="328" text-anchor="middle">query</text>
+      <rect class="bx" x="340" y="300" width="140" height="44" rx="8"/>
+      <text x="410" y="328" text-anchor="middle">generate</text>
+      <rect class="bx" x="690" y="300" width="230" height="44" rx="8"/>
+      <text x="805" y="328" text-anchor="middle">user sees the answer</text>
+      <path class="ln" d="M310,322 L336,322" marker-end="url(#ar2)"/>
+      <path class="ln" d="M480,322 L686,322" marker-end="url(#ar2)"/>
+      <path class="ln dash" d="M410,344 L410,396" marker-end="url(#ar2)"/>
+      <rect class="bx j" x="250" y="400" width="380" height="44" rx="8"/>
+      <text x="440" y="428" text-anchor="middle">sampled traces → 5–10 targeted checks</text>
+      <text class="tag" x="650" y="428">the 10–20% that fail get the battery</text>
+    </svg>
+    <figcaption id="architecture-cap2">Judge checks run in seconds, not milliseconds, and you pay per check forever <cite data-video="EjFsjfOBZFE" data-chunk="17" data-quote="these things work in order of seconds not order of milliseconds">seconds, not ms</cite>, so topology is a cost decision before it is a quality one. In lane A the number to watch is p95, not the mean — one person waiting two minutes ruins the experience even if most get sub-five-second responses <cite data-video="EjFsjfOBZFE" data-chunk="29" data-quote="it's actually your sort of like 95th percentile">p95</cite>. Lane B is the recommended shape for safety checks <cite data-video="vBJF2sy1Pyw" data-chunk="19" data-quote="fire a query evaluate like you know few of these key matrices and in parallel generate your responses">in parallel</cite>; lane C is where relevance, hallucination and completeness belong <cite data-video="vBJF2sy1Pyw" data-chunk="3" data-quote="you can do this evaluation in parallel to the generation">post-hoc</cite>, feeding the root-cause battery on the 10–20% of cases that fail a high-level check <cite data-video="vBJF2sy1Pyw" data-chunk="6" data-quote="take this 10 20% cases run like a a battery of checks on them">battery</cite>.</figcaption>
+  </figure>
+
+  <figure class="diagram" id="architecture-fig3">
+    <svg viewBox="0 0 960 440" role="img" aria-labelledby="architecture-fig3-t architecture-fig3-d">
+      <title id="architecture-fig3-t">The instrument ladder and per-criterion decomposition</title>
+      <desc id="architecture-fig3-d">One criterion fans out to five candidate instruments — executable check, reference check, classifier, LLM judge, human review — ordered from cheap and deterministic to interpretive and requiring calibration. Below, a factuality criterion splits into plot, metadata, talent and awards sub-judges whose scores are combined with a minimum.</desc>
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+
+      <rect class="bx" x="370" y="20" width="220" height="50" rx="10"/>
+      <text x="480" y="50" text-anchor="middle">One criterion, one decision</text>
+      <path class="ln" d="M480,70 L104,126" marker-end="url(#ar3)"/>
+      <path class="ln" d="M480,70 L292,126" marker-end="url(#ar3)"/>
+      <path class="ln" d="M480,70 L480,126" marker-end="url(#ar3)"/>
+      <path class="ln" d="M480,70 L668,126" marker-end="url(#ar3)"/>
+      <path class="ln" d="M480,70 L856,126" marker-end="url(#ar3)"/>
+
+      <rect class="bx" x="20" y="130" width="168" height="70" rx="10"/>
+      <text x="104" y="158" text-anchor="middle">executable check</text>
+      <text class="tag" x="104" y="180" text-anchor="middle">output shape</text>
+      <rect class="bx" x="208" y="130" width="168" height="70" rx="10"/>
+      <text x="292" y="158" text-anchor="middle">reference check</text>
+      <text class="tag" x="292" y="180" text-anchor="middle">identity · DB state</text>
+      <rect class="bx" x="396" y="130" width="168" height="70" rx="10"/>
+      <text x="480" y="158" text-anchor="middle">classifier</text>
+      <text class="tag" x="480" y="180" text-anchor="middle">known categories</text>
+      <rect class="bx j" x="584" y="130" width="168" height="70" rx="10"/>
+      <text x="668" y="158" text-anchor="middle">LLM judge</text>
+      <text class="tag" x="668" y="180" text-anchor="middle">borderline meaning</text>
+      <rect class="bx" x="772" y="130" width="168" height="70" rx="10"/>
+      <text x="856" y="158" text-anchor="middle">human review</text>
+      <text class="tag" x="856" y="180" text-anchor="middle">high-consequence</text>
+
+      <path class="ln" d="M20,232 L940,232" marker-end="url(#ar3)"/>
+      <text class="tag" x="20" y="252">cheap · deterministic · debuggable</text>
+      <text class="tag" x="940" y="252" text-anchor="end">interpretive · needs calibration</text>
+
+      <text class="tag" x="20" y="300">and inside the judge column, decompose again:</text>
+      <rect class="bx j" x="200" y="316" width="150" height="44" rx="8"/>
+      <text x="275" y="344" text-anchor="middle">plot</text>
+      <rect class="bx j" x="370" y="316" width="150" height="44" rx="8"/>
+      <text x="445" y="344" text-anchor="middle">metadata</text>
+      <rect class="bx j" x="540" y="316" width="150" height="44" rx="8"/>
+      <text x="615" y="344" text-anchor="middle">talent</text>
+      <rect class="bx j" x="710" y="316" width="150" height="44" rx="8"/>
+      <text x="785" y="344" text-anchor="middle">awards</text>
+      <path class="ln" d="M275,360 L466,382" marker-end="url(#ar3)"/>
+      <path class="ln" d="M445,360 L505,382" marker-end="url(#ar3)"/>
+      <path class="ln" d="M615,360 L555,382" marker-end="url(#ar3)"/>
+      <path class="ln" d="M785,360 L594,382" marker-end="url(#ar3)"/>
+      <rect class="bx" x="380" y="386" width="300" height="44" rx="8"/>
+      <text x="530" y="414" text-anchor="middle">min() across sub-scores</text>
+    </svg>
+    <figcaption id="architecture-cap3">Read the top row left to right and stop at the first instrument that can answer the criterion: an evaluator is a measurement instrument with a failure profile, so pick the least interpretive one that works <cite data-video="PjCwlX0XT8o" data-chunk="9" data-quote="An evaluator is a measurement instrument with a failure profile">least interpretive</cite>, and push as much of the criterion as possible into deterministic checks <cite data-video="PjCwlX0XT8o" data-chunk="12" data-quote="Deterministic checks should carry as much of the criterion as possible">deterministic first</cite>. When the judge column is unavoidable, decompose the hard question into narrow checks a smaller model answers reliably <cite data-video="EjFsjfOBZFE" data-chunk="35" data-quote="did you name a specific product? You know, very very simple cases that you can answer reliably">decompose</cite> — the bottom row is Netflix's factuality split, whose minimum-across-sub-types aggregation was their single biggest gain, over 10% <cite data-video="mX9HzIRdBpw" data-chunk="17" data-quote="we see over a 10% boost by using these factuality agents">factuality agents</cite>.</figcaption>
+  </figure>
+
+  <figure class="diagram" id="architecture-fig4">
+    <svg viewBox="0 0 960 420" role="img" aria-labelledby="architecture-fig4-t architecture-fig4-d">
+      <title id="architecture-fig4-t">The two calibration loops</title>
+      <desc id="architecture-fig4-d">Production traces are sampled into a human-labelled golden set with a frozen split, which informs the judge prompt. The judge runs on the design split, its labels are compared against human labels with a confusion matrix and kappa, and disagreements feed a meta-prompt that rewrites the judge — loop two. Separately the frozen test split gates a release back into production — loop one.</desc>
+      <defs>
+        <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+
+      <rect class="bx" x="40" y="40" width="200" height="56" rx="10"/>
+      <text x="140" y="66" text-anchor="middle">Production traces</text>
+      <text class="tag" x="140" y="86" text-anchor="middle">downvoted · rejected</text>
+      <rect class="bx" x="300" y="40" width="180" height="56" rx="10"/>
+      <text x="390" y="66" text-anchor="middle">Sample</text>
+      <text class="tag" x="390" y="86" text-anchor="middle">+ deliberate hard cases</text>
+      <rect class="bx" x="560" y="40" width="220" height="56" rx="10"/>
+      <text x="670" y="66" text-anchor="middle">Human labels</text>
+      <text class="tag" x="670" y="86" text-anchor="middle">golden set · frozen split</text>
+      <path class="ln" d="M240,68 L296,68" marker-end="url(#ar4)"/>
+      <path class="ln" d="M480,68 L556,68" marker-end="url(#ar4)"/>
+
+      <rect class="bx j" x="740" y="160" width="180" height="56" rx="10"/>
+      <text x="830" y="186" text-anchor="middle">Judge prompt vN</text>
+      <text class="tag" x="830" y="206" text-anchor="middle">one decision</text>
+      <path class="ln" d="M676,96 L812,156" marker-end="url(#ar4)"/>
+
+      <rect class="bx j" x="660" y="250" width="250" height="56" rx="10"/>
+      <text x="785" y="276" text-anchor="middle">Judge labels</text>
+      <text class="tag" x="785" y="296" text-anchor="middle">design split only</text>
+      <path class="ln" d="M836,216 L800,246" marker-end="url(#ar4)"/>
+      <rect class="bx" x="350" y="250" width="280" height="56" rx="10"/>
+      <text x="490" y="276" text-anchor="middle">Confusion matrix + kappa</text>
+      <text class="tag" x="490" y="296" text-anchor="middle">per criterion, not aggregate</text>
+      <path class="ln" d="M656,278 L636,278" marker-end="url(#ar4)"/>
+      <rect class="bx" x="40" y="250" width="280" height="56" rx="10"/>
+      <text x="180" y="276" text-anchor="middle">Disagreements → meta-prompt</text>
+      <text class="tag" x="180" y="296" text-anchor="middle">general criteria only</text>
+      <path class="ln" d="M346,278 L326,278" marker-end="url(#ar4)"/>
+      <path class="ln" d="M180,246 L180,132 L830,132 L830,156" marker-end="url(#ar4)"/>
+      <text class="tag" x="505" y="124" text-anchor="middle">loop 2 · improve the judge</text>
+
+      <rect class="bx" x="350" y="340" width="280" height="56" rx="10"/>
+      <text x="490" y="366" text-anchor="middle">Frozen test → release gate</text>
+      <text class="tag" x="490" y="386" text-anchor="middle">predeclared minimum</text>
+      <path class="ln" d="M490,306 L490,336" marker-end="url(#ar4)"/>
+      <path class="ln" d="M350,368 L18,368 L18,120 L140,120 L140,100" marker-end="url(#ar4)"/>
+      <text class="tag" x="46" y="392">loop 1 · ship, then watch production</text>
+    </svg>
+    <figcaption id="architecture-cap4">Two loops, not one: one improving the application from eval signal, a second annotating eval failures to improve the eval prompt itself <cite data-video="spvXj9tnWAQ" data-chunk="9" data-quote="you'll want to improve the eval prompt template">two virtuous cycles</cite>. Sample from real traffic, not benchmarks <cite data-video="vBJF2sy1Pyw" data-chunk="13" data-quote="look at your traffic like you know take 50 samples from them">real traffic</cite>, and plant hard cases deliberately because random sampling alone produces an easy test <cite data-video="PjCwlX0XT8o" data-chunk="48" data-quote="Random sampling alone can produce an easy test">hard cases</cite>. The comparison box is exact-match human alignment <cite data-video="pnlT_xatpVQ" data-chunk="17" data-quote="This is what we call human alignment">human alignment</cite> reported chance-corrected <cite data-video="8fNP4N46RRo" data-chunk="9" data-quote="cohen scappa that people use for cases">kappa</cite> and per criterion, since tone and product knowledge can differ wildly on the same judge <cite data-video="TL527yTpxlk" data-chunk="39" data-quote="the tone only matches once in from our human labels">per criterion</cite>. The rewrite arrow is the meta-prompt <cite data-video="a3SMraZWNNs" data-chunk="26" data-quote="help me optimize the prompt so that the next time we run this system">meta-prompting</cite>; the split is frozen before the judge prompt is touched <cite data-video="PjCwlX0XT8o" data-chunk="44" data-quote="uses 108 for judge design, 36 for development checks">frozen split</cite> and the gate predeclares its minimum worthwhile improvement <cite data-video="PjCwlX0XT8o" data-chunk="83" data-quote="Predeclare the primary metric comparison evaluation set and minimum worthwhile improvement">predeclare</cite>.</figcaption>
+  </figure>
+
+  <figure class="diagram" id="architecture-fig5">
+    <svg viewBox="0 0 960 400" role="img" aria-labelledby="architecture-fig5-t architecture-fig5-d">
+      <title id="architecture-fig5-t">The confusion matrix with the worked numbers</title>
+      <desc id="architecture-fig5-d">A two-by-two grid crossing human labels against judge calls on 200 held-out responses: 34 true positives, 16 false positives, 6 false negatives and 144 true negatives, giving sensitivity 0.85, specificity 0.90 and balanced accuracy 0.875.</desc>
+
+      <text class="tag" x="480" y="44" text-anchor="middle">positive class = the human label says “contains an unsupported claim”</text>
+      <text class="hd" x="380" y="94" text-anchor="middle">human: unsupported</text>
+      <text class="hd" x="590" y="94" text-anchor="middle">human: supported</text>
+      <text class="hd" x="272" y="170" text-anchor="end">judge flags</text>
+      <text class="hd" x="272" y="290" text-anchor="end">judge passes</text>
+
+      <rect class="bx" x="280" y="110" width="200" height="110" rx="10"/>
+      <text class="num" x="380" y="162" text-anchor="middle">TP 34</text>
+      <text class="tag" x="380" y="190" text-anchor="middle">a catch</text>
+      <rect class="bx" x="490" y="110" width="200" height="110" rx="10"/>
+      <text class="num" x="590" y="162" text-anchor="middle">FP 16</text>
+      <text class="tag" x="590" y="190" text-anchor="middle">false alarm · review cost</text>
+      <rect class="bx hot" x="280" y="230" width="200" height="110" rx="10"/>
+      <text class="num" x="380" y="282" text-anchor="middle">FN 6</text>
+      <text class="tag" x="380" y="310" text-anchor="middle">reaches the user</text>
+      <rect class="bx" x="490" y="230" width="200" height="110" rx="10"/>
+      <text class="num" x="590" y="282" text-anchor="middle">TN 144</text>
+      <text class="tag" x="590" y="310" text-anchor="middle">correctly left alone</text>
+
+      <text class="tag" x="712" y="150">TPR = 34 / (34 + 6) = 0.85</text>
+      <text class="tag" x="712" y="176">TNR = 144 / (144 + 16) = 0.90</text>
+      <text class="tag" x="712" y="272">balanced accuracy = 0.875</text>
+      <text class="tag" x="712" y="298">n = 200 held out</text>
+    </svg>
+    <figcaption id="architecture-cap5">Name the positive class before you compute anything — the class you pick decides how every error is read <cite data-video="PjCwlX0XT8o" data-chunk="54" data-quote="Before calculating the confusion matrix, name the positive class">name the positive class</cite>. These are the worked numbers: TP 34, FN 6, FP 16 out of 200 <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TP is 34, FN is six, FP is 16">the four counts</cite>, giving TPR 0.85, TNR 0.90 and balanced accuracy 0.875 <cite data-video="PjCwlX0XT8o" data-chunk="57" data-quote="TPR is 0.85, TNR is 0.90, balanced accuracy is 0.875">the rates</cite>. The shaded cell is shaded because a miss puts an ungrounded statement into a user-facing answer, exactly where the evaluator was supposed to be the safety signal <cite data-video="PjCwlX0XT8o" data-chunk="60" data-quote="may allow an ungrounded statement into a user-facing answer">the cost of a miss</cite>.</figcaption>
+  </figure>
+
+  <p id="architecture-p2">One honest caveat on all five. No talk in this corpus presents a reference architecture — every box above is a placement someone described in prose, drawn here and cited to the sentence that justifies it. Where the corpus is silent it stays silent: nothing here tells you how many judge calls a single agent turn should cost, how to combine J1–J7 into one release decision, or what the agent's own memory and planner should look like. Those are in <a href="#gaps">the gaps</a>.</p>
 </section>
 
 <section id="prompts">
@@ -666,6 +976,7 @@ policy: thresholds are NEVER silently retuned to preserve a green dashboard</pre
     <li id="gaps-li8"><strong>Self-hosted judges.</strong> No cost, latency or quality comparison of open-weight judge models against hosted APIs, and no comparison of eval frameworks — Ragas is named <cite data-video="cRz0BWkuwHg" data-chunk="9" data-quote="human judgment is still the gold standard">one pointer</cite> but never compared to alternatives.</li>
     <li id="gaps-li9"><strong>Cost of the judging paradigms.</strong> No concrete dollar or millisecond comparison across pointwise, pairwise and listwise judging, and the ELO/ragelo approach is described without its K-factor or scoring maths, so you cannot reproduce it from the transcript.</li>
     <li id="gaps-li10"><strong>Statistical significance in the platform demos.</strong> A jump from 79% to 94% on 20 examples is reported without any significance treatment <cite data-video="qoPYlLg7_rY" data-chunk="14" data-quote="It scored 79% and then we tested our agent using GPT-5.4 and it scored 94%">small-n</cite> — and on a 168-example set the ranking reversed, with the older GPT-4o-mini beating the newer model <cite data-video="qoPYlLg7_rY" data-chunk="16" data-quote="one of the older Open AI models, AKA GPT-4o-mini, performed better than one of the newer Open AI models">the reversal</cite>. Treat every small-n eval result this way.</li>
+    <li id="gaps-li11"><strong>A reference architecture.</strong> No talk draws where judges sit in an agent, how many judge calls one agent turn should cost, or how J1–J7 in <a href="#architecture">Draw the system</a> combine into a single release decision. The placements are described one at a time — instrument every stage <cite data-video="vBJF2sy1Pyw" data-chunk="16" data-quote="we plug with every part so even if you start with r retrieval">every stage</cite>, skip what is downstream of a failed step <cite data-video="spvXj9tnWAQ" data-chunk="12" data-quote="why eval anything down the line">conditional</cite> — and never assembled into one diagram or costed as a whole.</li>
   </ul>
 </section>
 
@@ -673,7 +984,7 @@ policy: thresholds are NEVER silently retuned to preserve a green dashboard</pre
 
 <footer class="site" id="footer">
   <p id="footer-p1">LLM-as-a-Judge · a field guide compiled from the transcript corpus.</p>
-  <p id="footer-p2">19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14.</p>
+  <p id="footer-p2">19 source videos · 703 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-09-14 · revision 4, 2026-09-15.</p>
   <p id="footer-p3">Every claim on this page resolves to a chunk you can open. Where it does not, it is in the gaps.</p>
 </footer>
 
