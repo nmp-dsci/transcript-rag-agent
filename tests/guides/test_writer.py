@@ -203,6 +203,29 @@ def test_write_runs_every_stage_and_publishes(tmp_path: Path):
     assert writer.run_log is not None and writer.run_log.read_text().count("\n") == len(events)
 
 
+def test_a_question_lets_the_composer_name_the_guide(tmp_path: Path):
+    """Asked, not configured: the question is the working title, the composer
+    is told to name the page, and publish takes the name from ``<title>``."""
+    agent = FakeAgent()
+    writer, events = make_writer(tmp_path, agent)
+    question = "How do teams calibrate an LLM judge against human labels?"
+    manifest = writer.write(
+        topic="calibrate an llm judge against human labels",
+        title=question,
+        video_ids=["v1", "v2", "v3"],
+        videos_meta=VIDEOS,
+        compiled_at="2026-09-14",
+        question=question,
+    )
+    compose = next(r for r in agent.requests if r.label == "compose")
+    assert question in compose.prompt and "Name the guide yourself" in compose.prompt
+    assert manifest.question == question
+    assert manifest.title == "T"  # GOOD_PAGE's <title>, not the question
+    assert manifest.topic == "calibrate an llm judge against human labels"
+    assert any("the composer named it" in (e.get("message") or "") for e in events)
+    assert read_manifest(writer.paths).question == question
+
+
 def test_verify_failure_triggers_a_bounded_fix_pass(tmp_path: Path):
     agent = FakeAgent(bad_first_compose=True)
     writer, events = make_writer(tmp_path, agent)

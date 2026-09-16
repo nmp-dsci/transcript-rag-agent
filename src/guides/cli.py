@@ -114,7 +114,12 @@ def add_guides_parser(subparsers: Any) -> None:
     scope = sub.add_parser(
         "scope", help="Rank the corpus for a topic — the videos a guide would read"
     )
-    scope.add_argument("--topic", required=True)
+    scope.add_argument("--topic", default=None)
+    scope.add_argument(
+        "--question",
+        default=None,
+        help="A plain-language question; the topic and probes are derived",
+    )
     scope.add_argument("--limit", type=int, default=25)
     scope.add_argument("--json", action="store_true")
 
@@ -126,7 +131,12 @@ def add_guides_parser(subparsers: Any) -> None:
             "Resumes from the last completed stage if the guide directory already has one."
         ),
     )
-    write.add_argument("--topic", required=True, help="What the guide is about")
+    write.add_argument("--topic", default=None, help="What the guide is about")
+    write.add_argument(
+        "--question",
+        default=None,
+        help="Ask instead: the topic is derived and the composer names the guide",
+    )
     write.add_argument("--slug", default=None, help="Guide slug (default: from the title)")
     write.add_argument("--title", default=None, help="Page title (default: the topic, title-cased)")
     write.add_argument(
@@ -249,10 +259,22 @@ def run_guides(args: argparse.Namespace, settings: Settings) -> int:
     if command == "scope":
         known, _lookup, _counts, videos = _corpus_videos(settings)
         provider = _provider(settings)
-        from src.guides.scope import candidate_videos
+        from src.guides.scope import candidate_videos, probes_for, topic_from_question
 
+        question = " ".join((args.question or "").split())
+        topic = " ".join((args.topic or "").split()) or (
+            topic_from_question(question) if question else ""
+        )
+        if not topic:
+            print("Give --question or --topic.")
+            return 2
+        if question:
+            print(f"topic: {topic}")
         ranked = candidate_videos(
-            args.topic, videos, lambda q, k: provider.get_context(q, top_k=k).retrieved_chunks
+            topic,
+            videos,
+            lambda q, k: provider.get_context(q, top_k=k).retrieved_chunks,
+            probes=probes_for(question) if question else None,
         )[: args.limit]
         if args.json:
             print(json.dumps([c.to_dict() for c in ranked], indent=2))
@@ -498,13 +520,20 @@ def _run_write(args: argparse.Namespace, settings: Settings, guides_dir: Path) -
         print(problem)
         return 2
 
-    from src.guides.scope import candidate_videos
+    from src.guides.scope import candidate_videos, probes_for, topic_from_question
     from src.guides.service import build_writer, retrieval_fns
     from src.guides.writer import WriterConfig
 
-    topic = " ".join(args.topic.split())
-    title = args.title or topic.title()
-    slug = args.slug or slugify(title)
+    question = " ".join((args.question or "").split())
+    topic = " ".join((args.topic or "").split()) or (
+        topic_from_question(question) if question else ""
+    )
+    if not topic:
+        print("Give --question or --topic.")
+        return 2
+    # Asked: the question is the working title until the composer names the page.
+    title = args.title or question or topic.title()
+    slug = args.slug or slugify(topic if question else title)
     paths = guide_paths(slug, guides_dir)
     known, _lookup, _counts, videos = _corpus_videos(settings)
     provider = _provider(settings)
@@ -514,7 +543,11 @@ def _run_write(args: argparse.Namespace, settings: Settings, guides_dir: Path) -
         video_ids = [v.strip() for v in args.videos.split(",") if v.strip()]
     else:
         ranked = [
-            c for c in candidate_videos(topic, videos, retrieve_whole) if c.score >= args.min_score
+            c
+            for c in candidate_videos(
+                topic, videos, retrieve_whole, probes=probes_for(question) if question else None
+            )
+            if c.score >= args.min_score
         ][: args.limit]
         if not ranked:
             print("No candidate videos for that topic. Try --videos or a broader topic.")
@@ -548,6 +581,7 @@ def _run_write(args: argparse.Namespace, settings: Settings, guides_dir: Path) -
             video_ids=video_ids,
             videos_meta=videos,
             compiled_at=args.compiled_at,
+            question=question or None,
         )
     except Exception as exc:  # noqa: BLE001 - one line, then the run log has the rest
         print(f"Failed: {exc}")

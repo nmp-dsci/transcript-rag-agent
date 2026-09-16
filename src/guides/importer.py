@@ -226,6 +226,19 @@ def extract_sources(html: str) -> list[dict[str, Any]]:
     return sources
 
 
+def extract_title(html: str) -> str:
+    """The guide's library name from the page's ``<title>``: the part before an
+    em dash / en dash / pipe / middle dot separator, so "Calibrating LLM Judges — a
+    field guide from the transcript corpus" gives "Calibrating LLM Judges".
+    Empty when the page has no title."""
+    match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.S | re.I)
+    if not match:
+        return ""
+    text = _text(match.group(1))
+    head = re.split(r"\s+[—–|·]\s+|\s+-\s+", text, maxsplit=1)[0].strip()
+    return head[:120]
+
+
 def extract_subtitle(html: str) -> str:
     match = re.search(r'<p\b[^>]*\bclass="[^"]*\bsub\b[^"]*"[^>]*>(.*?)</p>', html, re.S)
     return _text(match.group(1)) if match else ""

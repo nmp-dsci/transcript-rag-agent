@@ -78,6 +78,99 @@ def probe_questions(topic: str) -> list[str]:
     return [template.format(topic=clean) for template in PROBE_TEMPLATES]
 
 
+#: Leading question scaffolding that says nothing about the subject. Matched
+#: as whole phrases at the start, longest first, so "what is the best way to
+#: do X" leaves "do X" → "X" after the verb strip below.
+_QUESTION_LEADS = (
+    "what is the best way to",
+    "what are the best ways to",
+    "what's the best way to",
+    "how do i",
+    "how do you",
+    "how do we",
+    "how do teams",
+    "how does one",
+    "how should i",
+    "how should we",
+    "how can i",
+    "how can we",
+    "how to",
+    "what is",
+    "what are",
+    "what's",
+    "what does",
+    "what do",
+    "why do",
+    "why does",
+    "why is",
+    "why are",
+    "when should",
+    "when do",
+    "should i",
+    "should we",
+    "can you",
+    "could you",
+    "tell me about",
+    "explain",
+    "write a guide on",
+    "write a guide about",
+    "write me a guide on",
+    "i want a guide on",
+    "i want to know",
+    "i want to understand",
+    "give me",
+    "make me",
+)
+_QUESTION_VERBS = ("do", "make", "build", "use", "get", "go about", "approach", "handle")
+_QUESTION_TAILS = (" and why", " and how", " and when", " and where")
+
+
+def topic_from_question(question: str) -> str:
+    """The subject phrase of a plain-language question, for probes and the slug.
+
+    No LLM: strip a leading "how do teams", a bare verb after it, a trailing
+    "and why", and the question mark; then keep the content words in order,
+    capped at ten. "How do teams calibrate an LLM judge against human
+    labels, and what do they do when it drifts?" → "calibrate an llm judge
+    against human labels".
+    """
+    text = " ".join(question.split()).strip().rstrip("?.!").strip().lower()
+    for lead in sorted(_QUESTION_LEADS, key=len, reverse=True):
+        if text.startswith(lead + " "):
+            text = text[len(lead) + 1 :]
+            break
+    for verb in _QUESTION_VERBS:
+        if text.startswith(verb + " "):
+            text = text[len(verb) + 1 :]
+            break
+    # A second clause ("..., and what do they do when") is usually a follow-up
+    # question; the first clause names the subject.
+    text = re.split(r",\s*(?:and|or|but)\s+|;\s+", text, maxsplit=1)[0]
+    for tail in _QUESTION_TAILS:
+        if text.endswith(tail):
+            text = text[: -len(tail)]
+    words = [w for w in re.findall(r"[a-z0-9][a-z0-9+#.'-]*", text)]
+    # Trim leading/trailing stopwords but keep the ones inside the phrase so
+    # the probes still read as English ("judge against human labels").
+    while words and words[0] in STOPWORDS:
+        words.pop(0)
+    while words and words[-1] in STOPWORDS:
+        words.pop()
+    return " ".join(words[:10]) or " ".join(question.split())[:80]
+
+
+def probes_for(question: str) -> list[str]:
+    """The retrieval probes for a question: the question itself, then the
+    topic templates over its subject phrase."""
+    clean = " ".join(question.split())
+    topic = topic_from_question(clean)
+    probes = [clean] if clean.lower() != topic else []
+    for probe in probe_questions(topic):
+        if probe not in probes:
+            probes.append(probe)
+    return probes
+
+
 def title_matches(topic: str, title: str | None) -> bool:
     """True when at least half of the topic's meaningful words appear in the title.
 

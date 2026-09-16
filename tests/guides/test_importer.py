@@ -134,3 +134,15 @@ def test_unreadable_manifest_is_skipped(tmp_path: Path):
     (guides_dir / "broken" / "manifest.json").write_text("{not json", encoding="utf-8")
     (guides_dir / "not-a-guide.txt").write_text("x", encoding="utf-8")
     assert list_guides(guides_dir)["guides"] == []
+
+
+def test_extract_title_takes_the_name_before_the_separator():
+    from src.guides.importer import extract_title
+
+    assert (
+        extract_title("<html><head><title>Calibrating LLM Judges — a field guide</title></head>")
+        == "Calibrating LLM Judges"
+    )
+    assert extract_title("<title>Ship Like a Studio · corpus</title>") == "Ship Like a Studio"
+    assert extract_title("<title>Plain &amp; simple</title>") == "Plain & simple"
+    assert extract_title("<p>no title</p>") == ""

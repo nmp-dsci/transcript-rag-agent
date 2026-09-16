@@ -110,6 +110,9 @@ class Manifest:
     title: str
     topic: str
     subtitle: str = ""
+    #: The plain-language question the guide was asked for, when it was asked
+    #: rather than configured. The topic is derived from it.
+    question: str = ""
     status: str = "published"  # published | draft | error
     current_version: int = 1
     compiled_at: str = ""
@@ -131,6 +134,7 @@ class Manifest:
             "title": self.title,
             "topic": self.topic,
             "subtitle": self.subtitle,
+            "question": self.question,
             "status": self.status,
             "current_version": self.current_version,
             "compiled_at": self.compiled_at,
@@ -299,6 +303,7 @@ def write_index(guides_dir: Path | None = None) -> Path:
                     "title",
                     "topic",
                     "subtitle",
+                    "question",
                     "status",
                     "current_version",
                     "compiled_at",

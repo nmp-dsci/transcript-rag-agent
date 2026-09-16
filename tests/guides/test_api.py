@@ -189,6 +189,98 @@ def test_job_routes_and_scope_start(settings: Settings, tmp_path: Path):
     assert "/api/guides/job" not in client.get("/api/guides/job").text  # not the 404 body
 
 
+def test_ask_a_question_scopes_and_starts_at_once(settings: Settings, tmp_path: Path):
+    """The ask path: a plain question, no video_ids — the server derives the
+    topic, scopes the corpus and starts, with the question as the working
+    title until the composer names the page."""
+    import threading
+
+    from types import SimpleNamespace
+
+    from src.api.main import create_app
+
+    done = threading.Event()
+    seen: list = []
+
+    def run_fn(job, on_event):
+        seen.append(job)
+        done.set()
+        return {
+            "version": 1,
+            "cite_valid": 1,
+            "cite_total": 1,
+            "gaps": [],
+            "title": "Calibrating LLM Judges",
+        }
+
+    class FakeStore:
+        def query_by_video_ids(self, ids, q, k):
+            return []
+
+    class FakeProvider:
+        chunk_store = FakeStore()
+
+        def get_context(self, question, top_k=10, **kw):
+            return SimpleNamespace(retrieved_chunks=[SimpleNamespace(video_id="abc123XYZ")])
+
+    corpus = {
+        "videos": [
+            {
+                "video_id": "abc123XYZ",
+                "title": "LLM judge basics",
+                "channel_name": "A",
+                "chunk_count": 12,
+            },
+            {"video_id": "zzz", "title": "Unrelated", "channel_name": "B", "chunk_count": 3},
+        ],
+        "channels": [],
+        "totals": {},
+        "insights": [],
+    }
+    app = create_app(
+        replace(settings, demo_mode=False),
+        runner_factory=lambda: SimpleNamespace(provider=FakeProvider()),
+        judge_factory=forbidden,
+        graph_store_factory=forbidden,
+        corpus_fn=lambda: corpus,
+        history_path=tmp_path / "history.json",
+        chat_html_path=tmp_path / "chat.html",
+        runs_dir=tmp_path / "runs",
+        frontend_dist=tmp_path / "no-bundle",
+        guides_dir=tmp_path / "guides",
+        guide_run_fn=run_fn,
+        guide_sdk_check=lambda: None,
+    )
+    client = TestClient(app)
+    question = "How do teams calibrate an LLM judge against human labels, and when does it drift?"
+
+    scoped = client.post("/api/guides/scope", json={"question": question}).json()
+    assert scoped["topic"] == "calibrate an llm judge against human labels"
+    assert scoped["question"] == question
+    assert scoped["probes"][0] == question and len(scoped["probes"]) == 9
+    assert [c["video_id"] for c in scoped["candidates"]] == ["abc123XYZ"]
+    assert client.post("/api/guides/scope", json={}).status_code == 422
+
+    started = client.post("/api/guides", json={"question": question})
+    assert started.status_code == 202, started.text
+    job = started.json()
+    assert job["slug"] == "calibrate-an-llm-judge-against-human-labels"
+    assert job["title"] == question and job["question"] == question
+    assert job["topic"] == "calibrate an llm judge against human labels"
+    assert job["video_ids"] == ["abc123XYZ"]
+    assert done.wait(2)
+    assert seen[0].question == question
+    for _ in range(50):
+        snap = client.get("/api/guides/job").json()["job"]
+        if snap["status"] == "done":
+            break
+        import time
+
+        time.sleep(0.02)
+    # Once published, the job carries the composer's name for the rail.
+    assert snap["status"] == "done" and snap["title"] == "Calibrating LLM Judges"
+
+
 def test_demo_blocks_starting_and_streaming_guide_jobs(settings: Settings, tmp_path: Path):
     client = make_client(settings, tmp_path, seeded(tmp_path), demo=True)
     assert client.post("/api/guides/scope", json={"topic": "x"}).status_code == 403

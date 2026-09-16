@@ -519,6 +519,7 @@ class GuideWriter:
         summary: ExportSummary,
         evidence_files: list[Path],
         compiled_at: str,
+        question: str | None = None,
     ) -> None:
         self.emit("compose", "start", f"composing with {self.config.compose_model}")
         allowed, disallowed = self._tools(edit=True)
@@ -543,6 +544,7 @@ class GuideWriter:
                 compiled_at=compiled_at,
                 sources=sources,
                 example_path=example,
+                question=question,
             ),
             system_prompt=composer_system_prompt(self.skill, allow_web=self.config.allow_web),
             model=self.config.compose_model,
@@ -622,11 +624,19 @@ class GuideWriter:
         compiled_at: str,
         version: int,
         manifest: Manifest | None = None,
+        question: str | None = None,
     ) -> Manifest:
         self.emit("publish", "start", f"publishing v{version}")
+        from src.guides.importer import extract_title
         from src.guides.normalize import normalize_page
 
         page = self.paths.html.read_text(encoding="utf-8")
+        if question:
+            # The composer named the guide; the working title was the question.
+            named = extract_title(page)
+            if named and named.lower() != question.lower():
+                title = named
+                self.emit("publish", "progress", f"the composer named it: {title}")
         normalized = normalize_page(page, title=title)
         if normalized != page:
             self.paths.html.write_text(normalized, encoding="utf-8")
@@ -644,6 +654,8 @@ class GuideWriter:
         result = manifest or Manifest(slug=self.paths.slug, title=title, topic=topic)
         result.title = title
         result.topic = topic
+        if question:
+            result.question = question
         if subtitle:
             result.subtitle = subtitle
         result.status = "published"
@@ -732,6 +744,7 @@ class GuideWriter:
         video_ids: list[str],
         videos_meta: list[dict[str, Any]],
         compiled_at: str | None = None,
+        question: str | None = None,
     ) -> Manifest:
         compiled_at = compiled_at or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
         self.paths.dir.mkdir(parents=True, exist_ok=True)
@@ -753,6 +766,7 @@ class GuideWriter:
                     summary=summary,
                     evidence_files=evidence,
                     compiled_at=compiled_at,
+                    question=question,
                 )
             else:
                 self.emit("compose", "skip", "guide.html already written")
@@ -767,6 +781,7 @@ class GuideWriter:
                 compiled_at=compiled_at,
                 version=version,
                 manifest=read_manifest(self.paths),
+                question=question,
             )
         except Exception as exc:
             self.emit("run", "error", str(exc))

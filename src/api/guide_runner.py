@@ -47,6 +47,8 @@ class GuideJob:
     slug: str
     topic: str = ""
     title: str = ""
+    #: The plain-language ask, when the guide was asked for rather than configured.
+    question: str = ""
     video_ids: list[str] = field(default_factory=list)
     allow_web: bool = False
     comment_ids: list[str] = field(default_factory=list)
@@ -79,6 +81,7 @@ class GuideJob:
             "slug": self.slug,
             "topic": self.topic,
             "title": self.title,
+            "question": self.question,
             "video_ids": list(self.video_ids),
             "allow_web": self.allow_web,
             "comment_ids": list(self.comment_ids),
@@ -132,6 +135,7 @@ class GuideRunner:
         video_ids: list[str] | None = None,
         allow_web: bool = False,
         comment_ids: list[str] | None = None,
+        question: str = "",
     ) -> tuple[GuideJob, bool]:
         """Begin a job. Returns ``(job, started)``; ``started`` is False when
         one is already running, in which case that job is returned."""
@@ -144,6 +148,7 @@ class GuideRunner:
                 slug=slug,
                 topic=topic,
                 title=title,
+                question=question,
                 video_ids=list(video_ids or []),
                 allow_web=allow_web,
                 comment_ids=list(comment_ids or []),
@@ -295,6 +300,8 @@ class GuideRunner:
                     job.cite_valid = int(result["cite_valid"])
                     job.cite_total = int(result.get("cite_total") or 0)
                 job.gaps = list(result.get("gaps") or job.gaps)
+                if result.get("title"):
+                    job.title = str(result["title"])
                 job.message = None
                 job.status = "done"
         self._broadcast(job)

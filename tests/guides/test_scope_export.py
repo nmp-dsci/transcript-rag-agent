@@ -8,7 +8,9 @@ from src.guides.scope import (
     candidate_videos,
     cluster_videos,
     probe_questions,
+    probes_for,
     title_matches,
+    topic_from_question,
     topic_tokens,
 )
 
@@ -56,6 +58,30 @@ def test_tokens_probes_and_title_match():
     )
     assert title_matches("LLM-as-a-judge", "LLM as a Judge Explained | Hands-On")
     assert title_matches("anything", None) is False
+
+
+def test_topic_from_question_keeps_the_subject_phrase():
+    cases = {
+        "How do teams calibrate an LLM judge against human labels, and what do they do when it drifts?": "calibrate an llm judge against human labels",
+        "What is the best way to do prompt caching?": "prompt caching",
+        "prompt caching": "prompt caching",
+        "Explain LLM-as-a-judge": "llm-as-a-judge",
+        "How should I structure a RAG eval so the numbers mean something": "structure a rag eval so the numbers mean something",
+        "What do recruiters actually look for on an AI engineer resume?": "recruiters actually look for on an ai engineer resume",
+        "why is context engineering hard and why": "context engineering hard",
+        "???": "???",
+    }
+    for question, topic in cases.items():
+        assert topic_from_question(question) == topic, question
+
+
+def test_probes_for_a_question_lead_with_the_question_itself():
+    question = "How do teams calibrate an LLM judge against human labels?"
+    probes = probes_for(question)
+    assert probes[0] == question
+    assert probes[1:] == probe_questions("calibrate an llm judge against human labels")
+    # A bare topic is not duplicated as its own probe.
+    assert probes_for("prompt caching") == probe_questions("prompt caching")
 
 
 def test_candidates_ranked_by_probe_hits_and_title():

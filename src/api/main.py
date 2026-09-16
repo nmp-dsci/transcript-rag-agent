@@ -175,20 +175,33 @@ class MatrixRunRequest(BaseModel):
 
 
 class GuideScopeRequest(BaseModel):
-    """A topic to rank the corpus for; ``limit`` caps the candidate list."""
+    """What to rank the corpus for: a plain-language ``question`` (the topic
+    and probes are derived from it) or a bare ``topic``. ``limit`` caps the
+    candidate list."""
 
-    topic: str
+    topic: str = ""
+    question: str = ""
     limit: int = 25
 
 
 class GuideWriteRequest(BaseModel):
-    """Start writing a guide from a confirmed video set."""
+    """Start writing a guide.
 
-    topic: str
+    Asked as a ``question``: the server scopes the corpus itself and starts at
+    once, with the question as the working title until the composer names the
+    page. Configured with ``topic`` + ``video_ids``: the CLI/checklist path.
+    """
+
+    topic: str = ""
+    question: str = ""
     title: str | None = None
     slug: str | None = None
     video_ids: list[str] = Field(default_factory=list)
     allow_web: bool = False
+    #: Question path: how many ranked candidates to read, at most.
+    limit: int = 20
+    #: Question path: candidates below this score are left out.
+    min_score: float = 2.0
 
 
 class GuideCommentRequest(BaseModel):
@@ -619,6 +632,7 @@ def create_app(
                 title=job.title or job.topic.title(),
                 video_ids=list(job.video_ids),
                 videos_meta=list(corpus_fn().get("videos") or []),
+                question=job.question or None,
             )
         elif job.kind == "revise":
             manifest = writer.revise(comment_ids=list(job.comment_ids))
@@ -635,6 +649,7 @@ def create_app(
             "cite_valid": manifest.cite_valid,
             "cite_total": manifest.cite_total,
             "gaps": list(manifest.gaps),
+            "title": manifest.title,
         }
 
     guide_runner = GuideRunner(run_fn=guide_run_fn or _default_guide_run_fn)
@@ -1002,21 +1017,32 @@ def create_app(
         but no LLM, and writes nothing — the candidate list is a checklist
         the user edits before anything starts.
         """
-        from src.guides.scope import candidate_videos, probe_questions
-        from src.guides.service import retrieval_fns
+        from src.guides.scope import probe_questions, probes_for, topic_from_question
 
-        topic = " ".join(payload.topic.split())
+        question = " ".join(payload.question.split())
+        topic = " ".join(payload.topic.split()) or (
+            topic_from_question(question) if question else ""
+        )
         if not topic:
-            raise HTTPException(status_code=422, detail="topic is required")
-        retrieve_whole, _retrieve = retrieval_fns(get_runner().provider)
-        videos = list(corpus_fn().get("videos") or [])
-        ranked = candidate_videos(topic, videos, retrieve_whole)[: max(1, payload.limit)]
+            raise HTTPException(status_code=422, detail="a question or topic is required")
+        probes = probes_for(question) if question else probe_questions(topic)
+        ranked, total = _scope_corpus(topic, probes, payload.limit)
         return {
             "topic": topic,
-            "probes": probe_questions(topic),
+            "question": question,
+            "probes": probes,
             "candidates": [candidate.to_dict() for candidate in ranked],
-            "total_videos": len(videos),
+            "total_videos": total,
         }
+
+    def _scope_corpus(topic: str, probes: list[str], limit: int) -> tuple[list[Any], int]:
+        from src.guides.scope import candidate_videos
+        from src.guides.service import retrieval_fns
+
+        retrieve_whole, _retrieve = retrieval_fns(get_runner().provider)
+        videos = list(corpus_fn().get("videos") or [])
+        ranked = candidate_videos(topic, videos, retrieve_whole, probes=probes)[: max(1, limit)]
+        return ranked, len(videos)
 
     @app.post("/api/guides", status_code=202)
     def guide_write(payload: GuideWriteRequest) -> dict:
@@ -1027,21 +1053,38 @@ def create_app(
         absent, with the one-line fix in ``detail``.
         """
         from src.guides.catalog import is_slug, slugify
+        from src.guides.scope import probes_for, topic_from_question
 
         problem = guide_sdk_check()
         if problem:
             raise HTTPException(status_code=503, detail=problem)
-        topic = " ".join(payload.topic.split())
+        question = " ".join(payload.question.split())
+        topic = " ".join(payload.topic.split()) or (
+            topic_from_question(question) if question else ""
+        )
         if not topic:
-            raise HTTPException(status_code=422, detail="topic is required")
-        if not payload.video_ids:
+            raise HTTPException(status_code=422, detail="a question or topic is required")
+        video_ids = list(dict.fromkeys(payload.video_ids))
+        if question and not video_ids:
+            # Asked, not configured: scope here and start at once. The research
+            # map shows what was chosen, so nothing is hidden by skipping the
+            # checklist.
+            ranked, _total = _scope_corpus(topic, probes_for(question), payload.limit)
+            video_ids = [c.video_id for c in ranked if c.score >= payload.min_score]
+            if not video_ids:
+                raise HTTPException(
+                    status_code=422,
+                    detail="the corpus has no videos on that question; try other words",
+                )
+        if not video_ids:
             raise HTTPException(status_code=422, detail="video_ids must not be empty")
-        title = (payload.title or "").strip() or topic.title()
-        slug = (payload.slug or "").strip() or slugify(title)
+        # A question is the working title until the composer names the page.
+        title = (payload.title or "").strip() or question or topic.title()
+        slug = (payload.slug or "").strip() or slugify(topic if question else title)
         if not is_slug(slug):
             raise HTTPException(status_code=422, detail=f"not a valid slug: {slug}")
         known = {str(v.get("video_id")) for v in corpus_fn().get("videos") or []}
-        unknown = [v for v in payload.video_ids if v not in known]
+        unknown = [v for v in video_ids if v not in known]
         if unknown:
             raise HTTPException(status_code=422, detail=f"not in the corpus: {', '.join(unknown)}")
         job, started = guide_runner.start(
@@ -1049,7 +1092,8 @@ def create_app(
             slug=slug,
             topic=topic,
             title=title,
-            video_ids=list(dict.fromkeys(payload.video_ids)),
+            question=question,
+            video_ids=video_ids,
             allow_web=payload.allow_web,
         )
         if not started:

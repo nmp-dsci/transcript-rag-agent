@@ -93,6 +93,7 @@ def composer_prompt(
     compiled_at: str,
     sources: list[dict[str, Any]],
     example_path: str | None,
+    question: str | None = None,
 ) -> str:
     sources_json = json.dumps(sources, indent=1, ensure_ascii=False)
     example = (
@@ -101,9 +102,20 @@ def composer_prompt(
         if example_path
         else ""
     )
+    if question:
+        opening = (
+            f"Write the field guide (slug `{slug}`) that answers this question from the "
+            f"corpus: **{question}**\n\n"
+            "Name the guide yourself: a short library title of two to five words that says "
+            "what it covers (not the question restated). Put it in `<title>` as "
+            "`Name — a field guide from the transcript corpus`, in the nav brand, and in the "
+            "`guide.md` frontmatter `title`. The hero `<h1>` is the editorial headline and may "
+            "differ. Open the thesis by answering the question directly.\n\n"
+        )
+    else:
+        opening = f"Write the field guide **{title}** (slug `{slug}`) on the topic: {topic}.\n\n"
     return (
-        f"Write the field guide **{title}** (slug `{slug}`) on the topic: {topic}.\n\n"
-        f"{example}"
+        opening + f"{example}"
         f"Evidence files (read all of them):\n"
         + "\n".join(f"- {name}" for name in evidence_files)
         + "\n\nCorpus files, for re-reading a passage in context:\n"
