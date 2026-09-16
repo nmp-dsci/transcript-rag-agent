@@ -1,0 +1,457 @@
+<title>Field Guides — ask, don't configure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FAF9F5; --panel: #FFFFFF; --panel-2: #F3F1EA;
+    --ink: #16181D; --body: rgba(22,24,29,.87); --caption: rgba(22,24,29,.60); --muted: #5C6270;
+    --line: #E5E2D8; --line-strong: #C9C5B8;
+    --accent: #2434C9; --accent-soft: rgba(36,52,201,.10);
+    --good: #1a7f37; --good-soft: rgba(26,127,55,.10);
+    --warn: #9a6700; --warn-soft: rgba(154,103,0,.12);
+    --bad: #cf222e; --bad-soft: rgba(207,34,46,.10);
+    --console: #14161B; --console-text: #E9E8E2; --console-label: #9BA1AE;
+    --nav-bg: rgba(250,249,245,.85);
+    --shadow: 0 1px 2px rgba(22,24,29,.05), 0 8px 28px rgba(22,24,29,.07);
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+    --mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+    /* workbench mock tokens = frontend/src/theme.css dark palette */
+    --wb-bg:#0d1017; --wb-panel:#12151e; --wb-panel2:#1b2130; --wb-panel3:#151924; --wb-border:#242936; --wb-border2:#2b3242;
+    --wb-text:#e7ebf3; --wb-text2:#c7ccd9; --wb-muted:#8a90a0; --wb-dim:#6d7383;
+    --wb-accent:#5b7cf0; --wb-accent2:#9db0ff; --wb-accent-dim:#171d33; --wb-accent-border:#33437e;
+    --wb-good:#3fb950; --wb-good-dim:#173a2b; --wb-good-border:#1f5937;
+    --wb-bad:#f85149; --wb-bad-dim:#3a1b1d; --wb-bad-border:#6b2a2c;
+    --wb-warn:#d29922; --wb-on-accent:#0b1020;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  } }
+  :root[data-theme="dark"] {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; min-width: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin:0; background:var(--paper); color:var(--body); font-family:var(--sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; padding-inline:16px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  nav.top { position: sticky; top:0; z-index:10; background:var(--nav-bg); backdrop-filter: blur(10px); border-bottom:1px solid var(--line); margin-inline:-16px; padding-inline:16px; }
+  nav.top .wrap { display:flex; gap:18px; align-items:center; height:52px; flex-wrap:wrap; }
+  nav.top .brand { font-family:var(--serif); font-size:20px; color:var(--ink); display:flex; align-items:center; gap:8px; }
+  .diamond { width:9px; height:9px; background:var(--accent); transform:rotate(45deg); display:inline-block; }
+  nav.top a { color:var(--muted); text-decoration:none; font-size:13px; font-weight:500; }
+  nav.top a:hover { color:var(--ink); }
+  header.hero { padding: 56px 0 28px; border-bottom:1px solid var(--line); }
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:10px; }
+  h1 { font-family:var(--serif); font-weight:400; font-size: clamp(38px, 6vw, 60px); line-height:1.05; color:var(--ink); margin: 14px 0 12px; letter-spacing:-.01em; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size:19px; color:var(--body); max-width: 760px; margin:0; }
+  .facts { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:22px; font-family:var(--mono); font-size:12.5px; color:var(--caption); }
+  .facts b { color:var(--ink); font-weight:500; }
+  section { padding: 44px 0 8px; }
+  .section-head { display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:34px; color:var(--ink); margin:0; line-height:1.1; }
+  h3 { font-family:var(--sans); font-weight:600; font-size:17px; color:var(--ink); margin:26px 0 8px; }
+  p { margin: 0 0 12px; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow); }
+  .card h4 { margin:0 0 8px; font-size:15px; color:var(--ink); font-weight:600; display:flex; align-items:center; gap:8px; }
+  .card p { font-size:14.5px; color:var(--body); margin:0; }
+  .card.bad { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
+  .num { font-family:var(--mono); font-size:12px; color:var(--accent); }
+  .k { font-family:var(--mono); font-size:12.5px; background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--ink); white-space:nowrap; }
+  code { font-family:var(--mono); font-size:.9em; }
+  pre { background:var(--console); color:var(--console-text); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55; margin: 10px 0 16px; }
+  pre .c { color:var(--console-label); }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin: 8px 0 18px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--caption); font-weight:500; }
+  .tablewrap { overflow-x:auto; }
+  .tag { display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 7px; border-radius:99px; border:1px solid var(--line-strong); color:var(--muted); }
+  .tag.good { color:var(--good); border-color:var(--good); background:var(--good-soft); }
+  .tag.warn { color:var(--warn); border-color:var(--warn); background:var(--warn-soft); }
+  .tag.bad { color:var(--bad); border-color:var(--bad); background:var(--bad-soft); }
+  .tag.acc { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+  .note { border-left:3px solid var(--accent); background:var(--accent-soft); padding:10px 14px; border-radius:0 8px 8px 0; font-size:14.5px; margin:12px 0 18px; }
+  .note.warn { border-color:var(--warn); background:var(--warn-soft); }
+  ul { padding-left: 20px; margin: 0 0 12px; } li { margin: 4px 0; }
+  .slice { display:grid; grid-template-columns: 64px minmax(0,1fr); gap: 14px; padding: 16px 0; border-top:1px solid var(--line); }
+  .slice .v { font-family:var(--serif); font-size:30px; color:var(--accent); line-height:1; }
+  .slice h4 { margin:2px 0 6px; font-size:16px; color:var(--ink); }
+  .slice p, .slice li { font-size:14.5px; }
+  .slice .ship { font-family:var(--mono); font-size:12px; color:var(--caption); margin-top:6px; }
+  .screen { margin: 18px 0 30px; }
+  .screen .sh { display:flex; align-items:baseline; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .screen .sh b { color:var(--ink); font-size:15.5px; }
+  .screen .sh span { font-family:var(--mono); font-size:11.5px; color:var(--caption); }
+  .screen .cap { font-size:13.5px; color:var(--caption); margin-top:8px; }
+  .beside { display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap:14px; }
+
+  /* ── workbench mock (dark theme of frontend/src/theme.css) ── */
+  .mock { background:var(--wb-bg); color:var(--wb-text); border-radius:12px; border:1px solid var(--wb-border); overflow:hidden; font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size:12.5px; box-shadow:var(--shadow); }
+  .mock .bar { display:flex; gap:4px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--wb-border); background:var(--wb-panel); flex-wrap:wrap; }
+  .mock .bar .b { font-family:"Instrument Sans", system-ui, sans-serif; font-weight:700; font-size:14px; margin-right:12px; color:var(--wb-text); letter-spacing:-.02em; }
+  .mock .bar .b em { font-style:normal; color:var(--wb-accent); }
+  .mock .tab { padding:4px 9px; border-radius:6px; color:var(--wb-muted); }
+  .mock .tab.on { background:var(--wb-accent-dim); color:var(--wb-text); border:1px solid var(--wb-accent-border); }
+  .mock .body { display:grid; grid-template-columns: 240px minmax(0,1fr); min-height:380px; }
+  .mock .body.three { grid-template-columns: 240px minmax(0,1fr) 270px; }
+  @media (max-width: 860px) { .mock .body, .mock .body.three { grid-template-columns: 1fr; } .mock .rail { border-right:0; border-bottom:1px solid var(--wb-border);} }
+  .mock .rail { background:var(--wb-panel); border-right:1px solid var(--wb-border); padding:10px; display:flex; flex-direction:column; }
+  .mock .rail.right { border-right:0; border-left:1px solid var(--wb-border); background:var(--wb-panel3); padding:0; }
+  .mock .rh { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin: 4px 4px 8px; }
+  .mock .rh b { font-family:"Instrument Sans", system-ui, sans-serif; font-weight:600; font-size:13px; color:var(--wb-text); }
+  .mock .rh .m { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); }
+  .mock .g { padding:8px 9px; border-radius:7px; border:1px solid transparent; margin-bottom:4px; }
+  .mock .g.on { background:var(--wb-panel2); border-color:var(--wb-border); }
+  .mock .g .t { color:var(--wb-text); font-weight:500; }
+  .mock .g.on .t { color:var(--wb-accent2); }
+  .mock .g .m { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .mock .pill { font-family:ui-monospace, Menlo, monospace; font-size:10px; padding:1px 6px; border-radius:99px; border:1px solid var(--wb-border2); color:var(--wb-muted); }
+  .mock .pill.good { color:var(--wb-good); border-color:var(--wb-good-border); background:var(--wb-good-dim); }
+  .mock .pill.acc { color:var(--wb-accent2); border-color:var(--wb-accent-border); background:var(--wb-accent-dim); }
+  .mock .pill.warn { color:var(--wb-warn); border-color:#5c451a; background:#3a2e12; }
+  .mock .btn { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:7px; background:var(--wb-accent); color:var(--wb-on-accent); font-weight:600; font-size:12px; }
+  .mock .btn.ghost { background:var(--wb-panel2); color:var(--wb-text2); border:1px solid var(--wb-border); font-weight:500; }
+  .mock .btn.off { opacity:.45; }
+  .mock .btn.new { width:100%; justify-content:center; background:var(--wb-accent-dim); color:var(--wb-accent2); border:1px dashed var(--wb-accent-border); margin-bottom:8px; }
+  .mock .main { padding: 14px 16px; min-width:0; }
+  .mock .h { font-family:"Instrument Sans", system-ui, sans-serif; font-size:15px; color:var(--wb-text); margin-bottom:4px; font-weight:600; }
+  .mock .sub { color:var(--wb-muted); font-size:12px; margin-bottom:10px; }
+  .mock .inp { background:var(--wb-bg); border:1px solid var(--wb-border); border-radius:6px; padding:7px 9px; color:var(--wb-text); font-size:12.5px; }
+  .mock .inp.ph { color:var(--wb-dim); }
+  .mock .foot { margin-top:auto; border-top:1px solid var(--wb-border); padding-top:10px; }
+  .mock .warnline { color:var(--wb-warn); font-size:11px; margin: 4px 0; }
+  .mock .mono { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); }
+
+  /* the ask surface */
+  .ask { max-width: 640px; margin: 28px auto 0; }
+  .ask .ey { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--wb-accent2); }
+  .ask h5 { font-family:"Instrument Sans", system-ui, sans-serif; font-weight:600; font-size:22px; letter-spacing:-.015em; color:var(--wb-text); margin:6px 0 6px; line-height:1.15; }
+  .ask .lead { color:var(--wb-muted); font-size:12.5px; margin-bottom:14px; }
+  .composer { background:var(--wb-panel); border:1px solid var(--wb-border2); border-radius:12px; padding:10px 12px 10px; box-shadow: 0 0 0 3px var(--wb-accent-dim); }
+  .composer.rec { border-color:var(--wb-bad-border); box-shadow: 0 0 0 3px var(--wb-bad-dim); }
+  .composer .ta { min-height:58px; font-size:13.5px; color:var(--wb-text); line-height:1.5; }
+  .composer .ta .ph { color:var(--wb-dim); }
+  .composer .ta .interim { color:var(--wb-muted); }
+  .composer .row { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .composer .row .sp { flex:1; }
+  .composer .hint { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-dim); }
+  .composer .hint.rec { color:var(--wb-bad); }
+  .mic { width:30px; height:30px; border-radius:999px; flex:none; border:1px solid var(--wb-good-border); background:var(--wb-good-dim); color:var(--wb-good); display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 0 0 3px var(--wb-good-dim); }
+  .mic.sm { width:26px; height:26px; }
+  .mic.rec { border-color:var(--wb-bad-border); background:var(--wb-bad-dim); color:var(--wb-bad); box-shadow: 0 0 0 4px var(--wb-bad-dim); }
+  .mic svg { width:14px; height:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .chips span { background:var(--wb-bg); border:1px solid var(--wb-border2); border-radius:14px; padding:4px 10px; font-size:11.5px; color:var(--wb-muted); }
+  .opt { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--wb-text2); margin-top:10px; }
+  .opt .cb { display:inline-block; width:11px; height:11px; border:1px solid var(--wb-border2); border-radius:3px; vertical-align:-1px; margin-right:5px; background:var(--wb-bg); }
+  .opt .cb.on { background:var(--wb-accent); border-color:var(--wb-accent-border); }
+
+  /* scope card */
+  .scope { background:var(--wb-panel); border:1px solid var(--wb-border); border-radius:12px; padding:12px 14px; margin-top:12px; }
+  .scope .q { font-size:13px; color:var(--wb-text); border-left:2px solid var(--wb-accent); padding-left:10px; margin-bottom:10px; }
+  .scope .q .mono { display:block; margin-top:2px; }
+  .scope .found { display:flex; gap:14px; flex-wrap:wrap; font-family:ui-monospace, Menlo, monospace; font-size:11px; color:var(--wb-muted); margin-bottom:8px; }
+  .scope .found b { color:var(--wb-text); font-weight:500; }
+  .vl { display:grid; grid-template-columns: 16px minmax(0,1fr) 92px; gap:4px 8px; align-items:center; padding:5px 0; border-bottom:1px solid var(--wb-border); font-size:12px; }
+  .vl .cb { width:11px; height:11px; border:1px solid var(--wb-accent-border); border-radius:3px; background:var(--wb-accent); }
+  .vl .cb.off { background:transparent; border-color:var(--wb-border2); }
+  .vl .tt { color:var(--wb-text); }
+  .vl .ch { color:var(--wb-dim); font-size:10.5px; }
+  .vl .hits { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); text-align:right; white-space:nowrap; }
+  .vl .hits i { display:inline-block; height:6px; background:var(--wb-accent); border-radius:2px; vertical-align:middle; margin-right:5px; }
+  .vl.dim .tt { color:var(--wb-muted); }
+  .scope .more { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-dim); padding:6px 0; }
+  .scope .act { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  .scope .act .est { font-family:ui-monospace, Menlo, monospace; font-size:10.5px; color:var(--wb-muted); }
+
+  /* right rail comment box */
+  .tabs { display:flex; border-bottom:1px solid var(--wb-border); }
+  .tabs span { flex:1; text-align:center; font-family:ui-monospace, Menlo, monospace; font-size:10px; letter-spacing:.02em; text-transform:uppercase; color:var(--wb-muted); padding:8px 4px; border-bottom:2px solid transparent; }
+  .tabs span.on { color:var(--wb-text); border-bottom-color:var(--wb-accent); }
+  .cm { background:var(--wb-panel2); border:1px solid var(--wb-border); border-radius:7px; padding:8px 9px; margin:0 10px 6px; }
+  .cm .q { color:var(--wb-muted); font-style:italic; font-size:11.5px; }
+  .cm .x { color:var(--wb-text2); margin-top:4px; }
+  .cm .s { font-family:ui-monospace, Menlo, monospace; font-size:10px; margin-top:4px; display:flex; gap:6px; align-items:center; }
+  .compose { border-top:1px solid var(--wb-border); padding:8px 10px; display:flex; flex-direction:column; gap:6px; }
+  .dq { position:relative; padding:6px 24px 6px 8px; background:var(--wb-accent-dim); border:1px solid var(--wb-accent-border); border-radius:6px; font-size:11px; color:var(--wb-text2); font-style:italic; }
+  .dq .x { position:absolute; top:2px; right:6px; color:var(--wb-muted); font-style:normal; }
+  .tbox { background:var(--wb-bg); border:1px solid var(--wb-border); border-radius:6px; padding:6px 8px; min-height:52px; font-size:12px; color:var(--wb-text); position:relative; }
+  .tbox.rec { border-color:var(--wb-bad-border); }
+  .tbox .ph { color:var(--wb-dim); }
+  .tbox .interim { color:var(--wb-muted); }
+  .tbox .mic { position:absolute; right:6px; bottom:6px; }
+  .cact { display:flex; gap:6px; }
+  .cact .btn { flex:1; justify-content:center; }
+
+  /* flow strip */
+  .flow { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:8px; margin: 14px 0 22px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .flow .st { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; }
+  .flow .st b { display:block; color:var(--ink); font-size:13.5px; margin-bottom:2px; }
+  .flow .st .n { font-family:var(--mono); font-size:11px; color:var(--accent); }
+
+  /* input forms */
+  form.q { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin: 12px 0 18px; box-shadow:var(--shadow); }
+  form.q legend, form.q .qh { font-weight:600; color:var(--ink); font-size:15px; margin-bottom:8px; }
+  form.q label { display:flex; gap:10px; align-items:flex-start; padding:6px 0; font-size:14.5px; cursor:pointer; }
+  form.q label input { margin-top:5px; }
+  form.q label small { display:block; color:var(--caption); font-size:13px; }
+  form.q button { margin-top:10px; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font: 600 13.5px var(--sans); cursor:pointer; }
+  form.q textarea, form.q input[type=text] { width:100%; font: 14px var(--sans); padding:8px 10px; border:1px solid var(--line-strong); border-radius:8px; background:var(--paper); color:var(--ink); }
+  .decided { font-family:var(--mono); font-size:11.5px; color:var(--good); }
+</style>
+
+<nav class="top"><div class="wrap">
+  <span class="brand"><span class="diamond"></span> Field Guides · ask</span>
+  <a href="#now">01 Today</a><a href="#target">02 Target</a><a href="#screens">03 Screens</a><a href="#voice">04 Voice</a><a href="#build">05 Build</a><a href="#decide">06 Decided</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow"><span class="diamond"></span> plan s24 · follows s23 · branch writeups</div>
+  <h1>Ask for a guide the way you <em>ask a question</em></h1>
+  <p class="lede">The New guide panel is a form crammed into the bottom of a rail: topic field, scan, checklist, title, checkbox, button. It should be one box you talk into — the same composer and microphone Chat already has — that turns a question into a report. The same mic goes on the comment box, so feedback on a guide is spoken too.</p>
+  <div class="facts">
+    <span><b>Voice stack</b> already shipped: mic → AudioWorklet → <code>/ws/stt</code> → Deepgram, <code>useSpeechToText</code></span>
+    <span><b>STT</b> live on this server (<code>/api/health.stt = true</code>)</span>
+    <span><b>Pipeline</b> unchanged: scope → export → extract → compose → verify → publish</span>
+  </div>
+</div></header>
+
+<section id="now"><div class="wrap">
+  <div class="section-head"><span class="num">01</span><h2>What sucks today</h2></div>
+  <div class="beside">
+    <div class="screen">
+      <div class="sh"><b>Today</b><span>ComposePanel, bottom of the left rail, 300px wide</span></div>
+      <div class="mock"><div class="body">
+        <div class="rail">
+          <div class="rh"><b>Field guides</b><span class="m">3 guides</span></div>
+          <div class="g on"><div class="t">LLM-as-a-Judge</div><div class="m">19 videos · v3 <span class="pill good">cites 319/319</span></div></div>
+          <div class="g"><div class="t">Production GenAI Systems</div><div class="m">17 videos · v1</div></div>
+          <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+          <div class="foot">
+            <div class="rh"><b>New guide</b></div>
+            <div class="mono" style="margin:0 4px 6px">the agent reads every chunk of the videos you confirm</div>
+            <div style="display:flex;gap:6px"><div class="inp ph" style="flex:1">topic, e.g. "context e</div><span class="btn ghost off">Find sources</span></div>
+            <div class="vl" style="margin-top:8px"><span class="cb"></span><span><span class="tt">Evaluating LLM apps…</span><br><span class="ch">Arize</span></span><span class="hits"><i style="width:26px"></i>7</span></div>
+            <div class="vl"><span class="cb"></span><span><span class="tt">LLM judge calibration…</span><br><span class="ch">Stanford</span></span><span class="hits"><i style="width:18px"></i>5</span></div>
+            <div class="mono" style="padding:4px">… 12 more, scroll</div>
+            <div class="inp ph" style="margin-top:6px">title</div>
+            <div class="opt"><span><span class="cb"></span>allow web search this run</span></div>
+            <span class="btn off" style="margin-top:8px">Write guide</span>
+          </div>
+        </div>
+        <div class="main" style="color:var(--wb-dim);display:flex;align-items:center;justify-content:center">(the current guide's page — unrelated to what you are composing)</div>
+      </div></div>
+      <div class="cap">The panel competes with the library for 300px, the placeholder is cut off, the checklist scrolls inside a scrolling rail, and the page next to it is about something else entirely.</div>
+    </div>
+    <div>
+      <div class="cards">
+        <div class="card bad"><h4><span class="num">P1</span> It's a form, not a question</h4><p>Users think "how do teams calibrate LLM judges against humans?", not "topic: llm-as-a-judge". The topic field forces the translation onto the user, and the title field asks them to name a report they haven't seen.</p></div>
+        <div class="card bad"><h4><span class="num">P2</span> Two clicks before anything happens</h4><p>Find sources, then read a checklist, then Write guide. Nothing starts until the third action, and the checklist is the only feedback that the question was understood.</p></div>
+        <div class="card bad"><h4><span class="num">P3</span> No voice, no examples</h4><p>Chat has a mic that streams speech into the box. Guides has neither the mic nor example questions to show what a good ask looks like.</p></div>
+        <div class="card bad"><h4><span class="num">P4</span> Wrong place</h4><p>Composing a new report belongs in the main stage, like Chat's empty state — not squeezed under the library while an unrelated guide fills the screen.</p></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="target"><div class="wrap">
+  <div class="section-head"><span class="num">02</span><h2>Target behaviour</h2></div>
+  <p>One composer, four moments. Every step is the shortest thing that keeps the agent honest about which videos it will read.</p>
+  <div class="flow">
+    <div class="st"><span class="n">1 · ask</span><b>Type or speak a question</b>Plain language. Enter or Build. The mic is the same green button as Chat.</div>
+    <div class="st"><span class="n">2 · found</span><b>Sources appear under the question</b>Scope runs on submit (no LLM, ~1s). The card says "found 19 videos across 11 channels" with the list pre-selected. One click to build.</div>
+    <div class="st"><span class="n">3 · building</span><b>Research map, guide in the rail</b>Unchanged from s23: the map shows every cluster reading, and the rail entry says <code>● extract</code>.</div>
+    <div class="st"><span class="n">4 · read + comment</span><b>Speak comments too</b>The comment box gets the mic; Send to the agent runs in the Revisions tab while you keep reading.</div>
+  </div>
+  <div class="note">The confirmation card stays. It is the one place the user sees which videos the agent will read in full before spending 15 minutes of subscription, and it is where a wrong retrieval (a "judge" that pulled in courtroom videos) gets caught. It just stops being a form: pre-selected, one button, editable if you care.</div>
+</div></section>
+
+<section id="screens"><div class="wrap">
+  <div class="section-head"><span class="num">03</span><h2>Screens</h2></div>
+
+  <div class="screen">
+    <div class="sh"><b>A · Ask</b><span>+ New guide in the rail opens this in the main stage · route ?guide=new</span></div>
+    <div class="mock">
+      <div class="bar"><span class="b">transcript·<em>lab</em></span><span class="tab">Chat</span><span class="tab on">Field Guides</span><span class="tab">RAG Pipeline</span><span class="tab">Scoreboard</span><span class="tab">Experiments</span></div>
+      <div class="body">
+        <div class="rail">
+          <div class="rh"><b>Field guides</b><span class="m">3 guides</span></div>
+          <span class="btn new">+ New guide</span>
+          <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">19 videos · v3 <span class="pill good">cites 319/319</span></div></div>
+          <div class="g"><div class="t">Production GenAI Systems</div><div class="m">17 videos · v1 <span class="pill good">cites 195/195</span></div></div>
+          <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1 <span class="pill good">cites 25/25</span></div></div>
+        </div>
+        <div class="main">
+          <div class="ask">
+            <div class="ey">new field guide</div>
+            <h5>What do you want a guide on?</h5>
+            <div class="lead">Ask like you would in Chat. The agent finds the videos that answer it, reads every chunk of them, and writes a cited guide you can comment on.</div>
+            <div class="composer">
+              <div class="ta"><span class="ph">e.g. How do teams calibrate an LLM judge against human labels, and where does it drift?</span></div>
+              <div class="row">
+                <span class="hint">Enter to build · Shift+Enter for a newline</span>
+                <span class="sp"></span>
+                <span class="mic" title="Ask by voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>
+                <span class="btn off">Build guide</span>
+              </div>
+            </div>
+            <div class="opt"><span><span class="cb on"></span>show me the sources before writing</span><span><span class="cb"></span>allow web search</span></div>
+            <div class="chips"><span>How should I structure a RAG eval so the numbers mean something?</span><span>What do recruiters actually look for on an AI engineer resume?</span><span>Prompt caching: when it pays and when it bites</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">Chat's empty state, transplanted. The library keeps its full rail; "+ New guide" is a dashed accent button at the top instead of a form at the bottom. Example chips come from questions the corpus can actually answer (top titles per pack), never invented.</div>
+  </div>
+
+  <div class="screen">
+    <div class="sh"><b>B · Ask by voice</b><span>same composer, mic pressed · transcript streams in like Chat</span></div>
+    <div class="mock"><div class="body">
+      <div class="rail">
+        <div class="rh"><b>Field guides</b><span class="m">3 guides</span></div>
+        <span class="btn new">+ New guide</span>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">19 videos · v3</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">17 videos · v1</div></div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+      </div>
+      <div class="main">
+        <div class="ask">
+          <div class="ey">new field guide</div>
+          <h5>What do you want a guide on?</h5>
+          <div class="composer rec">
+            <div class="ta">How do teams calibrate an LLM judge against human labels <span class="interim">and what do they do when it starts to drift</span></div>
+            <div class="row">
+              <span class="hint rec">● listening — press stop or pause to finish</span>
+              <span class="sp"></span>
+              <span class="mic rec" title="Stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>
+              <span class="btn off">Build guide</span>
+            </div>
+          </div>
+          <div class="opt"><span><span class="cb on"></span>show me the sources before writing</span><span><span class="cb"></span>allow web search</span></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap">Identical contract to Chat: committed text is solid, the interim phrase is muted, the box is read-only while listening, Build is disabled until the mic stops. Same <code>useSpeechToText</code> hook, same <code>.micbtn</code> CSS, same <code>/ws/stt</code> relay — nothing new on the server.</div>
+  </div>
+
+  <div class="screen">
+    <div class="sh"><b>C · Sources found</b><span>after submit · scope ran on the question · one click to build</span></div>
+    <div class="mock"><div class="body">
+      <div class="rail">
+        <div class="rh"><b>Field guides</b><span class="m">3 guides</span></div>
+        <span class="btn new">+ New guide</span>
+        <div class="g"><div class="t">LLM-as-a-Judge</div><div class="m">19 videos · v3</div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">17 videos · v1</div></div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+      </div>
+      <div class="main">
+        <div class="ask">
+          <div class="ey">new field guide</div>
+          <div class="scope">
+            <div class="q">How do teams calibrate an LLM judge against human labels, and what do they do when it starts to drift?<span class="mono">title · <span style="color:var(--wb-text)">Calibrating LLM Judges</span> ✎ &nbsp; slug · calibrating-llm-judges</span></div>
+            <div class="found"><span><b>14 videos</b> across <b>9 channels</b></span><span><b>512 chunks</b> to read in full</span><span>8 probes · hybrid retrieval · no LLM yet</span></div>
+            <div class="vl"><span class="cb"></span><span><span class="tt">Evaluating LLM Apps: judges that agree with humans</span> <span class="ch">· Arize</span></span><span class="hits"><i style="width:34px"></i>7/8</span></div>
+            <div class="vl"><span class="cb"></span><span><span class="tt">CME295 — LLM-as-a-judge, position bias, calibration</span> <span class="ch">· Stanford</span></span><span class="hits"><i style="width:30px"></i>6/8</span></div>
+            <div class="vl"><span class="cb"></span><span><span class="tt">Netflix: aligning offline judges with online metrics</span> <span class="ch">· Netflix Eng</span></span><span class="hits"><i style="width:26px"></i>5/8</span></div>
+            <div class="vl"><span class="cb"></span><span><span class="tt">Judge drift — monitoring evaluators in production</span> <span class="ch">· Evidently</span></span><span class="hits"><i style="width:22px"></i>4/8</span></div>
+            <div class="vl dim"><span class="cb off"></span><span><span class="tt">Courtroom AI: can a model judge a case?</span> <span class="ch">· Legal Eagle</span></span><span class="hits"><i style="width:6px"></i>1/8</span></div>
+            <div class="more">… 9 more selected, 6 below the bar — show all · add a video id</div>
+            <div class="act"><span class="btn">Build guide from 14 videos</span><span class="btn ghost">Edit question</span><span class="est">~12 min · Sonnet 5 extract × 4 · Opus 5 compose · bills your subscription</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap">The question stays visible as the thing being answered. The title is suggested, not demanded (Title Case of the topic phrase; editable inline). Off-topic hits sit below the bar unchecked — "Courtroom AI" is the kind of retrieval mistake this card exists to catch. Skip this card entirely by unticking "show me the sources" in A.</div>
+  </div>
+
+  <div class="screen">
+    <div class="sh"><b>D · Comment by voice</b><span>right rail · Commentary tab · mic in the comment box</span></div>
+    <div class="mock"><div class="body three">
+      <div class="rail">
+        <div class="rh"><b>Field guides</b><span class="m">3 guides</span></div>
+        <span class="btn new">+ New guide</span>
+        <div class="g on"><div class="t">LLM-as-a-Judge</div><div class="m">19 videos · v3 <span class="pill good">cites 319/319</span></div></div>
+        <div class="g"><div class="t">Production GenAI Systems</div><div class="m">17 videos · v1</div></div>
+        <div class="g"><div class="t">Ship Like a Studio</div><div class="m">23 videos · v1</div></div>
+      </div>
+      <div class="main" style="padding:0">
+        <div style="background:#FAF9F5;color:#16181D;margin:12px;border-radius:8px;padding:20px 24px;font-family:var(--sans)">
+          <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#2434C9">scoring · lever 4</div>
+          <div style="font-family:var(--serif);font-size:22px;margin:6px 0 8px;line-height:1.1">Pairwise beats scoring in isolation</div>
+          <p style="font-size:12.5px;line-height:1.55;margin:0 0 8px">Ask the judge which of two answers is better rather than for an absolute score; agreement with humans rises from <mark style="background:rgba(36,52,201,.16)">0.61 to 0.78 in the Arize numbers</mark> <cite style="font-style:normal;font-family:var(--mono);font-size:10px;color:#2434C9;background:rgba(36,52,201,.08);border-radius:4px;padding:0 4px">8fNP4N46RRo@23</cite>, at the cost of order sensitivity.</p>
+          <p style="font-size:12.5px;line-height:1.55;margin:0;color:rgba(22,24,29,.6)">…</p>
+        </div>
+      </div>
+      <div class="rail right">
+        <div class="tabs"><span class="on">Commentary · 1</span><span>Evidence</span><span>Revisions · 3</span></div>
+        <div class="rh" style="margin:10px 10px 8px"><b>Commentary</b><span class="m">1 open · 2 addressed</span></div>
+        <div class="cm"><div class="q">“TP/FP/TN/FN”</div><div class="x">what do these mean?</div><div class="s"><span class="pill good">addressed in v3</span><span class="mono">c-f63c64</span></div></div>
+        <div class="compose">
+          <div class="dq">“0.61 to 0.78 in the Arize numbers”<span class="x">×</span></div>
+          <div class="tbox rec">Is 0.61 to 0.78 the same eval set both times <span class="interim">or did they change the</span>
+            <span class="mic sm rec"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>
+          </div>
+          <div class="warnline" style="font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--wb-bad)">● listening</div>
+          <div class="cact"><span class="btn ghost off">Add comment</span><span class="btn off">Send 1 to the agent</span></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap">Select a phrase in the page (as today), press the mic that now sits inside the comment box, speak. The quote anchor is kept; the spoken text lands as the comment body. Add commits it; Send runs the revision in the Revisions tab (shipped this week) so you keep reading.</div>
+  </div>
+</div></section>
+
+<section id="voice"><div class="wrap">
+  <div class="section-head"><span class="num">04</span><h2>Voice: reuse, don't rebuild</h2></div>
+  <div class="tablewrap"><table>
+    <tr><th>Piece</th><th>Where it lives today</th><th>Change</th></tr>
+    <tr><td><code>useSpeechToText</code></td><td><code>frontend/src/chat/useSpeechToText.ts</code> — owns mic, AudioWorklet, socket, transcript state</td><td>Move to <code>frontend/src/speech/</code> with <code>pcm.ts</code>. Chat imports from the new path. No behaviour change.</td></tr>
+    <tr><td>Mic button</td><td>Inline JSX + two SVGs in <code>Composer.tsx</code>; <code>.micbtn</code> / <code>.rec</code> in <code>theme.css</code></td><td>Extract <code>&lt;MicButton listening supported onToggle size /&gt;</code>. Add a <code>.micbtn.sm</code> (26px) for the comment box. Chat, Ask and Comment all use it.</td></tr>
+    <tr><td>Speech → text landing</td><td>Composer folds <code>committed + interim</code> into the displayed value and commits on stop</td><td>Same fold, factored into <code>useDictation(value, setValue)</code> so each box is three lines: <code>const d = useDictation(body, setBody)</code>, render <code>d.display</code>, pass <code>d.listening</code>.</td></tr>
+    <tr><td>Gate</td><td><code>/api/health.stt</code> decides whether Chat renders the mic</td><td>Same flag read once in <code>App</code> and passed down (or a <code>useStt()</code> hook). Mic hidden when the relay is off; the text path is unchanged.</td></tr>
+    <tr><td>Server</td><td><code>/ws/stt</code> relay to Deepgram</td><td>None.</td></tr>
+  </table></div>
+  <h3>Question → scope, on the server</h3>
+  <p>Today <code>POST /api/guides/scope</code> takes a <code>topic</code> and runs eight templated probes (<code>"{topic}"</code>, <code>"how to do {topic} step by step"</code>, …). A question needs one more step before the templates, and no LLM:</p>
+  <pre><span class="c"># src/guides/scope.py</span>
+def topic_from_question(question: str) -> str:
+    <span class="c"># strip question scaffolding ("how do teams", "what is the best way to", "?"),</span>
+    <span class="c"># keep content tokens in order, cap at 8 words</span>
+    ...
+
+def probes_for(question: str) -> list[str]:
+    topic = topic_from_question(question)
+    return [question, *(t.format(topic=topic) for t in PROBE_TEMPLATES)]   <span class="c"># the question itself is probe 0</span>
+
+def suggest_title(question: str) -> str:   <span class="c"># Title Case of the topic phrase, ≤ 6 words</span></pre>
+  <p>The request gains <code>question</code> (topic still accepted for the CLI), the response gains <code>topic</code>, <code>title</code>, <code>slug</code>. The manifest records the original question so the guide page can say what it was answering. <code>guides write</code> gets <code>--question</code>.</p>
+  <div class="note warn">Title quality from a heuristic will be "fine, not great". The composer already writes the page's real headline from the evidence; the suggested title is only the library label and the slug. If it grates, one Haiku call at scope time (~200 tokens) is the upgrade — held back because it would be the only LLM call before the user commits.</div>
+</div></section>
+
+<section id="build"><div class="wrap">
+  <div class="section-head"><span class="num">05</span><h2>Build slices</h2></div>
+  <p>Each slice ships on <code>writeups</code>, tested, and leaves the tab working. Frontend-hypothesis rule from s11 still applies: every UI slice is checked in the browser before commit.</p>
+  <div class="slice"><div class="v">V0</div><div><h4>Shared voice</h4><ul><li>Move hook + worklet to <code>src/speech/</code>; extract <code>MicButton</code> and <code>useDictation</code>; Chat re-wired, zero behaviour change (existing Composer tests pass untouched).</li><li>Mic in the guide comment box (screen D) with a <code>.micbtn.sm</code>.</li></ul><div class="ship">ships: comments by voice · tests: useDictation fold, MicButton states, CommentRail listening state</div></div></div>
+  <div class="slice"><div class="v">V1</div><div><h4>Ask surface</h4><ul><li><code>AskGuide</code> in the main stage at <code>?guide=new</code>; "+ New guide" at the top of the rail; ComposePanel removed from the rail foot.</li><li>Composer with mic, Enter to build, example chips, "show sources" (default on) and "allow web" options.</li><li>Uses the existing scope API with the question as topic — works today, gets better in V2.</li></ul><div class="ship">ships: screens A + B · tests: route, submit → scope call, Enter/Shift+Enter, demo hides it</div></div></div>
+  <div class="slice"><div class="v">V2</div><div><h4>Question-aware scope</h4><ul><li><code>topic_from_question</code>, <code>probes_for</code>, <code>suggest_title</code>; API accepts <code>question</code>, returns topic/title/slug; manifest stores <code>question</code>.</li><li>Screen C card: question at top, editable title, selected/below-the-bar split, "Build from N videos", estimate line.</li><li>CLI: <code>guides scope --question</code>, <code>guides write --question</code>.</li></ul><div class="ship">ships: screen C · tests: question stripping table, probe list, title suggestion, API round-trip</div></div></div>
+  <div class="slice"><div class="v">V3</div><div><h4>Skip-confirm + polish</h4><ul><li>"Show me the sources" off → Build starts immediately; the research map's header shows the selected videos so nothing is hidden.</li><li>Example chips derived from the corpus (top-hit titles per pack), analytics events (<code>guide_ask</code>, <code>guide_ask_voice</code>, <code>guide_comment_voice</code>), readme + s24 evidence screenshots.</li></ul><div class="ship">ships: everything above in one PR · no-mistakes gate</div></div></div>
+</div></section>
+
+<section id="decide"><div class="wrap">
+  <div class="section-head"><span class="num">06</span><h2>Decided</h2></div>
+  <p class="decided">reviewed in Lavish · 2026-09-16 · all four answered, building V0–V3</p>
+  <div class="tablewrap"><table>
+    <tr><th>Question</th><th>Decision</th><th>What it changes in the plan</th></tr>
+    <tr><td>Sources card (screen C)</td><td><b>Build immediately</b>; sources shown in the research map</td><td>Screen C is dropped as a gate. Submit runs scope and starts the write in one go; the research map header lists the chosen videos with hit counts so nothing is hidden. The "show me the sources" checkbox goes away.</td></tr>
+    <tr><td>Title</td><td><b>The composer names it</b>; the library shows the question until then</td><td>No title field, no heuristic title. The rail entry and research map show the question while writing; at publish the page's own headline becomes the manifest title. The slug still comes from the question's content words.</td></tr>
+    <tr><td>Voice comment on stop</td><td><b>Stop = Add</b></td><td>When the mic stops with text, the comment is added at once with the current quote anchor. Text typed by hand still needs Add.</td></tr>
+    <tr><td>Scope</td><td><b>V0–V3 in one PR</b></td><td>Shared voice → ask surface → question-aware scope + composer-named titles → polish, all on <code>writeups</code> behind one no-mistakes gate.</td></tr>
+  </table></div>
+</div></section>
