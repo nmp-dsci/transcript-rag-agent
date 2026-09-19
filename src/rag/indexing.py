@@ -18,6 +18,8 @@ do about it. Graph extraction is already handled this way one level up, in
 
 from __future__ import annotations
 
+from typing import Any
+
 import logging
 from dataclasses import dataclass, field
 
@@ -69,13 +71,18 @@ class RagIndexer:
         source_url: str,
         refresh: bool = False,
         refresh_summary: bool = False,
+        metadata: dict[str, Any] | None = None,
     ) -> RagIndexResult:
         # Each stage is announced as it *begins*, so a progress reading is a
         # fact about where the run is rather than an optimistic guess made
         # before any work started.
         report_stage("discover")
         report_stage("fetch")
-        raw_document, cache_status = self.raw_store.ensure_raw_document(source_url, refresh=refresh)
+        raw_document, cache_status = (
+            self.raw_store.ensure_raw_document(source_url, refresh=refresh, metadata=metadata)
+            if metadata is not None
+            else self.raw_store.ensure_raw_document(source_url, refresh=refresh)
+        )
         report_stage("chunk")
         chunks = build_chunks(
             raw_document,

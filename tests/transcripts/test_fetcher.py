@@ -111,3 +111,44 @@ def test_normalizes_supadata_metadata_response() -> None:
     assert transcript.like_count == 45
     assert transcript.tags == ["tax", "property"]
     assert transcript.transcript_languages == ["en", "es"]
+
+
+def test_fetch_skips_metadata_request_when_metadata_is_supplied(monkeypatch) -> None:
+    """Supadata bills per request: with metadata in hand, fetch() makes one call, not two."""
+    fetcher = SuperdataTranscriptFetcher("key")
+    calls: list[str] = []
+    monkeypatch.setattr(
+        fetcher,
+        "_request_transcript",
+        lambda url: (calls.append("transcript"), {"content": "hi there", "lang": "en"})[1],
+    )
+    monkeypatch.setattr(
+        fetcher, "_request_metadata", lambda url: (calls.append("metadata"), {})[1]
+    )
+
+    supplied = {"title": "Supplied title", "createdAt": "2026-01-02T00:00:00.000Z"}
+    transcript = fetcher.fetch("https://www.youtube.com/watch?v=3hk7nO_q0a8", metadata=supplied)
+
+    assert calls == ["transcript"]
+    assert transcript.title == "Supplied title"
+    assert transcript.upload_date == "2026-01-02T00:00:00.000Z"
+
+
+def test_fetch_requests_metadata_by_default(monkeypatch) -> None:
+    fetcher = SuperdataTranscriptFetcher("key")
+    calls: list[str] = []
+    monkeypatch.setattr(
+        fetcher,
+        "_request_transcript",
+        lambda url: (calls.append("transcript"), {"content": "hi there", "lang": "en"})[1],
+    )
+    monkeypatch.setattr(
+        fetcher,
+        "_request_metadata",
+        lambda url: (calls.append("metadata"), {"title": "Fetched title"})[1],
+    )
+
+    transcript = fetcher.fetch("https://www.youtube.com/watch?v=3hk7nO_q0a8")
+
+    assert calls == ["transcript", "metadata"]
+    assert transcript.title == "Fetched title"

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import date, datetime, timezone
+import json
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +86,13 @@ def build_parser() -> argparse.ArgumentParser:
     index_rag.add_argument("url")
     index_rag.add_argument("--refresh", action="store_true")
     index_rag.add_argument("--refresh-summary", action="store_true")
+    index_rag.add_argument(
+        "--metadata-json",
+        help=(
+            "Path to the video's metadata in Supadata /metadata shape. Supplying it skips "
+            "the metadata request (one credit per video); by default it is fetched."
+        ),
+    )
 
     bulk = subparsers.add_parser("bulk-index", help="Discover and index many videos")
     bulk_subparsers = bulk.add_subparsers(dest="bulk_mode", required=True)
@@ -1828,11 +1836,14 @@ def main(argv: list[str] | None = None) -> int:
                     summary_store=_build_summary_store(settings, embedding_model, raw_store),
                     summary_generator=_build_summary_generator(settings),
                 )
-                result = indexer.index(
-                    args.url,
-                    refresh=args.refresh,
-                    refresh_summary=args.refresh_summary,
-                )
+                index_kwargs: dict[str, Any] = {
+                    "refresh": args.refresh,
+                    "refresh_summary": args.refresh_summary,
+                }
+                if args.metadata_json:
+                    # Supplied metadata replaces the Supadata /metadata call.
+                    index_kwargs["metadata"] = json.loads(Path(args.metadata_json).read_text())
+                result = indexer.index(args.url, **index_kwargs)
                 log_raw_transcript_metadata(result.raw_document)
                 print(
                     _format_index(
