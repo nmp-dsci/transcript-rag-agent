@@ -120,8 +120,7 @@ def test_min_similarity_filters_weak_edges(fan_records) -> None:
 def test_edge_similarities_are_true_cosines(fan_records) -> None:
     graph = build_chunk_graph(fan_records, k=1)
     scores = {
-        frozenset((edge["source"], edge["target"])): edge["similarity"]
-        for edge in graph["edges"]
+        frozenset((edge["source"], edge["target"])): edge["similarity"] for edge in graph["edges"]
     }
 
     assert scores[frozenset(("a", "b"))] == pytest.approx(math.cos(math.radians(10)), abs=1e-6)
@@ -142,9 +141,7 @@ def test_stats_summarise_the_graph(fan_records) -> None:
     assert stats["mean_similarity"] == pytest.approx(
         sum(edge["similarity"] for edge in graph["edges"]) / len(graph["edges"]), abs=1e-6
     )
-    assert stats["isolated_nodes"] == sum(
-        1 for node in graph["nodes"] if node["degree"] == 0
-    )
+    assert stats["isolated_nodes"] == sum(1 for node in graph["nodes"] if node["degree"] == 0)
 
 
 def test_layout_is_deterministic_across_calls(fan_records) -> None:

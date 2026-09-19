@@ -66,9 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--question", default=DEFAULT_QUESTION)
-    parser.add_argument(
-        "--output", type=Path, default=Path("dashboard/evaluation.html")
-    )
+    parser.add_argument("--output", type=Path, default=Path("dashboard/evaluation.html"))
     parser.add_argument("--json-output", type=Path)
     return parser
 
@@ -85,9 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(report["html"], encoding="utf-8")
     if args.json_output:
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
-        args.json_output.write_text(
-            json.dumps(report["json"], indent=2) + "\n", encoding="utf-8"
-        )
+        args.json_output.write_text(json.dumps(report["json"], indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {args.output}")
     return 0
 
@@ -96,7 +92,7 @@ def run_evaluation(question: str = DEFAULT_QUESTION) -> dict[str, Any]:
     settings = load_settings(require_keys=True)
 
     fetcher = SuperdataTranscriptFetcher(
-        settings.superdata_api_key,
+        settings.supadata_api_keys,
         timeout_seconds=settings.supadata_timeout_seconds,
         poll_interval_seconds=settings.supadata_poll_interval_seconds,
         max_poll_seconds=settings.supadata_max_poll_seconds,
@@ -168,9 +164,7 @@ def run_evaluation(question: str = DEFAULT_QUESTION) -> dict[str, Any]:
         SETUP_COMMANDS[1],
         answer_2,
         context_2,
-        llm_calls=(
-            sum(stage.llm_calls for stage in recursion.stages) if recursion else 1
-        ),
+        llm_calls=(sum(stage.llm_calls for stage in recursion.stages) if recursion else 1),
         terminated_reason=recursion.terminated_reason if recursion else None,
     )
 
@@ -224,8 +218,7 @@ def _layout_style_block() -> list[str]:
         ".question-box p{margin:8px 0 0;font-size:16px;color:#e7edf5}",
         ".answer-columns{display:grid;grid-template-columns:repeat(3,1fr);"
         "gap:16px;align-items:start}",
-        ".answer-col{border:1px solid #2d3745;background:#151c26;"
-        "padding:16px;min-width:0}",
+        ".answer-col{border:1px solid #2d3745;background:#151c26;padding:16px;min-width:0}",
         ".answer-col h2{margin:0 0 10px;font-size:14px;color:#f6f8fb;"
         "font-family:ui-monospace,Menlo,monospace;word-break:break-word}",
         ".answer-col .answer{white-space:pre-wrap;background:#10161f;"

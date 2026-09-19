@@ -34,6 +34,7 @@ class FakeEmbeddingModel:
 def _settings(tmp_path: Path) -> Settings:
     return Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
@@ -57,7 +58,9 @@ def _seed(tmp_path: Path) -> Settings:
         raw_text="some spoken text",
         fetched_at=datetime.now(timezone.utc),
     )
-    raw_store = RawTranscriptStore(settings.chroma_path, collection_name=settings.raw_transcript_collection)
+    raw_store = RawTranscriptStore(
+        settings.chroma_path, collection_name=settings.raw_transcript_collection
+    )
     raw_store.upsert_raw_document(raw_document_from_transcript(transcript))
 
     chunk_store = TranscriptChunkStore(

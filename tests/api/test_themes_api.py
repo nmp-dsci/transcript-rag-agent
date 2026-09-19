@@ -160,6 +160,7 @@ def test_theme_detail_survives_a_missing_chunk_collection(theme_path: Path, tmp_
 def _client(theme_path: Path, chroma: Path, tmp_path: Path) -> TestClient:
     settings = Settings(
         superdata_api_key="s",
+        supadata_api_keys=("s",),
         deepseek_api_key="d",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,

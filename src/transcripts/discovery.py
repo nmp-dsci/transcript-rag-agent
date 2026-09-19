@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import time
+from collections.abc import Sequence
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 from pydantic import BaseModel, HttpUrl
 
+from src.transcripts.supadata_keys import SupadataKeyRing, SupadataQuotaError, ring_for
 from src.transcripts.youtube import extract_video_id
 
 
@@ -32,13 +33,15 @@ class SupadataDiscoveryClient:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str | Sequence[str] | SupadataKeyRing,
         timeout_seconds: float = 120.0,
         cache_dir: Path | str | None = None,
         cache_ttl_hours: float = 24.0,
         use_cache: bool = True,
     ) -> None:
-        self.api_key = api_key
+        # Same ring as the transcript fetcher: a key found exhausted by either
+        # client is skipped by both.
+        self.ring = ring_for(api_key, timeout_seconds=timeout_seconds)
         self.timeout_seconds = timeout_seconds
         self.cache_dir = Path(cache_dir or ".yt-agent/discovery_cache")
         self.cache_ttl = timedelta(hours=cache_ttl_hours)
@@ -117,36 +120,23 @@ class SupadataDiscoveryClient:
             cached = self._read_cache(cache_path)
             if cached is not None:
                 return cached
-        headers = {"x-api-key": self.api_key}
         url = f"{self.base_url}/{path.lstrip('/')}"
-        last_error: Exception | None = None
-        for attempt in range(3):
-            try:
-                response = httpx.get(
-                    url,
-                    params=params,
-                    headers=headers,
-                    timeout=self.timeout_seconds,
-                )
-                if response.status_code == 429 and attempt < 2:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-                if response.status_code >= 400:
-                    raise DiscoveryError(
-                        f"Supadata discovery failed with HTTP {response.status_code}: "
-                        f"{response.text}"
-                    )
-                data = response.json()
-                if not isinstance(data, dict):
-                    raise DiscoveryError("Supadata discovery returned a non-object response")
-                self._write_cache(cache_path, data)
-                return data
-            except httpx.HTTPError as exc:
-                last_error = exc
-                if attempt < 2:
-                    time.sleep(0.5 * (attempt + 1))
-                    continue
-        raise DiscoveryError(f"Supadata discovery request failed: {last_error}")
+        # Rate-limit backoff and quota failover both live in the ring.
+        try:
+            response, _ = self.ring.get(url, params)
+        except SupadataQuotaError as exc:
+            raise DiscoveryError(str(exc)) from exc
+        except httpx.HTTPError as exc:
+            raise DiscoveryError(f"Supadata discovery request failed: {exc}") from exc
+        if response.status_code >= 400:
+            raise DiscoveryError(
+                f"Supadata discovery failed with HTTP {response.status_code}: {response.text}"
+            )
+        data = response.json()
+        if not isinstance(data, dict):
+            raise DiscoveryError("Supadata discovery returned a non-object response")
+        self._write_cache(cache_path, data)
+        return data
 
     def _cache_path(self, namespace: str, params: dict[str, Any]) -> Path:
         payload = json.dumps(params, sort_keys=True, default=str)
@@ -219,13 +209,7 @@ def discover_search_results(
 
 
 def _videos_from_search_response(data: dict[str, Any]) -> tuple[list[DiscoveredVideo], str | None]:
-    items = (
-        data.get("items")
-        or data.get("results")
-        or data.get("videos")
-        or data.get("data")
-        or []
-    )
+    items = data.get("items") or data.get("results") or data.get("videos") or data.get("data") or []
     if isinstance(items, dict):
         items = items.get("items") or items.get("results") or []
     videos: list[DiscoveredVideo] = []
@@ -276,20 +260,26 @@ def _video_from_metadata(video_id: str, metadata: dict[str, Any]) -> DiscoveredV
     author = metadata.get("author") if isinstance(metadata.get("author"), dict) else {}
     channel = metadata.get("channel") if isinstance(metadata.get("channel"), dict) else {}
     additional = (
-        metadata.get("additionalData")
-        if isinstance(metadata.get("additionalData"), dict)
-        else {}
+        metadata.get("additionalData") if isinstance(metadata.get("additionalData"), dict) else {}
     )
     media = metadata.get("media") if isinstance(metadata.get("media"), dict) else {}
     return DiscoveredVideo(
         video_id=video_id,
-        source_url=HttpUrl(str(metadata.get("url") or metadata.get("link") or _youtube_url(video_id))),
+        source_url=HttpUrl(
+            str(metadata.get("url") or metadata.get("link") or _youtube_url(video_id))
+        ),
         title=_str_or_none(metadata.get("title")),
         channel_id=_str_or_none(
-            channel.get("id") or additional.get("channelId") or additional.get("channel_id") or author.get("id")
+            channel.get("id")
+            or additional.get("channelId")
+            or additional.get("channel_id")
+            or author.get("id")
         ),
         channel_name=_str_or_none(
-            channel.get("name") or author.get("displayName") or author.get("username") or metadata.get("channelName")
+            channel.get("name")
+            or author.get("displayName")
+            or author.get("username")
+            or metadata.get("channelName")
         ),
         published_at=_str_or_none(
             metadata.get("createdAt") or metadata.get("publishedAt") or metadata.get("published_at")

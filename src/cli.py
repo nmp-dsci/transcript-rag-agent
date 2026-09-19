@@ -1793,7 +1793,7 @@ def main(argv: list[str] | None = None) -> int:
         video_id = extract_video_id(source_url) if source_url else None
         with cli_run(args.command, settings, video_id):
             fetcher = SuperdataTranscriptFetcher(
-                settings.superdata_api_key,
+                settings.supadata_api_keys,
                 timeout_seconds=settings.supadata_timeout_seconds,
                 poll_interval_seconds=settings.supadata_poll_interval_seconds,
                 max_poll_seconds=settings.supadata_max_poll_seconds,
@@ -2517,7 +2517,7 @@ def _run_bulk_index(args, settings, raw_store, chunk_store, indexer) -> str:
     run_path = None
     try:
         discovery_client = SupadataDiscoveryClient(
-            settings.superdata_api_key,
+            settings.supadata_api_keys,
             timeout_seconds=settings.supadata_timeout_seconds,
             cache_dir=settings.chroma_path.parent / "discovery_cache",
             cache_ttl_hours=settings.discovery_cache_ttl_hours,

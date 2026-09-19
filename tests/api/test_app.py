@@ -262,6 +262,20 @@ def test_health(harness: Harness) -> None:
     assert payload["judge_model"] == "deepseek-v4"
     assert payload["answer_model"] == "deepseek-v4"
     assert payload["ui"] == "legacy"  # no built bundle in the test harness
+    assert payload["supadata"] == {"keys": 1, "active": 1, "exhausted": []}
+    assert "super" not in response.text  # indexes only, never key material
+
+
+def test_health_reports_which_supadata_key_is_live(harness: Harness) -> None:
+    from src.transcripts.supadata_keys import SupadataQuotaError, ring_for
+
+    ring = ring_for(("super",))
+    with pytest.raises(SupadataQuotaError):
+        ring._mark_exhausted(0, "Plan usage limit was exceeded.")
+
+    payload = harness.client.get("/api/health").json()
+
+    assert payload["supadata"] == {"keys": 1, "active": 1, "exhausted": [1]}
 
 
 def test_setups_lists_all(harness: Harness) -> None:
@@ -1558,3 +1572,45 @@ def test_knowledge_graph_route_reports_503_when_store_unreachable(
     response = client.get("/api/graph/knowledge")
     assert response.status_code == 503
     assert "neo4j unreachable" in response.json()["detail"]
+
+
+def test_index_job_names_the_quota_problem_when_every_key_is_spent(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """The CLI prints the 429 to its own stderr and exits 1; the job must say
+    "out of credits", not "check the server log"."""
+    from src.transcripts.supadata_keys import SupadataQuotaError, ring_for
+
+    def index_fn(argv: list[str]) -> int:
+        try:
+            ring_for(settings.supadata_api_keys)._mark_exhausted(
+                0, "Plan usage limit was exceeded."
+            )
+        except SupadataQuotaError:
+            return 1
+        return 0
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=index_fn,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/a"})
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        jobs = client.get("/api/index/queue").json()["jobs"]
+        if jobs and jobs[0]["status"] == "error":
+            break
+        time.sleep(0.02)
+    assert jobs[0]["error"].startswith("Out of Supadata credits — all 1 configured keys")
+    assert "SUPADATA_API_KEY_2" in jobs[0]["error"]
+    assert client.get("/api/health").json()["supadata"] == {
+        "keys": 1,
+        "active": 1,
+        "exhausted": [1],
+    }

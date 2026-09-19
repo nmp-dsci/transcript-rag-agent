@@ -61,9 +61,7 @@ class FakeChunkStore:
         return chunks[:top_k]
 
     def channel_video_ids(self, channel_id):
-        return sorted(
-            {chunk.video_id for chunk in self.by_channel.get(channel_id, [])}
-        )
+        return sorted({chunk.video_id for chunk in self.by_channel.get(channel_id, [])})
 
     def neighbors(self, video_id, chunk_index, span):
         return self._neighbors.get((video_id, chunk_index), [])
@@ -86,9 +84,7 @@ class FakeChunkStore:
 
 
 def provider(store, **kwargs):
-    return MultiTranscriptRagContextProvider(
-        raw_store=None, chunk_store=store, **kwargs
-    )
+    return MultiTranscriptRagContextProvider(raw_store=None, chunk_store=store, **kwargs)
 
 
 def test_channel_scope_uses_the_native_channel_filter():
@@ -138,9 +134,7 @@ def test_neighbour_expansion_widens_hits_without_duplicating_them():
         by_channel={"UC1": [chunk("v1", 2, "hit")]},
         neighbors={("v1", 2): [neighbor]},
     )
-    context = provider(store, neighbor_span=1).get_context(
-        "q", channel_id="UC1", top_k=1
-    )
+    context = provider(store, neighbor_span=1).get_context("q", channel_id="UC1", top_k=1)
     texts = [c.text for c in context.retrieved_chunks]
     assert texts == ["neighbour", "hit"]
     # Neighbours are context, not retrieval results, so they carry no score.
@@ -152,17 +146,13 @@ def test_neighbour_already_retrieved_is_not_added_twice():
         by_channel={"UC1": [chunk("v1", 0, "a"), chunk("v1", 1, "b")]},
         neighbors={("v1", 0): [], ("v1", 1): []},
     )
-    context = provider(store, neighbor_span=1).get_context(
-        "q", channel_id="UC1", top_k=2
-    )
+    context = provider(store, neighbor_span=1).get_context("q", channel_id="UC1", top_k=2)
     keys = [(c.video_id, c.chunk_index) for c in context.retrieved_chunks]
     assert len(keys) == len(set(keys))
 
 
 def test_hybrid_mode_retrieves_wider_than_top_k_before_narrowing():
-    store = FakeChunkStore(
-        by_channel={"UC1": [chunk("v1", i) for i in range(30)]}
-    )
+    store = FakeChunkStore(by_channel={"UC1": [chunk("v1", i) for i in range(30)]})
     context = provider(store, retrieval_candidates=25).get_context(
         "q", channel_id="UC1", top_k=5, retrieval_mode="hybrid"
     )
@@ -204,8 +194,8 @@ def test_hybrid_fusion_widens_for_reranker_so_it_can_still_promote_a_low_rrf_hit
     # top_k below 10. The fake reranker is the one signal that favours it.
     reranker = FakeReranker(boost_index=9)
 
-    context = provider(
-        store, retrieval_candidates=10, reranker=reranker
-    ).get_context("topic", channel_id="UC1", top_k=3, retrieval_mode="hybrid")
+    context = provider(store, retrieval_candidates=10, reranker=reranker).get_context(
+        "topic", channel_id="UC1", top_k=3, retrieval_mode="hybrid"
+    )
 
     assert [c.chunk_index for c in context.retrieved_chunks] == [9, 0, 1]

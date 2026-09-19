@@ -93,6 +93,7 @@ def test_a_missing_artifact_names_the_build_command(tmp_path: Path) -> None:
 def test_the_endpoint_serves_the_artifact(conflict_path: Path, tmp_path: Path) -> None:
     settings = Settings(
         superdata_api_key="s",
+        supadata_api_keys=("s",),
         deepseek_api_key="d",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,

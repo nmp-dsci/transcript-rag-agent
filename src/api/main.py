@@ -86,6 +86,7 @@ from src.chat.setups import (
     setup_spec,
 )
 from src.config import Settings, load_settings
+from src.transcripts.supadata_keys import ring_for
 from src.documents.resolve import ResolvedDocument, describe_failure, resolve_document
 from src.documents.store import DocumentStore
 from src.evals.judge import RagasJudge, unjudgeable
@@ -574,11 +575,30 @@ def create_app(
         return {"ok": ok, **stats}
 
     graph_extract_fn = graph_extract_fn or _default_graph_extract_fn
+
+    def supadata_failure_hint() -> str | None:
+        """Name the quota problem on the job when every Supadata key is spent."""
+        keys = tuple(resolved.supadata_api_keys)
+        if resolved.demo_mode or not keys:
+            return None
+        ring = ring_for(keys, timeout_seconds=resolved.supadata_timeout_seconds)
+        if len(ring.exhausted) < len(ring.keys):
+            return None
+        reasons = "; ".join(
+            f"key {index + 1}: {why}" for index, why in sorted(ring.exhausted.items())
+        )
+        return (
+            f"Out of Supadata credits — all {len(ring.keys)} configured keys reported "
+            f"their plan usage limit ({reasons}). Add SUPADATA_API_KEY_{len(ring.keys) + 1} "
+            "to the env file or wait for the plan to reset, then restart the server."
+        )
+
     ingestion_queue = IngestionQueue(
         index_fn=index_fn,
         corpus_fn=corpus_fn,
         graph_fn=graph_extract_fn,
         max_workers=resolved.ingestion_workers,
+        failure_hint=supadata_failure_hint,
     )
 
     def _default_matrix_run_fn(
@@ -755,7 +775,19 @@ def create_app(
             # The composer mic renders only when this is true; demo mode and a
             # missing Deepgram key both turn it off server-side.
             "stt": stt_ready,
+            "supadata": supadata_status(),
         }
+
+    def supadata_status() -> dict:
+        """Which Supadata key is live — one-based indexes only, never keys.
+
+        Read from the shared ring so it reflects what the ingestion workers
+        have learned this process; ``{"keys": 0}`` when nothing can fetch.
+        """
+        keys = tuple(resolved.supadata_api_keys)
+        if resolved.demo_mode or not keys:
+            return {"keys": 0, "active": 0, "exhausted": []}
+        return ring_for(keys, timeout_seconds=resolved.supadata_timeout_seconds).status()
 
     @app.websocket("/ws/stt")
     async def stt_socket(websocket: WebSocket, sample_rate: int = 16_000) -> None:
@@ -1017,7 +1049,12 @@ def create_app(
         but no LLM, and writes nothing — the candidate list is a checklist
         the user edits before anything starts.
         """
-        from src.guides.scope import probe_questions, probes_for, topic_from_question, topic_has_words
+        from src.guides.scope import (
+            probe_questions,
+            probes_for,
+            topic_from_question,
+            topic_has_words,
+        )
 
         question = " ".join(payload.question.split())
         explicit_topic = " ".join(payload.topic.split())
@@ -1025,9 +1062,7 @@ def create_app(
         if not topic:
             raise HTTPException(status_code=422, detail="a question or topic is required")
         if question and not explicit_topic and not topic_has_words(topic):
-            raise HTTPException(
-                status_code=422, detail="ask a question with some words in it"
-            )
+            raise HTTPException(status_code=422, detail="ask a question with some words in it")
         probes = probes_for(question) if question else probe_questions(topic)
         ranked, total = _scope_corpus(topic, probes, payload.limit)
         return {
@@ -1067,9 +1102,7 @@ def create_app(
         if not topic:
             raise HTTPException(status_code=422, detail="a question or topic is required")
         if question and not explicit_topic and not topic_has_words(topic):
-            raise HTTPException(
-                status_code=422, detail="ask a question with some words in it"
-            )
+            raise HTTPException(status_code=422, detail="ask a question with some words in it")
         video_ids = list(dict.fromkeys(payload.video_ids))
         if question and not video_ids:
             # Asked, not configured: scope here and start at once. The research

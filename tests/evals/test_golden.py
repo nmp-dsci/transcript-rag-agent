@@ -414,6 +414,7 @@ def test_evaluate_entry_propagates_score_fn_errors(entry: GoldenEntry) -> None:
 def _settings(**overrides: Any) -> Settings:
     values: dict[str, Any] = {
         "superdata_api_key": "sd-key",
+        "supadata_api_keys": ("sd-key",),
         "deepseek_api_key": "ds-key",
         "deepseek_model": "deepseek-v4-flash",
         "deepseek_base_url": "https://api.deepseek.com",

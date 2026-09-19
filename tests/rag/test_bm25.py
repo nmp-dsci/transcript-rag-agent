@@ -30,9 +30,10 @@ def test_tokenize_lowercases_and_drops_punctuation():
 
 def test_search_ranks_matching_chunks_first():
     results = bm25.search(CORPUS, "capital gains tax", top_k=10)
-    assert [r["chunk_index"] for r in results] == [0, 2] or [
-        r["chunk_index"] for r in results
-    ] == [2, 0]
+    assert [r["chunk_index"] for r in results] == [0, 2] or [r["chunk_index"] for r in results] == [
+        2,
+        0,
+    ]
     assert all(r["score"] >= 0 for r in results)
     assert [r["rank"] for r in results] == [1, 2]
 

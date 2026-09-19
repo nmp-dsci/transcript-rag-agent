@@ -11,6 +11,7 @@ from src.config import Settings
 def settings(tmp_path: Path) -> Settings:
     return Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
