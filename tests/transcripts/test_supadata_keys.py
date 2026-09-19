@@ -159,6 +159,42 @@ def test_ring_needs_a_key() -> None:
         SupadataKeyRing(())
 
 
+def test_network_error_retries_the_same_key_and_recovers(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def flaky(
+        url: str, params: Any = None, headers: Any = None, timeout: Any = None
+    ) -> httpx.Response:
+        calls.append(headers["x-api-key"])
+        if len(calls) == 1:
+            raise httpx.ConnectError("connection reset")
+        return httpx.Response(200, json={"ok": 1})
+
+    monkeypatch.setattr(httpx, "get", flaky)
+    ring = SupadataKeyRing(("k1", "k2"))
+
+    response, used = ring.get("https://api.supadata.ai/v1/transcript", {"url": "u"})
+
+    assert (response.json(), used) == ({"ok": 1}, 0)
+    assert calls == ["k1", "k1"]
+    assert ring.status() == {"keys": 2, "active": 1, "exhausted": []}
+
+
+def test_persistent_network_error_propagates_as_http_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def always_fails(
+        url: str, params: Any = None, headers: Any = None, timeout: Any = None
+    ) -> httpx.Response:
+        raise httpx.ConnectError("connection reset")
+
+    monkeypatch.setattr(httpx, "get", always_fails)
+    ring = SupadataKeyRing(("k1", "k2"))
+
+    with pytest.raises(httpx.HTTPError):
+        ring.get("https://api.supadata.ai/v1/transcript", {"url": "u"})
+
+
 # --- the fetcher on top of the ring ------------------------------------------
 
 

@@ -1614,3 +1614,68 @@ def test_index_job_names_the_quota_problem_when_every_key_is_spent(
         "active": 1,
         "exhausted": [1],
     }
+
+
+def test_index_job_names_the_quota_problem_when_keys_were_already_spent(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """A job that starts after every key is already exhausted could never have
+    fetched anything, so it still gets the credits message even though its own
+    failure (a disk error, say) has nothing to do with Supadata."""
+    from src.transcripts.supadata_keys import SupadataQuotaError, ring_for
+
+    try:
+        ring_for(settings.supadata_api_keys)._mark_exhausted(0, "Plan usage limit was exceeded.")
+    except SupadataQuotaError:
+        pass
+
+    def index_fn(argv: list[str]) -> int:
+        return 1
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=index_fn,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/a"})
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        jobs = client.get("/api/index/queue").json()["jobs"]
+        if jobs and jobs[0]["status"] == "error":
+            break
+        time.sleep(0.02)
+    assert jobs[0]["error"].startswith("Out of Supadata credits — all 1 configured keys")
+
+
+def test_index_job_keeps_the_generic_message_when_keys_are_not_exhausted(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """A job failing for an unrelated reason while at least one key still has
+    credits must not be blamed on Supadata."""
+
+    def index_fn(argv: list[str]) -> int:
+        return 1
+
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=index_fn,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    client.post("/api/index/queue", json={"mode": "video", "url": "https://youtu.be/a"})
+
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        jobs = client.get("/api/index/queue").json()["jobs"]
+        if jobs and jobs[0]["status"] == "error":
+            break
+        time.sleep(0.02)
+    assert jobs[0]["error"].startswith("Indexing failed (exit 1)")

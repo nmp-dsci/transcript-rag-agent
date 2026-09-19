@@ -173,7 +173,7 @@ def test_failure_hint_replaces_the_generic_exit_message() -> None:
         index_fn=lambda argv: 1,
         corpus_fn=lambda: {"videos": [], "totals": {"videos": 0, "chunks": 0}},
         max_workers=1,
-        failure_hint=lambda: next(hints),
+        failure_hint=lambda: lambda: next(hints),
     )
     queue_.enqueue(mode="video", target="quota", argv=["index-rag", "quota"])
     queue_.enqueue(mode="video", target="other", argv=["index-rag", "other"])

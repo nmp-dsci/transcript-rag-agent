@@ -68,8 +68,8 @@ class SupadataKeyRing:
 
         ``key_index`` pins the request to one key (an async job must be
         polled by the key that started it); a pinned 429 is returned to the
-        caller rather than failing over. Network errors propagate as
-        ``httpx.HTTPError`` exactly as before.
+        caller rather than failing over. A network error is retried like a
+        throttle 429, then propagates as ``httpx.HTTPError`` if it persists.
         """
         if key_index is not None:
             return self._get_with_backoff(url, params, key_index), key_index
@@ -86,7 +86,15 @@ class SupadataKeyRing:
         headers = {"x-api-key": self.keys[index]}
         response: httpx.Response | None = None
         for attempt in range(self.throttle_retries):
-            response = httpx.get(url, params=params, headers=headers, timeout=self.timeout_seconds)
+            try:
+                response = httpx.get(
+                    url, params=params, headers=headers, timeout=self.timeout_seconds
+                )
+            except httpx.HTTPError:
+                if attempt == self.throttle_retries - 1:
+                    raise
+                time.sleep(0.5 * (attempt + 1))
+                continue
             if response.status_code != 429 or not _is_throttle(_details(response)):
                 return response
             time.sleep(0.5 * (attempt + 1))

@@ -576,22 +576,31 @@ def create_app(
 
     graph_extract_fn = graph_extract_fn or _default_graph_extract_fn
 
-    def supadata_failure_hint() -> str | None:
-        """Name the quota problem on the job when every Supadata key is spent."""
+    def supadata_failure_hint() -> Callable[[], str | None]:
+        """Name the quota problem when every key was, or became, exhausted for this job."""
         keys = tuple(resolved.supadata_api_keys)
         if resolved.demo_mode or not keys:
-            return None
+            return lambda: None
         ring = ring_for(keys, timeout_seconds=resolved.supadata_timeout_seconds)
-        if len(ring.exhausted) < len(ring.keys):
-            return None
-        reasons = "; ".join(
-            f"key {index + 1}: {why}" for index, why in sorted(ring.exhausted.items())
-        )
-        return (
-            f"Out of Supadata credits — all {len(ring.keys)} configured keys reported "
-            f"their plan usage limit ({reasons}). Add SUPADATA_API_KEY_{len(ring.keys) + 1} "
-            "to the env file or wait for the plan to reset, then restart the server."
-        )
+        started_exhausted = len(ring.exhausted)
+
+        def hint() -> str | None:
+            total = len(ring.keys)
+            exhausted_now = dict(ring.exhausted)
+            already_full_at_start = started_exhausted >= total
+            grew_to_full_this_job = started_exhausted < total <= len(exhausted_now)
+            if not (already_full_at_start or grew_to_full_this_job):
+                return None
+            reasons = "; ".join(
+                f"key {index + 1}: {why}" for index, why in sorted(exhausted_now.items())
+            )
+            return (
+                f"Out of Supadata credits — all {total} configured keys reported "
+                f"their plan usage limit ({reasons}). Add SUPADATA_API_KEY_{total + 1} "
+                "to the env file or wait for the plan to reset, then restart the server."
+            )
+
+        return hint
 
     ingestion_queue = IngestionQueue(
         index_fn=index_fn,
