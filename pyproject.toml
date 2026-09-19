@@ -79,6 +79,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 warn_unused_ignores = true
 files = [
+    "src/transcripts/supadata_keys.py",
     "src/evals/golden.py",
     "src/evals/regression.py",
     "src/evals/judge.py",

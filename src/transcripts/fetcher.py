@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import time
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from typing import Any
 
@@ -9,6 +10,7 @@ import httpx
 from pydantic import HttpUrl, ValidationError
 
 from src.transcripts.models import Transcript, TranscriptSegment
+from src.transcripts.supadata_keys import SupadataKeyRing, SupadataQuotaError, ring_for
 from src.transcripts.youtube import extract_video_id
 
 
@@ -24,12 +26,14 @@ class SuperdataTranscriptFetcher:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str | Sequence[str] | SupadataKeyRing,
         timeout_seconds: float = 120.0,
         poll_interval_seconds: float = 2.0,
         max_poll_seconds: float = 600.0,
     ) -> None:
-        self.api_key = api_key
+        # A plain string is a one-key ring; a list of keys fails over to the
+        # next one when the first reports its plan usage limit exceeded.
+        self.ring = ring_for(api_key, timeout_seconds=timeout_seconds)
         self.timeout_seconds = timeout_seconds
         self.poll_interval_seconds = poll_interval_seconds
         self.max_poll_seconds = max_poll_seconds
@@ -49,15 +53,11 @@ class SuperdataTranscriptFetcher:
         return self._request_metadata(url)
 
     def _request_transcript(self, url: str) -> dict[str, Any]:
-        headers = {"x-api-key": self.api_key}
         params: dict[str, Any] = {"url": url, "text": "false", "mode": "auto"}
         try:
-            response = httpx.get(
-                self.endpoint,
-                params=params,
-                headers=headers,
-                timeout=self.timeout_seconds,
-            )
+            response, key_index = self.ring.get(self.endpoint, params)
+        except SupadataQuotaError as exc:
+            raise TranscriptFetchError(str(exc)) from exc
         except httpx.HTTPError as exc:
             raise TranscriptFetchError(f"Supadata transcript request failed: {exc}") from exc
 
@@ -65,7 +65,7 @@ class SuperdataTranscriptFetcher:
             job_id = response.json().get("jobId")
             if not job_id:
                 raise TranscriptFetchError("Supadata returned 202 without jobId")
-            return self._poll_job(job_id)
+            return self._poll_job(job_id, key_index)
 
         if response.status_code >= 400:
             raise TranscriptFetchError(
@@ -75,31 +75,24 @@ class SuperdataTranscriptFetcher:
         return response.json()
 
     def _request_metadata(self, url: str) -> dict[str, Any]:
-        headers = {"x-api-key": self.api_key}
         try:
-            response = httpx.get(
-                self.metadata_endpoint,
-                params={"url": url},
-                headers=headers,
-                timeout=self.timeout_seconds,
-            )
-        except httpx.HTTPError:
+            response, _ = self.ring.get(self.metadata_endpoint, {"url": url})
+        except (httpx.HTTPError, SupadataQuotaError):
             return {}
         if response.status_code >= 400:
             return {}
         data = response.json()
         return data if isinstance(data, dict) else {}
 
-    def _poll_job(self, job_id: str) -> dict[str, Any]:
+    def _poll_job(self, job_id: str, key_index: int) -> dict[str, Any]:
         deadline = time.monotonic() + self.max_poll_seconds
         url = f"{self.endpoint}/{job_id}"
-        headers = {"x-api-key": self.api_key}
         while time.monotonic() < deadline:
-            response = httpx.get(url, headers=headers, timeout=self.timeout_seconds)
+            # The job belongs to the org that started it: poll with that key.
+            response, _ = self.ring.get(url, key_index=key_index)
             if response.status_code >= 400:
                 raise TranscriptFetchError(
-                    f"Supadata job status failed with HTTP {response.status_code}: "
-                    f"{response.text}"
+                    f"Supadata job status failed with HTTP {response.status_code}: {response.text}"
                 )
             data = response.json()
             status = data.get("status")
@@ -183,14 +176,10 @@ class SuperdataTranscriptFetcher:
             title=metadata.get("title") or data.get("title"),
             description=_str_or_none(metadata.get("description")),
             channel_id=_str_or_none(
-                channel.get("id")
-                or additional.get("channelId")
-                or author.get("id")
+                channel.get("id") or additional.get("channelId") or author.get("id")
             ),
             channel_name=_str_or_none(
-                channel.get("name")
-                or author.get("displayName")
-                or author.get("username")
+                channel.get("name") or author.get("displayName") or author.get("username")
             ),
             duration_seconds=_float_or_none(media.get("duration") or metadata.get("duration")),
             thumbnail_url=_http_url_or_none(
@@ -199,8 +188,12 @@ class SuperdataTranscriptFetcher:
                 or metadata.get("thumbnailUrl")
             ),
             upload_date=_str_or_none(metadata.get("uploadDate") or metadata.get("createdAt")),
-            view_count=_int_or_none(_nested(metadata, "stats", "views") or metadata.get("viewCount")),
-            like_count=_int_or_none(_nested(metadata, "stats", "likes") or metadata.get("likeCount")),
+            view_count=_int_or_none(
+                _nested(metadata, "stats", "views") or metadata.get("viewCount")
+            ),
+            like_count=_int_or_none(
+                _nested(metadata, "stats", "likes") or metadata.get("likeCount")
+            ),
             tags=[str(tag) for tag in tags],
             transcript_languages=[str(lang) for lang in transcript_languages],
             language=language,
