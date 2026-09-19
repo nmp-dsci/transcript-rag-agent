@@ -128,8 +128,7 @@ def entry_ir_metrics(
     it earns its name once averaged across the set by :func:`mean_metrics`.
     """
     scores: dict[str, float] = {
-        f"recall@{k}": round(recall_at_k(retrieved_chunk_ids, expected_chunk_ids, k), 4)
-        for k in ks
+        f"recall@{k}": round(recall_at_k(retrieved_chunk_ids, expected_chunk_ids, k), 4) for k in ks
     }
     scores["mrr"] = round(reciprocal_rank(retrieved_chunk_ids, expected_chunk_ids), 4)
     scores[f"ndcg@{ndcg_k}"] = round(ndcg_at_k(retrieved_chunk_ids, expected_chunk_ids, ndcg_k), 4)
@@ -146,9 +145,7 @@ def mean_metrics(per_entry: list[dict[str, float | None]], names: list[str]) -> 
     averages: dict[str, float] = {}
     for name in names:
         values = [
-            value
-            for entry in per_entry
-            if isinstance((value := entry.get(name)), (int, float))
+            value for entry in per_entry if isinstance((value := entry.get(name)), (int, float))
         ]
         if values:
             averages[name] = round(sum(values) / len(values), 4)

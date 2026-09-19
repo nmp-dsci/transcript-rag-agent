@@ -71,9 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(report["html"], encoding="utf-8")
     if args.json_output:
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
-        args.json_output.write_text(
-            json.dumps(report["json"], indent=2) + "\n", encoding="utf-8"
-        )
+        args.json_output.write_text(json.dumps(report["json"], indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {args.output}")
     return 0
 
@@ -86,7 +84,7 @@ def run_evaluation(
     settings = load_settings(require_keys=True)
     resolved_top_k = top_k or settings.rag_top_k
     fetcher = SuperdataTranscriptFetcher(
-        settings.superdata_api_key,
+        settings.supadata_api_keys,
         timeout_seconds=settings.supadata_timeout_seconds,
         poll_interval_seconds=settings.supadata_poll_interval_seconds,
         max_poll_seconds=settings.supadata_max_poll_seconds,
@@ -136,9 +134,7 @@ def run_evaluation(
         )
     )
 
-    answer_embeddings = embedding_model.embed_documents(
-        [run.answer.answer for run in runs]
-    )
+    answer_embeddings = embedding_model.embed_documents([run.answer.answer for run in runs])
     similarities = _similarities(runs, answer_embeddings)
     payload = _json_payload(question, resolved_top_k, runs, similarities)
     return {
@@ -154,9 +150,7 @@ def _run_agent(
     source_url: str | None,
     top_k: int,
 ) -> EvalRun:
-    answer = agent.answer(
-        RagQuestionRequest(question=question, source_url=source_url, top_k=top_k)
-    )
+    answer = agent.answer(RagQuestionRequest(question=question, source_url=source_url, top_k=top_k))
     if agent.last_context is None:
         raise RuntimeError(f"{name} did not capture context")
     return EvalRun(
@@ -168,9 +162,7 @@ def _run_agent(
     )
 
 
-def _similarities(
-    runs: list[EvalRun], embeddings: list[list[float]]
-) -> dict[str, float]:
+def _similarities(runs: list[EvalRun], embeddings: list[list[float]]) -> dict[str, float]:
     by_name = {run.name: index for index, run in enumerate(runs)}
     pairs = [
         ("url_1_only", "all_indexed"),
@@ -231,10 +223,10 @@ def _summary_table(runs: list[EvalRun], similarities: dict[str, float]) -> str:
             "<tr>"
             f"<td>{html.escape(run.name)}</td>"
             f"<td>{html.escape(run.source_url or 'all indexed transcripts')}</td>"
-            f"<td class=\"metric\">{len(run.answer.answer)}</td>"
-            f"<td class=\"metric\">{run.token_estimate}</td>"
-            f"<td class=\"metric\">{len(run.retrieved_chunks)}</td>"
-            f"<td class=\"metric\">{similarity}</td>"
+            f'<td class="metric">{len(run.answer.answer)}</td>'
+            f'<td class="metric">{run.token_estimate}</td>'
+            f'<td class="metric">{len(run.retrieved_chunks)}</td>'
+            f'<td class="metric">{similarity}</td>'
             "</tr>"
         )
     return "<table>" + "".join(rows) + "</table>"
@@ -242,10 +234,11 @@ def _summary_table(runs: list[EvalRun], similarities: dict[str, float]) -> str:
 
 def _run_section(run: EvalRun) -> str:
     references = "\n".join(
-        f"{reference.label} {reference.timestamp_url}"
-        for reference in run.answer.references
+        f"{reference.label} {reference.timestamp_url}" for reference in run.answer.references
     )
-    chunks = "\n".join(_chunk_details(index, chunk) for index, chunk in enumerate(run.retrieved_chunks, 1))
+    chunks = "\n".join(
+        _chunk_details(index, chunk) for index, chunk in enumerate(run.retrieved_chunks, 1)
+    )
     return "\n".join(
         [
             "<article>",
@@ -265,9 +258,7 @@ def _run_section(run: EvalRun) -> str:
 def _chunk_details(index: int, chunk) -> str:
     timestamp_url = youtube_timestamp_url(str(chunk.source_url), chunk.start_seconds)
     summary = (
-        f"[{index}] {chunk.video_id} "
-        f"{chunk.start_seconds}-{chunk.end_seconds}s "
-        f"score={chunk.score}"
+        f"[{index}] {chunk.video_id} {chunk.start_seconds}-{chunk.end_seconds}s score={chunk.score}"
     )
     return "\n".join(
         [
@@ -285,7 +276,7 @@ def _similarity_list(similarities: dict[str, float]) -> str:
     if not similarities:
         return "<p>No similarity metrics.</p>"
     items = "".join(
-        f"<li><span class=\"metric\">{html.escape(name)}: {value:.3f}</span></li>"
+        f'<li><span class="metric">{html.escape(name)}: {value:.3f}</span></li>'
         for name, value in similarities.items()
     )
     return f"<ul>{items}</ul>"

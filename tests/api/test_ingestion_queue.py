@@ -164,6 +164,26 @@ def test_nonzero_exit_code_marks_job_errored_without_stopping_the_worker() -> No
     assert succeeded["status"] == "done"
 
 
+def test_failure_hint_replaces_the_generic_exit_message() -> None:
+    hints = iter(
+        ["Out of Supadata credits — all 2 configured keys reported their plan usage limit", None]
+    )
+
+    queue_ = IngestionQueue(
+        index_fn=lambda argv: 1,
+        corpus_fn=lambda: {"videos": [], "totals": {"videos": 0, "chunks": 0}},
+        max_workers=1,
+        failure_hint=lambda: lambda: next(hints),
+    )
+    queue_.enqueue(mode="video", target="quota", argv=["index-rag", "quota"])
+    queue_.enqueue(mode="video", target="other", argv=["index-rag", "other"])
+
+    wait_until(lambda: len(queue_.snapshot()) == 2 and queue_.snapshot()[1]["status"] == "error")
+    quota, other = queue_.snapshot()
+    assert quota["error"].startswith("Out of Supadata credits")
+    assert "exit 1" in other["error"]  # no hint → the generic message as before
+
+
 def test_exception_in_index_fn_marks_job_errored() -> None:
     def index_fn(argv: list[str]) -> int:
         raise RuntimeError("boom")

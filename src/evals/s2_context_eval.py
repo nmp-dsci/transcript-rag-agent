@@ -68,7 +68,7 @@ def run_evaluation(
     resolved_top_k = top_k or settings.rag_top_k
 
     fetcher = SuperdataTranscriptFetcher(
-        settings.superdata_api_key,
+        settings.supadata_api_keys,
         timeout_seconds=settings.supadata_timeout_seconds,
         poll_interval_seconds=settings.supadata_poll_interval_seconds,
         max_poll_seconds=settings.supadata_max_poll_seconds,

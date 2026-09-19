@@ -50,6 +50,7 @@ def make_chunk(
 def make_settings(tmp_path: Path) -> Settings:
     return Settings(
         superdata_api_key="",
+        supadata_api_keys=(),
         deepseek_api_key="test-key",
         deepseek_model="test-model",
         deepseek_base_url=None,

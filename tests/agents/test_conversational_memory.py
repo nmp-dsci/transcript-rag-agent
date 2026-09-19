@@ -29,9 +29,7 @@ def agent(llm):
 
 def test_question_without_history_is_not_rewritten_and_costs_no_call():
     llm = FakeLLM()
-    query = agent(llm).retrieval_query(
-        RagQuestionRequest(question="What changed for investors?")
-    )
+    query = agent(llm).retrieval_query(RagQuestionRequest(question="What changed for investors?"))
     assert query == "What changed for investors?"
     assert llm.prompts == []
 

@@ -81,6 +81,7 @@ class FakeJudge:
 def settings(tmp_path) -> Settings:
     return Settings(
         superdata_api_key="k",
+        supadata_api_keys=("k",),
         deepseek_api_key="k",
         deepseek_model="deepseek-v4-flash",
         deepseek_base_url=None,
@@ -94,15 +95,11 @@ def settings(tmp_path) -> Settings:
 def test_run_scores_every_entry_with_recall_and_judge(entries, settings):
     runner = FakeRunner(
         {
-            "What changed for investors?": FakeResult(
-                chunk_ids=["chunk:v1:0", "chunk:v1:1"]
-            ),
+            "What changed for investors?": FakeResult(chunk_ids=["chunk:v1:0", "chunk:v1:1"]),
             "How do agents use tools?": FakeResult(chunk_ids=["chunk:v9:0"]),
         }
     )
-    run = run_golden_eval(
-        runner, settings, setup="rag_llm", judge=FakeJudge(), entries=entries
-    )
+    run = run_golden_eval(runner, settings, setup="rag_llm", judge=FakeJudge(), entries=entries)
     assert run["summary"]["scored"] == 2
     first, second = run["entries"]
     # All expected chunks retrieved, versus none.
@@ -208,9 +205,7 @@ def test_small_deterministic_recall_drop_is_still_a_regression():
 
 
 def test_diff_reports_which_questions_moved():
-    diff = diff_runs(
-        make_run("a", 0.80, entry_score=0.9), make_run("b", 0.80, entry_score=0.4)
-    )
+    diff = diff_runs(make_run("a", 0.80, entry_score=0.9), make_run("b", 0.80, entry_score=0.4))
     assert diff["entries"][0]["id"] == "g001"
     assert diff["entries"][0]["changes"]["faithfulness"]["delta"] == -0.5
 

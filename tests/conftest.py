@@ -4,7 +4,15 @@ from datetime import datetime, timezone
 
 import pytest
 
+from src.transcripts import supadata_keys
 from src.transcripts.models import Transcript
+
+
+@pytest.fixture(autouse=True)
+def _fresh_supadata_rings() -> None:
+    # Key rings are process-wide so ingestion workers share what they learn;
+    # a key one test exhausts must not stay exhausted for the next.
+    supadata_keys.reset_rings()
 
 
 @pytest.fixture

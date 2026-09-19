@@ -58,7 +58,7 @@ class TranscriptAgent:
         kwargs = chat_model_kwargs(settings)
         if context_provider is None:
             fetcher = SuperdataTranscriptFetcher(
-                settings.superdata_api_key,
+                settings.supadata_api_keys,
                 timeout_seconds=settings.supadata_timeout_seconds,
                 poll_interval_seconds=settings.supadata_poll_interval_seconds,
                 max_poll_seconds=settings.supadata_max_poll_seconds,

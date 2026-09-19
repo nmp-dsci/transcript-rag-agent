@@ -79,9 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     args.output.write_text(report["html"], encoding="utf-8")
     if args.json_output:
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
-        args.json_output.write_text(
-            json.dumps(report["json"], indent=2) + "\n", encoding="utf-8"
-        )
+        args.json_output.write_text(json.dumps(report["json"], indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {args.output}")
     return 0
 
@@ -102,7 +100,7 @@ def run_evaluation(
     )
 
     fetcher = SuperdataTranscriptFetcher(
-        settings.superdata_api_key,
+        settings.supadata_api_keys,
         timeout_seconds=settings.supadata_timeout_seconds,
         poll_interval_seconds=settings.supadata_poll_interval_seconds,
         max_poll_seconds=settings.supadata_max_poll_seconds,
@@ -163,9 +161,7 @@ def run_evaluation(
             ),
             "rag_all_filtered",
         )
-        answer_embeddings = embedding_model.embed_documents(
-            [unfiltered.answer, filtered.answer]
-        )
+        answer_embeddings = embedding_model.embed_documents([unfiltered.answer, filtered.answer])
         answer_similarity = cosine_similarity(answer_embeddings[0], answer_embeddings[1])
         token_delta = filtered.token_estimate - unfiltered.token_estimate
         time_delta = filtered.time_seconds - unfiltered.time_seconds
@@ -219,12 +215,7 @@ def run_evaluation(
         for run in runs:
             _log_artifact(
                 json.dumps(
-                    {
-                        "chunks": [
-                            chunk.model_dump(mode="json")
-                            for chunk in run.retrieved_chunks
-                        ]
-                    },
+                    {"chunks": [chunk.model_dump(mode="json") for chunk in run.retrieved_chunks]},
                     indent=2,
                 ),
                 f"s4_{run.name}_chunks.json",
@@ -280,8 +271,7 @@ def _json_payload(
                 "prompt_tokens_estimate": run.token_estimate,
                 "time_seconds": run.time_seconds,
                 "selected_transcripts": [
-                    transcript.model_dump(mode="json")
-                    for transcript in run.selected_transcripts
+                    transcript.model_dump(mode="json") for transcript in run.selected_transcripts
                 ],
                 "retrieved_chunks": [
                     chunk.model_dump(mode="json") for chunk in run.retrieved_chunks
@@ -393,9 +383,7 @@ def _chunks_section(chunks: list[dict[str, Any]]) -> str:
         return "<p>No retrieved chunks.</p>"
     details = []
     for chunk in chunks:
-        timestamp_url = youtube_timestamp_url(
-            chunk["source_url"], chunk.get("start_seconds")
-        )
+        timestamp_url = youtube_timestamp_url(chunk["source_url"], chunk.get("start_seconds"))
         details.append(
             "<details>"
             f"<summary>video={html.escape(chunk['video_id'])} "

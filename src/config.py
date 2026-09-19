@@ -14,6 +14,10 @@ class ConfigError(RuntimeError):
 @dataclass(frozen=True)
 class Settings:
     superdata_api_key: str
+    #: Every Supadata key in priority order: ``superdata_api_key`` first, then
+    #: ``SUPADATA_API_KEY_2``, ``_3`` … Each is a fallback for the one before
+    #: it, used only once that key reports its plan usage limit exceeded.
+    supadata_api_keys: tuple[str, ...]
     deepseek_api_key: str
     deepseek_model: str
     deepseek_base_url: str | None
@@ -206,6 +210,24 @@ def _query_transform_env(name: str) -> str | None:
     return value
 
 
+def _numbered_supadata_keys(first: str) -> tuple[str, ...]:
+    """``first`` followed by ``SUPADATA_API_KEY_2``, ``_3`` … in order.
+
+    The numbering stops at the first gap so a commented-out ``_2`` also
+    retires ``_3``; a key listed twice counts once, at its first position.
+    """
+    keys: list[str] = [first] if first else []
+    index = 2
+    while True:
+        extra = os.environ.get(f"SUPADATA_API_KEY_{index}", "").strip()
+        if not extra:
+            break
+        if extra not in keys:
+            keys.append(extra)
+        index += 1
+    return tuple(keys)
+
+
 def load_settings(require_keys: bool = True) -> Settings:
     # Demo mode is read before the env file: the demo container ships no env
     # file and no keys, and that absence must not be an error there.
@@ -222,6 +244,7 @@ def load_settings(require_keys: bool = True) -> Settings:
     superdata_api_key = os.environ.get("SUPERDATA_API_KEY") or os.environ.get(
         "SUPADATA_API_KEY", ""
     )
+    supadata_api_keys = _numbered_supadata_keys(superdata_api_key)
     deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY", "")
 
     missing: list[str] = []
@@ -238,6 +261,7 @@ def load_settings(require_keys: bool = True) -> Settings:
 
     return Settings(
         superdata_api_key=superdata_api_key,
+        supadata_api_keys=supadata_api_keys,
         deepseek_api_key=deepseek_api_key,
         deepseek_model=api_model,
         deepseek_base_url=os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com",

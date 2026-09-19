@@ -36,9 +36,7 @@ class FakeContextProvider:
 
 
 def test_summarize_returns_pydantic_output(sample_transcript: Transcript) -> None:
-    llm = FakeLlm(
-        '{"summary": "A useful summary", "top_findings": ["one", "two", "three"]}'
-    )
+    llm = FakeLlm('{"summary": "A useful summary", "top_findings": ["one", "two", "three"]}')
     provider = FakeContextProvider(sample_transcript)
     agent = TranscriptAgent(llm, provider)
 
@@ -58,8 +56,7 @@ def test_summarize_returns_pydantic_output(sample_transcript: Transcript) -> Non
 
 def test_summarize_trims_extra_findings(sample_transcript: Transcript) -> None:
     llm = FakeLlm(
-        '{"summary": "A useful summary", "top_findings": '
-        '["one", "two", "three", "four"]}'
+        '{"summary": "A useful summary", "top_findings": ["one", "two", "three", "four"]}'
     )
     agent = TranscriptAgent(llm, FakeContextProvider(sample_transcript))
 
@@ -75,8 +72,7 @@ def test_summarize_trims_extra_findings(sample_transcript: Transcript) -> None:
 
 def test_answer_returns_pydantic_output(sample_transcript: Transcript) -> None:
     llm = FakeLlm(
-        '{"question": "What?", "answer": "It explains agents.", '
-        '"source_video_id": "3hk7nO_q0a8"}'
+        '{"question": "What?", "answer": "It explains agents.", "source_video_id": "3hk7nO_q0a8"}'
     )
     agent = TranscriptAgent(llm, FakeContextProvider(sample_transcript))
 

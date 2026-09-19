@@ -117,10 +117,7 @@ def test_breakdown_fn_supplies_both_score_and_details() -> None:
     assert details["total"] == 2
     assert [claim["verdict"] for claim in details["claims"]] == [1, 0]
     # The headline number is arithmetic over the rows shown beneath it.
-    assert (
-        evaluation["scores"]["faithfulness"]
-        == details["supported"] / details["total"]
-    )
+    assert evaluation["scores"]["faithfulness"] == details["supported"] / details["total"]
 
 
 def test_breakdown_fn_preferred_over_score_fn() -> None:
@@ -251,9 +248,7 @@ def test_multiple_samples_survive_one_failed_run() -> None:
             raise value
         return value
 
-    judge = RagasJudge(
-        score_fns={"faithfulness": flaky}, judge_model="test-judge", samples=3
-    )
+    judge = RagasJudge(score_fns={"faithfulness": flaky}, judge_model="test-judge", samples=3)
     evaluation = judge.score("q?", "a", ["c"])
 
     assert evaluation["scores"] == {"faithfulness": 0.5}
@@ -327,9 +322,7 @@ def test_self_graded_false_for_independent_judge() -> None:
 
 
 def test_self_graded_none_when_answering_model_unknown() -> None:
-    assert _judge(faithfulness=lambda q, a, c: 0.5).score("q?", "a", ["c"])[
-        "self_graded"
-    ] is None
+    assert _judge(faithfulness=lambda q, a, c: 0.5).score("q?", "a", ["c"])["self_graded"] is None
 
 
 def test_per_answer_model_overrides_the_judge_default() -> None:
@@ -358,9 +351,7 @@ def ragas_ready(monkeypatch: pytest.MonkeyPatch) -> None:
     "verdicts",
     [[], [0], [1], [0, 0], [1, 1], [1, 0], [0, 1], [1, 0, 1], [0, 1, 1, 0, 1]],
 )
-def test_average_precision_matches_ragas(
-    verdicts: list[int], ragas_ready: None
-) -> None:
+def test_average_precision_matches_ragas(verdicts: list[int], ragas_ready: None) -> None:
     """Pin our reimplementation against ragas' own average precision."""
     from ragas.metrics._context_precision import (
         LLMContextPrecisionWithoutReference,
@@ -417,15 +408,11 @@ def _fake_stack() -> Any:
                 return _RELEVANCE
             raise AssertionError(f"unexpected prompt: {prompt_text[:200]}")
 
-        def generate_text(
-            self, prompt, n=1, temperature=0.01, stop=None, callbacks=None
-        ):
+        def generate_text(self, prompt, n=1, temperature=0.01, stop=None, callbacks=None):
             text = self._text_for(prompt.to_string())
             return LLMResult(generations=[[Generation(text=text) for _ in range(n)]])
 
-        async def agenerate_text(
-            self, prompt, n=1, temperature=0.01, stop=None, callbacks=None
-        ):
+        async def agenerate_text(self, prompt, n=1, temperature=0.01, stop=None, callbacks=None):
             return self.generate_text(prompt, n, temperature, stop, callbacks)
 
         def is_finished(self, response) -> bool:
@@ -541,15 +528,11 @@ def test_faithfulness_without_statements_scores_nan(ragas_ready: None) -> None:
 
     @dataclass
     class EmptyLLM(BaseRagasLLM):
-        def generate_text(
-            self, prompt, n=1, temperature=0.01, stop=None, callbacks=None
-        ):
+        def generate_text(self, prompt, n=1, temperature=0.01, stop=None, callbacks=None):
             text = json.dumps({"statements": []})
             return LLMResult(generations=[[Generation(text=text) for _ in range(n)]])
 
-        async def agenerate_text(
-            self, prompt, n=1, temperature=0.01, stop=None, callbacks=None
-        ):
+        async def agenerate_text(self, prompt, n=1, temperature=0.01, stop=None, callbacks=None):
             return self.generate_text(prompt, n, temperature, stop, callbacks)
 
         def is_finished(self, response) -> bool:

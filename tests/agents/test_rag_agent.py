@@ -471,6 +471,7 @@ class _NullRun:
 def _patch_cli_for_agent(monkeypatch, tmp_path) -> None:
     settings = Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,

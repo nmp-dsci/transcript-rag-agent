@@ -25,6 +25,7 @@ _spec.loader.exec_module(migrate_module)
 def settings(tmp_path: Path) -> Settings:
     return Settings(
         superdata_api_key="",
+        supadata_api_keys=(),
         deepseek_api_key="test-key",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
