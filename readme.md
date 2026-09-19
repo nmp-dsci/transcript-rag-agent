@@ -287,6 +287,8 @@ YT_AGENT_LOG_TRANSCRIPT_ARTIFACTS=false
 
 `SUPADATA_API_KEY` is used with the Supadata transcript API. DeepSeek is called through the OpenAI-compatible LangChain client.
 
+**Fallback Supadata keys.** `SUPADATA_API_KEY_2`, `_3`, … (contiguous numbering; a gap ends the list) are tried in order only after the key before them answers `429` with *"Plan usage limit was exceeded"*. Until then the fallback key never touches the wire. The switch is sticky for the life of the process, so a `serve` or CLI run that has rolled to key 2 stays there; the next process tries key 1 first again, which is how it self-heals when the plan resets. A per-second rate-limit `429` backs off and retries the *same* key — it never advances to the fallback. Transcript fetching and channel discovery share one ring per process, so a key one of them finds exhausted is skipped by both, and an async transcript job is always polled with the key that started it. When every key is spent the ingestion job reads *"Out of Supadata credits — all N configured keys …"* rather than the generic exit message, and `/api/health` reports `supadata: {keys, active, exhausted}` as one-based indexes (never key text).
+
 `YT_AGENT_INGESTION_WORKERS` (default `3`) caps how many `/api/index/queue` jobs the server runs concurrently — indexing is mostly network wait, so this hides latency without saturating the CPU-bound embedding step. `YT_AGENT_SUMMARY_SOURCE` picks how a video's routing summary is written: `description` (default) uses the creator's own YouTube description that Supadata already returns, with no LLM call and nothing that can fail on a provider balance; `llm` restores the previous DeepSeek summariser. `YT_AGENT_SUMMARY_MIN_CHARS` (default `120`) is the floor a cleaned description must clear before it is indexed as a summary — thinner than that and the video is recorded with `summary_status="failed"` rather than routed on a line of marketing copy.
 
 `YT_AGENT_EMBEDDING_DEVICE` pins the torch device for the embedding model and
@@ -1000,7 +1002,7 @@ Endpoints (JSON unless noted):
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
-| `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode, `stt` (whether the composer mic is available) |
+| `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode, `stt` (whether the composer mic is available), `supadata` (which numbered key is live and which are exhausted) |
 | `/api/setups` | GET | The RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
 | `/api/prompts` | GET | The live prompt registry, grouped by system |

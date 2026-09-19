@@ -108,9 +108,14 @@ class IngestionQueue:
         graph_fn: Callable[[list[str]], dict[str, Any]] | None = None,
         heartbeat_seconds: float = DEFAULT_HEARTBEAT_SECONDS,
         max_workers: int = DEFAULT_MAX_WORKERS,
+        failure_hint: Callable[[], str | None] | None = None,
     ) -> None:
         self._index_fn = index_fn
         self._corpus_fn = corpus_fn
+        # Optional: a plain-language reason for a non-zero exit that the CLI
+        # only printed to its own stderr — e.g. every Supadata key is out of
+        # credits — so the job says that instead of "check the server log".
+        self._failure_hint = failure_hint
         # Optional: extracts entities/claims for newly added videos once the
         # vector index succeeds. Failures here are enrichment-only — a broken
         # graph extraction must not fail a job whose vector index is already
@@ -241,7 +246,8 @@ class IngestionQueue:
 
             if exit_code != 0:
                 job.status = "error"
-                job.error = (
+                hint = self._failure_hint() if self._failure_hint else None
+                job.error = hint or (
                     f"Indexing failed (exit {exit_code}). Check the server log for the CLI output."
                 )
                 self._broadcast_job(job)
