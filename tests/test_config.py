@@ -76,3 +76,49 @@ def test_missing_env_file_raises(monkeypatch, tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError):
         load_settings()
+
+
+def test_numbered_supadata_keys_form_an_ordered_fallback_list(monkeypatch, tmp_path: Path) -> None:
+    env = tmp_path / ".env"
+    env.write_text(
+        "\n".join(
+            [
+                "SUPADATA_API_KEY=first",
+                "SUPADATA_API_KEY_2=second",
+                "SUPADATA_API_KEY_3=  third  ",
+                "SUPADATA_API_KEY_5=never-reached",
+                "DEEPSEEK_API_KEY=deep",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
+    for name in ("SUPERDATA_API_KEY", "SUPADATA_API_KEY", "DEEPSEEK_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    for index in range(2, 7):
+        monkeypatch.delenv(f"SUPADATA_API_KEY_{index}", raising=False)
+
+    settings = load_settings()
+
+    assert settings.superdata_api_key == "first"
+    # _4 is absent, so _5 is not read: the numbering stops at the first gap.
+    assert settings.supadata_api_keys == ("first", "second", "third")
+
+
+def test_single_key_is_a_one_entry_ring(monkeypatch, tmp_path: Path) -> None:
+    env = tmp_path / ".env"
+    env.write_text("SUPERDATA_API_KEY=only\nDEEPSEEK_API_KEY=deep\n", encoding="utf-8")
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
+    for name in ("SUPERDATA_API_KEY", "SUPADATA_API_KEY", "SUPADATA_API_KEY_2", "DEEPSEEK_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+    assert load_settings().supadata_api_keys == ("only",)
+
+
+def test_demo_mode_without_keys_has_an_empty_ring(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(tmp_path / "missing.env"))
+    monkeypatch.setenv("YT_AGENT_DEMO_MODE", "1")
+    for name in ("SUPERDATA_API_KEY", "SUPADATA_API_KEY", "SUPADATA_API_KEY_2"):
+        monkeypatch.delenv(name, raising=False)
+
+    assert load_settings().supadata_api_keys == ()

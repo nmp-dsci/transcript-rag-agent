@@ -1,0 +1,646 @@
+<title>Supadata failover — a second key for when the first runs dry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FAF9F5; --panel: #FFFFFF; --panel-2: #F3F1EA;
+    --ink: #16181D; --body: rgba(22,24,29,.87); --caption: rgba(22,24,29,.60); --muted: #5C6270;
+    --line: #E5E2D8; --line-strong: #C9C5B8;
+    --accent: #2434C9; --accent-soft: rgba(36,52,201,.10);
+    --good: #1a7f37; --good-soft: rgba(26,127,55,.10);
+    --warn: #9a6700; --warn-soft: rgba(154,103,0,.12);
+    --bad: #cf222e; --bad-soft: rgba(207,34,46,.10);
+    --console: #14161B; --console-text: #E9E8E2; --console-label: #9BA1AE;
+    --nav-bg: rgba(250,249,245,.85);
+    --shadow: 0 1px 2px rgba(22,24,29,.05), 0 8px 28px rgba(22,24,29,.07);
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+    --mono: "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  } }
+  :root[data-theme="dark"] {
+    --paper:#101216; --panel:#171A20; --panel-2:#1C2027; --ink:#EDEBE4; --body:rgba(237,235,228,.87); --caption:rgba(237,235,228,.60);
+    --muted:#9BA1AE; --line:#262B34; --line-strong:#3A4150; --accent:#96A4FF; --accent-soft:rgba(150,164,255,.12);
+    --good:#57c86b; --good-soft:rgba(87,200,107,.14); --warn:#e0b04a; --warn-soft:rgba(224,176,74,.14); --bad:#ff7b72; --bad-soft:rgba(255,123,114,.14);
+    --console:#0B0D11; --nav-bg:rgba(16,18,22,.85); --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; min-width: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin:0; background:var(--paper); color:var(--body); font-family:var(--sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; padding-inline:16px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  nav.top { position: sticky; top:0; z-index:10; background:var(--nav-bg); backdrop-filter: blur(10px); border-bottom:1px solid var(--line); margin-inline:-16px; padding-inline:16px; }
+  nav.top .wrap { display:flex; gap:18px; align-items:center; height:52px; flex-wrap:wrap; }
+  nav.top .brand { font-family:var(--serif); font-size:20px; color:var(--ink); display:flex; align-items:center; gap:8px; }
+  .diamond { width:9px; height:9px; background:var(--accent); transform:rotate(45deg); display:inline-block; }
+  nav.top a { color:var(--muted); text-decoration:none; font-size:13px; font-weight:500; }
+  nav.top a:hover { color:var(--ink); }
+  header.hero { padding: 56px 0 28px; border-bottom:1px solid var(--line); }
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:10px; }
+  h1 { font-family:var(--serif); font-weight:400; font-size: clamp(38px, 6vw, 60px); line-height:1.05; color:var(--ink); margin: 14px 0 12px; letter-spacing:-.01em; }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { font-size:19px; color:var(--body); max-width: 760px; margin:0; }
+  .facts { display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:22px; font-family:var(--mono); font-size:12.5px; color:var(--caption); }
+  .facts b { color:var(--ink); font-weight:500; }
+  section { padding: 44px 0 8px; }
+  .section-head { display:flex; align-items:baseline; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:34px; color:var(--ink); margin:0; line-height:1.1; }
+  h3 { font-family:var(--sans); font-weight:600; font-size:17px; color:var(--ink); margin:26px 0 8px; }
+  p { margin: 0 0 12px; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow); }
+  .card h4 { margin:0 0 8px; font-size:15px; color:var(--ink); font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .card p { font-size:14.5px; color:var(--body); margin:0 0 6px; }
+  .card.bad { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
+  .card.good { border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+  .card.hi { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent-soft) 40%, var(--panel)); }
+  .num { font-family:var(--mono); font-size:12px; color:var(--accent); }
+  .k { font-family:var(--mono); font-size:12.5px; background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--ink); white-space:nowrap; }
+  code { font-family:var(--mono); font-size:.9em; }
+  pre { background:var(--console); color:var(--console-text); border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55; margin: 10px 0 16px; }
+  pre .c { color:var(--console-label); }
+  pre .hl { color:#ffd479; }
+  pre .add { color:#7ee787; }
+  .pill { display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line-strong); color:var(--caption); }
+  .pill.good { background:var(--good-soft); color:var(--good); border-color:transparent; }
+  .pill.warn { background:var(--warn-soft); color:var(--warn); border-color:transparent; }
+  .pill.bad { background:var(--bad-soft); color:var(--bad); border-color:transparent; }
+  .pill.acc { background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  .tbl { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--caption); font-weight:500; background:var(--panel-2); }
+  tr:last-child td { border-bottom:none; }
+  td code { white-space:nowrap; }
+  .fig { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; box-shadow:var(--shadow); margin:12px 0 18px; }
+  .fig svg { width:100%; height:auto; display:block; font-family:var(--sans); }
+  .fig figcaption { font-size:13.5px; color:var(--caption); margin-top:10px; }
+  .steps { counter-reset: s; display:grid; gap:12px; }
+  .step { display:grid; grid-template-columns: 34px minmax(0,1fr); gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .step::before { counter-increment:s; content: counter(s); font-family:var(--mono); font-size:13px; color:var(--accent); border:1px solid var(--accent); border-radius:999px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+  .step h4 { margin:0 0 4px; font-size:15px; color:var(--ink); }
+  .step p { font-size:14.5px; margin:0 0 4px; }
+  .step ul { margin:4px 0 0; padding-left:18px; font-size:14px; }
+  .step li { margin:2px 0; }
+  .callout { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; border-radius:0 10px 10px 0; margin:14px 0; font-size:15px; }
+  .callout.warn { border-color:var(--warn); background:var(--warn-soft); }
+  .diff { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin: 6px 0 18px; }
+  .diff-head { font-family:var(--mono); font-size:12.5px; padding:8px 12px; background:var(--panel-2); border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .diff-head b { color:var(--ink); font-weight:500; }
+  /* decisions */
+  .q { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .q h4 { margin:0 0 4px; font-size:16px; color:var(--ink); display:flex; align-items:center; gap:10px; }
+  .q > p { font-size:14.5px; color:var(--caption); margin:0 0 10px; }
+  .q label { display:grid; grid-template-columns: 20px minmax(0,1fr); gap:10px; align-items:start; padding:9px 10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; cursor:pointer; font-size:14.5px; }
+  .q label:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+  .q label input { margin-top:4px; }
+  .q label b { color:var(--ink); font-weight:600; }
+  .q label span.d { display:block; color:var(--caption); font-size:13.5px; }
+  .q .rec { font-family:var(--mono); font-size:10.5px; color:var(--good); text-transform:uppercase; letter-spacing:.06em; margin-left:6px; }
+  .q button { font:inherit; font-size:13.5px; font-weight:600; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; }
+  .q button:hover { filter:brightness(1.08); }
+  .q .queued { font-size:13px; color:var(--good); margin-left:10px; }
+  footer { padding:40px 0 60px; color:var(--caption); font-size:13px; border-top:1px solid var(--line); margin-top:40px; }
+</style>
+
+<nav class="top"><div class="wrap">
+  <span class="brand"><span class="diamond"></span> Supadata failover</span>
+  <a href="#now">Today</a><a href="#key">Where the key goes</a><a href="#flow">How it fails over</a><a href="#code">The code</a><a href="#slices">Build order</a><a href="#tests">Tests</a><a href="#risks">Risks</a><a href="#decide">Decide</a>
+</div></nav>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">s25 · branch <span class="k">supadata-failover</span> · plan</div>
+  <h1>A second Supadata key, <em>used only when the first runs dry</em></h1>
+  <p class="lede">Every transcript fetch and channel discovery goes through one <code>SUPADATA_API_KEY</code>. When its monthly credits are gone, indexing simply fails. This plan adds <code>SUPADATA_API_KEY_2</code>, a small key ring that rolls over on a quota 429 and stays rolled, and a health line so you can see which key is live.</p>
+  <div class="facts">
+    <span><b>1</b> new module</span><span><b>2</b> clients patched</span><span><b>8</b> call sites unchanged in shape</span><span><b>0</b> demo-site changes (demo never fetches)</span>
+  </div>
+</header>
+
+<section id="now">
+  <div class="section-head"><h2>What happens today</h2></div>
+  <div class="cards">
+    <div class="card">
+      <h4>One key, read in one place</h4>
+      <p><code>src/config.py:222</code> reads <code>SUPERDATA_API_KEY</code> or <code>SUPADATA_API_KEY</code> into <code>Settings.superdata_api_key: str</code>. Eight constructors pass it straight through (<code>cli.py</code> ×2, four evals, <code>chat/setups.py</code>, <code>agents/transcript_agent.py</code>).</p>
+    </div>
+    <div class="card bad">
+      <h4>Fetcher: 429 is just an error</h4>
+      <p><code>src/transcripts/fetcher.py:69</code> raises <code>TranscriptFetchError("… HTTP 429 …")</code> on any 4xx. The ingestion queue records the video as failed and moves on — every remaining video in the batch fails the same way.</p>
+    </div>
+    <div class="card bad">
+      <h4>Discovery: retries the dead key</h4>
+      <p><code>src/transcripts/discovery.py:131</code> sleeps 0.5 s / 1 s and retries a 429 twice. Right for a per-second rate limit; useless for an exhausted plan, which returns the same 429 for the rest of the month.</p>
+    </div>
+    <div class="card">
+      <h4>Supadata says which 429 it is</h4>
+      <p>Both cases are <code>HTTP 429 {"error":"limit-exceeded"}</code>. The <code>details</code> string tells them apart: <em>"Plan usage limit was exceeded."</em> (quota) vs <em>"Request rate limit on current plan was exceeded."</em> (throttle). Source: docs.supadata.ai/errors/limit-exceeded.</p>
+    </div>
+  </div>
+</section>
+
+<section id="key">
+  <div class="section-head"><h2>Where you add the key</h2></div>
+  <p>Keys never live in the repo. The app loads <code>~/.env</code> (or whatever <code>YT_AGENT_ENV_PATH</code> points at) via <code>load_settings()</code>. Add one line next to the existing key:</p>
+<pre><span class="c"># ~/.env  — the file load_settings() reads; never committed</span>
+SUPADATA_API_KEY=sd_live_…first_key…
+<span class="add">SUPADATA_API_KEY_2=sd_live_…second_key…</span>   <span class="c"># new: used only after _1 reports "Plan usage limit was exceeded"</span>
+<span class="c"># SUPADATA_API_KEY_3, _4 … are picked up the same way if you ever need them</span>
+DEEPSEEK_API_KEY=…</pre>
+  <div class="cards">
+    <div class="card hi">
+      <h4><span class="num">local</span> <code>~/.env</code></h4>
+      <p>The only place a real key goes. Both <code>serve</code> and every CLI command read it.</p>
+    </div>
+    <div class="card">
+      <h4><span class="num">template</span> <code>.env.example</code></h4>
+      <p>Gains a commented <code>SUPADATA_API_KEY_2=</code> line under the existing one so a fresh clone knows the option exists.</p>
+    </div>
+    <div class="card">
+      <h4><span class="num">docs</span> <code>readme.md</code> §Setup</h4>
+      <p>One paragraph: what triggers failover, that it is sticky for the process, and how to read <code>/api/health</code>.</p>
+    </div>
+    <div class="card">
+      <h4><span class="num">prod demo</span> App Runner</h4>
+      <p>Nothing. <code>deploy-aws.yml</code> passes no Supadata secret and demo mode fetches nothing (<code>main.py:527</code>). The failover only matters where you index: your laptop.</p>
+    </div>
+  </div>
+  <div class="callout">Ordering is the priority. <code>SUPADATA_API_KEY</code> is always tried first; <code>_2</code> only after <code>_1</code> is marked exhausted. Put the key with the bigger remaining balance first.</div>
+</section>
+
+<section id="flow">
+  <div class="section-head"><h2>How a request fails over</h2></div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 300" role="img" aria-labelledby="flow-title">
+      <title id="flow-title">A request goes to the active key; a quota 429 rolls to the next key; a rate-limit 429 retries the same key; all keys exhausted raises SupadataQuotaError</title>
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+      </defs>
+      <g font-size="13" fill="var(--ink)" stroke="var(--line-strong)" stroke-width="1.2">
+        <!-- caller -->
+        <g id="n-caller"><title>Fetcher or discovery client</title>
+          <rect x="20" y="118" width="150" height="64" rx="10" fill="var(--panel-2)"/>
+          <text x="95" y="145" text-anchor="middle" stroke="none" font-weight="600">fetcher / discovery</text>
+          <text x="95" y="165" text-anchor="middle" stroke="none" font-size="11.5" fill="var(--caption)">ring.get(url, params)</text>
+        </g>
+        <!-- ring -->
+        <g id="n-ring"><title>SupadataKeyRing: holds the ordered keys and the active index</title>
+          <rect x="230" y="98" width="190" height="104" rx="10" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="325" y="125" text-anchor="middle" stroke="none" font-weight="600">SupadataKeyRing</text>
+          <text x="325" y="146" text-anchor="middle" stroke="none" font-size="11.5" fill="var(--caption)">active = 0</text>
+          <text x="325" y="164" text-anchor="middle" stroke="none" font-size="11.5" fill="var(--caption)">exhausted = {}</text>
+          <text x="325" y="182" text-anchor="middle" stroke="none" font-size="11.5" fill="var(--caption)">one per process · lock</text>
+        </g>
+        <!-- key 1 -->
+        <g id="n-key1"><title>SUPADATA_API_KEY (first)</title>
+          <rect x="500" y="40" width="150" height="50" rx="10" fill="var(--panel)"/>
+          <text x="575" y="62" text-anchor="middle" stroke="none" font-weight="600">key 1</text>
+          <text x="575" y="79" text-anchor="middle" stroke="none" font-size="11" fill="var(--caption)">SUPADATA_API_KEY</text>
+        </g>
+        <!-- key 2 -->
+        <g id="n-key2"><title>SUPADATA_API_KEY_2 (second)</title>
+          <rect x="500" y="125" width="150" height="50" rx="10" fill="var(--panel)"/>
+          <text x="575" y="147" text-anchor="middle" stroke="none" font-weight="600">key 2</text>
+          <text x="575" y="164" text-anchor="middle" stroke="none" font-size="11" fill="var(--caption)">SUPADATA_API_KEY_2</text>
+        </g>
+        <!-- supadata -->
+        <g id="n-api"><title>api.supadata.ai</title>
+          <rect x="740" y="82" width="180" height="50" rx="10" fill="var(--panel-2)"/>
+          <text x="830" y="112" text-anchor="middle" stroke="none" font-weight="600">api.supadata.ai/v1</text>
+        </g>
+        <!-- outcomes -->
+        <g id="n-ok"><title>200 or 202: return the response</title>
+          <rect x="500" y="215" width="130" height="40" rx="8" fill="var(--good-soft)" stroke="var(--good)"/>
+          <text x="565" y="240" text-anchor="middle" stroke="none" fill="var(--good)" font-weight="600">200 / 202 → return</text>
+        </g>
+        <g id="n-err"><title>Every key exhausted: SupadataQuotaError</title>
+          <rect x="660" y="215" width="260" height="40" rx="8" fill="var(--bad-soft)" stroke="var(--bad)"/>
+          <text x="790" y="240" text-anchor="middle" stroke="none" fill="var(--bad)" font-weight="600">all exhausted → SupadataQuotaError</text>
+        </g>
+      </g>
+      <g fill="none" stroke="currentColor" stroke-width="1.4" color="var(--muted)" marker-end="url(#arr)">
+        <path id="e-call" d="M170 150 H228"><title>request</title></path>
+        <path id="e-k1" d="M420 130 C 460 130, 460 65, 498 65"><title>try the active key first</title></path>
+        <path id="e-k2" d="M420 160 C 460 160, 460 150, 498 150"><title>after key 1 is exhausted</title></path>
+        <path d="M650 65 C 700 65, 700 107, 738 107"/>
+        <path d="M650 150 C 700 150, 700 107, 738 107"/>
+        <path id="e-ok" d="M760 132 C 720 190, 640 200, 632 235"><title>success</title></path>
+        <path id="e-exh" d="M830 132 V 213"><title>no key left</title></path>
+      </g>
+      <g fill="none" stroke="var(--warn)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arr)">
+        <path id="e-quota" d="M740 100 C 700 60, 470 20, 330 96"><title>429 "Plan usage limit was exceeded" → mark key exhausted, advance active, retry once</title></path>
+      </g>
+      <g fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="2 3" marker-end="url(#arr)">
+        <path id="e-rate" d="M745 118 C 720 150, 700 175, 560 178"><title>429 "Request rate limit" → sleep 0.5s·n, retry same key (max 3)</title></path>
+      </g>
+      <g font-size="11" fill="var(--warn)" font-family="var(--mono)">
+        <text x="430" y="32">429 quota → mark exhausted, advance, retry</text>
+      </g>
+      <g font-size="11" fill="var(--muted)" font-family="var(--mono)">
+        <text x="560" y="197">429 rate → backoff, same key</text>
+      </g>
+    </svg>
+    <figcaption>One ring per process, shared by the transcript fetcher and the discovery client. Quota 429 (amber, dashed) rolls the ring forward permanently for that process; a rate-limit 429 (grey, dotted) keeps the existing backoff on the same key. Nothing else about the request changes.</figcaption>
+  </figure>
+
+  <h3>Rules the ring enforces</h3>
+  <div class="steps">
+    <div class="step"><div><h4>Try the active key</h4><p>Header <code>x-api-key</code> comes from <code>ring.active_key</code>. Success (200/202/206) returns as before — no behaviour change on the happy path.</p></div></div>
+    <div class="step"><div><h4>Classify a 429 by its <code>details</code></h4><p>Body parsed once. <code>"Plan usage limit"</code> ⇒ <b>quota</b>. <code>"rate limit"</code> ⇒ <b>throttle</b>. Anything else, or an unparseable body, is treated as quota only after the throttle retries are spent — so an unexpected 429 still fails over rather than looping.</p></div></div>
+    <div class="step"><div><h4>Quota ⇒ mark, advance, retry once</h4><p>The key index goes into <code>exhausted</code> with a timestamp and the reason string; <code>active</code> moves to the next unexhausted key; the same request is re-sent. Logged once at WARNING: <code>supadata key 1 exhausted (Plan usage limit was exceeded); using key 2</code>.</p></div></div>
+    <div class="step"><div><h4>Throttle ⇒ existing backoff, same key</h4><p>Discovery's 0.5 s × n retry moves into the ring so the fetcher gets it too. A throttle never advances the ring — that would burn the second key's credits on a transient.</p></div></div>
+    <div class="step"><div><h4>Async jobs stay pinned</h4><p><code>fetcher._poll_job</code> polls <code>/transcript/{jobId}</code> with the key that started the job — a job belongs to the org that created it. The ring returns <code>(response, key_index)</code> so the poll loop can pin it.</p></div></div>
+    <div class="step"><div><h4>Every key exhausted ⇒ <code>SupadataQuotaError</code></h4><p>Subclass of <code>TranscriptFetchError</code> / <code>DiscoveryError</code> so existing <code>except</code> clauses still catch it, but with a message that names the keys: <code>all 2 Supadata keys exhausted (key 1: Plan usage limit…, key 2: Plan usage limit…)</code>. The ingestion queue surfaces that text on the job, so the UI says "out of credits" instead of "HTTP 429".</p></div></div>
+    <div class="step"><div><h4>Visible in <code>/api/health</code></h4><p>New field <code>"supadata": {"keys": 2, "active": 2, "exhausted": [1]}</code> (indexes, never key text). Demo mode reports <code>{"keys": 0}</code>.</p></div></div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="section-head"><h2>The code</h2><span class="pill">3 files change, 1 file is new</span></div>
+
+  <h3>config.py — read the numbered keys</h3>
+  <p><code>Settings.superdata_api_key</code> stays (it becomes <code>keys[0]</code>) so the eight constructors and every test keep compiling; a new <code>supadata_api_keys: list[str]</code> carries the whole ring.</p>
+  <div class="diff"><div class="diff-head"><b>src/config.py</b> · split diff · lines 220–241</div><div id="d-config"></div></div>
+
+  <h3>supadata_keys.py — the ring (new)</h3>
+  <p>Small, synchronous, no framework. <code>httpx.get</code> stays the seam the existing tests monkeypatch, so the current fake-<code>httpx</code> test style carries over untouched.</p>
+  <div class="diff"><div class="diff-head"><b>src/transcripts/supadata_keys.py</b> · new file</div><div id="f-ring"></div></div>
+
+  <h3>fetcher.py — swap the header for the ring</h3>
+  <p>The constructor accepts what it always accepted (<code>"key"</code>) <em>or</em> a list, and builds a ring either way — <code>SuperdataTranscriptFetcher("key")</code> in <code>test_fetcher.py</code> keeps working. Discovery gets the identical treatment and loses its private retry loop.</p>
+  <div class="diff"><div class="diff-head"><b>src/transcripts/fetcher.py</b> · split diff · <code>_request_transcript</code> and <code>_poll_job</code></div><div id="d-fetcher"></div></div>
+
+  <h3>The eight call sites</h3>
+  <p>Each changes one token, <code>settings.superdata_api_key</code> → <code>settings.supadata_api_keys</code>, so the ring is built from every key. Because the constructors normalise a plain string too, missing one only means that path can't fail over — it can't break.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>file</th><th>line</th><th>constructs</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/cli.py</code></td><td>1795</td><td>SuperdataTranscriptFetcher — <code>index</code> command</td></tr>
+      <tr><td><code>src/cli.py</code></td><td>2519</td><td>SupadataDiscoveryClient — <code>discover</code> / bulk index</td></tr>
+      <tr><td><code>src/chat/setups.py</code></td><td>398</td><td>SuperdataTranscriptFetcher — chat setups that fetch on demand</td></tr>
+      <tr><td><code>src/agents/transcript_agent.py</code></td><td>60</td><td>SuperdataTranscriptFetcher — direct transcript agent</td></tr>
+      <tr><td><code>src/evals/evaluation.py</code></td><td>98</td><td>SuperdataTranscriptFetcher</td></tr>
+      <tr><td><code>src/evals/s2_context_eval.py</code></td><td>70</td><td>SuperdataTranscriptFetcher</td></tr>
+      <tr><td><code>src/evals/s3_rag_agent_eval.py</code></td><td>88</td><td>SuperdataTranscriptFetcher</td></tr>
+      <tr><td><code>src/evals/s4_rag_filter_eval.py</code></td><td>104</td><td>SuperdataTranscriptFetcher</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn">Sharing state matters for <code>serve</code>: <code>YT_AGENT_INGESTION_WORKERS=3</code> means three fetchers run at once. If each built its own ring, key 1 would be "discovered exhausted" three times. So the ring is a per-process singleton keyed on the key tuple (<code>supadata_keys.ring_for(keys)</code>), guarded by a lock — the fetcher and discovery client look it up rather than own it.</div>
+</section>
+
+<section id="slices">
+  <div class="section-head"><h2>Build order</h2><span class="pill acc">one PR, four commits</span></div>
+  <div class="cards">
+    <div class="card"><h4><span class="num">V0</span> Config + env</h4><p><code>supadata_api_keys</code> in <code>Settings</code>, numbered-key loop, <code>.env.example</code> line, readme paragraph. Test: <code>load_settings</code> with <code>_2</code> set yields two keys, ordered; with none yields the old single key.</p></div>
+    <div class="card"><h4><span class="num">V1</span> Key ring + fetcher</h4><p>New module, fetcher uses it for transcript, metadata and poll. Tests cover quota roll-over, throttle stays, pinned poll, all-exhausted error text.</p></div>
+    <div class="card"><h4><span class="num">V2</span> Discovery + call sites + health</h4><p>Discovery drops its retry loop for the ring; eight call sites pass the list; <code>/api/health.supadata</code>. Test: health reports indexes only, never key text.</p></div>
+    <div class="card"><h4><span class="num">V3</span> Queue error surfacing</h4><p><code>SupadataQuotaError</code> message reaches the ingestion job record and the Pipeline tab's failure line. Then <code>/no-mistakes</code> and merge.</p></div>
+  </div>
+</section>
+
+<section id="tests">
+  <div class="section-head"><h2>Tests</h2></div>
+  <p>All fake <code>httpx.get</code> with <code>monkeypatch</code>, the pattern already in <code>tests/transcripts/test_discovery.py</code>. Each asserts observable behaviour: which key hit the wire, what was returned, what was raised.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>test</th><th>arrange</th><th>assert</th></tr></thead>
+    <tbody>
+      <tr><td><code>test_quota_429_rolls_to_second_key</code></td><td>key1 → 429 "Plan usage limit"; key2 → 200</td><td>two calls, second carries key2; result returned; ring.active == 1</td></tr>
+      <tr><td><code>test_rollover_is_sticky</code></td><td>as above, then a second fetch</td><td>second fetch goes straight to key2 (one call)</td></tr>
+      <tr><td><code>test_rate_limit_429_retries_same_key</code></td><td>key1 → 429 "rate limit", then 200</td><td>both calls carry key1; ring.active == 0; sleep called</td></tr>
+      <tr><td><code>test_all_keys_exhausted_names_them</code></td><td>both → 429 quota</td><td><code>SupadataQuotaError</code>; message mentions "2 Supadata keys" and both reasons; is a <code>TranscriptFetchError</code></td></tr>
+      <tr><td><code>test_async_job_polls_with_starting_key</code></td><td>key1 → 202 jobId; poll → 200 completed</td><td>poll request carries key1 even if ring advanced between</td></tr>
+      <tr><td><code>test_single_key_behaves_as_before</code></td><td>one key → 429 quota</td><td>raises with the old-style HTTP 429 text preserved inside</td></tr>
+      <tr><td><code>test_settings_reads_numbered_keys</code></td><td>env <code>SUPADATA_API_KEY</code>, <code>_2</code>, <code>_3</code></td><td><code>supadata_api_keys</code> ordered [1,2,3]; <code>superdata_api_key</code> == first</td></tr>
+      <tr><td><code>test_health_reports_ring_state</code></td><td>ring with key 0 exhausted</td><td><code>/api/health.supadata == {"keys":2,"active":2,"exhausted":[1]}</code>, no key text in body</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="risks">
+  <div class="section-head"><h2>Risks and edges</h2></div>
+  <div class="cards">
+    <div class="card"><h4><span class="pill warn">coupling</span> The <code>details</code> string</h4><p>Supadata could reword "Plan usage limit was exceeded." Mitigation: the classifier only needs the substring <code>"usage limit"</code>, and any 429 that survives the throttle retries is treated as quota anyway — worst case is one extra second of backoff before failover.</p></div>
+    <div class="card"><h4><span class="pill warn">cost</span> The failover probe</h4><p>Each new process re-discovers key 1 is dead with one 429. Supadata doesn't charge credits for a rejected request, so that's a wasted round-trip, not money. Persisting exhaustion to disk is the alternative — see decision B.</p></div>
+    <div class="card"><h4><span class="pill">cache</span> Discovery cache</h4><p>Unaffected: the discovery cache key is path + params, not the API key. A result fetched with key 2 is cached identically.</p></div>
+    <div class="card"><h4><span class="pill">async</span> Job started, key dies mid-poll</h4><p>Only possible if key 1 exhausts on the exact video that went async. The poll then fails with quota text; the queue retries the video and key 2 starts a fresh job. Acceptable, and noted in the readme.</p></div>
+    <div class="card good"><h4><span class="pill good">demo</span> App Runner</h4><p>No keys, no fetches. <code>load_settings(require_keys=False)</code> returns an empty list; the ring refuses to be constructed and health reports <code>{"keys": 0}</code>. Nothing on the demo path touches this.</p></div>
+    <div class="card"><h4><span class="pill">compat</span> <code>SUPERDATA_API_KEY</code></h4><p>The old spelling still works as key 1. Numbered keys use the correct spelling only — no <code>SUPERDATA_API_KEY_2</code>.</p></div>
+  </div>
+</section>
+
+<section id="decide">
+  <div class="section-head"><h2>Decide</h2><span class="pill">queue answers, then Send to Agent</span></div>
+
+  <form class="q" data-lavish-question="env-naming" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('a'); if(!c) return; window.lavish.queuePrompt('Decision A (env naming): '+c, {tag:'choice', text:'A: '+c, element:event.currentTarget, data:{question:'env-naming', answer:c}}); event.currentTarget.querySelector('.queued').textContent='queued ✓';">
+    <h4>A · How is the second key named?</h4>
+    <p>Both are read by the same loop; this is about what you type into <code>~/.env</code>.</p>
+    <label><input type="radio" name="a" value="numbered: SUPADATA_API_KEY_2, _3 …" checked><span><b>Numbered</b> <span class="rec">recommended</span><span class="d"><code>SUPADATA_API_KEY_2</code>, <code>_3</code>… One line per key, obvious priority, easy to comment one out.</span></span></label>
+    <label><input type="radio" name="a" value="comma list: SUPADATA_API_KEYS=k1,k2"><span><b>Comma list</b><span class="d"><code>SUPADATA_API_KEYS=k1,k2</code>. One variable, but a rotated key means editing the middle of a line.</span></span></label>
+    <button type="submit">Queue answer</button><span class="queued"></span>
+  </form>
+
+  <form class="q" data-lavish-question="exhaustion-memory" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('b'); if(!c) return; window.lavish.queuePrompt('Decision B (exhaustion memory): '+c, {tag:'choice', text:'B: '+c, element:event.currentTarget, data:{question:'exhaustion-memory', answer:c}}); event.currentTarget.querySelector('.queued').textContent='queued ✓';">
+    <h4>B · How long does the ring remember a dead key?</h4>
+    <p>Supadata credits reset monthly; there's no header saying when.</p>
+    <label><input type="radio" name="b" value="in-process only: every new process probes key 1 once" checked><span><b>In-process only</b> <span class="rec">recommended</span><span class="d">Each <code>serve</code> or CLI run tries key 1 first, eats one free 429 if it's dead, rolls over. Self-heals on the 1st of the month with zero bookkeeping.</span></span></label>
+    <label><input type="radio" name="b" value="persist to .yt-agent/supadata_keys.json with a 24h re-probe"><span><b>Persist to disk</b><span class="d"><code>.yt-agent/supadata_keys.json</code> records exhausted keys; re-probe key 1 every 24 h. Saves one round-trip per process, adds a file and a clock.</span></span></label>
+    <button type="submit">Queue answer</button><span class="queued"></span>
+  </form>
+
+  <form class="q" data-lavish-question="visibility" onsubmit="event.preventDefault(); const c=[...event.currentTarget.querySelectorAll('input[name=c]:checked')].map(i=>i.value); if(!c.length) return; window.lavish.queuePrompt('Decision C (visibility): '+c.join('; '), {tag:'choice', text:'C: '+c.join(', '), element:event.currentTarget, data:{question:'visibility', answer:c}}); event.currentTarget.querySelector('.queued').textContent='queued ✓';">
+    <h4>C · Where do you want to see which key is live? <span class="pill">pick any</span></h4>
+    <p>The plan ships the health field; the others are cheap adds.</p>
+    <label><input type="checkbox" name="c" value="/api/health.supadata field" checked><span><b><code>/api/health</code> field</b><span class="d"><code>{"keys":2,"active":2,"exhausted":[1]}</code> — in the plan already.</span></span></label>
+    <label><input type="checkbox" name="c" value="header tooltip in the workbench next to judge/stack"><span><b>Header tooltip</b><span class="d">Add "supadata key 2 of 2" to the topstat tooltip you moved the judge text into.</span></span></label>
+    <label><input type="checkbox" name="c" value="CLI: python -m src.cli supadata status calling GET /me per key"><span><b>CLI <code>supadata status</code></b><span class="d">Calls <code>GET /me</code> with each key and prints plan + credits used. Real numbers, but a new command and one request per key.</span></span></label>
+    <button type="submit">Queue answer</button><span class="queued"></span>
+  </form>
+
+  <form class="q" data-lavish-question="scope" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('d'); if(!c) return; window.lavish.queuePrompt('Decision D (scope): '+c, {tag:'choice', text:'D: '+c, element:event.currentTarget, data:{question:'scope', answer:c}}); event.currentTarget.querySelector('.queued').textContent='queued ✓';">
+    <h4>D · Scope</h4>
+    <label><input type="radio" name="d" value="build V0-V3 in one PR, then run /no-mistakes" checked><span><b>All four slices, one PR</b> <span class="rec">recommended</span><span class="d">Same shape as the last two features. ~4 commits, then <code>/no-mistakes</code>.</span></span></label>
+    <label><input type="radio" name="d" value="build V0-V1 only (fetcher failover), leave discovery and health for later"><span><b>Fetcher only first</b><span class="d">V0 + V1. Indexing fails over; discovery and health wait.</span></span></label>
+    <button type="submit">Queue answer</button><span class="queued"></span>
+  </form>
+</section>
+
+<footer>Claims checked against <code>src/config.py</code>, <code>src/transcripts/fetcher.py</code>, <code>src/transcripts/discovery.py</code>, <code>src/api/main.py</code>, <code>.github/workflows/deploy-aws.yml</code> and docs.supadata.ai (limit-exceeded error page) on 2026-09-18. Design source: this project's own lavish tokens (s23/s24), so the page matches earlier plans.</footer>
+</div>
+
+<script type="text/plain" id="src-config-old">    superdata_api_key = os.environ.get("SUPERDATA_API_KEY") or os.environ.get(
+        "SUPADATA_API_KEY", ""
+    )
+    deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+
+    missing: list[str] = []
+    if require_keys and not superdata_api_key:
+        missing.append("SUPERDATA_API_KEY or SUPADATA_API_KEY")
+    if require_keys and not deepseek_api_key:
+        missing.append("DEEPSEEK_API_KEY")
+    if missing:
+        joined = ", ".join(missing)
+        raise ConfigError(f"Missing required configuration: {joined}")
+
+    return Settings(
+        superdata_api_key=superdata_api_key,
+</script>
+<script type="text/plain" id="src-config-new">    superdata_api_key = os.environ.get("SUPERDATA_API_KEY") or os.environ.get(
+        "SUPADATA_API_KEY", ""
+    )
+    # Failover keys, tried in order after the first reports its plan usage
+    # limit exceeded. Numbered so a rotated key is one line in ~/.env.
+    supadata_api_keys = [key for key in [superdata_api_key] if key]
+    for index in range(2, 10):
+        extra = os.environ.get(f"SUPADATA_API_KEY_{index}", "").strip()
+        if extra:
+            supadata_api_keys.append(extra)
+    deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY", "")
+
+    missing: list[str] = []
+    if require_keys and not superdata_api_key:
+        missing.append("SUPERDATA_API_KEY or SUPADATA_API_KEY")
+    if require_keys and not deepseek_api_key:
+        missing.append("DEEPSEEK_API_KEY")
+    if missing:
+        joined = ", ".join(missing)
+        raise ConfigError(f"Missing required configuration: {joined}")
+
+    return Settings(
+        superdata_api_key=superdata_api_key,
+        supadata_api_keys=supadata_api_keys,
+</script>
+<script type="text/plain" id="src-ring">"""One ordered ring of Supadata API keys, shared by every client in a process.
+
+A key that answers 429 "Plan usage limit was exceeded" is out of credits for
+the rest of the month; the ring marks it and moves on to the next key. A 429
+that is only a per-second rate limit is retried on the same key with the
+backoff discovery.py already used, and never advances the ring.
+"""
+
+from __future__ import annotations
+
+import logging
+import threading
+import time
+from dataclasses import dataclass, field
+from typing import Any
+
+import httpx
+
+log = logging.getLogger(__name__)
+
+QUOTA_MARKERS = ("usage limit",)
+THROTTLE_MARKERS = ("rate limit",)
+
+
+class SupadataQuotaError(RuntimeError):
+    """Every configured key has reported its plan usage limit exceeded."""
+
+
+@dataclass
+class SupadataKeyRing:
+    keys: tuple[str, ...]
+    timeout_seconds: float = 120.0
+    throttle_retries: int = 3
+    active: int = 0
+    exhausted: dict[int, str] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def __post_init__(self) -> None:
+        if not self.keys:
+            raise ValueError("SupadataKeyRing needs at least one key")
+
+    @property
+    def active_key(self) -> str:
+        return self.keys[self.active]
+
+    def status(self) -> dict[str, Any]:
+        """Indexes only — never key material — for /api/health."""
+        return {
+            "keys": len(self.keys),
+            "active": self.active + 1,
+            "exhausted": sorted(index + 1 for index in self.exhausted),
+        }
+
+    def get(
+        self, url: str, params: dict[str, Any], key_index: int | None = None
+    ) -> tuple[httpx.Response, int]:
+        """GET with the active key (or a pinned one); returns (response, key used).
+
+        Raises SupadataQuotaError once every key is exhausted. Other HTTP
+        errors come back as the response for the caller to interpret.
+        """
+        pinned = key_index is not None
+        while True:
+            index = key_index if pinned else self.active
+            response = self._get_with_backoff(url, params, index)
+            if response.status_code != 429:
+                return response, index
+            reason = _details(response)
+            if pinned:
+                return response, index
+            self._mark_exhausted(index, reason)
+
+    def _get_with_backoff(self, url: str, params: dict[str, Any], index: int) -> httpx.Response:
+        headers = {"x-api-key": self.keys[index]}
+        response: httpx.Response | None = None
+        for attempt in range(self.throttle_retries):
+            response = httpx.get(url, params=params, headers=headers, timeout=self.timeout_seconds)
+            if response.status_code != 429 or not _is_throttle(_details(response)):
+                return response
+            time.sleep(0.5 * (attempt + 1))
+        assert response is not None
+        return response
+
+    def _mark_exhausted(self, index: int, reason: str) -> None:
+        with self._lock:
+            self.exhausted.setdefault(index, reason)
+            remaining = [i for i in range(len(self.keys)) if i not in self.exhausted]
+            if not remaining:
+                detail = ", ".join(
+                    f"key {i + 1}: {why}" for i, why in sorted(self.exhausted.items())
+                )
+                raise SupadataQuotaError(
+                    f"all {len(self.keys)} Supadata keys exhausted ({detail})"
+                )
+            if self.active == index:
+                self.active = remaining[0]
+                log.warning(
+                    "supadata key %d exhausted (%s); using key %d",
+                    index + 1, reason, self.active + 1,
+                )
+
+
+def _details(response: httpx.Response) -> str:
+    try:
+        body = response.json()
+    except ValueError:
+        return response.text[:200]
+    return str(body.get("details") or body.get("message") or "") if isinstance(body, dict) else ""
+
+
+def _is_throttle(reason: str) -> bool:
+    lowered = reason.lower()
+    return any(m in lowered for m in THROTTLE_MARKERS) and not any(
+        m in lowered for m in QUOTA_MARKERS
+    )
+
+
+_rings: dict[tuple[str, ...], SupadataKeyRing] = {}
+_rings_lock = threading.Lock()
+
+
+def ring_for(keys: str | tuple[str, ...] | list[str], timeout_seconds: float = 120.0) -> SupadataKeyRing:
+    """The one ring for this key set in this process, so concurrent ingestion
+    workers share what they learn about exhausted keys."""
+    ordered = (keys,) if isinstance(keys, str) else tuple(k for k in keys if k)
+    with _rings_lock:
+        ring = _rings.get(ordered)
+        if ring is None:
+            ring = _rings[ordered] = SupadataKeyRing(ordered, timeout_seconds=timeout_seconds)
+        return ring
+</script>
+<script type="text/plain" id="src-fetcher-old">    def __init__(
+        self,
+        api_key: str,
+        timeout_seconds: float = 120.0,
+        poll_interval_seconds: float = 2.0,
+        max_poll_seconds: float = 600.0,
+    ) -> None:
+        self.api_key = api_key
+        self.timeout_seconds = timeout_seconds
+        self.poll_interval_seconds = poll_interval_seconds
+        self.max_poll_seconds = max_poll_seconds
+
+    def _request_transcript(self, url: str) -> dict[str, Any]:
+        headers = {"x-api-key": self.api_key}
+        params: dict[str, Any] = {"url": url, "text": "false", "mode": "auto"}
+        try:
+            response = httpx.get(
+                self.endpoint,
+                params=params,
+                headers=headers,
+                timeout=self.timeout_seconds,
+            )
+        except httpx.HTTPError as exc:
+            raise TranscriptFetchError(f"Supadata transcript request failed: {exc}") from exc
+
+        if response.status_code == 202:
+            job_id = response.json().get("jobId")
+            if not job_id:
+                raise TranscriptFetchError("Supadata returned 202 without jobId")
+            return self._poll_job(job_id)
+
+    def _poll_job(self, job_id: str) -> dict[str, Any]:
+        deadline = time.monotonic() + self.max_poll_seconds
+        url = f"{self.endpoint}/{job_id}"
+        headers = {"x-api-key": self.api_key}
+        while time.monotonic() < deadline:
+            response = httpx.get(url, headers=headers, timeout=self.timeout_seconds)
+</script>
+<script type="text/plain" id="src-fetcher-new">    def __init__(
+        self,
+        api_key: str | Sequence[str] | SupadataKeyRing,
+        timeout_seconds: float = 120.0,
+        poll_interval_seconds: float = 2.0,
+        max_poll_seconds: float = 600.0,
+    ) -> None:
+        # A plain string still works (every existing caller and test); a list
+        # of keys, or a ring already shared by another client, fails over.
+        self.ring = (
+            api_key if isinstance(api_key, SupadataKeyRing)
+            else ring_for(api_key, timeout_seconds=timeout_seconds)
+        )
+        self.timeout_seconds = timeout_seconds
+        self.poll_interval_seconds = poll_interval_seconds
+        self.max_poll_seconds = max_poll_seconds
+
+    def _request_transcript(self, url: str) -> dict[str, Any]:
+        params: dict[str, Any] = {"url": url, "text": "false", "mode": "auto"}
+        try:
+            response, key_index = self.ring.get(self.endpoint, params)
+        except SupadataQuotaError as exc:
+            raise TranscriptFetchError(str(exc)) from exc
+        except httpx.HTTPError as exc:
+            raise TranscriptFetchError(f"Supadata transcript request failed: {exc}") from exc
+
+        if response.status_code == 202:
+            job_id = response.json().get("jobId")
+            if not job_id:
+                raise TranscriptFetchError("Supadata returned 202 without jobId")
+            return self._poll_job(job_id, key_index)
+
+    def _poll_job(self, job_id: str, key_index: int) -> dict[str, Any]:
+        deadline = time.monotonic() + self.max_poll_seconds
+        url = f"{self.endpoint}/{job_id}"
+        while time.monotonic() < deadline:
+            # The job belongs to the org that started it: poll with that key.
+            response, _ = self.ring.get(url, {}, key_index=key_index)
+</script>
+
+<script type="module">
+  import { File, FileDiff } from "https://esm.sh/@pierre/diffs@1.2.10?bundle";
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  const options = { theme: { light: "github-light", dark: "github-dark" }, themeType: dark ? "dark" : "light", overflow: "wrap" };
+  const src = (id) => document.getElementById(id).textContent.replace(/^\n/, '');
+  const narrow = innerWidth < 900;
+  new FileDiff({ ...options, diffStyle: narrow ? "unified" : "split" }).render({
+    containerWrapper: document.querySelector("#d-config"),
+    oldFile: { name: "src/config.py", contents: src('src-config-old') },
+    newFile: { name: "src/config.py", contents: src('src-config-new') },
+  });
+  new File(options).render({
+    containerWrapper: document.querySelector("#f-ring"),
+    file: { name: "src/transcripts/supadata_keys.py", contents: src('src-ring') },
+  });
+  new FileDiff({ ...options, diffStyle: narrow ? "unified" : "split" }).render({
+    containerWrapper: document.querySelector("#d-fetcher"),
+    oldFile: { name: "src/transcripts/fetcher.py", contents: src('src-fetcher-old') },
+    newFile: { name: "src/transcripts/fetcher.py", contents: src('src-fetcher-new') },
+  });
+</script>

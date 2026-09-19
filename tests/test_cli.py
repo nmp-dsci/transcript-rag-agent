@@ -265,6 +265,7 @@ def test_rag_ask_passes_recursive_flags(monkeypatch, tmp_path, capsys) -> None:
 def test_rag_ask_uses_recursive_env_default_and_opt_out(monkeypatch, tmp_path, capsys) -> None:
     settings = Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
@@ -376,6 +377,7 @@ def test_refresh_rag_pipeline_dashboard_passes_default_filter_question(
 ) -> None:
     settings = Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
@@ -403,6 +405,7 @@ def test_refresh_rag_pipeline_dashboard_passes_default_filter_question(
 def _patch_cli(monkeypatch, tmp_path, store_cls=FakeStore) -> None:
     settings = Settings(
         superdata_api_key="super",
+        supadata_api_keys=("super",),
         deepseek_api_key="deep",
         deepseek_model="deepseek-v4",
         deepseek_base_url=None,
@@ -442,6 +445,7 @@ def test_eval_ablation_does_not_require_api_keys(monkeypatch, tmp_path, capsys) 
         seen["require_keys"] = require_keys
         return Settings(
             superdata_api_key="",
+            supadata_api_keys=(),
             deepseek_api_key="",
             deepseek_model="deepseek-v4",
             deepseek_base_url=None,
