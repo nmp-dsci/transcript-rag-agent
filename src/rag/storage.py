@@ -115,16 +115,26 @@ class RawTranscriptStore:
         )
 
     def ensure_raw_document(
-        self, source_url: str, refresh: bool = False
+        self,
+        source_url: str,
+        refresh: bool = False,
+        metadata: dict[str, Any] | None = None,
     ) -> tuple[RawTranscriptDocument, str]:
+        """``metadata`` (Supadata ``/metadata`` shape) is used in place of the
+        metadata request — both on a fresh fetch and when back-filling a cached
+        document that lacks video metadata — so the caller pays one credit."""
         video_id = extract_video_id(source_url)
         if not refresh:
             cached = self.get_raw_document(video_id)
             if cached is not None:
-                if self.fetcher is not None and _missing_video_metadata(cached):
+                if _missing_video_metadata(cached) and (
+                    metadata is not None or self.fetcher is not None
+                ):
                     updated = _raw_document_with_metadata(
                         cached,
-                        self.fetcher.fetch_metadata(source_url),
+                        metadata
+                        if metadata is not None
+                        else self.fetcher.fetch_metadata(source_url),  # type: ignore[union-attr]
                     )
                     if updated != cached:
                         self.upsert_raw_document(updated)
@@ -132,7 +142,13 @@ class RawTranscriptStore:
                 return cached, "hit"
         if self.fetcher is None:
             raise ValueError("RawTranscriptStore requires a fetcher to refresh transcripts")
-        transcript = self.fetcher.fetch(source_url)
+        # Only pass the keyword when set, so duck-typed fetchers with the old
+        # signature keep working.
+        transcript = (
+            self.fetcher.fetch(source_url, metadata=metadata)
+            if metadata is not None
+            else self.fetcher.fetch(source_url)
+        )
         document = raw_document_from_transcript(transcript, self.collection_name)
         self.upsert_raw_document(document)
         return document, "refresh" if refresh else "miss"

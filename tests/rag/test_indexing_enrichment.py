@@ -207,3 +207,33 @@ def test_clearing_a_summary_actually_clears_it(tmp_path) -> None:
     cleared = raw_store.get_raw_document(VIDEO_ID)
     assert cleared.summary is None
     assert cleared.summary_model is None
+
+
+def test_supplied_metadata_skips_the_metadata_request(tmp_path) -> None:
+    """One credit, not two: metadata handed to ensure_raw_document is used as-is."""
+
+    class CountingFetcher(FakeFetcher):
+        def __init__(self) -> None:
+            self.metadata_calls = 0
+            self.received: dict | None = None
+
+        def fetch(self, source_url: str, metadata: dict | None = None) -> Transcript:
+            self.received = metadata
+            transcript = super().fetch(source_url)
+            if metadata:
+                transcript = transcript.model_copy(update={"title": metadata.get("title")})
+            return transcript
+
+        def fetch_metadata(self, source_url: str) -> dict:
+            self.metadata_calls += 1
+            return {}
+
+    fetcher = CountingFetcher()
+    raw_store = RawTranscriptStore(tmp_path / "chroma", fetcher=fetcher)
+    supplied = {"title": "From the caller", "createdAt": "2026-01-02T00:00:00.000Z"}
+    document, status = raw_store.ensure_raw_document(SOURCE_URL, metadata=supplied)
+
+    assert status == "miss"
+    assert fetcher.received == supplied
+    assert fetcher.metadata_calls == 0
+    assert document.title == "From the caller"

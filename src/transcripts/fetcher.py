@@ -38,10 +38,19 @@ class SuperdataTranscriptFetcher:
         self.poll_interval_seconds = poll_interval_seconds
         self.max_poll_seconds = max_poll_seconds
 
-    def fetch(self, url: str) -> Transcript:
+    def fetch(self, url: str, metadata: dict[str, Any] | None = None) -> Transcript:
+        """Fetch a transcript, plus its metadata unless the caller supplies it.
+
+        Supadata bills one credit per request and ``fetch`` makes two — the
+        transcript and ``/metadata`` (title, date, description, counts). A
+        caller that already holds the metadata in Supadata's shape passes it
+        here and pays for the transcript alone. Fetching metadata is the
+        default; skipping it is always an explicit override.
+        """
         video_id = extract_video_id(url)
         data = self._request_transcript(url)
-        metadata = self._request_metadata(url)
+        if metadata is None:
+            metadata = self._request_metadata(url)
         return self._normalize_response(
             url=url,
             video_id=video_id,
