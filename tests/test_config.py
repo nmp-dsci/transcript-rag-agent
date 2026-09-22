@@ -124,11 +124,14 @@ def test_demo_mode_without_keys_has_an_empty_ring(monkeypatch, tmp_path: Path) -
     assert load_settings().supadata_api_keys == ()
 
 
-def test_the_web_collections_are_separate_from_the_transcript_ones(monkeypatch) -> None:
+def test_the_web_collections_are_separate_from_the_transcript_ones(
+    monkeypatch, tmp_path: Path
+) -> None:
     # The separation is the whole point: transcript_chunks is the collection
     # the committed eval snapshots were measured against.
-    monkeypatch.setenv("SUPADATA_API_KEY", "k1")
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "d")
+    env = tmp_path / ".env"
+    env.write_text("SUPADATA_API_KEY=k1\nDEEPSEEK_API_KEY=d\n", encoding="utf-8")
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
     settings = load_settings()
     assert settings.web_source_collection == "web_sources"
     assert settings.web_chunk_collection == "web_chunks"
@@ -136,25 +139,30 @@ def test_the_web_collections_are_separate_from_the_transcript_ones(monkeypatch) 
     assert settings.web_source_collection != settings.raw_transcript_collection
 
 
-def test_the_web_collections_can_be_overridden(monkeypatch) -> None:
-    monkeypatch.setenv("SUPADATA_API_KEY", "k1")
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "d")
+def test_the_web_collections_can_be_overridden(monkeypatch, tmp_path: Path) -> None:
+    env = tmp_path / ".env"
+    env.write_text("SUPADATA_API_KEY=k1\nDEEPSEEK_API_KEY=d\n", encoding="utf-8")
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
     monkeypatch.setenv("YT_AGENT_WEB_CHUNK_COLLECTION", "web_chunks_v2")
     assert load_settings().web_chunk_collection == "web_chunks_v2"
 
 
-def test_the_channels_file_defaults_to_the_repo_convention(monkeypatch) -> None:
+def test_the_channels_file_defaults_to_the_repo_convention(monkeypatch, tmp_path: Path) -> None:
     # None means "use channels.yaml at the repo root", resolved by the
     # registry rather than baked into settings.
-    monkeypatch.setenv("SUPADATA_API_KEY", "k1")
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "d")
+    env = tmp_path / ".env"
+    env.write_text("SUPADATA_API_KEY=k1\nDEEPSEEK_API_KEY=d\n", encoding="utf-8")
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
     monkeypatch.delenv("YT_AGENT_CHANNELS_FILE", raising=False)
     assert load_settings().channels_file is None
 
 
-def test_a_relative_channels_file_resolves_against_the_project_root(monkeypatch) -> None:
-    monkeypatch.setenv("SUPADATA_API_KEY", "k1")
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "d")
+def test_a_relative_channels_file_resolves_against_the_project_root(
+    monkeypatch, tmp_path: Path
+) -> None:
+    env = tmp_path / ".env"
+    env.write_text("SUPADATA_API_KEY=k1\nDEEPSEEK_API_KEY=d\n", encoding="utf-8")
+    monkeypatch.setenv("YT_AGENT_ENV_PATH", str(env))
     monkeypatch.setenv("YT_AGENT_CHANNELS_FILE", "custom-channels.yaml")
     resolved = load_settings().channels_file
     assert resolved is not None
