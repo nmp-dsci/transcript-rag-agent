@@ -522,6 +522,121 @@ attribute a score gap to retrieval alone. `rag_llm_filtered` in particular
 shares the baseline's provider, index and models outright: the only difference
 is the set of videos that provider is allowed to search.
 
+### Watched text sources (non-YouTube channels)
+
+The corpus watches text sources as well as videos. A **channel** here is *a
+watched source of URLs* — not a YouTube channel — and four poller kinds cover
+every free source on the register: `rss`, `atom`, `sitemap` and `github_docs`,
+plus `url_list` for a hand-curated set that polls nothing.
+
+**YouTube is deliberately not one of them.** Videos are added by hand through
+the ingest form or `bulk-index`, so nothing on this path can spend a Supadata
+credit. No path here needs an API key of any kind.
+
+**Which sources, and where that is written.** `channels.yaml` at the repo root
+is committed, because *which* sources this corpus follows is a decision worth
+reviewing in a diff, and its comments record what was measured about each one.
+Runtime state — ETags, cursors, due times, failure counts, the item ids already
+seen — lives in `.yt-agent/channels/state.json`, which is gitignored: a poll
+never dirties the tree, and clearing that file costs one extra poll rather than
+a corpus. Point `YT_AGENT_CHANNELS_FILE` elsewhere to use a different register.
+
+```bash
+python -m src.cli channels list                      # what is configured, and its state
+python -m src.cli channels add --id hamel-dev --kind rss \
+    --url https://hamel.dev/index.xml --label "Hamel Husain" --body-in-feed
+python -m src.cli channels poll --dry-run            # print candidates, write nothing
+python -m src.cli channels poll                      # find what is new, and index it
+python -m src.cli channels refresh --due             # re-visit stored sources
+python -m src.cli channels refresh --force --reextract   # after an extractor change
+```
+
+**"URLs need refreshing" is two problems, and they have two mechanisms.**
+
+*Discovery refresh* — did anything new appear — is a conditional GET on the
+feed. Eight of the eleven registered sources answer `304`, which is the whole
+cost of a poll that finds nothing. Cadence is adaptive: 24 h to start, doubling
+on each poll that finds nothing to a 7-day ceiling, halving on each poll that
+finds something to a 6-hour floor, backing off on error and disabling the
+channel after five consecutive failures. Five rather than one, because a feed
+answering `404` once and `200` a minute later is ordinary — measured, on a real
+source.
+
+*Content refresh* — is what I already stored still what is there — is a state
+machine over stored sources, each state recorded rather than inferred:
+
+| State | Trigger | What it costs |
+|---|---|---|
+| `live` | `304`, or `200` with the same content hash | nothing: no extract, no chunk, no embed |
+| `changed` | `200` with a new content hash | re-chunk, and embed **only** the chunks whose own hash moved |
+| `moved` | `301`/`308` | one fetch; the `external_id` does **not** move with the URL |
+| `gone` | `404`/`410`, twice | nothing deleted; chunks stay retrievable and marked unverifiable |
+| `blocked` | `403`/`429`, or `robots.txt` | nothing, and no retry storm |
+| `truncated` | the body hit the fetch byte cap | flagged, so half a document is never cited as a whole one |
+
+Re-visit cadence is the observed stable period as of the last fetch, clamped to
+6 h–7 days. Fixed at fetch time rather than recomputed from the clock: measured
+from "now" the interval grows while a source waits, which pushes the due time
+away as fast as the wait accrues, and a source whose due time always recedes
+never becomes due.
+
+**The content hash is the floor; the ETag is the optimisation.** Two registered
+sources offer no ETag, no `Last-Modified` and no sitemap `<lastmod>` between
+them, so for those the only way to answer "has this changed" is to fetch and
+hash. Hashes are kept at two levels — the source's extracted text and each
+chunk's own text — so a typo fixed in one paragraph of a 152-chunk article
+re-embeds one chunk, and an inserted section re-embeds only itself rather than
+the whole shifted tail.
+
+**Identity comes from the channel, never from the URL.** `external_id` is the
+feed `guid`, the sitemap `loc`, or the pinned repo path. A post that moves keeps
+its `guid`; keying on a URL hash would mint a second document and leave the
+first as a duplicate nobody notices.
+
+**Where it lands.** Two new Chroma collections, `web_sources` and `web_chunks`,
+beside the four transcript ones — which are left byte-identical. That is the
+point rather than a nicety: `transcript_chunks` is the collection the committed
+snapshots in `evals/runs/` were measured against, so writing articles into it
+would move what retrieval returns without moving any number the CI gate checks.
+Cross-source retrieval is therefore a read-side union, not a mixed index.
+`--reextract` exists because both cheap short-circuits (a `304` and a matching
+content hash) stop *before* extraction: without it, an improvement to
+boilerplate stripping reaches only sources ingested after it landed.
+
+**Extraction, and the four defects it had to fix.** `extract_document` gained
+`mode="article"`, which drops `nav`/`header`/`footer`/`aside` and a leading
+table of contents; `mode="resume"` stays the default so the chat's
+paste-a-link review is byte-for-byte what it was. A Markdown branch handles raw
+`.md` — run through the HTML path one real README produced twenty sections and
+*zero* headings, which makes section-anchored citation impossible while looking
+like a clean ingest. GitHub docs are pulled from `raw.githubusercontent.com`
+and cited at the rendered page, whose slugs match. And a feed item over ~2,000
+characters is used instead of fetching the page: on three registered sources
+that is not merely cheaper but the difference between the essay and a
+JavaScript shell worth about a hundred words.
+
+Below a per-channel `min_words` floor (250 by default) an ingest **fails
+loudly** rather than storing what it got. Measured across the seed set, that is
+what catches a JavaScript-rendered page: six of twenty-seven links extract to
+under 110 words, and every one is a shell or a login wall.
+
+**Citations keep parity with transcripts.** A transcript chunk cites `14:22` and
+deep-links into the video; a web chunk cites `§ heading` and deep-links to the
+anchor.
+
+**Politeness, and one deliberate exclusion.** The poller identifies itself as
+`yt-agent-corpus/1.0` with a repo URL, honours `robots.txt` for `*`, and
+additionally treats a blanket disallow aimed at named AI crawlers
+(`GPTBot`, `ClaudeBot`, `CCBot`, `Google-Extended`, …) as applying to it. That
+is stricter than the spec requires — by the letter, only the `*` group applies
+to an agent nothing names — and it is a deliberate choice: such a file is
+legible about the site's intent, and this corpus is the thing those rules are
+aimed at. It has a measured cost. One registered source carries `Disallow: /`
+for eleven AI crawlers, and because that covers `/feed` as well as the article
+paths, the source is excluded **entirely** rather than read through its feed.
+`robots.txt` is not terms of service, and this policy does not pretend to
+settle that; it settles one narrow question in the direction of restraint.
+
 ### Reviewing a document you share
 
 Paste a URL into a chat message and the answer becomes a review of that page.
@@ -1002,6 +1117,8 @@ Endpoints (JSON unless noted):
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
+| `/api/channels` | GET | Every configured text channel with its state and stored-document count. Read-only, and served in demo mode |
+| `/api/channels/poll` | POST | Queue a poll of the watched channels (`{channel_ids: []}` polls every enabled one). Rides the ingestion queue, so it streams through `/api/index/queue/stream` |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode, `stt` (whether the composer mic is available), `supadata` (which numbered key is live and which are exhausted) |
 | `/api/setups` | GET | The RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
