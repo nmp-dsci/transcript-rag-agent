@@ -462,6 +462,19 @@ def test_a_prefix_cannot_mirror_a_whole_repository() -> None:
     assert len(select_paths(many, ("content/",), ())) == MAX_TREE_FILES
 
 
+def test_the_cap_applies_per_prefix_not_across_all_of_them() -> None:
+    # "interview/" alone exceeds MAX_TREE_FILES and sorts before "wiki/"; a
+    # global slice over the combined, alphabetically sorted list would starve
+    # "wiki/" entirely. Each prefix must still be represented.
+    paths = sorted(
+        [f"interview/{index}.md" for index in range(MAX_TREE_FILES + 10)]
+        + [f"wiki/{index}.md" for index in range(5)]
+    )
+    chosen = select_paths(paths, ("interview/", "wiki/"), ())
+    assert len([path for path in chosen if path.startswith("interview/")]) == MAX_TREE_FILES
+    assert len([path for path in chosen if path.startswith("wiki/")]) == 5
+
+
 def test_a_url_list_offers_its_urls_and_makes_no_request(permissive_robots) -> None:
     calls: list = []
     channel = ChannelConfig(

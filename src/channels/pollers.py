@@ -55,9 +55,12 @@ MAX_SITEMAP_CHILDREN = 4
 
 _GITHUB_REPO = re.compile(r"^/(?P<owner>[^/]+)/(?P<repo>[^/]+)/?$")
 
-#: Markdown files taken from one repository tree in one poll. A prefix is a
+#: Markdown files taken from a single prefix in one poll. A prefix is a
 #: directory, not a licence to mirror a repo: the largest in the register
 #: offers 149 files and most of them are notes about other people's work.
+#: Applied per prefix, not across a channel's whole ``path_prefixes``, so one
+#: large directory cannot crowd out another; ``channel.max_items_per_poll``
+#: is what bounds the size of a poll overall.
 MAX_TREE_FILES = 120
 
 #: The tree response for a large repo is JSON listing every blob, so it needs
@@ -150,21 +153,42 @@ def parse_tree(body: str, truncated: bool = False) -> tuple[list[str], bool]:
 
 
 def select_paths(
-    paths: list[str], prefixes: tuple[str, ...], excludes: tuple[str, ...]
+    paths: list[str],
+    prefixes: tuple[str, ...],
+    excludes: tuple[str, ...],
+    channel_id: str = "",
 ) -> list[str]:
     """Paths under any prefix, minus anything matching an exclude fragment.
 
     Excludes are plain substrings rather than globs on purpose: what they have
     to express in the register is "anything under ``_internal/fetched/``", and
     a substring says that without inviting a pattern language into the file.
+
+    ``MAX_TREE_FILES`` is applied per prefix, in the order the channel
+    declares them, so a large early-alphabetical prefix cannot silently crowd
+    out a later one; ``paths`` is expected pre-sorted, which keeps each
+    prefix's matches in that same order. A prefix that gets capped is logged,
+    the same way a GitHub-truncated tree is.
     """
-    chosen = [
-        path
-        for path in paths
-        if any(path.startswith(prefix) for prefix in prefixes)
-        and not any(fragment in path for fragment in excludes)
-    ]
-    return chosen[:MAX_TREE_FILES]
+    chosen: list[str] = []
+    for prefix in prefixes:
+        matches = [
+            path
+            for path in paths
+            if path.startswith(prefix) and not any(fragment in path for fragment in excludes)
+        ]
+        if len(matches) > MAX_TREE_FILES:
+            logger.warning(
+                "channel %s: prefix %s has %d files, capped at %d",
+                channel_id,
+                prefix,
+                len(matches),
+                MAX_TREE_FILES,
+            )
+        for path in matches[:MAX_TREE_FILES]:
+            if path not in chosen:
+                chosen.append(path)
+    return chosen
 
 
 def _blocked(channel: ChannelConfig, url: str, reason: str) -> PollResult:
@@ -321,7 +345,7 @@ def poll_github_docs(
             accept=GITHUB_API_ACCEPT,
         )
         found, complete = parse_tree(page.body, page.truncated)
-        chosen = select_paths(found, channel.path_prefixes, channel.exclude_paths)
+        chosen = select_paths(found, channel.path_prefixes, channel.exclude_paths, channel.id)
         if not complete:
             # Recorded rather than swallowed: the candidate set is a subset of
             # the repo, and a later poll finding "nothing new" would otherwise
