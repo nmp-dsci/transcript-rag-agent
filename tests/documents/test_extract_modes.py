@@ -246,7 +246,9 @@ def test_a_document_opening_below_h1_still_gets_a_title() -> None:
 
 def test_a_level_one_heading_still_wins_over_a_later_one() -> None:
     document = extract_document(
-        page("### Subtitle\n\nIntro.\n\n# The Real Title\n\nBody.\n", url="https://raw.example/f.md"),
+        page(
+            "### Subtitle\n\nIntro.\n\n# The Real Title\n\nBody.\n", url="https://raw.example/f.md"
+        ),
         mode=ARTICLE_MODE,
     )
     assert document.title == "The Real Title"
