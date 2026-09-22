@@ -32,6 +32,12 @@ class Settings:
     # two are compared against each other, so neither may overwrite the other.
     contextual_chunk_collection: str = "transcript_chunks_contextual"
     transcript_summary_collection: str = "transcript_summaries"
+    # The second source type (s26). Two new collections beside the transcript
+    # ones, never inside them: transcript_chunks is what the committed eval
+    # snapshots were measured against, so articles landing there would move
+    # retrieval without moving any number the CI gate checks.
+    web_source_collection: str = "web_sources"
+    web_chunk_collection: str = "web_chunks"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     # Torch device for the embedding model. Defaults to CPU because
     # sentence-transformers' own auto-selection picks MPS on Apple Silicon,
@@ -130,6 +136,10 @@ class Settings:
     # Streaming voice-to-text (the composer mic). Optional: an empty key means
     # the feature is absent, not an error — /api/health reports stt=false and
     # the mic never renders. The relay keeps this key server-side.
+    # Which text sources the corpus watches. Committed, because adding a
+    # source is a decision worth reviewing in a diff; the ETags and cursors it
+    # accumulates live under .yt-agent/ and are not.
+    channels_file: Path | None = None
     deepgram_api_key: str = ""
     stt_enabled: bool = True
     stt_model: str = "nova-3"
@@ -282,6 +292,13 @@ def load_settings(require_keys: bool = True) -> Settings:
         ),
         transcript_summary_collection=os.environ.get(
             "YT_AGENT_TRANSCRIPT_SUMMARY_COLLECTION", "transcript_summaries"
+        ),
+        web_source_collection=os.environ.get("YT_AGENT_WEB_SOURCE_COLLECTION", "web_sources"),
+        web_chunk_collection=os.environ.get("YT_AGENT_WEB_CHUNK_COLLECTION", "web_chunks"),
+        channels_file=(
+            _resolve_project_path(configured)
+            if (configured := os.environ.get("YT_AGENT_CHANNELS_FILE", ""))
+            else None
         ),
         embedding_model=os.environ.get(
             "YT_AGENT_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"

@@ -1304,7 +1304,7 @@ export interface IngestionJob {
   /** `enrichment` jobs index nothing — they catch the knowledge graph up on
    * videos already in the corpus, through the same queue so they share its
    * workers, progress broadcasting and failure isolation. */
-  mode: "video" | "channel" | "enrichment";
+  mode: "video" | "channel" | "enrichment" | "channels";
   target: string;
   latest: number | null;
   status: "queued" | "running" | "done" | "error";
@@ -1319,6 +1319,112 @@ export interface IngestionJob {
   stage_total: number;
   /** Only set on `enrichment` jobs: the videos being caught up. */
   enrich_video_ids?: string[];
+  /** Only set on `channels` jobs: which watched text channels are polled.
+   * Empty means every enabled one. */
+  channel_ids?: string[];
+}
+
+/** One watched text source, from GET /api/channels.
+ *
+ * A channel is a source of URLs, not a YouTube channel: videos stay a manual
+ * paste through the ingest form above, so nothing here spends a transcript
+ * credit. */
+export interface WatchedChannel {
+  id: string;
+  kind: "rss" | "atom" | "sitemap" | "github_docs" | "url_list";
+  label: string;
+  url?: string | null;
+  enabled: boolean;
+  /** The feed carries the article itself, so the page is never fetched. */
+  body_in_feed?: boolean;
+  /** Documents from this channel currently in the corpus. */
+  sources: number;
+  last_polled_at: string | null;
+  next_due_at: string | null;
+  /** Adaptive: doubles on a poll that finds nothing, halves on one that does. */
+  interval_hours: number;
+  consecutive_failures: number;
+  /** Set once repeated failures have switched the channel off. */
+  disabled_reason: string | null;
+  last_error: string | null;
+  /** How many item ids this channel has already offered. */
+  seen: number;
+}
+
+export interface ChannelList {
+  channels: WatchedChannel[];
+  totals: { channels: number; enabled: number; sources: number };
+  /** Set when channels.yaml could not be read, so the panel can say why
+   * instead of rendering an empty register as if nothing were configured. */
+  error?: string;
+}
+
+/* ── The corpus's web half (GET /api/web/sources) ────────────────────────
+   Deliberately not folded into `Video`/`Chunk`. A web document has no
+   duration, no views and no timestamps, and its citation unit is a section
+   heading rather than `mm:ss` — the tree has to show both honestly. */
+
+/** One watched document: an article, a docs page, a pinned repo file. */
+export interface WebSourceSummary {
+  /** The store key, and what the chunks endpoint is addressed by. */
+  key: string;
+  external_id: string;
+  channel_id: string;
+  /** Null when the page offered no title; fall back to the URL. */
+  title: string | null;
+  /** Where a reader should be sent, which is not always where we fetched. */
+  url: string;
+  /** One of live, changed, moved, gone, blocked, truncated. */
+  state: string;
+  state_reason: string | null;
+  revision: number;
+  chunk_count: number;
+  word_count: number;
+  section_count: number;
+  /** The body hit the fetch byte cap, so this is part of a document. */
+  truncated: boolean;
+  /** This revision came from the feed body rather than a page fetch. */
+  from_feed: boolean;
+  /** False once a citation into this source can no longer be re-checked. */
+  verifiable: boolean;
+  published_at: string | null;
+  last_fetched_at: string;
+  last_changed_at: string;
+}
+
+/** The documents one channel has found, the tree's second level. */
+export interface WebChannelGroup {
+  channel_id: string;
+  label: string;
+  sources: WebSourceSummary[];
+  chunk_count: number;
+}
+
+export interface WebSourceList {
+  channels: WebChannelGroup[];
+  totals: { channels: number; sources: number; chunks: number };
+}
+
+/** A web chunk. The section heading is the citation unit, so it is never
+ * optional in the way a transcript's timestamp is: a chunk without one sits
+ * above the document's first heading. */
+export interface WebChunk {
+  chunk_index: number;
+  text: string;
+  heading: string | null;
+  section_index: number;
+  part_index: number;
+  /** URL fragment for the heading, so a citation deep-links into the page. */
+  anchor: string | null;
+  url: string;
+  citation: string;
+  revision: number;
+}
+
+export interface WebChunkList {
+  key: string;
+  chunks: WebChunk[];
+  total: number;
 }
 
 /** The stages of a core index, in order. Enrichment is deliberately not among

@@ -33,6 +33,21 @@ class FetchedPage(BaseModel):
     #: Every URL passed through, in order, starting with the requested one.
     redirect_chain: list[str] = Field(default_factory=list)
     fetched_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    #: Validators the server offered, carried back so the next fetch of this
+    #: URL can be conditional. A refresh that can ask "has this changed" for
+    #: the price of one 304 is the difference between a habit and a chore.
+    etag: str | None = None
+    last_modified: str | None = None
+
+    @property
+    def not_modified(self) -> bool:
+        """The server answered 304: the stored copy is still current.
+
+        Modelled as a successful fetch rather than an error because, for a
+        refresh, "nothing changed" is the most common and by far the cheapest
+        successful outcome.
+        """
+        return self.status_code == 304
 
 
 class DocumentSection(BaseModel):

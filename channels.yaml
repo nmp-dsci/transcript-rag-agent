@@ -1,0 +1,218 @@
+# channels.yaml — the text sources this corpus watches.
+#
+# Committed on purpose: *which* sources we follow is a decision worth reviewing
+# in a diff. Runtime state — ETags, cursors, due times, failure counts, the ids
+# already seen — lives in .yt-agent/channels/state.json, which is gitignored,
+# so a poll never dirties the tree and a cleared cache costs one extra poll
+# rather than a lost corpus.
+#
+# Text sources only. YouTube is deliberately absent: videos are added by hand
+# through the existing ingest form, so nothing here can spend a Supadata credit.
+#
+# Every claim in a comment below was measured against the live web on
+# 22 Sep 2026, not recalled. The working is in
+# .lavish/s26_new-channels-ingestion.html.
+
+version: 1
+
+defaults:
+  poll_interval_hours: 24     # doubles on each unchanged poll to a 7-day ceiling,
+                              # halves on each poll that finds something to a 6-hour floor
+  max_items_per_poll: 25      # one registered feed carries 1,215 archive items;
+                              # a first poll is not a backfill
+  min_words: 250              # below this the extract is a nav bar or a login wall,
+                              # and the ingest fails loudly instead of storing it
+  disable_after_failures: 5
+
+channels:
+
+  # ── enabled: the hand-curated seed set ────────────────────────────────────
+  # These make no discovery requests at all. url_list polls nothing, and
+  # github_docs resolves a pinned file list without a network call, so the
+  # corpus can be proved end to end before any feed is switched on.
+
+  - id: s53-articles
+    kind: url_list
+    label: s53 seed articles
+    topics: [evals, agents, rag]
+    # Only the s53 links that are *articles*. The rest of that bookmark set is
+    # index and landing pages — eugeneyan.com/writing/, huggingface.co/blog,
+    # anthropic.com/engineering — which are discovery surfaces, not documents:
+    # ingested as pages they store link text. They appear below as feed and
+    # sitemap channels instead, which is what they actually are.
+    urls:
+      # 17,133 words, 115 sections. The largest single document on the register.
+      - https://hamel.dev/blog/posts/evals-faq/
+      # 13,175 words, 32 sections, one of them 11,855 characters on its own.
+      - https://eugeneyan.com/writing/llm-patterns/
+      # 14,228 words, 66 sections.
+      - https://applied-llms.org/
+      - https://huggingface.co/learn/smol-course/
+      - https://huggingface.co/learn/agents-course/
+
+  # github_docs pulls raw.githubusercontent.com Markdown, never the rendered
+  # page: measured, the HTML page extracts to "Navigation Menu" and "Folders
+  # and files" before any content, while the raw Markdown extracts to properly
+  # headed sections. Paths are literal — resolving globs would cost a
+  # repository-tree API call and a rate limit per channel.
+  - id: twelve-factor-agents
+    kind: github_docs
+    url: https://github.com/humanlayer/12-factor-agents
+    label: 12-Factor Agents
+    paths: [README.md]
+    topics: [agents]
+
+  - id: agents-towards-production
+    kind: github_docs
+    url: https://github.com/NirDiamant/agents-towards-production
+    label: Agents Towards Production
+    paths: [README.md]
+    topics: [agents, production]
+
+  - id: awesome-evals
+    kind: github_docs
+    url: https://github.com/benchflow-ai/awesome-evals
+    label: Awesome Evals
+    paths: [README.md]
+    topics: [evals]
+
+  - id: llm-twin-course
+    kind: github_docs
+    url: https://github.com/decodingai-magazine/llm-twin-course
+    label: LLM Twin Course
+    paths: [README.md]
+    topics: [rag, production]
+
+  - id: ai-engineering-field-guide
+    kind: github_docs
+    url: https://github.com/alexeygrigorev/ai-engineering-field-guide
+    label: AI Engineering Field Guide
+    paths: [README.md]
+    topics: [careers]
+
+  - id: ai-engineer-portfolio-projects
+    kind: github_docs
+    url: https://github.com/landedjobs/ai-engineer-portfolio-projects
+    label: AI Engineer Portfolio Projects
+    paths: [README.md]
+    topics: [careers]
+
+  # ── built and tested, switched off ────────────────────────────────────────
+  # Every one of these was probed live. They stay `enabled: false` until the
+  # seed set above has proved chunk quality, citation shape and cross-source
+  # ranking; flipping one on is a one-word edit to this file.
+
+  - id: hamel-dev
+    kind: rss
+    url: https://hamel.dev/index.xml
+    label: Hamel Husain
+    enabled: false
+    # The feed carries the whole post: 27 KB per item, longest 175 KB.
+    # Twenty posts indexable with zero page fetches.
+    body_in_feed: true
+    topics: [evals, error-analysis]
+
+  - id: simonwillison
+    kind: atom
+    url: https://simonwillison.net/atom/everything/
+    label: Simon Willison
+    enabled: false
+    # Content sits in <summary type="html">; these are short link-posts, so
+    # the summary is the post.
+    body_in_feed: true
+
+  - id: latent-space
+    kind: rss
+    url: https://www.latent.space/feed
+    label: Latent Space
+    enabled: false
+    # 20 of 20 items carry the full body. This one *needs* the feed: its page
+    # is a JavaScript shell that extracts to 101 words.
+    body_in_feed: true
+
+  - id: interconnects
+    kind: rss
+    url: https://www.interconnects.ai/feed
+    label: Interconnects
+    enabled: false
+    body_in_feed: true          # same as above; the page yields 99 words
+
+  - id: sebastian-raschka
+    kind: rss
+    url: https://magazine.sebastianraschka.com/feed
+    label: Ahead of AI
+    enabled: false
+    body_in_feed: true          # same again; the page yields 97 words.
+    # This feed is 2.9 MB, which the default 2 MB fetch cap cut mid-CDATA and
+    # turned into a parse error. Feeds use FEED_MAX_BYTES (8 MB) for this
+    # exact reason.
+
+  - id: eugeneyan
+    kind: rss
+    url: https://eugeneyan.com/rss/
+    label: Eugene Yan
+    enabled: false
+    body_in_feed: false         # 164-character teaser; the page gets fetched
+    # 212 items in the feed, so max_items_per_poll is doing real work here.
+
+  - id: hf-blog
+    kind: rss
+    url: https://huggingface.co/blog/feed.xml
+    label: Hugging Face blog
+    enabled: false
+    body_in_feed: false         # 21-character teaser
+    # 863 items. Without a title filter this channel is a firehose.
+    include_title: '(?i)agent|eval|rag|fine-?tun|rlhf|distill'
+
+  - id: zenml-blog
+    kind: rss
+    url: https://www.zenml.io/blog/rss.xml
+    label: ZenML blog
+    enabled: false
+    body_in_feed: false         # 1,157-character teaser
+
+  - id: openai-news
+    kind: rss
+    url: https://openai.com/news/rss.xml
+    label: OpenAI news
+    enabled: false
+    body_in_feed: false
+    change_signal: content_hash
+    # 1,215 items, 742 KB, and *no* ETag or Last-Modified: every poll
+    # re-downloads the whole thing. Poll it rarely.
+    poll_interval_hours: 168
+
+  - id: anthropic-engineering
+    kind: sitemap
+    url: https://www.anthropic.com/sitemap.xml
+    label: Anthropic Engineering
+    enabled: false
+    change_signal: lastmod
+    # /engineering/rss.xml is a 404. The sitemap is not: 535 locs, every one
+    # carrying <lastmod>, 25 of them under /engineering/.
+    include: '^https://www\.anthropic\.com/engineering/.+'
+
+  - id: evidently-blog
+    kind: sitemap
+    url: https://www.evidentlyai.com/sitemap.xml
+    label: Evidently AI
+    enabled: false
+    change_signal: content_hash
+    # 192 locs, 102 of them under /blog/, and *zero* <lastmod> — nor an ETag on
+    # the sitemap. The content hash is the only change signal this one has,
+    # which is why the hash is the floor and the ETag the optimisation.
+    include: '^https://www\.evidentlyai\.com/blog/.+'
+
+  # ── excluded, with the reason recorded ────────────────────────────────────
+  # newsletter.pragmaticengineer.com is absent deliberately. Its robots.txt
+  # carries `Disallow: /` for eleven named AI crawlers, and under the
+  # conservative identity policy that rule is treated as covering this agent.
+  # That blanket disallow covers /feed as well as the article paths, so the
+  # source is excluded entirely rather than read through its feed.
+  #
+  # The following s53 links are absent because they extract to a JavaScript
+  # shell — measured word counts in brackets — and the word-count floor would
+  # fail them anyway:
+  #   huggingface.co/spaces/HuggingFaceTB/smol-training-playbook  [12]
+  #   www.zenml.io/llmops-database                                [61]
+  #   huggingface.co/new-blog                                     [28, a login page]

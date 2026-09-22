@@ -2,6 +2,7 @@
 
 import { readEvents } from "./sse";
 import type {
+  ChannelList,
   AgentStep,
   Answer,
   AskRequest,
@@ -38,6 +39,8 @@ import type {
   ThemeDetail,
   ThemeList,
   VideoChunkEnrichment,
+  WebChunkList,
+  WebSourceList,
 } from "./types";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -104,6 +107,20 @@ export const api = {
       (r) => r.conversations,
     ),
   corpus: () => getJson<Corpus>("/api/corpus"),
+
+  /** The watched text channels and what each has stored. */
+  channels: () => getJson<ChannelList>("/api/channels"),
+
+  /** Web documents grouped by the channel that found them. */
+  webSources: () => getJson<WebSourceList>("/api/web/sources"),
+
+  /** Every stored chunk of one web document, in reading order. */
+  webChunks: (key: string) =>
+    getJson<WebChunkList>(`/api/web/sources/${encodeURIComponent(key)}/chunks`),
+
+  /** Queue a poll of the watched channels. Empty polls every enabled one. */
+  pollChannels: (channelIds: string[] = []) =>
+    postJson<IngestionJob>("/api/channels/poll", { channel_ids: channelIds }),
   chunks: (videoId: string) =>
     getJson<ChunkList>(`/api/corpus/${encodeURIComponent(videoId)}/chunks`),
 

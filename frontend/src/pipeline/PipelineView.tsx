@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "../api/client";
-import type { Chunk, Corpus } from "../api/types";
+import type { Chunk, Corpus, WebChunk, WebSourceList } from "../api/types";
 import { ChunkGraphView } from "./ChunkGraphView";
 import { DisagreementsView } from "./DisagreementsView";
 import { CorpusSummary } from "./CorpusSummary";
@@ -12,6 +12,8 @@ import { RetrievalLab } from "./RetrievalLab";
 import { useDemo } from "../demo";
 import { ThemesView } from "./ThemesView";
 import { VideoDetail } from "./VideoDetail";
+import { WebSourceDetail } from "./WebSourceDetail";
+import { ChannelsPanel } from "./ChannelsPanel";
 import { type TreeFilter, applyFilter } from "./insights";
 import { PIPELINE_STYLES } from "./styles";
 
@@ -60,6 +62,13 @@ export function PipelineView({
   // show a loading row without a second piece of state.
   const [chunks, setChunks] = useState<Record<string, Chunk[]>>({});
   const [fetchedModel, setFetchedModel] = useState<string | null>(null);
+  // The corpus's web half. Fetched separately from /api/corpus rather than
+  // folded into it, because the two halves live in different collections and
+  // a web poll must not invalidate the video corpus (or the reverse).
+  const [web, setWeb] = useState<WebSourceList | null>(null);
+  const [webChunks, setWebChunks] = useState<Record<string, WebChunk[]>>({});
+  const [selectedWebSource, setSelectedWebSource] = useState<string | null>(null);
+  const [selectedWebChunk, setSelectedWebChunk] = useState<number | null>(null);
 
   useEffect(() => {
     if (embeddingModel !== undefined) return;
@@ -74,6 +83,57 @@ export function PipelineView({
       live = false;
     };
   }, [embeddingModel]);
+
+  const loadWeb = useCallback(async () => {
+    try {
+      setWeb(await api.webSources());
+    } catch {
+      setWeb({ channels: [], totals: { channels: 0, sources: 0, chunks: 0 } });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (demo) return;
+    void loadWeb();
+  }, [demo, loadWeb]);
+
+  /** A finished job can have changed either half, so refresh both.
+   *
+   * The cached chunk lists go with it: a re-poll that re-chunked a document
+   * leaves this instance holding the previous revision's text, and nothing
+   * else would ever invalidate it. */
+  const refreshCorpus = useCallback(() => {
+    onCorpusChange();
+    setWebChunks({});
+    void loadWeb();
+  }, [onCorpusChange, loadWeb]);
+
+  const loadWebChunks = useCallback(
+    async (key: string) => {
+      if (webChunks[key] !== undefined) return;
+      try {
+        const payload = await api.webChunks(key);
+        setWebChunks((current) => ({ ...current, [key]: payload.chunks }));
+      } catch {
+        setWebChunks((current) => ({ ...current, [key]: [] }));
+      }
+    },
+    [webChunks],
+  );
+
+  const selectWebSource = (key: string) => {
+    setSelectedWebSource(key);
+    setSelectedWebChunk(null);
+    setSelectedVideo(null);
+    void loadWebChunks(key);
+  };
+
+  const selectWebChunk = (key: string, chunkIndex: number) => {
+    setSelectedWebSource(key);
+    setSelectedWebChunk(chunkIndex);
+    setSelectedVideo(null);
+    void loadWebChunks(key);
+  };
 
   const loadChunks = useCallback(
     async (videoId: string) => {
@@ -91,12 +151,14 @@ export function PipelineView({
   const selectVideo = (videoId: string) => {
     setSelectedVideo(videoId);
     setSelectedChunk(null);
+    setSelectedWebSource(null);
     void loadChunks(videoId);
   };
 
   const selectChunk = (videoId: string, chunkIndex: number) => {
     setSelectedVideo(videoId);
     setSelectedChunk(chunkIndex);
+    setSelectedWebSource(null);
     void loadChunks(videoId);
   };
 
@@ -127,6 +189,14 @@ export function PipelineView({
   const videos = applyFilter(allVideos, filter);
   const video =
     allVideos.find((item) => item.video_id === selectedVideo) ?? null;
+  const webChannels = web?.channels ?? [];
+  const webSource =
+    webChannels
+      .flatMap((group) => group.sources)
+      .find((item) => item.key === selectedWebSource) ?? null;
+  // The corpus is only empty when *both* halves are. A poll that brought in
+  // web documents before any video was indexed still has something to show.
+  const corpusEmpty = allVideos.length === 0 && webChannels.length === 0;
 
   return (
     <section className="view" style={{ flexDirection: "column" }}>
@@ -153,7 +223,8 @@ export function PipelineView({
         </div>
       </CorpusSummary>
 
-      {!demo && <IndexPanel onIndexed={onCorpusChange} onViewVideo={viewIndexedVideo} />}
+      {!demo && <IndexPanel onIndexed={refreshCorpus} onViewVideo={viewIndexedVideo} />}
+      {!demo && <ChannelsPanel onPolled={refreshCorpus} />}
 
       <div className="pipe-pane" hidden={sub !== "corpus"}>
         {!demo && <RetrievalLab
@@ -172,7 +243,7 @@ export function PipelineView({
         />}
 
         <div className="libbody">
-          {allVideos.length === 0 ? (
+          {corpusEmpty ? (
             <div className="detail">
               <div className="empty">
                 <h2>The library is empty</h2>
@@ -182,7 +253,7 @@ export function PipelineView({
                 </p>
               </div>
             </div>
-          ) : videos.length === 0 ? (
+          ) : videos.length === 0 && filter !== null ? (
             <div className="detail">
               <div className="empty">
                 <h2>No videos match this filter</h2>
@@ -211,13 +282,28 @@ export function PipelineView({
                 chunks={chunks}
                 onSelectVideo={selectVideo}
                 onSelectChunk={selectChunk}
+                webChannels={webChannels}
+                selectedWebSource={selectedWebSource}
+                selectedWebChunk={selectedWebChunk}
+                webChunks={webChunks}
+                onSelectWebSource={selectWebSource}
+                onSelectWebChunk={selectWebChunk}
               />
-              <VideoDetail
-                video={video}
-                chunks={selectedVideo ? chunks[selectedVideo] : undefined}
-                selectedChunk={selectedChunk}
-                onAskAbout={demo ? undefined : onAskAbout}
-              />
+              {webSource ? (
+                <WebSourceDetail
+                  source={webSource}
+                  chunks={selectedWebSource ? webChunks[selectedWebSource] : undefined}
+                  selectedChunk={selectedWebChunk}
+                  onAskAbout={demo ? undefined : onAskAbout}
+                />
+              ) : (
+                <VideoDetail
+                  video={video}
+                  chunks={selectedVideo ? chunks[selectedVideo] : undefined}
+                  selectedChunk={selectedChunk}
+                  onAskAbout={demo ? undefined : onAskAbout}
+                />
+              )}
             </>
           )}
         </div>

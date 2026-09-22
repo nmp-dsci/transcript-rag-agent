@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New channels · a refresh-aware ingestion pipeline for non-YouTube sources</title>
+<script>
+  (function(){
+    var t; try{t=localStorage.getItem('theme')}catch(e){}
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    if(t!=='light'&&t!=='dark'){t=mq.matches?'dark':'light'}
+    document.documentElement.setAttribute('data-theme',t);
+    mq.addEventListener('change',function(e){
+      try{if(localStorage.getItem('theme'))return}catch(err){}
+      document.documentElement.setAttribute('data-theme',e.matches?'dark':'light');
+    });
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* nmp-dsci.github.io "Eval Report" design system — same tokens as s53/s54,
+   so the three pages read as one series. */
+:root{
+  color-scheme:light;
+  --bg:#F4F6F3; --panel:#FFFFFF; --ink:#14181C; --ink-soft:#3E4A44;
+  --muted:#5A655D; --faint:#77837A; --line:#DDE4DC; --line-2:#C9D2C9;
+  --signal:#17876B; --signal-soft:#E4F1EC; --amber:#B26A12;
+  --chip-bg:#E4F1EC; --chip-ink:#11674F; --hover:#FAFBF9;
+  --grid-line:rgba(16,22,19,.028); --hero-glow:rgba(23,135,107,.07);
+  --pre-bg:#14181C; --pre-ink:#E8ECE9;
+  --shadow:0 1px 2px rgba(16,22,19,.04),0 10px 26px -14px rgba(16,22,19,.16);
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --w:1080px;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101511; --panel:#171E19; --ink:#E8EDE9; --ink-soft:#C3CCC5;
+  --muted:#96A29A; --faint:#71807A; --line:#242E27; --line-2:#33413A;
+  --signal:#43C29A; --signal-soft:#173428; --amber:#D19243;
+  --chip-bg:#173428; --chip-ink:#7FDDBB; --hover:#1C2420;
+  --grid-line:rgba(232,237,233,.035); --hero-glow:rgba(67,194,154,.09);
+  --pre-bg:#0B0F0C; --pre-ink:#DEE5E0;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px -14px rgba(0,0,0,.55);
+}
+*,*::before,*::after{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:34px 34px;transition:background-color .2s,color .2s}
+a{color:var(--signal);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+h1,h2,h3{font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0}
+:where(p,h1,h2,h3,li,td,th,figcaption){overflow-wrap:anywhere}
+.wrap{max-width:var(--w);margin:0 auto;padding:0 22px}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin:0 0 12px}
+
+/* hero */
+.hero{border-bottom:1px solid var(--line);background:
+  radial-gradient(600px 300px at 85% -40%,var(--hero-glow),transparent)}
+.hero-inner{max-width:var(--w);margin:0 auto;padding:46px 22px 38px;position:relative}
+.hero h1{font-size:clamp(26px,4.2vw,42px);letter-spacing:-.026em;max-width:23ch;padding-bottom:.06em}
+.hero-sub{color:var(--muted);font-size:clamp(14px,1.8vw,16.5px);max-width:72ch;margin:14px 0 0}
+.theme-toggle{position:absolute;top:20px;right:22px;font-size:14px;line-height:1;
+  background:transparent;cursor:pointer;border:1px solid var(--line-2);border-radius:999px;
+  width:31px;height:31px;color:var(--ink-soft);display:inline-flex;align-items:center;
+  justify-content:center;padding:0}
+.theme-toggle:hover{border-color:var(--signal);color:var(--signal)}
+.metrics{display:grid;gap:12px;margin-top:26px;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,168px),1fr))}
+.met{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.met-n{display:block;font-family:var(--mono);font-weight:600;font-size:24px;
+  line-height:1.3;color:var(--signal);font-variant-numeric:tabular-nums}
+.met-l{display:block;font-size:12px;color:var(--faint);margin-top:2px;line-height:1.4}
+
+/* sections */
+.sec{margin:44px 0 0}
+.sec-title{display:flex;align-items:baseline;gap:12px;border-top:1px solid var(--line);
+  padding-top:22px;margin-bottom:8px;flex-wrap:wrap}
+.sec-title .sec-k{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--signal)}
+.sec-title h2{font-size:clamp(18px,2.4vw,23px)}
+.lede{color:var(--muted);font-size:14.5px;max-width:78ch;margin:0 0 18px}
+
+/* callouts */
+.tldr{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--signal);
+  border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);font-size:14.5px;color:var(--ink-soft)}
+.tldr.warn{border-left-color:var(--amber)}
+.tldr b{color:var(--ink)}
+.tldr p{margin:0 0 10px}
+.tldr p:last-child{margin:0}
+
+/* cards */
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr))}
+.cards.three{grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:16px 17px;box-shadow:var(--shadow);min-width:0;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.card h3{font-size:15px;margin-bottom:6px}
+.card p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.55}
+.card p+p{margin-top:8px}
+.card.pick{border-color:var(--signal)}
+.card.no{border-color:var(--line);opacity:.92}
+.verdict{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  display:block;margin-bottom:6px}
+.verdict.yes{color:var(--signal)}
+.verdict.nope{color:var(--amber)}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:10.5px;background:var(--chip-bg);
+  color:var(--chip-ink);border-radius:999px;padding:2px 9px;white-space:nowrap;
+  vertical-align:middle;letter-spacing:.02em}
+.tag.amb{background:transparent;color:var(--amber);border:1px solid var(--amber)}
+.tag.ghost{background:transparent;color:var(--faint);border:1px solid var(--line-2)}
+
+/* tables */
+.tw{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);overflow:auto;max-height:78vh}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{position:sticky;top:0;z-index:2;background:var(--panel);box-shadow:0 1px 0 var(--line-2);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);text-align:left;padding:11px 13px;font-weight:600;white-space:nowrap}
+td{padding:11px 13px;border-top:1px solid var(--line);vertical-align:top;color:var(--ink-soft);line-height:1.5}
+tbody tr:hover{background:var(--hover)}
+td b{color:var(--ink);font-weight:600}
+td .sm{display:block;font-size:12px;color:var(--faint);margin-top:3px}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font-family:var(--mono);font-size:12.2px;background:var(--chip-bg);color:var(--chip-ink);
+  border-radius:5px;padding:1px 5px}
+.ok{color:var(--signal);font-weight:600}
+.bad{color:var(--amber);font-weight:600}
+
+/* figure */
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px;box-shadow:var(--shadow)}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:12.5px;color:var(--faint);margin-top:12px;font-family:var(--mono)}
+
+/* code */
+.codeblock{margin:0 0 6px}
+.codehead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+.codehead .path{font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:500}
+.codehead .why{font-size:13px;color:var(--muted)}
+.codemount{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);overflow:auto;max-height:70vh;font-size:12.5px}
+.codemount pre{margin:0;padding:16px;background:var(--pre-bg);color:var(--pre-ink);
+  border-radius:12px;font-family:var(--mono);font-size:12.3px;line-height:1.55;
+  overflow:auto;white-space:pre}
+.codenote{font-size:12.5px;color:var(--faint);margin:8px 0 0}
+
+/* lists */
+ul.tight{margin:0;padding-left:20px;font-size:14px;color:var(--ink-soft)}
+ul.tight li{margin:0 0 7px;line-height:1.55}
+ul.tight li b{color:var(--ink)}
+
+/* ---- workbench UI mock: the product's own tokens, scoped ---- */
+.mock{--m-bg:#0d1017;--m-panel:#12151e;--m-panel2:#1b2130;--m-text:#e7ebf3;
+  --m-text2:#c7ccd9;--m-muted:#8a90a0;--m-dim:#6d7383;--m-line:#242a38;
+  --m-accent:#5b7cf0;--m-accent-dim:#171d33;--m-accent-border:#33437e;
+  --m-good:#3fb950;--m-warn:#d29922;--m-bad:#f85149;
+  background:var(--m-bg);color:var(--m-text);border:1px solid var(--line-2);
+  border-radius:12px;padding:16px;box-shadow:var(--shadow);overflow:auto;
+  font-family:var(--sans);font-size:13px}
+.mock-bar{display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--m-line);
+  padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
+.mock-tab{font-size:11.5px;color:var(--m-muted);padding:4px 9px;border-radius:7px;white-space:nowrap}
+.mock-tab.on{color:var(--m-text);background:var(--m-panel2)}
+.mock-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.mock-panel{background:var(--m-panel);border:1px solid var(--m-line);border-radius:10px;padding:12px 13px;min-width:0}
+.mock-h{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--m-dim);margin:0 0 9px}
+.mock-row{display:flex;gap:8px;align-items:center;justify-content:space-between;
+  padding:6px 0;border-top:1px solid var(--m-line);font-size:12px;color:var(--m-text2)}
+.mock-row:first-of-type{border-top:0}
+.mock-row .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock-chip{font-family:var(--mono);font-size:9.5px;padding:1.5px 6px;border-radius:999px;
+  border:1px solid var(--m-line);color:var(--m-muted);white-space:nowrap;flex:0 0 auto}
+.mock-chip.rss{color:#7FDDBB;border-color:#1f5937}
+.mock-chip.site{color:var(--m-accent);border-color:var(--m-accent-border)}
+.mock-chip.yt{color:var(--m-warn);border-color:#5c451a}
+.mock-chip.gone{color:var(--m-bad);border-color:#6b2a2c}
+.mock-seg{display:inline-flex;border:1px solid var(--m-line);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.mock-seg span{font-size:11.5px;padding:5px 11px;color:var(--m-muted);white-space:nowrap}
+.mock-seg span.on{background:var(--m-accent-dim);color:var(--m-text);
+  box-shadow:inset 0 0 0 1px var(--m-accent-border)}
+.mock-input{background:#0a0d13;border:1px solid var(--m-line);border-radius:8px;
+  padding:8px 10px;font-family:var(--mono);font-size:11.5px;color:var(--m-text2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock-btn{display:inline-block;margin-top:10px;background:var(--m-accent);color:#fff;
+  font-size:11.5px;font-weight:600;border-radius:8px;padding:7px 14px}
+.mock-note{font-size:11px;color:var(--m-dim);margin:9px 0 0;line-height:1.5}
+.mock-stat{font-family:var(--mono);font-size:19px;color:var(--m-text);font-variant-numeric:tabular-nums}
+.mock-cite{border-left:2px solid var(--m-accent-border);padding:2px 0 2px 10px;margin-top:8px;
+  font-size:11.5px;color:var(--m-text2);line-height:1.55}
+.mock-cite .src{font-family:var(--mono);font-size:10px;color:var(--m-accent)}
+
+/* forms */
+form.q{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:17px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+form.q h3{font-size:14.5px;margin-bottom:4px}
+form.q .hint{font-size:12.5px;color:var(--faint);margin:0 0 11px}
+form.q label{display:flex;gap:10px;align-items:flex-start;padding:7px 9px;border-radius:8px;
+  font-size:13.8px;color:var(--ink-soft);cursor:pointer;line-height:1.5}
+form.q label:hover{background:var(--hover)}
+form.q input{accent-color:var(--signal);margin-top:4px;flex:0 0 auto}
+form.q input:checked+span{color:var(--ink);font-weight:500}
+form.q span.picked{color:var(--ink)}
+form.q label:has(span.picked){background:var(--signal-soft);box-shadow:inset 2px 0 0 var(--signal)}
+form.q label .idc{font-family:var(--mono);font-size:11px;color:var(--faint);margin-right:6px}
+.btn-solid{background:var(--ink);color:var(--bg);font-weight:600;font-size:13.5px;
+  border:0;border-radius:10px;padding:10px 18px;display:inline-block;cursor:pointer;
+  font-family:var(--sans);margin-top:10px}
+.btn-solid:hover{opacity:.88}
+footer{margin:56px 0 46px;border-top:1px solid var(--line);padding-top:18px;
+  font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <button class="theme-toggle" id="tt" aria-label="Toggle theme">◐</button>
+    <p class="kicker">s26 · ingestion pipeline · <b>built</b> · 22 Sep 2026 · branch <code>new-channels</code></p>
+    <h1>New channels, and the refresh problem underneath them</h1>
+    <p class="hero-sub">The corpus watches 132 YouTube channels and nothing else. You want the same pipeline
+      pointed at free text sources — the practitioner blogs and repos from s53 — and you named the hard part
+      yourself: <b>the URLs need refreshing</b>. That turns out to be two different problems needing two
+      different mechanisms. Every number below was probed against the live web today, including four things
+      that do not work. <b>The four decisions at the bottom are answered and the pipeline is built:</b> the
+      seed set is indexed, the four transcript collections are byte-identical, and a forced re-visit of all
+      eleven sources re-embeds nothing.</p>
+    <div class="metrics">
+      <div class="met"><span class="met-n">132</span><span class="met-l">channels today, all YouTube</span></div>
+      <div class="met"><span class="met-n">12 / 14</span><span class="met-l">candidate free feeds live</span></div>
+      <div class="met"><span class="met-n">11</span><span class="met-l">answer <code>304</code> to a conditional GET</span></div>
+      <div class="met"><span class="met-n">94</span><span class="met-l">chunks from <i>one</i> article (mean video: 24)</span></div>
+      <div class="met"><span class="met-n">679</span><span class="met-l">web chunks indexed, from 11 sources</span></div>
+      <div class="met"><span class="met-n">0</span><span class="met-l">new API keys on any path</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ 00 DECISION ============ -->
+<section class="sec" id="decision">
+  <div class="sec-title"><span class="sec-k">00</span><h2>The decision, stated once</h2></div>
+  <div class="tldr">
+    <p><b>A channel stops meaning "a YouTube channel" and starts meaning <i>a watched source of URLs</i>.</b>
+      That is the whole generalisation. A channel is asked "what is here now", answers with candidate URLs, and
+      remembers just enough to make the next ask cheap. Four poller kinds cover every free text source in
+      s53 — <code>rss</code>, <code>atom</code>, <code>sitemap</code>, <code>github_docs</code> — plus
+      <code>url_list</code> for hand-curated one-offs, which polls nothing by design.</p>
+    <p><b>"URLs need refreshing" is two problems, not one.</b> <b>(A) Discovery refresh</b> — new things appear
+      at a source you are already watching. <b>(B) Content refresh</b> — a URL you already stored has moved,
+      died, or quietly changed underneath you. A is a feed poll with a conditional GET; B is a state machine
+      over stored sources. Building only A gives you a corpus that silently rots; building only B gives you a
+      corpus that never grows. Section 05 does both.</p>
+    <p><b>Half of this pipeline already exists.</b> <code>src/documents/fetch.py</code> and
+      <code>extract.py</code> already fetch an arbitrary URL under five safety bounds and cut it into
+      heading-delimited sections. What is missing is in front of them (nothing in <code>src/</code> parses a
+      feed or a sitemap — zero lines) and behind them (an extracted document is never chunked or embedded).
+      This plan is a front end and a back end around a middle that works.</p>
+    <p><b>Yes, it goes into Chroma — in its own collection, not the transcript one.</b> The store you have
+      today is the store this uses: <code>.yt-agent/chroma</code>, 383 MB, five collections. Web sources get
+      two new ones, <code>web_sources</code> and <code>web_chunks</code>, and every existing collection is
+      left byte-identical. That is what keeps the committed eval snapshots honest, and it is what makes s54's
+      Postgres move a later backend swap rather than a prerequisite. Section 02 has the table.</p>
+    <p><b>YouTube stays manual, and nothing here touches it.</b> Your call, and it simplifies the plan:
+      there is no <code>youtube_channel</code> poller, no automatic transcript fetching, and no new way to
+      spend a Supadata credit. Videos keep arriving exactly as they do today — you paste a video or a channel
+      into the ingest form and the existing queue handles it. This pipeline only ever adds <i>text</i>
+      sources, and it needs no API key of any kind to do it.</p>
+  </div>
+</section>
+
+<!-- ============ 01 SERIES ============ -->
+<section class="sec" id="series">
+  <div class="sec-title"><span class="sec-k">01</span><h2>Where this sits next to s53 and s54</h2>
+    <span class="tag ghost">read those first</span></div>
+  <p class="lede">Three pages, three layers, one job. The important line below is the last one: this plan's
+    first three slices depend on none of s54's storage decisions, so capture can start before the store
+    question is settled.</p>
+  <div class="cards three">
+    <div class="card"><h3>s53 · which sources</h3>
+      <p>Named the people and banks worth reading, and why video is a bad medium for eval tables and failure
+        taxonomies. Output: a seed set of links and an intake loop.</p>
+      <p><b>This page takes from it:</b> the source list, turned into feed URLs and probed.</p></div>
+    <div class="card"><h3>s54 · where it lands</h3>
+      <p>Decided articles enter as a declared <code>source_type</code> rather than pseudo-videos, in a
+        three-level <code>source → chunk → embedding</code> schema on the central Postgres.</p>
+      <p><b>This page takes from it:</b> the discriminator, and the rule that an article must never borrow a
+        <code>video_id</code>.</p></div>
+    <div class="card pick"><h3>s26 · how it gets there, and stays true</h3>
+      <p>The capture layer: watching sources, noticing change, and re-fetching without re-embedding the world.
+        s54 left this as "step 5, ingest the seed links". It is the half with the moving parts.</p>
+      <p><b>Decoupled on purpose:</b> V0–V2 produce candidates and documents and touch no store at all.</p></div>
+  </div>
+  <div class="tldr" style="margin-top:14px">
+    <p><b>Resolved, and built that way.</b> s54's corpus schema still does not exist, so V3 landed on
+      <b>two new Chroma collections</b> — <code>web_sources</code> and <code>web_chunks</code> — written
+      through a facade, exactly as decision 2 chose. The four transcript collections are byte-identical
+      afterwards (339 / 8,026 / 546 / 337, re-counted), so s54's Postgres move stays a later backend swap
+      rather than a prerequisite. The one door that does not reopen — writing web chunks into
+      <code>transcript_chunks</code> — was never opened.</p>
+  </div>
+</section>
+
+<!-- ============ 02 SHAPE ============ -->
+<section class="sec" id="shape">
+  <div class="sec-title"><span class="sec-k">02</span><h2>The pipeline, and where the two refreshes attach</h2></div>
+  <p class="lede">Left to right is one pass over one source. The two dashed arcs are the only loops, and they
+    are the whole subject of this plan: the amber one asks whether anything new appeared, the green one asks
+    whether what you already stored is still true. Everything from <code>fetch</code> rightwards is code that
+    runs today.</p>
+  <figure>
+    <svg viewBox="0 0 980 300" role="img" aria-labelledby="pipe-title pipe-desc">
+      <title id="pipe-title">Ingestion pipeline from watched channels to corpus, with two refresh loops</title>
+      <desc id="pipe-desc">A committed channel list is polled by one of five pollers, producing candidate
+        URLs, which are fetched and extracted, then chunked and embedded into the corpus. A discovery refresh
+        loop returns from the poller to the channel state; a content refresh loop returns from the corpus to
+        the fetch stage.</desc>
+      <defs>
+        <marker id="p-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--line-2)"/>
+        </marker>
+        <marker id="p-ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--signal)"/>
+        </marker>
+        <marker id="p-aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/>
+        </marker>
+      </defs>
+      <g font-family="IBM Plex Mono, monospace" font-size="11.5">
+        <text x="14" y="14" fill="var(--faint)" font-size="10.5" letter-spacing="1.4">ONE PASS OVER ONE SOURCE</text>
+
+        <!-- boxes -->
+        <g id="p-channels"><title>channels.yaml — the committed list of sources we watch</title>
+          <rect x="14" y="92" width="130" height="62" rx="9" fill="var(--panel)" stroke="var(--signal)" stroke-width="1.5"/>
+          <text x="27" y="118" fill="var(--ink)">channels.yaml</text>
+          <text x="27" y="136" fill="var(--faint)" font-size="10.5">what we watch</text></g>
+        <g id="p-poll"><title>Poller: rss, atom, sitemap, github_docs (plus url_list, which polls nothing)</title>
+          <rect x="172" y="92" width="130" height="62" rx="9" fill="var(--panel)" stroke="var(--amber)" stroke-width="1.5"/>
+          <text x="185" y="118" fill="var(--ink)">poll</text>
+          <text x="185" y="136" fill="var(--faint)" font-size="10.5">4 kinds</text></g>
+        <g id="p-cand"><title>Candidates: a URL plus the identity the channel gave it</title>
+          <rect x="330" y="92" width="130" height="62" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="343" y="118" fill="var(--ink)">candidates</text>
+          <text x="343" y="136" fill="var(--faint)" font-size="10.5">url + external_id</text></g>
+        <g id="p-fetch"><title>src/documents/fetch.py and extract.py — built today, five safety bounds</title>
+          <rect x="488" y="92" width="130" height="62" rx="9" fill="var(--signal-soft)" stroke="var(--signal)"/>
+          <text x="501" y="118" fill="var(--ink)">fetch + extract</text>
+          <text x="501" y="136" fill="var(--signal)" font-size="10.5">built today</text></g>
+        <g id="p-chunk"><title>Chunk and embed — one new branch for web sections</title>
+          <rect x="646" y="92" width="130" height="62" rx="9" fill="var(--signal-soft)" stroke="var(--signal)"/>
+          <text x="659" y="118" fill="var(--ink)">chunk + embed</text>
+          <text x="659" y="136" fill="var(--signal)" font-size="10.5">one new branch</text></g>
+        <g id="p-corpus"><title>The corpus: Chroma today. transcript_chunks is untouched; web_chunks is a new collection. Postgres later, per s54.</title>
+          <rect x="804" y="92" width="130" height="62" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="817" y="118" fill="var(--ink)">corpus</text>
+          <text x="817" y="136" fill="var(--faint)" font-size="10.5">chroma today</text></g>
+
+        <!-- flow arrows -->
+        <path id="p-e1" d="M144,123 H168" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#p-ah)"><title>read the watched list</title></path>
+        <path id="p-e2" d="M302,123 H326" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#p-ah)"><title>emit candidates</title></path>
+        <path id="p-e3" d="M460,123 H484" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#p-ah)"><title>fetch each new or changed URL</title></path>
+        <path id="p-e4" d="M618,123 H642" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#p-ah)"><title>sections become chunks</title></path>
+        <path id="p-e5" d="M776,123 H800" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#p-ah)"><title>upsert into the corpus</title></path>
+
+        <!-- ownership brackets -->
+        <path d="M14,168 V178 H460 V168" fill="none" stroke="var(--amber)" stroke-width="1.2" opacity=".75"/>
+        <text x="130" y="194" fill="var(--amber)" font-size="10.5">NEW · src/channels/ · zero lines exist today</text>
+        <path d="M488,168 V178 H934 V168" fill="none" stroke="var(--signal)" stroke-width="1.2" opacity=".75"/>
+        <text x="596" y="194" fill="var(--signal)" font-size="10.5">EXISTS · src/documents + src/rag</text>
+
+        <!-- loop A: discovery refresh -->
+        <path id="p-loopA" d="M237,92 C237,44 96,44 79,88" fill="none" stroke="var(--amber)" stroke-width="1.5"
+              stroke-dasharray="5 4" marker-end="url(#p-aha)"><title>Loop A: the poll writes back an ETag, a cursor and the next due time</title></path>
+        <text x="122" y="38" fill="var(--amber)" font-size="11">A · discovery refresh — did anything new appear?</text>
+
+        <!-- loop B: content refresh -->
+        <path id="p-loopB" d="M869,154 C869,242 700,242 553,242 C553,242 553,200 553,158" fill="none"
+              stroke="var(--signal)" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#p-ahg)"><title>Loop B: stored sources come due and are re-visited</title></path>
+        <text x="548" y="262" fill="var(--signal)" font-size="11">B · content refresh — is what I stored still what is there?</text>
+        <text x="14" y="288" fill="var(--faint)" font-size="10.5">no API key on any arrow · text sources only · YouTube ingestion stays manual and untouched</text>
+      </g>
+    </svg>
+    <figcaption>Both loops are cheap when nothing changed: loop A costs one 304, loop B costs one conditional GET and zero embeddings.</figcaption>
+  </figure>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Which store, concretely</h3>
+  <p class="lede">Counted in <code>.yt-agent/chroma</code> today. Two collections are added and none is
+    altered — the whole point of the separation, because <code>transcript_chunks</code> is the collection the
+    committed eval snapshots in <code>evals/runs/</code> were measured against.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="min-width:210px">Chroma collection</th><th style="min-width:86px">Today</th>
+        <th style="min-width:118px">After this work</th><th style="min-width:250px">What it holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>raw_transcripts</code></td><td class="num">339</td>
+          <td class="num"><span class="ok">339, unchanged</span></td>
+          <td>One row per YouTube video: segments, metadata, summary state.</td></tr>
+        <tr><td><code>transcript_chunks</code></td><td class="num">8,026</td>
+          <td class="num"><span class="ok">8,026, unchanged</span></td>
+          <td>The retrieval corpus. <b>Not written to by any of this.</b> 12.3 MB of that 383 MB is the
+            vectors themselves, at 384 dims.</td></tr>
+        <tr><td><code>transcript_summaries</code></td><td class="num">337</td>
+          <td class="num"><span class="ok">337, unchanged</span></td>
+          <td>Routing summaries and their embeddings.</td></tr>
+        <tr><td><code>transcript_chunks_contextual</code></td><td class="num">546</td>
+          <td class="num"><span class="ok">546, unchanged</span></td>
+          <td>The parallel contextual-retrieval index, kept for its ablation comparison.</td></tr>
+        <tr><td><code>web_sources</code> <span class="tag amb">new</span></td><td class="num">—</td>
+          <td class="num">~28 from the seed set</td>
+          <td>One row per URL: extracted sections, the feed <code>guid</code> as identity, the URL history, and
+            the refresh state from section 05. The analogue of <code>raw_transcripts</code>.</td></tr>
+        <tr><td><code>web_chunks</code> <span class="tag amb">new</span></td><td class="num">—</td>
+          <td class="num">~1,400 from the seed set</td>
+          <td>Section-anchored article chunks. Queried <i>alongside</i> <code>transcript_chunks</code> by a
+            union at query time, so cross-source retrieval is a read-side choice rather than a mixed index.
+            Estimated from the probe: 49.5 chunks per article mean, so about <b>2.2 MB of new vectors</b>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tldr" style="margin-top:14px">
+    <p><b>Two deliberate omissions.</b> There is no <code>web_summaries</code> collection at first — routing
+      summaries cost an LLM call per source and earn their keep only once there are enough web sources to
+      route between, so that waits. And nothing is written to <code>.yt-agent/documents</code>, the 64 KB JSON
+      store the chat's paste-a-link review uses: that stays a one-shot scratch space for a single reviewed
+      page, which is what it was built to be.</p>
+    <p><b>And one consequence worth saying out loud.</b> Because Chroma keeps one embedding space per
+      collection and the union happens above it, similarity scores from the two collections are not strictly
+      comparable — the risk section 10 names. Fusing them properly is the job reciprocal-rank fusion already
+      does in <code>src/rag/fusion.py</code> for the hybrid retriever, which is the machinery to reuse rather
+      than a new problem.</p>
+  </div>
+</section>
+
+<!-- ============ 03 WHAT EXISTS ============ -->
+<section class="sec" id="exists">
+  <div class="sec-title"><span class="sec-k">03</span><h2>What exists, what is missing, and what is in the way</h2>
+    <span class="tag ghost">verified in the tree today</span></div>
+  <p class="lede">Every row was checked in the working tree or run against the live web this session. The last
+    two rows are the ones that will bite: they are not gaps, they are existing code that does the wrong thing
+    for this use and will look like it is working.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="min-width:200px">Capability</th><th style="min-width:96px">State</th>
+        <th style="min-width:200px">Where</th><th style="min-width:250px">What it means here</th></tr></thead>
+      <tbody>
+        <tr><td><b>Parse a feed or a sitemap</b></td><td><span class="tag amb">missing</span></td>
+          <td>nowhere — <code>grep -ri 'rss\|sitemap\|feedparser' src</code> returns nothing</td>
+          <td>All of loop A is new code. Good news: RSS, Atom and sitemaps are all XML, and stdlib
+            <code>xml.etree</code> parses them, so this adds no dependency to a project that keeps few.</td></tr>
+        <tr><td><b>Fetch an arbitrary URL safely</b></td><td><span class="tag">built</span></td>
+          <td><code>src/documents/fetch.py</code></td>
+          <td>Scheme, address (re-resolved on every redirect hop), redirect count, byte cap and content type.
+            The SSRF-hard part is done, and the 2 MB cap was never hit — the largest page probed was 377 KB.</td></tr>
+        <tr><td><b>Cut a page into headed sections</b></td><td><span class="tag">built</span></td>
+          <td><code>src/documents/extract.py</code>, <code>DocumentSection.label</code></td>
+          <td>Articles get from a heading what videos get from a timestamp: a citation unit smaller than the
+            document. Measured on four real posts in section 06.</td></tr>
+        <tr><td><b>Chunk, embed, upsert, query</b></td><td><span class="tag">built</span></td>
+          <td><code>src/rag/chunking.py</code>, <code>storage.py:163</code></td>
+          <td><code>TranscriptChunkStore</code> is the seam, and <code>build_chunks</code> walks a list of text
+            segments — a <code>DocumentSection</code> fits that shape with timings left null.</td></tr>
+        <tr><td><b>A queue with live progress</b></td><td><span class="tag">built</span></td>
+          <td><code>src/api/ingestion_queue.py</code>, 3 workers</td>
+          <td>Already broadcasts stage-by-stage progress over SSE for <code>video</code> and
+            <code>channel</code> jobs. A <code>feed</code> mode is a third value, not a new subsystem.</td></tr>
+        <tr><td><b>Index an extracted document</b></td><td><span class="tag amb">missing</span></td>
+          <td><code>src/documents/store.py</code> writes JSON to <code>.yt-agent/documents</code></td>
+          <td>A fetched page is kept for one-shot chat review and never chunked. This is the one-module gap
+            s54 named, and it is still the gap.</td></tr>
+        <tr><td><b>The fetcher refuses feeds</b></td><td><span class="tag amb">in the way</span></td>
+          <td><code>fetch.py:219</code>, <code>ALLOWED_CONTENT_TYPES</code></td>
+          <td>Probed: <code>hamel.dev/index.xml</code> raises <code>UnsafeUrlError: … is application/xml, which
+            cannot be reviewed</code>. Every feed on the register is <code>application/xml</code>,
+            <code>application/rss+xml</code>, <code>application/atom+xml</code> or <code>text/xml</code>. Needs
+            a per-call allow-list, <b>not</b> a widened global one — see section 07.</td></tr>
+        <tr><td><b>The document id is a hash of the URL</b></td><td><span class="tag amb">in the way</span></td>
+          <td><code>extract.py:181</code>, <code>document_id_for()</code></td>
+          <td><code>"doc:" + sha256(url)[:16]</code>. A post that moves gets a <i>new id</i> and is re-indexed
+            as a second document, with the old one left behind as a duplicate nobody notices. Identity has to
+            come from the feed's <code>guid</code>, not from the URL. This is loop B's central requirement.</td></tr>
+        <tr><td><b>Chunk identity is video identity</b></td><td><span class="tag amb">in the way</span></td>
+          <td><code>models.py</code>: <code>chunk_id = f"chunk:{video_id}:{index}"</code>;
+            <code>replace_chunks(video_id, …)</code></td>
+          <td>1,654 <code>video_id</code> references across 142 files. An article cannot be stored without
+            either lying about being a video (s54 rejected this) or a discriminator (s54 chose this).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 04 REGISTER ============ -->
+<section class="sec" id="register">
+  <div class="sec-title"><span class="sec-k">04</span><h2>The free-source register, probed today</h2>
+    <span class="tag">evidence, not a wishlist</span></div>
+  <p class="lede">Fourteen text candidates from s53, each hit once for real this session: is there a feed,
+    does it answer a conditional GET, and does the feed carry the article or only a teaser. That last column
+    is the surprise — on <b>five</b> of these the feed is a better source than the page, and on three of those
+    it is the only usable one. YouTube is absent on purpose: it stays a manual paste, so it is not a channel
+    this pipeline watches.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="min-width:52px">ID</th><th style="min-width:150px">Channel</th>
+        <th style="min-width:86px">Kind</th><th style="min-width:118px">Probe</th>
+        <th style="min-width:130px">Refresh signal</th><th style="min-width:200px">Body in the feed?</th></tr></thead>
+      <tbody>
+        <tr><td class="num">C-01</td><td><b>hamel.dev</b><span class="sm">Hamel Husain — evals, error analysis</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 20 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag + Last-Modified</td>
+          <td><b class="ok">Full article.</b> 27 KB per item, longest 175 KB. Twenty posts indexable with
+            <b>zero</b> page fetches.</td></tr>
+        <tr><td class="num">C-02</td><td><b>simonwillison.net</b><span class="sm">everything feed</span></td>
+          <td><code>atom</code></td><td class="num"><span class="ok">200</span> · 30 items<span class="sm">304 on re-GET</span></td>
+          <td>Last-Modified + per-entry <code>&lt;updated&gt;</code></td>
+          <td><b class="ok">Full.</b> Content sits in <code>&lt;summary type="html"&gt;</code> — these are
+            short link-posts, so the summary <i>is</i> the post.</td></tr>
+        <tr><td class="num">C-03</td><td><b>eugeneyan.com</b><span class="sm">Amazon applied science</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 212 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag + Last-Modified</td>
+          <td>Teaser only — longest description 164 chars. Fetch the page. 212 items on first poll is a
+            backfill, so cap it.</td></tr>
+        <tr><td class="num">C-04</td><td><b>huggingface.co/blog</b><span class="sm">community + official</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 863 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td>Teaser only — 21 chars. Fetch the page. 863 items: this one needs a topic filter, not a
+            firehose.</td></tr>
+        <tr><td class="num">C-05</td><td><b>anthropic.com/engineering</b><span class="sm">25 engineering posts</span></td>
+          <td><code>sitemap</code></td><td class="num"><span class="bad">404</span> on <code>rss.xml</code><span class="sm">sitemap: 200, 535 locs</span></td>
+          <td><code>&lt;lastmod&gt;</code> on <b>535 of 535</b> locs</td>
+          <td>n/a — fetch the page. No feed exists, but the sitemap names all 25
+            <code>/engineering/</code> pages and dates every one.</td></tr>
+        <tr><td class="num">C-06</td><td><b>openai.com/news</b></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 1,215 items<span class="sm">no ETag, no LM</span></td>
+          <td>guid diff only</td>
+          <td>Teaser (695 chars). No conditional GET: every poll re-downloads 742 KB. Poll it rarely.</td></tr>
+        <tr><td class="num">C-07</td><td><b>zenml.io/blog</b><span class="sm">LLMOps case studies</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 323 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td><td>Teaser (1,157 chars). Fetch the page.</td></tr>
+        <tr><td class="num">C-08</td><td><b>Substack, any</b><span class="sm">probed: pragmaticengineer</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 20 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td><b class="ok">Full, via <code>content:encoded</code></b> on all 20. And it matters: the
+            <i>page</i> extracted to 1,551 words of mostly chrome. <b>The feed is the better source.</b></td></tr>
+        <tr><td class="num">C-09</td><td><b>GitHub repo docs</b><span class="sm">probed: 12-factor-agents</span></td>
+          <td><code>github_docs</code></td><td class="num"><span class="ok">200</span> · 10 releases<span class="sm">304 on re-GET</span></td>
+          <td><code>releases.atom</code> ETag</td>
+          <td>n/a — pull <code>raw.githubusercontent.com</code> Markdown, never the HTML page. See
+            section 06 for why both halves of that sentence matter.</td></tr>
+        <tr><td class="num">C-10</td><td><b>arxiv cs.CL</b></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 138 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td>Abstracts only. Included for completeness and <b>recommended against</b>: s53's whole finding was
+            that paper-explainer content is what you already have too much of.</td></tr>
+        <tr><td class="num">C-11</td><td><b>latent.space</b><span class="sm">swyx — Latent Space</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 20 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td><b class="ok">Full, all 20.</b> And the feed is the <i>only</i> way in: the page is a
+            JavaScript shell that extracts to <b>101 words</b>. 1.4 MB per fetch.</td></tr>
+        <tr><td class="num">C-12</td><td><b>interconnects.ai</b><span class="sm">Nathan Lambert</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 20 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td><b class="ok">Full, all 20.</b> Page: <b>99 words</b>. Same shape as C-11.</td></tr>
+        <tr><td class="num">C-13</td><td><b>magazine.sebastianraschka.com</b><span class="sm">Ahead of AI</span></td>
+          <td><code>rss</code></td><td class="num"><span class="ok">200</span> · 20 items<span class="sm">304 on re-GET</span></td>
+          <td>ETag</td>
+          <td><b class="ok">Full, all 20.</b> Page: <b>97 words</b>. <b>2.9 MB</b>, which is the feed that
+            broke the byte cap — see section 09, V1.</td></tr>
+        <tr><td class="num">C-14</td><td><b>evidentlyai.com/blog</b><span class="sm">~800 ML/LLM writeups</span></td>
+          <td><code>sitemap</code></td><td class="num"><span class="bad">404</span> on two feed paths<span class="sm">sitemap: 200, 192 locs</span></td>
+          <td><b class="bad">none</b> — 0 of 192 locs carry <code>lastmod</code></td>
+          <td>n/a. 102 blog URLs are discoverable, but with no date and no ETag the only change signal left is
+            the content hash. This is the row that proves loop B has to exist.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tldr" style="margin-top:16px">
+    <p><b>The rule the probe produced.</b> A connector must declare whether the feed carries the body, because
+      five sources are cheaper and <i>more faithful</i> read from the feed than from the page — three of them
+      only usable that way — while four are unusable from the feed alone. The test is mechanical: if an item body exceeds ~2,000 characters it is the
+      article; below that it is a teaser and the page gets fetched. Nothing about that needs a per-site rule.</p>
+    <p><b>And the rule it did not produce.</b> Three of twelve have no usable change signal at all
+      (C-06 and C-14). Any design that assumes ETags leaves part of the register unrefreshable, which is why
+      the content hash in section 05 is the floor rather than the optimisation.</p>
+  </div>
+</section>
+
+<!-- ============ 05 REFRESH ============ -->
+<section class="sec" id="refresh">
+  <div class="sec-title"><span class="sec-k">05</span><h2>The two refreshes, each with its own mechanism</h2>
+    <span class="tag">the core of the ask</span></div>
+  <p class="lede">You asked for a plan "where urls may need refreshing". Here is the split, stated as two
+    tables and a state machine, because conflating them is the mistake that makes a corpus quietly wrong.</p>
+
+  <h3 style="font-size:15px;margin:0 0 10px">A · Discovery refresh — <span style="font-weight:400;color:var(--muted)">did anything new appear?</span></h3>
+  <div class="tw" style="margin-bottom:22px">
+    <table>
+      <thead><tr><th style="min-width:130px">Kind</th><th style="min-width:180px">How "new" is detected</th>
+        <th style="min-width:180px">Cost of a poll that finds nothing</th><th style="min-width:200px">Failure mode it has</th></tr></thead>
+      <tbody>
+        <tr><td><code>rss</code> / <code>atom</code></td>
+          <td>Conditional GET with the stored <code>If-None-Match</code> / <code>If-Modified-Since</code>, then
+            new <code>guid</code>s.</td>
+          <td><b>One 304, no body.</b> Verified on 8 of 12.</td>
+          <td>A feed that renumbers guids on republish re-ingests its whole archive. Cap items per poll.</td></tr>
+        <tr><td><code>sitemap</code></td>
+          <td><code>&lt;lastmod&gt;</code> newer than the stored one, filtered by an <code>include</code>
+            regex.</td>
+          <td>One 33–70 KB XML parse. No 304 on either sitemap probed.</td>
+          <td>A generator that stamps every <code>lastmod</code> on deploy looks like "everything changed".
+            Confirm against the content hash before re-fetching.</td></tr>
+        <tr><td><code>github_docs</code></td>
+          <td><code>releases.atom</code> ETag, or the raw file's ETag per pinned path.</td>
+          <td>One 304 per watched path.</td>
+          <td>A repo that never tags releases needs the per-file ETag path instead.</td></tr>
+        <tr><td><code>url_list</code></td>
+          <td>Nothing. It is a hand-curated list and only changes when you edit it.</td>
+          <td>Zero.</td>
+          <td>None, which is exactly why the seed set should start here.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede" style="margin-bottom:22px"><b>Cadence.</b> Start every channel at 24 hours. Double the
+    interval on each poll that finds nothing, to a 7-day ceiling; halve it on each poll that finds something, to
+    a 6-hour floor. Back off exponentially on error and disable a channel after five consecutive failures rather
+    than retrying it forever — the same discipline the Supadata key ring got last week, for the same reason.
+    One host at a time, <code>robots.txt</code> honoured, and a poll run that hits a dead channel records the
+    error and continues.</p>
+
+  <h3 style="font-size:15px;margin:0 0 10px">B · Content refresh — <span style="font-weight:400;color:var(--muted)">is what I stored still what is there?</span></h3>
+  <figure style="margin-bottom:14px">
+    <svg viewBox="0 0 980 250" role="img" aria-labelledby="st-title st-desc">
+      <title id="st-title">State machine for a stored source that comes due for re-visit</title>
+      <desc id="st-desc">A live source that comes due is re-fetched. Identical content returns it to live at
+        no cost. New content marks it changed. A redirect marks it moved, a 404 marks it gone, a 403 or 429
+        marks it blocked, and hitting the byte cap marks it truncated.</desc>
+      <defs>
+        <marker id="s-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--line-2)"/>
+        </marker>
+        <marker id="s-ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--signal)"/>
+        </marker>
+        <marker id="s-aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/>
+        </marker>
+      </defs>
+      <g font-family="IBM Plex Mono, monospace" font-size="11.5">
+        <text x="14" y="14" fill="var(--faint)" font-size="10.5" letter-spacing="1.4">ONE STORED SOURCE, COME DUE</text>
+
+        <g id="s-live"><title>live: the stored copy matches the page</title>
+          <rect x="356" y="98" width="150" height="58" rx="10" fill="var(--panel)" stroke="var(--signal)" stroke-width="1.7"/>
+          <text x="372" y="123" fill="var(--ink)" font-size="13">live</text>
+          <text x="372" y="141" fill="var(--signal)" font-size="10.5">hash matches</text></g>
+
+        <path id="s-due" d="M262,127 H352" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#s-ah)"><title>the refresh scheduler says this source is due</title></path>
+        <text x="266" y="118" fill="var(--faint)" font-size="10.5">due</text>
+        <text x="224" y="152" fill="var(--faint)" font-size="10.5">conditional GET</text>
+
+        <path id="s-self" d="M431,98 C431,54 512,54 512,96" fill="none" stroke="var(--signal)" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#s-ahg)"><title>304 or identical hash: nothing is re-chunked, nothing is re-embedded</title></path>
+        <text x="452" y="48" fill="var(--signal)" font-size="10.5">304 / same hash</text>
+
+        <g id="s-changed"><title>changed: new content hash, re-chunk and re-embed only the chunks that moved</title>
+          <rect x="678" y="26" width="150" height="52" rx="9" fill="var(--panel)" stroke="var(--amber)"/>
+          <text x="694" y="48" fill="var(--ink)">changed</text>
+          <text x="694" y="65" fill="var(--amber)" font-size="10.5">new hash</text></g>
+        <path d="M506,112 C590,108 600,64 674,54" fill="none" stroke="var(--amber)" stroke-width="1.4" marker-end="url(#s-aha)"/>
+
+        <g id="s-moved"><title>moved: 301 or 308, keep the external_id and record the new canonical URL</title>
+          <rect x="678" y="100" width="150" height="52" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="694" y="122" fill="var(--ink)">moved</text>
+          <text x="694" y="139" fill="var(--faint)" font-size="10.5">301 / 308</text></g>
+        <path d="M506,126 H674" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#s-ah)"/>
+
+        <g id="s-gone"><title>gone: 404 or 410, keep the chunks but mark them unverifiable</title>
+          <rect x="678" y="174" width="150" height="52" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="694" y="196" fill="var(--ink)">gone</text>
+          <text x="694" y="213" fill="var(--faint)" font-size="10.5">404 / 410</text></g>
+        <path d="M506,142 C590,146 600,190 674,202" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#s-ah)"/>
+
+        <g id="s-blocked"><title>blocked: 403, 429, or robots.txt now disallows the path</title>
+          <rect x="34" y="174" width="150" height="52" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="50" y="196" fill="var(--ink)">blocked</text>
+          <text x="50" y="213" fill="var(--faint)" font-size="10.5">403 / 429 / robots</text></g>
+        <path d="M356,142 C280,150 240,190 188,200" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#s-ah)"/>
+
+        <g id="s-trunc"><title>truncated: the body hit the 2 MB cap, so the stored copy is half a document</title>
+          <rect x="34" y="26" width="150" height="52" rx="9" fill="var(--panel)" stroke="var(--line-2)"/>
+          <text x="50" y="48" fill="var(--ink)">truncated</text>
+          <text x="50" y="65" fill="var(--faint)" font-size="10.5">2 MB cap hit</text></g>
+        <path d="M356,112 C280,106 240,64 188,54" fill="none" stroke="var(--line-2)" stroke-width="1.4" marker-end="url(#s-ah)"/>
+
+        <text x="14" y="244" fill="var(--faint)" font-size="10.5">every state is recorded, never inferred — "no summary" taught this project that an unrecorded failure is indistinguishable from untried</text>
+      </g>
+    </svg>
+    <figcaption>The only free transition is the dashed one, and it is the one that happens most.</figcaption>
+  </figure>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="min-width:104px">State</th><th style="min-width:150px">Trigger</th>
+        <th style="min-width:210px">What it costs</th><th style="min-width:200px">What the app shows</th></tr></thead>
+      <tbody>
+        <tr><td><b class="ok">live</b></td><td>304, or 200 with an identical <code>content_hash</code>.</td>
+          <td><b>Nothing.</b> No extract, no chunk, no embed. The whole point of hashing at the source
+            level.</td><td>Last checked, quietly.</td></tr>
+        <tr><td><b>changed</b></td><td>200 with a new <code>content_hash</code>.</td>
+          <td>Re-extract and re-chunk, then embed <b>only chunks whose own hash changed</b>. A typo fix in
+            paragraph one re-embeds one chunk of 94, not 94 of 94.</td>
+          <td>"Updated 3 days ago", and the previous revision stays citable.</td></tr>
+        <tr><td><b>moved</b></td><td>301 / 308 to a new URL.</td>
+          <td>One fetch. <b>Identity must not move with it:</b> the source keeps its
+            <code>external_id</code> from the feed guid and gains a URL history. Without that,
+            <code>document_id_for(url)</code> mints a second document and you have a silent duplicate.</td>
+          <td>The new URL, with the old one still resolving in stored citations.</td></tr>
+        <tr><td><b>gone</b></td><td>404 / 410, twice, a week apart.</td>
+          <td>Nothing is deleted. Chunks stay retrievable and are marked unverifiable, because an answer built
+            on them is still a real answer — it just cannot be re-checked.</td>
+          <td>A struck-through link plus an archive link, not a dead blue link.</td></tr>
+        <tr><td><b>blocked</b></td><td>403, 429, or <code>robots.txt</code> now disallows the path.</td>
+          <td>Nothing, and no retry storm. Backs off and stays put.</td>
+          <td>Named as blocked, so it reads as a policy decision rather than a bug.</td></tr>
+        <tr><td><b>truncated</b></td><td>The body hit the byte cap.</td>
+          <td>Already flagged by <code>FetchedPage.truncated</code> today — carried onto the source so a half
+            document is never cited as a whole one.</td><td>A warning chip on the source.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tldr" style="margin-top:16px">
+    <p><b>Why the hash is the floor and the ETag is the bonus.</b> C-06 offers no ETag and no
+      Last-Modified; C-14 offers neither of those and no <code>lastmod</code> either. For those two, "has
+      this changed" can only be answered by fetching and hashing. Design for that case and the other nine get
+      faster for free; design for the ETag and two sources have no refresh at all.</p>
+  </div>
+</section>
+
+<!-- ============ 06 EXTRACTION ============ -->
+<section class="sec" id="extraction">
+  <div class="sec-title"><span class="sec-k">06</span><h2>Extraction quality, measured on real pages</h2>
+    <span class="tag amb">s54 listed this as unverified — here it is</span></div>
+  <p class="lede">I ran the repo's own <code>fetch_document</code> + <code>extract_document</code> over eight
+    URLs this session. Four extracted beautifully. Four found defects, and every one of them is the kind that
+    looks like success in a log line.</p>
+  <div class="tw" style="margin-bottom:18px">
+    <table>
+      <thead><tr><th style="min-width:160px">URL</th><th style="min-width:76px">Sections</th>
+        <th style="min-width:76px">Words</th><th style="min-width:110px">Est. chunks</th>
+        <th style="min-width:230px">First headings, and the verdict</th></tr></thead>
+      <tbody>
+        <tr><td><b>hamel.dev</b> evals FAQ</td><td class="num">116</td><td class="num">17,806</td><td class="num">~94</td>
+          <td><span class="ok">Good</span> — <code>Contents</code>, <code>AI Evals: Everything You Need…</code>,
+            <code>How to use this FAQ</code>. Sections 98–3,720 chars, median 832.
+            <span class="sm">One flaw: <code>Contents</code> is a table of contents and will be indexed as prose.</span></td></tr>
+        <tr><td><b>eugeneyan.com</b> llm-patterns</td><td class="num">32</td><td class="num">13,236</td><td class="num">~73</td>
+          <td><span class="ok">Good</span> — real section headings throughout. One 11,855-char section will be
+            split across ~10 chunks, which is fine, and they will all still carry the heading.</td></tr>
+        <tr><td><b>huggingface.co</b> /blog/smolagents</td><td class="num">23</td><td class="num">2,661</td><td class="num">~14</td>
+          <td><span class="ok">Good</span> — <code>🤔 What are agents?</code> and friends. Clean.</td></tr>
+        <tr><td><b>anthropic.com</b> /engineering/…</td><td class="num">27</td><td class="num">2,962</td><td class="num">~17</td>
+          <td><span class="ok">Good</span> — <code>Building effective agents</code>,
+            <code>When (and when not) to use agents</code>.</td></tr>
+        <tr><td><b>GitHub raw README.md</b></td><td class="num">20</td><td class="num">1,763</td><td class="num">~2</td>
+          <td><span class="bad">Broken</span> — <b>zero headings</b>. <code>extract.py</code> is an HTML parser,
+            so <code>## Factor 4</code> arrives as plain text. Section-anchored citation is impossible, and the
+            log says "indexed 20 sections".</td></tr>
+        <tr><td><b>GitHub HTML page</b></td><td class="num">22</td><td class="num">1,899</td><td class="num">~2</td>
+          <td><span class="bad">Polluted</span> — <code>Navigation Menu</code>, <code>Folders and files</code>,
+            then the README. <code>extract.py</code> deliberately keeps <code>nav</code>/<code>header</code>/
+            <code>footer</code> — correct for the resumes it was built for, wrong here.</td></tr>
+        <tr><td><b>Substack post page</b></td><td class="num">17</td><td class="num">1,551</td><td class="num">~1</td>
+          <td><span class="bad">Wrong source</span> — <code>Stream the Latest Episode</code>, median section
+            242 chars. The page is chrome. <b>The feed's <code>content:encoded</code> has the whole post</b>
+            (30 KB/item), so prefer the feed.</td></tr>
+        <tr><td><b>Any feed URL</b></td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+          <td><span class="bad">Refused</span> — <code>UnsafeUrlError: … is application/xml, which cannot be
+            reviewed</code>. The content-type gate at <code>fetch.py:219</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cards three">
+    <div class="card pick"><h3>Fix 1 · a Markdown branch</h3>
+      <p><code>extract_markdown(page)</code> splitting on ATX headings, chosen by content type
+        (<code>text/markdown</code>) or a <code>.md</code> path. Fifteen lines, and it turns GitHub docs from
+        unusable into the best-structured source on the register.</p></div>
+    <div class="card pick"><h3>Fix 2 · an article mode</h3>
+      <p><code>extract_document(page, mode="article")</code> drops <code>nav</code>/<code>header</code>/
+        <code>footer</code> and a leading section titled Contents or Table of Contents. The default stays
+        <code>mode="resume"</code>, so the chat review feature this module was built for does not change at
+        all.</p></div>
+    <div class="card pick"><h3>Fix 3 · prefer the feed body</h3>
+      <p>When a feed item carries more than ~2,000 characters, extract from it and never fetch the page. Saves
+        a request on C-01, and on C-08 it is the difference between the essay and a subscribe button.</p></div>
+    <div class="card"><h3>Not fixed · JavaScript</h3>
+      <p>Nothing here renders JS, so a client-rendered page yields its shell. Four of twelve probed fine; the
+        rest of the seed set is untested. The honest answer is a per-source word-count floor that fails the
+        ingest loudly rather than storing a nav bar as an article.</p></div>
+    <div class="card"><h3>Volume, though</h3>
+      <p>One hamel.dev post is <b>94 chunks — four times the mean video</b> (8,026 ÷ 339 = 23.7). Four
+        articles came to ~198. Article count is a bad proxy for corpus growth; character count is the
+        one to watch.</p></div>
+    <div class="card"><h3>What did not go wrong</h3>
+      <p>The 2 MB cap was never approached (largest body 377 KB), nothing was truncated, and the SSRF bounds
+        did not need touching. The fetch layer is genuinely ready.</p></div>
+  </div>
+</section>
+
+<!-- ============ 07 CONTRACT ============ -->
+<section class="sec" id="contract">
+  <div class="sec-title"><span class="sec-k">07</span><h2>The contract: one module, one protocol, one honest diff</h2></div>
+  <p class="lede">Three artefacts carry this design. The committed list of what we watch, the protocol every
+    poller answers, and the one change to existing code — which is deliberately the smallest change that could
+    work, because <code>fetch.py</code> is the module with the security bounds on it.</p>
+
+  <div class="codeblock">
+    <div class="codehead">
+      <span class="path">channels.yaml</span>
+      <span class="why">committed: which sources we watch is a decision, not derived state</span>
+    </div>
+    <div class="codemount" id="f-yaml"></div>
+    <p class="codenote">The split mirrors what this repo already does with <code>guides/</code>: intent is
+      committed and reviewable, runtime state is not. ETags, cursors, due times and failure counts go to
+      <code>.yt-agent/channels/state.json</code>, which is gitignored — so a poll never dirties the tree, and a
+      cleared cache costs one extra poll rather than a lost corpus.</p>
+  </div>
+
+  <div class="codeblock" style="margin-top:26px">
+    <div class="codehead">
+      <span class="path">src/channels/models.py</span>
+      <span class="why">a channel is a watched source of URLs, and nothing more</span>
+    </div>
+    <div class="codemount" id="f-proto"></div>
+    <p class="codenote">Note what the protocol does <i>not</i> have: no fetching, no chunking, no store. A
+      poller answers "what is here now" and hands back candidates. That is what lets V1 ship and be tested
+      with no store decision made, and it is what keeps five source kinds from becoming five pipelines.</p>
+  </div>
+
+  <div class="codeblock" style="margin-top:26px">
+    <div class="codehead">
+      <span class="path">src/documents/fetch.py</span>
+      <span class="why">the only change to existing code — per-call content types, plus a conditional GET</span>
+    </div>
+    <div class="codemount" id="f-fetch"></div>
+    <p class="codenote">Two properties worth stating. <b>The default is unchanged</b>, so the chat's
+      paste-a-link path keeps the exact policy it has — widening the module constant would have let a chat
+      message fetch XML, which nobody asked for. And <b>only the content-type bound takes a parameter</b>:
+      scheme, address re-validation, redirect count and the byte cap stay non-negotiable, because those are the
+      four that make this not an SSRF proxy.</p>
+  </div>
+
+  <div class="tldr" style="margin-top:20px">
+    <p><b>The surface this adds.</b> CLI: <code>channels list | add | poll [--dry-run] | refresh [--due]</code>
+      and <code>index-web &lt;url&gt;</code>. API: <code>GET /api/channels</code>,
+      <code>POST /api/channels/poll</code>, and a third <code>mode</code> value —
+      <code>"feed"</code> — on the existing <code>POST /api/index/queue</code>, so a feed job rides the same
+      three-worker queue and the same SSE progress stream as a video does. Demo mode refuses all of it with the
+      403 it already gives every mutating route.</p>
+  </div>
+</section>
+
+<!-- ============ 08 IN THE APP ============ -->
+<section class="sec" id="app">
+  <div class="sec-title"><span class="sec-k">08</span><h2>What it looks like in the workbench</h2>
+    <span class="tag ghost">mock, in the product's own tokens</span></div>
+  <p class="lede">"Use them like I use transcripts" means two visible things: sources show up in the Corpus
+    view with their channel and their freshness, and a citation to an article deep-links the way a citation to
+    a video deep-links. Below is the Corpus tab as it would look, rendered in the workbench's real palette
+    rather than this page's.</p>
+
+  <div class="mock">
+    <div class="mock-bar">
+      <span class="mock-tab">Chat</span><span class="mock-tab">Field Guides</span>
+      <span class="mock-tab on">RAG Pipeline · Corpus</span><span class="mock-tab">Scoreboard</span>
+      <span class="mock-tab">Experiments</span><span class="mock-tab">System Design</span>
+    </div>
+    <div class="mock-grid">
+      <div class="mock-panel">
+        <p class="mock-h">Corpus</p>
+        <div class="mock-row"><span class="l">Sources</span><span class="mock-stat">351</span></div>
+        <div class="mock-row"><span class="l">— transcripts</span><span class="mock-stat">339</span></div>
+        <div class="mock-row"><span class="l">— web</span><span class="mock-stat">12</span></div>
+        <div class="mock-row"><span class="l">Chunks</span><span class="mock-stat">8,224</span></div>
+        <div class="mock-row"><span class="l">Channels</span><span class="mock-stat">136</span></div>
+        <p class="mock-note">Source type is a filter here, not a second page — the existing channel grouping in
+          <code>src/api/corpus.py</code> already keys on <code>channel_id</code>, and a feed is a channel.</p>
+      </div>
+      <div class="mock-panel">
+        <p class="mock-h">Watched channels · 4 new since last poll</p>
+        <div class="mock-row"><span class="l">Hamel Husain</span><span class="mock-chip rss">rss · 2h</span></div>
+        <div class="mock-row"><span class="l">Anthropic Engineering</span><span class="mock-chip site">sitemap · 9h</span></div>
+        <div class="mock-row"><span class="l">Eugene Yan</span><span class="mock-chip rss">rss · 304</span></div>
+        <div class="mock-row"><span class="l">ZenML blog</span><span class="mock-chip rss">rss · 1d</span></div>
+        <div class="mock-row"><span class="l">Evidently AI blog</span><span class="mock-chip gone">1 gone</span></div>
+        <p class="mock-note">Each row is the channel's state, not a success count: <code>304</code> means
+          checked and unchanged, <code>gone</code> means one stored URL now 404s and its chunks are marked
+          unverifiable.</p>
+      </div>
+      <div class="mock-panel">
+        <p class="mock-h">Add to the corpus</p>
+        <div class="mock-seg"><span>Video</span><span>Channel</span><span class="on">Feed / URL</span></div>
+        <div class="mock-input">https://hamel.dev/index.xml</div>
+        <p class="mock-note" style="margin-bottom:0">Detected <b style="color:var(--m-good)">RSS, 20 items,
+          full article bodies</b> — no page fetches needed. Poll every 24h.</p>
+        <span class="mock-btn">Watch this source</span>
+        <p class="mock-note">A bare article URL indexes once and is watched for changes; a feed URL is watched
+          for new items too. The same three-worker queue, the same progress stream.</p>
+      </div>
+    </div>
+    <div class="mock-panel" style="margin-top:12px">
+      <p class="mock-h">Citations keep parity across source types</p>
+      <div class="mock-cite"><span class="src">▸ transcript · AI Engineer · 14:22</span><br>
+        "…the thing nobody tells you about evals is that you have to look at the data first…"</div>
+      <div class="mock-cite"><span class="src">▸ web · hamel.dev · § How to use this FAQ</span><br>
+        "…start with error analysis on fifty real traces before you write a single judge prompt…"</div>
+      <p class="mock-note">A video cites a timestamp and deep-links to it; an article cites its section
+        heading and deep-links to the anchor. <code>DocumentSection.label</code> already returns exactly the
+        string the second line needs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 ORDER ============ -->
+<section class="sec" id="order">
+  <div class="sec-title"><span class="sec-k">09</span><h2>What was built, and the proof it worked</h2>
+    <span class="tag">all six slices landed</span></div>
+  <p class="lede">Six slices, all delivered on <code>new-channels</code>. The proof column is what was
+    actually observed, not what was planned — including the two places where running it live changed the
+    design.</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th style="min-width:46px">#</th><th style="min-width:200px">Slice</th>
+        <th style="min-width:190px">Where</th><th style="min-width:250px">What was observed</th></tr></thead>
+      <tbody>
+        <tr><td><b>V0</b></td>
+          <td>The registry. <code>channels.yaml</code>, <code>ChannelConfig</code>,
+            <code>ChannelState</code>, and <code>channels list | add</code>. No network at all.</td>
+          <td>New <code>src/channels/</code>, <code>tests/channels/</code>.</td>
+          <td><span class="ok">Done.</span> 18 channels load, 7 enabled. Appending preserves every comment
+            already in the file. 28 tests, including a malformed id rejected at load and an unreadable state
+            file read as "never polled".</td></tr>
+        <tr><td><b>V1</b></td>
+          <td>The five pollers, behind <code>channels poll --dry-run</code>, which prints candidates and
+            writes nothing.</td>
+          <td><code>src/channels/feeds.py</code>, <code>sitemaps.py</code>, <code>pollers.py</code>; the
+            <code>fetch.py</code> diff from section 07.</td>
+          <td><span class="ok">Done.</span> 25 poller tests plus 22 for parsing and robots. Live: hamel 20
+            items (12 full-body), simonwillison 30, eugeneyan 212, the three Substack-hosted blogs 20/20
+            full-body, Anthropic's sitemap 535 locs all dated, Hugging Face's sitemap index followed one level.
+            <span class="sm"><b>Changed by running it:</b> one feed is 2.9 MB and the 2 MB page cap cut it
+            mid-CDATA. Feeds got their own 8 MB cap, and a truncated parse now says so rather than reporting
+            "unclosed CDATA section".</span></td></tr>
+        <tr><td><b>V2</b></td>
+          <td>The three extraction fixes: Markdown branch, article mode, prefer-feed-body.</td>
+          <td><code>src/documents/extract.py</code>, new <code>extract_markdown</code>.</td>
+          <td><span class="ok">Done.</span> The README now yields 15 real headings (was zero), hamel's
+            <code>Contents</code> section is gone, the HF blog post dropped 23→11 sections, and
+            <code>mode="resume"</code> output is unchanged. 21 tests.
+            <span class="sm">Two further defects surfaced while measuring: multi-line <code>&lt;img&gt;</code>
+            tags in READMEs survived a per-line strip, and Markdown link targets embedded as text — one
+            heading arrived as <code>[ ](https://awesome.re)</code>. Both fixed; code fences keep their
+            <code>&lt;</code> operators.</span></td></tr>
+        <tr><td><b>V3</b></td>
+          <td>Web sources enter the corpus as a declared source type, in their own collection. Citations render
+            a section anchor.</td>
+          <td><code>src/rag/</code> — a <code>web.sections</code> chunker and a store facade writing
+            <code>web_sources</code> and <code>web_chunks</code>; <b>not</b>
+            <code>transcript_chunks</code>.</td>
+          <td><span class="ok">Done.</span> 11 sources, 679 chunks. A cross-source query returns a
+            transcript chunk citing <code>39:13</code> beside a web chunk citing
+            <code>§ 1.4.2 LLM-as-Judge…</code> with a working anchor. Transcript collections re-counted
+            afterwards: 339 / 8,026 / 546 / 337, unchanged, and all 371 eval tests pass.</td></tr>
+        <tr><td><b>V4</b></td>
+          <td>Loop B: the state machine, the content hashes, the adaptive schedule, and
+            <code>channels refresh --due</code>.</td>
+          <td><code>src/channels/refresh.py</code>.</td>
+          <td><span class="ok">Done.</span> A forced re-visit of all 11 sources: <b>0 chunks embedded</b>.
+            The two Hugging Face course URLs redirect, and the store kept the <code>external_id</code> while
+            recording the new <code>canonical_url</code> — identity did not move with the URL.
+            <span class="sm"><b>Changed by running it:</b> both cheap short-circuits stop <i>before</i>
+            extraction, so improving the extractor never reached sources already stored. Added
+            <code>refresh --reextract</code>; rolling the Markdown fixes through re-embedded <b>203 of
+            725</b> chunks and bumped the revision only on the 6 sources whose text actually changed.</span></td></tr>
+        <tr><td><b>V5</b></td>
+          <td>The workbench surface from section 08: channel rows in Corpus, a Feed mode on the ingest form,
+            source-type filters.</td>
+          <td><code>frontend/src/pipeline/</code>, <code>src/api/main.py</code>,
+            <code>ingestion_queue.py</code>.</td>
+          <td><span class="ok">Done.</span> <code>GET /api/channels</code> and
+            <code>POST /api/channels/poll</code>, a <code>channels</code> mode on the shared ingestion queue,
+            and a Watched sources panel in the pipeline view. Demo mode serves the register and
+            <code>403</code>s the poll. 9 API tests, 12 component tests; 596 frontend tests and
+            <code>tsc</code> clean.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tldr" style="margin-top:16px">
+    <p><b>Totals.</b> 1,823 Python tests and 596 frontend tests pass; <code>ruff</code> and <code>mypy</code>
+      are clean. <code>src/rag/web_store.py</code> is the one new module outside the mypy scope, for the same
+      reason <code>src/rag/storage.py</code> is: it talks straight to Chroma, whose stubs reject a plain
+      <code>list[list[float]]</code> embedding. Its behaviour is covered by 15 tests instead.</p>
+    <p><b>Where the eval gate comes in.</b> Nowhere, until you ask it to — and that is deliberate. Web chunks
+      in a separate collection mean retrieval over transcripts is bit-for-bit what it was, so the committed
+      snapshots in <code>evals/runs/</code> stay valid and the CI floors keep meaning what they meant. The day
+      cross-source retrieval becomes the default is the day the golden set needs a source-scoped baseline, and
+      that is a separate piece of work with its own writeup in it.</p>
+  </div>
+</section>
+
+<!-- ============ 10 RISKS ============ -->
+<section class="sec" id="risks">
+  <div class="sec-title"><span class="sec-k">10</span><h2>Risks, and what I have not verified</h2></div>
+  <ul class="tight">
+    <li><b>Substack's <code>robots.txt</code> blocks named AI crawlers, and that is a policy question for
+      you, not a technical one.</b> Read today: <code>GPTBot</code>, <code>ClaudeBot</code>,
+      <code>anthropic-ai</code>, <code>CCBot</code>, <code>Google-Extended</code> and eight others get
+      <code>Disallow: /</code>; <code>User-agent: *</code> disallows only <code>/subscribe</code>,
+      <code>/action/</code> and similar, leaving <code>/p/…</code> article paths permitted. A generically named
+      corpus agent therefore falls under <code>*</code> and is allowed — but the site's intent about AI
+      ingestion is legible in that file, and <code>robots.txt</code> is not terms of service.
+      <b>Decision 3 chose the conservative reading, and my own option text got the consequence wrong:</b> that
+      blanket <code>Disallow: /</code> covers <code>/feed</code> as well as the article paths, so the source is
+      excluded <i>entirely</i> rather than read through its feed. The exclusion is one host's configuration
+      and not the platform's — the three Substack-hosted blogs on the register (C-11 to C-13) carry no such
+      rule and are fully usable. hamel.dev, eugeneyan.com, huggingface.co and anthropic.com are all
+      <code>Allow: /</code>; github.com sets a <code>Crawl-delay</code>, which is a reason to pull raw file
+      URLs rather than crawl the site.</li>
+    <li><b>Feeds fail intermittently, so a poll run must not trust one response.</b> Probing this session
+      turned up transient <code>404</code> and <code>500</code> answers from a host that returned a clean
+      <code>200</code> with full content minutes later. Without retry-with-backoff — the discipline the
+      Supadata key ring just got — a poll run will report a healthy channel as dead, and after five such runs
+      the scheduler disables it.</li>
+    <li><b>Long-form articles will shift the corpus mix.</b> 94 chunks from one hamel.dev post against a
+      23.7-chunk mean per video. Twenty such posts outweigh the entire <code>AI Engineer</code> channel's
+      14 videos. Embedding is local and CPU-pinned so the cost is minutes, not money — but retrieval balance
+      is a real effect and it is why the separate collection in V3 matters more than it looks.</li>
+    <li><b>Not verified: whether a mixed embedding space ranks honestly.</b> s54 raised it; the new evidence
+      sharpens it. Transcript chunks are conversational fragments that need the context header to embed at all;
+      article chunks are self-contained prose four times the size. Similarity scores across the two are not
+      obviously comparable. Measure it on the seed set before making cross-source retrieval the default.</li>
+    <li><b>Now measured: six of twenty-seven s53 links are JavaScript shells, and the floor catches every
+      one.</b> All 27 were run through the real pipeline: 21 clear the 250-word floor, and the six that do not
+      are exactly the client-rendered ones — the three Substack-hosted blogs at 97–101 words (usable via their
+      feeds instead), a Hugging Face Space at <b>12</b>, ZenML's LLMOps database UI at 61, and a Hugging Face
+      login page at 28. No false positives. The residual risk is the opposite error: a page that renders
+      enough server-side to pass the floor while still being mostly chrome, which no word count can catch.</li>
+    <li><b>Feed archives are backfills in disguise.</b> eugeneyan 212 items, ZenML 323, HF 863, OpenAI 1,215.
+      A first poll without a cap ingests years of content, most of it off-topic, and one of those feeds is
+      742 KB with no conditional GET. Cap items per poll and filter by topic before ingesting, not after.</li>
+    <li><b>Identity is the one thing that cannot be fixed later.</b> If web sources are keyed on
+      <code>document_id_for(url)</code> — a plain hash of the URL — then every moved post silently forks into
+      two documents, and un-forking them afterwards is a data-repair job over the chunk store. The feed
+      <code>guid</code> has to be the identity from the first ingest. This is the one item in this plan worth
+      blocking on.</li>
+    <li><b>Time.</b> V0–V2 are a comfortable day and touch nothing that can break retrieval. V3–V4 are the
+      real work. If the schedule tightens, stop after V2: pollers and fixed extraction with nothing indexed
+      are useful on their own and cost nothing to leave sitting.</li>
+  </ul>
+</section>
+
+<!-- ============ 11 DECISIONS ============ -->
+<section class="sec" id="decisions">
+  <div class="sec-title"><span class="sec-k">11</span><h2>The four decisions, as answered</h2>
+    <span class="tag">locked · built</span></div>
+  <p class="lede">All four were answered on 22 Sep and the build follows them. The chosen option is marked on
+    each; the forms are left in place as the record of what was asked.</p>
+  <div class="tldr" style="margin:0 0 18px">
+    <p><b>One submitted item was rejected rather than built.</b> The tracked batch arrived carrying
+      <code>N-12</code>, "YouTube channel discovery moves to the free XML feed" — ticked from the version of
+      this page that still proposed it, and contradicted by the instruction two messages later that YouTube
+      stays manual. The later instruction wins: there is no <code>youtube_channel</code> poller in the
+      build, and the batch is renumbered <code>N-01</code>–<code>N-14</code> here.</p>
+  </div>
+
+  <form class="q" data-lavish-question="scope" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('scope'); if(c) window.lavish.queuePrompt('New-channels first poll set: '+c+'. Update s26 section 04 and the V1 slice to match, then build.',{tag:'choice',text:'Poll set: '+c,element:event.currentTarget,data:{question:'scope',answer:c}});">
+    <h3>1. Which sources does the first version actually watch?</h3>
+    <p class="hint">All twelve are on the register either way; this is what V1 polls on day one.</p>
+    <label><input type="radio" name="scope" value="The six clean sources: hamel, simonwillison, eugeneyan, HF blog, anthropic sitemap, one Substack"><span><b>The six clean ones</b> — hamel, simonwillison, eugeneyan, HF blog, the Anthropic sitemap and one Substack. Covers all four poller kinds and every refresh signal, including the two that carry full bodies (not chosen)</span></label>
+    <label><input type="radio" name="scope" value="A hand-curated url_list of the s53 seed links only, no feeds yet" checked><span class="picked"><b>A <code>url_list</code> only</b> — the s53 seed links, ingested once, no polling. Smallest possible first step, proves extraction and citation before any scheduling exists <b>— chosen</b></span></label>
+    <label><input type="radio" name="scope" value="All nine live feeds including openai, zenml, arxiv, github"><span><b>All nine live feeds</b> — including the 1,215-item OpenAI feed and arXiv. More coverage, more filtering work, and s53 argued against the paper feeds</span></label>
+    <button class="btn-solid" type="submit">Queue this answer</button>
+  </form>
+
+  <form class="q" data-lavish-question="store" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('store'); if(c) window.lavish.queuePrompt('Where web chunks land: '+c+'. Rewrite the V3 slice in s26 section 09 accordingly.',{tag:'choice',text:'Store: '+c,element:event.currentTarget,data:{question:'store',answer:c}});">
+    <h3>2. Where do web chunks land, given s54 is unanswered?</h3>
+    <p class="hint">Only V3 depends on this. V0–V2 ship either way.</p>
+    <label><input type="radio" name="store" value="A second Chroma collection web_chunks now, behind a store facade, so the Postgres cutover is a backend swap" checked><span class="picked"><b>Two new Chroma collections now</b> — <code>web_sources</code> and <code>web_chunks</code>, written through a facade so s54's Postgres cutover later is a backend swap and not a redesign, and every existing collection stays byte-identical <b>— chosen</b></span></label>
+    <label><input type="radio" name="store" value="Block V3 until the s54 corpus schema exists on the central Postgres, land V0-V2 meanwhile"><span><b>Wait for Postgres</b> — land V0–V2, then answer s54's four forms and build V3 straight onto the <code>corpus</code> schema. Slower, but no store is built twice</span></label>
+    <label><input type="radio" name="store" value="Same transcript_chunks collection with a source_type metadata field"><span><b>Same collection</b> with a <code>source_type</code> field. One store, but it moves retrieval under the committed eval snapshots — the thing section 09 exists to avoid</span></label>
+    <button class="btn-solid" type="submit">Queue this answer</button>
+  </form>
+
+  <form class="q" data-lavish-question="agent" onsubmit="event.preventDefault(); const c=new FormData(event.currentTarget).get('agent'); if(c) window.lavish.queuePrompt('Crawler identity and politeness policy: '+c+'. Set DEFAULT_HEADERS and the robots handling in s26 V1 to match, and record the reasoning in the readme.',{tag:'choice',text:'Identity: '+c,element:event.currentTarget,data:{question:'agent',answer:c}});">
+    <h3>3. How does the poller identify itself, and how strictly does it read robots?</h3>
+    <p class="hint">Substack's robots blocks eleven named AI crawlers and allows <code>*</code>. What we call ourselves decides which rule applies to us.</p>
+    <label><input type="radio" name="agent" value="Honest project UA, honour robots for * plus any AI-crawler rule that plausibly covers us, skip sources that disallow" checked><span class="picked"><b>Honest and conservative</b> — a project user-agent with a repo URL, honour the <code>*</code> rules <i>and</i> treat a blanket AI-crawler disallow as applying to us. <b>— chosen.</b> Measured consequence, and my option text had it wrong: the blanket <code>Disallow: /</code> covers <code>/feed</code> too, so that source is excluded <i>entirely</i> rather than read through its feed</span></label>
+    <label><input type="radio" name="agent" value="Honest project UA, honour only the rules that name us or star, per the robots spec"><span><b>Honest and literal</b> — same user-agent, honour exactly the rules the spec says apply to it (<code>*</code>, since nothing names us). Permitted, and reads a site's AI-ingestion intent as not addressed to a personal corpus</span></label>
+    <label><input type="radio" name="agent" value="Feeds only, never fetch an article page, for every source on the register"><span><b>Feeds only</b> — never fetch a page at all. Maximally polite and costs the four teaser-only sources, which is most of the register's substance</span></label>
+    <button class="btn-solid" type="submit">Queue this answer</button>
+  </form>
+
+  <form class="q" data-lavish-question="locks" onsubmit="event.preventDefault(); const sel=[...event.currentTarget.querySelectorAll('input[name=items]:checked')].map(i=>({id:i.value,label:i.dataset.label,disposition:i.dataset.disposition})); if(sel.length) window.lavish.queuePrompt('Lock exactly these new-channels decisions and build against them on the new-channels branch. Account for every submitted ID with an item-by-item receipt: what was implemented, where, or why it was deferred.',{tag:'tracked-batch',text:'Lock '+sel.length+' ingestion decisions',element:event.currentTarget,data:{items:sel}});">
+    <h3>4. Which decisions do we lock in now?</h3>
+    <p class="hint">All fourteen were locked and every one is implemented. The receipt is in the conversation; the submitted <code>N-12</code> was rejected as superseded, as noted above.</p>
+    <label><input type="checkbox" name="items" value="N-01" checked data-label="A channel is a watched source of URLs, four poller kinds, no YouTube" data-disposition="design"><span><span class="idc">N-01</span>A channel is a <b>watched source of URLs</b>: <code>rss</code>, <code>atom</code>, <code>sitemap</code>, <code>github_docs</code>, plus <code>url_list</code>. <b>No YouTube poller</b> — video ingestion stays the manual path it is today</span></label>
+    <label><input type="checkbox" name="items" value="N-02" checked data-label="Identity from the feed guid, never from the URL hash" data-disposition="design"><span><span class="idc">N-02</span>Identity comes from the feed <code>guid</code> / sitemap loc, <b>never</b> from <code>document_id_for(url)</code> — so a moved post does not fork</span></label>
+    <label><input type="checkbox" name="items" value="N-03" checked data-label="Committed channels.yaml, gitignored runtime state" data-disposition="design"><span><span class="idc">N-03</span><code>channels.yaml</code> committed; ETags, cursors and due times in gitignored <code>.yt-agent/channels/state.json</code></span></label>
+    <label><input type="checkbox" name="items" value="N-04" checked data-label="Content hash is the floor, ETag is the optimisation" data-disposition="design"><span><span class="idc">N-04</span>The <b>content hash</b> is the change signal of record; conditional GET is the optimisation on top of it</span></label>
+    <label><input type="checkbox" name="items" value="N-05" checked data-label="Chunk-level hashes so a small edit re-embeds one chunk" data-disposition="design"><span><span class="idc">N-05</span>Chunk-level hashes too, so an edited article re-embeds only the chunks that moved</span></label>
+    <label><input type="checkbox" name="items" value="N-06" checked data-label="Six recorded source states, never inferred" data-disposition="design"><span><span class="idc">N-06</span>Six recorded source states — <code>live · changed · moved · gone · blocked · truncated</code> — written, not inferred</span></label>
+    <label><input type="checkbox" name="items" value="N-07" checked data-label="A gone URL keeps its chunks, marked unverifiable" data-disposition="design"><span><span class="idc">N-07</span>A <code>gone</code> URL keeps its chunks, marked unverifiable, with an archive link in the citation</span></label>
+    <label><input type="checkbox" name="items" value="N-08" checked data-label="Adaptive poll cadence 6h-7d with failure disable" data-disposition="design"><span><span class="idc">N-08</span>Adaptive cadence: 24 h start, double on unchanged to 7 d, halve on change to 6 h, disable after 5 failures</span></label>
+    <label><input type="checkbox" name="items" value="N-09" checked data-label="Per-call allowed_content_types, default unchanged" data-disposition="code"><span><span class="idc">N-09</span><code>fetch_document</code> gains <b>per-call</b> <code>allowed_content_types</code> plus conditional-GET params; the default and the other four bounds are unchanged</span></label>
+    <label><input type="checkbox" name="items" value="N-10" checked data-label="Markdown branch and article extraction mode" data-disposition="code"><span><span class="idc">N-10</span><code>extract_markdown</code> for raw <code>.md</code>, and <code>mode="article"</code> dropping nav/header/footer and Contents — <code>mode="resume"</code> output unchanged</span></label>
+    <label><input type="checkbox" name="items" value="N-11" checked data-label="Prefer the feed body when it exceeds 2000 chars" data-disposition="code"><span><span class="idc">N-11</span>Prefer the feed body over the page when an item carries more than ~2,000 characters (measured: hamel, every Substack)</span></label>
+    <label><input type="checkbox" name="items" value="N-12" checked data-label="Web chunks stay out of transcript_chunks" data-disposition="scope"><span><span class="idc">N-12</span>Web chunks stay out of <code>transcript_chunks</code>, so the committed eval snapshots and CI floors keep meaning what they mean</span></label>
+    <label><input type="checkbox" name="items" value="N-13" checked data-label="Word-count floor fails a JS-shell ingest loudly" data-disposition="design"><span><span class="idc">N-13</span>A per-source word-count floor, so a JavaScript shell fails the ingest loudly instead of storing a nav bar</span></label>
+    <label><input type="checkbox" name="items" value="N-14" checked data-label="Cap items per poll to avoid archive backfills" data-disposition="scope"><span><span class="idc">N-14</span>Cap items per poll (default 25) so a 212-, 323-, 863- or 1,215-item archive is not a first-day backfill</span></label>
+    <button class="btn-solid" type="submit">Queue selected decisions</button>
+  </form>
+</section>
+
+<footer>
+  s26 · branch new-channels · every probe run against the live web on 22 Sep 2026 · 12 of 14 feeds live,
+  8 answer 304, 4 extraction defects found and fixed · built: 11 sources, 679 chunks, transcript collections
+  untouched
+</footer>
+</main>
+
+<script type="text/plain" id="yaml-channels">
+# channels.yaml — the sources this corpus watches.
+#
+# Committed on purpose: *which* channels we follow is a decision worth
+# reviewing in a diff. Runtime state — ETags, cursors, due times, failure
+# counts — lives in .yt-agent/channels/state.json, which is gitignored, so a
+# poll never dirties the tree and a cleared cache costs one extra poll.
+#
+# Text sources only. YouTube is deliberately absent: videos are added by hand
+# through the existing ingest form, so nothing here can spend a Supadata credit.
+
+version: 1
+
+defaults:
+  poll_interval_hours: 24     # doubled on each unchanged poll to a 7-day ceiling,
+                              # halved on each poll that finds something to a 6-hour floor
+  max_items_per_poll: 25      # eugeneyan's feed carries 212 items; a first poll is not a backfill
+  min_words: 250              # below this the extract is a nav bar, not an article: fail loudly
+  disable_after_failures: 5
+
+channels:
+  - id: hamel-dev
+    kind: rss
+    url: https://hamel.dev/index.xml
+    label: Hamel Husain
+    topics: [evals, error-analysis]
+    # Measured 22 Sep: 27 KB per item, longest 175 KB. The feed carries the whole
+    # post, so these twenty index with zero page fetches.
+    body_in_feed: true
+
+  - id: simonwillison
+    kind: atom
+    url: https://simonwillison.net/atom/everything/
+    label: Simon Willison
+    body_in_feed: true          # in <summary type="html">; these are short link-posts
+
+  - id: eugeneyan
+    kind: rss
+    url: https://eugeneyan.com/rss/
+    label: Eugene Yan
+    body_in_feed: false         # 164-char teaser — fetch the page
+
+  - id: hf-blog
+    kind: rss
+    url: https://huggingface.co/blog/feed.xml
+    label: Hugging Face blog
+    body_in_feed: false         # 21-char teaser, and 863 items: filter before ingesting
+    include_title: '(?i)agent|eval|rag|fine-?tun'
+
+  - id: anthropic-engineering
+    kind: sitemap
+    url: https://www.anthropic.com/sitemap.xml
+    label: Anthropic Engineering
+    # /engineering/rss.xml is a 404. The sitemap is not: 535 locs, every one
+    # carrying <lastmod>, 25 of them under /engineering/.
+    include: '^https://www\.anthropic\.com/engineering/'
+    change_signal: lastmod
+
+  - id: evidently-blog
+    kind: sitemap
+    url: https://www.evidentlyai.com/sitemap.xml
+    label: Evidently AI
+    include: '^https://www\.evidentlyai\.com/blog/'
+    # 192 locs, 102 under /blog/, and *zero* <lastmod>. No feed, no ETag on the
+    # sitemap either — the content hash is the only change signal this one has.
+    change_signal: content_hash
+
+  - id: twelve-factor-agents
+    kind: github_docs
+    url: https://github.com/humanlayer/12-factor-agents
+    label: 12-Factor Agents
+    # raw.githubusercontent.com, never the HTML page: the page extracts to
+    # "Navigation Menu" and "Folders and files" before any content.
+    paths: ['README.md', 'content/*.md']
+
+  - id: s53-seed
+    kind: url_list
+    label: s53 seed links
+    urls:
+      - https://hamel.dev/blog/posts/evals-faq/
+      - https://eugeneyan.com/writing/llm-patterns/
+      - https://www.anthropic.com/engineering/building-effective-agents
+      - https://huggingface.co/blog/smolagents
+</script>
+
+<script type="text/plain" id="py-proto">
+"""What every channel kind has to answer, and nothing more.
+
+A channel is a *watched source of URLs*. That is the whole abstraction: it is
+asked "what is here now", it answers with candidates, and it remembers just
+enough to make the next ask cheap. Fetching, extracting, chunking and embedding
+are someone else's job — the same someone that already does all four for
+transcripts.
+
+Keeping the protocol this narrow is what lets the poller layer ship and be
+tested before the corpus schema question from s54 is settled, and it is what
+stops five source kinds from quietly becoming five pipelines.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Protocol
+
+
+@dataclass(frozen=True)
+class Candidate:
+    """One URL a channel is offering, with whatever the channel knew about it."""
+
+    url: str
+    #: Identity as the *channel* names it: a feed guid, a sitemap loc, a raw
+    #: file path. Deliberately not derived from the URL — a post that
+    #: moves keeps its guid, and ``document_id_for(url)`` would mint a second
+    #: document for the same article and leave the first behind as a duplicate
+    #: nobody notices.
+    external_id: str
+    title: str | None = None
+    published_at: str | None = None
+    #: The source's own claim about when this last changed: a feed
+    #: ``<updated>`` or a sitemap ``<lastmod>``. A claim, not proof — the
+    #: content hash is what decides whether anything is re-embedded.
+    updated_at: str | None = None
+    #: The full article body when the feed carried it. Measured on 22 Sep:
+    #: hamel.dev ships 27 KB per item and every Substack feed ships
+    #: ``content:encoded``; eugeneyan, HF and ZenML ship a 21–1,157 char
+    #: teaser. When this is set the page is never fetched — and for Substack
+    #: that is not just cheaper, it is the difference between the essay and a
+    #: subscribe button.
+    body_html: str | None = None
+
+
+@dataclass
+class PollResult:
+    """What one poll of one channel produced."""
+
+    candidates: list[Candidate] = field(default_factory=list)
+    #: The server said 304, or the change signal did not move. The scheduler
+    #: doubles this channel's interval when it sees this.
+    unchanged: bool = False
+    #: Carried back into ChannelState for the next conditional GET.
+    etag: str | None = None
+    last_modified: str | None = None
+    #: Recorded, not raised. One dead channel must not abandon a poll run
+    #: halfway through — the same reason the ingestion queue records a failed
+    #: job instead of taking the worker down with it.
+    error: str | None = None
+
+
+class ChannelPoller(Protocol):
+    """One implementation per ``kind`` in channels.yaml."""
+
+    kind: str
+
+    def poll(self, channel: ChannelConfig, state: ChannelState) -> PollResult:
+        """Everything at this source that ``state`` has not already seen.
+
+        Implementations must be pure with respect to the corpus: a poll reads
+        the network and returns candidates. It never writes a chunk, so
+        ``--dry-run`` is the same code path as a real run minus the consumer.
+        """
+        ...
+</script>
+
+<script type="text/plain" id="py-fetch-old">
+ALLOWED_CONTENT_TYPES = (
+    "text/html",
+    "text/plain",
+    "application/xhtml+xml",
+)
+
+
+def fetch_document(
+    url: str,
+    *,
+    client: Any | None = None,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+    timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    max_redirects: int = DEFAULT_MAX_REDIRECTS,
+) -> FetchedPage:
+    """Fetch one URL under every bound in this module's docstring.
+
+    ``client`` accepts a pre-built ``httpx.Client`` so tests can drive this with
+    a transport stub; when omitted a client is created and closed per fetch.
+    Redirects are followed here rather than by httpx precisely so each hop can
+    be re-validated.
+    """
+
+
+# ... inside _fetch(), after the status check:
+
+                content_type = _strip_parameters(response.headers.get("content-type", "text/html"))
+                if content_type not in ALLOWED_CONTENT_TYPES:
+                    raise UnsafeUrlError(
+                        f"{current} is {content_type}, which cannot be reviewed; "
+                        f"fetchable types are: {', '.join(ALLOWED_CONTENT_TYPES)}"
+                    )
+</script>
+
+<script type="text/plain" id="py-fetch-new">
+ALLOWED_CONTENT_TYPES = (
+    "text/html",
+    "text/plain",
+    "application/xhtml+xml",
+)
+
+#: Feeds and sitemaps. Kept *out* of ALLOWED_CONTENT_TYPES on purpose: the
+#: chat's paste-a-link path must not start accepting XML just because the
+#: corpus poller needs to. Callers opt in per fetch.
+FEED_CONTENT_TYPES = (
+    "application/xml",
+    "text/xml",
+    "application/rss+xml",
+    "application/atom+xml",
+)
+
+#: Raw Markdown. raw.githubusercontent.com serves .md as text/plain, which the
+#: default list already allows; these are for hosts that label it properly.
+MARKDOWN_CONTENT_TYPES = ("text/markdown", "text/x-markdown")
+
+
+def fetch_document(
+    url: str,
+    *,
+    client: Any | None = None,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+    timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    max_redirects: int = DEFAULT_MAX_REDIRECTS,
+    allowed_content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
+    etag: str | None = None,
+    last_modified: str | None = None,
+) -> FetchedPage:
+    """Fetch one URL under every bound in this module's docstring.
+
+    ``client`` accepts a pre-built ``httpx.Client`` so tests can drive this with
+    a transport stub; when omitted a client is created and closed per fetch.
+    Redirects are followed here rather than by httpx precisely so each hop can
+    be re-validated.
+
+    ``allowed_content_types`` narrows or widens **only** the content-type
+    bound, and defaults to the historical list so every existing caller keeps
+    exactly the policy it had. The other four bounds — scheme, address
+    re-validation on each hop, redirect count, byte cap — take no parameter,
+    because those are the four that make this not an SSRF proxy.
+
+    ``etag``/``last_modified`` make the request conditional. A 304 comes back
+    as a ``FetchedPage`` carrying that status and an empty body rather than an
+    exception: for a refresh, "nothing changed" is the most common and by far
+    the cheapest successful outcome, not a failure.
+    """
+
+
+# ... inside _fetch(), before the status check:
+
+                if response.status_code == 304:
+                    # Nothing to read, nothing to extract, nothing to embed.
+                    return FetchedPage(
+                        requested_url=requested_url,
+                        url=str(response.url),
+                        status_code=304,
+                        content_type="",
+                        body="",
+                        redirect_chain=chain,
+                        etag=response.headers.get("etag") or etag,
+                        last_modified=response.headers.get("last-modified") or last_modified,
+                    )
+
+                content_type = _strip_parameters(response.headers.get("content-type", "text/html"))
+                if content_type not in allowed_content_types:
+                    raise UnsafeUrlError(
+                        f"{current} is {content_type}, which cannot be fetched here; "
+                        f"allowed types are: {', '.join(allowed_content_types)}"
+                    )
+</script>
+
+<script>
+  document.getElementById('tt').addEventListener('click',function(){
+    var r=document.documentElement;
+    var next=r.getAttribute('data-theme')==='dark'?'light':'dark';
+    r.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next)}catch(e){}
+    window.dispatchEvent(new CustomEvent('lavish-theme',{detail:next}));
+  });
+</script>
+<script type="module">
+  const src = id => document.getElementById(id).textContent.replace(/^\n/, '');
+  const mount = sel => { const el = document.querySelector(sel); el.innerHTML = ''; return el; };
+
+  function fallback(){
+    for (const [sel, id] of [['#f-yaml','yaml-channels'],['#f-proto','py-proto'],['#f-fetch','py-fetch-new']]) {
+      const el = mount(sel);
+      const pre = document.createElement('pre');
+      pre.textContent = src(id);
+      el.appendChild(pre);
+    }
+  }
+
+  try {
+    const { File, FileDiff } = await import('https://esm.sh/@pierre/diffs@1.2.10?bundle');
+    const paint = themeType => {
+      const options = {
+        theme: { light: 'vitesse-light', dark: 'vitesse-dark' },
+        themeType,
+        overflow: 'wrap',
+      };
+      new File(options).render({
+        containerWrapper: mount('#f-yaml'),
+        file: { name: 'channels.yaml', contents: src('yaml-channels') },
+      });
+      new File(options).render({
+        containerWrapper: mount('#f-proto'),
+        file: { name: 'src/channels/models.py', contents: src('py-proto') },
+      });
+      new FileDiff({ ...options, diffStyle: 'unified' }).render({
+        containerWrapper: mount('#f-fetch'),
+        oldFile: { name: 'src/documents/fetch.py', contents: src('py-fetch-old') },
+        newFile: { name: 'src/documents/fetch.py', contents: src('py-fetch-new') },
+      });
+    };
+    paint(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    window.addEventListener('lavish-theme', e => paint(e.detail));
+  } catch (err) {
+    console.warn('pierre/diffs unavailable, falling back to plain text', err);
+    fallback();
+  }
+</script>
+</body>
+</html>

@@ -115,6 +115,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Interactive menu: ask questions across RAG setups or fetch new URLs",
     )
 
+    from src.channels.cli import add_channel_parsers
+
+    add_channel_parsers(subparsers)
+
     serve = subparsers.add_parser("serve", help="Run the live web chat app (FastAPI + uvicorn)")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
@@ -1755,11 +1759,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        settings = load_settings(require_keys=args.command not in ("eval-ablation", "guides"))
+        settings = load_settings(
+            require_keys=args.command not in ("eval-ablation", "guides", "channels")
+        )
         if args.command == "guides":
             from src.guides.cli import run_guides
 
             return run_guides(args, settings)
+        if args.command == "channels":
+            from src.channels.cli import run_channels
+
+            return run_channels(args, settings)
         if args.command == "chat":
             from src.chat.session import run_session
 

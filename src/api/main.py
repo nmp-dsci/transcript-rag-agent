@@ -155,6 +155,12 @@ class JudgeRequest(BaseModel):
     force: bool = False
 
 
+class ChannelPollRequest(BaseModel):
+    """Which channels to poll. Empty means every enabled one."""
+
+    channel_ids: list[str] = Field(default_factory=list)
+
+
 class IndexRequest(BaseModel):
     mode: Literal["video", "channel"]
     url: str | None = None
@@ -431,6 +437,7 @@ def create_app(
     graph_records_fn: Callable[[], list[dict[str, Any]]] | None = None,
     graph_store_factory: Callable[[], Any] | None = None,
     graph_extract_fn: Callable[[list[str]], dict[str, Any]] | None = None,
+    channels_poll_fn: Callable[[list[str]], dict[str, Any]] | None = None,
     history_path: Path = DEFAULT_HISTORY_PATH,
     chat_html_path: Path = DEFAULT_CHAT_HTML_PATH,
     index_fn: IndexFn = _default_index_fn,
@@ -490,6 +497,7 @@ def create_app(
         "graph_store": threading.Lock(),
         "chunk_store": threading.Lock(),
         "raw_store": threading.Lock(),
+        "web_embeddings": threading.Lock(),
     }
     holders: dict[str, Any] = {}
 
@@ -602,12 +610,298 @@ def create_app(
 
         return hint
 
+    def get_embedding_model() -> Any:
+        """The embedding model, built once for the app's lifetime.
+
+        Shared with the channel pipeline rather than rebuilt per poll: the
+        weights are hundreds of megabytes, and the model loads them lazily on
+        its first embed call anyway.
+        """
+        with locks["web_embeddings"]:
+            if "web_embeddings" not in holders:
+                from src.rag.embeddings import HuggingFaceEmbeddingModel
+
+                holders["web_embeddings"] = HuggingFaceEmbeddingModel(
+                    resolved.embedding_model, resolved.embedding_device
+                )
+            return holders["web_embeddings"]
+
+    def _web_ingestor() -> Any:
+        """The channel ingestor, built per call.
+
+        Per call rather than once at startup because it opens Chroma
+        collections and loads the embedding model lazily; a server that never
+        polls a channel should pay for neither.
+        """
+        from src.channels.ingest import WebIngestor
+        from src.channels.robots import RobotsPolicy
+        from src.rag.web_store import WebChunkStore, WebSourceStore
+
+        embeddings = get_embedding_model()
+        return WebIngestor(
+            source_store=WebSourceStore(
+                resolved.chroma_path, embeddings, resolved.web_source_collection
+            ),
+            chunk_store=WebChunkStore(
+                resolved.chroma_path, embeddings, resolved.web_chunk_collection
+            ),
+            robots=RobotsPolicy(),
+            target_chars=resolved.chunk_target_chars,
+            overlap_chars=resolved.chunk_overlap_chars,
+        )
+
+    def channels_overview() -> dict[str, Any]:
+        """Every configured channel with its state and its stored source count."""
+        from src.channels.registry import ChannelStateStore, load_registry, state_path
+
+        try:
+            registry = load_registry(resolved.channels_file)
+        except Exception as exc:
+            # A malformed channels.yaml must not take the tab down with a 500;
+            # it reads as "no channels, and here is why".
+            return {
+                "channels": [],
+                "totals": {"channels": 0, "enabled": 0, "sources": 0},
+                "error": str(exc),
+            }
+        states = ChannelStateStore(state_path(resolved.chroma_path))
+        counts: dict[str, int] = {}
+        if not resolved.demo_mode:
+            try:
+                from src.rag.web_store import WebSourceStore
+
+                store = WebSourceStore(
+                    resolved.chroma_path, get_embedding_model(), resolved.web_source_collection
+                )
+                for source in store.all():
+                    counts[source.channel_id] = counts.get(source.channel_id, 0) + 1
+            except Exception:  # pragma: no cover - a missing store is an empty one
+                counts = {}
+        channels = []
+        for channel in registry:
+            state = states.get(channel.id)
+            channels.append(
+                {
+                    **channel.to_dict(),
+                    "enabled": channel.enabled,
+                    "label": channel.label or channel.id,
+                    "sources": counts.get(channel.id, 0),
+                    "last_polled_at": state.last_polled_at,
+                    "next_due_at": state.next_due_at,
+                    "interval_hours": state.interval_hours,
+                    "consecutive_failures": state.consecutive_failures,
+                    "disabled_reason": state.disabled_reason,
+                    "last_error": state.last_error,
+                    "seen": len(state.seen_ids),
+                    "orphaned": False,
+                }
+            )
+        # A channel can hold documents after its entry is edited out of
+        # channels.yaml (support for that is deliberate — see web_corpus).
+        # Surfaced as its own row, same as GET /api/web/sources falls back to
+        # the channel id as label, so the headline total never exceeds the
+        # sum of what is actually shown.
+        known_ids = {channel.id for channel in registry}
+        for channel_id, count in counts.items():
+            if channel_id in known_ids:
+                continue
+            channels.append(
+                {
+                    "id": channel_id,
+                    "kind": None,
+                    "enabled": False,
+                    "label": channel_id or "Unknown channel",
+                    "sources": count,
+                    "last_polled_at": None,
+                    "next_due_at": None,
+                    "interval_hours": None,
+                    "consecutive_failures": 0,
+                    "disabled_reason": None,
+                    "last_error": None,
+                    "seen": 0,
+                    "orphaned": True,
+                }
+            )
+        return {
+            "channels": channels,
+            "totals": {
+                "channels": len(channels),
+                "enabled": len(registry.enabled()),
+                "sources": sum(counts.values()),
+            },
+        }
+
+    def web_corpus() -> dict[str, Any]:
+        """Watched web documents, grouped by the channel that found them.
+
+        The tree's second root. Grouped by channel for the same reason the
+        video tree groups by YouTube channel: the channel is the thing a
+        reader recognises, and it is what a refresh acts on.
+        """
+        empty: dict[str, Any] = {
+            "channels": [],
+            "totals": {"channels": 0, "sources": 0, "chunks": 0},
+        }
+        if resolved.demo_mode:
+            return empty
+        try:
+            from src.rag.web_store import WebSourceStore
+
+            store = WebSourceStore(
+                resolved.chroma_path, get_embedding_model(), resolved.web_source_collection
+            )
+            sources = store.all()
+        except Exception:  # pragma: no cover - a missing store is an empty one
+            return empty
+
+        labels: dict[str, str] = {}
+        try:
+            from src.channels.registry import load_registry
+
+            for channel in load_registry(resolved.channels_file):
+                labels[channel.id] = channel.label or channel.id
+        except Exception:
+            # A channel can hold documents after its entry is edited out of
+            # channels.yaml; the id is still a truthful label for them.
+            labels = {}
+
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for source in sources:
+            grouped.setdefault(source.channel_id, []).append(
+                {
+                    "key": source.key,
+                    "external_id": source.external_id,
+                    "channel_id": source.channel_id,
+                    "title": source.title,
+                    "url": source.reader_url,
+                    "state": source.state,
+                    "state_reason": source.state_reason,
+                    "revision": source.revision,
+                    "chunk_count": source.chunk_count,
+                    "word_count": source.word_count,
+                    "section_count": source.section_count,
+                    "truncated": source.truncated,
+                    "from_feed": source.from_feed,
+                    "verifiable": source.verifiable,
+                    "published_at": source.published_at,
+                    "last_fetched_at": source.last_fetched_at,
+                    "last_changed_at": source.last_changed_at,
+                }
+            )
+
+        channels = [
+            {
+                "channel_id": channel_id,
+                "label": labels.get(channel_id, channel_id or "Unknown channel"),
+                "sources": sorted(
+                    items, key=lambda item: (item["title"] or item["url"] or "").lower()
+                ),
+                "chunk_count": sum(int(item["chunk_count"]) for item in items),
+            }
+            for channel_id, items in grouped.items()
+        ]
+        channels.sort(key=lambda item: str(item["label"]).lower())
+        return {
+            "channels": channels,
+            "totals": {
+                "channels": len(channels),
+                "sources": len(sources),
+                "chunks": sum(int(channel["chunk_count"]) for channel in channels),
+            },
+        }
+
+    def web_source_chunks(key: str) -> dict[str, Any]:
+        """Every stored chunk of one web document, in reading order."""
+        if resolved.demo_mode:
+            return {"key": key, "chunks": [], "total": 0}
+        from src.rag.web_store import WebChunkStore
+
+        store = WebChunkStore(
+            resolved.chroma_path, get_embedding_model(), resolved.web_chunk_collection
+        )
+        chunks = [
+            {
+                "chunk_index": chunk.chunk_index,
+                "text": chunk.text,
+                "heading": chunk.heading,
+                "section_index": chunk.section_index,
+                "part_index": chunk.part_index,
+                "anchor": chunk.anchor,
+                "url": chunk.url,
+                "citation": chunk.citation,
+                "revision": chunk.revision,
+            }
+            for chunk in store.for_source(key)
+        ]
+        return {"key": key, "chunks": chunks, "total": len(chunks)}
+
+    def _default_channels_poll_fn(channel_ids: list[str]) -> dict[str, Any]:
+        """Poll the named channels (or every enabled one) and ingest what is new."""
+        from src.channels.pollers import PollContext, poll_channel
+        from src.channels.registry import ChannelStateStore, load_registry, state_path
+        from src.channels.schedule import is_due, record_poll
+
+        registry = load_registry(resolved.channels_file)
+        wanted = set(channel_ids)
+        selected = [c for c in registry if c.id in wanted] if wanted else list(registry.enabled())
+        states = ChannelStateStore(state_path(resolved.chroma_path))
+        ingestor = _web_ingestor()
+        context = PollContext(robots=ingestor.robots)
+
+        polled = indexed = updated = failed = skipped = 0
+        details: list[dict[str, Any]] = []
+        for channel in selected:
+            state = states.get(channel.id)
+            # An explicit request for one channel is a request to poll it now.
+            if not is_due(channel, state, force=bool(wanted)):
+                skipped += 1
+                continue
+            result = poll_channel(channel, state, context)
+            record_poll(channel, state, result)
+            polled += 1
+            if result.error:
+                states.put(state)
+                failed += 1
+                details.append({"channel": channel.id, "error": result.error})
+                continue
+            for candidate in result.candidates:
+                outcome = ingestor.ingest(candidate, channel)
+                if outcome.source is not None:
+                    state.remember([candidate.external_id])
+                if outcome.outcome == "indexed":
+                    indexed += 1
+                elif outcome.outcome == "updated":
+                    updated += 1
+                elif outcome.outcome in {"failed", "skipped"}:
+                    failed += 1
+                details.append(
+                    {
+                        "channel": channel.id,
+                        "url": candidate.reader_url,
+                        "outcome": outcome.outcome,
+                        "chunks": outcome.chunk_count,
+                        "words": outcome.words,
+                        "reason": outcome.reason,
+                    }
+                )
+            states.put(state)
+        states.save()
+        return {
+            "polled": polled,
+            "skipped": skipped,
+            "indexed": indexed,
+            "updated": updated,
+            "failed": failed,
+            "details": details,
+        }
+
     ingestion_queue = IngestionQueue(
         index_fn=index_fn,
         corpus_fn=corpus_fn,
         graph_fn=graph_extract_fn,
         max_workers=resolved.ingestion_workers,
         failure_hint=supadata_failure_hint,
+        channels_fn=channels_poll_fn or _default_channels_poll_fn,
     )
 
     def _default_matrix_run_fn(
@@ -869,6 +1163,35 @@ def create_app(
     @app.get("/api/history")
     def history() -> dict:
         return {"conversations": [entry.to_dict() for entry in load_history(history_path)]}
+
+    @app.get("/api/channels")
+    def list_channels() -> dict:
+        """Configured text channels, their state, and what each has stored.
+
+        Read-only and available in demo mode: the demo has no channels file
+        and no watched sources, so this reports an empty register rather than
+        pretending the feature is absent.
+        """
+        return channels_overview()
+
+    @app.post("/api/channels/poll", status_code=202)
+    def poll_channels(payload: ChannelPollRequest) -> dict:
+        """Queue a poll of the watched channels; returns immediately.
+
+        Rides the existing ingestion queue, so a poll streams its progress
+        through the same SSE endpoint the video jobs use.
+        """
+        job = ingestion_queue.enqueue_channels(payload.channel_ids)
+        return job.to_dict()
+
+    @app.get("/api/web/sources")
+    def web_sources() -> dict:
+        """The corpus's web half, grouped by channel — the tree's second root."""
+        return web_corpus()
+
+    @app.get("/api/web/sources/{key}/chunks")
+    def web_chunks(key: str) -> dict:
+        return web_source_chunks(key)
 
     @app.get("/api/corpus")
     def corpus() -> dict:

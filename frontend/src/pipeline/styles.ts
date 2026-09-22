@@ -378,4 +378,71 @@ export const PIPELINE_STYLES = `
 .kg-video { font-size: 10.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kg-claimtext { margin: 4px 0; font-size: 12.5px; color: var(--text2); line-height: 1.45; }
 .kg-claimlink { font-size: 11px; }
+
+/* ── the tree's web half, and its detail pane ──────────────────────────── */
+/* There are two roots now, and the video half is around forty channel rows
+   tall — so the web root would open below the fold and read as absent. Both
+   root rows pin to the top of the scrolling tree instead. */
+.tree > details > summary {
+  position: sticky; top: 0; z-index: 2; background: var(--panel3);
+}
+
+/* A state badge in a tree row must never win the width fight against the
+   title it qualifies. */
+.docstate {
+  flex: 0 0 auto; font: 600 9px var(--mono); padding: 0 5px; text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.websrc-meta { margin-top: 6px; font: 11px var(--mono); overflow-wrap: anywhere; }
+.websrc-meta a { color: var(--accent2); }
+/* A source that can no longer be verified must not render as a live link. */
+.websrc-dead { color: var(--dim); text-decoration: line-through; }
+.websrc-note {
+  margin: 8px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--text2);
+  background: var(--panel3); border-left: 2px solid var(--border2);
+  border-radius: 0 6px 6px 0; padding: 6px 10px; max-width: 78ch;
+}
+.websrc-note.bad { color: var(--bad); border-left-color: var(--bad); background: var(--bad-dim); }
+
+/* ── watched text sources ──────────────────────────────────────────────── */
+/* A strip in the same non-scrolling column as .pipe-index, so it follows the
+   same rules: capped, scrolled internally, and able to shrink. Eighteen rows
+   are taller than the corpus pane below, and nothing in this column scrolls,
+   so an uncapped panel pushed the tree off the bottom of the window. */
+.pipe-chan {
+  flex: 0 1 auto; background: var(--panel3); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; max-height: 30%; overflow-y: auto;
+}
+/* Same cap as the body, so "Poll all" lands at the right edge of the list it
+   acts on rather than out at the window edge. */
+.pipe-chan > .formrow, .pipe-chan-body { max-width: 1100px; }
+.pipe-chan-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.chan-poll { margin-left: auto; }
+.chan-note { margin: 0; font-size: 12px; color: var(--text2); }
+.chan-note.bad { color: var(--bad); }
+.chan-empty { margin: 0; font-size: 12.5px; color: var(--muted); }
+.chan-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.chan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 3.5em 5.5em auto;
+  align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--panel3); }
+.chan-row:hover { background: var(--panel2); }
+.chan-row.off { opacity: 0.6; }
+.chan-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; color: var(--text); }
+.chan-kind { font: 600 9.5px var(--mono); letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 1px 7px; white-space: nowrap; }
+.chan-kind.feed { color: var(--good); border-color: var(--good-border); }
+.chan-count { font: 600 12px var(--mono); color: var(--text2); text-align: right;
+  font-variant-numeric: tabular-nums; }
+.chan-badge { font: 600 10px var(--mono); border-radius: 8px; padding: 1px 7px; text-align: center;
+  white-space: nowrap; }
+.chan-badge.good { color: var(--good); background: var(--good-dim); }
+.chan-badge.warn { color: var(--warn); background: var(--warn-dim); }
+.chan-badge.bad { color: var(--bad); background: var(--bad-dim); }
+.chan-one { font-size: 11px; padding: 3px 9px; }
+.chan-foot { margin: 0; font-size: 11px; color: var(--dim); line-height: 1.5; }
+
+@media (max-width: 720px) {
+  .chan-row { grid-template-columns: minmax(0, 1fr) auto auto; row-gap: 4px; }
+}
 `;
