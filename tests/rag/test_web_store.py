@@ -180,6 +180,21 @@ def test_excluded_sources_are_invisible_on_every_read_path(tmp_path: Path, embed
     scoped = WebChunkStore(tmp_path, embeddings, exclude_external_ids=["a"])
     assert {chunk.external_id for chunk in scoped.all_chunks()} == {"b"}
     assert all(hit.external_id == "b" for hit in scoped.query("one", top_k=10))
+    # Including the one the pipeline tree reads a single document through:
+    # a held-out source must not become readable through the browser.
+    assert scoped.for_source(source_key("a")) == []
+    assert {chunk.external_id for chunk in scoped.for_source(source_key("b"))} == {"b"}
+
+
+def test_one_document_comes_back_in_reading_order(tmp_path: Path, embeddings) -> None:
+    store = WebChunkStore(tmp_path, embeddings)
+    store.replace(source_key("a"), chunks_for(external_id="a"))
+    store.replace(source_key("b"), chunks_for(external_id="b"))
+
+    mine = store.for_source(source_key("a"))
+    assert [chunk.chunk_index for chunk in mine] == sorted(chunk.chunk_index for chunk in mine)
+    assert {chunk.external_id for chunk in mine} == {"a"}
+    assert store.for_source(source_key("absent")) == []
 
 
 def test_the_transcript_collections_are_not_touched(tmp_path: Path, embeddings) -> None:

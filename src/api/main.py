@@ -704,6 +704,110 @@ def create_app(
             },
         }
 
+    def web_corpus() -> dict[str, Any]:
+        """Watched web documents, grouped by the channel that found them.
+
+        The tree's second root. Grouped by channel for the same reason the
+        video tree groups by YouTube channel: the channel is the thing a
+        reader recognises, and it is what a refresh acts on.
+        """
+        empty: dict[str, Any] = {
+            "channels": [],
+            "totals": {"channels": 0, "sources": 0, "chunks": 0},
+        }
+        if resolved.demo_mode:
+            return empty
+        try:
+            from src.rag.web_store import WebSourceStore
+
+            store = WebSourceStore(
+                resolved.chroma_path, get_embedding_model(), resolved.web_source_collection
+            )
+            sources = store.all()
+        except Exception:  # pragma: no cover - a missing store is an empty one
+            return empty
+
+        labels: dict[str, str] = {}
+        try:
+            from src.channels.registry import load_registry
+
+            for channel in load_registry(resolved.channels_file):
+                labels[channel.id] = channel.label or channel.id
+        except Exception:
+            # A channel can hold documents after its entry is edited out of
+            # channels.yaml; the id is still a truthful label for them.
+            labels = {}
+
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for source in sources:
+            grouped.setdefault(source.channel_id, []).append(
+                {
+                    "key": source.key,
+                    "external_id": source.external_id,
+                    "channel_id": source.channel_id,
+                    "title": source.title,
+                    "url": source.reader_url,
+                    "state": source.state,
+                    "state_reason": source.state_reason,
+                    "revision": source.revision,
+                    "chunk_count": source.chunk_count,
+                    "word_count": source.word_count,
+                    "section_count": source.section_count,
+                    "truncated": source.truncated,
+                    "from_feed": source.from_feed,
+                    "verifiable": source.verifiable,
+                    "published_at": source.published_at,
+                    "last_fetched_at": source.last_fetched_at,
+                    "last_changed_at": source.last_changed_at,
+                }
+            )
+
+        channels = [
+            {
+                "channel_id": channel_id,
+                "label": labels.get(channel_id, channel_id or "Unknown channel"),
+                "sources": sorted(
+                    items, key=lambda item: (item["title"] or item["url"] or "").lower()
+                ),
+                "chunk_count": sum(int(item["chunk_count"]) for item in items),
+            }
+            for channel_id, items in grouped.items()
+        ]
+        channels.sort(key=lambda item: str(item["label"]).lower())
+        return {
+            "channels": channels,
+            "totals": {
+                "channels": len(channels),
+                "sources": len(sources),
+                "chunks": sum(int(channel["chunk_count"]) for channel in channels),
+            },
+        }
+
+    def web_source_chunks(key: str) -> dict[str, Any]:
+        """Every stored chunk of one web document, in reading order."""
+        if resolved.demo_mode:
+            return {"key": key, "chunks": [], "total": 0}
+        from src.rag.web_store import WebChunkStore
+
+        store = WebChunkStore(
+            resolved.chroma_path, get_embedding_model(), resolved.web_chunk_collection
+        )
+        chunks = [
+            {
+                "chunk_index": chunk.chunk_index,
+                "text": chunk.text,
+                "heading": chunk.heading,
+                "section_index": chunk.section_index,
+                "part_index": chunk.part_index,
+                "anchor": chunk.anchor,
+                "url": chunk.url,
+                "citation": chunk.citation,
+                "revision": chunk.revision,
+            }
+            for chunk in store.for_source(key)
+        ]
+        return {"key": key, "chunks": chunks, "total": len(chunks)}
+
     def _default_channels_poll_fn(channel_ids: list[str]) -> dict[str, Any]:
         """Poll the named channels (or every enabled one) and ingest what is new."""
         from src.channels.pollers import PollContext, poll_channel
@@ -1049,6 +1153,15 @@ def create_app(
         """
         job = ingestion_queue.enqueue_channels(payload.channel_ids)
         return job.to_dict()
+
+    @app.get("/api/web/sources")
+    def web_sources() -> dict:
+        """The corpus's web half, grouped by channel — the tree's second root."""
+        return web_corpus()
+
+    @app.get("/api/web/sources/{key}/chunks")
+    def web_chunks(key: str) -> dict:
+        return web_source_chunks(key)
 
     @app.get("/api/corpus")
     def corpus() -> dict:

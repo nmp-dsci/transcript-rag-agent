@@ -47,8 +47,9 @@ export function VideoDetail({ video, chunks, selectedChunk, onAskAbout }: Props)
         <div className="empty">
           <h2>Explore the corpus</h2>
           <p>
-            Pick a video in the tree to read its chunks — the exact units retrieval returns —
-            or run a query in the Retrieval Lab above to compare BM25 against semantic ranking.
+            Pick a video or a web document in the tree to read its chunks — the exact units
+            retrieval returns — or run a query in the Retrieval Lab above to compare BM25
+            against semantic ranking.
           </p>
         </div>
       </div>

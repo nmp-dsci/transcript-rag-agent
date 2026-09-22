@@ -1359,6 +1359,74 @@ export interface ChannelList {
   error?: string;
 }
 
+/* ── The corpus's web half (GET /api/web/sources) ────────────────────────
+   Deliberately not folded into `Video`/`Chunk`. A web document has no
+   duration, no views and no timestamps, and its citation unit is a section
+   heading rather than `mm:ss` — the tree has to show both honestly. */
+
+/** One watched document: an article, a docs page, a pinned repo file. */
+export interface WebSourceSummary {
+  /** The store key, and what the chunks endpoint is addressed by. */
+  key: string;
+  external_id: string;
+  channel_id: string;
+  /** Null when the page offered no title; fall back to the URL. */
+  title: string | null;
+  /** Where a reader should be sent, which is not always where we fetched. */
+  url: string;
+  /** One of live, changed, moved, gone, blocked, truncated. */
+  state: string;
+  state_reason: string | null;
+  revision: number;
+  chunk_count: number;
+  word_count: number;
+  section_count: number;
+  /** The body hit the fetch byte cap, so this is part of a document. */
+  truncated: boolean;
+  /** This revision came from the feed body rather than a page fetch. */
+  from_feed: boolean;
+  /** False once a citation into this source can no longer be re-checked. */
+  verifiable: boolean;
+  published_at: string | null;
+  last_fetched_at: string;
+  last_changed_at: string;
+}
+
+/** The documents one channel has found, the tree's second level. */
+export interface WebChannelGroup {
+  channel_id: string;
+  label: string;
+  sources: WebSourceSummary[];
+  chunk_count: number;
+}
+
+export interface WebSourceList {
+  channels: WebChannelGroup[];
+  totals: { channels: number; sources: number; chunks: number };
+}
+
+/** A web chunk. The section heading is the citation unit, so it is never
+ * optional in the way a transcript's timestamp is: a chunk without one sits
+ * above the document's first heading. */
+export interface WebChunk {
+  chunk_index: number;
+  text: string;
+  heading: string | null;
+  section_index: number;
+  part_index: number;
+  /** URL fragment for the heading, so a citation deep-links into the page. */
+  anchor: string | null;
+  url: string;
+  citation: string;
+  revision: number;
+}
+
+export interface WebChunkList {
+  key: string;
+  chunks: WebChunk[];
+  total: number;
+}
+
 /** The stages of a core index, in order. Enrichment is deliberately not among
  * them: the summary is written during `embed` from the video description, and
  * graph extraction is a separate job. */

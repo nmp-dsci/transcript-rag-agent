@@ -379,6 +379,31 @@ export const PIPELINE_STYLES = `
 .kg-claimtext { margin: 4px 0; font-size: 12.5px; color: var(--text2); line-height: 1.45; }
 .kg-claimlink { font-size: 11px; }
 
+/* ── the tree's web half, and its detail pane ──────────────────────────── */
+/* There are two roots now, and the video half is around forty channel rows
+   tall — so the web root would open below the fold and read as absent. Both
+   root rows pin to the top of the scrolling tree instead. */
+.tree > details > summary {
+  position: sticky; top: 0; z-index: 2; background: var(--panel3);
+}
+
+/* A state badge in a tree row must never win the width fight against the
+   title it qualifies. */
+.docstate {
+  flex: 0 0 auto; font: 600 9px var(--mono); padding: 0 5px; text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.websrc-meta { margin-top: 6px; font: 11px var(--mono); overflow-wrap: anywhere; }
+.websrc-meta a { color: var(--accent2); }
+/* A source that can no longer be verified must not render as a live link. */
+.websrc-dead { color: var(--dim); text-decoration: line-through; }
+.websrc-note {
+  margin: 8px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--text2);
+  background: var(--panel3); border-left: 2px solid var(--border2);
+  border-radius: 0 6px 6px 0; padding: 6px 10px; max-width: 78ch;
+}
+.websrc-note.bad { color: var(--bad); border-left-color: var(--bad); background: var(--bad-dim); }
+
 /* ── watched text sources ──────────────────────────────────────────────── */
 /* A strip in the same non-scrolling column as .pipe-index, so it follows the
    same rules: capped, scrolled internally, and able to shrink. Eighteen rows

@@ -187,6 +187,28 @@ class WebChunkStore:
         result = self.collection.get(where={"source_key": key}, include=[])
         return sorted(result.get("ids") or [])
 
+    def for_source(self, key: str) -> list[WebChunk]:
+        """Every stored chunk of one document, in reading order.
+
+        Scoped like every other read path, so a held-out source stays held out
+        here too rather than being readable through the browser.
+        """
+        result = self.collection.get(
+            where=self.scoped_where({"source_key": key}), include=["documents", "metadatas"]
+        )
+        chunks: list[WebChunk] = []
+        for text, metadata in zip(result.get("documents") or [], result.get("metadatas") or []):
+            payload = dict(metadata or {})
+            fields = {
+                key_: value for key_, value in payload.items() if key_ in WebChunk.model_fields
+            }
+            try:
+                chunks.append(WebChunk(**{**fields, "text": text or ""}))
+            except ValueError:
+                continue
+        chunks.sort(key=lambda item: item.chunk_index)
+        return chunks
+
     def replace(self, key: str, chunks: list[WebChunk]) -> tuple[int, list[str]]:
         """Make ``chunks`` the whole truth for one source.
 
