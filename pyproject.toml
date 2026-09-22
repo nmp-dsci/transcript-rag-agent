@@ -17,6 +17,7 @@ dependencies = [
     "mlflow>=3.12.0",
     "neo4j>=6.2.0",
     "pydantic>=2.13.4",
+    "pyyaml>=6.0.0",
     "python-dotenv>=1.2.2",
     "python-igraph>=1.0.0",
     "ragas>=0.4.3",
@@ -74,11 +75,28 @@ select = ["E4", "E7", "E9", "F"]
 # errors; annotating them is its own task (tracked for the production-platform
 # milestone), so `follow_imports = "silent"` type-checks these files against the
 # rest without reporting the rest's errors. `tsc --noEmit` is the frontend's gate.
+#
+# `src/rag/web_store.py` is absent for that reason and no other: like
+# `src/rag/storage.py` it talks directly to Chroma, whose stubs reject a plain
+# `list[list[float]]` embedding and hand back metadata typed loosely enough to
+# fail every model construction. Its behaviour is covered by
+# `tests/rag/test_web_store.py` instead.
 python_version = "3.12"
 ignore_missing_imports = true
 follow_imports = "silent"
 warn_unused_ignores = true
 files = [
+    "src/channels/models.py",
+    "src/channels/registry.py",
+    "src/channels/robots.py",
+    "src/channels/feeds.py",
+    "src/channels/pollers.py",
+    "src/channels/schedule.py",
+    "src/channels/refresh.py",
+    "src/channels/ingest.py",
+    "src/channels/cli.py",
+    "src/rag/web_models.py",
+    "src/rag/web_chunking.py",
     "src/transcripts/supadata_keys.py",
     "src/evals/golden.py",
     "src/evals/regression.py",
