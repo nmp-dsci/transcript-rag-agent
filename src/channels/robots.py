@@ -177,9 +177,11 @@ class RobotsPolicy:
         this agent when the file actually names that crawler.
         """
         token_lower = token.lower()
-        return any(
-            agent.lower() == token_lower for entry in parser.entries for agent in entry.useragents
-        )
+        # `entries` is a real runtime attribute of RobotFileParser but typeshed
+        # does not declare it; access defensively so a future stdlib change
+        # dropping it degrades to "no group names this agent" rather than raising.
+        groups = getattr(parser, "entries", []) or []
+        return any(agent.lower() == token_lower for entry in groups for agent in entry.useragents)
 
     def check(self, url: str) -> RobotsVerdict:
         """Whether this URL may be fetched under the policy in the docstring."""
