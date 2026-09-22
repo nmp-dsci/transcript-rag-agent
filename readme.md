@@ -624,6 +624,15 @@ under 110 words, and every one is a shell or a login wall.
 deep-links into the video; a web chunk cites `§ heading` and deep-links to the
 anchor.
 
+**Browsing them.** The RAG Pipeline tab's tree has two roots: *All videos* over
+the YouTube channels, and *Websites & docs* over the watched channels, nesting
+channel → document → chunk the same way. Selecting a document reads it in this
+half's own terms — its recorded state, revision and section count, with each
+chunk headed by `§ heading` and linked to that heading's anchor. A source whose
+state is `gone` or `blocked` keeps its chunks but is deliberately **not**
+rendered as a live link: the answer it backs is still real, and the citation has
+to say it can no longer be re-checked.
+
 **Politeness, and one deliberate exclusion.** The poller identifies itself as
 `yt-agent-corpus/1.0` with a repo URL, honours `robots.txt` for `*`, and
 additionally treats a blanket disallow aimed at named AI crawlers
@@ -1119,6 +1128,8 @@ Endpoints (JSON unless noted):
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
 | `/api/channels` | GET | Every configured text channel with its state and stored-document count. Read-only, and served in demo mode |
 | `/api/channels/poll` | POST | Queue a poll of the watched channels (`{channel_ids: []}` polls every enabled one). Rides the ingestion queue, so it streams through `/api/index/queue/stream` |
+| `/api/web/sources` | GET | The corpus's web half, grouped by the channel that found each document — the pipeline tree's second root |
+| `/api/web/sources/{key}/chunks` | GET | One web document's chunks in reading order, each with its section heading and anchor |
 | `/api/health` | GET | Liveness, lazy-stack state, judge/answer/embedding models, `ui` mode, `stt` (whether the composer mic is available), `supadata` (which numbered key is live and which are exhausted) |
 | `/api/setups` | GET | The RAG setup descriptors |
 | `/api/experiments` | GET | Committed ablation, golden-run and matrix snapshots for the Experiments tab |
