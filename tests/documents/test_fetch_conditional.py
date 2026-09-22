@@ -219,6 +219,11 @@ def test_the_address_and_scheme_bounds_take_no_parameter() -> None:
         "etag",
         "last_modified",
         "user_agent",
+        # Changes what the request asks for, never what comes back: the
+        # content-type bound is still allowed_content_types, and scheme,
+        # per-hop address re-validation, redirect count and the byte cap all
+        # remain parameterless.
+        "accept",
     }
 
 

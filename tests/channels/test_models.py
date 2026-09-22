@@ -112,3 +112,33 @@ def test_state_survives_a_dict_round_trip() -> None:
     assert restored == state
     assert restored.interval_hours == 48.0
     assert ChannelState(channel_id="x").interval_hours == DEFAULT_INTERVAL_HOURS
+
+
+def test_path_prefixes_are_rejected_on_a_kind_that_cannot_use_them() -> None:
+    # Silently ignoring them would leave a feed channel looking configured
+    # for something it will never do.
+    with pytest.raises(ChannelConfigError, match="github_docs only"):
+        ChannelConfig(
+            id="feed", kind="rss", url="https://a.example/f.xml", path_prefixes=("docs/",)
+        )
+
+
+def test_a_github_channel_must_name_something_to_fetch() -> None:
+    with pytest.raises(ChannelConfigError, match="needs paths or path_prefixes"):
+        ChannelConfig(id="repo", kind="github_docs", url="https://github.com/o/r")
+
+
+def test_prefixes_and_excludes_survive_a_yaml_round_trip() -> None:
+    # channels.yaml is the committed intent, so what it says has to come back.
+    original = ChannelConfig(
+        id="repo",
+        kind="github_docs",
+        url="https://github.com/o/r",
+        paths=("README.md",),
+        path_prefixes=("content/", "role/"),
+        exclude_paths=("_internal/",),
+    )
+    restored = ChannelConfig.from_dict(original.to_dict())
+    assert restored.path_prefixes == ("content/", "role/")
+    assert restored.exclude_paths == ("_internal/",)
+    assert restored == original

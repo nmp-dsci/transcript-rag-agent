@@ -64,6 +64,15 @@ FEED_CONTENT_TYPES = (
 #: which the default list already allows; these are for hosts that label it.
 MARKDOWN_CONTENT_TYPES = ("text/markdown", "text/x-markdown")
 
+#: The repository-tree API. Its own list because nothing else in this project
+#: reads JSON over this path, and the chat's paste-a-link route must not start
+#: accepting it just because a poller does.
+JSON_CONTENT_TYPES = ("application/json", "application/vnd.github+json")
+
+#: What the GitHub REST API wants asked of it. Sent as ``Accept``; the default
+#: header advertises HTML, which that API answers with a 415.
+GITHUB_API_ACCEPT = "application/vnd.github+json"
+
 DEFAULT_MAX_BYTES = 2_000_000
 
 #: Feeds get their own, larger cap. A full-text feed is one document holding
@@ -196,6 +205,7 @@ def fetch_document(
     etag: str | None = None,
     last_modified: str | None = None,
     user_agent: str | None = None,
+    accept: str | None = None,
 ) -> FetchedPage:
     """Fetch one URL under every bound in this module's docstring.
 
@@ -213,12 +223,19 @@ def fetch_document(
     ``etag``/``last_modified`` make the request conditional. A 304 comes back
     as a :class:`FetchedPage` with that status and an empty body rather than an
     exception; see :attr:`FetchedPage.not_modified`.
+
+    ``accept`` overrides the request's ``Accept`` header. Needed because the
+    default advertises HTML and the GitHub tree API answers that with a 415;
+    it changes what the server is asked for, never what this function will
+    accept back — that remains ``allowed_content_types``.
     """
     import httpx
 
     headers = dict(DEFAULT_HEADERS)
     if user_agent:
         headers["User-Agent"] = user_agent
+    if accept:
+        headers["Accept"] = accept
     owned = client is None
     http = client or httpx.Client(timeout=timeout_seconds, follow_redirects=False, headers=headers)
     try:

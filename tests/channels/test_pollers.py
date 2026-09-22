@@ -3,7 +3,17 @@ from __future__ import annotations
 import pytest
 
 from src.channels.models import ChannelConfig, ChannelState
-from src.channels.pollers import MAX_SITEMAP_CHILDREN, PollContext, poll_channel, raw_github_url
+import json
+
+from src.channels.pollers import (
+    MAX_TREE_FILES,
+    MAX_SITEMAP_CHILDREN,
+    PollContext,
+    poll_channel,
+    raw_github_url,
+    select_paths,
+    tree_api_url,
+)
 from src.documents.fetch import DocumentFetchError
 from src.documents.models import FetchedPage
 
@@ -237,8 +247,219 @@ def test_github_docs_resolves_raw_urls_and_makes_no_request(permissive_robots) -
         "https://raw.githubusercontent.com/owner/repo/HEAD/README.md",
         "https://raw.githubusercontent.com/owner/repo/HEAD/docs/guide.md",
     ]
-    # Fetched from raw, cited at the rendered page.
-    assert all(c.reader_url == "https://github.com/owner/repo" for c in result.candidates)
+    # Fetched from raw, cited at the rendered page — per file, because with
+    # many files the repo root is the right page for none of them.
+    assert [c.reader_url for c in result.candidates] == [
+        "https://github.com/owner/repo/blob/HEAD/README.md",
+        "https://github.com/owner/repo/blob/HEAD/docs/guide.md",
+    ]
+
+
+TREE_URL = "https://api.github.com/repos/owner/repo/git/trees/HEAD?recursive=1"
+
+
+def tree_page(
+    paths: list[str], truncated: bool = False, body_truncated: bool = False, **kwargs
+) -> FetchedPage:
+    if body_truncated:
+        kwargs["truncated"] = True
+    body = json.dumps(
+        {
+            "tree": [{"type": "blob", "path": path} for path in paths]
+            + [{"type": "tree", "path": "content"}],
+            "truncated": truncated,
+        }
+    )
+    return page(
+        body, requested_url=TREE_URL, url=TREE_URL, content_type="application/json", **kwargs
+    )
+
+
+def tree_channel(**kwargs) -> ChannelConfig:
+    defaults = dict(
+        id="repo",
+        kind="github_docs",
+        url="https://github.com/owner/repo",
+        paths=("README.md",),
+        path_prefixes=("content/",),
+        max_items_per_poll=50,
+    )
+    return ChannelConfig(**{**defaults, **kwargs})
+
+
+def test_a_prefix_takes_every_markdown_file_beneath_it(permissive_robots) -> None:
+    # A README is an index; the documents are the files under content/. This
+    # is the whole reason the tree call is worth one request.
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context(
+            {
+                TREE_URL: tree_page(
+                    ["content/factor-01-a.md", "content/factor-02-b.md", "other/skip.md"]
+                )
+            },
+            permissive_robots,
+        ),
+    )
+    assert result.error is None
+    assert [c.url for c in result.candidates] == [
+        "https://raw.githubusercontent.com/owner/repo/HEAD/README.md",
+        "https://raw.githubusercontent.com/owner/repo/HEAD/content/factor-01-a.md",
+        "https://raw.githubusercontent.com/owner/repo/HEAD/content/factor-02-b.md",
+    ]
+
+
+def test_a_file_outside_every_prefix_is_left_alone(permissive_robots) -> None:
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context({TREE_URL: tree_page(["notes/third-party.md"])}, permissive_robots),
+    )
+    assert [c.external_id for c in result.candidates] == ["https://github.com/owner/repo#README.md"]
+
+
+def test_excluded_fragments_drop_files_a_prefix_would_otherwise_take(permissive_robots) -> None:
+    # Scraped threads and link dumps sit beside the author's own writing.
+    result = poll_channel(
+        tree_channel(exclude_paths=("_internal/",)),
+        ChannelState(channel_id="repo"),
+        context(
+            {TREE_URL: tree_page(["content/real.md", "content/_internal/fetched/reddit.md"])},
+            permissive_robots,
+        ),
+    )
+    assert [c.url for c in result.candidates] == [
+        "https://raw.githubusercontent.com/owner/repo/HEAD/README.md",
+        "https://raw.githubusercontent.com/owner/repo/HEAD/content/real.md",
+    ]
+
+
+def test_only_markdown_blobs_are_taken(permissive_robots) -> None:
+    # A tree lists images, code and directories too; none of them is a document.
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context(
+            {TREE_URL: tree_page(["content/a.md", "content/diagram.png", "content/run.py"])},
+            permissive_robots,
+        ),
+    )
+    assert [c.external_id.split("#")[-1] for c in result.candidates] == [
+        "README.md",
+        "content/a.md",
+    ]
+
+
+def test_a_pinned_path_is_never_offered_twice_because_a_prefix_also_matched(
+    permissive_robots,
+) -> None:
+    result = poll_channel(
+        tree_channel(paths=("content/a.md",)),
+        ChannelState(channel_id="repo"),
+        context({TREE_URL: tree_page(["content/a.md", "content/b.md"])}, permissive_robots),
+    )
+    assert [c.external_id.split("#")[-1] for c in result.candidates] == [
+        "content/a.md",
+        "content/b.md",
+    ]
+
+
+def test_each_file_cites_its_own_rendered_page(permissive_robots) -> None:
+    result = poll_channel(
+        tree_channel(paths=()),
+        ChannelState(channel_id="repo"),
+        context({TREE_URL: tree_page(["content/factor-01-a.md"])}, permissive_robots),
+    )
+    assert result.candidates[0].reader_url == (
+        "https://github.com/owner/repo/blob/HEAD/content/factor-01-a.md"
+    )
+
+
+def test_a_file_already_seen_is_not_offered_again(permissive_robots) -> None:
+    # Discovery means unseen; whether a stored file changed is loop B's job.
+    state = ChannelState(channel_id="repo")
+    state.remember(["https://github.com/owner/repo#content/a.md"])
+    result = poll_channel(
+        tree_channel(paths=()),
+        state,
+        context({TREE_URL: tree_page(["content/a.md", "content/b.md"])}, permissive_robots),
+    )
+    assert [c.external_id.split("#")[-1] for c in result.candidates] == ["content/b.md"]
+
+
+def test_a_repo_with_no_prefixes_never_calls_the_tree_api(permissive_robots) -> None:
+    # The cheap path has to stay cheap: a pinned-only channel costs nothing.
+    calls: list = []
+    result = poll_channel(
+        tree_channel(path_prefixes=()),
+        ChannelState(channel_id="repo"),
+        context({}, permissive_robots, calls),
+    )
+    assert calls == []
+    assert len(result.candidates) == 1
+
+
+def test_an_unparseable_tree_is_an_error_not_an_empty_repo(permissive_robots) -> None:
+    # Reporting "nothing new" here would read as the repo being unchanged.
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context(
+            {TREE_URL: page("not json", requested_url=TREE_URL, url=TREE_URL)}, permissive_robots
+        ),
+    )
+    assert result.error is not None
+    assert result.candidates == []
+
+
+def test_githubs_own_truncation_flag_still_yields_the_files_it_did_return(
+    permissive_robots, caplog
+) -> None:
+    # GitHub truncates very large trees but the entries it sent are complete
+    # and usable, so the poll proceeds with the subset — and says so, because
+    # a later "nothing new" would otherwise read as the repo being unchanged.
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context({TREE_URL: tree_page(["content/a.md"], truncated=True)}, permissive_robots),
+    )
+    assert result.error is None
+    assert [c.external_id.split("#")[-1] for c in result.candidates] == [
+        "README.md",
+        "content/a.md",
+    ]
+    assert any("truncated" in record.message for record in caplog.records)
+
+
+def test_a_tree_cut_by_our_own_byte_cap_is_an_error(permissive_robots) -> None:
+    # Different case: our cap cuts mid-JSON, so what arrived cannot be trusted
+    # to be a whole entry, let alone a whole tree.
+    result = poll_channel(
+        tree_channel(),
+        ChannelState(channel_id="repo"),
+        context(
+            {TREE_URL: tree_page(["content/a.md"], body_truncated=True)},
+            permissive_robots,
+        ),
+    )
+    assert result.error is not None
+    assert result.candidates == []
+
+
+def test_the_tree_api_url_is_derived_from_the_repo_page() -> None:
+    assert tree_api_url("https://github.com/o/r") == (
+        "https://api.github.com/repos/o/r/git/trees/HEAD?recursive=1"
+    )
+    assert tree_api_url("https://github.com/o/r.git") == (
+        "https://api.github.com/repos/o/r/git/trees/HEAD?recursive=1"
+    )
+
+
+def test_a_prefix_cannot_mirror_a_whole_repository() -> None:
+    # A prefix is a directory, not a licence to take everything under it.
+    many = [f"content/{index}.md" for index in range(MAX_TREE_FILES + 40)]
+    assert len(select_paths(many, ("content/",), ())) == MAX_TREE_FILES
 
 
 def test_a_url_list_offers_its_urls_and_makes_no_request(permissive_robots) -> None:

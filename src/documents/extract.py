@@ -286,10 +286,14 @@ def _sections_from_markdown(body: str) -> tuple[str | None, list[tuple[str | Non
     Only the prose segments have markup stripped: inside a fence a ``<`` is far
     more likely to be an operator than a tag.
 
-    Returns the document title — the first level-one heading, if any — and the
-    heading/body pairs.
+    Returns the document title and the heading/body pairs. The title is the
+    first level-one heading, falling back to the first heading of any level:
+    twelve of the registered repo files open at ``###`` because they are
+    chapters of a document whose ``#`` lives in its README, and without the
+    fallback each one cites as a bare URL.
     """
     title: str | None = None
+    first_heading: str | None = None
     # Each section is (heading, segments); each segment is (is_code, lines).
     sections: list[tuple[str | None, list[tuple[bool, list[str]]]]] = [(None, [(False, [])])]
     in_fence = False
@@ -324,6 +328,8 @@ def _sections_from_markdown(body: str) -> tuple[str | None, list[tuple[str | Non
         text = _collapse(_strip_markdown_markup(heading.group(2)))
         if title is None and len(heading.group(1)) == 1:
             title = text
+        if first_heading is None and text:
+            first_heading = text
         sections.append((text, [(False, [])]))
 
     pairs: list[tuple[str | None, str]] = []
@@ -339,7 +345,7 @@ def _sections_from_markdown(body: str) -> tuple[str | None, list[tuple[str | Non
         # path hands it data runs that already carry their own line breaks;
         # ``splitlines()`` removed those, so they go back in here.
         pairs.append((heading, _clean_block(["\n".join(rendered)])))
-    return title, pairs
+    return title or first_heading, pairs
 
 
 def _looks_like_markdown(page: FetchedPage) -> bool:
