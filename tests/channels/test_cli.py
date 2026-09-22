@@ -65,7 +65,9 @@ def test_a_candidate_whose_first_poll_ingest_fails_is_retried_by_the_next_poll(
     monkeypatch, settings: Settings, embeddings, permissive_robots: RobotsPolicy
 ) -> None:
     ingestor = WebIngestor(
-        source_store=WebSourceStore(settings.chroma_path, embeddings, settings.web_source_collection),
+        source_store=WebSourceStore(
+            settings.chroma_path, embeddings, settings.web_source_collection
+        ),
         chunk_store=WebChunkStore(settings.chroma_path, embeddings, settings.web_chunk_collection),
         robots=permissive_robots,
     )

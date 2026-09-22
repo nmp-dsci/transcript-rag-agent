@@ -123,6 +123,7 @@ def test_demo_mode_without_keys_has_an_empty_ring(monkeypatch, tmp_path: Path) -
 
     assert load_settings().supadata_api_keys == ()
 
+
 def test_the_web_collections_are_separate_from_the_transcript_ones(monkeypatch) -> None:
     # The separation is the whole point: transcript_chunks is the collection
     # the committed eval snapshots were measured against.

@@ -1126,7 +1126,7 @@ Endpoints (JSON unless noted):
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/` | GET | The workbench UI (React bundle, else the legacy page) |
-| `/api/channels` | GET | Every configured text channel with its state and stored-document count. Read-only, and served in demo mode |
+| `/api/channels` | GET | Every configured text channel with its state and stored-document count, plus an `orphaned: true` row for any channel id still holding documents after its entry left `channels.yaml`, so `totals.sources` never exceeds the rows shown. Read-only, and served in demo mode |
 | `/api/channels/poll` | POST | Queue a poll of the watched channels (`{channel_ids: []}` polls every enabled one). Rides the ingestion queue, so it streams through `/api/index/queue/stream` |
 | `/api/web/sources` | GET | The corpus's web half, grouped by the channel that found each document — the pipeline tree's second root |
 | `/api/web/sources/{key}/chunks` | GET | One web document's chunks in reading order, each with its section heading and anchor |
