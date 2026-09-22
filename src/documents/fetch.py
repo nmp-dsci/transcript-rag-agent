@@ -50,7 +50,28 @@ ALLOWED_CONTENT_TYPES = (
     "application/xhtml+xml",
 )
 
+#: Feeds and sitemaps. Kept *out* of :data:`ALLOWED_CONTENT_TYPES` on purpose:
+#: the chat's paste-a-link path must not start accepting XML just because the
+#: corpus poller needs to. Callers opt in per fetch.
+FEED_CONTENT_TYPES = (
+    "application/xml",
+    "text/xml",
+    "application/rss+xml",
+    "application/atom+xml",
+)
+
+#: Raw Markdown. ``raw.githubusercontent.com`` serves ``.md`` as ``text/plain``,
+#: which the default list already allows; these are for hosts that label it.
+MARKDOWN_CONTENT_TYPES = ("text/markdown", "text/x-markdown")
+
 DEFAULT_MAX_BYTES = 2_000_000
+
+#: Feeds get their own, larger cap. A full-text feed is one document holding
+#: twenty whole articles, so it is legitimately far bigger than any single
+#: page: measured, one registered source's feed is 2.9 MB, which the default
+#: cap cut mid-CDATA and turned into a parse error rather than a short feed.
+#: Still bounded, because the point of a cap is to bound memory.
+FEED_MAX_BYTES = 8_000_000
 DEFAULT_TIMEOUT_SECONDS = 15.0
 DEFAULT_MAX_REDIRECTS = 5
 
@@ -171,6 +192,10 @@ def fetch_document(
     max_bytes: int = DEFAULT_MAX_BYTES,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     max_redirects: int = DEFAULT_MAX_REDIRECTS,
+    allowed_content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
+    etag: str | None = None,
+    last_modified: str | None = None,
+    user_agent: str | None = None,
 ) -> FetchedPage:
     """Fetch one URL under every bound in this module's docstring.
 
@@ -178,31 +203,78 @@ def fetch_document(
     a transport stub; when omitted a client is created and closed per fetch.
     Redirects are followed here rather than by httpx precisely so each hop can
     be re-validated.
+
+    ``allowed_content_types`` narrows or widens **only** the content-type
+    bound, and defaults to the historical list so every existing caller keeps
+    exactly the policy it had. The other four bounds — scheme, address
+    re-validation on each hop, redirect count, byte cap — take no parameter,
+    because those four are what make this not an SSRF proxy.
+
+    ``etag``/``last_modified`` make the request conditional. A 304 comes back
+    as a :class:`FetchedPage` with that status and an empty body rather than an
+    exception; see :attr:`FetchedPage.not_modified`.
     """
     import httpx
 
+    headers = dict(DEFAULT_HEADERS)
+    if user_agent:
+        headers["User-Agent"] = user_agent
     owned = client is None
-    http = client or httpx.Client(
-        timeout=timeout_seconds, follow_redirects=False, headers=DEFAULT_HEADERS
-    )
+    http = client or httpx.Client(timeout=timeout_seconds, follow_redirects=False, headers=headers)
     try:
-        return _fetch(http, url, max_bytes=max_bytes, max_redirects=max_redirects)
+        return _fetch(
+            http,
+            url,
+            max_bytes=max_bytes,
+            max_redirects=max_redirects,
+            allowed_content_types=allowed_content_types,
+            etag=etag,
+            last_modified=last_modified,
+        )
     finally:
         if owned:
             http.close()
 
 
-def _fetch(http: Any, url: str, *, max_bytes: int, max_redirects: int) -> FetchedPage:
+def _fetch(
+    http: Any,
+    url: str,
+    *,
+    max_bytes: int,
+    max_redirects: int,
+    allowed_content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
+    etag: str | None = None,
+    last_modified: str | None = None,
+) -> FetchedPage:
     import httpx
 
     requested_url = url
     chain: list[str] = []
     current = assert_fetchable(url)
+    conditional: dict[str, str] = {}
+    if etag:
+        conditional["If-None-Match"] = etag
+    if last_modified:
+        conditional["If-Modified-Since"] = last_modified
 
     for _hop in range(max_redirects + 1):
         chain.append(current)
         try:
-            with http.stream("GET", current, follow_redirects=False) as response:
+            with http.stream(
+                "GET", current, follow_redirects=False, headers=conditional or None
+            ) as response:
+                if response.status_code == 304:
+                    # Nothing to read, nothing to extract, nothing to embed.
+                    return FetchedPage(
+                        requested_url=requested_url,
+                        url=str(response.url),
+                        status_code=304,
+                        content_type="",
+                        body="",
+                        redirect_chain=chain,
+                        etag=response.headers.get("etag") or etag,
+                        last_modified=response.headers.get("last-modified") or last_modified,
+                    )
                 if response.is_redirect:
                     location = response.headers.get("location")
                     if not location:
@@ -216,10 +288,10 @@ def _fetch(http: Any, url: str, *, max_bytes: int, max_redirects: int) -> Fetche
                 if response.status_code >= 400:
                     raise DocumentFetchError(f"{current} returned HTTP {response.status_code}")
                 content_type = _strip_parameters(response.headers.get("content-type", "text/html"))
-                if content_type not in ALLOWED_CONTENT_TYPES:
+                if content_type not in allowed_content_types:
                     raise UnsafeUrlError(
-                        f"{current} is {content_type}, which cannot be reviewed; "
-                        f"fetchable types are: {', '.join(ALLOWED_CONTENT_TYPES)}"
+                        f"{current} is {content_type}, which cannot be fetched here; "
+                        f"allowed types are: {', '.join(allowed_content_types)}"
                     )
                 body, truncated = _read_capped(response, max_bytes)
                 return FetchedPage(
@@ -230,6 +302,8 @@ def _fetch(http: Any, url: str, *, max_bytes: int, max_redirects: int) -> Fetche
                     body=body,
                     truncated=truncated,
                     redirect_chain=chain,
+                    etag=response.headers.get("etag"),
+                    last_modified=response.headers.get("last-modified"),
                 )
         except httpx.HTTPError as exc:
             raise DocumentFetchError(f"could not fetch {current}: {exc}") from exc

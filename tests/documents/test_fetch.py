@@ -204,7 +204,9 @@ def test_non_text_responses_are_refused(content_type: str) -> None:
         return httpx.Response(200, content=b"binary", headers={"content-type": content_type})
 
     with _client(handler) as client:
-        with pytest.raises(UnsafeUrlError, match="cannot be reviewed"):
+        # The refused type is named in the message because that message is
+        # shown to the user verbatim by ``describe_failure``.
+        with pytest.raises(UnsafeUrlError, match=content_type):
             fetch_document("https://example.com/file", client=client)
 
 
