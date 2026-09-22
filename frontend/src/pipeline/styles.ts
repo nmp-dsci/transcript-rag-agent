@@ -378,4 +378,38 @@ export const PIPELINE_STYLES = `
 .kg-video { font-size: 10.5px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kg-claimtext { margin: 4px 0; font-size: 12.5px; color: var(--text2); line-height: 1.45; }
 .kg-claimlink { font-size: 11px; }
+
+/* ── watched text sources ──────────────────────────────────────────────── */
+.chan { display: flex; flex-direction: column; gap: 10px; }
+.chan-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chan-head h2 { margin: 0; }
+.chan-totals { font: 600 11px var(--mono); color: var(--muted); }
+.chan-poll { margin-left: auto; }
+.chan-note { margin: 0; font-size: 12px; color: var(--text2); }
+.chan-note.bad { color: var(--bad); }
+.chan-empty { margin: 0; font-size: 12.5px; color: var(--muted); }
+.chan-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.chan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 3.5em 5.5em auto;
+  align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--panel3); }
+.chan-row:hover { background: var(--panel2); }
+.chan-row.off { opacity: 0.6; }
+.chan-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; color: var(--text); }
+.chan-kind { font: 600 9.5px var(--mono); letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 1px 7px; white-space: nowrap; }
+.chan-kind.feed { color: var(--good); border-color: var(--good-border); }
+.chan-count { font: 600 12px var(--mono); color: var(--text2); text-align: right;
+  font-variant-numeric: tabular-nums; }
+.chan-badge { font: 600 10px var(--mono); border-radius: 8px; padding: 1px 7px; text-align: center;
+  white-space: nowrap; }
+.chan-badge.good { color: var(--good); background: var(--good-dim); }
+.chan-badge.warn { color: var(--warn); background: var(--warn-dim); }
+.chan-badge.bad { color: var(--bad); background: var(--bad-dim); }
+.chan-one { font-size: 11px; padding: 3px 9px; }
+.chan-foot { margin: 0; font-size: 11px; color: var(--dim); line-height: 1.5; }
+
+@media (max-width: 720px) {
+  .chan-row { grid-template-columns: minmax(0, 1fr) auto auto; row-gap: 4px; }
+}
 `;

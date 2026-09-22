@@ -1304,7 +1304,7 @@ export interface IngestionJob {
   /** `enrichment` jobs index nothing — they catch the knowledge graph up on
    * videos already in the corpus, through the same queue so they share its
    * workers, progress broadcasting and failure isolation. */
-  mode: "video" | "channel" | "enrichment";
+  mode: "video" | "channel" | "enrichment" | "channels";
   target: string;
   latest: number | null;
   status: "queued" | "running" | "done" | "error";
@@ -1319,6 +1319,44 @@ export interface IngestionJob {
   stage_total: number;
   /** Only set on `enrichment` jobs: the videos being caught up. */
   enrich_video_ids?: string[];
+  /** Only set on `channels` jobs: which watched text channels are polled.
+   * Empty means every enabled one. */
+  channel_ids?: string[];
+}
+
+/** One watched text source, from GET /api/channels.
+ *
+ * A channel is a source of URLs, not a YouTube channel: videos stay a manual
+ * paste through the ingest form above, so nothing here spends a transcript
+ * credit. */
+export interface WatchedChannel {
+  id: string;
+  kind: "rss" | "atom" | "sitemap" | "github_docs" | "url_list";
+  label: string;
+  url?: string | null;
+  enabled: boolean;
+  /** The feed carries the article itself, so the page is never fetched. */
+  body_in_feed?: boolean;
+  /** Documents from this channel currently in the corpus. */
+  sources: number;
+  last_polled_at: string | null;
+  next_due_at: string | null;
+  /** Adaptive: doubles on a poll that finds nothing, halves on one that does. */
+  interval_hours: number;
+  consecutive_failures: number;
+  /** Set once repeated failures have switched the channel off. */
+  disabled_reason: string | null;
+  last_error: string | null;
+  /** How many item ids this channel has already offered. */
+  seen: number;
+}
+
+export interface ChannelList {
+  channels: WatchedChannel[];
+  totals: { channels: number; enabled: number; sources: number };
+  /** Set when channels.yaml could not be read, so the panel can say why
+   * instead of rendering an empty register as if nothing were configured. */
+  error?: string;
 }
 
 /** The stages of a core index, in order. Enrichment is deliberately not among

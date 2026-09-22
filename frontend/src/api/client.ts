@@ -2,6 +2,7 @@
 
 import { readEvents } from "./sse";
 import type {
+  ChannelList,
   AgentStep,
   Answer,
   AskRequest,
@@ -104,6 +105,13 @@ export const api = {
       (r) => r.conversations,
     ),
   corpus: () => getJson<Corpus>("/api/corpus"),
+
+  /** The watched text channels and what each has stored. */
+  channels: () => getJson<ChannelList>("/api/channels"),
+
+  /** Queue a poll of the watched channels. Empty polls every enabled one. */
+  pollChannels: (channelIds: string[] = []) =>
+    postJson<IngestionJob>("/api/channels/poll", { channel_ids: channelIds }),
   chunks: (videoId: string) =>
     getJson<ChunkList>(`/api/corpus/${encodeURIComponent(videoId)}/chunks`),
 

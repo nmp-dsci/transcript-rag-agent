@@ -12,6 +12,7 @@ import { RetrievalLab } from "./RetrievalLab";
 import { useDemo } from "../demo";
 import { ThemesView } from "./ThemesView";
 import { VideoDetail } from "./VideoDetail";
+import { ChannelsPanel } from "./ChannelsPanel";
 import { type TreeFilter, applyFilter } from "./insights";
 import { PIPELINE_STYLES } from "./styles";
 
@@ -154,6 +155,7 @@ export function PipelineView({
       </CorpusSummary>
 
       {!demo && <IndexPanel onIndexed={onCorpusChange} onViewVideo={viewIndexedVideo} />}
+      {!demo && <ChannelsPanel onPolled={onCorpusChange} />}
 
       <div className="pipe-pane" hidden={sub !== "corpus"}>
         {!demo && <RetrievalLab

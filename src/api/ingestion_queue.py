@@ -74,6 +74,9 @@ class IngestionJob:
     #: Set only on ``mode="enrichment"`` jobs: the videos to catch the graph
     #: up on. An ingest leaves this empty and discovers its own added videos.
     enrich_video_ids: list[str] = field(default_factory=list)
+    #: Set only on ``mode="channels"`` jobs: which watched channels to poll.
+    #: Empty means every enabled one.
+    channel_ids: list[str] = field(default_factory=list)
     created_at: float = field(default_factory=time.monotonic)
 
     def to_dict(self) -> dict[str, Any]:
@@ -90,6 +93,7 @@ class IngestionJob:
             "stage_index": self.stage_index,
             "stage_total": self.stage_total,
             "enrich_video_ids": self.enrich_video_ids,
+            "channel_ids": self.channel_ids,
         }
 
 
@@ -109,6 +113,7 @@ class IngestionQueue:
         heartbeat_seconds: float = DEFAULT_HEARTBEAT_SECONDS,
         max_workers: int = DEFAULT_MAX_WORKERS,
         failure_hint: Callable[[], Callable[[], str | None]] | None = None,
+        channels_fn: Callable[[list[str]], dict[str, Any]] | None = None,
     ) -> None:
         self._index_fn = index_fn
         self._corpus_fn = corpus_fn
@@ -122,6 +127,11 @@ class IngestionQueue:
         # graph extraction must not fail a job whose vector index is already
         # good, so _process reports it in job.result["graph"] instead.
         self._graph_fn = graph_fn
+        # Optional: polls watched text channels and ingests what is new. Rides
+        # this queue rather than its own because it is the same shape of job —
+        # minutes of network wait that a user watches in the same place — and
+        # it fails the same ways.
+        self._channels_fn = channels_fn
         self._heartbeat_seconds = heartbeat_seconds
         self._lock = threading.Lock()
         self._jobs: dict[str, IngestionJob] = {}
@@ -179,6 +189,28 @@ class IngestionQueue:
         self._broadcast_job(job)
         return job
 
+    def enqueue_channels(self, channel_ids: list[str]) -> IngestionJob:
+        """Queue a poll of the watched text channels.
+
+        ``argv`` is empty for the same reason enrichment's is: this job does
+        not shell out to the indexing CLI, it drives the channel pipeline
+        directly.
+        """
+        target = ", ".join(channel_ids) if channel_ids else "every enabled channel"
+        job = IngestionJob(
+            id=uuid.uuid4().hex[:12],
+            mode="channels",
+            target=target,
+            argv=[],
+            channel_ids=list(channel_ids),
+        )
+        with self._lock:
+            self._jobs[job.id] = job
+            self._order.append(job.id)
+        self._pending.put(job.id)
+        self._broadcast_job(job)
+        return job
+
     def snapshot(self) -> list[dict[str, Any]]:
         """Every job, queued first, in submission order."""
         with self._lock:
@@ -220,6 +252,9 @@ class IngestionQueue:
     def _process(self, job: IngestionJob) -> None:
         if job.mode == "enrichment":
             self._process_enrichment(job)
+            return
+        if job.mode == "channels":
+            self._process_channels(job)
             return
         job.status = "running"
         job.stage = "discover"
@@ -370,6 +405,41 @@ class IngestionQueue:
                     "The corpus is unchanged and still retrievable — "
                     "re-run the pass once the provider is available."
                 )
+        except Exception as exc:
+            job.status = "error"
+            job.error = str(exc)
+        self._broadcast_job(job)
+
+    def _process_channels(self, job: IngestionJob) -> None:
+        """Poll watched text channels and ingest whatever is new.
+
+        A poll that finds nothing is a success, not a no-op to hide: the whole
+        design goal is that "nothing changed" costs one conditional request,
+        and the job saying so is how that becomes visible.
+        """
+        job.status = "running"
+        job.stage = "discover"
+        job.stage_index = 1
+        job.message = f"Polling {job.target} …"
+        self._broadcast_job(job)
+        if self._channels_fn is None:
+            job.status = "error"
+            job.error = "No channel poller is configured on this server."
+            self._broadcast_job(job)
+            return
+        try:
+            result = self._run_blocking(
+                job,
+                lambda: self._channels_fn(job.channel_ids),  # type: ignore[misc]
+                "Still polling channels...",
+            )
+            job.result = {"ok": True, "target": job.target, **(result or {})}
+            job.status = "done"
+            job.stage = "done"
+            indexed = (result or {}).get("indexed", 0)
+            job.message = (
+                f"Indexed {indexed} new source(s)." if indexed else "Nothing new at any channel."
+            )
         except Exception as exc:
             job.status = "error"
             job.error = str(exc)
