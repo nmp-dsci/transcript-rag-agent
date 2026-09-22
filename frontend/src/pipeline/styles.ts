@@ -380,10 +380,18 @@ export const PIPELINE_STYLES = `
 .kg-claimlink { font-size: 11px; }
 
 /* ── watched text sources ──────────────────────────────────────────────── */
-.chan { display: flex; flex-direction: column; gap: 10px; }
-.chan-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.chan-head h2 { margin: 0; }
-.chan-totals { font: 600 11px var(--mono); color: var(--muted); }
+/* A strip in the same non-scrolling column as .pipe-index, so it follows the
+   same rules: capped, scrolled internally, and able to shrink. Eighteen rows
+   are taller than the corpus pane below, and nothing in this column scrolls,
+   so an uncapped panel pushed the tree off the bottom of the window. */
+.pipe-chan {
+  flex: 0 1 auto; background: var(--panel3); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; max-height: 30%; overflow-y: auto;
+}
+/* Same cap as the body, so "Poll all" lands at the right edge of the list it
+   acts on rather than out at the window edge. */
+.pipe-chan > .formrow, .pipe-chan-body { max-width: 1100px; }
+.pipe-chan-body { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .chan-poll { margin-left: auto; }
 .chan-note { margin: 0; font-size: 12px; color: var(--text2); }
 .chan-note.bad { color: var(--bad); }
