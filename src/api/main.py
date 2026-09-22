@@ -693,6 +693,33 @@ def create_app(
                     "disabled_reason": state.disabled_reason,
                     "last_error": state.last_error,
                     "seen": len(state.seen_ids),
+                    "orphaned": False,
+                }
+            )
+        # A channel can hold documents after its entry is edited out of
+        # channels.yaml (support for that is deliberate — see web_corpus).
+        # Surfaced as its own row, same as GET /api/web/sources falls back to
+        # the channel id as label, so the headline total never exceeds the
+        # sum of what is actually shown.
+        known_ids = {channel.id for channel in registry}
+        for channel_id, count in counts.items():
+            if channel_id in known_ids:
+                continue
+            channels.append(
+                {
+                    "id": channel_id,
+                    "kind": None,
+                    "enabled": False,
+                    "label": channel_id or "Unknown channel",
+                    "sources": count,
+                    "last_polled_at": None,
+                    "next_due_at": None,
+                    "interval_hours": None,
+                    "consecutive_failures": 0,
+                    "disabled_reason": None,
+                    "last_error": None,
+                    "seen": 0,
+                    "orphaned": True,
                 }
             )
         return {
@@ -831,14 +858,16 @@ def create_app(
                 continue
             result = poll_channel(channel, state, context)
             record_poll(channel, state, result)
-            states.put(state)
             polled += 1
             if result.error:
+                states.put(state)
                 failed += 1
                 details.append({"channel": channel.id, "error": result.error})
                 continue
             for candidate in result.candidates:
                 outcome = ingestor.ingest(candidate, channel)
+                if outcome.source is not None:
+                    state.remember([candidate.external_id])
                 if outcome.outcome == "indexed":
                     indexed += 1
                 elif outcome.outcome == "updated":
@@ -855,6 +884,7 @@ def create_app(
                         "reason": outcome.reason,
                     }
                 )
+            states.put(state)
         states.save()
         return {
             "polled": polled,

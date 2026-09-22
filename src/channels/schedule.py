@@ -73,6 +73,13 @@ def record_poll(
 ) -> ChannelState:
     """Fold one poll's outcome into the channel's state, in place.
 
+    Deliberately does **not** mark ``result.candidates`` as seen: that is the
+    caller's job, once each candidate's ingest has actually stored something.
+    A candidate that failed on this poll — a transient network error, a
+    temporary robots block, an extract below the word floor — must still be
+    offered again next time, and it can only stay retryable if its id was
+    never recorded as seen in the first place.
+
     Returns the same object it was given, so a caller can pass it straight to
     :meth:`ChannelStateStore.put` without wondering which copy is current.
     """
@@ -97,7 +104,6 @@ def record_poll(
         if result.last_modified is not None:
             state.last_modified = result.last_modified
         found = len(result.candidates)
-        state.remember([candidate.external_id for candidate in result.candidates])
         base = state.interval_hours or channel.poll_interval_hours
         state.interval_hours = clamp_interval(base / 2 if found else base * 2)
 

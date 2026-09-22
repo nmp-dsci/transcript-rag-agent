@@ -75,6 +75,50 @@ def test_the_register_is_reported_with_totals(channels_settings, tmp_path) -> No
     assert by_id["seeds"]["label"] == "Seed articles"
 
 
+def test_totals_sources_never_exceeds_the_sum_of_visible_rows(channels_settings, tmp_path) -> None:
+    # A channel can hold stored documents after its entry is edited out of
+    # channels.yaml (deliberately supported — see web_corpus). The headline
+    # total must not silently exceed what the rows in front of it add up to.
+    from src.rag.web_models import WebSource
+    from src.rag.web_store import WebSourceStore
+
+    class FakeEmbeddings:
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return [self.embed_query(text) for text in texts]
+
+        def embed_query(self, text: str) -> list[float]:
+            return [float(len(text) % 5), 1.0, 0.0]
+
+    store = WebSourceStore(
+        channels_settings.chroma_path, FakeEmbeddings(), channels_settings.web_source_collection
+    )
+    store.upsert(
+        WebSource(
+            external_id="a",
+            url="https://example.com/a",
+            channel_id="hamel-dev",
+            title="Post a",
+        )
+    )
+    store.upsert(
+        WebSource(
+            external_id="b",
+            url="https://example.com/b",
+            channel_id="deleted-channel",
+            title="Post b",
+        )
+    )
+
+    client = app_for(channels_settings, tmp_path)
+    body = client.get("/api/channels").json()
+
+    assert body["totals"]["sources"] == sum(channel["sources"] for channel in body["channels"])
+    orphaned = {channel["id"]: channel for channel in body["channels"]}["deleted-channel"]
+    assert orphaned["orphaned"] is True
+    assert orphaned["sources"] == 1
+    assert orphaned["label"] == "deleted-channel"
+
+
 def test_a_channel_never_polled_reports_no_history(channels_settings, tmp_path) -> None:
     client = app_for(channels_settings, tmp_path)
     channel = client.get("/api/channels").json()["channels"][0]

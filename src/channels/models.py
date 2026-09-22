@@ -215,6 +215,11 @@ class ChannelConfig:
         for name in ("paths", "urls", "topics"):
             if name in merged and merged[name] is not None:
                 merged[name] = tuple(merged[name])
+        unknown_defaults = set(defaults or {}) - known
+        if unknown_defaults:
+            raise ChannelConfigError(
+                f"channels.yaml defaults: unknown keys {', '.join(sorted(unknown_defaults))}"
+            )
         unknown = set(data) - known
         if unknown:
             raise ChannelConfigError(

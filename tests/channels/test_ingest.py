@@ -143,6 +143,34 @@ def test_a_thin_extract_fails_loudly_instead_of_being_stored(ingestor) -> None:
     assert ingestor.source_store.get("guid-1") is None
 
 
+def test_a_candidate_whose_first_ingest_fails_stays_retryable(ingestor) -> None:
+    # cli.py and the API poll endpoint only mark a candidate's external_id as
+    # seen once its ingest actually stores a WebSource. A transient failure on
+    # first encounter (here, a thin extract) must leave the id retryable
+    # rather than silently vanishing from all future polls.
+    from src.channels.models import ChannelState
+
+    state = ChannelState(channel_id="feed")
+    with_pages(
+        ingestor, {"https://a.example/post": page("<html><body><nav>Log In</nav></body></html>")}
+    )
+    outcome = ingestor.ingest(candidate(), CHANNEL)
+    assert outcome.outcome == FAILED
+    assert outcome.source is None
+    # The caller's rule: only remember an id once something was stored.
+    if outcome.source is not None:
+        state.remember([candidate().external_id])
+    assert "guid-1" not in state.seen_ids
+
+    with_pages(ingestor, {"https://a.example/post": page(article())})
+    outcome = ingestor.ingest(candidate(), CHANNEL)
+    assert outcome.outcome == INDEXED
+    assert outcome.source is not None
+    if outcome.source is not None:
+        state.remember([candidate().external_id])
+    assert "guid-1" in state.seen_ids
+
+
 def test_a_second_ingest_of_an_unchanged_source_embeds_nothing(ingestor, embeddings) -> None:
     with_pages(ingestor, {"https://a.example/post": page(article())})
     ingestor.ingest(candidate(), CHANNEL)

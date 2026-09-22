@@ -54,7 +54,6 @@ AI_CRAWLER_TOKENS = (
     "Applebot-Extended",
     "Bytespider",
     "meta-externalagent",
-    "Meta-ExternalAgent",
     "FacebookBot",
     "cohere-ai",
     "cohere-training-data-crawler",
@@ -166,6 +165,22 @@ class RobotsPolicy:
             self._cache[host] = entry
         return entry
 
+    @staticmethod
+    def _names_agent(parser: RobotFileParser, token: str) -> bool:
+        """Whether the file declares a group naming ``token`` exactly.
+
+        ``RobotFileParser.can_fetch`` falls back to substring containment when
+        no group names the agent exactly (so a generic ``User-agent: Bot``
+        group would match every token that merely contains "bot" — GPTBot,
+        ClaudeBot, Amazonbot, ...). Checked here first so that fallback is
+        never reached for :data:`AI_CRAWLER_TOKENS`: a group only "covers"
+        this agent when the file actually names that crawler.
+        """
+        token_lower = token.lower()
+        return any(
+            agent.lower() == token_lower for entry in parser.entries for agent in entry.useragents
+        )
+
     def check(self, url: str) -> RobotsVerdict:
         """Whether this URL may be fetched under the policy in the docstring."""
         entry = self._entry(url)
@@ -176,7 +191,7 @@ class RobotsPolicy:
         if not entry.parser.can_fetch(USER_AGENT_TOKEN, url):
             return RobotsVerdict(False, USER_AGENT_TOKEN, entry.crawl_delay)
         for token in AI_CRAWLER_TOKENS:
-            if not entry.parser.can_fetch(token, url):
+            if self._names_agent(entry.parser, token) and not entry.parser.can_fetch(token, url):
                 return RobotsVerdict(False, token, entry.crawl_delay)
         return RobotsVerdict(allowed=True, crawl_delay=entry.crawl_delay)
 

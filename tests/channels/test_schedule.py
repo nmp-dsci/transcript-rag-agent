@@ -61,10 +61,14 @@ def test_polls_that_find_something_speed_up_to_the_floor() -> None:
     assert state.interval_hours == MIN_INTERVAL_HOURS
 
 
-def test_a_successful_poll_records_the_ids_it_offered() -> None:
+def test_record_poll_does_not_mark_candidates_as_seen() -> None:
+    # Marking an id as seen is the caller's job, done only once that
+    # candidate's ingest has actually stored something. A candidate that
+    # fails on this poll (network error, robots block, below the word floor)
+    # must stay retryable, which only works if record_poll never claims it.
     state = ChannelState(channel_id="feed")
     record_poll(channel(), state, found(3), NOW)
-    assert state.seen_ids == ["g0", "g1", "g2"]
+    assert state.seen_ids == []
     assert state.last_polled_at == NOW.isoformat()
 
 
@@ -134,5 +138,6 @@ def test_reset_keeps_the_ids_already_seen() -> None:
     config = channel()
     state = ChannelState(channel_id="feed")
     record_poll(config, state, found(2), NOW)
+    state.remember(["g0", "g1"])
     reset(state, config)
     assert state.seen_ids == ["g0", "g1"]

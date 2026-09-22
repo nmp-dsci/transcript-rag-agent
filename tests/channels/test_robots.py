@@ -38,6 +38,16 @@ def test_a_path_closed_to_everyone_is_reported_as_such() -> None:
     assert "for all crawlers" in verdict.reason
 
 
+def test_a_generic_bot_group_does_not_sweep_in_named_ai_crawlers() -> None:
+    # RobotFileParser falls back to substring containment when no group names
+    # the agent exactly, so "Bot" would otherwise match every AI token that
+    # merely contains "bot" (GPTBot, ClaudeBot, Amazonbot, ...). A group that
+    # never actually names an AI crawler must not exclude the source.
+    robots = "User-agent: Bot\nDisallow: /\n\nUser-agent: *\nAllow: /\n"
+    verdict = policy(robots).check("https://generic.example/p/a-post")
+    assert verdict.allowed
+
+
 def test_an_open_site_is_allowed() -> None:
     verdict = policy(PERMISSIVE_ROBOTS).check("https://open.example/blog/post")
     assert verdict.allowed

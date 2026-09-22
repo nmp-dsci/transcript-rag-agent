@@ -348,6 +348,11 @@ def _looks_like_markdown(page: FetchedPage) -> bool:
     Conservative on purpose: a ``.md`` URL or a declared Markdown type, never a
     guess from the body. A transcript pasted as plain text must keep behaving
     exactly as it does today.
+
+    Only consulted in :data:`ARTICLE_MODE`: the resume review path must extract
+    a raw ``.md`` URL exactly as it always has, so a Markdown link like
+    ``[Email me](mailto:jane@example.com)`` keeps its target instead of losing
+    it to the article path's link-text-only rendering.
     """
     if page.content_type in MARKDOWN_CONTENT_TYPES:
         return True
@@ -402,7 +407,7 @@ def extract_document(
     """
     if mode not in EXTRACT_MODES:
         raise ValueError(f"mode must be one of {', '.join(EXTRACT_MODES)}, got {mode!r}")
-    if _looks_like_markdown(page):
+    if mode == ARTICLE_MODE and _looks_like_markdown(page):
         title, pairs = _sections_from_markdown(page.body)
     elif page.content_type == "text/plain":
         pairs = _sections_from_plain_text(page.body)

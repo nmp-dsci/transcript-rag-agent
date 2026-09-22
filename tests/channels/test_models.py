@@ -61,6 +61,17 @@ def test_unknown_keys_are_an_error_rather_than_silently_ignored() -> None:
         )
 
 
+def test_an_unknown_key_in_the_shared_defaults_block_is_an_error() -> None:
+    # A typo'd default key (poll_interval_hors) must not silently drop out and
+    # leave every channel on the hardcoded default instead of the intended
+    # shared value.
+    with pytest.raises(ChannelConfigError, match="unknown keys"):
+        ChannelConfig.from_dict(
+            {"id": "feed", "kind": "rss", "url": "https://a.example/f.xml"},
+            {"poll_interval_hors": 6},
+        )
+
+
 def test_file_defaults_sit_underneath_a_channels_own_values() -> None:
     defaults = {"poll_interval_hours": 6.0, "min_words": 100}
     channel = ChannelConfig.from_dict(

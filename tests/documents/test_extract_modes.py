@@ -214,6 +214,18 @@ def test_markdown_is_recognised_by_content_type() -> None:
     assert document.title == "Title"
 
 
+def test_resume_mode_keeps_markdown_link_targets() -> None:
+    # A resume pasted as a raw .md URL must be untouched by the article-mode
+    # Markdown path: the historical HTML parser keeps a link's target, while
+    # _sections_from_markdown would replace it with the link text alone.
+    body = "# Jane Doe\n\n[Email me](mailto:jane@example.com) or visit my site.\n"
+    document = extract_document(
+        page(body, url="https://raw.example/resume.md"),
+        mode=RESUME_MODE,
+    )
+    assert "mailto:jane@example.com" in document.text
+
+
 def test_plain_text_that_is_not_markdown_keeps_the_historical_behaviour() -> None:
     # A transcript pasted as plain text must behave exactly as it does today.
     body = "First block of prose here.\n\nSecond block of prose here."

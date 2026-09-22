@@ -194,8 +194,8 @@ def _run_poll(args: argparse.Namespace, settings: Settings) -> int:
             continue
         result = poll_channel(channel, state, context)
         record_poll(channel, state, result)
-        states.put(state)
         if result.error:
+            states.put(state)
             print(f"{channel.id:<32} FAILED: {result.error[:70]}")
             continue
         filtered = f", {result.filtered_out} filtered out" if result.filtered_out else ""
@@ -205,11 +205,14 @@ def _run_poll(args: argparse.Namespace, settings: Settings) -> int:
                 print(f"    would ingest  {candidate.reader_url}")
                 continue
             outcome = ingestor.ingest(candidate, channel)
+            if outcome.source is not None:
+                state.remember([candidate.external_id])
             total_chunks += outcome.chunk_count
             total_embedded += outcome.embedded_count
             total_new += 1 if outcome.changed else 0
             detail = outcome.reason or f"{outcome.chunk_count} chunks, {outcome.words} words"
             print(f"    {outcome.outcome:<10} {candidate.reader_url[-62:]:<62} {detail[:60]}")
+        states.put(state)
     if not args.dry_run:
         states.save()
         print(
