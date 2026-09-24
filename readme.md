@@ -533,6 +533,27 @@ plus `url_list` for a hand-curated set that polls nothing.
 the ingest form or `bulk-index`, so nothing on this path can spend a Supadata
 credit. No path here needs an API key of any kind.
 
+**A repo is a directory, not a README.** `github_docs` pulls raw
+`raw.githubusercontent.com` Markdown, never the rendered page — measured, the
+HTML extracts to "Navigation Menu" and "Folders and files" before any content.
+`paths` names files literally and costs nothing; `path_prefixes` asks the
+repository-tree API once per poll and takes every `.md` beneath the named
+directories, with `exclude_paths` dropping what the repos carry beside their own
+writing (scraped threads, link dumps — discovery surfaces, not documents).
+
+The prefixes are what make these channels honest. A README in this register is
+an index: the twelve factors of `12-factor-agents` are twelve files under
+`content/`, so pinning `README.md` alone stored the table of contents and not
+the book — 6 files of 353 across the six repos. Unauthenticated that API allows
+60 calls an hour and a full poll of every repo costs six, so the budget was
+never the constraint; what the call buys is the one thing a pinned list cannot
+do, which is notice a file that did not exist before.
+
+Those channels set `min_words: 150` rather than the default 250. That floor was
+measured against JavaScript-rendered pages, which raw Markdown cannot be, and
+applied here it rejected real documents — two of the twelve factors run to 168
+and 195 words. At 150 every index page and stub is still refused.
+
 **Which sources, and where that is written.** `channels.yaml` at the repo root
 is committed, because *which* sources this corpus follows is a decision worth
 reviewing in a diff, and its comments record what was measured about each one.

@@ -26,6 +26,7 @@ lives in :mod:`src.channels.refresh`.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -38,6 +39,8 @@ from src.channels.robots import USER_AGENT, RobotsPolicy
 from src.documents.fetch import (
     FEED_CONTENT_TYPES,
     FEED_MAX_BYTES,
+    GITHUB_API_ACCEPT,
+    JSON_CONTENT_TYPES,
     DocumentFetchError,
     UnsafeUrlError,
     fetch_document,
@@ -51,6 +54,18 @@ logger = logging.getLogger(__name__)
 MAX_SITEMAP_CHILDREN = 4
 
 _GITHUB_REPO = re.compile(r"^/(?P<owner>[^/]+)/(?P<repo>[^/]+)/?$")
+
+#: Markdown files taken from a single prefix in one poll. A prefix is a
+#: directory, not a licence to mirror a repo: the largest in the register
+#: offers 149 files and most of them are notes about other people's work.
+#: Applied per prefix, not across a channel's whole ``path_prefixes``, so one
+#: large directory cannot crowd out another; ``channel.max_items_per_poll``
+#: is what bounds the size of a poll overall.
+MAX_TREE_FILES = 120
+
+#: The tree response for a large repo is JSON listing every blob, so it needs
+#: the feed-sized cap rather than the document one.
+TREE_MAX_BYTES = FEED_MAX_BYTES
 
 
 def _default_fetch(url: str, **kwargs: Any) -> FetchedPage:
@@ -83,6 +98,97 @@ def raw_github_url(repo_url: str, path: str) -> str:
         raise ValueError(f"not a GitHub repository URL: {repo_url}")
     owner, repo = match.group("owner"), match.group("repo").removesuffix(".git")
     return f"https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path.lstrip('/')}"
+
+
+def tree_api_url(repo_url: str) -> str:
+    """The repository-tree API URL for a repo, recursive from ``HEAD``."""
+    parsed = urlparse(repo_url)
+    match = _GITHUB_REPO.match(parsed.path)
+    if parsed.hostname not in {"github.com", "www.github.com"} or match is None:
+        raise ValueError(f"not a GitHub repository URL: {repo_url}")
+    owner, repo = match.group("owner"), match.group("repo").removesuffix(".git")
+    return f"https://api.github.com/repos/{owner}/{repo}/git/trees/HEAD?recursive=1"
+
+
+def blob_github_url(repo_url: str, path: str) -> str:
+    """Where a reader should be sent for one file: the rendered page.
+
+    Fetching is done against ``raw``; this is the citation target. GitHub
+    slugifies Markdown headings the same way on both, so a section anchor
+    taken from the raw text resolves on the rendered page.
+    """
+    return f"{repo_url.rstrip('/')}/blob/HEAD/{path.lstrip('/')}"
+
+
+def parse_tree(body: str, truncated: bool = False) -> tuple[list[str], bool]:
+    """Markdown paths in a repository-tree response, and whether it was cut.
+
+    Returns ``(paths, complete)``. GitHub sets ``truncated`` on the response
+    itself for very large repositories, and our own byte cap can cut it too;
+    either way the caller is told, because a partial tree silently treated as
+    a whole one is a channel that quietly stops seeing half its files.
+    """
+    if truncated:
+        raise FeedParseError(
+            f"repository tree exceeded the {TREE_MAX_BYTES:,}-byte cap and cannot be parsed"
+        )
+    try:
+        payload = json.loads(body)
+    except ValueError as exc:
+        raise FeedParseError(f"repository tree is not JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise FeedParseError("repository tree is not a JSON object")
+    entries = payload.get("tree")
+    if not isinstance(entries, list):
+        raise FeedParseError("repository tree has no tree array")
+    paths = [
+        str(entry["path"])
+        for entry in entries
+        if isinstance(entry, dict)
+        and entry.get("type") == "blob"
+        and isinstance(entry.get("path"), str)
+        and str(entry["path"]).lower().endswith(".md")
+    ]
+    return sorted(paths), not bool(payload.get("truncated"))
+
+
+def select_paths(
+    paths: list[str],
+    prefixes: tuple[str, ...],
+    excludes: tuple[str, ...],
+    channel_id: str = "",
+) -> list[str]:
+    """Paths under any prefix, minus anything matching an exclude fragment.
+
+    Excludes are plain substrings rather than globs on purpose: what they have
+    to express in the register is "anything under ``_internal/fetched/``", and
+    a substring says that without inviting a pattern language into the file.
+
+    ``MAX_TREE_FILES`` is applied per prefix, in the order the channel
+    declares them, so a large early-alphabetical prefix cannot silently crowd
+    out a later one; ``paths`` is expected pre-sorted, which keeps each
+    prefix's matches in that same order. A prefix that gets capped is logged,
+    the same way a GitHub-truncated tree is.
+    """
+    chosen: list[str] = []
+    for prefix in prefixes:
+        matches = [
+            path
+            for path in paths
+            if path.startswith(prefix) and not any(fragment in path for fragment in excludes)
+        ]
+        if len(matches) > MAX_TREE_FILES:
+            logger.warning(
+                "channel %s: prefix %s has %d files, capped at %d",
+                channel_id,
+                prefix,
+                len(matches),
+                MAX_TREE_FILES,
+            )
+        for path in matches[:MAX_TREE_FILES]:
+            if path not in chosen:
+                chosen.append(path)
+    return chosen
 
 
 def _blocked(channel: ChannelConfig, url: str, reason: str) -> PollResult:
@@ -211,23 +317,58 @@ def poll_sitemap(channel: ChannelConfig, state: ChannelState, context: PollConte
 def poll_github_docs(
     channel: ChannelConfig, state: ChannelState, context: PollContext
 ) -> PollResult:
-    """The pinned file list, as raw-content URLs.
+    """The repo's Markdown, as raw-content URLs.
 
-    No network call: the candidate set is whatever ``paths`` names, and whether
-    each file has changed is loop B's question, answered there by a conditional
-    GET per file. Resolving globs would need the repository tree API, which is
-    a request and a rate limit in exchange for a convenience.
+    ``paths`` names files literally and costs nothing. ``path_prefixes`` asks
+    the repository-tree API once per poll and takes every ``.md`` beneath the
+    named directories, because a README is usually an index: the twelve
+    factors of ``12-factor-agents`` are twelve files under ``content/``, and
+    pinning the README alone stores the table of contents rather than the
+    book. It also buys what a pinned list cannot do — notice a file that did
+    not exist at the last poll.
+
+    Whether a file *already stored* has since changed remains loop B's
+    question, answered there by a conditional GET per file.
     """
     url = channel.url or ""
-    items = [
-        FeedItem(url=raw_github_url(url, path), external_id=f"{url}#{path}")
-        for path in channel.paths
-    ]
+    paths = list(channel.paths)
+    if channel.path_prefixes:
+        api = tree_api_url(url)
+        verdict = context.robots.check(api)
+        if not verdict.allowed:
+            return _blocked(channel, api, verdict.reason)
+        context.robots.wait(api)
+        page = context.fetch(
+            api,
+            allowed_content_types=JSON_CONTENT_TYPES,
+            max_bytes=TREE_MAX_BYTES,
+            accept=GITHUB_API_ACCEPT,
+        )
+        found, complete = parse_tree(page.body, page.truncated)
+        chosen = select_paths(found, channel.path_prefixes, channel.exclude_paths, channel.id)
+        if not complete:
+            # Recorded rather than swallowed: the candidate set is a subset of
+            # the repo, and a later poll finding "nothing new" would otherwise
+            # read as the repo being unchanged.
+            logger.warning(
+                "channel %s: repository tree was truncated by GitHub; %d paths seen",
+                channel.id,
+                len(found),
+            )
+        paths.extend(path for path in chosen if path not in paths)
+
+    items = [FeedItem(url=raw_github_url(url, path), external_id=f"{url}#{path}") for path in paths]
     candidates, filtered = _to_candidates(channel, state, items)
-    # Fetch from raw, cite the rendered page: GitHub slugifies headings the
-    # same way, so the section anchor resolves there too.
+    # Fetch from raw, cite the rendered page, per file rather than per repo:
+    # with many files the repo root is the right page for none of them.
     candidates = [
-        Candidate(**{**candidate.__dict__, "display_url": url}) for candidate in candidates
+        Candidate(
+            **{
+                **candidate.__dict__,
+                "display_url": blob_github_url(url, candidate.external_id.split("#", 1)[-1]),
+            }
+        )
+        for candidate in candidates
     ]
     return PollResult(
         channel_id=channel.id,

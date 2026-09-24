@@ -232,3 +232,23 @@ def test_plain_text_that_is_not_markdown_keeps_the_historical_behaviour() -> Non
     document = extract_document(page(body, content_type="text/plain", url="https://a.example/x"))
     assert headings(document) == [None]
     assert "First block" in document.text and "Second block" in document.text
+
+
+def test_a_document_opening_below_h1_still_gets_a_title() -> None:
+    # Chapter files in the registered repos open at "###" because the "#"
+    # lives in the README. Without a fallback each one cites as a bare URL.
+    document = extract_document(
+        page("### 3. Own your context window\n\nBody text here.\n", url="https://raw.example/f.md"),
+        mode=ARTICLE_MODE,
+    )
+    assert document.title == "3. Own your context window"
+
+
+def test_a_level_one_heading_still_wins_over_a_later_one() -> None:
+    document = extract_document(
+        page(
+            "### Subtitle\n\nIntro.\n\n# The Real Title\n\nBody.\n", url="https://raw.example/f.md"
+        ),
+        mode=ARTICLE_MODE,
+    )
+    assert document.title == "The Real Title"

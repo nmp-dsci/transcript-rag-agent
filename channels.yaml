@@ -53,13 +53,43 @@ channels:
   # github_docs pulls raw.githubusercontent.com Markdown, never the rendered
   # page: measured, the HTML page extracts to "Navigation Menu" and "Folders
   # and files" before any content, while the raw Markdown extracts to properly
-  # headed sections. Paths are literal — resolving globs would cost a
-  # repository-tree API call and a rate limit per channel.
+  # headed sections.
+  #
+  # `paths` names files literally and costs nothing. `path_prefixes` asks the
+  # repository-tree API once per poll, which these repos need: a README here
+  # is an index, not the document. The twelve factors of 12-factor-agents are
+  # twelve files under content/, so pinning README.md alone stored the table
+  # of contents and not the book — 6 files of 353 across the six repos.
+  # Unauthenticated that API allows 60 calls an hour and a full poll of every
+  # repo here costs six, so the budget is not the constraint; what the call
+  # actually buys is the ability to notice a file that did not exist before,
+  # which a pinned list can never do.
+  #
+  # `exclude_paths` drops what the repos carry beside their own writing:
+  # scraped third-party threads and link dumps are discovery surfaces, not
+  # documents — the same reason the url_list above holds no index pages.
+  # min_words: 150 on the tree-walked repos, not the default 250. That floor
+  # was measured against JavaScript-rendered pages, which raw Markdown cannot
+  # be; applied here it rejected real documents — factor-06 (168 words) and
+  # factor-11 (195) are two of the twelve factors, and nine of this repo set's
+  # tutorial intros sit at 183–231. Measured across all five, 150 admits those
+  # and still rejects every index page and stub: tutorials/README.md at 101,
+  # interview/README.md at 124, factor-12 at 39 (empty upstream).
   - id: twelve-factor-agents
     kind: github_docs
     url: https://github.com/humanlayer/12-factor-agents
     label: 12-Factor Agents
     paths: [README.md]
+    path_prefixes: [content/]
+    # content/ also carries factor-1-… through factor-9-…: 74–102-byte redirect
+    # stubs superseded by the zero-padded files. They would fail the word floor
+    # loudly every poll, which is noise, not a finding. "factor-1-" does not
+    # match "factor-10-", so the padded twelve all survive.
+    exclude_paths:
+      [factor-1-, factor-2-, factor-3-, factor-4-, factor-5-, factor-6-, factor-7-,
+       factor-8-, factor-9-]
+    max_items_per_poll: 40
+    min_words: 150
     topics: [agents]
 
   - id: agents-towards-production
@@ -67,27 +97,45 @@ channels:
     url: https://github.com/NirDiamant/agents-towards-production
     label: Agents Towards Production
     paths: [README.md]
+    path_prefixes: [tutorials/]
+    exclude_paths: ["/data/"]
+    max_items_per_poll: 40
+    min_words: 150
     topics: [agents, production]
 
+  # The one repo left on its README. Its 149 Markdown files are notes/ about
+  # other people's articles, talks and papers — third-party summaries rather
+  # than the authors' own writing — so only the three authored files are taken.
   - id: awesome-evals
     kind: github_docs
     url: https://github.com/benchflow-ai/awesome-evals
     label: Awesome Evals
-    paths: [README.md]
+    paths: [README.md, PATTERNS.md, SCAN.md]
     topics: [evals]
 
   - id: llm-twin-course
     kind: github_docs
     url: https://github.com/decodingai-magazine/llm-twin-course
     label: LLM Twin Course
-    paths: [README.md]
+    paths: [README.md, INSTALL_AND_USAGE.md]
+    path_prefixes: [src/]
+    exclude_paths: [.github/]
+    max_items_per_poll: 30
+    min_words: 150
     topics: [rag, production]
 
   - id: ai-engineering-field-guide
     kind: github_docs
     url: https://github.com/alexeygrigorev/ai-engineering-field-guide
     label: AI Engineering Field Guide
-    paths: [README.md]
+    paths: [README.md, awesome.md]
+    path_prefixes: [role/, interview/, portfolio/, webinars/, wiki/]
+    # _internal/fetched/ holds scraped Reddit threads; data/sources/ and
+    # data/research-exports/ and wiki/raw/ are link dumps and raw fetched
+    # material. None of it is this author's writing.
+    exclude_paths: [_internal/, /data/sources/, /data/research-exports/, wiki/raw/]
+    max_items_per_poll: 80
+    min_words: 150
     topics: [careers]
 
   - id: ai-engineer-portfolio-projects
@@ -95,6 +143,10 @@ channels:
     url: https://github.com/landedjobs/ai-engineer-portfolio-projects
     label: AI Engineer Portfolio Projects
     paths: [README.md]
+    path_prefixes: [catalog/]
+    exclude_paths: [.github/]
+    max_items_per_poll: 30
+    min_words: 150
     topics: [careers]
 
   # ── built and tested, switched off ────────────────────────────────────────

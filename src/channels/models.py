@@ -121,9 +121,20 @@ class ChannelConfig:
     #: subscribe button.
     body_in_feed: bool = False
     change_signal: str = "etag"
-    #: ``github_docs`` only: repo-relative file globs, pulled as raw Markdown
-    #: rather than as the rendered HTML page.
+    #: ``github_docs`` only: literal repo-relative file paths, pulled as raw
+    #: Markdown rather than as the rendered HTML page.
     paths: tuple[str, ...] = ()
+    #: ``github_docs`` only: repo-relative directory prefixes whose Markdown
+    #: is taken whole. A README is usually an index — the twelve factors of
+    #: ``12-factor-agents`` are twelve files under ``content/`` — so pinning
+    #: paths alone stores the table of contents and not the book. Resolving a
+    #: prefix costs one repository-tree call per poll, which also buys the one
+    #: thing a pinned list cannot do: notice a file that did not exist before.
+    path_prefixes: tuple[str, ...] = ()
+    #: Repo-relative path fragments to drop after prefix expansion. Repos in
+    #: the register carry scraped third-party threads and link dumps beside
+    #: their own writing, and those are discovery surfaces, not documents.
+    exclude_paths: tuple[str, ...] = ()
     #: ``url_list`` only.
     urls: tuple[str, ...] = ()
     topics: tuple[str, ...] = ()
@@ -145,6 +156,14 @@ class ChannelConfig:
                 raise ChannelConfigError(f"channel {self.id!r}: a url_list needs urls")
         elif not self.url:
             raise ChannelConfigError(f"channel {self.id!r}: kind {self.kind!r} needs a url")
+        if (self.path_prefixes or self.exclude_paths) and self.kind != "github_docs":
+            raise ChannelConfigError(
+                f"channel {self.id!r}: path_prefixes and exclude_paths are github_docs only"
+            )
+        if self.kind == "github_docs" and not (self.paths or self.path_prefixes):
+            raise ChannelConfigError(
+                f"channel {self.id!r}: a github_docs channel needs paths or path_prefixes"
+            )
         if self.max_items_per_poll < 1:
             raise ChannelConfigError(f"channel {self.id!r}: max_items_per_poll must be at least 1")
         # Validate the regexes at load time. A bad pattern discovered mid-poll
@@ -193,7 +212,7 @@ class ChannelConfig:
             value = getattr(self, name)
             if value:
                 data[name] = value
-        for name in ("paths", "urls", "topics"):
+        for name in ("paths", "path_prefixes", "exclude_paths", "urls", "topics"):
             value = getattr(self, name)
             if value:
                 data[name] = list(value)
@@ -212,7 +231,7 @@ class ChannelConfig:
             for key, value in source.items():
                 if key in known:
                     merged[key] = value
-        for name in ("paths", "urls", "topics"):
+        for name in ("paths", "path_prefixes", "exclude_paths", "urls", "topics"):
             if name in merged and merged[name] is not None:
                 merged[name] = tuple(merged[name])
         unknown_defaults = set(defaults or {}) - known
