@@ -1,0 +1,467 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "cO6Ly7mIziQ"
+ ],
+ "video_notes": [
+  {
+   "video_id": "cO6Ly7mIziQ",
+   "title": "LoRA & QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical (Complete Guide)",
+   "contributed": "Grounds the transformer's weight matrices and attention mechanism (Q/K/V, multi-head attention, feed-forward layers) in concrete matrix-rank math, then shows exactly how LoRA/QLoRA exploit that structure to fine-tune on a single GPU, including a full Hugging Face code walkthrough."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "LLM training pipeline stages",
+   "claim": "The full LLM training pipeline has three stages: pre-training on internet-scale data, instruction fine-tuning to teach proper behavior, then preference alignment to match human preferences.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 7,
+   "quote": "first stage of this training pipeline is called the pre-training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning entry points",
+   "claim": "You can pick up an LLM checkpoint after any of the three pipeline stages (base, instruct-tuned, or preference-aligned) and run your own custom fine-tuning on top of it.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 9,
+   "quote": "after any stage we can pick up the LLM model and we can perform our own custom fine-tuning",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning entry points",
+   "claim": "Fine-tuning is described as a deliberately flexible step in the pipeline — the same custom-tuning move works whether the base checkpoint is raw pre-trained, instruct-tuned, or already preference-aligned.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 12,
+   "quote": "this fine-tuning is a very flexible step",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Full fine-tuning cost scales with params",
+   "claim": "Full-parameter fine-tuning updates every weight, so a 7B model has 7B trainable weights and a 13B model has 13B trainable weights — the update cost scales linearly with model size.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 13,
+   "quote": "13 billion model, then you have 13 billion weights",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Transformer weights are huge",
+   "claim": "Stacking multiple encoder/decoder blocks means the attention and feed-forward weight counts inside a transformer reach into the billions, making full re-training of all weights impractical for a small knowledge tweak.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 14,
+   "quote": "It's going to be in billions, right?",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Full fine-tuning is not single-GPU practical",
+   "claim": "Full-parameter fine-tuning cannot be run on a single GPU — it needs a heavy GPU or a GPU cluster, which is why PEFT techniques exist.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 15,
+   "quote": "we cannot perform the full parameter fine-tuning on over the single GPU",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "PEFT freezes, trains a sliver",
+   "claim": "Parameter-efficient fine-tuning freezes the original model weights entirely and trains only a small number of additional weights layered on top.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 15,
+   "quote": "only a small number of additional weights are going to be trained",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "PEFT method landscape",
+   "claim": "Besides LoRA, PEFT methods include DoRA (weight-decomposed low-rank adaptation), QLoRA (LoRA plus quantized weights), prefix tuning, prompt tuning, BitFit, IA3, and plain adapters — but LoRA and QLoRA are the ones interviewers actually probe.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 16,
+   "quote": "they are going to be asked you about this LoRA and QLoRA",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "LoRA's practical payoff",
+   "claim": "LoRA's selling point versus full fine-tuning is less memory use, faster training, and lower cost alongside easy customization.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 17,
+   "quote": "You will get a lower cost and easy customization",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LoRA enables single-GPU fine-tuning",
+   "claim": "LoRA lets you fine-tune a model on a single, small GPU instead of needing a huge GPU or a cluster, with performance staying close to full fine-tuning.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 18,
+   "quote": "enabling fine-tuning on a single GPU means even you can fine tune",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Attention traces to the original Transformer paper",
+   "claim": "The attention mechanism underlying every modern LLM comes directly from the \"Attention Is All You Need\" paper, and stacking many encoder/decoder blocks on it is what balloons parameter count.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 19,
+   "quote": "This attention this comes basically from the attention all you need paper",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Weight = importance score",
+   "claim": "A weight, at its simplest, is an importance score: it tells the network which input feature or token matters more for the output.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 20,
+   "quote": "weights assesses which feature is a important",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Training = loss minimization via weight updates",
+   "claim": "Regardless of architecture, training always means the same thing: adjust weights via gradients to minimize loss — that is the end goal of every training run, neural net or LLM.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 25,
+   "quote": "this is the end goal of every training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Transformer weights motivate LoRA",
+   "claim": "Because transformer weight counts land in the billions/trillions, LoRA's answer is to decompose the weight update into a much smaller matrix rather than touch the original weight directly.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 25,
+   "quote": "this LoRA comes where we are going to be decompose this weight",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Attention is a weight mechanism",
+   "claim": "Attention is fundamentally a weighting mechanism: it decides which word in a sentence is important to another word, and that weighting is what lets the model sustain context.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 26,
+   "quote": "Attention mechanism is nothing it is a weight oriented mechanism",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Self-attention finds intra-sentence relations",
+   "claim": "Self-attention checks the relationship between every pair of words in the same sentence — e.g. in \"my name is Sunny,\" the pronoun \"my\" resolves back to \"Sunny.\"",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 27,
+   "quote": "self attention basically it's trying to check the relation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Q/K/V are linear transformations",
+   "claim": "Inside multi-head attention, the input is multiplied by three main matrices — Query, Key, and Value — as a linear transformation before further processing.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 28,
+   "quote": "we are going to be multiplied with the three main matrices",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Attention weight resolves word dependency",
+   "claim": "In \"I love machine learning,\" the attention weight correctly ties \"learning\" to \"machine,\" not \"love\" — a concrete illustration of attention weights picking the dependent word.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 29,
+   "quote": "it belong to the machine only, not love",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Deep learning is matrix operations",
+   "claim": "Deep learning and generative AI reduce to matrix operations end to end — output equals input (vector) times weight (matrix) plus bias, and images, video, embeddings, and attention QKV are all just matrices.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 30,
+   "quote": "It is a metrics game",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LLM weight matrix scale",
+   "claim": "LLM and transformer weight matrices commonly run at sizes like 512x512 or larger — far beyond toy 2x2 or 3x3 examples used to teach rank.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 34,
+   "quote": "A 512 cross 512. Even bigger than this one",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Rank is LoRA's foundation",
+   "claim": "The entire LoRA concept depends on the matrix-rank concept — without understanding rank, LoRA itself doesn't make sense.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 35,
+   "quote": "the entire LoRA concept actually depends on this rank concept",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Low-rank intuition via personality analogy",
+   "claim": "Low rank is explained via an analogy: if 1,000 people all have distinct personalities, the group's \"rank\" is 1,000 (full rank); if they all fall into just two or three personality types, the group's effective rank is low despite the large headcount.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 37,
+   "quote": "the rank of uh rank of it is going to be 1,000",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Full rank ceiling",
+   "claim": "The maximum possible rank of an n x n matrix is n — that ceiling is what \"full rank\" means in these examples.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 42,
+   "quote": "the matrix is n cross n, the full rank could be n",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Rank is symmetric row/column property",
+   "claim": "Rank can be computed by checking either rows or columns of a matrix — both approaches give the identical result.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 45,
+   "quote": "either you can check row or you can check column",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Decomposition cuts parameter count",
+   "claim": "A rank-2, 4x5 matrix (20 parameters) can be rewritten as the product of a 4x2 and a 2x5 matrix (8 + 10 = 18 parameters) while preserving the same information — at billion-parameter scale this same trick turns billions of trainable weights into millions.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 49,
+   "quote": "If you have billions of parameter, maybe it could be in millions",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA applies the decomposition trick to weights",
+   "claim": "LoRA checks the rank of the actual weight-update matrix and decomposes it into smaller matrices accordingly — only those smaller matrices get trained, the original matrix stays untouched.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 50,
+   "quote": "the same thing is being applied over here inside the LoRA",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA trains small matrices, not full weights",
+   "claim": "LoRA's core mechanism: train a small low-rank matrix pair instead of the full weight matrix, updating only those few parameters across training epochs.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 51,
+   "quote": "LoRA trains a small low-rank matrices instead of the full weight",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LoRA's low-rank assumption",
+   "claim": "LoRA's central assumption is that the weight-update matrix needed for fine-tuning is not full rank — it can be well approximated by a much smaller-rank matrix.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 52,
+   "quote": "it is possible that the weight update matrix is not full rank",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Low-rank adaptation defined",
+   "claim": "Low-rank adaptation means updating a large weight matrix by approximating that update using a much smaller matrix pair (A and B) — a one-line interview-ready definition.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 53,
+   "quote": "low rank adapt means updating a large matrix by approximate",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA is LoRA plus quantization",
+   "claim": "QLoRA is essentially \"LoRA 2.0\" — Quantized LoRA — the same low-rank adapter idea combined with quantized base weights for extra memory savings.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 53,
+   "quote": "This is also This is also called Quantized LoRA",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Quantization bit-depths",
+   "claim": "Quantization in QLoRA compresses weights stored in float16/float32 down to representations like 4-bit (or int8) to shrink memory footprint.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 54,
+   "quote": "quantize our weight into uh like uh into basically four bit",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Why use LoRA/QLoRA",
+   "claim": "LoRA/QLoRA drastically reduce GPU memory requirements compared to full fine-tuning, which is the headline reason to adopt them.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 54,
+   "quote": "GPU memory requirements are drastically reduced",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Multiple adapters per base model",
+   "claim": "You can maintain a different LoRA adapter per task without duplicating the full base model each time — swap adapters instead of swapping whole checkpoints.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 55,
+   "quote": "You can use different LoRA adapter for a multiple task without duplicating",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AdamW is the transformer-era optimizer",
+   "claim": "Transformer/LLM training typically uses AdamW rather than plain Adam, because AdamW folds in weight decay plus a learning-rate scheduler with warm-up.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 57,
+   "quote": "it is going to be combine this weight decay concept",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Where LoRA adapters attach",
+   "claim": "LoRA adapters are appended on top of the multi-head attention matrices and the feed-forward layer of each transformer block, with the original weights there kept frozen.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 60,
+   "quote": "we are going to be append this adapter",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Target-module choice affects LoRA accuracy",
+   "claim": "Adapting only the Query weight matrix alone gives average performance; combining adapters across both attention matrices (e.g. Q and V) tends to give better performance — target-module selection is itself a tunable hyperparameter.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 62,
+   "quote": "we might get a good uh performance",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "GPT-3 LoRA parameter reduction",
+   "claim": "On GPT-3, full fine-tuning trains roughly 175 billion parameters, while LoRA trains only about 4.7 million parameters — a reduction of roughly four orders of magnitude, per the LoRA paper's comparison cited in the video.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 62,
+   "quote": "We are just going to be trained only 4.7 million of parameter",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LoRA preserves accuracy",
+   "claim": "Despite training orders of magnitude fewer parameters, LoRA does not meaningfully sacrifice accuracy versus full fine-tuning — the paper's comparison shows full fine-tuning at 89.5% accuracy with LoRA matching or exceeding it on the cited benchmark.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 63,
+   "quote": "we were getting 89.5% accuracy, but if we are using LoRA",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA's low VRAM footprint",
+   "claim": "A task that needs high VRAM under LoRA's full-precision base model can run on just 8-16GB of VRAM under QLoRA's 4-bit quantized base model.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "8 to 16 GB will be enough for the respective task",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Precision byte sizes",
+   "claim": "Numeric precision drives memory cost directly: FP32 is about 4 bytes per weight, FP16 is about 2 bytes, and 4-bit quantization shrinks that to roughly 0.5 bytes.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "FP32 is having 32-bit around 4 byte",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Precision byte sizes",
+   "claim": "4-bit quantized weights cost roughly 0.5 bytes each, versus 4 bytes at FP32 — an 8x compression on raw storage.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "it's going to be around 0.5 byte",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA needs bitsandbytes on top of PEFT",
+   "claim": "QLoRA's library stack adds bitsandbytes for quantization on top of the PEFT library that implements the LoRA adapter itself.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "along with this bits and bytes for the quantization",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Required Hugging Face packages",
+   "claim": "A LoRA fine-tuning stack via Hugging Face needs: datasets, peft (implements LoRA), accelerate (multi-GPU), bitsandbytes (quantization), TRL (SFT and preference-tuning like DPO/ORPO/GRPO), and transformers as the base model-loading library.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 67,
+   "quote": "This peft to implement the LoRA",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Practical demo model choice",
+   "claim": "The hands-on walkthrough uses TinyLlama at 1.1B parameters specifically because it fits on modest hardware, versus larger options like Gemma 2 9B IT for users with bigger GPUs.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 70,
+   "quote": "The model name is a tiny llama and the model parameter",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Practical demo dataset",
+   "claim": "The demo fine-tunes on the \"English quote\" dataset (quote, author, tag fields), training the model to predict which tag a quote belongs to as a language-modeling task.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 70,
+   "quote": "the data set name is what? English quote",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "NF4 quantization type",
+   "claim": "BitsAndBytesConfig's NF4 quant type stands for \"Normal Float 4\" — the model is loaded in 4-bit NF4 while compute still happens at a higher precision like float16.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 74,
+   "quote": "NF4 means what? Normal float",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Worked LoRA hyperparameters",
+   "claim": "The walkthrough's concrete LoRAConfig uses rank=16 and alpha=32, with bias left untouched and task_type set to CAUSAL_LM.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 75,
+   "quote": "rank is equal to 16, LoRa alpha is equal to 32",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Trainable fraction with LoRA",
+   "claim": "After applying the LoRA config to the base model, only about 0.277% of the total model parameters end up trainable.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 76,
+   "quote": "it is just uh 0.277 of this all the parameter",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Merging adapters back into the base model",
+   "claim": "After training, the LoRA adapter can be merged into the base model and re-saved as a standalone full model (producing a regular safetensors file) instead of shipping the adapter separately.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 80,
+   "quote": "I can merge the Laura adapter with that previous model only",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [],
+ "gaps": [
+  "No coverage of positional encoding, layer normalization, or residual connections in the transformer block — the video stays at the level of attention (Q/K/V) and feed-forward weights.",
+  "The speaker explicitly flags his own LoRA vs QLoRA speed comparison as possibly mislabeled ('I think this is going to be swapped maybe'), so a reader cannot resolve from this source which is actually faster.",
+  "No perplexity or accuracy numbers are given for QLoRA itself — only the LoRA-vs-full-fine-tuning GPT-3 figures from the LoRA paper are cited.",
+  "RLHF, PPO, GRPO, DPO, and ORPO are named as upcoming playlist topics but are not explained in this video.",
+  "DoRA, prefix tuning, prompt tuning, BitFit, and IA3 are named as alternative PEFT methods but none are explained beyond their names.",
+  "No guidance on how to choose LoRA rank or alpha for a new task beyond the single demo values (rank=16, alpha=32) used in the walkthrough.",
+  "No treatment of the internal head-splitting math of multi-head attention — the video stays at the 'Q, K, V are matrices' level of detail."
+ ],
+ "verified_claims": 49
+}

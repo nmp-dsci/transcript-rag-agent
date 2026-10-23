@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Recurrence to Attention — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  .triptych { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 2rem 0; }
+  .triptych .move { border: 1px solid var(--rule, #e4e0d8); border-radius: 10px; padding: 1rem 1.1rem; }
+  .triptych .move h3 { margin: 0 0 .4rem; font-size: .95rem; letter-spacing: .02em; text-transform: uppercase; }
+  .levers { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: 1.6rem 0; }
+  .lever { border: 1px solid var(--rule, #e4e0d8); border-radius: 10px; padding: 1rem 1.1rem; }
+  .lever h3 { margin: 0 0 .45rem; font-size: 1rem; }
+  .stage { display: grid; grid-template-columns: 2.6rem 1fr; gap: .4rem 1rem; margin: 1.6rem 0; align-items: start; }
+  .stage .no { font-family: "Instrument Serif", serif; font-size: 2rem; line-height: 1; opacity: .45; grid-row: span 3; }
+  .stage h3 { margin: 0; }
+  .stage .why { margin: .3rem 0 .6rem; opacity: .82; }
+  .stage ul { margin: 0; }
+  table.ban { width: 100%; border-collapse: collapse; margin: 1.6rem 0; }
+  table.ban th, table.ban td { text-align: left; vertical-align: top; padding: .6rem .7rem; border-bottom: 1px solid var(--rule, #e4e0d8); }
+  table.ban th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; opacity: .7; }
+  figure.prompt { border: 1px solid var(--rule, #e4e0d8); border-radius: 10px; margin: 1.8rem 0; overflow: hidden; }
+  figure.prompt .label { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem .9rem; border-bottom: 1px solid var(--rule, #e4e0d8); font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; }
+  figure.prompt pre { margin: 0; padding: 1rem; overflow-x: auto; font-family: "Geist Mono", ui-monospace, monospace; font-size: .83rem; line-height: 1.55; white-space: pre-wrap; }
+  figure.prompt .note { padding: .7rem .9rem; border-top: 1px solid var(--rule, #e4e0d8); font-size: .85rem; opacity: .8; }
+  figure.prompt button[data-copy] { font: inherit; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; padding: .3rem .7rem; border: 1px solid currentColor; border-radius: 999px; background: none; cursor: pointer; }
+  .provenance { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; font-size: .82rem; letter-spacing: .03em; opacity: .75; margin-top: 1.2rem; }
+  .cluster { margin: 1.6rem 0; }
+  .tk { opacity: .72; }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>From Recurrence to Attention</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#lineage">Lineage</a>
+    <a href="#recurrence">Recurrence tax</a>
+    <a href="#swap">The swap</a>
+    <a href="#block">The block</a>
+    <a href="#attention">Attention math</a>
+    <a href="#bill">The n² bill</a>
+    <a href="#training">Training</a>
+    <a href="#adapt">Adapters</a>
+    <a href="#worksheets">Worksheets</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>The sequence bottleneck, and <em>the architecture that broke it</em></h1>
+  <p class="sub" id="top-p1">What the transformer actually changed about neural network training, how it differs from RNNs and LSTMs mechanism by mechanism, and what that change costs you downstream — distilled from Stanford's CME295 lectures (Afshine and Shervine Amidi), Maxime Labonne, Sebastian Raschka, Cormac Brick, Sunny Savita, Dave Ebbelaar, KodeKloud and the Databricks/MosaicML keynote.</p>
+  <div class="provenance">
+    <span>13 source videos</span>
+    <span>756 transcript chunks read in full</span>
+    <span>5 parallel extraction passes</span>
+    <span>compiled 2026-10-22</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h21">Thesis: attention traded memory for wiring</h2>
+
+  <p id="thesis-p1">The short answer to the question. An RNN carries the meaning of a sentence forward in a single hidden vector, one token at a time; the transformer deletes that vector and gives every token a direct link to every other token at once. The 2017 paper's whole bet was to <cite data-video="Ub3GoFaUcds" data-chunk="43" data-quote="move away from this sequential way of processing the text">move away from sequential processing</cite> and instead let the model have <cite data-video="Ub3GoFaUcds" data-chunk="43" data-quote="direct connections with all parts of the text at once">direct connections with all parts of the text at once</cite>. Three consequences fall out of that one change, and they are the reason the architecture took over: the gradient no longer has to survive a long multiplicative chain through time, the representation of a word becomes context-specific, and the computation becomes a pile of matrix multiplications instead of a loop — <cite data-video="Ub3GoFaUcds" data-chunk="45" data-quote="And GPUs love matrices">GPUs love matrices</cite>.</p>
+
+  <p id="thesis-p2">That is the mechanism. The revolution in <em>training</em> is a second-order effect: once the forward pass is parallel matrix math, you can spend compute instead of wall-clock. An RNN had to <cite data-video="Ub3GoFaUcds" data-chunk="41" data-quote="you basically need to compute all these hidden states before">compute all the hidden states before</cite> predicting a word, so long sequences meant long training; the transformer runs the whole sequence in one pass and runs its attention heads with <cite data-video="Ub3GoFaUcds" data-chunk="61" data-quote="all of that is done in parallel">all of that done in parallel</cite>. Scale became a budget line rather than a schedule: a modern pre-training run lands around <cite data-video="VlA_jt_3Qc4" data-chunk="9" data-quote="training an LLM is on the order of 10">10<sup>25</sup> FLOPs</cite> and <cite data-video="VlA_jt_3Qc4" data-chunk="14" data-quote="it can even cost tens of millions of dollars">tens of millions of dollars</cite>. The same bet that bought parallelism is also what bills you: self-attention is <cite data-video="VlA_jt_3Qc4" data-chunk="19" data-quote="n squared complexity because of this self attention operation">n² in sequence length</cite>, and most of the serving stack you will ever touch exists to pay that bill.</p>
+
+  <p id="thesis-p3">The corpus is blunt about the one thing beginners over-read: the architecture is not where the intelligence lives. <cite data-video="hBzUokVYQkI" data-chunk="5" data-quote="The formula, the transformer is only a page of code">The transformer is only a page of code</cite>, and GPT, Claude and Llama all run essentially that same formula — what differs is only the learned weight values, which are <cite data-video="hBzUokVYQkI" data-chunk="4" data-quote="its weights are numbers that are learned from examples">numbers learned from examples</cite>. Read this guide as architecture first, then as the training and serving consequences that architecture forces on you.</p>
+
+  <blockquote class="epigraph" id="thesis-bq1">
+    “Even from the title, you can see that the authors wanted to just rely on that part.” — on the paper <cite data-video="Ub3GoFaUcds" data-chunk="43" data-quote="named Attention is All You Need">Attention is All You Need</cite>, 2017.
+  </blockquote>
+
+  <div class="triptych">
+    <div class="move">
+      <h3 id="thesis-h31">Delete the hidden state</h3>
+      <p id="thesis-p4">In an RNN the sentence's meaning is <cite data-video="Ub3GoFaUcds" data-chunk="38" data-quote="the meaning of the sentence is basically solely encapsulated into this hidden state">solely encapsulated into this hidden state</cite>. Attention replaces that single channel with a direct link per token pair, so nothing has to be remembered through a bottleneck.</p>
+    </div>
+    <div class="move">
+      <h3 id="thesis-h32">Make it a matrix</h3>
+      <p id="thesis-p5">Expressing the computation as query/key/value matrices lets the whole sequence be attended in one matrix multiply — <cite data-video="Ub3GoFaUcds" data-chunk="45" data-quote="it's really made for the hardware that we have">made for the hardware we have</cite>, which does about <cite data-video="hBzUokVYQkI" data-chunk="9" data-quote="about 100 times more math every second">100× more math per second</cite> than a CPU.</p>
+    </div>
+    <div class="move">
+      <h3 id="thesis-h33">Pay the n² tax on purpose</h3>
+      <p id="thesis-p6">Activation memory now scales with <cite data-video="VlA_jt_3Qc4" data-chunk="19" data-quote="dependent on how large your context length is">how large your context length is</cite>. Flash attention, KV caching and prefill/decode splitting are all downstream of that single trade.</p>
+    </div>
+  </div>
+</section>
+
+<section id="lineage">
+  <h2 id="lineage-h21">Lineage: forty years to get to one page of code</h2>
+
+  <p id="lineage-p1">The corpus dates the field back well before ChatGPT and is precise about why the early ideas stalled: the models existed, the inputs did not. In the 1980s and 1990s, <cite data-video="Ub3GoFaUcds" data-chunk="14" data-quote="We didn't have a lot of compute">there was not a lot of compute</cite> and no internet-scale corpus. Read the timeline as a sequence of patches, each fixing the previous one's failure, until 2017 removed the thing being patched.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="lineage-h31">1980s — recurrence introduces word order</h3>
+    <p class="why" id="lineage-p2">The first real answer to "a bag of embeddings loses the order of the words."</p>
+    <ul>
+      <li id="lineage-li1">An RNN processes tokens one at a time and <cite data-video="Ub3GoFaUcds" data-chunk="35" data-quote="keep a hidden representation of the sentence so far">keeps a hidden representation of the sentence so far</cite>, variously called the hidden state, activation or context vector.</li>
+      <li id="lineage-li2">The win was real: <cite data-video="Ub3GoFaUcds" data-chunk="36" data-quote="the good thing with RNNs is now the word order matters">with RNNs the word order matters</cite>, and the same machinery served classification (project the last hidden state), tagging, and generation.</li>
+      <li id="lineage-li3">Blocker of the era: no internet and no compute, which is explicitly called out as <cite data-video="Ub3GoFaUcds" data-chunk="14" data-quote="one of the limiting factors which prevented the models from">one of the limiting factors</cite> that kept today's models untrainable then.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="lineage-h32">1990s — the LSTM bolts on a second memory</h3>
+    <p class="why" id="lineage-p3">Patch one: if one hidden state forgets, add a channel whose job is not forgetting.</p>
+    <ul>
+      <li id="lineage-li4"><cite data-video="Ub3GoFaUcds" data-chunk="38" data-quote="Long Short-Term Memory">Long Short-Term Memory</cite> adds <cite data-video="Ub3GoFaUcds" data-chunk="38" data-quote="another quantity that you track that is called the cell state">another tracked quantity called the cell state</cite> on top of the hidden state.</li>
+      <li id="lineage-li5">The lecture's verdict on the patch is flat: it aims at improving that piece, but <cite data-video="Ub3GoFaUcds" data-chunk="39" data-quote="it was not perfect either">it was not perfect either</cite> — the forgetting problem stayed the main issue of RNN-based methods.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="lineage-h33">2013 — Word2vec proves representations can be learned</h3>
+    <p class="why" id="lineage-p4">Before you can attend over tokens you need vectors worth attending over.</p>
+    <ul>
+      <li id="lineage-li6">Word2vec learned embeddings from a proxy task and produced interpretable analogies — <cite data-video="Ub3GoFaUcds" data-chunk="25" data-quote="king is to queen, what this is to that">king is to queen what this is to that</cite>.</li>
+      <li id="lineage-li7">Dimensions sit in the hundreds, far below vocabulary size: <cite data-video="Ub3GoFaUcds" data-chunk="27" data-quote="768, for instance, is one example of dimension">768 is one commonly cited example</cite>, against a vocabulary of <cite data-video="Ub3GoFaUcds" data-chunk="24" data-quote="tens of thousands for one language, hundreds of">tens of thousands of tokens for one language</cite>.</li>
+      <li id="lineage-li8">Its fatal limit, and the exact gap attention closes: Word2vec and FastText <cite data-video="idIck_TmPTE" data-chunk="28" data-quote="they produce static embedding">produce static embeddings</cite> with no awareness of context.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="lineage-h34">2014 — attention arrives as an RNN accessory</h3>
+    <p class="why" id="lineage-p5">Patch two: stop relying on memory, add a shortcut to the past.</p>
+    <ul>
+      <li id="lineage-li9">Attention gives <cite data-video="Ub3GoFaUcds" data-chunk="42" data-quote="a direct link between what we're trying to predict">a direct link between what you are trying to predict</cite> and something earlier in the text; <cite data-video="Ub3GoFaUcds" data-chunk="42" data-quote="it was introduced in 2014">it was introduced in 2014</cite>, three years before the transformer.</li>
+      <li id="lineage-li10">It was invented specifically to <cite data-video="Ub3GoFaUcds" data-chunk="42" data-quote="solve for these long-range dependency issues">solve for these long-range dependency issues</cite> — the RNN's defect, not a new capability.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="lineage-h35">2017 — the paper removes the thing being patched</h3>
+    <p class="why" id="lineage-p6">If the shortcut is what works, keep the shortcut and throw away the loop.</p>
+    <ul>
+      <li id="lineage-li11">The transformer, introduced in a paper <cite data-video="Ub3GoFaUcds" data-chunk="43" data-quote="named Attention is All You Need">named Attention is All You Need</cite>, is <cite data-video="Ub3GoFaUcds" data-chunk="15" data-quote="which is basically at the foundation of all of the models">at the foundation of all of the models you see today</cite>.</li>
+      <li id="lineage-li12">To build the representation of a token the model will <cite data-video="Ub3GoFaUcds" data-chunk="44" data-quote="look at all the other tokens in the sequence at once">look at all the other tokens in the sequence at once</cite> — this is self-attention.</li>
+      <li id="lineage-li13">The attention mechanism itself is not exotic: it is <cite data-video="cO6Ly7mIziQ" data-chunk="26" data-quote="Attention mechanism is nothing it is a weight oriented mechanism">a weight-oriented mechanism</cite>, deciding which word matters to which other word.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">6</div>
+    <h3 id="lineage-h36">2020s — the same block, scaled until it became an LLM</h3>
+    <p class="why" id="lineage-p7">No architecture change was needed to get from translation to ChatGPT; only data and compute.</p>
+    <ul>
+      <li id="lineage-li14">The models <cite data-video="Ub3GoFaUcds" data-chunk="15" data-quote="were scaled up, both by compute, but also in terms of the data">were scaled up both by compute and in terms of the data</cite> — and that is how LLMs were dubbed.</li>
+      <li id="lineage-li15">The scale delta is visible in two numbers: <cite data-video="VlA_jt_3Qc4" data-chunk="9" data-quote="GPT3 was trained on 300 billion tokens">GPT-3 trained on 300 billion tokens</cite>, Llama 3 on 15 trillion.</li>
+      <li id="lineage-li16">Over 90% of modern LLMs built this way are <cite data-video="VlA_jt_3Qc4" data-chunk="8" data-quote="most likely a decoder only model in more than 90% of the cases">decoder-only models</cite> — the 2017 encoder-decoder got cut in half along the way.</li>
+      <li id="lineage-li17">Adoption numbers from the same era: in one 30-day window, more than 1,500 <cite data-video="zjM2-_cFupo" data-chunk="13" data-quote="customers have used a Transformer model on databricks">customers used a Transformer model on Databricks</cite>, with GPU usage <cite data-video="zjM2-_cFupo" data-chunk="13" data-quote="growing 25 month over month">growing 25% month over month</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="recurrence">
+  <h2 id="recurrence-h21">The recurrence tax: four bills an RNN hands you</h2>
+
+  <p id="recurrence-p1">If you only remember one framing for the RNN-versus-transformer question, make it this: recurrence is not wrong, it is <em>expensive in four specific ways</em>, and attention pays off all four at once. Each card below is the failure as the corpus states it, not a paraphrase of textbook lore.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="recurrence-h31">1. The gradient dies on the way back</h3>
+      <p id="recurrence-p2">Predicting a late word depends on every hidden state before it, so updating weights means back-propagating through time. Written out, that is a product of many quantities: <cite data-video="Ub3GoFaUcds" data-chunk="40" data-quote="if it's less than 1, it's vanishing">if it's less than 1, it's vanishing</cite> — multiply enough of those and the update goes to zero. The literature name for it is the <cite data-video="Ub3GoFaUcds" data-chunk="39" data-quote="this phenomenon is called vanishing gradient">vanishing gradient</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="recurrence-h32">2. One vector has to hold the whole sentence</h3>
+      <p id="recurrence-p3">Because the meaning is <cite data-video="Ub3GoFaUcds" data-chunk="38" data-quote="basically solely encapsulated into this hidden state">solely encapsulated into this hidden state</cite>, long inputs degrade the model's ability to "remember" what it saw. This is what people mean by long-range dependencies; the LSTM's cell state was an attempt, not a fix.</p>
+    </div>
+    <div class="lever">
+      <h3 id="recurrence-h33">3. Training is serial, so GPUs idle</h3>
+      <p id="recurrence-p4">Stated plainly in the lecture: <cite data-video="Ub3GoFaUcds" data-chunk="41" data-quote="the computations are very slow">the computations are very slow</cite>, because at training time you <cite data-video="Ub3GoFaUcds" data-chunk="41" data-quote="need to compute all these hidden states before">need to compute all these hidden states before</cite> the token you want. Longer sequence, linearly longer wall-clock, with no way to spend parallel hardware on it.</p>
+    </div>
+    <div class="lever">
+      <h3 id="recurrence-h34">4. Word representations are position-blind</h3>
+      <p id="recurrence-p5">The pre-attention era's representations were token-specific <cite data-video="Ub3GoFaUcds" data-chunk="35" data-quote="regardless of where they're at">regardless of where they're at</cite>. Self-attention fixes exactly this: in "river bank" versus "robbing a bank", <cite data-video="Ub3GoFaUcds" data-chunk="44" data-quote="the bank would have different representations">the bank would have different representations</cite> — and the same contrast is why sentence-transformer embeddings beat Word2vec, since <cite data-video="idIck_TmPTE" data-chunk="32" data-quote="bank will be represented according to the context">bank will be represented according to the context</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="swap">
+  <h2 id="swap-h21">The swap, mechanism by mechanism</h2>
+
+  <p id="swap-p1">Use this table when someone asks for the difference in an interview or a design review. Left column is the recurrent mechanism; right column is what the transformer put in its place, and what that move bought or cost.</p>
+
+  <table class="ban" id="swap-table1">
+    <thead><tr><th>Recurrent mechanism</th><th>What the transformer put there instead</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Hidden state passed forward token by token</td>
+        <td>All-to-all self-attention: <cite data-video="Ub3GoFaUcds" data-chunk="44" data-quote="look at all the other tokens in the sequence at once">look at all the other tokens at once</cite>, with no memory bottleneck to survive.</td>
+      </tr>
+      <tr>
+        <td>Order comes free from the loop</td>
+        <td>Order must be injected. Because the links are direct, <cite data-video="Ub3GoFaUcds" data-chunk="51" data-quote="in the RNN, you are basically expressing things one at a time">unlike the RNN you lose the sense of order</cite>, so you add <cite data-video="Ub3GoFaUcds" data-chunk="51" data-quote="position encodings, which are there to inform on the position">position encodings to inform on the position</cite>.</td>
+      </tr>
+      <tr>
+        <td>Sequential forward and backward passes</td>
+        <td>One matrix-multiply pass over the sequence; heads run with <cite data-video="Ub3GoFaUcds" data-chunk="61" data-quote="all of that is done in parallel">all of that done in parallel</cite>, then concatenated and projected back.</td>
+      </tr>
+      <tr>
+        <td>Memory cost roughly linear in sequence length</td>
+        <td>Memory cost quadratic: <cite data-video="VlA_jt_3Qc4" data-chunk="19" data-quote="n squared complexity because of this self attention operation">n² complexity because of this self attention operation</cite>. You traded time for space, deliberately.</td>
+      </tr>
+      <tr>
+        <td>Static, context-free token embeddings feeding the loop</td>
+        <td>Context-specific representations computed from the whole sequence, so <cite data-video="Ub3GoFaUcds" data-chunk="44" data-quote="we would have a representation of teddy bear that would be unique">each token's representation is unique to its context</cite>.</td>
+      </tr>
+      <tr>
+        <td>Hand-built task architectures per NLP task</td>
+        <td>One stack, pre-trained once then adapted: <cite data-video="VlA_jt_3Qc4" data-chunk="6" data-quote="have what we call a pre-training stage">a pre-training stage</cite> followed by cheap tuning, instead of training from scratch per task.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="block">
+  <h2 id="block-h21">Read the block in one pass</h2>
+
+  <p id="block-p1">Six steps, in the order the data moves. This is the original encoder-decoder shape — <cite data-video="Ub3GoFaUcds" data-chunk="47" data-quote="an encoder, which is on the left side, and a decoder">an encoder on the left side and a decoder</cite> — built around translation. Decoder-only LLMs keep steps 1–3, 5 and 6, and keep only the masked flavour of step 4.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="block-h31">Tokenize</h3>
+    <p class="why" id="block-p2">Models understand numbers, not text, so cut the text first.</p>
+    <ul>
+      <li id="block-li1">Tokenization is <cite data-video="Ub3GoFaUcds" data-chunk="16" data-quote="cutting the text with respect to some arbitrary unit of text">cutting the text with respect to some arbitrary unit of text</cite>; that unit is the token.</li>
+      <li id="block-li2">Subword is the default middle ground because it works by <cite data-video="Ub3GoFaUcds" data-chunk="17" data-quote="leveraging roots of words in order to find what">leveraging roots of words</cite>, so related words share structure — at the cost of longer sequences.</li>
+      <li id="block-li3">Word-level carries the worst out-of-vocabulary risk — <cite data-video="Ub3GoFaUcds" data-chunk="19" data-quote="this thing is called OOV, Out Of Vocabulary">this thing is called OOV</cite> — while character-level eliminates it and inflates sequence length.</li>
+      <li id="block-li4">Rough serving conversion to keep in your head: <cite data-video="hBzUokVYQkI" data-chunk="16" data-quote="a token is roughly 3/4 of a word">a token is roughly 3/4 of a word</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="block-h32">Embed</h3>
+    <p class="why" id="block-p3">Turn each token id into a dense vector the network can move around.</p>
+    <ul>
+      <li id="block-li5">An embedding is a <cite data-video="idIck_TmPTE" data-chunk="9" data-quote="dense highdimensional uh numerical vector that represents semantic meaning">dense high-dimensional numerical vector representing semantic meaning</cite>; common sizes run 384, 768, 1024, 1536, 2048.</li>
+      <li id="block-li6">Target vocabulary size is <cite data-video="Ub3GoFaUcds" data-chunk="24" data-quote="tens of thousands for one language, hundreds of">tens of thousands for one language, hundreds of thousands</cite> for multilingual or code-covering models.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="block-h33">Add position encodings</h3>
+    <p class="why" id="block-p4">The step that exists only because recurrence was removed.</p>
+    <ul>
+      <li id="block-li7">Direct token-to-token links destroy the implicit ordering a loop gave you, so you add <cite data-video="Ub3GoFaUcds" data-chunk="51" data-quote="position encodings, which are there to inform on the position">position encodings to inform on the position of the word in the sequence</cite>.</li>
+      <li id="block-li8">The lecture flags it and skips the formula — <cite data-video="Ub3GoFaUcds" data-chunk="52" data-quote="we're not going to dig into that today">we're not going to dig into that today</cite> — so treat the mechanism as understood and the math as a gap (see Gaps).</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="block-h34">Multi-head attention (three flavours)</h3>
+    <p class="why" id="block-p5">The same layer does three different jobs depending on where the queries and keys come from.</p>
+    <ul>
+      <li id="block-li9">Encoder self-attention <cite data-video="Ub3GoFaUcds" data-chunk="51" data-quote="computing embeddings from the input sentence as a function of themselves">computes embeddings from the input sentence as a function of themselves</cite>.</li>
+      <li id="block-li10">Decoder self-attention is masked — <cite data-video="Ub3GoFaUcds" data-chunk="50" data-quote="it's called masked, because it only looks at the tokens">it only looks at the tokens</cite> already decoded, never to the right of the one being predicted.</li>
+      <li id="block-li11">Cross-attention expresses the output <cite data-video="Ub3GoFaUcds" data-chunk="51" data-quote="as a function of what has been seen in the input">as a function of what has been seen in the input</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="block-h35">Feed-forward expansion</h3>
+    <p class="why" id="block-p6">Where Word2vec compressed, the transformer expands — on purpose.</p>
+    <ul>
+      <li id="block-li12">Unlike Word2vec's bottleneck, here <cite data-video="Ub3GoFaUcds" data-chunk="63" data-quote="the hidden layer is of a bigger dimension than input and output">the hidden layer is of a bigger dimension than input and output</cite>, to buy degrees of freedom for richer features.</li>
+      <li id="block-li13">This block matters more than its reputation suggests for adaptation: analysis after the LoRA paper found that the bulk of the <cite data-video="VlA_jt_3Qc4" data-chunk="70" data-quote="performance improvements is actually contained in the feed forward">performance improvements is actually contained in the feed-forward</cite> block, not the attention matrices the paper originally targeted.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">6</div>
+    <h3 id="block-h36">Stack N, then softmax over the vocabulary</h3>
+    <p class="why" id="block-p7">Depth is repetition, not new machinery — which is also why parameter counts explode.</p>
+    <ul>
+      <li id="block-li14">You get <cite data-video="Ub3GoFaUcds" data-chunk="63" data-quote="a stacked succession of n encoders">a stacked succession of N encoders</cite> and N decoders; the final encoder representation is what is <cite data-video="Ub3GoFaUcds" data-chunk="63" data-quote="fed to the n decoders">fed to the N decoders</cite>' cross-attention.</li>
+      <li id="block-li15">At the end you project to a vector of vocabulary size and softmax it to <cite data-video="Ub3GoFaUcds" data-chunk="53" data-quote="guess what is the next word">guess what the next word is</cite>.</li>
+      <li id="block-li16">Stacking is why weight counts balloon: with blocks repeated, attention plus feed-forward weights land in the billions — <cite data-video="cO6Ly7mIziQ" data-chunk="14" data-quote="It's going to be in billions, right?">it's going to be in billions</cite>, with individual matrices at <cite data-video="cO6Ly7mIziQ" data-chunk="34" data-quote="A 512 cross 512. Even bigger than this one">512×512 and bigger</cite>.</li>
+      <li id="block-li17">One training trick from the original paper is worth copying: instead of a hard one-hot target, label smoothing says <cite data-video="Ub3GoFaUcds" data-chunk="55" data-quote="predict this word, but there's a chance it's not this word">predict this word, but there's a chance it's not this word</cite>, because there is rarely only one valid continuation.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="attention">
+  <h2 id="attention-h21">The attention computation, line by line</h2>
+
+  <p id="attention-p1">Four operations. If you can write these from memory you can read any transformer diagram. Nothing here is more than a linear projection, a dot product, a softmax and a weighted sum — <cite data-video="cO6Ly7mIziQ" data-chunk="30" data-quote="It is a metrics game">it is a matrix game</cite> end to end.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="attention-h31">Project each token three ways</h3>
+    <p class="why" id="attention-p2">Query, key and value are not three kinds of data — they are three learned views of the same vector.</p>
+    <ul>
+      <li id="attention-li1">Inside multi-head attention the input is <cite data-video="cO6Ly7mIziQ" data-chunk="28" data-quote="we are going to be multiplied with the three main matrices">multiplied with the three main matrices</cite>, Q, K and V, as a linear transformation.</li>
+      <li id="attention-li2">The projection matrices are what the word "head" names: <cite data-video="Ub3GoFaUcds" data-chunk="54" data-quote="given to the projection matrices that you use to obtain">the word head is given to the projection matrices</cite> used to obtain query, key and value.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="attention-h32">Score query against every key, then scale</h3>
+    <p class="why" id="attention-p3">This is the "direct link" from the thesis, expressed as a dot product.</p>
+    <ul>
+      <li id="attention-li3">You <cite data-video="Ub3GoFaUcds" data-chunk="45" data-quote="compare the query to the key to quantify how similar">compare the query to the key to quantify how similar</cite> they are, for every pair in the sequence at once.</li>
+      <li id="attention-li4">Dot products grow with dimension, <cite data-video="Ub3GoFaUcds" data-chunk="60" data-quote="So you want to normalize these dot products">so you normalize them</cite> — which is why you <cite data-video="Ub3GoFaUcds" data-chunk="60" data-quote="divide by square root of the dimension of keys">divide by the square root of the dimension of keys</cite>.</li>
+      <li id="attention-li5">A worked intuition from the LoRA walkthrough: in "I love machine learning" the attention weight ties <em>learning</em> to <em>machine</em> — <cite data-video="cO6Ly7mIziQ" data-chunk="29" data-quote="it belong to the machine only, not love">it belongs to the machine only, not love</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="attention-h33">Softmax, then take a weighted sum of values</h3>
+    <p class="why" id="attention-p4">The output of attention is always a convex mixture of other tokens' value vectors.</p>
+    <ul>
+      <li id="attention-li6">Softmax over the scaled scores gives <cite data-video="Ub3GoFaUcds" data-chunk="60" data-quote="a probability distribution of the projection of the query">a probability distribution of the projection of the query</cite> over keys, one row per query.</li>
+      <li id="attention-li7">Multiply by V and you <cite data-video="Ub3GoFaUcds" data-chunk="61" data-quote="end up with a weighted sum of values for each query">end up with a weighted sum of values for each query</cite>: weight the most similar keys and <cite data-video="Ub3GoFaUcds" data-chunk="45" data-quote="take the corresponding value">take the corresponding value</cite>.</li>
+      <li id="attention-li8">Self-attention's job, in one sentence from the practitioner side: it is <cite data-video="cO6Ly7mIziQ" data-chunk="27" data-quote="self attention basically it's trying to check the relation">trying to check the relation</cite> between every pair of words in the same sentence.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="attention-h34">Run h heads in parallel, concatenate, project back</h3>
+    <p class="why" id="attention-p5">The cheapest capacity increase in the architecture, and the one that makes it GPU-shaped.</p>
+    <ul>
+      <li id="attention-li9">Multiple heads mean multiple learned projections, <cite data-video="Ub3GoFaUcds" data-chunk="54" data-quote="allowing your model to learn different projections">allowing your model to learn different projections</cite> and therefore different token-to-token associations. If you have a vision background, it is like having multiple filters in a convolution.</li>
+      <li id="attention-li10">The h head outputs are computed with <cite data-video="Ub3GoFaUcds" data-chunk="61" data-quote="all of that is done in parallel">all of that done in parallel</cite>, concatenated columnwise, then pushed through an output projection W<sub>o</sub> back to the embedding dimension.</li>
+      <li id="attention-li11">Nothing forces the heads to differ; they differ because of <cite data-video="Ub3GoFaUcds" data-chunk="62" data-quote="it's the magic of gradient descent">the magic of gradient descent</cite> — the network has no incentive to copy itself.</li>
+      <li id="attention-li12">Why this shape and not another: matrix form means the whole-sequence computation is matrix multiplication, and <cite data-video="Ub3GoFaUcds" data-chunk="45" data-quote="And GPUs love matrices">GPUs love matrices</cite> — a GPU's thousands of small cores do about <cite data-video="hBzUokVYQkI" data-chunk="9" data-quote="about 100 times more math every second">100 times more math every second</cite> than a CPU's few big ones.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="bill">
+  <h2 id="bill-h21">The n² bill, and the six things built to pay it</h2>
+
+  <p id="bill-p1">Everything in this section is a consequence of deleting the hidden state. An RNN's memory cost grew with depth in time; a transformer's grows with the <em>square</em> of context. Training-side mitigations and serving-side mitigations are different engineering problems with the same root cause, so learn both.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="bill-h31">Where training memory actually goes</h3>
+      <p id="bill-p2">A training step must hold activations, gradients and optimizer moments at once, and activation memory depends on model size, batch size and context length — because <cite data-video="VlA_jt_3Qc4" data-chunk="19" data-quote="dependent on how large your context length is">it's dependent on how large your context length is</cite>, at <cite data-video="VlA_jt_3Qc4" data-chunk="19" data-quote="n squared complexity because of this self attention operation">n² complexity for the self attention operation</cite>. The transformer-era default optimizer is AdamW, which <cite data-video="cO6Ly7mIziQ" data-chunk="57" data-quote="it is going to be combine this weight decay concept">combines the weight decay concept</cite> with a warm-up schedule.</p>
+    </div>
+    <div class="lever">
+      <h3 id="bill-h32">Flash attention: tile it into fast memory</h3>
+      <p id="bill-p3"><cite data-video="VlA_jt_3Qc4" data-chunk="26" data-quote="flash attention. It was actually developed here at Stanford">Flash attention, developed at Stanford</cite> in 2022, exploits the gap between large-slow HBM and small-fast SRAM. <cite data-video="VlA_jt_3Qc4" data-chunk="29" data-quote="The method is called tiling">The method is called tiling</cite>: compute softmax exactly on small blocks end to end in SRAM instead of writing giant intermediates back to HBM. Reported effect is <cite data-video="VlA_jt_3Qc4" data-chunk="34" data-quote="it's like almost a 10x reduction">almost a 10× reduction</cite> in HBM reads and writes, and it saves memory and runtime at the same time.</p>
+    </div>
+    <div class="lever">
+      <h3 id="bill-h33">Spread it: data, model, ZeRO</h3>
+      <p id="bill-p4">Data parallelism <cite data-video="VlA_jt_3Qc4" data-chunk="21" data-quote="distributes data across GPUs">distributes data across GPUs</cite> with a full model copy each, paying gradient-averaging traffic. <cite data-video="VlA_jt_3Qc4" data-chunk="23" data-quote="zero redundancy optimization">Zero redundancy optimization</cite> shards optimizer states, gradients and parameters instead of duplicating them. Model parallelism adds <cite data-video="VlA_jt_3Qc4" data-chunk="24" data-quote="expert parallelism techniques">expert parallelism</cite>, tensor parallelism and pipeline parallelism.</p>
+    </div>
+    <div class="lever">
+      <h3 id="bill-h34">Lower the precision</h3>
+      <p id="bill-p5">Quantization halves footprint and roughly doubles throughput: dropping FP32 to FP16 means <cite data-video="VlA_jt_3Qc4" data-chunk="36" data-quote="it takes basically half the memory">it takes basically half the memory</cite>. The byte arithmetic is worth memorising — <cite data-video="cO6Ly7mIziQ" data-chunk="64" data-quote="FP32 is having 32-bit around 4 byte">FP32 is around 4 bytes</cite> per weight, FP16 about 2, and 4-bit <cite data-video="cO6Ly7mIziQ" data-chunk="64" data-quote="it's going to be around 0.5 byte">around 0.5 bytes</cite>. Mixed-precision training keeps master weights in FP32 while running the passes in FP16.</p>
+    </div>
+    <div class="lever">
+      <h3 id="bill-h35">At inference: cache the prefill</h3>
+      <p id="bill-p6">Generation is one trick repeated — <cite data-video="hBzUokVYQkI" data-chunk="16" data-quote="it predicts the next word or the next token">it predicts the next token</cite>, appends it and goes again — so a 100-token answer is 100 passes. The prompt is read in one compute-heavy burst whose latency is <cite data-video="hBzUokVYQkI" data-chunk="19" data-quote="That's TTFT or time to first token">TTFT, time to first token</cite>; that work is saved so each later token <cite data-video="hBzUokVYQkI" data-chunk="23" data-quote="it just reaches into the cache, reuses everything it already worked out">reaches into the cache and reuses everything it already worked out</cite>. Keep those blocks past the end of a request and you get <cite data-video="hBzUokVYQkI" data-chunk="24" data-quote="This idea has a name and is called prefix caching">prefix caching</cite>, where a cached input token <cite data-video="hBzUokVYQkI" data-chunk="25" data-quote="only costs about tenth of what a fresh one does">costs about a tenth of a fresh one</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="bill-h36">Decode is bandwidth-bound, so batch and shard</h3>
+      <p id="bill-p7">Each decode step rereads the whole model from VRAM, so a 3 TB/s GPU on a 16 GB model tops out: <cite data-video="hBzUokVYQkI" data-chunk="21" data-quote="So it's 200 tokens a second and that's the maximum limit">200 tokens a second is the maximum limit</cite>. The fix is batching, since one read gives <cite data-video="hBzUokVYQkI" data-chunk="26" data-quote="one token for one user or 50 tokens for 50 users">one token for one user or 50 tokens for 50 users</cite>. Concurrency then caps on memory, not math — <cite data-video="hBzUokVYQkI" data-chunk="28" data-quote="it's the memory that decides how many people one GPU">it's the memory that decides how many people one GPU</cite> can serve. When weights exceed one card (<cite data-video="hBzUokVYQkI" data-chunk="5" data-quote="a large model with 70 billion parameters would be 140GB">a 70B model is 140 GB</cite> against an <cite data-video="hBzUokVYQkI" data-chunk="13" data-quote="H100 is 80 V RAM capacity">80 GB H100</cite>), you resort to <cite data-video="hBzUokVYQkI" data-chunk="31" data-quote="splitting a model across GPUs">splitting a model across GPUs</cite> and <cite data-video="hBzUokVYQkI" data-chunk="31" data-quote="keep the chatty talk inside a box">keep the chatty talk inside a box</cite>.</p>
+    </div>
+  </div>
+
+  <p id="bill-p8">Two routing pitfalls follow directly from the KV cache being physical state on a specific machine. A plain round-robin balancer <cite data-video="hBzUokVYQkI" data-chunk="33" data-quote="it throws away saved work that was perfectly good">throws away saved work that was perfectly good</cite>; cache-aware routing instead delivers <cite data-video="hBzUokVYQkI" data-chunk="35" data-quote="around three times the throughput">around three times the throughput</cite> on identical hardware, and splitting compute-heavy prefill from bandwidth-heavy decode pools yields <cite data-video="hBzUokVYQkI" data-chunk="36" data-quote="up to 70% more tokens per second on the same hardware">up to 70% more tokens per second on the same hardware</cite>. If you are self-hosting, note that <cite data-video="hBzUokVYQkI" data-chunk="15" data-quote="VLM speaks the exact same format that the OpenAI API uses">vLLM speaks the exact same format the OpenAI API uses</cite>, so the swap is a base-URL change.</p>
+</section>
+
+<section id="training">
+  <h2 id="training-h21">How the architecture rewrote the training pipeline</h2>
+
+  <p id="training-p1">This is the part of "revolutionised neural network training" that is not about attention math. Because one expensive pre-training run produces a general model, training became a staged transfer-learning pipeline rather than a per-task project — <cite data-video="VlA_jt_3Qc4" data-chunk="6" data-quote="have what we call a pre-training stage">a pre-training stage</cite> followed by cheaper tuning. In the corpus's terminology, fine-tuning plus preference tuning <cite data-video="VlA_jt_3Qc4" data-chunk="66" data-quote="which comes after pre-training is what we call alignment">is what we call alignment</cite>, with a newer mid-training stage emerging between them.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="training-h31">Pre-train: next-token prediction at internet scale</h3>
+    <p class="why" id="training-p2">One objective, one corpus, one enormous bill — and a base model that cannot hold a conversation.</p>
+    <ul>
+      <li id="training-li1">The <cite data-video="cO6Ly7mIziQ" data-chunk="7" data-quote="first stage of this training pipeline is called the pre-training">first stage is pre-training</cite>, where the <cite data-video="uLrOI65XbDw" data-chunk="0" data-quote="model learns to do a next token prediction">model learns to do next-token prediction</cite>.</li>
+      <li id="training-li2">Chinchilla's compute-optimal rule: use a <cite data-video="VlA_jt_3Qc4" data-chunk="13" data-quote="training set size that's about 20 times the model size">training set about 20 times the model size</cite> in tokens — by which GPT-3 (175B parameters, 300B tokens) was undertrained.</li>
+      <li id="training-li3">Cost floor is millions and it <cite data-video="VlA_jt_3Qc4" data-chunk="14" data-quote="it can even cost tens of millions of dollars">can even cost tens of millions of dollars</cite>, plus a tracked ecological cost.</li>
+      <li id="training-li4">The output is bounded in time: a base model's knowledge stops at what <cite data-video="VlA_jt_3Qc4" data-chunk="15" data-quote="this date is called the knowledge cutoff date">is called the knowledge cutoff date</cite>, and injecting new facts afterward without damaging other capabilities is unsolved.</li>
+      <li id="training-li5">The resulting model is not an assistant: <cite data-video="VlA_jt_3Qc4" data-chunk="43" data-quote="it has been trained on next token prediction not being an assistant">it has been trained on next token prediction, not being an assistant</cite>, so it will <cite data-video="uLrOI65XbDw" data-chunk="0" data-quote="autocomplete your question instead of answering it">autocomplete your question instead of answering it</cite>.</li>
+      <li id="training-li6">A counterweight on cost from the enterprise side: MosaicML's MPT-7B was trained from scratch where <cite data-video="zjM2-_cFupo" data-chunk="9" data-quote="it only costs 250 000 to build it">it only costs 250,000 to build it</cite>, versus the <cite data-video="zjM2-_cFupo" data-chunk="8" data-quote="gpt3 costs Millions 10 12 15 million dollars to train">10 to 15 million dollars</cite> cited for GPT-3-scale, and MPT-30B at <cite data-video="zjM2-_cFupo" data-chunk="10" data-quote="seven or eight hundred thousand dollars to train this from scratch">seven or eight hundred thousand dollars</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="training-h32">Supervised fine-tune: same loss, different text</h3>
+    <p class="why" id="training-p3">The most misunderstood stage. SFT does not change the objective; it changes what you compute the loss over.</p>
+    <ul>
+      <li id="training-li7"><cite data-video="VlA_jt_3Qc4" data-chunk="44" data-quote="SFT is uh short for supervised fine-tuning">SFT is short for supervised fine-tuning</cite>: keep training the pre-trained model on input/output pairs so it predicts the right tokens for a given input.</li>
+      <li id="training-li8">It reuses the pre-training objective exactly — instruction fine-tuning uses <cite data-video="4yNswvhPWCQ" data-chunk="44" data-quote="exactly the same loss that we used during pre-training">exactly the same loss that we used during pre-training</cite>.</li>
+      <li id="training-li9">The loss is masked to the response: <cite data-video="VlA_jt_3Qc4" data-chunk="45" data-quote="we don't put a loss over the input">we don't put a loss over the input</cite>, and in practice you <cite data-video="uLrOI65XbDw" data-chunk="3" data-quote="we train the model usually like generally on the outputs only">train on the outputs only</cite>.</li>
+      <li id="training-li10">Mechanically, replace target padding with -100 — <cite data-video="4yNswvhPWCQ" data-chunk="27" data-quote="replacing all the target padding tokens by the minus 100">replacing all the target padding tokens by the minus 100</cite>, PyTorch's ignore index — and <cite data-video="4yNswvhPWCQ" data-chunk="14" data-quote="pad only to the longest element in each batch">pad only to the longest element in each batch</cite>, not the dataset.</li>
+      <li id="training-li11">Dataset scale is orders of magnitude below pre-training: <cite data-video="VlA_jt_3Qc4" data-chunk="52" data-quote="about 13k used by GPT3 and uh 10 million for lama 3">about 13k for GPT-3 and 10 million for Llama 3</cite>; a practical floor for real instruction tuning is <cite data-video="4yNswvhPWCQ" data-chunk="5" data-quote="nowadays at least 100,000 training examples">at least 100,000 training examples</cite>.</li>
+      <li id="training-li12">Template length is a real cost line, not a style choice: shorter prompt templates mean fewer tokens per example, and <cite data-video="4yNswvhPWCQ" data-chunk="9" data-quote="I like this because it's shorter and shorter is cheaper">shorter is cheaper</cite>.</li>
+      <li id="training-li13">Hardware sets the iteration loop: the same 355M-parameter 2-epoch run that takes 15–29 minutes on a laptop finishes in about a minute <cite data-video="4yNswvhPWCQ" data-chunk="47" data-quote="on a a100 GPU it just takes 1 minute">on an A100 GPU</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="training-h33">Preference-tune: teach tone, not facts</h3>
+    <p class="why" id="training-p4">The stage that made transformers usable as products, and the one with the worst cost/complexity curve.</p>
+    <ul>
+      <li id="training-li14">The unit of data is a rejected output paired with a preferred rewrite for the same prompt — <cite data-video="PmW_TMQ3l0I" data-chunk="3" data-quote="this pair would be what what we call a preference pair">a preference pair</cite> — collected <cite data-video="PmW_TMQ3l0I" data-chunk="8" data-quote="pair-wise preference data">pairwise</cite> because pointwise scoring is hard to calibrate.</li>
+      <li id="training-li15"><cite data-video="PmW_TMQ3l0I" data-chunk="16" data-quote="RHF stands for reinforcement learning from human feedback">RLHF</cite> is two stages: fit a reward model using <cite data-video="PmW_TMQ3l0I" data-chunk="19" data-quote="the Bradley Terry formulation">the Bradley-Terry formulation</cite>, then optimise the policy with RL.</li>
+      <li id="training-li16">The RL objective must <cite data-video="PmW_TMQ3l0I" data-chunk="30" data-quote="optimize for higher rewards but then without going too far">optimise for higher rewards without going too far</cite> from the SFT reference, via a KL penalty — otherwise you get reward hacking against an imperfect proxy.</li>
+      <li id="training-li17"><cite data-video="PmW_TMQ3l0I" data-chunk="33" data-quote="PO stands for proximal policy optimization">PPO</cite> keeps updates close to the previous policy with a clipped objective, but <cite data-video="PmW_TMQ3l0I" data-chunk="45" data-quote="you need a lot of models">you need a lot of models</cite> resident: policy, reference, reward model, value function.</li>
+      <li id="training-li18"><cite data-video="PmW_TMQ3l0I" data-chunk="57" data-quote="direct preference optimization">DPO</cite> collapses that into one loss on preference pairs, so <cite data-video="PmW_TMQ3l0I" data-chunk="62" data-quote="instead of four models you just need two">instead of four models you just need two</cite> — it is <cite data-video="4yNswvhPWCQ" data-chunk="53" data-quote="simpler than R lhf because it doesn't use a separate reward model">simpler than RLHF because it does not use a separate reward model</cite>.</li>
+      <li id="training-li19">The honest trade: <cite data-video="PmW_TMQ3l0I" data-chunk="63" data-quote="overall PO performs better than DPO">overall PPO performs better than DPO</cite>, but <cite data-video="PmW_TMQ3l0I" data-chunk="67" data-quote="PO like the RL bar is very hard to tune right">the RL bar is very hard to tune right</cite>. Pick by whether you have RL expertise to spend.</li>
+      <li id="training-li20">If you want the reward signal without the training loop, <cite data-video="PmW_TMQ3l0I" data-chunk="51" data-quote="best of n or bun">best-of-N</cite> scores N samples from a frozen model — but you <cite data-video="PmW_TMQ3l0I" data-chunk="57" data-quote="you still have to wait more than you would have on a single pass">still wait more than a single pass</cite>, so it trades cost for latency rather than removing either.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="training-h34">Post-2024: RL on verifiable rewards, bolted onto the same block</h3>
+    <p class="why" id="training-p5">Reasoning models are not a new architecture. They are the same transformer with a different reward and more decode tokens.</p>
+    <ul>
+      <li id="training-li21">Vanilla next-token models have <cite data-video="k5Fh-UgTuCo" data-chunk="6" data-quote="they have quote unquote limited resoning">quote-unquote limited reasoning</cite> and are <cite data-video="k5Fh-UgTuCo" data-chunk="7" data-quote="it's uh all talk no action">all talk, no action</cite> — they can only emit text.</li>
+      <li id="training-li22">Chain-of-thought works because a hard problem is unlikely to appear verbatim in training data, so you make the model <cite data-video="k5Fh-UgTuCo" data-chunk="12" data-quote="decompose the problem into tractable ones">decompose the problem into tractable ones</cite>; letting it emit more tokens first means <cite data-video="k5Fh-UgTuCo" data-chunk="13" data-quote="you just give it more compute">you just give it more compute</cite>.</li>
+      <li id="training-li23">The reward needs no reward model at all for math and code: combine a format check — <cite data-video="k5Fh-UgTuCo" data-chunk="33" data-quote="checking whether the think tokens are here">checking whether the think tokens are here</cite> — with a correctness check against tests or ground truth.</li>
+      <li id="training-li24"><cite data-video="k5Fh-UgTuCo" data-chunk="37" data-quote="GRPO stands for group relative policy optimization">GRPO</cite> drops PPO's value function entirely, computing advantage as <cite data-video="k5Fh-UgTuCo" data-chunk="42" data-quote="reward minus the average over the standard deviation">reward minus the average over the standard deviation</cite> across a sampled group of completions.</li>
+      <li id="training-li25">Known bug worth knowing: GRPO's per-token length normalisation pushes outputs longer and longer; Dr. GRPO <cite data-video="k5Fh-UgTuCo" data-chunk="54" data-quote="that paper actually proposes to remove the factor altogether">removes the factor altogether</cite>.</li>
+      <li id="training-li26">Pure RL on a base model works but degrades the chain: R1-Zero <cite data-video="k5Fh-UgTuCo" data-chunk="59" data-quote="it would mix languages and you had also syntax issues">would mix languages and had syntax issues</cite>, which is why R1 added cold-start SFT data and a language-consistency reward.</li>
+      <li id="training-li27">For small models, <cite data-video="k5Fh-UgTuCo" data-chunk="68" data-quote="distilling the knowledge is more uh efficient">distilling the knowledge is more efficient</cite> than running RL on them from scratch.</li>
+    </ul>
+  </div>
+
+  <p id="training-p6">One structural warning that applies to every number in this section. Benchmark comparisons across models are only meaningful if both models had comparable exposure to the benchmark's domain — the documented phenomenon is <cite data-video="VlA_jt_3Qc4" data-chunk="59" data-quote="training on the test task not the test set the test task">training on the test task, not the test set, the test task</cite>. Crowd leaderboards are not a refuge either: <cite data-video="VlA_jt_3Qc4" data-chunk="62" data-quote="it's easily possible to rig such a leaderboard">it's easily possible to rig such a leaderboard</cite>, and <cite data-video="8fNP4N46RRo" data-chunk="71" data-quote="when a measure becomes a target it ceases to be a good measure">when a measure becomes a target it ceases to be a good measure</cite>. <cite data-video="VlA_jt_3Qc4" data-chunk="58" data-quote="massive multitask language understanding">MMLU</cite> in particular mostly <cite data-video="8fNP4N46RRo" data-chunk="54" data-quote="measures how well pre-training was done">measures how well pre-training was done</cite>, not reasoning.</p>
+</section>
+
+<section id="adapt">
+  <h2 id="adapt-h21">Adapt, do not retrain: the architecture's other gift</h2>
+
+  <p id="adapt-p1">LoRA is usually taught as a memory trick. It is better understood as a direct exploitation of the transformer's shape: the model is a stack of large weight matrices, and the <em>update</em> to one of those matrices turns out to be low-rank. Full fine-tuning updates everything — a <cite data-video="cO6Ly7mIziQ" data-chunk="13" data-quote="13 billion model, then you have 13 billion weights">13 billion model means 13 billion weights</cite> — so <cite data-video="cO6Ly7mIziQ" data-chunk="15" data-quote="we cannot perform the full parameter fine-tuning">we cannot perform full-parameter fine-tuning</cite> on a single GPU.</p>
+
+  <div class="levers">
+    <div class="lever">
+      <h3 id="adapt-h31">The low-rank bet</h3>
+      <p id="adapt-p2">LoRA's assumption, stated plainly: <cite data-video="cO6Ly7mIziQ" data-chunk="52" data-quote="it is possible that the weight update matrix is not full rank">it is possible that the weight update matrix is not full rank</cite>. A rank-2 4×5 matrix (20 numbers) factors into 4×2 and 2×5 (18 numbers); at scale, <cite data-video="cO6Ly7mIziQ" data-chunk="49" data-quote="If you have billions of parameter, maybe it could be in millions">billions of parameters become millions</cite>. The rank r is <cite data-video="VlA_jt_3Qc4" data-chunk="67" data-quote="the rank of these matrices which is typically taken very small">typically taken very small</cite> against W<sub>0</sub>'s hundreds or thousands of dimensions.</p>
+    </div>
+    <div class="lever">
+      <h3 id="adapt-h32">Where the adapters attach</h3>
+      <p id="adapt-p3">You <cite data-video="uLrOI65XbDw" data-chunk="7" data-quote="freeze all the pre-rain weights and you add adapters">freeze all the pre-trained weights and add adapters</cite>, then <cite data-video="cO6Ly7mIziQ" data-chunk="60" data-quote="we are going to be append this adapter">append the adapter</cite> onto the multi-head attention matrices and the feed-forward layer of each block. Target choice is itself a hyperparameter: Q alone is average, Q plus V is better, and the feed-forward block is where <cite data-video="VlA_jt_3Qc4" data-chunk="70" data-quote="performance improvements is actually contained in the feed forward">the bulk of the performance improvements is actually contained</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="adapt-h33">The numbers that justify it</h3>
+      <p id="adapt-p4">On GPT-3, LoRA trains <cite data-video="cO6Ly7mIziQ" data-chunk="62" data-quote="We are just going to be trained only 4.7 million of parameter">only 4.7 million parameters</cite> against 175 billion, and the cited comparison has full fine-tuning at <cite data-video="cO6Ly7mIziQ" data-chunk="63" data-quote="we were getting 89.5% accuracy, but if we are using LoRA">89.5% accuracy</cite> with LoRA matching it. In the worked walkthrough, <cite data-video="cO6Ly7mIziQ" data-chunk="75" data-quote="rank is equal to 16, LoRa alpha is equal to 32">rank 16 and alpha 32</cite> leave <cite data-video="cO6Ly7mIziQ" data-chunk="76" data-quote="it is just uh 0.277 of this all the parameter">0.277% of parameters trainable</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="adapt-h34">QLoRA: quantize the frozen half</h3>
+      <p id="adapt-p5">QLoRA <cite data-video="uLrOI65XbDw" data-chunk="8" data-quote="quantize uh the pre-train model here in 4bit Precision">quantizes the pre-trained model in 4-bit precision</cite> — <cite data-video="cO6Ly7mIziQ" data-chunk="74" data-quote="NF4 means what? Normal float">NF4 means Normal Float 4</cite> — while the adapters train at higher precision, bringing a task down to <cite data-video="cO6Ly7mIziQ" data-chunk="64" data-quote="8 to 16 GB will be enough for the respective task">8 to 16 GB of VRAM</cite>. It is a real trade, not a free lunch: lower VRAM, degraded performance. Stack-wise you add <cite data-video="cO6Ly7mIziQ" data-chunk="64" data-quote="along with this bits and bytes for the quantization">bitsandbytes for the quantization</cite> on top of <cite data-video="cO6Ly7mIziQ" data-chunk="67" data-quote="This peft to implement the LoRA">peft, which implements the LoRA</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="adapt-h35">Hyperparameters that behave differently</h3>
+      <p id="adapt-p6">LoRA is not full fine-tuning with fewer weights; its dynamics differ. Empirically <cite data-video="VlA_jt_3Qc4" data-chunk="70" data-quote="you want to use a higher learning rates">you want higher learning rates</cite> — <cite data-video="VlA_jt_3Qc4" data-chunk="70" data-quote="10 times more is the is the guidance">10 times more is the guidance</cite> — and it <cite data-video="VlA_jt_3Qc4" data-chunk="70" data-quote="it doesn't perform as well when you train it with larger batch size">does not perform as well with larger batch size</cite>. For full fine-tuning the search procedure is blunt: <cite data-video="uLrOI65XbDw" data-chunk="8" data-quote="go as high as you can uh until your loss explodes">go as high as you can until your loss explodes</cite>, then back off.</p>
+    </div>
+    <div class="lever">
+      <h3 id="adapt-h36">Merging: capability without gradients</h3>
+      <p id="adapt-p7">Because every fine-tune of a given base shares a weight geometry, you can average them. Merging <cite data-video="uLrOI65XbDw" data-chunk="9" data-quote="it doesn't required any GPU so it's super efficient">does not require any GPU</cite>, and on the Open LLM Leaderboard's 7B tier <cite data-video="uLrOI65XbDw" data-chunk="9" data-quote="the entire top eight or top 10 is just merge models">the entire top eight or ten was merge models</cite>. SLERP — <cite data-video="uLrOI65XbDw" data-chunk="10" data-quote="it stands for spherical linear interpolation">spherical linear interpolation</cite> — merges two; DARE prunes and rescales and <cite data-video="uLrOI65XbDw" data-chunk="11" data-quote="like with seven or eight models it works really really well">works really well with seven or eight models</cite>; or extract feed-forward layers from several fine-tunes and <cite data-video="uLrOI65XbDw" data-chunk="13" data-quote="we call this a Franken M you add a router">add a router</cite> for a FrankenMoE.</p>
+    </div>
+  </div>
+
+  <p id="adapt-p8">At the small end, the same architecture runs entirely on a phone. <cite data-video="-TiET_K-E_g" data-chunk="0" data-quote="LLMs that are like smaller than a billion parameters">Models smaller than a billion parameters</cite> hit <cite data-video="-TiET_K-E_g" data-chunk="12" data-quote="almost 2,000 tokens per second prefill and 140 decode">almost 2,000 tokens per second prefill and 140 decode</cite> on an old Pixel 7, and fine-tuning moved one 270M function-calling model from 46% to <cite data-video="-TiET_K-E_g" data-chunk="14" data-quote="that 46% um to over like it was over 90%">over 90%</cite> app-intent accuracy. The constraint is narrowness: at that size <cite data-video="-TiET_K-E_g" data-chunk="11" data-quote="it needs to have a very narrow and focused task">it needs to have a very narrow and focused task</cite>.</p>
+</section>
+
+<section id="worksheets">
+  <h2 id="worksheets-h21">Three things to copy</h2>
+
+  <p id="worksheets-p1">The whiteboard answer, a bottleneck triage checklist, and a starting adapter config. All three are built only from claims cited above.</p>
+
+  <figure class="prompt" id="worksheets-fig1">
+    <div class="label"><span>The whiteboard answer: RNN/LSTM vs transformer</span><button type="button" data-copy>Copy</button></div>
+    <pre id="worksheets-pre1">RNN / LSTM
+- Carries meaning forward in ONE hidden state, token by token.
+- Order is implicit in the loop. No position encoding needed.
+- Failure 1: vanishing gradient. Backprop through time multiplies many
+  terms; terms < 1 drive the update to zero. Long-range memory dies.
+- Failure 2: the whole sentence lives in one vector (LSTM's cell state
+  is a patch, not a fix).
+- Failure 3: training is serial. To predict token t you must compute
+  every hidden state before t. Long sequence = long wall clock.
+- Failure 4: representations are token-specific regardless of position,
+  so "bank" has one vector in every context.
+- Cost shape: roughly linear in sequence length.
+
+TRANSFORMER (2017, "Attention is All You Need")
+- Deletes the hidden state. Every token gets a DIRECT link to every
+  other token, computed at once (self-attention).
+- Fixes 1 and 2: no long multiplicative chain through time to survive.
+- Fixes 3: the sequence runs in one pass, and the h attention heads run
+  in parallel. Matrix multiplies, which is what GPUs are built for
+  (~100x more math/sec than a CPU).
+- Fixes 4: a token's representation is computed from the whole
+  sequence, so it is context-specific.
+- New obligations: add position encodings (order is no longer implicit);
+  pay O(n^2) in sequence length for attention.
+- Depth is repetition: N identical blocks. Attention + FFN weights land
+  in the billions, which is why PEFT exists.
+
+WHAT IT CHANGED ABOUT TRAINING
+- Parallel forward pass => scale becomes a budget, not a schedule.
+  ~1e25 FLOPs, tens of millions of dollars for a frontier run.
+- One pre-train, then cheap staged tuning (SFT -> preference tuning)
+  replaced per-task architectures.
+- >90% of modern LLMs are decoder-only: the 2017 encoder got dropped.
+- Chinchilla: ~20 tokens per parameter is compute-optimal.
+
+WHAT IT COST
+- n^2 activation memory => flash attention (tiling, ~10x fewer HBM
+  reads/writes), ZeRO, mixed precision, sharding.
+- Autoregressive decode => KV cache, prefix caching, batching, and
+  VRAM (not compute) capping concurrent users.</pre>
+    <div class="note">Every line here traces to a cite in the Lineage, Recurrence tax, Swap, Attention math, n² bill and Training sections above.</div>
+  </figure>
+
+  <figure class="prompt" id="worksheets-fig2">
+    <div class="label"><span>Triage: which transformer cost is actually hurting you</span><button type="button" data-copy>Copy</button></div>
+    <pre id="worksheets-pre2">TRAINING SIDE
+[ ] OOM at long context, not large batch?
+    -> It is the n^2 activation term. Enable flash attention (tiling)
+       before buying GPUs. Reported ~10x fewer HBM reads/writes.
+[ ] OOM with every GPU holding identical optimizer state?
+    -> ZeRO stages 1-3. Shard optimizer state, gradients, parameters.
+[ ] Memory fine, throughput poor?
+    -> Mixed precision (FP32 master weights, FP16 passes). FP32 ~4 B/
+       weight, FP16 ~2 B, 4-bit ~0.5 B.
+[ ] Cannot fit full fine-tuning on one GPU at all?
+    -> LoRA first (10x higher LR, smaller batches), QLoRA if still
+       short (4-bit NF4 base, 8-16 GB VRAM, accepts a quality hit).
+[ ] Loss curve flat and you have not searched LR?
+    -> Push LR up until the loss explodes, then back off.
+
+SERVING SIDE
+[ ] Slow first token on long prompts?
+    -> That is prefill/TTFT, compute-bound. Prefix-cache shared system
+       prompts: a cached input token costs ~1/10 of a fresh one.
+[ ] Slow per-token streaming on short prompts?
+    -> That is decode/TPOT, memory-bandwidth-bound. One full weight
+       read per token caps you (e.g. ~200 tok/s for 16 GB at 3 TB/s).
+[ ] Low concurrency but idle GPU cores?
+    -> It is VRAM for per-user KV cache, not compute. Batch harder
+       before scaling out; one read serves 50 users as cheaply as 1.
+[ ] Latency spikes on multi-turn chat behind a load balancer?
+    -> Round-robin throws away valid cached work. Cache-aware routing
+       reported ~3x throughput on the same hardware.
+[ ] Mixed workload (huge summaries next to short chats)?
+    -> Disaggregate prefill and decode pools: up to 70% more tok/s.
+[ ] Weights exceed one card (70B ~= 140 GB vs 80 GB H100)?
+    -> Shard. Tensor-parallel inside a box, pipeline-parallel across.</pre>
+    <div class="note">Order matters: every item above is cheaper than adding hardware, and the corpus notes teams overbuy GPUs that then sit half-idle because memory, not math, was the limit.</div>
+  </figure>
+
+  <figure class="prompt" id="worksheets-fig3">
+    <div class="label"><span>Starting LoRA / QLoRA config</span><button type="button" data-copy>Copy</button></div>
+    <pre id="worksheets-pre3"># Stack: transformers + peft + bitsandbytes + accelerate + trl + datasets
+#   peft        -> implements LoRA
+#   bitsandbytes-> 4-bit quantization (QLoRA)
+#   trl         -> SFT and preference tuning (DPO / ORPO / GRPO)
+
+# --- QLoRA base load (skip quant_config for plain LoRA) ---
+quant_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",        # Normal Float 4
+    bnb_4bit_compute_dtype="float16", # compute stays higher precision
+)
+
+# --- Adapter ---
+lora_config = LoraConfig(
+    r=16,                 # walkthrough default; rank is "typically very small"
+    lora_alpha=32,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=[      # attention Q/V *and* the FFN blocks
+        "q_proj", "v_proj",
+        "gate_proj", "up_proj", "down_proj",
+    ],
+)
+# Expect ~0.3% of parameters trainable. Print it and check.
+
+# --- Training notes, not defaults to copy blindly ---
+# learning_rate: start ~10x your full-fine-tune LR, then search upward
+#                until the loss explodes and back off.
+# batch size   : LoRA performs WORSE with large batches. Do not max it
+#                out the way you would for full fine-tuning.
+# loss masking : train on the response only; set prompt/padding target
+#                ids to -100 so they are ignored.
+# padding      : pad to the longest example in each batch, not the
+#                longest in the dataset.
+# after training: merge the adapter into the base model and re-save as
+#                a standalone checkpoint, or keep one adapter per task
+#                and swap adapters instead of whole models.</pre>
+    <div class="note">Rank 16 / alpha 32 and the Q+V target choice are the corpus's worked example, not a tuned recommendation — the corpus gives no procedure for choosing rank or alpha on a new task (see Gaps).</div>
+  </figure>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h21">Sources</h2>
+
+  <p id="sources-p1">Thirteen talks, read in full across five extraction passes. The architecture spine comes from the Stanford lectures; everything about cost, serving and adaptation comes from practitioners who had to pay for it.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Architecture and the training pipeline</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=Ub3GoFaUcds" target="_blank" rel="noopener"><cite data-video="Ub3GoFaUcds">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 1 - Transformer</cite></a> <span class="tk">— the spine of this guide: tokenization tradeoffs, Word2vec, why RNNs and LSTMs fail, and the full Q/K/V mechanics with a worked translation example.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=VlA_jt_3Qc4" target="_blank" rel="noopener"><cite data-video="VlA_jt_3Qc4">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 4 - LLM Training</cite></a> <span class="tk">— pre-training scale and cost, Chinchilla, the distributed-training toolkit (ZeRO, flash attention, mixed precision), SFT and LoRA/QLoRA.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=PmW_TMQ3l0I" target="_blank" rel="noopener"><cite data-video="PmW_TMQ3l0I">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 5 - LLM tuning</cite></a> <span class="tk">— preference tuning end to end: Bradley-Terry reward models, PPO mechanics and footprint, best-of-N, DPO and the PPO-vs-DPO trade.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Reasoning, evaluation, embeddings</h3>
+    <ol>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=k5Fh-UgTuCo" target="_blank" rel="noopener"><cite data-video="k5Fh-UgTuCo">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 6 - LLM Reasoning</cite></a> <span class="tk">— how reasoning gets trained onto a vanilla transformer: chain-of-thought, pass@k, GRPO and its length-bias bug, the DeepSeek R1 recipe.</span></li>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=8fNP4N46RRo" target="_blank" rel="noopener"><cite data-video="8fNP4N46RRo">Stanford CME295 Transformers &amp; LLMs | Autumn 2025 | Lecture 8 - LLM Evaluation</cite></a> <span class="tk">— the evaluation taxonomy that proves whether architectural gains are real: rater agreement, rule-based metric limits, judge biases, the benchmark landscape.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=idIck_TmPTE" target="_blank" rel="noopener"><cite data-video="idIck_TmPTE">LLM Fine-Tuning 24: Embedding &amp; Embedding Fine-Tuning Full Guide | Train Your Own Embedding Model</cite></a> <span class="tk">— the cleanest static-vs-contextual contrast in the corpus: why Word2vec gives one vector per word and a sentence transformer does not.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Serving the formula, and judging what it emits</h3>
+    <ol>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=hBzUokVYQkI" target="_blank" rel="noopener"><cite data-video="hBzUokVYQkI">AI Infrastructure Explained (GPUs, vLLM, and LLM-D)</cite></a> <span class="tk">— frames the transformer as a fixed formula plus learned weights, then walks the serving machinery: VRAM, KV cache, prefill/decode, batching, sharding, cache-aware routing.</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=4yNswvhPWCQ" target="_blank" rel="noopener"><cite data-video="4yNswvhPWCQ">Build an LLM from Scratch 7: Instruction Finetuning</cite></a> <span class="tk">— the hands-on proof that SFT reuses the pre-training loss: prompt templating, per-batch padding, -100 loss masking, and the mess of judging free-form output.</span></li>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=a3SMraZWNNs" target="_blank" rel="noopener"><cite data-video="a3SMraZWNNs">How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)</cite></a> <span class="tk">— the three-level eval ladder (unit tests, human/model judge, A/B) and the human-alignment process a judge needs before you can trust it.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">Adapting, merging, and owning a model</h3>
+    <ol>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=cO6Ly7mIziQ" target="_blank" rel="noopener"><cite data-video="cO6Ly7mIziQ">LoRA &amp; QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical (Complete Guide)</cite></a> <span class="tk">— grounds attention and the FFN in concrete matrix-rank math, then shows exactly how LoRA exploits that structure, with the worked rank-16/alpha-32 config.</span></li>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=uLrOI65XbDw" target="_blank" rel="noopener"><cite data-video="uLrOI65XbDw">Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne</cite></a> <span class="tk">— the SFT taxonomy plus the merging deep dive (SLERP, DARE, passthrough self-merge, FrankenMoE) and the leaderboard evidence that merges beat trained models.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=-TiET_K-E_g" target="_blank" rel="noopener"><cite data-video="-TiET_K-E_g">From 46% to 90%: Fine-Tuning Tiny LLMs for On-Device Agents — Cormac Brick, Google</cite></a> <span class="tk">— the sub-1B end of the architecture: real on-device throughput numbers, the 46%-to-90% fine-tuning delta, and why tiny models need one narrow task.</span></li>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=zjM2-_cFupo" target="_blank" rel="noopener"><cite data-video="zjM2-_cFupo">Data + AI Summit Keynote, Wednesday Part 4 - Democratizing LLMs with MosaicML and Databricks</cite></a> <span class="tk">— the enterprise price list for training transformers from scratch (MPT-7B at $250K, MPT-30B at ~$750K against GPT-3's $10-15M) and the adoption curve behind it.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h21">Gaps: what these thirteen talks do not answer</h2>
+
+  <p id="gaps-p1">Read this list before you treat the guide as complete. Each item is something a reader of this topic would reasonably ask and the corpus does not support — stated here rather than filled in from memory.</p>
+
+  <ul>
+    <li id="gaps-li1"><strong>No position-encoding math.</strong> Lecture 1 names position encodings and explicitly declines the formula — so you get why they exist, not how sinusoidal (or any other) encoding is computed.</li>
+    <li id="gaps-li2"><strong>No layer norm, no residual connections.</strong> Two load-bearing components of every real transformer block are absent from the whole corpus. The LoRA walkthrough stays at the Q/K/V and feed-forward level by its own admission.</li>
+    <li id="gaps-li3"><strong>No head-splitting math.</strong> "h heads with different projection matrices, concatenated and projected back" is as deep as it goes; how d_model divides across heads is never shown.</li>
+    <li id="gaps-li4"><strong>No measured transformer-vs-LSTM head-to-head.</strong> The displacement is argued from mechanism — vanishing gradients, slow sequential compute, context-blind representations — and from the 2017 paper's translation results. No corpus talk reports a score delta on the same task.</li>
+    <li id="gaps-li5"><strong>No modern architectural variants.</strong> RoPE, grouped-query attention, sliding-window attention and MoE routing internals are never covered. Multi-head latent attention and MoE are named once in passing in the DeepSeek-V3 context and not explained.</li>
+    <li id="gaps-li6"><strong>No counter-argument to attention.</strong> Nothing in the corpus asks whether recurrence is returning — linear attention and state-space models (Mamba and relatives) do not appear at all.</li>
+    <li id="gaps-li7"><strong>No link from architecture choices to KV-cache sizing.</strong> Context length, head count and attention variant drive KV-cache memory directly, but the serving talk treats the cache purely as an ops concern and never gives a sizing formula.</li>
+    <li id="gaps-li8"><strong>No cost figures for the alignment stages.</strong> Pre-training is quantified in dollars and FLOPs; RLHF/PPO and GRPO runs are never given wall-clock or dollar numbers, and the DeepSeek R1 cold-start dataset size is explicitly unknown.</li>
+    <li id="gaps-li9"><strong>No procedure for choosing LoRA rank or alpha.</strong> Rank 16 and alpha 32 appear as one demo's values. Nothing in the corpus tells you how to pick them for a new task, and QLoRA gets no perplexity or accuracy numbers of its own.</li>
+    <li id="gaps-li10"><strong>Quantization internals are named, not taught.</strong> NF4, double quantization, zero-point and absmax are all mentioned as pointers; none is derived.</li>
+    <li id="gaps-li11"><strong>No scaling-law interrogation.</strong> Chinchilla's 20-tokens-per-parameter result and its claim that architecture choice barely matters are reported from the paper, never independently examined or challenged.</li>
+    <li id="gaps-li12"><strong>No safety or interpretability depth.</strong> Red-teaming, guardrails and attention-level interpretability are absent; the corpus treats harmlessness as one reward term and safety benchmarks as policy-relative.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  <p id="footer-p1">From Recurrence to Attention — a field guide compiled from a 13-video transcript corpus: 756 chunks read in full, 5 parallel extraction passes, compiled 2026-10-22. Every claim above carries a cite resolving to a video id and chunk index you can open and check. Where the corpus is silent, see Gaps.</p>
+</div></footer>
+
+<script>
+(function () {
+  document.querySelectorAll("figure.prompt button[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var fig = btn.closest("figure.prompt");
+      if (!fig) return;
+      var pre = fig.querySelector("pre");
+      if (!pre) return;
+      var done = function () {
+        var prev = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.textContent).then(done, function () {});
+      }
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

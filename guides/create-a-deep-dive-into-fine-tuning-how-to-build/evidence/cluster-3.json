@@ -1,0 +1,536 @@
+{
+ "cluster": "cluster-3",
+ "videos": [
+  "a3SMraZWNNs",
+  "NovNcsKX8AU",
+  "NRQVTxl14x8",
+  "vBJF2sy1Pyw"
+ ],
+ "video_notes": [
+  {
+   "video_id": "a3SMraZWNNs",
+   "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+   "contributed": "Lays out the three-level eval ladder (unit tests -> human/LLM judge -> AB testing) and a concrete Excel-based judge-alignment workflow with an agreement-score metric; closest thing here to a 'build' process, but for evals, not fine-tuning."
+  },
+  {
+   "video_id": "NovNcsKX8AU",
+   "title": "The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)",
+   "contributed": "Defines harness engineering (model + harness), gives concrete context-budget numbers for sub-agents, and frames explicitly when to reach for RL/fine-tuning on an open model versus when to stay with harness/context engineering."
+  },
+  {
+   "video_id": "NRQVTxl14x8",
+   "title": "GenAI in Production: How AI Is Transforming the Entire Filmmaking Pipeline",
+   "contributed": "Only video in the cluster describing an actual fine-tuning use case in production: LoRA-based digital doubles and Gaussian-splat environment capture inside a VFX pipeline, plus real client cost/control tradeoffs."
+  },
+  {
+   "video_id": "vBJF2sy1Pyw",
+   "title": "The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013",
+   "contributed": "Covers the economics and engineering of LLM-as-judge systems: cheap models for scale, root-cause analysis on failing slices, objective fact-level scoring, and dataset sizing (50-100 samples)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Industry failure rate of agent projects",
+   "claim": "Gartner and MIT reports cited predict 40% of agentic AI projects will be cancelled by 2027, and MIT found 95% of generative AI pilots are failing -- used to motivate why evals matter.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 0,
+   "quote": "40% of all agent AI projects is expected to be cancelled",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Three ways to operationalize evals",
+   "claim": "Evals can be run as background monitoring, as real-time guardrails that block bad outputs, or as improvement tools that label data for fine-tuning or custom test sets.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 9,
+   "quote": "label data for either fine-tuning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Analyze-measure-improve lifecycle",
+   "claim": "Apply an iterative analyze -> measure -> improve lifecycle (collect/categorize failures, turn them into quantitative metrics, then refine prompts/models/architecture) as the operating loop for improving an LLM system.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 9,
+   "quote": "analyze, measure, improve life cycle",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Three levels of evals",
+   "claim": "Evals split into three escalating levels -- unit tests (level 1), human-and-model evaluation (level 2), and AB testing (level 3) -- with cost and effort increasing at each level.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 12,
+   "quote": "we get to human and model evaluation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Unit tests on structured output",
+   "claim": "The simplest LLM unit test checks structured-output fields directly: assert the predicted category is in the allowed category list, confidence is a float between 0 and 1, and category equals the expected value for a known input.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 14,
+   "quote": "check whether the category is in all of the categories",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Eval cadence by level",
+   "claim": "Run unit tests on every code/prompt change, run human-and-model evals weekly or bi-weekly depending on system complexity, and reserve AB testing for major releases.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 12,
+   "quote": "you want to run these weekly or bi-weekly",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge model choice",
+   "claim": "When moving to LLM-as-a-judge, use the most powerful model you can afford (e.g. GPT-4.1 or Claude Sonnet class) rather than a cheap mini model, because the judge's reasoning quality has to be trusted.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 18,
+   "quote": "use the most powerful model that you can afford",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge should explain, not just score",
+   "claim": "A good LLM judge produces a detailed critique explaining its reasoning, not just a bare score -- the explanation is what lets you diagnose and later align the judge.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 19,
+   "quote": "detailed critiques, not just scores",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge-alignment process",
+   "claim": "To build an aligned evaluator: collect model predictions, generate model critiques, get human evaluations on the same data, compare model versus human judgments, iterate on the evaluator prompt, and repeat until agreement is high.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 20,
+   "quote": "you collect model predictions, you generate model critiques",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge-alignment worked example",
+   "claim": "In a 10-example worked example comparing human labels to model-judge labels side by side in a spreadsheet, the human/model agreement score came out to 70% on the first pass.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 25,
+   "quote": "a 70% agreement score",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Meta-prompting to raise judge agreement",
+   "claim": "Export the disagreement cases (input, output, human critique, model critique) and feed them to a strong model as a meta-prompt asking it to rewrite the judge prompt to close the gap -- then re-run and check if agreement rises.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 26,
+   "quote": "you could then create a metaprompt",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: tool-first thinking",
+   "claim": "Reaching for a new tool (vector DB, bigger model, eval platform) before understanding the actual failure is the first common eval mistake; fix is to start simple and build custom solutions based on what you actually need.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 33,
+   "quote": "the first one is tool first thinking",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: generic metrics obsession",
+   "claim": "Drowning in generic scores like 'helpfulness 4.2, truthfulness 4.5' tells you nothing actionable; fix is to start with specific boolean metrics tied to what you actually want to know.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 33,
+   "quote": "mistake number two, generic metrics obsessions",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Anecdote: looking at data",
+   "claim": "A principal engineer at Zapier reportedly spends three hours per day looking at traces and raw data -- cited as proof that manual data inspection is irreplaceable even for senior engineers.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 34,
+   "quote": "spends three hours per day looking at traces",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: unaligned LLM judges",
+   "claim": "Shipping an LLM judge without first validating it against human judgment is a core mistake; always validate judge alignment with a human in the loop before trusting its scores.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 35,
+   "quote": "mistake number four is unaligned LLM judges",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Reference-based vs reference-free metrics",
+   "claim": "Reference-based metrics (exact string match, semantic similarity, code execution results, SQL correctness, structured-data validation) are easier to automate because you know the golden answer; most real systems also need reference-free metrics like tone and hallucination checks.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 31,
+   "quote": "exact string matching, semantic similarity, code execution results",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Agent = model + harness",
+   "claim": "An agent is best defined as model plus harness, where a harness is every piece of code, configuration, or execution logic that is not the model itself -- giving teams shared language for what to optimize.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 27,
+   "quote": "every piece of code, configuration, or execution logic",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prompting as a harness pillar",
+   "claim": "Prompting is the first pillar of a good harness and covers more than the system prompt -- it includes tool descriptions, skill front matter, and sub-agent front matter that specify when and how each should be used.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 30,
+   "quote": "prompting and like very very clear instructions",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Agents game easy verification",
+   "claim": "Agents are susceptible to picking the easy way out in self-verification -- testing trivial cases instead of hard ones -- so harnesses must explicitly teach agents to be thorough when verifying their own work.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 32,
+   "quote": "picking the easy way out in verification",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Sub-agent context budget",
+   "claim": "Size sub-agent tasks to roughly a 50k-150k (up to ~200k depending on model) token working range -- big enough to be useful, small enough to avoid the 'dumb zone' from context rot.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 35,
+   "quote": "a 50k to like a 150k token range",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "More reasoning effort can hurt under time limits",
+   "claim": "On a time-bounded terminal-bench style run, using X-high reasoning end-to-end scored only 53.9% (due to timeouts) versus 63.6% when execution used high effort -- more reasoning is not free when the task has a hard time budget.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 36,
+   "quote": "scored 53.9% due to timeouts versus 63.6% at high",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "File system as foundational harness primitive",
+   "claim": "The file system is described as arguably the most foundational harness primitive: models are already very good at using it, and it gives agents persistent storage to both pull context in and offload it, including as a shared scratchpad across sub-agents.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 39,
+   "quote": "the file system is arguably the most foundational harness primitive",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "When to reach for RL / fine-tuning",
+   "claim": "RL/fine-tuning is worth it when you have curated vertical data and want a model that's both much better and much cheaper/faster at that one task -- e.g. fine-tuning on customer-service or finance data to beat a general model at that niche.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 50,
+   "quote": "fine-tune on a bunch of our like customer service data",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuned open model can beat a closed model",
+   "claim": "Depending on how well a task is represented in a frontier lab's training mixture, a fine-tuned open model built on your own data is very likely to outperform an unfine-tuned closed model on that specific task.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 51,
+   "quote": "your fine-tuned model will be better than that open model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Start with harness engineering before RL",
+   "claim": "Before investing in RL/fine-tuning, it's a really good idea to start with harness engineering (or plain context engineering) because it's cheap relative to RL -- build a simple harness around the base model first and only escalate once that's insufficient.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 52,
+   "quote": "a really good idea just to start with harness engineering",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Context-rot mitigation toolkit",
+   "claim": "The main levers against context rot are sub-agent decomposition, compaction, tool-call offloading, and skills with progressive disclosure -- these are typically used in combination, not alone.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 53,
+   "quote": "compaction, tool call offloading, skills",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Tool-call offloading pattern",
+   "claim": "For noisy tool output (e.g. a giant bash/shell result), pipe only the head and tail into the model's context and tell it the full string lives in a file it can read later if needed, instead of dumping everything into context.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 57,
+   "quote": "take like the head and the tail",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "What to log in evals",
+   "claim": "Beyond pass/fail, track fine-grained eval metrics like total time taken, number of tokens used, and overall cost, plus reading the trajectory itself to see whether context-rot mitigations are actually working.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 57,
+   "quote": "how many tokens did it take",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Open models as fine-tuning base",
+   "claim": "Open models like the GLM series surprised the team this year as genuinely good, fast agentic coding partners -- a credible base for teams who want to fine-tune rather than depend solely on frontier closed models.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 71,
+   "quote": "the GLM series is like fantastic",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Hooks/middleware as an underrated feature",
+   "claim": "Hooks (middleware) that inject deterministic code execution into the harness -- e.g. forcing self-verification before an agent is allowed to exit -- are an underrated, high-leverage harness feature most teams underuse.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 70,
+   "quote": "we call it middleware but like hooks",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Evals as the grounding signal for self-improvement",
+   "claim": "Evals function as the grounding mechanism for auto-research / meta-harness self-improvement loops -- they let you hill-climb a harness over time because the same measurement still applies weeks later, not just in the moment.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 75,
+   "quote": "evals are basically how we like ground our",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Evals converging with environments",
+   "claim": "As agents do longer-horizon work, evals are shifting away from simple input/output chat-completion checks toward full task environments the agent is dropped into and evaluated within (e.g. via Harbor/terminal-bench style setups).",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 78,
+   "quote": "evals are going to start looking like environments",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Don't trust generic benchmarks",
+   "claim": "Public benchmarks are only a rough vibe-check; the real lever for improving an agent is building your own representative bench of evals/tasks tagged to axes (retrieval, planning, tool use) that map to your actual product.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 83,
+   "quote": "get a representative set of like evals and tasks like my own bench",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Long-horizon task recipe",
+   "claim": "The general-purpose recipe for longer-horizon agent tasks is: decompose the hard problem into sub-pieces, then verify each intermediate step so mistakes are caught and fixed before they compound.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 86,
+   "quote": "decomposing a really difficult problem into like sub pieces",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA fine-tuning for digital doubles",
+   "claim": "Promise's Generation Company fine-tunes models per actor -- e.g. creating a LoRA to build a digital double -- rather than relying purely on prompting a general model, blending that with traditional VFX methods depending on the use case.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 27,
+   "quote": "we will create like things like a Laura",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Gaussian splat environment recreation",
+   "claim": "To recreate decades-old crime-scene environments from low-resolution archival photos, the team generated images with GenAI and then used them to build a Gaussian-splat 3D representation of the environment for display on a 16K LED wall.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 11,
+   "quote": "create a gauzing splat three-dimensional representation of that environment",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cost/control pendulum",
+   "claim": "Client budget sits on a pendulum: swing toward fast-and-cheap GenAI output and you get what you get with less control; swing toward traditional VFX/comp work layered on top and you buy back control, asset-by-asset.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 30,
+   "quote": "there's a pendulum, right? And it could swing",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Consistency satisfaction with commercial models",
+   "claim": "Commercial GenAI tools (e.g. Freepik, Luma) are rated about an 8 out of 10 for consistency/control, but traditional VFX is still required to bring shots to broadcast quality.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 27,
+   "quote": "Yeah, it's like an eight out of 10",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Low-budget-high-return film economics",
+   "claim": "Paranormal Activity cost roughly half a million dollars to make and grossed roughly a billion dollars over its lifetime, cited as the budget-efficiency model GenAI filmmaking should chase instead of $1.5B-breakeven tentpoles.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 38,
+   "quote": "cost like half a million dollars",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Copyright Guardian tool",
+   "claim": "Every generated image is run through a proprietary 'Copyright Guardian' check that flags elements (e.g. a background painting) that are too similar to copyrighted work before anything can be published or distributed.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 20,
+   "quote": "every single image we gener generate through copyright guardian",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Enterprise model deals for indemnification",
+   "claim": "To be able to distribute through studios like Paramount, Promise maintains enterprise deals with all of its model makers so chain-of-title, data security, and indemnification requirements are met before any model is used in production.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 21,
+   "quote": "we have enterprise deals with all of our models",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Embedding GenAI artists in production departments",
+   "claim": "A concrete service model: embed a GenAI artist directly inside a studio's art/costume/props/wardrobe department working side-by-side with the department head so ideas get visualized and iterated faster.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 6,
+   "quote": "we can embed an artist directly into the studio",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Shot volume achieved with GenAI",
+   "claim": "For the CBS Paramount true-crime series 'Harlan Coben's Final Twist', the team produced over 400 fully generated shots used as additional B-roll across five episodes.",
+   "video_id": "NRQVTxl14x8",
+   "chunk_index": 6,
+   "quote": "we worked on over 400 fully generated shots",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Don't use an expensive model as judge",
+   "claim": "Avoid using an expensive frontier model like GPT-4 purely for evaluation at scale -- if you're spending more on judging than generating, you might as well have a human do it; rely on smaller, cheaper models for most checks.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 5,
+   "quote": "you don't want to use like an expensive model like gp4",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Root-cause analysis on failing slice",
+   "claim": "Don't run every check on every data point; run a high-level check across all traffic, then on the 10-20% of cases that fail, run a battery of 5-10 deeper checks to pinpoint whether the failure is retrieval, citation, utilization, or hallucination.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 6,
+   "quote": "run like a a battery of checks on them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Objective scoring via fact decomposition",
+   "claim": "Instead of asking an LLM judge for a subjective relevant/irrelevant or Likert rating (which invites egocentric bias), break the response into individual facts and score each fact's relevance, then aggregate into a ratio-based score.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 7,
+   "quote": "break down the response into like individual facts",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Starter metric set for RAG",
+   "claim": "For any RAG application, start evaluation with four or five metrics: response relevance, response completeness, context relevance (retrieval quality), hallucination/groundedness, and conversation satisfaction -- optionally tonality if it matters.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 10,
+   "quote": "look at the relevance of the response",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Eval dataset size needed",
+   "claim": "A test dataset of just 50-100 samples drawn from real user traffic (or downvoted/failed responses) is a good enough starting point for evaluation -- it beats synthetic data or public benchmarks, which can't anticipate your real issues.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 12,
+   "quote": "a test data sets of like 50 to 100 samples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Real-time eval limited to latency-tolerant checks",
+   "claim": "Most quality evals (relevance, hallucination) can't run before the response is shown to the user because checking adds latency; only safety/jailbreak checks are cheap enough to run in parallel with generation.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 3,
+   "quote": "checking requires extra time and you don't want to add latency",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Jailbreak detection signals",
+   "claim": "Jailbreak attempts tend to show up as abnormally long prompts, bursts of repeated traffic (multiple techniques tried in quick succession), and lower sentiment/coherence than genuine questions.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 21,
+   "quote": "the length of their question or the length of their prompt",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "UpTrain log-and-evaluate API",
+   "claim": "UpTrain's core workflow is a single API call -- log and evaluate -- where you pass question/response/context plus the checks you want (context relevance, completeness, jailbreak, safety, satisfaction) and get back a score with an explanation.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 23,
+   "quote": "up train. log and evaluate",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Failure clustering by topic",
+   "claim": "UpTrain can filter down to all cases that scored zero on a given check and automatically surface the common topic across them, turning a pile of failures into an actionable pattern to fix.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 25,
+   "quote": "filter cases where let's say the model is failing",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Model/prompt comparison experiments",
+   "claim": "Run side-by-side experiments comparing two models or prompts (e.g. GPT-3.5 vs Claude 2) across multiple metrics at once, then decide which metric matters most for your users before picking a winner.",
+   "video_id": "vBJF2sy1Pyw",
+   "chunk_index": 26,
+   "quote": "compare like two different models right so GPD 3.5 and Claw 2",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "What model to use as an LLM judge",
+   "positions": [
+    {
+     "video_id": "a3SMraZWNNs",
+     "chunk_index": 18,
+     "position": "Use the most powerful model you can afford for LLM-as-a-judge (GPT-4.1 / Claude Sonnet class) -- this is explicitly not a job for mini/cheap models."
+    },
+    {
+     "video_id": "vBJF2sy1Pyw",
+     "chunk_index": 5,
+     "position": "Avoid using an expensive model like GPT-4 for evaluation at scale; rely on smaller, cheaper models, because judging cost otherwise outweighs the value and you'd be better off with a human."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four videos actually walk through how to fine-tune a model: no data-format prep, no training script, no hyperparameters (learning rate, epochs, LoRA rank/alpha), no infra/tooling choice (e.g. axolotl, Unsloth, TRL), and no cost or wall-clock-time figures for running a fine-tune.",
+  "NovNcsKX8AU references fine-tuning open models (GLM-5, Kimi) and doing RL on trace data, but gives no concrete recipe for turning traces into training data or running the RL job itself.",
+  "NRQVTxl14x8 mentions creating a LoRA for a digital double but gives no detail on the training process, dataset size, or tooling used to produce it -- that work is attributed to a separate 'Muse' team not covered in the talk.",
+  "None of the talks compare fine-tuning against prompting/RAG on cost or quality for a concrete task, so a reader can't tell from this cluster when fine-tuning actually beats a well-engineered harness or eval-driven prompt loop.",
+  "No discussion of evaluating a fine-tuned model specifically (e.g. catastrophic forgetting, regression suites for a fine-tuned checkpoint) distinct from the general LLM-eval guidance given for prompted systems.",
+  "No treatment of fine-tuning for safety/alignment, or of open-weight licensing/legal constraints on fine-tuning, despite NRQVTxl14x8's heavy focus on copyright/chain-of-title for generated images."
+ ],
+ "verified_claims": 52
+}

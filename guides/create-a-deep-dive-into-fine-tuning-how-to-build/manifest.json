@@ -1,0 +1,303 @@
+{
+  "slug": "create-a-deep-dive-into-fine-tuning-how-to-build",
+  "title": "The Fine-Tuning Pipeline",
+  "topic": "create a deep dive into fine tuning how to build",
+  "subtitle": "A staff-engineer walkthrough of fine-tuning as a system: when it earns its place, how to construct the input set, which method to pick (SFT, DPO, RFT, GRPO, merging), which parameters you actually set, how to host the result, and how to score it honestly. Distilled from twenty talks — OpenAI, LangChain, Databricks, MongoDB, Hugging Face practitioners, Unsloth and from-scratch tutorialists, and a tau²-bench case study.",
+  "question": "can you create a deep dive into fine tuning, how to build the input set for fine tuning, the options , how to fine tune the parameters you set and do you need hyper parameterisatgion and hosting an scoring the model. Tackle this as a staff ai ml engineer",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-10-22",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "JfaLQqfXqPA",
+    "YxXBojdD1as",
+    "v7qMjy_RxOs",
+    "4yNswvhPWCQ",
+    "uaiq1HvQKoI",
+    "uLrOI65XbDw",
+    "a3SMraZWNNs",
+    "qF5il_9IwME",
+    "T0HhO4YtTfE",
+    "cO6Ly7mIziQ",
+    "R78NYFkWH10",
+    "lsgVRCJ4fko",
+    "1jvxxa7tdjw",
+    "Q679gH7oszg",
+    "NRQVTxl14x8",
+    "vBJF2sy1Pyw",
+    "CvRngaQZQ3Y",
+    "E8zpgNPx8jE",
+    "r-MPiu0E4W4",
+    "NovNcsKX8AU"
+  ],
+  "sources": [
+    {
+      "video_id": "JfaLQqfXqPA",
+      "title": "RFT, DPO, SFT: Fine-tuning with OpenAI — Ilan Bigio, OpenAI",
+      "channel": "AI Engineer",
+      "contributed": "The most granular build guide in the cluster: live demos and real metrics for SFT (classification, function-calling distillation), DPO (joke tone-matching), and RFT (hydrogen-bond prediction success, email-triage failure), plus concrete rules of thumb on sample counts, grader design, and platform mechanics (LoRA adapters, overfitting monitoring, image fine-tuning).",
+      "url": "https://www.youtube.com/watch?v=JfaLQqfXqPA"
+    },
+    {
+      "video_id": "YxXBojdD1as",
+      "title": "Fine-Tuning a Model: The Easiest Way to Start (Unsloth Tutorial)",
+      "channel": "Ugo Chukwu",
+      "contributed": "A full hands-on walkthrough of the fine-tuning loop in Unsloth's no-code UI: baseline eval before training, LoRA/QLoRA hyperparameter choices, a real max-steps-vs-epochs mistake and its loss-chart symptom, before/after scoring, GGUF export, and calling the exported model from an external Python app.",
+      "url": "https://www.youtube.com/watch?v=YxXBojdD1as"
+    },
+    {
+      "video_id": "v7qMjy_RxOs",
+      "title": "The Honest Guide To Fine-Tuning Local AI In 2026",
+      "channel": "Zen van Riel",
+      "contributed": "The decision framework for when to fine-tune versus prompt/RAG/agentic loops, the five-step pipeline (data collection, dataset engineering, LoRA training, evaluation, GGUF export), concrete token/VRAM/time benchmarks, and a hardware verdict across Nvidia, AMD, and Apple Silicon for local fine-tuning.",
+      "url": "https://www.youtube.com/watch?v=v7qMjy_RxOs"
+    },
+    {
+      "video_id": "4yNswvhPWCQ",
+      "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+      "channel": "Sebastian Raschka",
+      "contributed": "Full from-scratch walkthrough of building an instruction-tuning dataset (Alpaca formatting, batch-level padding, loss masking), running SFT on GPT-2, and an LLM-as-judge evaluation pipeline using a local Ollama model.",
+      "url": "https://www.youtube.com/watch?v=4yNswvhPWCQ"
+    },
+    {
+      "video_id": "uaiq1HvQKoI",
+      "title": "GenAI in Production: How RAG & AI Agents Are Shaping the Future",
+      "channel": "Xgrid",
+      "contributed": "Mostly a RAG/agents production podcast, but it adds the 'garbage in, garbage out' warning specific to fine-tuned models inheriting training-data errors, plus general production practices (golden datasets, canary/blue-green rollouts, drift monitoring, feedback loops) that apply once a fine-tuned model ships.",
+      "url": "https://www.youtube.com/watch?v=uaiq1HvQKoI"
+    },
+    {
+      "video_id": "uLrOI65XbDw",
+      "title": "Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne",
+      "channel": "AI Engineer",
+      "contributed": "The cluster's core how-to-build reference: SFT/DPO data formats, the three-feature recipe for good training samples, a dataset-curation pipeline, SFT technique trade-offs (full/LoRA/QLoRA), key hyperparameters, and a deep dive into post-training model merging (SLERP, DARE, passthrough, FrankenMoE).",
+      "url": "https://www.youtube.com/watch?v=uLrOI65XbDw"
+    },
+    {
+      "video_id": "a3SMraZWNNs",
+      "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "Lays out the three-level eval ladder (unit tests -> human/LLM judge -> AB testing) and a concrete Excel-based judge-alignment workflow with an agreement-score metric; closest thing here to a 'build' process, but for evals, not fine-tuning.",
+      "url": "https://www.youtube.com/watch?v=a3SMraZWNNs"
+    },
+    {
+      "video_id": "qF5il_9IwME",
+      "title": "Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The deepest look in this cluster at a production-grade hybrid retrieval + agentic grounding pipeline for a RAG document copilot, plus repo conventions (agents.md, mono-repo, dependency pinning) and Railway deployment specifics.",
+      "url": "https://www.youtube.com/watch?v=qF5il_9IwME"
+    },
+    {
+      "video_id": "T0HhO4YtTfE",
+      "title": "AI System Design: From Idea to Production - Apoorva Joshi, MongoDB",
+      "channel": "AI Engineer",
+      "contributed": "Frames fine-tuning as just one design-pattern option inside a broader product-requirements-to-production framework, and names the exact trigger for reaching for it (behavioral failures, domain-specific ceiling) without ever actually implementing it in the walkthrough.",
+      "url": "https://www.youtube.com/watch?v=T0HhO4YtTfE"
+    },
+    {
+      "video_id": "cO6Ly7mIziQ",
+      "title": "LoRA & QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical (Complete Guide)",
+      "channel": "Sunny Savita",
+      "contributed": "Conceptual grounding in matrix rank and decomposition that underlies LoRA/QLoRA, a comparison of full fine-tuning vs PEFT methods, and a hands-on Hugging Face PEFT script fine-tuning TinyLlama with LoRA.",
+      "url": "https://www.youtube.com/watch?v=cO6Ly7mIziQ"
+    },
+    {
+      "video_id": "R78NYFkWH10",
+      "title": "Fine-Tuning LLMs for Real-World Tool Calling: Lessons from tau2-bench",
+      "channel": "Toronto Machine Learning Society (TMLS)",
+      "contributed": "A production-style SFT-then-GRPO fine-tuning workflow for tool-calling reliability, with reward-shaping details, pass^k evaluation, and hard-won lessons on reward hacking and teacher-trace data quality.",
+      "url": "https://www.youtube.com/watch?v=R78NYFkWH10"
+    },
+    {
+      "video_id": "lsgVRCJ4fko",
+      "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+      "channel": "UI Collective",
+      "contributed": "No content on model/LLM fine-tuning — this is a 4-hour Figma design-systems tutorial (design tokens, variables, components) that only uses 'AI' and 'training' in the generic design-tooling sense. It does not support any claim for this guide's topic; flagged as a cluster-assignment mismatch rather than a source.",
+      "url": "https://www.youtube.com/watch?v=lsgVRCJ4fko"
+    },
+    {
+      "video_id": "1jvxxa7tdjw",
+      "title": "Exploring MLOps and LLMOps: Architectures and Best Practices",
+      "channel": "Databricks",
+      "contributed": "Enterprise MLOps/LLMOps reference architecture (deploy-code vs deploy-model, Unity Catalog governance, lakehouse monitoring) and the only real coverage of actual pretraining/fine-tuning infrastructure (Mosaic AI model training, Composer, LLM Foundry).",
+      "url": "https://www.youtube.com/watch?v=1jvxxa7tdjw"
+    },
+    {
+      "video_id": "Q679gH7oszg",
+      "title": "How I Build and Ship Custom AI Solutions for Clients",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The business/process layer that wraps the other three builds: discovery, scoping, pricing, sprint cadence, a standardized internal stack, deployment security baseline, monitoring, and long-term client-partner positioning.",
+      "url": "https://www.youtube.com/watch?v=Q679gH7oszg"
+    },
+    {
+      "video_id": "NRQVTxl14x8",
+      "title": "GenAI in Production: How AI Is Transforming the Entire Filmmaking Pipeline",
+      "channel": "KINN",
+      "contributed": "Only video in the cluster describing an actual fine-tuning use case in production: LoRA-based digital doubles and Gaussian-splat environment capture inside a VFX pipeline, plus real client cost/control tradeoffs.",
+      "url": "https://www.youtube.com/watch?v=NRQVTxl14x8"
+    },
+    {
+      "video_id": "vBJF2sy1Pyw",
+      "title": "The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013",
+      "channel": "Qdrant Vector Search",
+      "contributed": "Covers the economics and engineering of LLM-as-judge systems: cheap models for scale, root-cause analysis on failing slices, objective fact-level scoring, and dataset sizing (50-100 samples).",
+      "url": "https://www.youtube.com/watch?v=vBJF2sy1Pyw"
+    },
+    {
+      "video_id": "CvRngaQZQ3Y",
+      "title": "Improving Agents is a Data Mining Problem — Vivek Trivedy, LangChain",
+      "channel": "AI Engineer",
+      "contributed": "Positions fine-tuning as the second step in a trace-mining pipeline (ship, collect traces, mine, experiment) and gives the operational sequencing rule for when to stop prompt/harness engineering and start fine-tuning, plus the token-cost-vs-hardware-cost economics that justify it at scale.",
+      "url": "https://www.youtube.com/watch?v=CvRngaQZQ3Y"
+    },
+    {
+      "video_id": "E8zpgNPx8jE",
+      "title": "Build a Complete End-to-End GenAI Project in 3 Hours",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A solo, AI-assisted live build of a scraping/digest/email pipeline from idea to a working render.com deployment, with concrete pitfalls hit along the way (Docling OOM, YouTube IP blocks, dedup logic, env/prod mixups, a mid-project OOP refactor).",
+      "url": "https://www.youtube.com/watch?v=E8zpgNPx8jE"
+    },
+    {
+      "video_id": "r-MPiu0E4W4",
+      "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+      "channel": "UI Collective",
+      "contributed": "Nothing on LLM fine-tuning. This talk is about AI-assisted UI/UX design tooling (Figma, Claude/Grok/Codex design workflows, design-system skills) and is off-topic for a fine-tuning build guide.",
+      "url": "https://www.youtube.com/watch?v=r-MPiu0E4W4"
+    },
+    {
+      "video_id": "NovNcsKX8AU",
+      "title": "The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)",
+      "channel": "GroundZero YT",
+      "contributed": "Defines harness engineering (model + harness), gives concrete context-budget numbers for sub-agents, and frames explicitly when to reach for RL/fine-tuning on an open model versus when to stay with harness/context engineering.",
+      "url": "https://www.youtube.com/watch?v=NovNcsKX8AU"
+    }
+  ],
+  "chunk_count": 1482,
+  "cluster_count": 5,
+  "cite_total": 264,
+  "cite_valid": 264,
+  "gaps": [
+    "No concrete pricing or dollar figures for OpenAI SFT/DPO/RFT fine-tuning jobs, or for self-hosted fine-tuning clusters, so cost comparisons across approaches stay qualitative only.",
+    "T0HhO4YtTfE names fine-tuning as an option for the claims-review system but never actually implements or evaluates it, so there's no worked example of fine-tuning inside a full product-requirements-to-production walkthrough.",
+    "No exact deduplication/quality-filter thresholds or hands-on tool demos for building SFT datasets — tools like Lilac/Atlas-style clustering are named, not demonstrated.",
+    "No description of how or when RFT will support multi-turn agentic tasks (feeding tool-call results back mid-episode) — explicitly called a current limitation with no stated timeline.",
+    "No benchmark numbers comparing merged/open-source fine-tuned models against frontier proprietary models on real downstream tasks — the merging results cite leaderboard rank, not absolute task scores against GPT-4-class models.",
+    "No detail on how 'continual learning' memory updates (sleep-time compute, evolving harnesses over multi-year timescales) are actually implemented in production — CvRngaQZQ3Y names the direction but calls it 'slightly unclear.'",
+    "No quantified break-even point between hosted per-token fine-tuning costs and the hardware-cluster economics described by CvRngaQZQ3Y — readers can't size when to switch.",
+    "The live 'prompt tuning' experiment in JfaLQqfXqPA (notes-based iterative prompt improvement as an alternative to RFT) ends inconclusively with no numbers showing convergence, so it's an idea sketch, not a validated technique.",
+    "None of the four talks actually walk through running a fine-tuning job end to end -- no LoRA/full-fine-tune code, hyperparameters, training curves, or before/after accuracy comparisons are shown.",
+    "No cost or infrastructure detail is given for GPU fine-tuning or pretraining beyond naming 'a GPU cluster' and tools like Mosaic AI Model Training, Composer, and LLM Foundry.",
+    "No guidance on the decision threshold for when to move from prompting/RAG to actual fine-tuning -- how do you know RAG has plateaued and fine-tuning is worth the investment?",
+    "No coverage of newer fine-tuning methods such as LoRA/QLoRA, DPO/RLHF, or distillation -- the corpus only discusses fine-tuning at the strategic/stack-selection level.",
+    "No example of evaluating a fine-tuned model head-to-head against its base model with concrete benchmark numbers.",
+    "None of the four videos actually walk through how to fine-tune a model: no data-format prep, no training script, no hyperparameters (learning rate, epochs, LoRA rank/alpha), no infra/tooling choice (e.g. axolotl, Unsloth, TRL), and no cost or wall-clock-time figures for running a fine-tune.",
+    "NovNcsKX8AU references fine-tuning open models (GLM-5, Kimi) and doing RL on trace data, but gives no concrete recipe for turning traces into training data or running the RL job itself.",
+    "NRQVTxl14x8 mentions creating a LoRA for a digital double but gives no detail on the training process, dataset size, or tooling used to produce it -- that work is attributed to a separate 'Muse' team not covered in the talk.",
+    "None of the talks compare fine-tuning against prompting/RAG on cost or quality for a concrete task, so a reader can't tell from this cluster when fine-tuning actually beats a well-engineered harness or eval-driven prompt loop.",
+    "No discussion of evaluating a fine-tuned model specifically (e.g. catastrophic forgetting, regression suites for a fine-tuned checkpoint) distinct from the general LLM-eval guidance given for prompted systems.",
+    "No treatment of fine-tuning for safety/alignment, or of open-weight licensing/legal constraints on fine-tuning, despite NRQVTxl14x8's heavy focus on copyright/chain-of-title for generated images.",
+    "None of the four videos give concrete dollar-cost figures for a full fine-tuning or LoRA/QLoRA training run on cloud GPUs — only wall-clock minutes and token counts are reported.",
+    "No guidance on fine-tuning multimodal or vision-language models; all examples are text-only LLMs.",
+    "No walkthrough of concrete hyperparameter values (learning rate schedule, warmup steps, weight decay) for AdamW in a production fine-tuning run — AdamW is named but not tuned on-screen.",
+    "No coverage of distributed or multi-GPU fine-tuning; both the from-scratch SFT demo and the LoRA demo run on a single machine (a MacBook Air or one Colab/H100 GPU).",
+    "No discussion of continued/domain-adaptive pretraining as a step before instruction fine-tuning.",
+    "The TMLS talk doesn't disclose exact GRPO hyperparameters (group size, KL penalty coefficient, learning rate) or the total training duration/cost of the RL stage.",
+    "No guidance on how to actually choose a LoRA rank or alpha value beyond 'it's a hyperparameter you can check out' — no systematic selection method is given.",
+    "No discussion of safety/red-teaming evaluation of fine-tuned models beyond a passing mention that preference tuning can reduce swearing or harmful outputs.",
+    "r-MPiu0E4W4 ('Design with AI') contains no fine-tuning content at all — it covers AI-assisted UI/UX design tooling and workflows, so it cannot answer any build questions about fine-tuning LLMs.",
+    "No guidance on choosing LoRA rank/alpha for a real production-sized task — only one toy example (rank 16, alpha 1.0) is shown, with no rule of thumb for scaling up.",
+    "No coverage of cloud or managed fine-tuning services (pricing, turnaround, scaling) — both detailed tutorials assume a local/home-lab GPU.",
+    "No comparison between Unsloth and other fine-tuning frameworks (e.g., Axolotl, Hugging Face PEFT/TRL) or criteria for choosing among them.",
+    "No discussion of merging multiple LoRA adapters, swapping adapters at inference time, or deciding when to merge an adapter into the base weights versus keeping it separate.",
+    "AMD ROCm and Apple Silicon/MLX fine-tuning performance are described qualitatively ('your mileage might vary') with no actual benchmark numbers.",
+    "No treatment of full-parameter fine-tuning trade-offs, or alignment-style fine-tuning (RLHF/DPO) as an alternative to supervised LoRA fine-tuning.",
+    "No discussion of licensing or IP implications of exporting and redistributing a fine-tuned open-weight model.",
+    "The design-systems video in this cluster (lsgVRCJ4fko) does not address LLM fine-tuning at all, so this cluster has no material on integrating fine-tuned models into design/product tooling workflows despite nominally being grouped together."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "gate",
+      "options",
+      "dataset",
+      "sizing",
+      "params",
+      "hosting",
+      "scoring",
+      "copy",
+      "conflicts",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20261022T050243Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0640414,
+        "duration_ms": 251405,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.2164377000000002,
+        "duration_ms": 265110,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.9807211,
+        "duration_ms": 316328,
+        "turns": 16,
+        "tool_calls": 15
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.3137267,
+        "duration_ms": 394434,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.7268754999999998,
+        "duration_ms": 397284,
+        "turns": 9,
+        "tool_calls": 8
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 4.422301999999999,
+        "duration_ms": 966226,
+        "turns": 23,
+        "tool_calls": 22
+      },
+      {
+        "label": "fix:1",
+        "model": "claude-opus-5",
+        "cost_usd": 0.441048,
+        "duration_ms": 48716,
+        "turns": 18,
+        "tool_calls": 17
+      }
+    ]
+  }
+}

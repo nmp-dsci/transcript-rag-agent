@@ -1,6 +1,40 @@
 {
   "guides": [
     {
+      "slug": "create-a-deep-dive-into-fine-tuning-how-to-build",
+      "title": "The Fine-Tuning Pipeline",
+      "topic": "create a deep dive into fine tuning how to build",
+      "subtitle": "A staff-engineer walkthrough of fine-tuning as a system: when it earns its place, how to construct the input set, which method to pick (SFT, DPO, RFT, GRPO, merging), which parameters you actually set, how to host the result, and how to score it honestly. Distilled from twenty talks — OpenAI, LangChain, Databricks, MongoDB, Hugging Face practitioners, Unsloth and from-scratch tutorialists, and a tau²-bench case study.",
+      "question": "can you create a deep dive into fine tuning, how to build the input set for fine tuning, the options , how to fine tune the parameters you set and do you need hyper parameterisatgion and hosting an scoring the model. Tackle this as a staff ai ml engineer",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-10-22",
+      "videos": 20,
+      "chunk_count": 1482,
+      "cite_total": 264,
+      "cite_valid": 264,
+      "versions": [
+        1
+      ]
+    },
+    {
+      "slug": "deep-dive-on-transformers-and-how-they-revolutionised-llm-and",
+      "title": "From Recurrence to Attention",
+      "topic": "deep dive on transformers and how they revolutionised llm and",
+      "subtitle": "What the transformer actually changed about neural network training, how it differs from RNNs and LSTMs mechanism by mechanism, and what that change costs you downstream — distilled from Stanford's CME295 lectures (Afshine and Shervine Amidi), Maxime Labonne, Sebastian Raschka, Cormac Brick, Sunny Savita, Dave Ebbelaar, KodeKloud and the Databricks/MosaicML keynote.",
+      "question": "can you do deep dive on transformers and how they revolutionised llm and neural network training how it differs to rnn / lstm",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-10-22",
+      "videos": 13,
+      "chunk_count": 756,
+      "cite_total": 211,
+      "cite_valid": 211,
+      "versions": [
+        1
+      ]
+    },
+    {
       "slug": "create-a-guide-for-presenting-and-communication-of-insights-and",
       "title": "The Executive Readout",
       "topic": "create a guide for presenting and communication of insights and",

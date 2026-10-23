@@ -1,0 +1,584 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "a3SMraZWNNs",
+  "hBzUokVYQkI",
+  "4yNswvhPWCQ"
+ ],
+ "video_notes": [
+  {
+   "video_id": "a3SMraZWNNs",
+   "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+   "contributed": "The three-level eval framework (unit tests -> human/model judge -> A/B testing) and the concrete human-alignment process you need before an LLM-as-judge can be trusted."
+  },
+  {
+   "video_id": "hBzUokVYQkI",
+   "title": "AI Infrastructure Explained (GPUs, vLLM, and LLM-D)",
+   "contributed": "Frames the transformer itself as 'a fixed formula plus billions of learned weights' and walks through the serving-side machinery (VRAM, KV cache, prefill/decode, batching, sharding, LLM-D routing) that turns that formula into a product at scale."
+  },
+  {
+   "video_id": "4yNswvhPWCQ",
+   "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+   "contributed": "Hands-on walkthrough of turning a pretrained GPT-2-class transformer into an instruction-follower: prompt templating, batch-level padding, loss masking, and the practical mess of scoring free-form output with another LLM as judge."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Industry failure rate of AI projects",
+   "claim": "Gartner projects 40% of agentic AI projects will be cancelled by 2027, and MIT found 95% of generative AI pilots are failing, which is the justification for building rigorous evals rather than shipping on vibes.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 0,
+   "quote": "by 2027, 40% of all agent AI projects is expected to be cancelled",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Three core challenges in LLM development",
+   "claim": "The three recurring failure sources in any LLM system are: not understanding the data flowing through it, a gap between what you want and what you can actually specify in prompts/code, and inconsistent behavior from small wording changes.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 6,
+   "quote": "these are really the three core challenges in LLM development",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Analyze-measure-improve cycle",
+   "claim": "Treat eval work as a repeating cycle: analyze (collect and categorize failure modes), measure (turn insights into quantitative metrics), improve (refine prompts/models/architecture) — drawn from Hamel Husain and Shankar's application-centric AI evals work.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 10,
+   "quote": "This iterative cycle addresses the three core challenges",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Three levels of evals, increasing cost",
+   "claim": "Evals come in three levels of increasing cost and effort: level 1 unit tests (cheap, run on every change), level 2 human/model evaluation (weekly/bi-weekly), level 3 A/B testing (major releases only).",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 11,
+   "quote": "the cost and effort increase with each level",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Level-1 unit tests on structured output",
+   "claim": "The simplest useful LLM test is a Python assert against structured output fields — e.g. check the predicted category is in the allowed enum, the confidence score is a float between 0 and 1, and it matches the expected label for a known ticket.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 14,
+   "quote": "creating unit tests around structured output",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Store raw events for regression tests",
+   "claim": "Capture raw production JSON events into an evals/events folder so you can replay exact real inputs through assertions every time you change a prompt or workflow step.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 15,
+   "quote": "we typically put these in the the eels folder",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Use the most capable model as judge",
+   "claim": "When you move to LLM-as-a-judge, use the most powerful model you can afford (e.g. GPT-4.1 or Claude Sonnet class), not a mini model, because judging quality depends on the model's reasoning strength.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 18,
+   "quote": "you typically want to use the most powerful model that you can afford",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Judge must be aligned to human judgment first",
+   "claim": "Never deploy an LLM judge before validating it against human ratings on the same data — alignment with human judgment is a precondition, not an optional nice-to-have.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 19,
+   "quote": "It must be aligned with human judgment",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Judge-alignment loop",
+   "claim": "Build an aligned evaluator by iterating: collect model predictions, generate model critiques, collect human evaluations on the same data, compare model vs. human judgments, revise the evaluator prompt, repeat until agreement is high.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 20,
+   "quote": "you collect model predictions, you generate model critiques, you get human evaluations",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Start binary, not 1-10 scores",
+   "claim": "Start judge rubrics with binary good/bad ratings plus a detailed written critique rather than jumping straight to 1-10 scoring — binary ratings are easier to align and debug.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 21,
+   "quote": "you want to start really with the binary ratings and detailed critiques",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Worked example: 70% human/model agreement",
+   "claim": "In a 10-example worked Excel exercise, the first LLM-judge prompt only matched human verdicts 70% of the time — the number itself isn't the point, it's the starting measurement you then try to raise toward 100%.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 25,
+   "quote": "a 70% agreement score",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Meta-prompting to fix a judge prompt",
+   "claim": "Feed a powerful model the input/output pairs, the human critiques, the current judge outcomes, and the existing judge prompt, and ask it to rewrite the judge prompt to close the human/model disagreement gap — don't hand-tune the judge prompt yourself.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 27,
+   "quote": "that the next time we run this system, we get as close to complete agreement as possible",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "A/B testing reserved for major releases",
+   "claim": "Level-3 A/B testing (comparing prompts, models, or whole workflows on real traffic) is the most expensive eval tier and should be run for major releases, not routine iteration.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 13,
+   "quote": "this is something that you want to run with major releases",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reference-based vs reference-free metrics",
+   "claim": "Split metrics into reference-based (exact match, semantic similarity, code execution, SQL correctness — easy because you know the gold answer) and reference-free (tone, length, hallucination, safety — harder because many outputs can be equally valid).",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 31,
+   "quote": "are our reference based metrics",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reference-free metrics are the harder, common case",
+   "claim": "Most real production systems end up needing reference-free metrics (tone appropriateness, length constraints, no hallucinations, format compliance, safety/toxicity) because there's no single correct answer.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 32,
+   "quote": "working with a lot of referencefree metrics",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: tool-first thinking",
+   "claim": "Swapping tools (new vector DB, bigger model, off-the-shelf eval platform) at the first sign of a problem is a common mistake — fix is to start simple and build custom solutions for your actual failure mode.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 33,
+   "quote": "tool first thinking",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: generic metric scores",
+   "claim": "Dashboards showing 'helpfulness: 4.2, truthfulness: 4.5' are close to meaningless — replace generic scores with specific, actionable boolean checks tied to what you actually want to know.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 34,
+   "quote": "drowning in meaningless scores",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "A principal engineer spends 3 hours a day on traces",
+   "claim": "A Zapier principal engineer reportedly spends three hours per day looking at production traces and data, illustrating that senior engineers treat manual data inspection as core work, not a side task.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 34,
+   "quote": "spends three hours per day looking at traces and data",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Pitfall: unaligned LLM judges",
+   "claim": "Assuming an LLM judge 'just works' without a validation process against human ratings is a named common mistake; the fix is always to validate judge alignment first.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 35,
+   "quote": "unaligned LLM judges",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Manual inspection has the best effort-to-value ratio",
+   "claim": "Manual inspection of real data has the highest value-to-effort ratio of any eval activity — sample broadly, then focus on patterns, and never stop examining real examples.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 36,
+   "quote": "Manual inspection has the highest value to prestige ratio",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Model = fixed formula + learned weights",
+   "claim": "Every model, no matter how complex, reduces to a fixed mathematical formula (the structure) plus numbers called weights that are fit to data — the formula is fixed, training only changes the weights.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 4,
+   "quote": "a model is a formula and its weights are numbers that are learned from examples",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Transformer is the shared architecture across GPT/Claude/Llama",
+   "claim": "GPT, Claude, and Llama all run on essentially the same transformer formula, written once as code; what makes each model different is only the billions of learned weight values, not the architecture.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 5,
+   "quote": "The formula, the transformer is only a page of code and all of the knowledge is in the weights",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Model file sizes scale with parameter count",
+   "claim": "Model weight files scale roughly 2x parameters-to-GB at low precision: a small model is ~2GB, a mid-size model ~16GB, a 70B-parameter large model ~140GB, and 500B+-parameter giants run several hundred GB.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 5,
+   "quote": "a large model with 70 billion parameters would be 140GB",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "GPUs beat CPUs ~100x on raw throughput",
+   "claim": "A CPU manages roughly 10 trillion operations/second with a few powerful sequential cores, while a GPU with thousands of small simple cores reaches closer to 1,000 trillion operations/second — about 100x more math per second, which is why GPUs run transformer math.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 9,
+   "quote": "about 100 times more math every second",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "System RAM is too slow to feed GPU cores",
+   "claim": "Ordinary system RAM connects to a GPU over a pipe carrying ~64 Gbps, roughly 50x slower than what thousands of GPU cores can consume, so weights stored in regular RAM leave the cores starved and idle.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 10,
+   "quote": "that's roughly 50 times slower than what the core actually can eat",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Three numbers size every AI workload",
+   "claim": "Every GPU/AI workload is characterized by three numbers: compute (how much math it can do), capacity (how much fits in VRAM), and bandwidth (how fast it can read its own memory).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 11,
+   "quote": "there are three numbers that size every AI workload",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Data-center GPU generation comparison",
+   "claim": "Across Nvidia data-center GPUs, memory capacity is the key differentiator between generations: the H100 has 80GB VRAM and the H200 has 141GB VRAM despite both having ~990 TFLOPs of compute, while the B200 jumps to ~2,250 TFLOPs, 192GB VRAM, and ~8 Tbps bandwidth.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 13,
+   "quote": "H100 is 80 V RAM capacity and H200 has 141 RAM of capacity",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "vLLM is OpenAI-API-compatible",
+   "claim": "vLLM wraps a raw PyTorch model into a persistent web service and speaks the exact same API format as OpenAI, so any existing OpenAI-client code can point at a self-hosted vLLM server with zero code changes.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 15,
+   "quote": "VLM speaks the exact same format that the OpenAI API uses",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "A token is roughly 3/4 of a word",
+   "claim": "LLMs operate on tokens, not words — a rough rule of thumb is one token is about 3/4 of a word, and everything a model reads, that you pay for, and that streams back is counted in tokens.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 16,
+   "quote": "a token is roughly 3/4 of a word",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Autoregressive next-token loop",
+   "claim": "A transformer LLM has exactly one trick: given all the text so far, predict the next token, append it, and repeat — a 100-token answer is 100 sequential passes through the model, not one big calculation, which is why answers stream word by word.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 16,
+   "quote": "it predicts the next word or the next token",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prefill phase and time-to-first-token",
+   "claim": "Reading the entire prompt happens in one compute-heavy burst called prefill, processed in a single pass through all layers; the time this takes before the first output word appears is called time to first token (TTFT).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 19,
+   "quote": "That's TTFT or time to first token",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Decode phase is memory-bandwidth bound",
+   "claim": "Generating each new token requires rereading the entire model's weights out of VRAM, so a 3TB/s GPU reading a 16GB model tops out around 200 tokens/second — the per-token gap this produces is called TPOT, time per output token (~5ms/token at that rate).",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 21,
+   "quote": "So it's 200 tokens a second and that's the maximum limit",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "KV cache avoids re-running prefill per token",
+   "claim": "The expensive prefill computation is saved into GPU memory as the KV cache the moment it finishes, so every subsequent token in the same response reuses that cached work instead of repeating the full prompt pass.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 23,
+   "quote": "it just reaches into the cache, reuses everything it already worked out",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Prefix caching across turns and users",
+   "claim": "Keeping KV-cache blocks around after a request ends (rather than clearing them) and labeling them by the exact text that produced them means later turns, or even other users sharing the same system prompt, skip re-prefilling that shared prefix — this is called prefix caching.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 24,
+   "quote": "This idea has a name and is called prefix caching",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cached tokens cost ~10% of fresh tokens",
+   "claim": "In Anthropic's API, a cached input token costs about a tenth of what a fresh (uncached) input token costs, making prefix/prompt caching a direct cost lever, not just a latency one.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 25,
+   "quote": "a cacheed input token only costs about tenth of what a fresh one does",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Batching multiplies throughput for free",
+   "claim": "Because decode already requires reading the whole model from VRAM once per step, that same read can produce one token each for many users simultaneously — batching 50 requests together costs close to the same single memory read as batching one, multiplying server throughput.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 26,
+   "quote": "One read of the model gives you one token for one user or 50 tokens for 50 users",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "VRAM, not compute, caps concurrent users",
+   "claim": "The ceiling on how many users one GPU can serve concurrently is VRAM capacity for per-user KV-cache scratch space, not leftover compute — cores sit mostly idle while memory fills up, which is also why teams overbuy GPUs that then sit half-idle.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 28,
+   "quote": "it's the memory that decides how many people one GPU can actually serve",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Sharding splits a model across GPUs",
+   "claim": "When a model's weights (e.g. 140GB+ for a 70B model) don't fit an 80GB GPU, the model is sliced and spread across multiple GPUs — called sharding — so no single GPU holds the whole model but together they do.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 31,
+   "quote": "this technique splitting a model across GPUs has a name and that's called sharding",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Tensor-parallel within a box, pipeline-parallel across boxes",
+   "claim": "Split within a layer ('chatty', constant cross-GPU chatter) when GPUs share a fast NVLink inside one box; split by whole layers ('light', infrequent handoffs) when GPUs sit in different machines connected only by ordinary network.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 31,
+   "quote": "you keep the chatty talk inside a box and you keep the light talk between boxes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Round-robin load balancers break LLM serving",
+   "claim": "A plain round-robin load balancer treats every server as interchangeable and every request as equal size, so it throws away a server's cached KV work on the next message and can route a 50-page summarization next to 30 other active streams, slowing everyone down.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 33,
+   "quote": "it throws away saved work that was perfectly good",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-D cache-aware routing triples throughput",
+   "claim": "LLM-D's cache-aware routing (tracking which server already holds a user's KV cache, free memory, and queue depth) delivers roughly 3x the throughput and 2x faster first response versus naive routing, on the same hardware.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 35,
+   "quote": "around three times the throughput and a first response that is twice as fast",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Disaggregating prefill/decode pools",
+   "claim": "Splitting servers into a compute-heavy prefill pool and a memory-bandwidth-heavy decode pool (e.g. H100s for prefill, H200s for decode), with saved KV work handed across a fast link between them, yields up to 70% more tokens per second on the same hardware.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 36,
+   "quote": "up to 70% more tokens per second on the same hardware",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Kubernetes is the de facto AI-inference platform",
+   "claim": "66% of organizations hosting generative AI use Kubernetes to manage some or all of their inference workloads, which is why LLM-D is built to sit directly on top of it rather than invent a new orchestration layer.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 37,
+   "quote": "66% of organizations hosting generative AI use it to manage some or all of their inference workloads",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LLM-D well-lit paths as deployment presets",
+   "claim": "Rather than hand-tuning dozens of routing/pool/batch knobs, LLM-D ships pre-measured 'well-lit path' recipes — optimized baseline (cache-aware routing only), prefill/decode split, and multi-GPU sharded serving — so teams start from a known-good config.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 38,
+   "quote": "LLMD hands you what it calls the welllit paths",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "LeaderWorkerSet for sharded model pods",
+   "claim": "Kubernetes StatefulSets treat each pod as an independent replica, which is wrong for a model sharded across pods (they're one logical server, not N copies) — Kubernetes added a new object type, the LeaderWorkerSet, that scales and heals the whole group as a single unit.",
+   "video_id": "hBzUokVYQkI",
+   "chunk_index": 42,
+   "quote": "called the leader worker set",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Instruction fine-tuning uses the pretraining loss",
+   "claim": "Instruction fine-tuning is not a different objective from pretraining — it uses exactly the same next-token-prediction cross-entropy loss; only the structure of the training text (instruction/input/response fields vs. raw text) changes.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 44,
+   "quote": "instruction fine-tuning uses exactly the same loss that we used during pre-training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Alpaca prompt-style template",
+   "claim": "The classic Alpaca instruction format prepends fixed boilerplate ('Below is an instruction that describes a task...') before the instruction, optional input, and response fields — it's one convention among many, not a required format.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 8,
+   "quote": "below is an instruction that describes a task",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Shorter prompt templates are cheaper",
+   "claim": "Microsoft's Phi-3 style template skips the Alpaca boilerplate entirely (just user/assistant fields) — fewer tokens per example means fewer generation iterations and lower inference cost, so shorter templates are directly cheaper to run.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 9,
+   "quote": "I like this because it's shorter and shorter is cheaper",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Pad per-batch, not per-dataset",
+   "claim": "Pad each training batch only to that batch's own longest example (not to the single longest example across the whole dataset) to avoid wasting huge amounts of compute on padding tokens.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 14,
+   "quote": "pad only to the longest element in each batch",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Mask padding tokens out of the loss",
+   "claim": "Replace target padding token IDs with -100 (PyTorch cross-entropy's default ignore index) so the model's loss isn't influenced by how many padding tokens happen to be in a given batch.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 27,
+   "quote": "I'm replacing all the target padding tokens by the minus 100",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Keep exactly one end-of-text token unmasked",
+   "claim": "Even after masking padding with -100, keep the first padding/end-of-text token (id 50256) unmasked in the targets so the model learns to emit it and the generation loop knows definitively when to stop.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 17,
+   "quote": "we want our model to generate uh end of text token",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Tiny demo dataset vs. real-world scale",
+   "claim": "The demo instruction dataset has only 1,100 examples (935 train / 55 val / 110 test) to keep training fast, but real production instruction-tuned LLMs are typically trained on at least 100,000 examples.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 5,
+   "quote": "llms they are instruction fine-tuned with with I would say nowadays at least 100,000 training examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Hardware determines fine-tuning turnaround time",
+   "claim": "Fine-tuning the 355M-parameter model for 2 epochs took about 15-29 minutes on an M-series MacBook Air but would take about 1 minute on an A100 GPU — a 15-30x speed gap purely from hardware choice.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 47,
+   "quote": "if you're running this on a a100 GPU it just takes 1 minute",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Alignment/preference tuning follows instruction fine-tuning",
+   "claim": "After pretraining and instruction fine-tuning (SFT), production LLMs typically add an optional alignment step using either RLHF (reinforcement learning with human feedback) or DPO (direct preference optimization) to nudge outputs toward preferred responses.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 51,
+   "quote": "reinforcement learning with human feedback or DPO",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "DPO is simpler than RLHF",
+   "claim": "DPO is preferred by many teams over RLHF because it doesn't require training a separate reward model (which would mean holding two LLMs in memory simultaneously) and lets you iterate over more data points faster, even if its ceiling performance is sometimes slightly lower.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 53,
+   "quote": "DPO which is simpler than R lhf because it doesn't use a separate reward model",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge on a 0-100 scale",
+   "claim": "To evaluate free-form instruction-following output where there's no single correct answer, prompt a separate LLM to score each model response on a 0-100 scale against the reference output, rather than relying on exact-match accuracy.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 76,
+   "quote": "on a scale from 0 to 100 where 100 is the best score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Small local judge models are unstable",
+   "claim": "Even with temperature set to 0 and a fixed random seed, a small local judge model (Llama 3.2 3B via Ollama) sometimes still produces non-deterministic scores across runs, and periodically returns unparseable text instead of a bare integer.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 81,
+   "quote": "I still sometimes get non-deterministic results",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Worked result: average judge score 51.96/100",
+   "claim": "Running the 3B-parameter Llama judge across all 110 test examples gave an average score of 51.96 out of 100, with 14 of 110 responses failing to parse into a usable integer score at all.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 83,
+   "quote": "we get an average score of 51.6 96 out of 110 answers",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Bigger, newer models make better judges",
+   "claim": "As a rule of thumb, bigger and newer models produce better, more capable evaluations than small older ones when used as an LLM judge — the single biggest lever for judge quality is the model you pick, even before prompt tweaks.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 78,
+   "quote": "the bigger the models usually the better they are",
+   "kind": "principle",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "What model size is acceptable for an LLM-as-judge",
+   "positions": [
+    {
+     "video_id": "a3SMraZWNNs",
+     "chunk_index": 18,
+     "position": "Always use the most powerful model you can afford for judging — this is explicitly not a job for mini/small models."
+    },
+    {
+     "video_id": "4yNswvhPWCQ",
+     "chunk_index": 78,
+     "position": "Demonstrates and ships judging with a small local 3B Llama model for cost/educational reasons, while conceding it gives noisy, sometimes unparseable scores and that bigger models would do better — a practical tradeoff the eval-focused talk treats as a non-starter."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks explain the actual internals of the transformer — self-attention, multi-head attention, positional encoding — hBzUokVYQkI explicitly says 'don't worry about how it works inside' and moves straight to weights-as-a-file.",
+  "No video explains why the transformer architecture displaced RNNs/LSTMs (e.g. parallelizable training, long-range dependency handling) — the 'revolutionised' half of the topic is asserted, not argued, from this corpus.",
+  "No discussion of pretraining compute budgets, dataset scale, or scaling laws for transformer LLMs — hBzUokVYQkI only covers inference-time serving costs.",
+  "No cost or step breakdown of a full RLHF pipeline (reward model training, PPO) — 4yNswvhPWCQ names RLHF and PPO but defers the details to unlinked bonus material.",
+  "No guidance connecting transformer architectural choices (context length, attention variant, head count) to KV-cache memory sizing in production — hBzUokVYQkI treats KV cache purely as a serving concern, not an architecture one.",
+  "No concrete benchmark numbers for transformer LLM quality (e.g. MMLU results) beyond a passing comment that MMLU-style multiple choice is 'not super useful' for judging free-form generation."
+ ],
+ "verified_claims": 58
+}

@@ -1,0 +1,538 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "lsgVRCJ4fko",
+  "YxXBojdD1as",
+  "uaiq1HvQKoI",
+  "v7qMjy_RxOs"
+ ],
+ "video_notes": [
+  {
+   "video_id": "YxXBojdD1as",
+   "title": "Fine-Tuning a Model: The Easiest Way to Start (Unsloth Tutorial)",
+   "contributed": "A full hands-on walkthrough of the fine-tuning loop in Unsloth's no-code UI: baseline eval before training, LoRA/QLoRA hyperparameter choices, a real max-steps-vs-epochs mistake and its loss-chart symptom, before/after scoring, GGUF export, and calling the exported model from an external Python app."
+  },
+  {
+   "video_id": "v7qMjy_RxOs",
+   "title": "The Honest Guide To Fine-Tuning Local AI In 2026",
+   "contributed": "The decision framework for when to fine-tune versus prompt/RAG/agentic loops, the five-step pipeline (data collection, dataset engineering, LoRA training, evaluation, GGUF export), concrete token/VRAM/time benchmarks, and a hardware verdict across Nvidia, AMD, and Apple Silicon for local fine-tuning."
+  },
+  {
+   "video_id": "uaiq1HvQKoI",
+   "title": "GenAI in Production: How RAG & AI Agents Are Shaping the Future",
+   "contributed": "Mostly a RAG/agents production podcast, but it adds the 'garbage in, garbage out' warning specific to fine-tuned models inheriting training-data errors, plus general production practices (golden datasets, canary/blue-green rollouts, drift monitoring, feedback loops) that apply once a fine-tuned model ships."
+  },
+  {
+   "video_id": "lsgVRCJ4fko",
+   "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+   "contributed": "No content on model/LLM fine-tuning — this is a 4-hour Figma design-systems tutorial (design tokens, variables, components) that only uses 'AI' and 'training' in the generic design-tooling sense. It does not support any claim for this guide's topic; flagged as a cluster-assignment mismatch rather than a source."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "the fine-tuning loop",
+   "claim": "Treat fine-tuning as one step inside a larger loop: pick a base model, choose one narrow behavior, build examples, baseline-test the untrained model, train, re-run the same evaluation, and only then export/ship.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 1,
+   "quote": "You start with a general purpose model.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LoRA mental model",
+   "claim": "LoRA freezes the base model's weights and trains a small adapter on top, so fine-tuning steers existing capability toward a target behavior rather than teaching new facts.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 2,
+   "quote": "the base stays frozen We train a relatively small adapter",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "pick a scorable task",
+   "claim": "Design your first fine-tuning task so the output is machine-scorable (e.g., force a JSON object with fixed fields) instead of a subjective 'does this feel nicer' judgment.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 3,
+   "quote": "exactly one JSON object containing three fields, Category, severity and next action",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "behavior before tooling",
+   "claim": "Define the exact behavior you want to measure (categories, severity levels, labels) before opening any fine-tuning tool.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 4,
+   "quote": "start with the behavior you want to measure and then move from there",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "dataset format",
+   "claim": "Structure each training example as a system/user/assistant chat triplet; the assistant message is the exact training target the model learns to reproduce.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 4,
+   "quote": "the assistant message contains the correct answer",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "baseline evaluation",
+   "claim": "Run the identical evaluation (same questions, scoring rules, and generation settings) on the base model before and after fine-tuning, or the before/after comparison is meaningless.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 4,
+   "quote": "same evaluation, same questions, same scoring rules, comparable generation settings",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scoring dimensions",
+   "claim": "Score a structured-output fine-tune on multiple axes at once: correct category, correct severity, valid JSON, exact required keys, and usefulness of the free-text field.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 5,
+   "quote": "did it return a valid JSON, did it use the exact required keys",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "train/validation/test split",
+   "claim": "Keep three separate data splits: training data updates the adapter, validation data checks generalization while you iterate, and a final test set stays completely untouched until you need to verify what survived your decisions.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 6,
+   "quote": "keep a final test set completely untouched as well",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA vs full fine-tuning",
+   "claim": "Full fine-tuning updates every model parameter and is expensive; LoRA instead trains only a small extra set of parameters while the base model stays frozen.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 7,
+   "quote": "Lora is a fine tuning method that lets you adapt a large language model by training only a small extra set of parameters",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA memory savings",
+   "claim": "QLoRA compresses the frozen base model to 4-bit precision while still training a small trainable LoRA adapter on top, which is why the experiment can run comfortably on a normal machine.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 7,
+   "quote": "the Bayes model is compressed often to four bits",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "start small",
+   "claim": "Pick a deliberately small base model (Qwen 2.5 0.5B) for a first fine-tune since the goal is to learn the loop, not to ship a production financial model.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 8,
+   "quote": "I'm going to be using Queen 2.505 B",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "dataset sourcing options",
+   "claim": "Unsloth has a built-in recipe builder to auto-generate datasets, but the presenter prefers hand-building datasets (e.g., via ChatGPT) depending on the task.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 9,
+   "quote": "I usually prefer getting my own data sets essentially just going to charge PT and having it create a data set for me",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "hyperparameters used",
+   "claim": "For the tutorial run: 4-bit quantization, LoRA/QLoRA method, 3 epochs, 512-token context length, batch size 2, rank 16, adapter scale (alpha) 1.0, dropout 0, and gradient accumulation over 4 batches.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 12,
+   "quote": "We're going to be setting the low rank at 16",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "dropout setting",
+   "claim": "Dropout randomly ignores some training signals to reduce overfitting; the tutorial leaves it at zero so nothing is dropped during this small experimental run.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 12,
+   "quote": "dropout randomly ignores some training signals to reduce overfitting",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "gradient accumulation",
+   "claim": "Gradient accumulation collects gradients across several mini-batches before applying one update, letting you simulate a larger batch size without using more memory.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 12,
+   "quote": "the model collects gradients from four batches, making one update",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "effective batch size",
+   "claim": "A physical batch size of 2 with gradient accumulation of 4 means the optimizer effectively sees eight examples before applying one full update.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 15,
+   "quote": "effectively sees eight examples before one full update",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "parameters that matter most",
+   "claim": "Focus first on three settings — epochs, learning rate, and rank — since rank controls how much capacity the adapter has to learn, and more capacity is not automatically better.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 14,
+   "quote": "Three parameters I want you to recognize immediately are epochs, learning rate and rank",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "rank controls capacity",
+   "claim": "A higher LoRA rank gives the adapter more capacity to learn new patterns, but costs more memory and parameters.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 14,
+   "quote": "the rank controls roughly how much capacity the adapter has",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "max-steps mistake",
+   "claim": "Setting 'max steps' to 3 instead of 3 epochs is a critical configuration mistake: it makes the optimizer update the model only three times total instead of cycling through the whole dataset three times.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 17,
+   "quote": "I mistakenly set these Max steps at 3",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "reading the loss chart",
+   "claim": "A training loss chart trending upward instead of downward is a visible symptom that something in the run configuration is wrong, not a normal training artifact.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 16,
+   "quote": "the training loss chart is trending upwards instead of training downwards",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "confirming the fix",
+   "claim": "After switching from max-steps=3 to epochs=3, training loss visibly trended downward, confirming the earlier config was the cause of the broken run.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 18,
+   "quote": "the training loss is gradually going down",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "modest first-run gains",
+   "claim": "On the tutorial's finance-triage classifier, the fine-tuned model scored 75 composite versus 74 for the base model, and correctly classified 12 of 25 test cases versus 11 for the base model — a real but small improvement from one iteration.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 23,
+   "quote": "the composite result shows us that the fine tune model performed has a score of 75 whereas the base model has a score of 74",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning is a loop, not an event",
+   "claim": "Fine-tuning is not a single event but an experimental loop: train, evaluate, inspect failures, change one thing, retrain, and repeat until results are acceptable.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 23,
+   "quote": "fine tuning is not an event, it's essentially an experimental loop",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "change one variable at a time",
+   "claim": "Between iterations, change exactly one thing — either how the data is specified or one configuration parameter — so you can attribute any change in results to that one change.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 24,
+   "quote": "Then what we do is we go back, we change one thing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "export to GGUF",
+   "claim": "Export the finished fine-tune to GGUF format, which is optimized for local inference, rather than keeping it only inside the training tool.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 25,
+   "quote": "we're going to be exporting the model using the file formats gguf",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "quantization choice at export",
+   "claim": "Use the Q4_K_M quantization level at export time (distinct from the 4-bit quantization used during training) as the recommended balance of size and quality for local inference.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 26,
+   "quote": "we're going to be selecting the Q4KM",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "surfacing a local export",
+   "claim": "After exporting, point the model hub to the local export folder rather than re-downloading the model, since the files already exist on disk.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 27,
+   "quote": "we are not downloading the model again",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "calling the model from code",
+   "claim": "Unsloth exposes an OpenAI-compatible API locally, so an external Python app can call the fine-tuned model with the standard OpenAI client pointed at localhost, reusing the same system prompt used during training.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 30,
+   "quote": "OnSlot provides an OpenAI compatible API locally",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning is not the whole system",
+   "claim": "Fine-tuning only changes a model's behavior; a real production system around it still needs context, evaluation, application logic, callable tools, and guardrails.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 32,
+   "quote": "fine tuning only changes the behavior of the model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "sizing a first dataset",
+   "claim": "A first fine-tuning dataset can be as small as 20 to 50 examples, or a few hundred, plus a separate evaluation dataset — don't start with thousands of examples.",
+   "video_id": "YxXBojdD1as",
+   "chunk_index": 33,
+   "quote": "The data set could be 20 to 50 or a few hundred examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning implements persona, not just prompting",
+   "claim": "A system prompt can't cover every type of question a model will face, but fine-tuning can bake a persistent persona or style directly into the model's weights so it shows up consistently across unseen questions.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 1,
+   "quote": "your system prompt is not going to cover every type of question that you might throw at a model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LoRA touches a small fraction of parameters",
+   "claim": "Fine-tuning with a LoRA adapter typically only needs to train about half a percent to 2% of a model's parameters, not the full weight set.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 4,
+   "quote": "it's enough to train, say, half to 2% of the parameters of the model",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "RAG/prompt-injection is not real fine-tuning",
+   "claim": "Many AI platforms that claim to 'train on your data' are actually just injecting information into a prompt rather than fine-tuning the model.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 4,
+   "quote": "a lot of them just inject your information into a prompt",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "decision flowchart",
+   "claim": "Use a four-step flowchart before fine-tuning: try a better prompt first, then add RAG if that fails, then consider an agentic loop if that fails, and only fine-tune if all three fail.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 8,
+   "quote": "First, you can just try a better prompt and evaluate whether the model performs well enough on a task.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "good fine-tuning use cases",
+   "claim": "Fine-tuning is the right tool when you need a guaranteed consistent style/persona every time, or when you want to bake static, rarely-changing knowledge directly into the model (reserving RAG only for the parts that change).",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 8,
+   "quote": "create a model that writes like you every time with a real guarantee",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cost of fine-tuning",
+   "claim": "Fine-tuning will cost at least a weekend of iteration and requires a pretty competent GPU, unlike prompting or RAG.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 8,
+   "quote": "It will cost you at least a weekend of screwing around",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "five-step pipeline",
+   "claim": "A first fine-tuning project has roughly five steps: data collection, dataset engineering, LoRA training, evaluation, and GGUF export.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 10,
+   "quote": "for your first fine-tuning project, there's roughly five steps",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "data volume needed",
+   "claim": "Fine-tuning an 8B-parameter model may require on the order of one to two million-plus tokens of raw data before any transformation into training pairs.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 10,
+   "quote": "you might need a million, 2 million plus tokens of raw data",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "garbage in, garbage out",
+   "claim": "A language model cannot self-correct bad training data; feeding it uncleaned, error-ridden data makes the fine-tuned result worse, not neutral.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 10,
+   "quote": "if you feed it bad data, then actually you're going to make the end result much worse",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "turning raw text into training pairs",
+   "claim": "To fine-tune on raw source material like transcripts, use a local LLM to synthesize a relevant question for each text snippet, then pair it with the matching answer, converting raw text into chat-format prompt/response pairs.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 11,
+   "quote": "use a local language model to generate a question that is relevant for that little text snippet",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA speeds iteration",
+   "claim": "Because LoRA only retrains a small fraction of parameters, a run that might take 20 hours with full fine-tuning can finish in about 2 hours, enabling fast iterate-and-fix cycles.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 13,
+   "quote": "instead of having to wait 20 hours to get a result, maybe you can get some fine tuning done in just 2 hours",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "real training time benchmark",
+   "claim": "Fine-tuning a medium-sized language model took roughly 2 to 3 hours on an RTX 5090 in the presenter's home-lab tests.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 14,
+   "quote": "it would take something like 2 to 3 hours on a 5090",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "VRAM requirement at 27B",
+   "claim": "A 27-billion-parameter model will likely exceed 14GB of VRAM to fine-tune even with an efficient quantized version.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 14,
+   "quote": "a 27 billion parameter model likely will exceed 14 GB",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "offloading to system RAM fails",
+   "claim": "Offloading fine-tuning parameters to regular system RAM instead of dedicated GPU VRAM will grind fine-tuning to a halt, and sometimes doesn't work at all.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 16,
+   "quote": "this will grind fine-tuning to a halt and sometimes that just doesn't work at all",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AMD as a middle-ground GPU option",
+   "claim": "AMD is actively building CUDA counterparts (ROCm) and you can already fine-tune a lot of models on it, making a recent AMD GPU a viable middle-ground option versus paying the 'Nvidia tax', though compatibility varies.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 16,
+   "quote": "AMD is actively developing CUDA counterparts. With Rockom, you can actually fine-tune quite a lot of models already",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "avoid Apple Silicon for fine-tuning",
+   "claim": "Avoid fine-tuning on Apple Silicon: most models lack MLX ports, and even when available, fine-tuning on Apple Silicon is much slower than on a good Nvidia GPU.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 17,
+   "quote": "What I would definitely avoid is to fine-tune on Apple silicon",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "evaluate against the vanilla model",
+   "claim": "Write proper tests comparing the fine-tuned model against the untrained vanilla model to figure out whether a problem lies in the LoRA training step or the dataset engineering step.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 19,
+   "quote": "write some proper tests to figure out whether your finetude model is actually performing better than the vanilla model",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "GGUF export for consumer tools",
+   "claim": "GGUF export makes a fine-tuned model easy to run in consumer-friendly local tools like LM Studio and Ollama.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 19,
+   "quote": "format of a model that's easier to run on platforms like LM Studio and Olama",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuned models inherit bad data",
+   "claim": "If you fine-tune a model on the same messy or biased source data that would poison a RAG system, the fine-tuned model inherits whatever errors or biases lurk in that training data.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 46,
+   "quote": "the fine-tuned models usually inherit whatever errors or biases lurk in the training data",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "testing across the lifecycle",
+   "claim": "Use golden datasets and manual review during development, run full end-to-end tests with adversarial edge cases in staging, and keep A/B testing and re-evaluating after deployment — testing is a continuous cycle, not a one-time certification.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 43,
+   "quote": "use golden data sets and manual uh reviews to assess uh output quality",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "safe model/version rollout",
+   "claim": "Manage model or data-source updates with versioning and safe rollout patterns like blue-green or canary deployments, validating before switching traffic over.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 43,
+   "quote": "we rely on versioning and safe rollout patterns like uh blue green uh deployments or canary deployments",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "feedback loop for ongoing tuning",
+   "claim": "Build in explicit feedback mechanisms like thumbs up/down and comments so users can add context that helps refine model responses over time.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 41,
+   "quote": "thumbs up, thumbs down, comments",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "production risk list",
+   "claim": "Key risks to actively mitigate when an LLM app goes to production include hallucinations, data leaks, bias, prompt injection, IP concerns, and runaway usage costs.",
+   "video_id": "uaiq1HvQKoI",
+   "chunk_index": 44,
+   "quote": "hallucinations data leaks um and bias prompt injections are a big one",
+   "kind": "pitfall",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Where fine-tuning sits relative to prompting, RAG, and agents",
+   "positions": [
+    {
+     "video_id": "v7qMjy_RxOs",
+     "chunk_index": 8,
+     "position": "Fine-tuning should be the last resort in a strict escalation: try a better prompt, then RAG, then an agentic loop, and only fine-tune if all three fail, because fine-tuning costs at least a weekend and a competent GPU."
+    },
+    {
+     "video_id": "uaiq1HvQKoI",
+     "chunk_index": 46,
+     "position": "Frames fine-tuning as carrying its own distinct data-quality risk ('garbage in, garbage out' applies to fine-tuned models inheriting bad training data) rather than ranking it strictly below RAG — the emphasis is on data cleanliness as the gate, not sequencing fine-tuning last."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No guidance on choosing LoRA rank/alpha for a real production-sized task — only one toy example (rank 16, alpha 1.0) is shown, with no rule of thumb for scaling up.",
+  "No coverage of cloud or managed fine-tuning services (pricing, turnaround, scaling) — both detailed tutorials assume a local/home-lab GPU.",
+  "No comparison between Unsloth and other fine-tuning frameworks (e.g., Axolotl, Hugging Face PEFT/TRL) or criteria for choosing among them.",
+  "No discussion of merging multiple LoRA adapters, swapping adapters at inference time, or deciding when to merge an adapter into the base weights versus keeping it separate.",
+  "AMD ROCm and Apple Silicon/MLX fine-tuning performance are described qualitatively ('your mileage might vary') with no actual benchmark numbers.",
+  "No treatment of full-parameter fine-tuning trade-offs, or alignment-style fine-tuning (RLHF/DPO) as an alternative to supervised LoRA fine-tuning.",
+  "No discussion of licensing or IP implications of exporting and redistributing a fine-tuned open-weight model.",
+  "The design-systems video in this cluster (lsgVRCJ4fko) does not address LLM fine-tuning at all, so this cluster has no material on integrating fine-tuned models into design/product tooling workflows despite nominally being grouped together."
+ ],
+ "verified_claims": 53
+}

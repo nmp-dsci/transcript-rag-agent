@@ -1,0 +1,609 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "4yNswvhPWCQ",
+  "cO6Ly7mIziQ",
+  "R78NYFkWH10",
+  "r-MPiu0E4W4"
+ ],
+ "video_notes": [
+  {
+   "video_id": "4yNswvhPWCQ",
+   "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+   "contributed": "Full from-scratch walkthrough of building an instruction-tuning dataset (Alpaca formatting, batch-level padding, loss masking), running SFT on GPT-2, and an LLM-as-judge evaluation pipeline using a local Ollama model."
+  },
+  {
+   "video_id": "cO6Ly7mIziQ",
+   "title": "LoRA & QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical",
+   "contributed": "Conceptual grounding in matrix rank and decomposition that underlies LoRA/QLoRA, a comparison of full fine-tuning vs PEFT methods, and a hands-on Hugging Face PEFT script fine-tuning TinyLlama with LoRA."
+  },
+  {
+   "video_id": "R78NYFkWH10",
+   "title": "Fine-Tuning LLMs for Real-World Tool Calling: Lessons from tau2-bench",
+   "contributed": "A production-style SFT-then-GRPO fine-tuning workflow for tool-calling reliability, with reward-shaping details, pass^k evaluation, and hard-won lessons on reward hacking and teacher-trace data quality."
+  },
+  {
+   "video_id": "r-MPiu0E4W4",
+   "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+   "contributed": "Nothing on LLM fine-tuning. This talk is about AI-assisted UI/UX design tooling (Figma, Claude/Grok/Codex design workflows, design-system skills) and is off-topic for a fine-tuning build guide."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Alpaca prompt formatting",
+   "claim": "Convert raw instruction/input/output JSON entries into plain text with the Alpaca-style boilerplate template before feeding them to the model, since LLMs are trained on text, not dictionaries.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 7,
+   "quote": "this is the alpaka prompt style template",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Instruction data scale",
+   "claim": "Production LLMs are typically instruction fine-tuned on at least 100,000 examples, far more than the small teaching dataset used in this walkthrough.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 5,
+   "quote": "nowadays at least 100,000 training examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Train/val/test split",
+   "claim": "Split the instruction dataset 85% train / 10% test / 5% validation.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 12,
+   "quote": "85% for training 10% for testing and then the remaining 5%",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Batch-level padding",
+   "claim": "Pad each training batch independently to its own longest sequence instead of padding the whole dataset to one global max length, to avoid wasting compute on excess padding tokens.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 14,
+   "quote": "we will pad only to the longest element in each batch",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Loss masking with ignore_index",
+   "claim": "Replace all but one padding token per sequence with the ignore_index (-100, the cross-entropy loss's default ignore value) so the loss skips excess padding, while keeping exactly one padding token so the model learns to emit an end-of-text stop token.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 27,
+   "quote": "I'm using minus 100 because that's the default value",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Model size vs. capability",
+   "claim": "The 124M-parameter GPT-2 produced unusable, repetitive responses after instruction tuning; stepping up to the 355M version was necessary to get coherent output on a laptop.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 38,
+   "quote": "I went one model size up",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Training time benchmarks",
+   "claim": "Instruction fine-tuning the 355M GPT-2 model for 2 epochs took about 15 minutes on an M3 MacBook Air CPU, versus roughly 1 minute on an A100 GPU.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 46,
+   "quote": "with this 355 million model it took about 15 minutes",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Epoch count and overfitting",
+   "claim": "Two epochs produced a better fine-tuned model than one, but going further starts pushing the model into overfitting territory as training loss drops well below validation loss.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 48,
+   "quote": "two was better than one",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "SFT reuses the pretraining loss",
+   "claim": "Instruction fine-tuning (SFT) uses exactly the same next-token-prediction cross-entropy loss as pretraining; only the text structure (instruction/input/response fields vs. raw text) differs.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 44,
+   "quote": "instruction fine-tuning uses exactly the same loss that we used during pre-training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reuse the correct loss-loader code",
+   "claim": "When instruction fine-tuning, reuse the chapter-5 loss-loader (loss over every token) rather than the chapter-6 version (loss on only the last token), since free-form generation needs loss signal across the whole sequence.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 45,
+   "quote": "please make sure you're using the correct code from chapter 5",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge evaluation",
+   "claim": "Evaluate free-form fine-tuned responses by having a second local LLM (run via Ollama) score each response against the reference answer on a 0-100 scale, since exact-match accuracy doesn't work for open-ended text.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 76,
+   "quote": "scale from 0 to 100 where 100 is the best score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-judge results and limits",
+   "claim": "A small 3B Ollama judge model gave an average score of 51.6/100 across the 110-example test set, and 14 of the 110 responses couldn't even be parsed into a numeric score.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 83,
+   "quote": "we get an average score of 51.6",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Improving the judge prompt",
+   "claim": "A reader-contributed rubric-based judge prompt using a 1-5 scale (instead of 0-100) produced more consistent LLM-judge scores.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 78,
+   "quote": "it's just using a scale from 1 to 5",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Bigger judge models evaluate better",
+   "claim": "As a rule of thumb, bigger and newer judge models give more capable, more reliable evaluations than a small 3B model, often more effective than just tweaking the prompt.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 78,
+   "quote": "as a rule of thumb the bigger the models usually the better they are",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Alignment follows instruction tuning",
+   "claim": "After instruction fine-tuning, LLM providers commonly run an additional optional alignment/preference-tuning step using RLHF or DPO.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 50,
+   "quote": "there's also often an optional alignment step",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "DPO avoids a separate reward model",
+   "claim": "DPO is popular because, unlike RLHF, it skips training a separate reward model — RLHF otherwise requires holding two LLMs in memory at once, raising compute cost.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 53,
+   "quote": "two llms in your compute memory which is more expensive",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Preference data structure",
+   "claim": "Preference/DPO datasets pair a chosen (preferred) response with a rejected response for the same prompt, rather than supplying a single target output.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 55,
+   "quote": "chosen response could also be called preferred response",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Preference tuning for safety",
+   "claim": "Preference tuning is also used to make models refuse harmful requests and cut down on profanity, not just to pick the stylistically 'better' of two valid answers.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 56,
+   "quote": "making the LM a bit safer in that sense",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Shorter prompt templates are cheaper",
+   "claim": "Terser instruction-formatting styles (like Microsoft Phi-3's, which skips Alpaca's boilerplate) are preferable because generation is token-by-token, so fewer tokens per example means cheaper, faster training and inference.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 9,
+   "quote": "shorter and shorter is cheaper",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Dataset curation bonus technique",
+   "claim": "When building an instruction dataset, deduplicate near-duplicate entries to avoid wasting training time on redundant examples.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 49,
+   "quote": "I made a few examples and then I found near duplicates removed them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Hardware/software result variance",
+   "claim": "Fine-tuning results differ slightly across CPU, Apple MPS, and GPU backends, and even across PyTorch versions, so don't expect bit-identical outputs when switching hardware or library versions.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 47,
+   "quote": "right now in 2.6 the results are very close between CPU and GPU",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM training pipeline stages",
+   "claim": "The full LLM training pipeline has three stages: pretraining on internet-scale data, instruction fine-tuning to teach custom behavior, and preference alignment to match human preferences.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 7,
+   "quote": "the first stage of this training pipeline is called the pre-training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tune from any pipeline stage",
+   "claim": "You can take a model after any pipeline stage — base, instruct-tuned, or preference-aligned — and run your own custom fine-tuning on top of it.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 9,
+   "quote": "after any stage we can pick up the LLM model and we can perform",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Full fine-tuning parameter scale",
+   "claim": "Full fine-tuning updates every model weight, so a 7B model means 7B trainable weights, a 13B model means 13B trainable weights, scaling costs linearly with model size.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 13,
+   "quote": "if you have 13 billion model, then you have 13 billion weights",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Full fine-tuning is impractical at scale",
+   "claim": "Full-parameter fine-tuning requires large GPUs or GPU clusters and isn't a practical choice for most teams, which is why parameter-efficient fine-tuning (PEFT) methods emerged.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 15,
+   "quote": "full parameter fine-tuning is not a practical choice",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "PEFT method landscape",
+   "claim": "Beyond LoRA, parameter-efficient fine-tuning methods include DoRA, QLoRA, prefix tuning, prompt tuning, BitFit, IA3, and plain adapters — though interviewers mostly only probe LoRA and QLoRA.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 16,
+   "quote": "LoRA adaptation is a very famous method to achieve this PEFT",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Why LoRA is worth using",
+   "claim": "LoRA's practical payoff is less memory use, faster training, lower cost, easy customization, and single-GPU fine-tuning with performance that stays close to full fine-tuning.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 18,
+   "quote": "less memory, faster training, lower cost, and the easy customization",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Rank defines LoRA's compressibility",
+   "claim": "A matrix's rank is the number of linearly independent rows (or columns) it has — this is the exact property LoRA exploits to decompose large weight matrices into small trainable ones.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 36,
+   "quote": "number of linearly independent rows and columns",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Decomposition cuts parameter count",
+   "claim": "A rank-2, 4x5 weight matrix (20 parameters) can be factored into a 4x2 and a 2x5 matrix (8+10=18 parameters) that multiply back to the same matrix — the arithmetic basis for LoRA's parameter savings, which compounds dramatically at billion-parameter scale.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 49,
+   "quote": "so, in total we have 18 parameter",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA's core formula",
+   "claim": "LoRA freezes the original weight matrix W0 and learns two small matrices, A and B, whose product is added on top; only A and B get trained.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 50,
+   "quote": "decompose uh this actual weight matrix uh which is W into two",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA's parameter reduction at scale",
+   "claim": "On GPT-3 (~175B parameters), full fine-tuning retrains roughly all 175 billion weights, while LoRA trains only about 4.7 million parameters for the same task.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 62,
+   "quote": "we are just going to be trained only 4.7 million of parameter",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LoRA matches full fine-tuning accuracy",
+   "claim": "Per the cited benchmark numbers, full fine-tuning reached 89.5% accuracy while LoRA matched or slightly exceeded it despite training a tiny fraction of the parameters.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 63,
+   "quote": "we were getting 89.5% accuracy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA adds quantization to LoRA",
+   "claim": "QLoRA is LoRA plus quantization: the frozen base weights are loaded in 4-bit precision to cut memory further, while LoRA full-precision is used when memory isn't the bottleneck.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "we are going to be use the 4-bit, right, the quantized model",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "QLoRA's lower GPU requirement",
+   "claim": "Tasks that would otherwise need 24GB+ of VRAM can often run on just 8-16GB thanks to QLoRA's 4-bit quantization.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 64,
+   "quote": "8 to 16 GB will be enough for the respective task",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Swappable LoRA adapters",
+   "claim": "Because the base model stays frozen, you can keep multiple LoRA adapters for different tasks and swap between them without duplicating the full model weights.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 55,
+   "quote": "different LoRA adapter for a multiple task without duplicating the full model",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AdamW for transformer training",
+   "claim": "Transformer/LLM training typically uses AdamW rather than plain Adam or SGD, because it layers in weight decay alongside a learning-rate scheduler and warmup.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 57,
+   "quote": "it's going to be combine this weight decay concept",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "Required packages for a LoRA run",
+   "claim": "A Hugging Face LoRA fine-tuning setup needs transformers, datasets, peft, accelerate, bitsandbytes (for quantization), and trl (for SFT/preference-tuning training loops).",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 66,
+   "quote": "data set, peft, accelerator, bits and bytes, TRL",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Practical demo configuration",
+   "claim": "The hands-on demo fine-tunes TinyLlama (1.1B parameters) with LoRA on a small slice of an English-quotes dataset.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 70,
+   "quote": "model name is a tiny llama and the model parameter is 1.1 billion",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Trainable parameter fraction",
+   "claim": "After wrapping TinyLlama with the LoRA config (rank 16, alpha 32) via get_peft_model, only about 0.277% of total parameters are actually trainable.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 76,
+   "quote": "it is just uh 0.277 of this all the parameter",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Merge the adapter for deployment",
+   "claim": "After LoRA training, merge the adapter weights into the base model to produce a single standalone model for inference instead of shipping base weights and adapter separately.",
+   "video_id": "cO6Ly7mIziQ",
+   "chunk_index": 80,
+   "quote": "merge the Laura adapter with that previous model only",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Cost pressure drives fine-tuning adoption",
+   "claim": "Rising production AI inference costs are pushing teams toward fine-tuning open-source models instead of relying solely on closed frontier APIs.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 0,
+   "quote": "AI inference cost has been gaining scrutiny",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Closed-model cost premium",
+   "claim": "A closed model like GPT-4.1 mini can cost roughly 4-5x more per task than a comparable open-source alternative.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 1,
+   "quote": "actually four or five times more expensive than open source model",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning target model",
+   "claim": "The case study fine-tunes the open-source Qwen3 30B model specifically to make it more reliable at calling tools.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 1,
+   "quote": "fine-tune, right, Qwen 3 30B parameters on a specific task",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Environment-state task success",
+   "claim": "Task success in tau2-bench is judged by checking the resulting environment state (e.g., did a customer's data allowance actually increase by 2GB), not by scoring the conversation text itself.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 3,
+   "quote": "whether for this particular task data actually increased by 2 GB",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Logging rollouts for training data",
+   "claim": "Multi-turn user-agent conversations are logged as rollouts in Weights & Biases to build the trace dataset later used for SFT and RL.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 4,
+   "quote": "we basically log the traces of the interaction between the user and",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SFT-then-GRPO staged workflow",
+   "claim": "The fine-tuning workflow is staged: supervised fine-tuning on teacher-generated trajectories first, then reinforcement learning with GRPO to push performance further.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 8,
+   "quote": "try to push the performance further by use by doing reinforcement learning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Training infrastructure choices",
+   "claim": "Supervised fine-tuning ran on Weights & Biases' serverless SFT offering; the RL stage used the OpenPipe SDK on self-managed H100 GPUs.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 9,
+   "quote": "I'm actually using Weights & Biases uh serverless uh supervised fine-tuning",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Teacher model solve rate",
+   "claim": "A teacher model (GLM) solved 68 of 74 designed tasks when generating candidate SFT trajectories for distillation.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 9,
+   "quote": "it actually able to solve 68 of the 74 tasks",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Filtering trajectories before SFT",
+   "claim": "Of roughly 822 raw rollouts collected, only 669 'clean' trajectories (filtered for efficiency and absence of hallucinated tool calls) were kept for supervised fine-tuning.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 10,
+   "quote": "to use 669 clean trajectories, right, for the uh supervised fine-tuning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Shaped reward function for GRPO",
+   "claim": "The GRPO reward combines multiple signals — action fraction (tool-call recall), a termination bonus, tool-name accuracy, tool-argument accuracy, and a step penalty — rather than a single pass/fail signal.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 11,
+   "quote": "the first one is action fraction",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Reward hacking during RL",
+   "claim": "Weighting reward components evenly let the model learn to repeatedly call a correct-but-redundant tool (e.g., re-fetching customer ID) just to farm the action-fraction reward instead of finishing the task; the fix was upweighting task completion.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 13,
+   "quote": "there's actually presence of reward reward hacking",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "pass^k as the evaluation metric",
+   "claim": "Evaluate tool-calling reliability with pass^k (success required k consecutive times), which is far stricter than pass^1 and exposes consistency problems a single successful run would hide.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 14,
+   "quote": "pass three itself, right? It's significantly lower than pass one",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SFT+RL performance gains",
+   "claim": "SFT alone lifted the model's pass^3 score from ~37.5% to 75%; adding GRPO-based RL pushed it incrementally further, to 77.5%, beating the closed GPT-4.1 mini baseline at lower cost.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 15,
+   "quote": "from 37.5, right? Increased to 75 percent percentage",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Avoiding benchmark contamination",
+   "claim": "The team benchmarked against GPT-4.1 mini specifically because it predates the tau2-bench dataset's release, reducing the risk the closed model had already seen the benchmark.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 19,
+   "quote": "it was um released after GPT 4.1 mini",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Production adoption pattern",
+   "claim": "Teams typically optimize for performance first with closed models, then once productionizing, evaluate open-source fine-tuning for cost — often ending up with a tiered setup where frontier models handle hard tasks and fine-tuned small models handle simpler ones.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 20,
+   "quote": "break their workload into final workload",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Risk of unverified teacher traces",
+   "claim": "Training a student model on unverified teacher-generated SFT traces is risky: some trajectories pass the success metric while actually hallucinating tool calls or succeeding by luck, and that noise propagates into later RL training, making it unstable.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 22,
+   "quote": "a lot of the RL roll out trajectories are actually hallucinating a lot",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Programmatic guardrails in SFT data",
+   "claim": "Mitigate noisy teacher traces by adding programmatic checks in the SFT stage — e.g., flagging tool-not-found errors or checking response tone — before trajectories get used to train the RL stage.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 23,
+   "quote": "more programmatic evaluation or got reals in your SFT stage",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Silent failures are hard to catch",
+   "claim": "Tool-calling agents can fail silently on either side of an interaction — e.g., a user never enabling app permissions, or the agent never enabling roaming — with no explicit error signal, making these failures especially hard to detect in evaluation.",
+   "video_id": "R78NYFkWH10",
+   "chunk_index": 21,
+   "quote": "it needs to enable the roaming uh on the agent side",
+   "kind": "pitfall",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Is full-parameter fine-tuning a reasonable default, or should PEFT always be preferred?",
+   "positions": [
+    {
+     "video_id": "4yNswvhPWCQ",
+     "chunk_index": 38,
+     "position": "Raschka fully fine-tunes GPT-2 (355M) end-to-end for the book's instruction-tuning chapter, treating full fine-tuning as the default teaching path at small scale (even picking a bigger base model rather than reaching for LoRA when results were weak)."
+    },
+    {
+     "video_id": "cO6Ly7mIziQ",
+     "chunk_index": 15,
+     "position": "Sunny Savita argues full-parameter fine-tuning 'is not a practical choice' in general, and frames LoRA/QLoRA as the default even for modest setups, since full fine-tuning's memory and compute cost scale directly with model size."
+    }
+   ]
+  },
+  {
+   "topic": "Which alignment method is better, RLHF or DPO?",
+   "positions": [
+    {
+     "video_id": "4yNswvhPWCQ",
+     "chunk_index": 51,
+     "position": "Raschka says 'the jury is still out' on which performs better; DPO is simpler to implement (no separate reward model) but may trade off some modeling performance versus RLHF, which is why both remain in use."
+    }
+   ]
+  },
+  {
+   "topic": "Is passing a task's success metric sufficient evidence that a training trajectory is good?",
+   "positions": [
+    {
+     "video_id": "4yNswvhPWCQ",
+     "chunk_index": 76,
+     "position": "Raschka's evaluation approach scores finished responses after the fact with an LLM judge (0-100 or 1-5 scale), implicitly treating a good final-answer score as sufficient evidence of quality."
+    },
+    {
+     "video_id": "R78NYFkWH10",
+     "chunk_index": 23,
+     "position": "The TMLS talk explicitly warns that passing the task's success metric is not sufficient — trajectories can pass while hallucinating tool calls or succeeding by luck — and recommends programmatic guardrails during SFT data curation, not just outcome scoring."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four videos give concrete dollar-cost figures for a full fine-tuning or LoRA/QLoRA training run on cloud GPUs — only wall-clock minutes and token counts are reported.",
+  "No guidance on fine-tuning multimodal or vision-language models; all examples are text-only LLMs.",
+  "No walkthrough of concrete hyperparameter values (learning rate schedule, warmup steps, weight decay) for AdamW in a production fine-tuning run — AdamW is named but not tuned on-screen.",
+  "No coverage of distributed or multi-GPU fine-tuning; both the from-scratch SFT demo and the LoRA demo run on a single machine (a MacBook Air or one Colab/H100 GPU).",
+  "No discussion of continued/domain-adaptive pretraining as a step before instruction fine-tuning.",
+  "The TMLS talk doesn't disclose exact GRPO hyperparameters (group size, KL penalty coefficient, learning rate) or the total training duration/cost of the RL stage.",
+  "No guidance on how to actually choose a LoRA rank or alpha value beyond 'it's a hyperparameter you can check out' — no systematic selection method is given.",
+  "No discussion of safety/red-teaming evaluation of fine-tuned models beyond a passing mention that preference tuning can reduce swearing or harmful outputs.",
+  "r-MPiu0E4W4 ('Design with AI') contains no fine-tuning content at all — it covers AI-assisted UI/UX design tooling and workflows, so it cannot answer any build questions about fine-tuning LLMs."
+ ],
+ "verified_claims": 55
+}

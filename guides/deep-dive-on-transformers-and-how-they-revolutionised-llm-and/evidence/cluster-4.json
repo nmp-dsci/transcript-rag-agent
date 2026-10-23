@@ -1,0 +1,714 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "k5Fh-UgTuCo",
+  "8fNP4N46RRo",
+  "idIck_TmPTE"
+ ],
+ "video_notes": [
+  {
+   "video_id": "k5Fh-UgTuCo",
+   "title": "Stanford CME295 Transformers & LLMs | Lecture 6 - LLM Reasoning",
+   "contributed": "Walks through how reasoning models are actually trained on top of vanilla transformer LLMs — chain-of-thought motivation, pass@k math, GRPO mechanics, its known length-bias bug and fixes, and the full DeepSeek R1-Zero/R1 recipe."
+  },
+  {
+   "video_id": "8fNP4N46RRo",
+   "title": "Stanford CME295 Transformers & LLMs | Lecture 8 - LLM Evaluation",
+   "contributed": "Gives the evaluation taxonomy that proves whether reasoning/transformer gains are real: human-rating pitfalls, rule-based metric limits, full LLM-as-judge mechanics and bias catalogue, an agentic failure-mode breakdown, and the benchmark landscape (MMLU, AIME, PIQA, SWE-bench, HarmBench, tau-bench)."
+  },
+  {
+   "video_id": "idIck_TmPTE",
+   "title": "LLM Fine-Tuning 24: Embedding & Embedding Fine-Tuning Full Guide",
+   "contributed": "Shows the other transformer-derived artifact besides generative LLMs — sentence-transformer embeddings — contrasting them with pre-transformer static embeddings (Word2Vec/FastText), and gives hands-on model selection/benchmarking workflow (MTEB, cosine similarity, BM25 baseline)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "vanilla LLM weaknesses",
+   "claim": "Vanilla next-token-prediction LLMs have 'limited reasoning' — they tend to get lost on sophisticated math problems because they were never trained to decompose problems, just to continue plausible text.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 6,
+   "quote": "they have quote unquote limited resoning",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "vanilla LLM weaknesses",
+   "claim": "A pre-trained/SFT LLM is 'all talk no action' — it can only respond in text, it cannot place an order or take any real-world action, which motivates tool calling and agentic pipelines.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 7,
+   "quote": "it's uh all talk no action",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "vanilla LLM weaknesses",
+   "claim": "Because LLMs generate free-form text instead of constrained outputs, the rule-based metrics used for older NLP (BLEU for translation, ROUGE for summarization) don't transfer well to evaluating them.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 7,
+   "quote": "it's very hard to evaluate them",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "defining reasoning",
+   "claim": "Reasoning is defined (absent a universal definition) as the ability to solve a problem — typically math or coding — via a multi-step process, as opposed to a single-fact lookup question.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 9,
+   "quote": "the ability to solve a problem",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "why chain-of-thought works",
+   "claim": "Chain-of-thought helps because a hard problem is unlikely to appear verbatim in training data; forcing the model to decompose it into tractable sub-problems lets it fall back on patterns it has actually seen.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 12,
+   "quote": "decompose the problem into tractable ones",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "test-time compute",
+   "claim": "Letting the model generate more tokens before answering is literally giving it more forward-pass compute per response — the origin of the 'compute budget' framing for reasoning models.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 13,
+   "quote": "you just give it more compute",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "reasoning model timeline",
+   "claim": "The reasoning-model era is dated to OpenAI's o1-preview release in September 2024, after which every major lab scrambled to match it.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 14,
+   "quote": "OpenAI's release of 01 preview",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "reasoning model timeline",
+   "claim": "DeepSeek's R1 paper (January 2025) was the moment the field changed, because it matched OpenAI's reasoning performance while publishing the method.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 15,
+   "quote": "DeepSync R1 paper that was published in January",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "thinking UIs",
+   "claim": "The 'thinking' panel shown in chat UIs (ChatGPT, etc.) is not the raw reasoning chain — it's a compressed summary, likely because the raw chain can be unintelligible, too long for users, and valuable IP that labs don't want copied into competitor training data.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 16,
+   "quote": "it's a summary of it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cost of reasoning",
+   "claim": "Reasoning tokens are billed to the user as output tokens even though the full chain often isn't shown — check provider docs for the line that says reasoning tokens count toward output cost.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 17,
+   "quote": "you're actually getting charged for it",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "coding benchmarks",
+   "claim": "HumanEval is a human-written set of roughly 100-odd coding problems; SWE-bench instead derives real problems from actual GitHub issues, making it a more practical coding benchmark.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 19,
+   "quote": "100 something coding problems that were human written",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "math benchmarks",
+   "claim": "AIME is a US math-olympiad qualifying exam used as a hard math benchmark; GSM8K is grade-school-level math used as an easier benchmark.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 20,
+   "quote": "a math exam to qualify for the US math olympiads",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "pass@k metric",
+   "claim": "pass@k estimates the probability that at least one of k generated attempts succeeds, computed from n total samples and c correct ones as 1 − C(n−c,k)/C(n,k) — useful whenever you can afford to generate and verify multiple attempts (e.g., coding).",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 21,
+   "quote": "probability that at least one of these K answers passes the tests",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "pass@k metric",
+   "claim": "pass@1, the special case of pass@k, reduces to simply the proportion of attempts that succeed.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 27,
+   "quote": "pass at one is defined as the probability of a single attempt succeeding",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "sampling temperature",
+   "claim": "Temperature trades off diversity against quality for pass@k: t=0 gives no diversity (pass@k flatlines as k grows), extreme t (e.g. 1.2) hurts correctness; around t≈0.8 gave the best pass@k growth in the lecture's example.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 29,
+   "quote": "typical temperature choice would be something that is not too large not too small",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "sampling temperature",
+   "claim": "consensus@k (related to self-consistency) scores based on the most frequent answer across multiple generations, rather than whether any single attempt passed.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 29,
+   "quote": "consensus at K which is the answer that is coming from the highest number of times",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "bootstrapping reasoning",
+   "claim": "SFT is a poor way to bootstrap reasoning from scratch: writing long, high-quality reasoning chains by hand is extremely hard, human-style reasoning may not match how the model 'thinks', and verifiable reward signals already exist for math/code — so RL is preferred.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 30,
+   "quote": "reasoning chains writing is a very tough task especially for I guess long reasoning",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "verifiable reward RL",
+   "claim": "The RL reward used to train reasoning is a simple combination of a formatting reward (did the model produce think-start/think-end tokens) and a correctness reward (does the final answer pass tests / match ground truth) — no learned reward model needed.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 33,
+   "quote": "a reward that is a combination of checking whether the think tokens are here",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "controlling think length",
+   "claim": "'Budget forcing' (from the S1 paper) controls reasoning length by injecting tokens like 'wait' mid-generation to force the model to keep thinking, or inserting a stop cue to force an immediate answer.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 35,
+   "quote": "budget forcing uh that I think was introduced in this paper uh S1",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "GRPO algorithm",
+   "claim": "GRPO (Group Relative Policy Optimization, 2024) is the go-to RL algorithm for reasoning training; its key difference from PPO is that it never trains a value function at all.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 37,
+   "quote": "GRPO stands for group relative policy optimization",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "GRPO algorithm",
+   "claim": "GRPO computes the advantage for a completion as (reward − mean reward) / standard deviation of rewards across a sampled group of completions to the same prompt, instead of a learned value function.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 42,
+   "quote": "reward minus the average over the standard deviation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "GRPO length bias",
+   "claim": "Original GRPO divides the loss by output length per-token, which perversely downweights bad tokens more in short outputs than long ones — an incentive that pushes models toward longer and longer (sometimes needlessly) outputs; Dr. GRPO fixes this by removing the length-normalization factor entirely, which stops output length from growing unboundedly.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 54,
+   "quote": "that paper actually proposes to remove the factor altogether",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "GRPO refinements",
+   "claim": "Beyond length normalization, practitioners also adjust the std-normalization term (biased on very hard problems where almost all completions fail) and use asymmetric clipping epsilons so low-probability tokens aren't unfairly capped from growing.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 56,
+   "quote": "introduce an asymmetry between the lower and the upper bounds",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "DeepSeek R1-Zero was trained with pure RL (format + correctness reward only) directly on a pre-trained base model (DeepSeek-V3-base, using MoE and multi-head latent attention) with zero SFT alignment step.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 57,
+   "quote": "a pre-trained model uh like trained on next token prediction",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "R1-Zero's pure-RL reasoning chains had real problems: the model would mix languages mid-chain and produce syntax issues, because it had no prior supervision to anchor its 'language' of thought.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 59,
+   "quote": "it would mix languages and you had also syntax issues",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "R1 (unlike R1-Zero) starts from a small human-curated 'cold start' SFT dataset — R1-Zero-generated chains rewritten by humans for formatting and language consistency — before entering the RL stage.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 61,
+   "quote": "cold cold start data",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "R1's RL stage adds a language-consistency reward: a heuristic measuring the ratio of target-language tokens in the reasoning chain, specifically to stop the language-mixing problem seen in R1-Zero.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 62,
+   "quote": "the ratio of the tokens in the target language",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "R1's second SFT stage mixes ~200k recycled non-reasoning instruction pairs from V3 with reasoning pairs generated via rejection sampling (generate with the current model, keep only answers an LLM judge accepts).",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 63,
+   "quote": "about 200k uh pairs",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "DeepSeek R1 recipe",
+   "claim": "R1's final RL stage layers in helpfulness and harmlessness rewards on top of the reasoning reward; harmlessness is scored over the entire output including the think section, not just the final answer.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 64,
+   "quote": "helpfulness and harmlessness components",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "distillation into small models",
+   "claim": "To give a small model reasoning ability, DeepSeek distilled by having R1 generate full responses (including think tokens) and then SFT-fitting the student on the entire sequence (not a probability distribution) — and found this beats running RL directly on the small model from scratch.",
+   "video_id": "k5Fh-UgTuCo",
+   "chunk_index": 68,
+   "quote": "distilling the knowledge is more uh efficient in terms of performance",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "human evaluation limits",
+   "claim": "Rating every LLM output with a human is the 'ideal' evaluation but impractical — it's cost-intensive, slow, and the rating task itself can be subjective (e.g. two raters disagreeing on whether 'a teddy bear' is a useful gift suggestion).",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 4,
+   "quote": "very cost intensive",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "inter-rater agreement",
+   "claim": "Raw agreement rate is a misleading metric: if two raters respond randomly with P=0.5 each, they will 'agree' 50% of the time by pure chance — agreement numbers must be read relative to this chance baseline.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 7,
+   "quote": "we would already have an agreement rate of 50%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "inter-rater agreement",
+   "claim": "Cohen's kappa corrects raw agreement for chance; Fleiss' kappa and Krippendorff's alpha extend the idea to more than two raters.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 9,
+   "quote": "fly scapa and crypendors alpha",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "inter-rater agreement",
+   "claim": "When inter-rater agreement is unsatisfactory, teams run 'agreement sessions' between raters to realign on rating guidelines — treat agreement score as an ongoing health metric.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 10,
+   "quote": "some quote unquote agreement sessions between the raiders",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "rule-based metrics",
+   "claim": "METEOR (Metric for Evaluation of Translation with Explicit Ordering) combines a precision/recall F-score with an ordering penalty based on contiguous matched-chunk counts, rewarding outputs ordered like the reference.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 12,
+   "quote": "metric for evaluation of translation with explicit ordering",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "rule-based metrics",
+   "claim": "BLEU (Bilingual Evaluation Understudy) is a precision-focused n-gram overlap metric with a brevity penalty to stop short translations from gaming the score.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 15,
+   "quote": "bilingual evaluation under study",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "rule-based metric limits",
+   "claim": "Reference-comparison metrics (METEOR/BLEU/ROUGE) perform poorly when a correct answer is phrased in a totally different style than the reference, since they can't recognize stylistic/lexical variation that preserves meaning.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 16,
+   "quote": "the metrics that we saw would you would really perform very poorly",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge mechanics",
+   "claim": "Best practice: have the judge output its rationale before the score, mirroring chain-of-thought — this empirically improves judge quality by letting it externalize reasoning before committing to a verdict.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 18,
+   "quote": "ask the model to first output the rationale and then the score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge mechanics",
+   "claim": "Use structured output / constrained decoding (restricting sampling to valid tokens for a target schema) to guarantee a parseable rationale+score response from a judge model, rather than hoping free text parses cleanly.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 20,
+   "quote": "this technique is known under the name structured output",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge mechanics",
+   "claim": "There are two broad LLM-judge setups: pointwise (grade one response) and pairwise (which of two responses is better) — pairwise judging doubles as a way to synthetically generate preference data for reward-model training.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 22,
+   "quote": "is response A better or is response B better",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge biases",
+   "claim": "Position bias remedy: run the pairwise comparison twice with order swapped (A-then-B and B-then-A) and take the majority vote; if the verdict flips, treat the judgment as unreliable.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 24,
+   "quote": "ask the model is A or B better and then ask the model is B or A better",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge biases",
+   "claim": "Verbosity bias: judges tend to prefer longer, more detailed responses regardless of actual correctness; mitigations are explicit anti-verbosity instructions in the prompt, in-context examples, or a length penalty on the score.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 25,
+   "quote": "prefer responses that are just more verbose",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge biases",
+   "claim": "Self-enhancement bias: a model tends to prefer outputs it generated itself; general guideline is to judge with a different (and typically bigger/stronger-reasoning) model than the one that generated the response.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 26,
+   "quote": "the model will tend to prefer responses that are generated by itself",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge best practice",
+   "claim": "Prefer a binary pass/fail scale over a granular scale for LLM-judge scoring — it's easier for the judge, and easier for humans to rate consistently, removing noise from choosing among several options.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 30,
+   "quote": "use a binary scale like a pass or fail kind of score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge best practice",
+   "claim": "Use a low temperature for evaluation runs (people use values like 0.1–0.2) because you want eval results to be reproducible across repeated runs.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 31,
+   "quote": "a low temperature because they want to make their evaluation experiments reproducible",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge best practice",
+   "claim": "Don't over-optimize against the LLM judge as if it were ground truth — it's an approximation of human ratings, so periodically run correlation analysis between judge scores and real human ratings to catch divergence.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 32,
+   "quote": "you don't want to overoptimize against the I guess a proxy",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "factuality scoring",
+   "claim": "Factuality scoring pipeline: (1) decompose output text into a list of atomic facts via an LLM call, (2) fact-check each fact in a binary (correct/incorrect) fashion, typically via RAG or web search, (3) aggregate with per-fact importance weights alpha_i into a single factuality score.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 35,
+   "quote": "aggregate the factuality of this text along the dimension of the facts",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "agentic failure modes",
+   "claim": "A 'tool router error' (the right tool existed but wasn't surfaced to the model) is specifically a recall problem in the tool-selection/filtering stage, distinct from the model simply choosing not to use an available tool.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 40,
+   "quote": "it means it's possible that we just didn't select the right tool",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "agentic failure modes",
+   "claim": "Tool hallucination — the model invents a function name that was never defined — often means the model is too weak to ground, or that the tool's name/arguments/description are poorly written; the fix is renaming the API and tightening descriptions, or upgrading the model.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 41,
+   "quote": "it calls a function that is just not defined",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "agentic failure modes",
+   "claim": "A tool should never return a bare error or None on empty results — returning an empty JSON object is strictly better than None, because None gives the model no way to distinguish 'nothing found' from 'something broke'.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 49,
+   "quote": "it's actually better to output an empty JSON than just outputting none",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "agentic failure modes",
+   "claim": "If a tool call succeeds but returns too much raw/unstructured data, the model can fail to find the relevant piece ('drowning' in noise) — fix by trimming and structuring tool output (e.g., typed objects with named attributes) before it reaches the model.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 51,
+   "quote": "it's drowning under um an ocean of other kinds of information",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "benchmarks",
+   "claim": "MMLU-style knowledge benchmarks mostly measure how well pre-training retained facts, not reasoning ability — MMLU itself spans nearly 60 diverse task domains as 4-way multiple choice.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 54,
+   "quote": "this knowledge benchmark mostly but not only measures how well pre-training was done",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "benchmarks",
+   "claim": "AIME is formatted so the model must output a specific three-digit answer, making it hard-coded to score, while PIQA tests everyday physical commonsense reasoning as 2-choice questions across ~20k examples.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 58,
+   "quote": "an exam that high school students um sit for",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "benchmarks",
+   "claim": "SWE-bench was built by filtering real Python GitHub repos for pull requests that both fixed an issue and introduced tests, so a model's patch can be objectively scored by whether the tests pass before/after.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 61,
+   "quote": "they filtered down those that contained pull requests that were solving an issue",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "safety benchmarks",
+   "claim": "Safety benchmark scores aren't directly comparable across LLM providers because every company enforces its own safety policy — a benchmark like HarmBench is only meaningful once you know what policy it's checking against.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 63,
+   "quote": "every company has its own policy",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "agent benchmarks",
+   "claim": "tau-bench ('tool agent user') evaluates agents end-to-end with an LLM-simulated user across airline/retail domains with explicit policies, scoring success via whether the backend database reaches the intended state.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 66,
+   "quote": "tool agent users and this is why we say toao",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "agent benchmarks",
+   "claim": "tau-bench introduces pass^k (distinct from pass@k): the probability that ALL k attempts succeed, which matters for agents where you need reliable, repeatable task completion rather than just one lucky success.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 68,
+   "quote": "the probability that all K attempts succeed",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "benchmark hygiene",
+   "claim": "Guard against data contamination by hashing benchmark answers and blocklisting websites containing them (for tool-use benchmarks) or using freshly-written problems the model couldn't have seen (for math) — Goodhart's law applies: once a benchmark becomes a target, it stops being a good measure.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 71,
+   "quote": "a measure when a measure becomes a target it ceases to be a good measure",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "model selection",
+   "claim": "No single model wins everywhere — plot models on a Pareto frontier against a second axis you care about (price, safety, context length) and pick per use case rather than chasing one leaderboard number.",
+   "video_id": "8fNP4N46RRo",
+   "chunk_index": 70,
+   "quote": "called the parareto frontier",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "embedding definition",
+   "claim": "An embedding is a dense (non-sparse), high-dimensional numerical vector representing the semantic/contextual meaning of data — common dimensions are 384, 768, 1024, 1536, 2048 and up.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 9,
+   "quote": "dense highdimensional uh numerical vector that represents semantic meaning",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "semantic vs keyword search",
+   "claim": "Semantic search means searching based on meaning rather than exact word match — the entire premise of using embeddings for retrieval instead of keyword matching.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 14,
+   "quote": "semantic search means searching based on the meaning not based on the exact exact word",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "similarity metrics",
+   "claim": "Semantic/similarity search is performed using cosine similarity, dot product, or Euclidean distance between embedding vectors.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 15,
+   "quote": "cosine similarity using the dot product uclean distance",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "keyword search failure",
+   "claim": "Keyword search fails on paraphrase: searching 'reduce heart risk' will not match 'lower cardiovascular disease chances' because the literal words differ, even though the meaning is identical — exactly the case semantic search fixes.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 19,
+   "quote": "reduce is not equal to lower and heart risk is not",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "pre-embedding encodings",
+   "claim": "Classic text encodings (one-hot, bag-of-words, TF-IDF) are count-based and produce sparse vectors; GloVe is a matrix-factorization-based technique — none of these are learned embeddings in the modern sense.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 21,
+   "quote": "it convert data into the numerical format",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "static vs contextual embeddings",
+   "claim": "Word2Vec and FastText produce static, word-level embeddings that don't understand context — a key limitation that made them unusable for sentence-level semantic tasks.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 28,
+   "quote": "they produce static embedding",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "static vs contextual embeddings",
+   "claim": "Sentence-transformer ('SoTA') models are transformer-based and produce contextual embeddings, so the word 'bank' gets a different vector in 'I sat on a river bank' versus 'I deposit my money in the bank' — unlike Word2Vec, which gives it one fixed vector regardless of context.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 32,
+   "quote": "bank will be represented according to the context",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "multimodal embeddings",
+   "claim": "Embedding models extend beyond text: CLIP and Vision Transformer models embed images; Whisper/Google Speech-to-Text/Meta MMS convert audio to text first (or Wav2Vec/YAMNet embed audio directly); video models like TimeSformer and I3D embed video directly, or video is split into frame/audio/metadata multi-vectors.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 33,
+   "quote": "clip model vision transform model are enough capable to convert",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "embedding applications",
+   "claim": "RAG (Retrieval-Augmented Generation) is described as the single biggest application of embeddings — chunk data, embed it, store in a vector DB, embed the query, retrieve relevant context, and feed that context plus the query to the LLM.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 41,
+   "quote": "the biggest application of the embedding is this rag architecture",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "embedding model landscape",
+   "claim": "Major closed-source embedding providers include OpenAI, Google, Anthropic, Cohere, and AWS (Titan Embeddings on Bedrock); open-source alternatives (e.g. all-mpnet-base-v2, BGE from the Beijing Academy of AI, E5 from Microsoft) are freely downloadable from Hugging Face.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 42,
+   "quote": "OpenAI is providing their own embedding model",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "embedding model selection",
+   "claim": "MTEB (Massive Text Embedding Benchmark) provides a leaderboard filterable by task type, language, and model size — the recommended starting point for picking an embedding model.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 44,
+   "quote": "massive text embedding benchmark",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "hands-on demo",
+   "claim": "A worked demo using all-MiniLM-L6-v2 (384-dim) shows a query correctly scoring near 0.0 cosine similarity against an unrelated sentence ('My car needs fuel') while scoring high against the semantically matching document, concretely demonstrating embedding-based retrieval over keyword overlap.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 51,
+   "quote": "score is 0.05. My car needs fuel",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "benchmarking embedding models",
+   "claim": "The MTEB Python package can score any embedding model on the STS (Semantic Textual Similarity) benchmark, returning Spearman/Pearson/cosine-correlation numbers you can use to directly compare candidate models.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 54,
+   "quote": "semantics textual similarity benchmark",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "benchmarking embedding models",
+   "claim": "In a head-to-head STS-benchmark run, BGE-base scored highest, followed by E5-base, then all-MiniLM — a concrete example of using MTEB scores to rank candidate embedding models before committing to one.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 58,
+   "quote": "BGE base E1 it is having a highest score",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "embedding model selection tradeoffs",
+   "claim": "Higher embedding dimensionality gives better representation quality but costs more storage, memory, and inference speed — choose dimension based on whether you have the infrastructure budget.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 59,
+   "quote": "higher dimension will give you the better representation of the data but it is having a more storage cost",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "embedding model selection tradeoffs",
+   "claim": "Closed-source embedding APIs are easier to maintain (no hosting) but carry ongoing per-call API cost; open-source models require self-hosting and scaling cost but are recommended as the better choice when learning or on small-scale applications.",
+   "video_id": "idIck_TmPTE",
+   "chunk_index": 60,
+   "quote": "open source is a better choice for learning",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [],
+ "gaps": [
+  "No corpus talk gives the actual GRPO/DAPO/Dr. GRPO loss formulas end-to-end with worked numbers — only high-level descriptions of what each fix changes, so a reader can't reimplement them from this evidence alone.",
+  "No concrete numbers on reasoning-token pricing (e.g., $/token for reasoning vs output tokens on a specific provider) are given, even though the lecture flags that users are charged for them.",
+  "The DeepSeek R1 cold-start SFT dataset size is never quantified — the lecturer explicitly says the paper doesn't give a number and guesses it's 'orders of magnitude less' than other stages.",
+  "No video gives a recommended judge model (or model family) for LLM-as-judge setups, just the general heuristic 'bigger and different from the generator.'",
+  "The embedding video explicitly defers embedding fine-tuning methodology itself (loss functions like triplet/contrastive loss, dataset formatting, actual fine-tuning code) to a follow-up video not in this cluster — so this cluster explains what embeddings are and how to pick one, but not how to fine-tune one.",
+  "None of the three talks covers core transformer architecture internals (self-attention, positional encoding, multi-head attention math) — they all assume that foundation from earlier lectures not present in this cluster.",
+  "No guidance is given on how to choose or size the 'group' (G) in GRPO (how many completions to sample per prompt) beyond noting that more samples reduce variance in the reward comparison.",
+  "No benchmark numbers (accuracy percentages, dollar costs) are given comparing reasoning models like R1 against closed competitors on specific tasks — the lecture only characterizes R1 as 'competitive.'"
+ ],
+ "verified_claims": 75
+}
