@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free-GPU Video Production — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  .spec { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.92rem; }
+  .spec th, .spec td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid rgba(128,128,128,0.22); vertical-align: top; }
+  .spec th { font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; font-size: 0.72rem; opacity: 0.7; }
+  .spec td:first-child { font-family: "Geist Mono", ui-monospace, monospace; white-space: nowrap; }
+  .verdict { font-size: 0.85rem; opacity: 0.78; margin-top: 0.4rem; }
+  .flag { display: inline-block; font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.1rem 0.4rem; border: 1px solid rgba(128,128,128,0.4); border-radius: 3px; opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Free-GPU Video Production</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#variants">Variants</a>
+    <a href="#pipeline">Stage one</a>
+    <a href="#framing">Failure modes</a>
+    <a href="#memory">Memory</a>
+    <a href="#pivot">When to pivot</a>
+    <a href="#judging">Judging</a>
+    <a href="#prompts">Copy blocks</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>Four steps, two T4s, and a <em>memory bank</em></h1>
+  <p class="sub" id="top-p1">How to generate AI video end to end on free cloud GPUs — picking a MiniMax H3 distillation variant, running the dual-T4 notebook, diagnosing the failures that only show up at 480p, bolting long-term character memory onto an open backbone with StoryMem, and knowing the exact moment the free tier stops being enough. Distilled from AIQUEST's two open-video-model teardowns, with the fine-tuning, eval and deployment practice around them drawn from Fahd Mirza, Zen van Riel, Sebastian Raschka, Dave Ebbelaar, LangChain, Ray Fu, Gaurav Sen and others.</p>
+  <div class="provenance" id="top-p2">20 source videos · 1,368 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-11-04</div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h2">The short answer</h2>
+  <p id="thesis-p1">Yes — stage one runs for free, and no, you will not stay there. The corpus contains exactly one working end-to-end path for MiniMax H3 on free hardware, and it is a <strong>Kaggle</strong> notebook on <strong>dual T4 GPUs</strong>, not Colab. Two cells: cell one installs dependencies and pulls roughly 40&nbsp;GB of weights in about three minutes <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="pull down roughly 40">weights</cite>, cell two splits the diffusion transformer across both cards at <strong>9.3&nbsp;GB of VRAM each</strong> and hands you a web UI <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="loading exactly 9.3 GB of VRM onto each card">split</cite>. A five-second 480p clip came back in <strong>182 seconds</strong> <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="wrap up the render in exactly 182 seconds">182s</cite>. That is your base case, and it is enough to do real comparative work.</p>
+  <p id="thesis-p2">On Colab specifically, be precise about what the corpus does and does not say. The same creator keeps "all my updated notebooks for Collab and Kaggle" in one GitHub repo <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="keep all my updated notebooks for Collab and Kaggle">repo</cite> — but the MiniMax H3 Turbo notebook is launched by clicking the <em>Kaggle</em> badge, and every hardware number given assumes two T4s with the text encoder pinned in ~21.9&nbsp;GB of system RAM <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="Your total system memory sits around 21.9 GB">RAM</cite>. No video in this corpus demonstrates H3 on a single Colab GPU, states Colab's runtime limits, or shows a single-card fallback. Treat Colab as unverified for this pipeline and run the verified Kaggle path first; see <a href="#gaps">Gaps</a>.</p>
+  <blockquote class="epigraph" id="thesis-blockquote1">"Trying to run a massive model on a free T4 GPU is brutal." <cite data-video="rEjasJZq1t8" data-chunk="0" data-quote="trying to run a massive model on a free T4 GPU is brutal">AIQUEST</cite></blockquote>
+  <p id="thesis-p3">That line is the whole reason the four-step distillation LoRAs exist, and why the free tier works at all. Three moves follow from it.</p>
+  <div class="triptych">
+    <div>
+      <h3 id="thesis-h31">Buy speed with distillation, not hardware</h3>
+      <p id="thesis-p4">Four-step distillation LoRAs are what make a massive model tractable on free cards, and their authors claim they "match or beat the full base model" <cite data-video="rEjasJZq1t8" data-chunk="0" data-quote="match or beat the full base model">claim</cite>. Distillation is the standard move — train a small student on a large teacher's outputs <cite data-video="OYvlznJ4IZQ" data-chunk="31" data-quote="the process of building small language models is usually distillation">why it works</cite>.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h32">Pick the variant by failure mode</h3>
+      <p id="thesis-p5">Benchmarks do not decide this. PDMD leads published leaderboards on visual quality, motion and prompt alignment <cite data-video="rEjasJZq1t8" data-chunk="1" data-quote="pulled the highest scores across visual quality, dynamic motion, and semantic prompt alignment">PDMD</cite>, yet Fused Turbo won the squirrel-on-a-deck composition test outright and lost the hard-cut test badly. Choose per shot type, not per leaderboard.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h33">Buy memory with a LoRA, not a bigger model</h3>
+      <p id="thesis-p6">ByteDance's StoryMem is a LoRA over an existing backbone that "generates videos shot by shot while maintaining a compact memory bank" <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="generates videos shot by shot while maintaining a compact memory bank">StoryMem</cite> — 0.7&nbsp;B added parameters on a 14&nbsp;B base <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="adds only 0.7 billion parameters to the 14 billion parameter base model">0.7B</cite>. Minute-long continuity is an adapter, not a new model.</p>
+    </div>
+  </div>
+</section>
+
+<section id="variants">
+  <h2 id="variants-h2">The four variants, and what each one is actually for</h2>
+  <p id="variants-p1">Cell one of the notebook exposes a single variable where you type the active LoRA: <code>PDMD</code>, <code>DMAD</code>, <code>fused</code>, or <code>official</code> <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="a dedicated variable where you choose your active Laura">switch</cite>. That one word changes your failure profile more than any prompt edit will. Here is the side-by-side, from the creator's own battery of text-rendering, physics, dialogue and multi-shot tests.</p>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="variants-h31">PDMD — sharpness and prompt obedience</h3>
+      <ul>
+        <li id="variants-li1">Top of the published leaderboards against H3's official Turbo LoRA and DMD, leading on visual quality, dynamic motion and semantic prompt alignment <cite data-video="rEjasJZq1t8" data-chunk="1" data-quote="pulled the highest scores across visual quality, dynamic motion, and semantic prompt alignment">benchmark</cite>.</li>
+        <li id="variants-li2">Won the hardest test in the set — a 10-second multi-character argument with a prompted hard camera cut: "strict prompt following, PDMD easily took the crown" <cite data-video="rEjasJZq1t8" data-chunk="11" data-quote="strict prompt following, PDMD easily took the crown">verdict</cite>.</li>
+        <li id="variants-li3">Renders individual strands of hair crisply even at 480p; colour profile reads slightly washed out and muted next to Fused <cite data-video="rEjasJZq1t8" data-chunk="6" data-quote="the overall color profile feels slightly washed out and muted compared to Fused">tradeoff</cite>.</li>
+        <li id="variants-li4">Technically runs in two steps instead of four, "if you don't mind a noticeable drop in quality" <cite data-video="rEjasJZq1t8" data-chunk="1" data-quote="though you can technically squeeze out an output in just two steps">two-step</cite>. Use it for thumbnail-grade previews only, never finals.</li>
+        <li id="variants-li5">Text-to-video and image-to-video only — no reference-to-video mode <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="PDMD and DMAD are strictly limited to text to video and image to video">modes</cite>.</li>
+      </ul>
+      <p class="verdict" id="variants-p2"><span class="flag">Default</span> Start here. It won the two tests that matter most for narrative work: legible text and obeyed cuts.</p>
+    </div>
+    <div class="lever">
+      <h3 id="variants-h32">DMAD — cinematic motion, softer image</h3>
+      <ul>
+        <li id="variants-li6">ByteDance's four-step distillation, claiming a <strong>79% preference win rate</strong> against rivals like DMD2 and RCM in their own published data <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="79% preference win rate against rival distillations">claim</cite>.</li>
+        <li id="variants-li7">Trades harsh digital sharpness for motion that "looks organic and fluid" — the cat-on-a-turntable test read natural rather than artificial <cite data-video="rEjasJZq1t8" data-chunk="7" data-quote="It sacrifices that harsh digital sharpness for movement that looks organic">motion</cite>.</li>
+        <li id="variants-li8">Weakest on kinetic impact: in the kaiju-versus-skyscraper test "the building just sort of collapses on its own" with no sense of weight <cite data-video="rEjasJZq1t8" data-chunk="7" data-quote="the building just sort of collapses on its own">physics</cite>.</li>
+        <li id="variants-li9">Hallucinated extra text across a fighter's back and put "AI Quest" on a waistband instead of a belt in the text-rendering test <cite data-video="rEjasJZq1t8" data-chunk="4" data-quote="it hallucinates extra text across the back of the person">text</cite>.</li>
+        <li id="variants-li10">Cleans up the most of any variant when you move from 480p to 720p, "leaning into a remarkably smooth and realistic human render" <cite data-video="rEjasJZq1t8" data-chunk="9" data-quote="the 720p DMAD render cleans up substantially">720p</cite>.</li>
+      </ul>
+      <p class="verdict" id="variants-p3"><span class="flag">Pick for</span> Sci-fi and action where smooth cinematic motion beats micro-detail, and for any shot you will finish at 720p.</p>
+    </div>
+    <div class="lever">
+      <h3 id="variants-h33">Fused Turbo — fastest, widest mode support, least predictable</h3>
+      <ul>
+        <li id="variants-li11">The LoRA is "baked directly into the model transformer safe tensors file" rather than loaded on top, cutting overhead <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="baked directly into the model transformer safe tensors file">architecture</cite>.</li>
+        <li id="variants-li12">Finishes a standard five-second render <strong>10–15 seconds faster</strong> than PDMD or DMAD, which share nearly identical times <cite data-video="rEjasJZq1t8" data-chunk="3" data-quote="roughly 10 to 15 seconds faster than the other two">speed</cite>.</li>
+        <li id="variants-li13">The only variant supporting all three modes — text-to-video, image-to-video and reference-to-video, the last taking reference audio plus up to three reference images <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="supports all three modes: text to video, image to video, and reference to video">modes</cite>.</li>
+        <li id="variants-li14">Surprise winner on unhyped text rendering and on colour vibrancy — it "completely steals the show" on the spatial-composition test <cite data-video="rEjasJZq1t8" data-chunk="6" data-quote="Fused Turbo completely steals the show">colour</cite>.</li>
+        <li id="variants-li15">Breaks on the two things narrative video needs most: it faked a prompted hard cut by letting "the virtual camera just drift awkwardly back and forth" <cite data-video="rEjasJZq1t8" data-chunk="11" data-quote="the virtual camera just drifted awkwardly back and forth">cuts</cite>, and "still lagged behind visually" in two-person dialogue close-ups <cite data-video="rEjasJZq1t8" data-chunk="10" data-quote="Fuse Turbo, however, still lagged behind visually">dialogue</cite>.</li>
+      </ul>
+      <p class="verdict" id="variants-p4"><span class="flag">Pick for</span> Single-shot establishing frames, reference-driven generation, and any pass where render throughput matters more than character fidelity.</p>
+    </div>
+    <div class="lever">
+      <h3 id="variants-h34">Official 8-step reference-to-video — the baseline you should keep</h3>
+      <ul>
+        <li id="variants-li16">Built into the same notebook alongside the three four-step options, selected by typing <code>official</code> <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="alongside the official eight-step reference to video model">included</cite>.</li>
+        <li id="variants-li17">Twice the steps means it is your control condition. Every "match or beat the base model" claim in this space is vendor-published; the corpus contains no independent third-party validation of any of the three win rates. Run the official model on your own prompts before you believe any of them.</li>
+        <li id="variants-li18">Selecting <code>fused</code> or <code>official</code> makes the UI reveal a reference-to-video tab for reference audio and up to three images <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="The UI dynamically displays a dedicated reference to video tab">UI</cite>.</li>
+      </ul>
+      <p class="verdict" id="variants-p5"><span class="flag">Always</span> Render one shot per variant including <code>official</code> before committing a project to any single LoRA.</p>
+    </div>
+  </div>
+  <p id="variants-p6">One result held across all four: audio is not the weak link. "The actual spoken audio and ambient background generation on all three models sounded fantastic," even where faces fell apart in the same clip <cite data-video="rEjasJZq1t8" data-chunk="9" data-quote="spoken audio and ambient background generation on all three models sounded fantastic">audio</cite>. Budget your debugging time on pixels, not on sound.</p>
+</section>
+
+<section id="pipeline">
+  <h2 id="pipeline-h2">Stage one: the free dual-T4 run, start to finished clip</h2>
+  <p id="pipeline-p1">Five stages. Nothing here needs a credit card, local GPU, or command line — the environment is "stripped down into just two executable cells" <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="stripped down into just two executable cells">two cells</cite>. Budget around ten minutes of setup before your first render starts.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="pipeline-h31">Verify the account before you touch the notebook</h3>
+    <p class="why" id="pipeline-p2">This is the single step that silently blocks everyone. Kaggle gates GPU access behind identity verification, and the failure is not an error message — it is a greyed-out dropdown.</p>
+    <ul>
+      <li id="pipeline-li1">Verify your Kaggle account with a phone number in account settings first. Skip it and "the GPU options will be grayed out and the notebook won't initialize" <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="the GPU options will be grayed out and the notebook won't initialize">gate</cite>.</li>
+      <li id="pipeline-li2">Set the accelerator to the <strong>T4 × 2</strong> option, not a single T4 <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="open the Kaggle settings and make sure your accelerator is set to GPU">accelerator</cite>. The model is split across both cards; this is not optional.</li>
+      <li id="pipeline-li3">Launch from the creator's GitHub repo by clicking the Kaggle badge next to the MiniMax H3 Turbo notebook — it "will load the workspace directly into your account" <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="load the workspace directly into your account">launch</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="pipeline-h32">Choose the LoRA in cell one, then run all</h3>
+    <p class="why" id="pipeline-p3">The variant is a string literal, not a UI toggle, so it is decided before the 40&nbsp;GB download rather than after. Pick deliberately; changing your mind means re-running cell one.</p>
+    <ul>
+      <li id="pipeline-li4">Default is <code>PDMD</code>. Backspace it and type <code>DMAD</code>, <code>fused</code>, or <code>official</code> to switch <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="just backspace out PDMD and type DMAD">switch</cite>.</li>
+      <li id="pipeline-li5">Cell one connects to the instance, installs dependencies and pulls ~40&nbsp;GB of weights, "finishing the entire download in about 3 minutes" <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="finishing the entire download in about 3 minutes">3 min</cite>.</li>
+      <li id="pipeline-li6">Cell two initialises the engine and takes "roughly 3 minutes" before it emits your UI links <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="After roughly 3 minutes of initialization">init</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="pipeline-h33">Read the load logs — they are your capacity budget</h3>
+    <p class="why" id="pipeline-p4">These three numbers tell you exactly how much headroom you have, and they are why the free tier works at all. Memorise them; they decide every pivot decision later.</p>
+    <ul>
+      <li id="pipeline-li7">The script "automatically splits the massive diffusion transformer evenly across both T4 GPUs," loading exactly 9.3&nbsp;GB onto each card <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="splits the massive diffusion transformer evenly across both T4 GPUs">split</cite>.</li>
+      <li id="pipeline-li8">Auxiliary components — notably the text encoder — are pinned into system RAM, not VRAM <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="pinning auxiliary components like the text encoder into your system RAM">offload</cite>.</li>
+      <li id="pipeline-li9">Steady state: ~21.9&nbsp;GB system memory, just over 10&nbsp;GB per card <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="GPU usage hovers just over 10 GB per card">steady state</cite>. Roughly 5&nbsp;GB of VRAM headroom per card is all you have for resolution and duration increases.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="pipeline-h34">Take the Cloudflare link, never the Gradio one</h3>
+    <p class="why" id="pipeline-p5">Cell two emits two public URLs and they are not equivalent. Choosing wrong costs you a mid-render session, and renders are measured in minutes.</p>
+    <ul>
+      <li id="pipeline-li10">You get both a Gradio link and a Cloudflare tunnel URL. "Grad links have a habit of timing out or crashing midsession" — use Cloudflare <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="Grad links have a habit of timing out or crashing midsession">tunnel</cite>.</li>
+      <li id="pipeline-li11">The UI shows your selected LoRA name at the top — use it to confirm cell one actually took your edit <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="with your selected Laura name clearly displayed right at the top">confirm</cite>.</li>
+      <li id="pipeline-li12">The interface splits prompt input into dedicated fields for spoken lines, speech language, sound-effect prompts and background-music prompts. You can dump it all into the main box, but "splitting them out gives you granular creative control" <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="splitting them out gives you granular creative control">fields</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="pipeline-h35">Prototype at 480p, finish at 540p or 720p</h3>
+    <p class="why" id="pipeline-p6">Resolution is the main dial you have and it is a two-pass workflow, not a single choice. Everything you learn about framing at 480p transfers; everything you judge about fidelity at 480p does not.</p>
+    <ul>
+      <li id="pipeline-li13">"480p is your best friend for rapid prototyping," finishing a five-second clip in under three minutes; 540p is the middle ground, 720p maximum fidelity at longer waits <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="480p is your best friend for rapid prototyping">resolution</cite>.</li>
+      <li id="pipeline-li14">A measured five-second 480p run completed in <strong>182 seconds</strong>, with full generation metadata saved below the video player <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="wrap up the render in exactly 182 seconds">182s</cite>. Keep that metadata — it is your only reproducibility record.</li>
+      <li id="pipeline-li15">Duration goes up to 15 seconds, with aspect-ratio auto-match and an image-to-video tab that takes first <em>and</em> last frames <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="use the image to video tab to feed in first and last frames">controls</cite>.</li>
+      <li id="pipeline-li16">A style-LoRA picker ships preconfigured options (realism, people, camera motion, 360 orbit, weapon combat, spatial physics); you can "stack up to two styles at once" or paste a custom Hugging Face repo link <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="stack up to two styles at once">styles</cite>.</li>
+      <li id="pipeline-li17">Both PDMD and DMAD "hit their peak performance at 720p" <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="both of these models hit their peak performance at 720p">peak</cite>, so re-render your final cuts at 540p or 720p to "clear up the artifacts" <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="render your final cuts at 540p or 720p">finals</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="framing">
+  <h2 id="framing-h2">Delete on sight</h2>
+  <p id="framing-p1">Most 480p "bad model" verdicts are framing bugs. The corpus contains one controlled experiment that proves it: the same jungle prompt with hikers framed wide produced "noticeable facial morphing, glitching, and weird artifacts" because "480p just doesn't provide enough pixel density for distant facial features" <cite data-video="rEjasJZq1t8" data-chunk="8" data-quote="480p just doesn't provide enough pixel density for distant facial features">root cause</cite>. Forcing the camera into a close-up at the same 480p made "the facial distortion disappear because the model has enough pixel real estate to resolve the eyes, mouth, and skin texture properly" <cite data-video="rEjasJZq1t8" data-chunk="9" data-quote="the facial distortion disappears because the model has enough pixel real estate">fix</cite>. Framing is a resolution decision.</p>
+  <table class="ban">
+    <thead><tr><th>Delete on sight</th><th>Replace with</th></tr></thead>
+    <tbody>
+      <tr><td>Wide framing with distant faces at 480p</td><td>A close-up, or the same prompt re-run at 720p — which stabilises facial structure though "you can still catch slight warping" <cite data-video="rEjasJZq1t8" data-chunk="9" data-quote="the extra resolution helps stabilize the facial structure">720p</cite></td></tr>
+      <tr><td>The Gradio share link</td><td>The Cloudflare tunnel URL <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="I strongly recommend clicking the Cloudflare link">tunnel</cite></td></tr>
+      <tr><td>Fused Turbo for prompted hard camera cuts</td><td>PDMD, which "handled this brilliantly" with crisp close-up expressions <cite data-video="rEjasJZq1t8" data-chunk="11" data-quote="PDMD handled this brilliantly">PDMD</cite></td></tr>
+      <tr><td>Fused Turbo for two-person dialogue close-ups</td><td>PDMD or DMAD — Fused's "character rendering can be somewhat inconsistent depending on the scene" <cite data-video="rEjasJZq1t8" data-chunk="10" data-quote="character rendering can be somewhat inconsistent depending on the scene">inconsistent</cite></td></tr>
+      <tr><td>Two-step PDMD output in a final cut</td><td>The full four steps; two steps carries "a noticeable drop in quality" <cite data-video="rEjasJZq1t8" data-chunk="1" data-quote="a noticeable drop in quality compared to the full four-step process">steps</cite></td></tr>
+      <tr><td>480p as the delivery resolution</td><td>540p or 720p for finals <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="render your final cuts at 540p or 720p">finals</cite></td></tr>
+      <tr><td>One 60-second prompt and hope</td><td>Shot-by-shot generation with a memory bank <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="generates videos shot by shot while maintaining a compact memory bank">StoryMem</cite></td></tr>
+      <tr><td>Blaming StoryMem for visible glitches</td><td>Blaming the backbone — "those artifacts, they're coming from the underlying video model" <cite data-video="GM70MDyl94E" data-chunk="1" data-quote="those artifacts, they're coming from the underlying video model">attribution</cite></td></tr>
+      <tr><td>A vendor's cherry-picked showcase page</td><td>Your own pre-generated side-by-side playback page <cite data-video="rEjasJZq1t8" data-chunk="3" data-quote="a dedicated comparison web page playing back my own pre-generated clips">harness</cite></td></tr>
+      <tr><td>"The agent says the render pipeline works"</td><td>Watching the output yourself — agents cheat verification, including disabling the thing under test to fake a pass <cite data-video="Cu8kUBwLoTM" data-chunk="28" data-quote="the AI constantly cheated">cheating</cite></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="memory">
+  <h2 id="memory-h2">Long-term and short-term memory, concretely</h2>
+  <p id="memory-p1">This is the part of your plan that has a real answer in the corpus, and it is more specific than "give the model memory." Open video models have a <em>duration</em> ceiling: most "can barely generate 5 to 10 seconds of footage," and when they chain scenes you get "different faces, different outfits, completely broken continuity" <cite data-video="GM70MDyl94E" data-chunk="0" data-quote="different faces, different outfits, completely broken continuity">the problem</cite>. Even Sora 2 "has a hard 15-second limit. You can't generate anything longer than that in one go" <cite data-video="GM70MDyl94E" data-chunk="1" data-quote="Sora has a hard 15-second limit">ceiling</cite>. StoryMem's claimed result against that baseline: <strong>28.7% better consistency</strong> than Sora 2 and <strong>9.4%</strong> over prior state-of-the-art HoloCine <cite data-video="GM70MDyl94E" data-chunk="0" data-quote="achieved 28.7% better consistency than the baseline model">benchmark</cite>, over stories of 20, 43, 45, 46 and 58 seconds with 10–15+ distinct scenes.</p>
+
+  <h3 id="memory-h31">Long-term memory: the memory bank between shots</h3>
+  <p id="memory-p2">The architectural choice is the lesson. Rather than train a giant model on long footage — an approach that "require[s] huge computational costs and often degrade[s] quality" <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="require huge computational costs and often degrade quality">rejected path</cite> — StoryMem keeps the single-shot model and adds state outside it.</p>
+  <ul>
+    <li id="memory-li1">It is "a Laura that works with existing video models," not a new model — so your backbone choice stays open <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="it's actually a Laura that works with existing video models">adapter</cite>.</li>
+    <li id="memory-li2">The bank "stores key frames from previously generated shots, characters, scenes, stylistic cues" — a compact visual-context store, not a text summary <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="stores key frames from previously generated shots">contents</cite>.</li>
+    <li id="memory-li3">Memory enters the diffusion model via <strong>latent concatenation</strong> plus a <strong>negative RoPE shift</strong>, which "tells the model that these memory frames are from the past, not part of the current sequence" <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="tells the model that these memory frames are from the past">mechanism</cite>. That positional tag is the whole trick: without it, past frames read as present ones.</li>
+    <li id="memory-li4">What goes <em>into</em> the bank is filtered twice: CLIP features for "semantic key frame selection to pick the most meaningful frames," and HPSv3 for "aesthetic filtering to make sure they're not storing blurry or lowquality frames" <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="clip features for semantic key frame selection">filtering</cite>. A memory bank is only as good as its admission policy.</li>
+    <li id="memory-li5">Training cost stayed small: LoRA fine-tuning on "just 400,000 5-second videos," adding 0.7&nbsp;B parameters to a 14&nbsp;B Wan 2.2 base <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="just 400,000 5-second videos">training</cite>. Short clips taught long-horizon memory.</li>
+  </ul>
+
+  <h3 id="memory-h32">Short-term memory: first/last frames and reference conditioning</h3>
+  <p id="memory-p3">Within and across adjacent shots, the corpus gives you three conditioning handles you already have in the H3 notebook — use these before reaching for StoryMem at all.</p>
+  <ul>
+    <li id="memory-li6">The image-to-video tab accepts first <em>and</em> last frames <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="use the image to video tab to feed in first and last frames">endpoints</cite>. Chaining shot N's last frame into shot N+1's first frame is the cheapest continuity you can buy.</li>
+      <li id="memory-li7">Fused Turbo and the official model expose reference-to-video: reference audio plus "up to three reference images to steer your generation" <cite data-video="rEjasJZq1t8" data-chunk="2" data-quote="up to three reference images to steer your generation">reference</cite> — a three-slot short-term identity anchor.</li>
+    <li id="memory-li8">StoryMem's own memory-to-video mode starts from an explicit initial memory: a 43-second lovers story began from "a male character and a female character with a garden background" <cite data-video="GM70MDyl94E" data-chunk="3" data-quote="you see the initial memory, a male character and a female character">seeding</cite>. You seed the bank; you don't hope it forms.</li>
+    <li id="memory-li9">Environment consistency comes free with character consistency: in the cafe story "the cafe environment stays identical" across cuts for the full 20 seconds <cite data-video="GM70MDyl94E" data-chunk="4" data-quote="the cafe environment stays identical">sets</cite>.</li>
+    <li id="memory-li10">Set expectations honestly. Consistency is "quite good. Not absolutely perfect, but very solid" <cite data-video="GM70MDyl94E" data-chunk="5" data-quote="Not absolutely perfect, but very solid">honest</cite>, and glitches do occur — one scene had a character "suddenly replace someone who was already standing" <cite data-video="GM70MDyl94E" data-chunk="1" data-quote="suddenly replaces someone who was already standing">glitch</cite>.</li>
+  </ul>
+
+  <h3 id="memory-h33">What StoryMem costs you to run</h3>
+  <ul>
+    <li id="memory-li11">Three weight sets on Hugging Face: text-to-video with Wan 2.2 14B, image-to-video, and memory-to-video — plus the backbone weights for Wan 2.2 14B itself <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="There are three different weights you can grab">weights</cite>.</li>
+    <li id="memory-li12">Unquantised, "you can't run the full model unless you have serious VRAM" <cite data-video="GM70MDyl94E" data-chunk="7" data-quote="you can't run the full model unless you have serious VRAM">VRAM wall</cite>.</li>
+    <li id="memory-li13">With an FP8 or FP4 quantised backbone, "you should be able to run this whole thing within 16&nbsp;GB of VRAM" <cite data-video="GM70MDyl94E" data-chunk="7" data-quote="you should be able to run this whole thing within 16 GB of VRAM">16GB</cite>. That is the number to design your hardware around.</li>
+    <li id="memory-li14">Why quantisation buys that much: dropping 32-bit weights to 8-bit means "75% of your memory is expected to be saved," applied after training purely to cut inference cost <cite data-video="OYvlznJ4IZQ" data-chunk="33" data-quote="75% of your memory is expected to be saved">quantisation</cite>.</li>
+    <li id="memory-li15"><span class="flag">Blocker</span> 16&nbsp;GB in <em>one</em> card is not what the free H3 notebook gives you — it gives 9.3&nbsp;GB on each of two cards with the model sharded across them <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="loading exactly 9.3 GB of VRM onto each card">sharded</cite>. The corpus never demonstrates StoryMem on a free dual-T4 notebook, and never shows a dual-GPU split for it. This is the hard boundary of your base case.</li>
+  </ul>
+</section>
+
+<section id="pivot">
+  <h2 id="pivot-h2">When to leave the free notebook — and where to go</h2>
+  <p id="pivot-p1">Four triggers, each with a destination the corpus actually supports. None of them arrives on day one: do stage one first, learn your prompts and framing at 480p, and only then spend money.</p>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="pivot-h31">Trigger: you need StoryMem's minute-long memory</h3>
+      <ul>
+        <li id="pivot-li1">Target one card with <strong>≥16&nbsp;GB VRAM</strong> plus an FP8/FP4 quantised Wan 2.2 14B backbone <cite data-video="GM70MDyl94E" data-chunk="7" data-quote="you should be able to run this whole thing within 16 GB of VRAM">spec</cite>.</li>
+        <li id="pivot-li2">Stay on Nvidia. "Nvidia GPUs have access to CUDA" and it is the path of least resistance; AMD's ROCm is a viable but less mature middle ground <cite data-video="v7qMjy_RxOs" data-chunk="15" data-quote="Nvidia GPUs have access to CUDA">CUDA</cite>.</li>
+        <li id="pivot-li3">Do not buy a Mac for this. "What I would definitely avoid is to fine-tune on Apple silicon" — missing ports, much slower than comparable Nvidia <cite data-video="v7qMjy_RxOs" data-chunk="17" data-quote="I would definitely avoid is to fine-tune on Apple silicon">Apple</cite>. The corpus disagrees with itself here: Raschka trains happily on a MacBook Air CPU in ~15 minutes for a tiny 355M text model <cite data-video="4yNswvhPWCQ" data-chunk="46" data-quote="it took about 15 minutes on this model">counterpoint</cite> — a different scale of problem entirely.</li>
+      </ul>
+    </div>
+    <div class="lever">
+      <h3 id="pivot-h32">Trigger: you want your own look, as a style LoRA</h3>
+      <ul>
+        <li id="pivot-li4">Exhaust the cheaper options first. The decision order is: better prompt, then RAG/context, then an agentic loop, and only fine-tune if all of those fail <cite data-video="v7qMjy_RxOs" data-chunk="8" data-quote="try a better prompt and evaluate whether the model performs well enough">order</cite>. For video, your "better prompt" rung includes the built-in style picker and stacking two styles.</li>
+        <li id="pivot-li5">LoRA trains roughly "half to 2% of the parameters" <cite data-video="v7qMjy_RxOs" data-chunk="4" data-quote="enough to train, say, half to 2% of the parameters">share</cite> by injecting "small trainable matrices into specific layers" while the base stays frozen <cite data-video="9LU90uI4WRU" data-chunk="1" data-quote="Laura injects small trainable matrices into specific layers and only train those">mechanism</cite>.</li>
+        <li id="pivot-li6">Starting hyperparameters from the corpus: rank 16 — "16 is a solid sweet spot. I always use it" <cite data-video="9LU90uI4WRU" data-chunk="4" data-quote="16 is a solid sweet spot. I always use it">rank</cite> — with alpha equal to rank <cite data-video="9LU90uI4WRU" data-chunk="10" data-quote="The rule of thumb is keep it equal to R">alpha</cite>, and a fixed seed for reproducibility <cite data-video="9LU90uI4WRU" data-chunk="9" data-quote="Seed is just 34 3407. This is a fixed random starting point">seed</cite>.</li>
+        <li id="pivot-li7">Wall-clock reference point: LoRA fine-tuning a medium model took "2 to 3 hours on a 5090" <cite data-video="v7qMjy_RxOs" data-chunk="14" data-quote="2 to 3 hours on a 5090">time</cite>. Note these figures are all from text-model fine-tunes; the corpus gives no video-LoRA training benchmarks.</li>
+        <li id="pivot-li8">"Always always inspect your data before training. Garbage in garbage out" <cite data-video="9LU90uI4WRU" data-chunk="5" data-quote="Always always inspect your data before training. Garbage in garbage out">data</cite> — and dedupe near-duplicates before you start <cite data-video="4yNswvhPWCQ" data-chunk="49" data-quote="found near duplicates removed them">dedupe</cite>.</li>
+      </ul>
+    </div>
+    <div class="lever">
+      <h3 id="pivot-h33">Trigger: you need unattended, scheduled batch rendering</h3>
+      <ul>
+        <li id="pivot-li9">A notebook is an interactive session, not a job runner. The one scheduled-automation example in the corpus carries the same caveat — automate the run on a clock, but the host machine has to stay on <cite data-video="oQdkFPhqaGk" data-chunk="15" data-quote="automate my bot so it runs Monday through Friday at 9:30 EST">schedule</cite>.</li>
+        <li id="pivot-li10">The mental model is unglamorous: "deploying is nothing more than pushing all that code to some kind of like cloud server," setting env vars, and running the same startup command you ran locally <cite data-video="qF5il_9IwME" data-chunk="180" data-quote="deploying is nothing more than pushing all that code to some kind of like cloud server">deploy</cite>.</li>
+        <li id="pivot-li11">Containerise. "The really industry standard way of doing this is first of all to use docker" <cite data-video="omU3zR3K7-U" data-chunk="13" data-quote="the really industry standard way of doing this doing this is first of all to use docker">Docker</cite>; Railway for a first deploy, with its own MCP server for agent-managed deployment <cite data-video="omU3zR3K7-U" data-chunk="14" data-quote="railway even got an MCP server to help you manage that">Railway</cite>.</li>
+        <li id="pivot-li12">For steady-state cost, a bare-metal provider beats hyperscalers at this scale — one team has run Hetzner for three years <cite data-video="omU3zR3K7-U" data-chunk="14" data-quote="We for the past 3 years have actually uh used HNER for this really great German company">Hetzner</cite> and calls it "literally 10 times cheaper" than Azure/AWS for their workload <cite data-video="Q679gH7oszg" data-chunk="37" data-quote="This is literally 10 times cheaper">10x</cite>.</li>
+        <li id="pivot-li13">Expect the memory crunch to move, not vanish: a heavy document-processing library on a small cloud instance produced exactly the failure you'd predict — "we were running out of memory" — and the fix was a lighter library, not a bigger box <cite data-video="E8zpgNPx8jE" data-chunk="104" data-quote="we were running out of memory">OOM</cite>.</li>
+      </ul>
+    </div>
+    <div class="lever">
+      <h3 id="pivot-h34">Trigger: clips need to become a channel</h3>
+      <ul>
+        <li id="pivot-li14">Pick the niche on revenue data, not taste: YouTube RPM ranges from "finance, that's $15 to $50 per 1,000 views" down to $3–8 for entertainment <cite data-video="IBYHgDC5L0c" data-chunk="1" data-quote="finance, that's $15 to $50 per 1,000 views">RPM</cite> — a 10× payout spread for identical effort.</li>
+        <li id="pivot-li15">Script to four rules: a hook in the first 30–60 seconds, an early open loop, visual tags on every scene for the editor, and "a soft CTA at the end so no smash that like energy" <cite data-video="IBYHgDC5L0c" data-chunk="6" data-quote="a soft CTA at the end so no smash that like energy">script</cite>. The visual tags are what turn a script into a shot list for H3.</li>
+        <li id="pivot-li16">H3 generates its own spoken audio, so voice cloning is optional — but if you want a consistent host voice, instant cloning "requires you to record a 10-second audio clip for minimum," with at least four clips recommended <cite data-video="IBYHgDC5L0c" data-chunk="7" data-quote="requires you to record a 10-second audio clip for minimum">voice</cite>.</li>
+        <li id="pivot-li17">Watch advertised-versus-real tool pricing. An AI-avatar tool advertises from $15/month but realistic use needs "something like the $100 a month plan" for enough API credits <cite data-video="IBYHgDC5L0c" data-chunk="14" data-quote="you're probably going to need something like the $100 a month plan">pricing</cite>; most other tools' free tiers cover "80% of what you need anyway" <cite data-video="IBYHgDC5L0c" data-chunk="3" data-quote="80% of what you need anyway">free tiers</cite>.</li>
+        <li id="pivot-li18">Cadence and patience: "post five to six times a week," with results typically visible after two to three months <cite data-video="IBYHgDC5L0c" data-chunk="16" data-quote="post five to six times a week">cadence</cite>. At 182 seconds per five-second 480p clip, do that arithmetic before you commit.</li>
+        <li id="pivot-li19">For assembly and post, ffmpeg is the workhorse — one workflow generates start/end frames, runs them through a video model, then "break[s] out the video into individual frames using ffmpeg" for frame-level control <cite data-video="r-MPiu0E4W4" data-chunk="110" data-quote="Break out the video into individual frames using ffmpeg">ffmpeg</cite>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="judging">
+  <h2 id="judging-h2">How to actually tell which variant is better</h2>
+  <p id="judging-p1">Every number in the <a href="#variants">Variants</a> section above is vendor-published. The creator's own method is the one worth copying: he "put together a dedicated comparison web page playing back my own pre-generated clips so we can watch all three four-step models side by side" <cite data-video="rEjasJZq1t8" data-chunk="3" data-quote="a dedicated comparison web page playing back my own pre-generated clips">harness</cite>, on his own prompts, "not cherrypicked marketing clips" <cite data-video="rEjasJZq1t8" data-chunk="1" data-quote="not cherrypicked marketing clips">discipline</cite>. That is a human eval harness. The eval videos in this corpus tell you how to make it rigorous.</p>
+  <ul>
+    <li id="judging-li1">Start in a spreadsheet, not a platform. "Spreadsheets are the ultimate sort of product to use for evaluating LLMs" before any automated judge exists <cite data-video="TL527yTpxlk" data-chunk="13" data-quote="spreadsheets are the ultimate sort of product to use for evaluating LLMs">spreadsheet</cite>.</li>
+    <li id="judging-li2">Write the rubric before you grade. Define explicit criteria and "define what's good or bad for any of these" — for video, that means naming your axes: distant-face integrity, text legibility, cut obedience, motion weight, colour <cite data-video="TL527yTpxlk" data-chunk="14" data-quote="define what's good or bad for any of these">rubric</cite>.</li>
+    <li id="judging-li3">Size the prompt set small at first: "somewhere between you know five at least usually it's around 10" golden examples, and only push past 100 when you're chasing production confidence <cite data-video="TL527yTpxlk" data-chunk="23" data-quote="somewhere between you know five at least usually it's around 10">size</cite>. At three minutes a render, ten prompts × four variants is already a two-hour batch.</li>
+    <li id="judging-li4">Grade it yourself. Outsourcing human eval entirely "never [proved] useful" — the person who owns the product has to be in the sheet <cite data-video="TL527yTpxlk" data-chunk="5" data-quote="never found it useful to just completely outsource the human evals">ownership</cite>. The strongest practitioner habit in the corpus is a principal engineer who "spends three hours per day looking at traces and data" <cite data-video="a3SMraZWNNs" data-chunk="34" data-quote="a principal engineer at Zapier who spends three hours per day looking at traces and data">habit</cite>.</li>
+    <li id="judging-li5">Repeat each prompt. For probabilistic long-horizon generation where one bad step derails the whole run, "people usually run it three to five times" to get a confidence interval <cite data-video="reISMhbZ2XE" data-chunk="40" data-quote="people usually run it three to five times">repeats</cite>. A single clip is an anecdote, not a result.</li>
+    <li id="judging-li6">Take notes while grading, then compress them: write short notes next to the bad outputs and "use the LM to summarize all my notes" into the top few things to fix <cite data-video="TL527yTpxlk" data-chunk="21" data-quote="use the LM to summarize all my notes">compress</cite>.</li>
+    <li id="judging-li7">Ship something early. "Ship early and shipped often," even to a tiny cohort — production usage is where you discover what you actually needed to test for <cite data-video="reISMhbZ2XE" data-chunk="10" data-quote="ship early and shipped often">ship</cite>.</li>
+    <li id="judging-li8">Calibrate your own expectations with the generic curve: a first build "typically gets to 70 or 80% accuracy. After iteration, you can usually get to 90%" <cite data-video="Q679gH7oszg" data-chunk="10" data-quote="Your first build typically gets to 70 or 80% accuracy. After iteration, you can usually get to 90%">curve</cite>. Your first batch of clips will not be your last.</li>
+    <li id="judging-li9">Keep the artefacts on disk. Generation metadata saves alongside each video <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="complete with full generation metadata saved right below the video player">metadata</cite>, and the file system is "arguably the most foundational harness primitive" for persistence across runs <cite data-video="NovNcsKX8AU" data-chunk="39" data-quote="the file system is arguably the most foundational harness primitive">files</cite>. A Kaggle session is ephemeral; your prompt/seed/clip ledger should not be.</li>
+  </ul>
+</section>
+
+<section id="prompts">
+  <h2 id="prompts-h2">Copy blocks</h2>
+  <p id="prompts-p1">Three artefacts to paste. The first is your stage-one checklist, the second is the shot-list format that makes multi-shot generation tractable, the third is the variant-comparison rubric.</p>
+
+  <figure class="prompt" id="prompts-figure1">
+    <div class="label">Stage one — free dual-T4 run <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre1">STAGE ONE CHECKLIST — MiniMax H3 on free dual T4
+
+BEFORE THE NOTEBOOK
+[ ] Kaggle account verified with a phone number
+    (unverified = GPU dropdown greyed out, notebook will not initialise)
+[ ] Accelerator set to T4 x 2  — NOT single T4
+[ ] Launched via the Kaggle badge from the notebook repo
+
+CELL 1  (~3 min)
+[ ] LoRA variable set deliberately: PDMD | DMAD | fused | official
+    PDMD    -> sharpest, best prompt/cut obedience      (default)
+    DMAD    -> smoothest motion, best 480p->720p gain
+    fused   -> ~10-15s faster per 5s render, t2v+i2v+r2v
+    official-> 8-step reference-to-video = control condition
+[ ] Run all; ~40 GB of weights download
+
+CELL 2  (~3 min)
+[ ] Confirm log: 9.3 GB VRAM loaded per card, ~21.9 GB system RAM
+[ ] Confirm the LoRA name shown at the top of the UI matches cell 1
+[ ] Open the CLOUDFLARE tunnel link — not the Gradio link
+
+FIRST RENDER
+[ ] 480p, 5 seconds  -> expect under 3 minutes (measured: 182 s)
+[ ] Close-up framing for anything with a face
+[ ] Split prompt fields: visual / spoken lines / language / SFX / music
+[ ] Save the generation metadata next to the clip
+
+FINALS
+[ ] Re-render the keepers at 540p or 720p
+[ ] Duration ceiling: 15 s. Style LoRAs: stack max 2.</pre>
+    <div class="note">Every number here is measured in <cite data-video="rEjasJZq1t8" data-chunk="13" data-quote="loading exactly 9.3 GB of VRM onto each card">rEjasJZq1t8@13</cite> and <cite data-video="rEjasJZq1t8" data-chunk="15" data-quote="wrap up the render in exactly 182 seconds">@15</cite> on one creator's run. Treat them as the expected shape, not a guarantee.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-figure2">
+    <div class="label">Shot list for memory-consistent multi-scene video <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre2">SHOT LIST — one row per generated shot, max 15 s each
+
+PROJECT MEMORY (seed this before shot 1)
+  character_refs:  up to 3 reference images, one per recurring character
+  environment_ref: 1 image per recurring set
+  style_lora:      max 2 stacked (realism | people | camera motion |
+                   360 orbit | weapon combat | spatial physics)
+  reference_audio: optional voice/ambience anchor
+
+PER SHOT
+  id:              S01
+  duration:        5 s        (ceiling 15 s)
+  framing:         CLOSE-UP unless no face is in frame
+                   -- wide + distant face at 480p = facial morphing
+  visual prompt:   <action, subject, camera move, lighting>
+  spoken lines:    &lt;dialogue only — own field, not the main prompt&gt;
+  language:        <speech language>
+  sfx prompt:      <diegetic sound>
+  music prompt:    <bed>
+  first frame:     <path | S00 last frame>   <- short-term continuity
+  last frame:      <path | leave blank>
+  seed:            <record it>
+  variant:         PDMD | DMAD | fused | official
+
+CUTS
+  Want a hard cut inside one shot? Use PDMD.
+  Fused Turbo fakes cuts by drifting the camera instead.
+
+CONTINUITY ESCALATION (cheapest first)
+  1. Chain shot N last frame -> shot N+1 first frame
+  2. Reference-to-video: reference audio + up to 3 reference images
+     (fused / official only)
+  3. StoryMem LoRA over a quantised Wan 2.2 14B backbone
+     -- needs ~16 GB VRAM on one card, FP8/FP4. Not the free notebook.</pre>
+    <div class="note">Fields map to the notebook UI described in <cite data-video="rEjasJZq1t8" data-chunk="14" data-quote="splitting them out gives you granular creative control">rEjasJZq1t8@14</cite>; the escalation ladder's top rung is StoryMem's documented requirement <cite data-video="GM70MDyl94E" data-chunk="7" data-quote="you should be able to run this whole thing within 16 GB of VRAM">GM70MDyl94E@7</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="prompts-figure3">
+    <div class="label">Variant comparison rubric <button type="button" data-copy>Copy</button></div>
+    <pre id="prompts-pre3">VARIANT BAKE-OFF — your prompts, your sheet, not their showcase page
+
+SETUP
+  prompts: 10 of your own, covering the known failure axes below
+  variants: PDMD, DMAD, fused, official  (official = control)
+  repeats: 3 per prompt per variant      (one clip is an anecdote)
+  resolution: 480p for the bake-off, 720p for the finalists only
+
+ONE ROW PER CLIP
+  prompt_id | variant | seed | resolution | render_seconds | notes
+  then score 1-5 on each axis:
+
+AXES  (define good/bad BEFORE you watch anything)
+  face_integrity_wide   distant faces intact in a wide frame?
+  face_integrity_close  eyes/mouth/skin resolved in a close-up?
+  text_legibility       prompted on-screen words correct and placed?
+  cut_obedience         did a prompted hard cut actually cut?
+  motion_weight         does impact read as mass, or does it collapse?
+  colour                vibrancy and grading without over-saturation
+  audio_sync            dialogue lip/timing match
+  prompt_adherence      did it build the scene you asked for?
+
+AFTER GRADING
+  - Write one short note beside every clip scoring <=2.
+  - Summarise all the notes into the top 3 fixes (framing? resolution?
+    variant? prompt structure?). Fix one at a time.
+  - Only then change the variant. Framing bugs masquerade as model bugs.</pre>
+    <div class="note">The method is lifted from the eval discipline in <cite data-video="TL527yTpxlk" data-chunk="14" data-quote="define what's good or bad for any of these">TL527yTpxlk@14</cite>, <cite data-video="TL527yTpxlk" data-chunk="21" data-quote="use the LM to summarize all my notes">@21</cite> and the repeat-count guidance in <cite data-video="reISMhbZ2XE" data-chunk="40" data-quote="people usually run it three to five times">reISMhbZ2XE@40</cite>. The axes are the failure modes this corpus actually observed.</div>
+  </figure>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h2">Sources</h2>
+  <p id="sources-p1">Twenty talks, read in full across five parallel extraction passes. Only two are about video generation; they carry the spine of this guide. The other eighteen supply the fine-tuning, eval, hardware and deployment practice that the two video talks assume.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Cluster 1 — Video models and fine-tuning methods</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=rEjasJZq1t8" target="_blank" rel="noopener"><cite data-video="rEjasJZq1t8">MiniMax H3 is Now Crazy Fast (Free Kaggle Notebook)</cite></a> <span class="tk">— AIQUEST. The spine of this guide: head-to-head tests of the three four-step distillation LoRAs, plus exact specs, timings and setup steps for the free dual-T4 notebook.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=GM70MDyl94E" target="_blank" rel="noopener"><cite data-video="GM70MDyl94E">Minute Long AI Story Videos With Consistent Characters? Meet StoryMem</cite></a> <span class="tk">— AIQUEST. The memory answer: the memory-bank mechanism, negative RoPE shift, CLIP + HPSv3 keyframe filtering, and the 16&nbsp;GB quantised VRAM figure.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=JfaLQqfXqPA" target="_blank" rel="noopener"><cite data-video="JfaLQqfXqPA">RFT, DPO, SFT: Fine-tuning with OpenAI — Ilan Bigio, OpenAI</cite></a> <span class="tk">— AI Engineer. Why LoRA underlies every tuning method, data-volume thresholds, and the "avoid fine-tuning until you need it" default.</span></li>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=Cu8kUBwLoTM" target="_blank" rel="noopener"><cite data-video="Cu8kUBwLoTM">Agentic AI made me an 100x engineer!</cite></a> <span class="tk">— Bits inside by René Rebe. The verification warning: an agent that faked a passing test by disabling the thing under test, plus real token-cost figures.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Cluster 2 — End-to-end builds, client delivery and evals</h3>
+    <ol>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=E8zpgNPx8jE" target="_blank" rel="noopener"><cite data-video="E8zpgNPx8jE">Build a Complete End-to-End GenAI Project in 3 Hours</cite></a> <span class="tk">— Dave Ebbelaar. The memory-exhaustion failure on a small cloud instance, and the architect-not-passenger stance toward coding agents.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=qF5il_9IwME" target="_blank" rel="noopener"><cite data-video="qF5il_9IwME">Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)</cite></a> <span class="tk">— Dave Ebbelaar. The deployment mental model, and the reminder that a demo one-shot is a day of real validation.</span></li>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=Q679gH7oszg" target="_blank" rel="noopener"><cite data-video="Q679gH7oszg">How I Build and Ship Custom AI Solutions for Clients</cite></a> <span class="tk">— Dave Ebbelaar. The 70–80%-then-90% accuracy curve, and the Hetzner-is-10×-cheaper deployment economics.</span></li>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=a3SMraZWNNs" target="_blank" rel="noopener"><cite data-video="a3SMraZWNNs">How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)</cite></a> <span class="tk">— Dave Ebbelaar. The three eval levels and the look-at-your-own-data habit this guide's bake-off rests on.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Cluster 3 — Stack, LoRA mechanics and concepts</h3>
+    <ol>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=omU3zR3K7-U" target="_blank" rel="noopener"><cite data-video="omU3zR3K7-U">The Best AI Automation Stack to Learn in 2026</cite></a> <span class="tk">— Dave Ebbelaar. Docker as the shipping default, Railway for a first deploy, Hetzner for production.</span></li>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=9LU90uI4WRU" target="_blank" rel="noopener"><cite data-video="9LU90uI4WRU">Fine-Tune Qwen3.5 0.8B Locally On Your Own Dataset - Full Easy Guide</cite></a> <span class="tk">— Fahd Mirza. Parameter-by-parameter LoRA settings — rank 16, alpha = rank, fixed seed, inspect-your-data-first.</span></li>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=OYvlznJ4IZQ" target="_blank" rel="noopener"><cite data-video="OYvlznJ4IZQ">20 AI Concepts Explained in 40 Minutes</cite></a> <span class="tk">— Gaurav Sen. Why distillation and quantisation exist, including the 75%-memory-saved figure for 32→8-bit.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=NovNcsKX8AU" target="_blank" rel="noopener"><cite data-video="NovNcsKX8AU">The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)</cite></a> <span class="tk">— GroundZero YT. The file system as foundational primitive, and harness-engineering-before-RL.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">Cluster 4 — Observability, judging and shipped pipelines</h3>
+    <ol>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=reISMhbZ2XE" target="_blank" rel="noopener"><cite data-video="reISMhbZ2XE">Building Better AI Agents: Artificial Intelligence Observability How To</cite></a> <span class="tk">— LangChain. Ship-early-and-often, and the three-to-five-repeats rule for probabilistic tasks.</span></li>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=TL527yTpxlk" target="_blank" rel="noopener"><cite data-video="TL527yTpxlk">Complete Beginner's Course on AI Evaluations in 50 Minutes (2025) | Aman Khan</cite></a> <span class="tk">— Peter Yang. Spreadsheet-first grading, rubric-before-judge, golden-set sizing, and don't outsource your own eval.</span></li>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=oQdkFPhqaGk" target="_blank" rel="noopener"><cite data-video="oQdkFPhqaGk">Complete Guide to building an AI Trading Bot with Claude for Beginners</cite></a> <span class="tk">— Ray Fu. The scheduled-automation pattern and its host-must-stay-on caveat.</span></li>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=IBYHgDC5L0c" target="_blank" rel="noopener"><cite data-video="IBYHgDC5L0c">How to make an $8K/month Youtube Channel with Claude</cite></a> <span class="tk">— Ray Fu. The channel layer: RPM-driven niche choice, four script rules, voice-clone minimums, real tool pricing, posting cadence.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h35">Cluster 5 — Fine-tuning hardware, design and post</h3>
+    <ol>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=v7qMjy_RxOs" target="_blank" rel="noopener"><cite data-video="v7qMjy_RxOs">The Honest Guide To Fine-Tuning Local AI In 2026</cite></a> <span class="tk">— Zen van Riel. The prompt→RAG→agentic→fine-tune decision order, CUDA-first hardware advice, avoid-Apple-Silicon, and the 2–3h-on-a-5090 figure.</span></li>
+      <li id="sources-li18"><a href="https://www.youtube.com/watch?v=4yNswvhPWCQ" target="_blank" rel="noopener"><cite data-video="4yNswvhPWCQ">Build an LLM from Scratch 7: Instruction Finetuning</cite></a> <span class="tk">— Sebastian Raschka. The Apple-Silicon counterpoint, deduplication before training, and the CPU-versus-A100 time gap.</span></li>
+      <li id="sources-li19"><a href="https://www.youtube.com/watch?v=r-MPiu0E4W4" target="_blank" rel="noopener"><cite data-video="r-MPiu0E4W4">Design with AI - Full Guide (Tools, Workflows, Design Systems)</cite></a> <span class="tk">— UI Collective. The ffmpeg frame-extraction post-production pattern, and token-cost reality for generative tooling.</span></li>
+      <li id="sources-li20"><a href="https://www.youtube.com/watch?v=lsgVRCJ4fko" target="_blank" rel="noopener"><cite data-video="lsgVRCJ4fko">Learn Design Systems: Figma Variables, Components, AI, and More</cite></a> <span class="tk">— UI Collective. Background on skills-based AI consistency — the 28%-out-of-the-box versus 80–85%-with-structure gap.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h2">Gaps — what this corpus cannot tell you</h2>
+  <p id="gaps-p1">These are the questions you asked, or will ask next, that twenty talks do not answer. Do not let anyone — including a model — fill them in for you.</p>
+  <ul>
+    <li id="gaps-li1"><strong>Google Colab specifically.</strong> The only Colab mention is that the creator's repo holds "notebooks for Collab and Kaggle" <cite data-video="rEjasJZq1t8" data-chunk="12" data-quote="keep all my updated notebooks for Collab and Kaggle">mention</cite>. Nothing in the corpus states Colab's free GPU allocation, runtime or disk limits, whether a free Colab session offers two GPUs, or whether the H3 notebook has ever been run there. Your single most load-bearing question is the one the corpus answers least.</li>
+    <li id="gaps-li2"><strong>Single-GPU MiniMax H3.</strong> Every figure assumes the transformer sharded across two T4s at 9.3&nbsp;GB each. No video shows a single-card configuration, a CPU-offload path, or a quantised H3 variant.</li>
+    <li id="gaps-li3"><strong>StoryMem's speed and runtime.</strong> The corpus gives parameter count, training-clip count and VRAM footprint, but no generation latency, no per-shot render time, and no end-to-end wall-clock for a one-minute story. You cannot budget a production schedule from it.</li>
+    <li id="gaps-li4"><strong>MiniMax H3 + StoryMem together.</strong> StoryMem is documented as a LoRA for Wan 2.2-based models <cite data-video="GM70MDyl94E" data-chunk="6" data-quote="You'll also need the backbone model weights">backbone</cite>. No video states whether it composes with MiniMax H3, or with H3's four-step distillation LoRAs. Treat "H3 plus StoryMem" as an untested hypothesis.</li>
+    <li id="gaps-li5"><strong>Independent benchmark validation.</strong> PDMD's leaderboard position, DMAD's 79% win rate and StoryMem's 28.7%/9.4% consistency gains are all vendor-published. The corpus contains no third-party replication of any of them.</li>
+    <li id="gaps-li6"><strong>Dollar costs for GPU rental.</strong> No video prices a cloud GPU hour, an RTX 5090, or the per-clip cost of rendering at scale. The nearest cost signals in the corpus are for text models and agentic coding, not video.</li>
+    <li id="gaps-li7"><strong>Training your own video LoRA.</strong> All LoRA hyperparameters, timings and dataset-size figures in this corpus come from text-model fine-tunes. No video shows building a video-model style LoRA, nor the data engineering that turns raw clips into training pairs.</li>
+    <li id="gaps-li8"><strong>What to do when an unattended render dies.</strong> No video covers recovery from a mid-render session crash, a timed-out tunnel, or a notebook killed by the free tier's limits — beyond noting that Gradio links crash and that scheduled jobs need the host to stay on.</li>
+    <li id="gaps-li9"><strong>Automated video evaluation.</strong> The eval material in this corpus is all text-output grading. Nothing covers an automated judge for video — no metric for character consistency, cut obedience, or face integrity that you could run instead of watching clips yourself.</li>
+    <li id="gaps-li10"><strong>Rights, licensing and platform policy.</strong> No video addresses the licensing terms of these open weights, the rules for monetising AI-generated video on YouTube, or disclosure requirements for synthetic voices and faces.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  Free-GPU Video Production · a field guide compiled from 20 source videos and 1,368 transcript chunks read in full, across 5 parallel extraction passes · compiled 2026-11-04. Every cite resolves to a numbered chunk in the corpus; claims without a cite are editorial connective tissue. No web sources were used.
+</div></footer>
+
+<script>
+document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var fig = btn.closest('figure');
+    var pre = fig && fig.querySelector('pre');
+    if (!pre) return;
+    var done = function () {
+      var prev = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = prev; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(pre.textContent).then(done, function () {});
+    } else {
+      var r = document.createRange();
+      r.selectNodeContents(pre);
+      var s = window.getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      s.removeAllRanges();
+    }
+  });
+});
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

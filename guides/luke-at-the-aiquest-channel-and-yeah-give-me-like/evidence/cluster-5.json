@@ -1,0 +1,609 @@
+{
+ "cluster": "cluster-5",
+ "videos": [
+  "4yNswvhPWCQ",
+  "r-MPiu0E4W4",
+  "lsgVRCJ4fko",
+  "v7qMjy_RxOs"
+ ],
+ "video_notes": [
+  {
+   "video_id": "4yNswvhPWCQ",
+   "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+   "contributed": "Code-level walkthrough of building an instruction-tuning dataset, collate function, padding/masking, and using a local LLM (Ollama) as an automated judge to score fine-tuned responses."
+  },
+  {
+   "video_id": "r-MPiu0E4W4",
+   "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+   "contributed": "Head-to-head token/time/quality comparison of AI design tools (Grok, Claude Fable/Opus, Codex, Figma AI, Google Stitch, cursor) and a staged workflow (iterate -> prototype/QA -> align to design system) using different tools for each stage."
+  },
+  {
+   "video_id": "lsgVRCJ4fko",
+   "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+   "contributed": "From-scratch teaching of design token tiering (brand/alias/mapped), component variant structure, and the specific skills-based workaround needed because AI cannot reliably sync with or build a design system on its own."
+  },
+  {
+   "video_id": "v7qMjy_RxOs",
+   "title": "The Honest Guide To Fine-Tuning Local AI In 2026",
+   "contributed": "A decision framework for when to fine-tune vs. prompt/RAG/agentic loops, plus concrete hardware, VRAM, and time benchmarks for local LoRA fine-tuning."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "instruction dataset size",
+   "claim": "The book's educational instruction-tuning dataset is deliberately tiny (1,100 examples) to keep training time short.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 4,
+   "quote": "1,100 training examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "instruction dataset size",
+   "claim": "Real-world instruction-tuned LLMs today are typically trained on far more data than a toy dataset — at least 100,000 examples is the modern norm.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 5,
+   "quote": "at least 100,000 training examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "train/val/test split",
+   "claim": "Split instruction data 85% train / 10% test / 5% validation.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 12,
+   "quote": "85% for training 10% for testing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "prompt templates",
+   "claim": "The Alpaca prompt template prepends fixed boilerplate (\"Below is an instruction that describes a task...\") before the instruction/input/response fields.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 8,
+   "quote": "below is an instruction that describes a task",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "prompt templates",
+   "claim": "Shorter prompt templates (e.g., Microsoft Phi's no-boilerplate, merged user/assistant style) cost less to run because every extra token requires another generation step.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 9,
+   "quote": "the shorter usually the better",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "batch padding",
+   "claim": "Pad each training batch to its own longest sequence rather than the whole dataset's longest, to avoid wasting compute on excess padding.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 14,
+   "quote": "pad only to the longest element in each batch",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "target construction",
+   "claim": "Target token IDs for instruction fine-tuning are the input IDs shifted by one position, the same mechanism used for pretraining's next-token prediction.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 15,
+   "quote": "target token IDs are the input token IDs shifted by one position",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "loss masking",
+   "claim": "Replace all but one padding token with the ignore-index -100 so padding doesn't affect the cross-entropy loss, while keeping exactly one end-of-text token so the model learns when to stop generating.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 16,
+   "quote": "replacing this excessive padding amount by uh mask tokens here minus 100",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "model size choice",
+   "claim": "The author first tried the smaller 124M-parameter GPT-2 for instruction tuning and the outputs were unusable, so he moved up to the 355M version.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 38,
+   "quote": "didn't do great so when I trained it the responses were really not good",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "training time",
+   "claim": "Fine-tuning the 355M model for 2 epochs took about 15 minutes on an M3 MacBook Air CPU in the author's own prior test run.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 46,
+   "quote": "it took about 15 minutes on this model",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "training time",
+   "claim": "The same fine-tuning job that takes 15-30 minutes on a MacBook Air CPU takes about 1 minute on an A100 GPU.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 47,
+   "quote": "if you're running this on a a100 GPU it just takes 1 minute",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Apple Silicon for training",
+   "claim": "Running this training on an Apple Silicon Mac via MPS is usable and faster than CPU, though results come out slightly different from CPU/GPU runs and vary by PyTorch version.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 32,
+   "quote": "you get slightly different numbers if you use the uh MPS device",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "epochs and overfitting",
+   "claim": "On this small instruction set, two training epochs beat one; going further starts to overfit.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 48,
+   "quote": "two was better than one",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge evaluation",
+   "claim": "Using a local 3B Llama model as an automated judge (0-100 scale) across 110 test responses produced an average score of about 51.6.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 83,
+   "quote": "average score of 51.6",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge evaluation",
+   "claim": "Even after instructing the judge model to \"respond with the integer number only,\" the small judge model sometimes still returns prose, breaking automatic score parsing for some responses (14 of 110 here).",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 82,
+   "quote": "could not convert score",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM-as-judge evaluation",
+   "claim": "A reader-contributed rubric-based prompt using a 1-5 scale (instead of 0-100) produced more consistent judge-model scores.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 78,
+   "quote": "using a scale from 1 to 5",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "alignment methods",
+   "claim": "DPO (direct preference optimization) is simpler to implement than RLHF because it skips training a separate reward model.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 53,
+   "quote": "doesn't use a separate reward model",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "alignment methods",
+   "claim": "Llama 3 moved to DPO for alignment, whereas the original InstructGPT/ChatGPT model and Llama 2 used RLHF.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 51,
+   "quote": "is based on Direct preference optimization",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning loss function",
+   "claim": "Instruction fine-tuning uses the exact same next-token-prediction loss as pretraining — only the structure of the training text changes.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 44,
+   "quote": "exactly the same loss that we used during pre-training",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "code reuse pitfall",
+   "claim": "Readers must reuse chapter 5's loss-loader code for instruction tuning, not chapter 6's, because chapter 6's version only computed loss on the last token rather than all tokens.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 45,
+   "quote": "was based on the last token",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "dataset cleaning",
+   "claim": "Bonus material shows deduplicating near-duplicate instruction examples before training.",
+   "video_id": "4yNswvhPWCQ",
+   "chunk_index": 49,
+   "quote": "found near duplicates removed them",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI design tool comparison",
+   "claim": "In a head-to-head dashboard-design test, the Grok platform returned a result in 2 minutes 19 seconds using 47,000 tokens.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 12,
+   "quote": "it used 47,000 tokens",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI design tool comparison",
+   "claim": "Claude \"Fable\" took 17 minutes and 128,000 tokens for a \"great\" quality dashboard; Claude Opus took 8 minutes and 75,000 tokens for only \"average\" quality on the same prompt.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 21,
+   "quote": "Claude Fable took 17 minutes and 128,000 tokens",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Figma AI limitations",
+   "claim": "Figma AI and Google Stitch perform poorly on custom one-off page prompts; they only produce good results when driven by the tools' own pre-built \"system prompts\" for full flows.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 20,
+   "quote": "not great at giving it individual screens",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "platform vs model",
+   "claim": "The same underlying model gives materially different output depending on which platform runs it (e.g., Grok's own platform vs. the Grok model accessed inside Cursor).",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 18,
+   "quote": "platform is not the same as model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "canvas tool token cost",
+   "claim": "A single initial dashboard generated inside the canvas tool paper.design (via Claude Opus + MCP) burned through 155,400 tokens, before any iteration.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 28,
+   "quote": "burned through 155.4,000 tokens",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "design inspiration tooling",
+   "claim": "Mobin MCP lets an AI agent search a repository of real app/screen designs on your behalf for mood-boarding and inspiration instead of manual browsing.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 33,
+   "quote": "a massive repository of every screen app flow",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "prototyping and QA",
+   "claim": "Google Anti-gravity is favored for prototyping because it can drive a browser, screenshot its own output, and pressure-test designs across breakpoints before handing control back.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 60,
+   "quote": "pressure test its own designs as it goes",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "design-system alignment tool choice",
+   "claim": "For connecting a generated design back to an existing design system, Claude handles large design-system context more accurately than Codex, in the presenter's experience.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 65,
+   "quote": "Claude is generally the best",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "AI skills structure",
+   "claim": "Build a separate AI skill per component grouping (form elements, navigation, data display, etc.) rather than one skill for the whole design system, to keep AI output structured.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 85,
+   "quote": "one skill for each component category",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI accessibility audits",
+   "claim": "Anthropic's built-in Figma accessibility-audit skill found 22 issues on a single screen (3 critical, 13 major, 6 minor), far more thorough than a generic prompt-based check.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 74,
+   "quote": "three critical, 13 major, and six minor",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI design system limits",
+   "claim": "AI cannot build a complete design system end-to-end — it can generate styles, variables, or a single button, but that's only a tiny fraction of an actual design system.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 92,
+   "quote": "it cannot help you build a true design system",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI-generated tokens pitfall",
+   "claim": "AI-generated Figma variable sets invent plausible-sounding names (e.g., \"surface subtle\" vs. \"surface sunken\") without usable rules for when each should apply.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 98,
+   "quote": "surface subtle versus surface sunken should be applied",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "multi-tool workflow",
+   "claim": "Recommended per-stage tool split: Anti-gravity for QA, Grok for fast iteration, Claude for design-system adherence — no single tool covers every stage well.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 115,
+   "quote": "anti-gravity for QA gro for iteration",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "scroll-driven interaction build",
+   "claim": "Build scroll-controlled hero animations by generating start/end frames, running them through a video model (Cling 3.0), then using ffmpeg to break the video into frames the app swaps as the user scrolls.",
+   "video_id": "r-MPiu0E4W4",
+   "chunk_index": 110,
+   "quote": "Break out the video into individual frames using ffmpeg",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "design token definition",
+   "claim": "A raw hex code or number isn't a design token until it's assigned a reusable semantic role (e.g., \"text-action\") applied across components.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 1,
+   "quote": "colors and attributes that are assigned to components",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "token tiering",
+   "claim": "A three-tiered token architecture — brand, alias, mapped collections — scales better for large design systems than a two-tier primitive/semantic setup.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 11,
+   "quote": "a brand collection, alias collection, mapped collection",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "color scale naming",
+   "claim": "Name 100-scale color tokens based on the actual math of your opacity steps (e.g., a clean 20% jump becomes the 200 value) rather than a naive 100/200/300 sequence.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 17,
+   "quote": "is to use the 100 scale",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "accessible base text size",
+   "claim": "Base paragraph text size should always be 16px — the accessibility \"golden rule\" minimum.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 61,
+   "quote": "your base paragraph size should always be 16",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "type scale generation",
+   "claim": "Generate a mathematically consistent type scale using a defined ratio (e.g., major third, 1.25) with line-height set to 1.2x font size.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 63,
+   "quote": "major third scale 1.25 ratio",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "type scale generation",
+   "claim": "Round generated type-scale values to the nearest multiple of 4 to avoid odd decimal sizes.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 62,
+   "quote": "round these to a multiple of four",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "component-specific tokens pitfall",
+   "claim": "Never create component-specific design tokens — route colors/values through shared tokens so one change propagates to every component using it.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 36,
+   "quote": "component specific tokens are always a bad idea",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI cannot define tokens",
+   "claim": "AI cannot define your design tokens for you — it doesn't know your brand, product context, or component constraints, so teams end up reverse-engineering AI-generated tokens.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 6,
+   "quote": "AI cannot do those things",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI component building limits",
+   "claim": "AI (including Figma agents) can build components but does it poorly — producing dividers instead of borders, missing variants, or non-reusable shapes.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 9,
+   "quote": "AI can build components. It is not great at building components",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "mobile design systems",
+   "claim": "Handle mobile layouts as a \"mobile optimized variant\" inside the same component rather than building an entirely separate mobile design system.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 204,
+   "quote": "a variant of the main components",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "layout variable naming",
+   "claim": "Name layout/spacing variables generically (e.g., small/large) rather than by use case (e.g., \"page margin\"), or you end up with duplicate variables for the same value.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 207,
+   "quote": "we want to avoid use case specific variables",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI design-system sync reliability",
+   "claim": "Out-of-the-box AI \"design system sync\" features (e.g., Claude Design's) correctly pick up only about 28% of a design system's components.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 214,
+   "quote": "it works like 28%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI design-system sync reliability",
+   "claim": "A skills-based workaround (separate skills per component group, tokens, and type styles) gets AI design-system adherence to about 80-85%, with manual polishing needed for the rest.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 214,
+   "quote": "then you have to go through and polish the remaining 15%",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "design system rules skill",
+   "claim": "Document explicit \"design system rules\" (e.g., when to use a checkbox vs. radio buttons) as an AI skill so AI follows team conventions instead of guessing.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 224,
+   "quote": "when should or shouldn't you use certain components",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "what belongs in a design system",
+   "claim": "A design element only belongs in the central design system if it's reused across multiple flows/pages; if reused only within one flow, keep it as a local component instead.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 210,
+   "quote": "if it's used more than once it should be a component",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "copying other companies' design systems",
+   "claim": "Don't copy published design systems like IBM Carbon or Shopify's verbatim — you inherit their unrelated technical debt and legacy constraints.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 235,
+   "quote": "absolutely do not do that",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "aligning with dev frameworks",
+   "claim": "Adopting an existing dev component framework (e.g., Radix) requires manually renaming Figma variants/properties to match the framework's docs one-to-one, or design and dev drift out of sync and incur technical debt.",
+   "video_id": "lsgVRCJ4fko",
+   "chunk_index": 231,
+   "quote": "align with what's inside of the radics documentation",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuned persona",
+   "claim": "A model explicitly fine-tuned with thinking disabled answers immediately in the author's own voice instead of generating a long reasoning preamble.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 2,
+   "quote": "explicitly fine-tuned it and disabled thinking",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "LoRA parameter efficiency",
+   "claim": "LoRA fine-tuning typically trains only about 0.5-2% of a model's parameters rather than the full model.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 4,
+   "quote": "enough to train, say, half to 2% of the parameters",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "decision order before fine-tuning",
+   "claim": "Decision order before fine-tuning: try a better prompt first, then add RAG, then try an agentic loop, and only fine-tune if all of those fail.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 8,
+   "quote": "try a better prompt and evaluate whether the model performs well enough",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "limits of prompting",
+   "claim": "Prompting away unwanted model behavior (e.g., stripping em dashes) \"only gets you so far\" — baked-in training behavior eventually resurfaces.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 7,
+   "quote": "prompting the model to remove M dashes",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "data volume needed",
+   "claim": "For an 8B-parameter model, expect to need roughly 1-2 million+ tokens of raw data before any dataset transformation into prompt/response pairs.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 10,
+   "quote": "a million, 2 million plus tokens of raw data",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LoRA training time",
+   "claim": "LoRA fine-tuning a medium-sized model took about 2-3 hours on an RTX 5090.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 14,
+   "quote": "2 to 3 hours on a 5090",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Apple Silicon for fine-tuning",
+   "claim": "Avoid fine-tuning on Apple Silicon — most models lack MLX ports, and even when they exist, fine-tuning runs much slower than on a comparable Nvidia GPU.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 17,
+   "quote": "I would definitely avoid is to fine-tune on Apple silicon",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "hardware vendor choice",
+   "claim": "Nvidia's CUDA ecosystem is the easiest path to fine-tuning hardware; AMD's ROCm is a viable but less mature \"middle ground.\"",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 15,
+   "quote": "Nvidia GPUs have access to CUDA",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "deployment export format",
+   "claim": "Export the final fine-tuned model to GGUF format so it can run in consumer tools like LM Studio and Ollama.",
+   "video_id": "v7qMjy_RxOs",
+   "chunk_index": 19,
+   "quote": "easier to run on platforms like LM Studio and Olama",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "Is Apple Silicon acceptable hardware for training/fine-tuning LLMs locally?",
+   "positions": [
+    {
+     "video_id": "4yNswvhPWCQ",
+     "chunk_index": 32,
+     "position": "Raschka trains his instruction-tuning example on an M1 MacBook Air CPU and says MPS (Apple's GPU) is a usable option that's faster than CPU, just with slightly different numeric results depending on PyTorch version."
+    },
+    {
+     "video_id": "v7qMjy_RxOs",
+     "chunk_index": 17,
+     "position": "Van Riel says to 'definitely avoid' fine-tuning on Apple Silicon at all, because most models lack MLX ports and fine-tuning is much slower there than on a comparable Nvidia GPU."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the videos show the actual data-engineering code that turns raw transcripts/logs into prompt-response pairs for fine-tuning (v7qMjy_RxOs promises this for a future video in the series but doesn't demonstrate it here).",
+  "No video gives dollar-cost figures for any of the AI design tools (Claude, Grok, Codex, paper.design, Figma AI) or for fine-tuning hardware (RTX 5090, cloud GPU rental) — only time and token/VRAM counts are given.",
+  "The corpus doesn't address how to combine fine-tuning, RAG, and an agentic loop together in one production system — v7qMjy_RxOs presents them as a sequential decision tree, not a combined architecture.",
+  "No video benchmarks AMD ROCm or Nvidia's unified-memory \"Spark\" machines for fine-tuning in practice, despite both being mentioned as emerging options.",
+  "Neither design video explains how to measure or validate that an AI-assisted design actually passes accessibility/contrast checks in code (only Figma-level accessibility audits are covered, not shipped frontend code).",
+  "Sebastian Raschka's evaluation section doesn't say how to pick a good small-model-as-judge prompt beyond pointing to a reader-contributed GitHub discussion; no systematic guidance on validating a judge model against human ratings is given.",
+  "None of the videos discuss team/organizational rollout of these workflows at scale (e.g., onboarding a whole design or ML team to these AI practices) beyond individual-contributor tips."
+ ],
+ "verified_claims": 60
+}

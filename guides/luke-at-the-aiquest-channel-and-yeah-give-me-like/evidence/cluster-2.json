@@ -1,0 +1,777 @@
+{
+ "cluster": "cluster-2",
+ "videos": [
+  "E8zpgNPx8jE",
+  "qF5il_9IwME",
+  "Q679gH7oszg",
+  "a3SMraZWNNs"
+ ],
+ "video_notes": [
+  {
+   "video_id": "E8zpgNPx8jE",
+   "title": "Build a Complete End-to-End GenAI Project in 3 Hours",
+   "contributed": "A single-person, single-repo AI news aggregator build (scrapers to database to agents to email to render deployment) that shows the moment-to-moment prompting and architectural-decision loop with a coding agent."
+  },
+  {
+   "video_id": "qF5il_9IwME",
+   "title": "Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)",
+   "contributed": "A monorepo full-stack RAG build (FastAPI + React + Supabase + pgvector) for a hypothetical client, showing agents.md-driven setup, hybrid retrieval with agentic tool loops, grounding/citation validators, and a Railway deployment."
+  },
+  {
+   "video_id": "Q679gH7oszg",
+   "title": "How I Build and Ship Custom AI Solutions for Clients",
+   "contributed": "The agency-level process: discovery, scoping into PoC vs MVP, proposal structure, two-week sprint cadence and pricing, the standardized Genai Launchpad stack, and the Hetzner/Caddy/Langfuse/Sentry deployment and monitoring setup."
+  },
+  {
+   "video_id": "a3SMraZWNNs",
+   "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+   "contributed": "A dedicated framework for the three levels of LLM evals (unit tests, human+LLM-judge, A/B testing), the analyze-measure-improve loop, and the human/LLM alignment process with concrete agreement-score tooling."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Brain dump before building",
+   "claim": "Start a new build by speech-to-texting a free-form brain dump of the idea and feeding that raw transcript into an AI tool's plan mode before writing any code.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 7,
+   "quote": "I want to use some kind of speech to text tool in order to just do a brain dump",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Be the architect, not the passenger",
+   "claim": "Give the AI agent specific technical constraints up front (exact DB, ORM, language, folder layout) during planning so the agent's plan reflects your architecture rather than its own default.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 10,
+   "quote": "we are the architect",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Reference docs over letting AI guess",
+   "claim": "When a library behaves unexpectedly (e.g. YouTube Transcript API's fetch vs get_transcript), stop and pull the quick-start docs rather than letting the agent keep guessing at the API.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 19,
+   "quote": "always try and reference some kind of like quick start documentation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Avoid Python filename/package collisions",
+   "claim": "Never name a project file the same as a package you import (e.g. a file called openai.py in a module that imports the openai package) — it causes confusing import errors.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 27,
+   "quote": "don't accidentally have a file name in Python that is similar to a package that you're importing",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Prefer RSS/official feeds over scraping",
+   "claim": "Before building a custom scraper, check for an RSS feed (OpenAI has one; a third party maintains unofficial feeds for sites like Anthropic that lack one) — RSS is far more reliable than scraping a JS-heavy or Cloudflare-protected page.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 26,
+   "quote": "turns out there is an RSS feed for OpenAI as well",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Scraping blocked by Cloudflare",
+   "claim": "OpenAI's site actively blocks scraping attempts via Cloudflare, so full-page content extraction (even with Docling) fails there and you must fall back to RSS title/description only.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 33,
+   "quote": "OpenAI is really tricky with scraping any information from their website",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Two-stage scrape-then-process pipeline",
+   "claim": "Separate pipelines into a fast metadata-only ingestion stage (store title/URL/ID quickly) and a slower content-processing stage (transcript/markdown extraction) that runs afterward or in background — don't block scraping on expensive extraction.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 40,
+   "quote": "store metadata no transfer fast get all the items and then process",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Use the launchpad boilerplate",
+   "claim": "Data Lumina's commercial 'Genai Launchpad' is the production boilerplate used for all client builds, handling infra setup, agent definitions, and Docker — sold separately from the free YouTube content.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 43,
+   "quote": "this is actually a product that we offer",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Primary keys to dedupe scraped data",
+   "claim": "Use natural IDs (e.g. video ID) as database primary keys so re-running a scraper never creates duplicate rows; decide explicitly whether re-ingestion should skip or update existing rows.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 52,
+   "quote": "there's no duplicate data",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Skip YouTube Shorts in scrapers",
+   "claim": "Explicitly filter out YouTube Shorts in a channel scraper — they are usually clips of longer videos and the transcript API is unreliable for them.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 56,
+   "quote": "Can you actually make it so that shorts are skipped entirely?",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Residential proxy for YouTube transcript scraping at scale",
+   "claim": "YouTube will temporarily IP-block high-volume use of its internal transcript API; use a rotating residential proxy service (e.g. Webshare, ~$4-5/month cheapest plan) configured on the YouTube Transcript API client to avoid blocks in production.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 64,
+   "quote": "YouTube will temporarily IP block you",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Push back on AI architecture suggestions",
+   "claim": "Don't blindly accept an agent-proposed schema change (e.g. a 'message_citations' table) — ask the agent to justify why the table/field is needed before approving it.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 69,
+   "quote": "a little bit of a of a push back",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": ".env file leaked into git",
+   "claim": "If you accidentally commit a .env file before adding it to .gitignore, git rm --cached (or AI-assisted equivalent) is needed to stop tracking it without deleting the local file — gitignore alone won't untrack an already-committed file.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 78,
+   "quote": "I accidentally pushed my file to GitHub",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Simplest free email sending",
+   "claim": "For personal/portfolio projects, send email via Python's smtplib with a Gmail account and an app password — no paid service or external account needed; for client/production work use a dedicated service like Resend instead.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 81,
+   "quote": "Python has an SMTP lip",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "Docling is memory-heavy in production",
+   "claim": "Docling loads local OCR-capable models and can exhaust memory on small cloud instances; swapping to the lighter Rust-based html-to-markdown library (lower fidelity but far less memory) fixed an out-of-memory crash on a Render deployment.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 104,
+   "quote": "we were running out of memory",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Manually create tables on first deploy",
+   "claim": "If a cron/scheduled job fails because tables don't exist yet on a fresh production database, add a table-existence check inside the daily runner that creates tables on first run, instead of relying solely on a deploy-time migration step.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 106,
+   "quote": "we manually create them in the daily runner",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Explicit local/production environment switch",
+   "claim": "Build an explicit ENVIRONMENT=local|production setting (not just inferring from whether a DATABASE_URL happens to contain 'render') so migrations and scripts never accidentally hit the wrong database.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 120,
+   "quote": "it automatically assumes that this is the production environment",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Refactor to base classes once duplication appears",
+   "claim": "Once two or more scrapers (or repository functions) share ~80% identical logic, refactor into a base class with inheritance (BaseScraper → OpenAIScraper/AnthropicScraper) rather than keep copy-pasting, and introduce a scraper registry pattern so adding a new source doesn't touch the runner.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 125,
+   "quote": "the entropic scraper and the openi scraper share 80% identical RSS parsing logic",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Whitelist IPs for production databases",
+   "claim": "A freshly deployed database defaults to being publicly reachable (0.0.0.0/0 inbound); use a dedicated static IP (e.g. via an N-layer/VPN gateway) to whitelist only your team's connections at the database/firewall level.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 141,
+   "quote": "right now it's set to like 00 0",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "AI-assisted coding vs vibe coding",
+   "claim": "The distinguishing feature of 'AI-assisted/agentic coding' versus 'vibe coding' is staying in control of architecture decisions while letting AI handle execution — not avoiding AI, and not blindly accepting everything it outputs.",
+   "video_id": "E8zpgNPx8jE",
+   "chunk_index": 142,
+   "quote": "this is not vibe coding, this is AI assisted coding, this is agentic coding",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Mono-repo for coding agents",
+   "claim": "Put frontend and backend in a single mono-repo (not separate repos) when using coding agents, because the agent can reason over the full context across both layers at once.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 4,
+   "quote": "This works super well when you are using coding agents because they can reason over the entire context",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Why internal tools beat ChatGPT for enterprise",
+   "claim": "Enterprises reject plugging proprietary documents into off-the-shelf tools like ChatGPT/Copilot for two reasons: data privacy/compliance (needs a whitelisted endpoint via AWS Bedrock/Azure) and the need for a customization layer so 40 analysts get standardized, not generic, output.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 12,
+   "quote": "it is simply just a nogo to let everyone pretty much use CHBT",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Citations as a trust contract",
+   "claim": "For high-stakes document Q&A, every claim must cite the specific filing and page, and the application must treat the analyst as still responsible for fact-checking — the tool accelerates intake, it doesn't replace verification.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 10,
+   "quote": "cites the specific file in a specific page",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "agents.md as injected system context",
+   "claim": "Maintain an agents.md file (top-level plus one per major folder like frontend/backend) that is auto-injected into every coding-agent session; for Claude Code, rename it to CLAUDE.md to get the same effect.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 18,
+   "quote": "turn this into a clot.md file",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "Guard against npm supply-chain attacks",
+   "claim": "Protect dependencies from supply-chain attacks by setting a minimum-release-age in .npmrc (pnpm) so packages younger than 7 days can't be installed, and use exact version bounds with 'exclude newer than 7 days' in pyproject.toml for Python.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 22,
+   "quote": "a minimum release age so that we cannot import literally we cannot import packages that are younger than 7 days",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Small bite-sized prompts beat giant plans",
+   "claim": "When you deeply understand the problem, incremental bite-sized prompts with review checkpoints are faster than one giant plan executed unattended for hours — the big-plan approach works but risks losing codebase understanding.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 19,
+   "quote": "it's usually way faster to work in small inter incremental bite-size prompts",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Postgres connection string quoting",
+   "claim": "Special characters in a database password (#, %, backtick) can break environment-variable parsing in a connection string; wrap the DATABASE_URL in quotes in the .env file to fix it, or reset to a password without special characters.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 36,
+   "quote": "use the quotes around it",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "pydantic-settings for config validation",
+   "claim": "Use pydantic-settings (BaseSettings) to load environment variables because it raises a clear validation error naming the specific missing required field, which is far easier to debug than silent failures — especially valuable during deployment.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 46,
+   "quote": "we got a validation error and what there is a particular required field that is missing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "psycopg driver version mismatch",
+   "claim": "A SQLAlchemy connection using psycopg (v3) vs psycopg2 requires rewriting the DATABASE_URL scheme (adding the driver suffix); without it you get import/connection errors that look unrelated to the actual cause.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 56,
+   "quote": "if you have Psychob G without the two after it, it uses version three",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Disable public signup for internal tools",
+   "claim": "For an internal-only tool built on Supabase auth, disable 'allow new users to sign up' and manually create accounts with auto-confirm — otherwise anyone who finds the deployed URL can self-register.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 71,
+   "quote": "I'm going to disable allow new users to sign up",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Keep ingestion scripts out of the app folder",
+   "claim": "One-time/local data-processing scripts (HTML-to-markdown conversion, manual DB seeding) that the deployed app doesn't depend on should live in a separate data/ingest folder outside the application code, as a matter of deployment hygiene.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 85,
+   "quote": "keep it out of your like application folder because it's code essentially that your app doesn't rely on",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Docling hierarchical/hybrid chunker",
+   "claim": "Docling's hybrid/hierarchical chunker respects document headers and structure instead of naive fixed-token splitting, producing better chunk boundaries for RAG — but struggles with tables, which can still come out malformed.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 93,
+   "quote": "it applies tokenizationaw aware refinements on top of the document based hierarchical chunking",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Postgres full-text search needs keyword extraction",
+   "claim": "Feeding a user's full natural-language question directly into Postgres full-text search almost never matches; first run an LLM call to extract 3-5 meaningful keywords (and strip filler/stopwords) before the full-text query.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 117,
+   "quote": "if you do a full user query there will almost never be a match",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Agentic retrieval with tool-calling loop",
+   "claim": "Instead of a naive 'retrieve once, stuff into prompt' RAG pipeline, build an agent with tools (search_filings, read_chunk, read_surrounding_chunks) so it can decide it needs more context and go back to the database — trading speed/cost for better grounding.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 126,
+   "quote": "it can search filings, it can read uh chunks, it can read a chunk and it can also read surrounding chunks",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Separate grounding validator pass",
+   "claim": "After the agent produces an answer, run a second validator step that re-checks every citation against the actually-retrieved chunks and rejects any chunk ID that was never retrieved, forcing a hard pass/fail before returning the answer to the user.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 142,
+   "quote": "rejects chunks ideas that were never retrieved",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Keep Docling out of main dependencies",
+   "claim": "Docling is heavy enough that including it in main (not dev/optional) dependencies can make deployment fail on constrained compute (low RAM/CPU); keep it in an optional/dev dependency group.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 174,
+   "quote": "dockling can is a quite an extensive library",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Custom HTML table extractor beats generic parser",
+   "claim": "For structured source documents (SEC filings) with many tables, a dedicated custom HTML table extractor produced correctly rendered markdown tables where Docling's general-purpose conversion mangled them — worth the extra build step for citation-critical UIs.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 172,
+   "quote": "it's better to just rely on HTML parsing in order to get this out",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Query classification to control cost/latency",
+   "claim": "Running every user query (even 'hi, what can you help with') through the full agentic search pipeline wastes time and model cost; add a query-classification step to route simple/greeting/follow-up questions to a cheaper direct answer instead of the full retrieval loop.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 196,
+   "quote": "query classification. So we check okay what kind of question is this?",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Per-query cost of frontier-model RAG",
+   "claim": "Running a sophisticated multi-call agentic RAG pipeline on a frontier model (GPT-5.5) can cost roughly $1-2 per query, which must be factored into the business case before choosing model tier.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 177,
+   "quote": "this can easily become like one one to two $1 probably something like that per query",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Deployment is push code + run startup command",
+   "claim": "The universal mental model for deployment, regardless of platform (Render, Railway, Hetzner), is: push your code to a rented always-on server, set environment variables, and run the same startup command you used locally.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 180,
+   "quote": "deploying is nothing more than pushing all that code to some kind of like cloud server",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Don't let an MCP server hold production credentials",
+   "claim": "Letting a deployment MCP server (e.g. Railway's) handle API keys and infra setup directly is explicitly not how production client work is done — it's acceptable in a demo project you plan to tear down, not for real credentials.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 162,
+   "quote": "this is not something that I would do on a client project",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "First version is only the beginning",
+   "claim": "A single purple 'phase' block that an agent appears to one-shot in a tutorial would, in a real client project, take at least a full day to properly validate (prompts, tool outputs, edge cases) — the speed of generation does not equal the speed of a production-ready result.",
+   "video_id": "qF5il_9IwME",
+   "chunk_index": 190,
+   "quote": "you'll spend at least a day on any one of those purple building blocks",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Discovery call separates real ROI from hype",
+   "claim": "In discovery calls, actively push back on client-proposed use cases biased toward 'we think AI can do this' — dig for the simplest high-impact automation (sometimes simple n8n/Zapier integrations, no LLM needed) rather than accepting the client's framing.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 4,
+   "quote": "always pick the quick wins over the moonshots",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Discovery red flags",
+   "claim": "Red flags to screen out during discovery: motivation is only 'everyone's doing AI,' no clear success criteria exist, and the client expects 100% accuracy from day one.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 6,
+   "quote": "some clients expect magic from day one",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "First-iteration accuracy benchmark",
+   "claim": "A first LLM-based build typically reaches 70-80% accuracy; iteration usually gets you to about 90% — clients used to deterministic software need to be explicitly educated that this is the normal curve, not a failure.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 10,
+   "quote": "Your first build typically gets to 70 or 80% accuracy. After iteration, you can usually get to 90%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Human escalation vs human-in-the-loop",
+   "claim": "Distinguish human escalation (system routes only the ~20% of cases it can't confidently handle to a person) from human-in-the-loop (every output requires human approval before it goes live) — pick based on error-impact tolerance for the use case.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 9,
+   "quote": "we identify the 80% of the tickets that we can handle and we escalate 20%",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Proof of concept vs MVP distinction",
+   "claim": "Frame first client deliverables explicitly as either a Proof of Concept (local demo proving the KPI is achievable, not yet production value) or an MVP (minimum but real, deployable, value-adding product) — be upfront about which one you're billing for, since clients often assume a PoC is already usable.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 15,
+   "quote": "a proof of concept is usually not something that adds value",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Proposal structure",
+   "claim": "A client proposal should contain, in order: problem statement in the client's own words, proposed solution with scope boundaries, technical approach, what's included/excluded, success criteria and measurement, then timeline and pricing.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 16,
+   "quote": "we start with the pro the problem statement",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Two-week sprint pricing and cadence",
+   "claim": "Price custom AI dev work in two-week sprints at 10k-20k EUR per sprint; structure each sprint as day 1-2 architecture setup, day 3-8 core development/integration, final days testing/polish/demo.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 18,
+   "quote": "we'll price that between 10k to 20k in euros per sprint",
+   "kind": "metric",
+   "verified": false
+  },
+  {
+   "theme": "Always quote ongoing costs, not just build cost",
+   "claim": "Beginners often forget to quote ongoing infrastructure and LLM API costs alongside the upfront build price — always give a rough estimate of recurring costs in the proposal, even though exact prediction is hard.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 19,
+   "quote": "beginners often forget where say like hey I am going to build this chatbot for you 5k",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Async-first client communication",
+   "claim": "Push for async updates instead of recurring standups with clients to minimize meeting overhead; only hold a kickoff call at sprint start and a demo call at sprint end.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 20,
+   "quote": "we always push for async updates. We don't want to do standups",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Expect multi-week client feedback gaps",
+   "claim": "Real sprint cadence is rarely back-to-back; plan for client-side delays of 2-8 weeks between sprints due to internal testing and reprioritization, and mitigate cash-flow risk by overbooking slightly with a pipeline of other clients.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 23,
+   "quote": "this can take anywhere from two sometimes oh sorry sometimes even like up to eight weeks",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Standardized stack via Genai Launchpad",
+   "claim": "Standardize every client backend on one framework (FastAPI, Celery, Postgres, Redis, self-hosted Supabase, Pydantic AI) via a forkable boilerplate repo so every project has identical folder structure, enabling fast context-switching between concurrent client projects.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 25,
+   "quote": "same stack, same patterns, same deployment process every single project",
+   "kind": "tool",
+   "verified": false
+  },
+  {
+   "theme": "Azure OpenAI for compliance despite friction",
+   "claim": "Azure OpenAI is used for most client LLM calls specifically to satisfy enterprise data-compliance requirements, despite disliking its frequently changing interface and restrictive quotas.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 27,
+   "quote": "Not the happiest with it. It's kind of like annoying",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Pull raw production events for eval tests",
+   "claim": "Build unit/eval tests from real raw JSON payloads pulled from the production database rather than only synthetic dummy data, so evals reflect actual failure patterns.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 28,
+   "quote": "later we constantly pull raw records from the database",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Skills built from recurring debugging tasks",
+   "claim": "Turn repeated support/debug workflows (pull a specific ticket from the DB, assess what went wrong) into a Claude Code skill (SKILL.md) once you catch yourself doing the same task manually more than two or three times.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 29,
+   "quote": "we've been creating actual skills",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Vanilla Claude Code, 1-3 sessions at a time",
+   "claim": "Run Claude Code (currently Opus 4.6) in plan-mode-then-execute with only one to three concurrent sessions on the same branch — avoid 10-agent worktree setups because they become impossible to oversee.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 33,
+   "quote": "I usually like to work with one or three sessions at a time",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Prime fresh sessions with explicit pointers",
+   "claim": "Every coding-agent session starts with zero codebase knowledge; prime it by naming the exact docs/files to read first, otherwise it reindexes the whole codebase and burns half the context window before useful work starts.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 35,
+   "quote": "it's going to reindex your codebase and it is for itself going to think and try to search for everything",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Hetzner bare-metal + Caddy deploy pattern",
+   "claim": "Client deployments run on a cheap Hetzner bare-metal VM with Docker Compose, pulled via a GitHub-Action-triggered pull-based CI/CD script, fronted by Caddy as a reverse proxy for automatic HTTPS — roughly 10x cheaper than Azure/AWS for this team's scale.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 37,
+   "quote": "This is literally 10 times cheaper",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Block-by-default network security",
+   "claim": "Deploy with a default-deny firewall (only ports 80/443 open), use a dedicated static VPN IP for team and database access, and whitelist only services that need it — never leave a database reachable from any IP.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 38,
+   "quote": "you want to like block everything by default and then whitelist services",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Langfuse + Sentry as the two monitoring tools",
+   "claim": "Use Langfuse for LLM trace monitoring (prompt-level debugging, every workflow step automatically tracked) and Sentry for application error tracking piped to a Slack channel — together they are described as the 'two secret weapons' for production AI observability.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 40,
+   "quote": "we have two secret weapons for this",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Copy Sentry error as markdown into the agent",
+   "claim": "Sentry lets you copy an error event as markdown; pasting that directly into a coding agent (e.g. Claude Code) is often enough for it to diagnose and fix the bug on the spot.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 42,
+   "quote": "you chug it into cloud code and it fixes fixes it on the spot",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Keep pricing flat, use speed to increase margin",
+   "claim": "Rather than racing to the bottom on price as AI makes delivery faster, keep sprint pricing the same and use the extra speed to take on more client requests/features at the same cost — described as a 'golden era' before the market recalibrates.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 44,
+   "quote": "we pretty much keep the pricing the same",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "One big client can hit six figures",
+   "claim": "A single large ongoing client contract can put a solo freelancer at the six-figure revenue mark — the long-term play is becoming a client's recurring 'AI development partner' rather than chasing many one-off projects.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 47,
+   "quote": "that could like that could put you at a six-figure mark",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Never hit a scaling ceiling on single-VM + Celery",
+   "claim": "The team has never needed Kubernetes across years of client projects — a single VM with Celery/Redis as a task queue scales further than most people assume before container orchestration becomes necessary.",
+   "video_id": "Q679gH7oszg",
+   "chunk_index": 49,
+   "quote": "we've never hit the limit of where where this kind of like breaks",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI project failure rates",
+   "claim": "Gartner projects 40% of agentic AI projects will be cancelled by 2027; MIT reports 95% of generative AI pilots are failing — cited as directional evidence even if the exact numbers are uncertain.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 0,
+   "quote": "by 2027, 40% of all agent AI projects is expected to be cancelled",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Three core challenges in LLM development",
+   "claim": "LLM systems face three compounding challenges: not understanding what data flows through the system at scale, a gap between what you can specify in prompts/code and what 'good' looks like, and inconsistent behavior where small wording changes produce very different outputs.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 4,
+   "quote": "the three core challenges in LLM development",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Three levels of LLM evals",
+   "claim": "Evals exist at three escalating levels: Level 1 unit tests (fast, cheap, run on every change), Level 2 human+LLM-judge evaluation (run weekly/bi-weekly, needs humans in the loop), Level 3 A/B testing (run on major releases, measures real business impact) — cost and effort increase at each level.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 11,
+   "quote": "the cost and effort increase with each level",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Analyze-measure-improve eval cycle",
+   "claim": "Apply an iterative analyze (collect/categorize failure modes) → measure (turn insights into quantitative boolean/scored metrics) → improve (refine prompts, models, architecture) cycle, borrowed from Hamel Husain and Shankar's application-centric AI evals framework.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 10,
+   "quote": "analyze, measure, improve life cycle",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "Unit tests via plain Python asserts on structured output",
+   "claim": "Build Level 1 LLM unit tests as simple Python asserts over structured (pydantic) output fields (category in allowed set, confidence is a float between 0-1, response length > N) run against stored raw JSON events in an evals/events folder.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 14,
+   "quote": "we typically put these in the the eels folder and then we have some events in there",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "LLM-as-judge must use the most powerful model",
+   "claim": "When moving to Level 2 LLM-as-a-judge evaluation, use the most powerful model you can afford (not cheap/mini models) and require detailed critiques explaining the reasoning, not just a bare score.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 18,
+   "quote": "you uh you typically want to use the most powerful model that you can afford",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Judge must be aligned to human judgment first",
+   "claim": "An LLM judge is worthless until validated against human domain-expert judgments on the same data — the process is: collect model predictions, generate model critiques, get human evaluations on the same data, compare, iterate on the judge prompt, repeat until agreement is sufficient.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 20,
+   "quote": "It must be aligned with human judgment",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Spreadsheet-based human/LLM agreement tracking",
+   "claim": "Track human-vs-LLM-judge agreement in a simple spreadsheet (10-100 examples: input, output, model critique, human critique, match=1/0) and compute an agreement score (e.g. 70%) that you then iterate up by refining the judge prompt, including via meta-prompting with a powerful model.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 25,
+   "quote": "there is a 70% agreement score",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AB testing is the most expensive and trickiest eval level",
+   "claim": "Level 3 A/B testing (comparing prompts/models/workflows against real user outcomes like satisfaction, task completion rate, time to resolution) requires enough user volume to be worthwhile and the agency itself hasn't fully automated it yet — they still mostly do small manual prompt A/B comparisons.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 30,
+   "quote": "we at data lumna we haven't even gotten to the point with our applications yet where we really have automated ab testing",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Reference-based vs reference-free metrics",
+   "claim": "Reference-based metrics (exact match, semantic similarity, code execution, SQL correctness) apply when you know the golden answer and are easier to automate; reference-free metrics (tone, length, hallucination, safety/toxicity) are needed when multiple valid outputs exist and require scored rubrics.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 31,
+   "quote": "are reference based metrics",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "Four common eval mistakes",
+   "claim": "Avoid four common eval mistakes: tool-first thinking (buying a new vector DB/model/eval platform before understanding the problem), generic metrics obsession (meaningless averaged scores like 'helpfulness 4.2'), avoiding looking at your own data, and shipping an unaligned LLM judge without human validation.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 33,
+   "quote": "tool first thinking",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Engineers who look at data outperform those who don't",
+   "claim": "A principal engineer at Zapier reportedly spends three hours per day looking at traces and raw data — manual inspection of real data has the highest value-to-effort ratio in AI engineering and should never be skipped.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 34,
+   "quote": "a principal engineer at Zapier who spends three hours per day looking at traces and data",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Signs you're succeeding vs struggling with evals",
+   "claim": "You're succeeding at an evaluation-driven workflow when you can deploy changes confidently, failures are caught before users see them, and improvements compound; you're struggling when fixes break other things, you're surprised by user complaints, and progress feels like trial and error.",
+   "video_id": "a3SMraZWNNs",
+   "chunk_index": 36,
+   "quote": "You'll know you'll succeeding when you can deploy changes confidently",
+   "kind": "principle",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much weight to give big upfront AI agent plans vs. small incremental prompts",
+   "positions": [
+    {
+     "video_id": "qF5il_9IwME",
+     "chunk_index": 19,
+     "position": "Prefers small, bite-sized incremental prompts with frequent review checkpoints over letting an agent run unattended on a huge plan for an hour, to stay oriented in the codebase."
+    },
+    {
+     "video_id": "E8zpgNPx8jE",
+     "chunk_index": 68,
+     "position": "Repeatedly hands the agent large multi-step instructions (e.g. 'create the digest agent, the database model, and the processor') and lets it execute a big chunk in one go, checking in only afterward."
+    }
+   ]
+  },
+  {
+   "topic": "Whether to let AI/MCP tools handle production credentials and deployment directly",
+   "positions": [
+    {
+     "video_id": "qF5il_9IwME",
+     "chunk_index": 162,
+     "position": "Explicitly uses an MCP server to let the agent configure Railway and handle credentials directly, while flagging that this is not how it's done for real client projects."
+    },
+    {
+     "video_id": "Q679gH7oszg",
+     "chunk_index": 39,
+     "position": "Insists on manual, access-controlled deployment (block-all-by-default firewalls, dedicated static IP, private networks) for all real client work — no MCP-driven credential handling."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No corpus content on how to measure or prove the '3 hours saved per analyst per week' success metric mentioned as the RAG project's definition of done — the demo build never gets tested with real analysts.",
+  "No discussion of exact pricing or contract terms for the LLM evals program/consulting beyond the sprint pricing given in Q679gH7oszg; the eval video doesn't connect its framework back to billing.",
+  "No detail on how the agency actually recruits, interviews, or onboards subcontractors mentioned in Q679gH7oszg beyond 'depending on the contracts' — the hiring process itself is not covered.",
+  "No concrete numbers on LLM API cost for the news aggregator or document-copilot projects beyond the single qF5il_9IwME remark about $1-2 per RAG query — no monthly cost estimate for either demo app.",
+  "The videos never show what the actual LLM-as-judge prompt looked like after iteration to reach high agreement, only the general meta-prompting technique — no worked example of a 'good' judge prompt verbatim.",
+  "No coverage of how Pydantic AI's tool-calling loop actually decides when to stop calling tools versus finalize an answer (the internal stopping criteria) — only that it 'decides' based on instructions.",
+  "No discussion of multi-tenant security hardening (RLS policy specifics, rate limiting, abuse prevention) beyond enabling Supabase row-level security by default — the videos don't show what a bad RLS policy misconfiguration looks like."
+ ],
+ "verified_claims": 58
+}
