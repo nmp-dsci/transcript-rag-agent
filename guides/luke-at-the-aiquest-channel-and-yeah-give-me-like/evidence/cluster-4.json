@@ -1,0 +1,586 @@
+{
+ "cluster": "cluster-4",
+ "videos": [
+  "reISMhbZ2XE",
+  "TL527yTpxlk",
+  "oQdkFPhqaGk",
+  "IBYHgDC5L0c"
+ ],
+ "video_notes": [
+  {
+   "video_id": "reISMhbZ2XE",
+   "title": "Building Better AI Agents: Artificial Intelligence Observability How To",
+   "contributed": "Frames agent observability (runs/traces/threads) as the prerequisite infrastructure that powers every type of agent eval, and shows LangChain's internal workflow for mining Terminal-Bench traces to improve their deep-agents coding harness."
+  },
+  {
+   "video_id": "TL527yTpxlk",
+   "title": "Complete Beginner's Course on AI Evaluations in 50 Minutes (2025)",
+   "contributed": "Walks a full live example of building a customer-support-agent eval pipeline end to end — prompt, human-labeled rubric/spreadsheet, LLM-as-judge, and match-rate validation — using Anthropic's console and the Arise platform."
+  },
+  {
+   "video_id": "oQdkFPhqaGk",
+   "title": "Complete Guide to building an AI Trading Bot with Claude for Beginners",
+   "contributed": "Shows a concrete non-technical workflow for having Claude Code build and schedule a working moving-average-crossover trading bot wired to Alpaca's paper-trading API via MCP."
+  },
+  {
+   "video_id": "IBYHgDC5L0c",
+   "title": "How to make an $8K/month Youtube Channel with Claude",
+   "contributed": "Lays out a five-step faceless-YouTube production pipeline (niche selection by RPM data, scripting rules, voice cloning, three tiers of AI visuals) built almost entirely around Claude prompts."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "observability precedes eval difficulty",
+   "claim": "Observability is comparatively easy to stand up, while evals are the harder, stickier problem because they require building your own datasets and metrics.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 2,
+   "quote": "observability is relatively easy to set up",
+   "kind": "principle",
+   "verified": false
+  },
+  {
+   "theme": "debugging shifts from code to reasoning",
+   "claim": "Because agents are non-deterministic, the trace becomes the source of truth and debugging shifts from reading stack traces to debugging the agent's reasoning.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 5,
+   "quote": "You go from debugging code to debugging reasoning.",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "three primitives of agent observability",
+   "claim": "Agent observability stacks three primitives in ascending complexity: a run (single LLM call with inputs/outputs), a trace (a full agent execution made of nested runs), and a thread (multiple traces grouped by human-in-the-loop turns).",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 7,
+   "quote": "A trace then consists of basically a list of these runs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "three levels of eval match observability primitives",
+   "claim": "Agent eval should be run at three matching levels: single-step (does one LLM call make the right decision), full-turn (does the whole agent run produce the right end result), and multi-turn (does the agent behave correctly across a conversation).",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 9,
+   "quote": "this is what we call kind of like a single step test",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "ship early to discover what to test",
+   "claim": "Production usage is where you discover what you actually need to test for, so the best practice is to ship early and often, even to a small user cohort, to surface real behavior and build test sets from it.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 10,
+   "quote": "ship early and shipped often",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "single-step eval tradeoff",
+   "claim": "Single-step evals are the easiest and fastest to define pass/fail metrics for, but they go out of date quickly whenever you change the agent's internals.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 13,
+   "quote": "these go out of date pretty easily",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "three eval timing modes",
+   "claim": "Evals run at three different times: offline (pre-production, dataset-driven, good for catching regressions/benchmarking), online (runs on live production traces without ground truth, good for flagging real issues), and ad hoc (one-off scoring of production data for exploratory analysis).",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 15,
+   "quote": "offline eval is basically building up a data set",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "online eval checks without ground truth",
+   "claim": "Without ground truth, online evaluators can still flag unusual tool-call patterns, such as the same tool being called repeatedly in a row.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 18,
+   "quote": "flag for unusual tool call patterns",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "deterministic hook stops edit-loop pathology",
+   "claim": "A common reasoning-model failure pathology is repeatedly editing the same file in a destructive loop; the fix is a deterministic middleware hook that detects 5-6 edits to one file and forces the model to stop and re-evaluate its plan.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 19,
+   "quote": "edit this file like five six times",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "offline datasets mined from failed production traces",
+   "claim": "The standard offline-eval workflow is to find a production trace a user flagged as bad in LangSmith, locate the exact failure point, and turn that captured agent state into a new test case.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 17,
+   "quote": "that state becomes the test case",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Terminal-Bench scale forces automated trace analysis",
+   "claim": "Terminal-Bench 2.0 has 89 tasks per model run, which is too much for one person to read manually, driving the need for automated trace-analysis tooling instead of eyeballing each trace.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 30,
+   "quote": "Terminal bench has 89 tasks",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "concrete harness benchmark result",
+   "claim": "LangChain's deep-agents harness scored a 65.2% pass rate running Codex 5.2 'extra high' on their Terminal-Bench evaluation, which would have ranked #1 on the public leaderboard the day before new model releases came out.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 31,
+   "quote": "we got 65.2 pass rate",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Langmith trace analyzer skill",
+   "claim": "LangChain built an internal 'LangSmith trace analyzer' skill, powered by a tool called LangFetch, that pulls a project's traces locally so an agent can group failure modes and propose fixes, producing a shareable progress report.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 31,
+   "quote": "Langmith trace analyzer skill",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "three levers for improving an agent",
+   "claim": "The three levers for improving agent performance are the underlying model, the harness (built-in prompts, file-system conventions, sub-agent delegation), and environment context (repo structure, coding guidelines) that should be auto-injected so the model doesn't have to search for it every run.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 25,
+   "quote": "environment context can be what's in my file system",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "mix multiple model providers in one harness",
+   "claim": "A deep-agents harness is not locked to one model provider; teams run multiple frontier models together (e.g. Codex 5.3 alongside Opus 4.6) to find what pushes performance furthest on a given task.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 26,
+   "quote": "use them all together find what's the best approach",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "precompletion checklist middleware",
+   "claim": "A 'precompletion checklist' middleware intercepts the model whenever it claims to be done and forces it to re-check a checklist file before actually finishing — the same checklist can later be wired into CI/GitHub Actions for feedback.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 29,
+   "quote": "precompletion checklist middlewares",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "premature-stop pathology in async agents",
+   "claim": "A recurring failure mode in offline evals is the model prematurely stopping or asking a human for help, because it doesn't realize it is operating autonomously without a human available to respond.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 28,
+   "quote": "it will like prematurely stop or it will ask",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "reflective optimization at scale beats RL post-training for harness gains",
+   "claim": "Beyond RL post-training, teams use 'reflective optimization at scale' — distilling learnings from traces with signal and updating the harness/prompts (not model weights) — and this can produce bigger performance jumps than switching the underlying model.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 35,
+   "quote": "reflective optimization at scale",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "inject human priors into prompt optimization",
+   "claim": "When auto-improving prompts from a batch of traces, explicitly inject your team's human priors about what the model should do rather than letting the agent decide the fix on its own.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 44,
+   "quote": "human priors injecting those into your prompts is incredibly valuable",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "skills as reusable prompt packages",
+   "claim": "Deep agents natively supports 'skills' — prompts injected as specializations for recurring semantic actions — created whenever the same need shows up repeatedly across tasks.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 44,
+   "quote": "skills basically are prompts",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "how many repeated runs for confidence",
+   "claim": "For probabilistic, long-horizon agent tasks where one step can derail the whole run, teams typically repeat the test 3-5 times to get a standard-error confidence interval; simpler classification-style tasks may only need 1-2 runs.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 40,
+   "quote": "people usually run it three to five times",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "using traces for agent security checks",
+   "claim": "Traces can be scanned, online or ad hoc, for malicious activity such as prompt injection, indirect prompt injection via tool outputs, and leaked API keys.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 40,
+   "quote": "testing for prompt injections, testing for indirect prompt injections",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "first step is always tracing",
+   "claim": "The recommended first step for any agent development workflow, before anything else, is simply to set up tracing.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 41,
+   "quote": "just setup tracing",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "virtual file system as sandbox alternative",
+   "claim": "LangChain's own insights-at-scale analysis job avoids sandboxes entirely by using Deep Agents' virtual file system to manipulate text data instead.",
+   "video_id": "reISMhbZ2XE",
+   "chunk_index": 36,
+   "quote": "virtual file system which lets us do kind of like manipulation",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "four fundamental eval types",
+   "claim": "There are four fundamental AI eval types used from development through production: code-based (binary pass/fail checks), human eval (PM/SME thumbs up-down), LLM-as-judge (scaled human-like labeling), and user eval (real-world business-metric feedback).",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 2,
+   "quote": "there's really just four types of of evalu deployed",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "golden dataset sizing rule of thumb",
+   "claim": "For internal/early-stage testing, start with roughly 10 golden-dataset examples (minimum ~5) before deciding whether to invest further; move toward 100+ rows only once you're pushing for production confidence.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 23,
+   "quote": "start with somewhere between you know five at least usually it's around 10",
+   "kind": "metric",
+   "verified": false
+  },
+  {
+   "theme": "speed of iteration vs confidence tradeoff",
+   "claim": "Golden-dataset size trades off two orthogonal goals: more rows buy more confidence but slow iteration, while fewer rows let you iterate faster with less certainty.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 24,
+   "quote": "optimize for speed of iteration and confidence in result",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "define rubric criteria before building a judge",
+   "claim": "Before building an LLM-as-judge, first define an explicit human rubric (e.g. product knowledge, policy compliance, tone) with concrete good/bad/average criteria, since the judge is trained to mimic that rubric.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 14,
+   "quote": "define what's good or bad for any of these",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LLMs fail at basic arithmetic inside policy logic",
+   "claim": "In real human-labeled data, an LLM support bot claimed a 45-minute-old cancellation request had 'passed the 60-minute window,' an outright arithmetic error (45 < 60) — a concrete example that LLMs are unreliable at math even when applying a stated policy.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 21,
+   "quote": "LM are really bad at math",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "summarize grading notes into fixes",
+   "claim": "While manually labeling outputs, write short notes next to the bad ones, then have an LLM summarize all the notes at the end into the top few things to fix in the prompt or product.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 21,
+   "quote": "use the LM to summarize all my notes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "validate LLM-judge match rate against human labels",
+   "claim": "Before trusting an LLM-as-judge, measure its match rate against human labels on a small sample; in the live demo, product-knowledge labels matched 100% of the time but tone labels matched only once out of the sample, exposing an untrustworthy judge.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 39,
+   "quote": "the tone only matches once",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "always have the judge explain itself",
+   "claim": "An LLM-as-judge should always generate an explanation alongside its label, because the explanation functions like a human reviewer's notes and lets you audit whether the judge's reasoning should be trusted.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 33,
+   "quote": "highly recommend, especially when you're getting started, have the LLM create an explanation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "under-specified judge rates everything good",
+   "claim": "An under-specified LLM-as-judge rated every sampled response as 'good,' including a verbose, off-tone answer — a sign the judge prompt itself needed tighter criteria (e.g. explicit length/tone rules) before it could be trusted.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 34,
+   "quote": "it gave everything good",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "use a console generate feature to draft the first prompt",
+   "claim": "Use Anthropic's Workbench 'generate' feature to draft an initial agent prompt from a short task description plus named input variables (user question, product info, policy info), rather than starting from a blank page.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 8,
+   "quote": "generate function which allows us to kind of create a prompt",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "automated prompt optimizers can make things worse",
+   "claim": "An automated prompt-optimization tool asked to make a prompt 'friendlier' instead added a long list of formal rules and produced a longer, still-formal response — automated rewrites aren't guaranteed to improve the intended quality.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 26,
+   "quote": "it almost like got longer",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "staged rollout after eval confidence",
+   "claim": "After building eval confidence, launch via a staged rollout: internal dogfooding first, then an A/B test on a small slice of real traffic (e.g. around 10%, or as low as 1%), watching for user complaints before a full launch.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 43,
+   "quote": "launch this thing as like a AB test first like maybe like a 10% of traffic",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "user thumbs-down is an ambiguous signal",
+   "claim": "A user's negative feedback (thumbs down) is ambiguous — it can mean the agent truly erred or just that the user is frustrated by a correct but unwelcome answer (e.g. a valid refund denial) — so teams need an explicit rule for what to do when the eval looks good but the business metric drops.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 45,
+   "quote": "what does that actually mean",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "spreadsheets are the real starting tool for eval",
+   "claim": "A plain spreadsheet, not specialized tooling, is described as the ultimate starting product for evaluating LLM outputs before any LLM-as-judge system is introduced.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 13,
+   "quote": "spreadsheets are the ultimate sort of product to use for evaluating LLMs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "don't outsource human eval entirely",
+   "claim": "Outsourcing human eval entirely to contractors or hired labelers doesn't work well; the PM/product owner needs to be directly inside the labeling spreadsheet themselves.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 5,
+   "quote": "never found it useful to just completely outsource the human evals",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "borderline labels surface missing policy",
+   "claim": "Borderline eval judgment calls (e.g. should the agent say 'not covered by policy' instead of deflecting to another team) are valuable team debates that expose missing product/policy rules rather than mere grading noise.",
+   "video_id": "TL527yTpxlk",
+   "chunk_index": 17,
+   "quote": "a good one to debate on your team",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "moving-average crossover trading strategy",
+   "claim": "The beginner trading-bot strategy uses a 20-day 'fast' moving average and a 50-day 'slow' moving average: a buy signal fires when the fast line crosses above the slow line, and an exit/sell signal fires when it crosses below.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 10,
+   "quote": "a fast one, which is a 20-day average, and a slow one, which is a 50-day average",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "crossover strategy weakness in choppy markets",
+   "claim": "The moving-average crossover strategy performs well in trending markets but racks up a series of small losing trades in choppy, sideways markets, since no trading strategy wins every time.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 11,
+   "quote": "in a choppy sideways market, the lines cross back and forth",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "paper trading before real money",
+   "claim": "Build and validate the trading bot against a paper-trading account (fake money against real, live market prices via Alpaca) before ever connecting it to real funds.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 2,
+   "quote": "paper trading just means that we are using fake money in a real market",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Alpaca MCP wiring into Claude Desktop",
+   "claim": "Connecting Claude Desktop to a brokerage requires pasting the Alpaca MCP server config (including API key and secret key) into Claude's config file and restarting the app before the MCP becomes available for trading.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 5,
+   "quote": "this is where you'll connect the alpaca mcp to claude",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "use a lighter model for simple verification tasks",
+   "claim": "Use an older/lighter Claude model for simple verification tasks, like checking an account balance, specifically to save on token usage.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 8,
+   "quote": "we're going to save on token usage",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "switch to Opus for building the bot logic",
+   "claim": "Switch to a stronger model (Opus) specifically for the complex task of building the bot's actual trading logic, since it performs better on more complicated tasks than lighter models.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 12,
+   "quote": "use Opus 5 for building this bot because it's a lot better",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "bot data source and lookback window",
+   "claim": "The bot was specified to fetch the last 100 days of stock data via Yahoo Finance (yfinance) in order to calculate its moving averages.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 12,
+   "quote": "fetch the last 100 days of stock data using Y Finance",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "scheduled market-open automation prompt",
+   "claim": "A single follow-up prompt automated the bot to run every weekday at 9:30 EST market open, fetch fresh data, check for a crossover, execute any resulting trade, and log the results — with the caveat that the host computer must stay on.",
+   "video_id": "oQdkFPhqaGk",
+   "chunk_index": 15,
+   "quote": "automate my bot so it runs Monday through Friday at 9:30 EST",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "RPM varies drastically by content niche",
+   "claim": "YouTube RPM (pay per 1,000 views) varies hugely by niche — finance earns $15-50, tech/AI $12-30, health $10-25, true crime $5-15, and entertainment just $3-8 — so niche choice alone can create a 10x difference in payout for the same views and effort.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 1,
+   "quote": "finance, that's $15 to $50 per 1,000 views",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "only one paid tool is required",
+   "claim": "The only tool strictly required to pay for in a faceless AI YouTube pipeline is Claude (~$20/month); every other tool in the stack (11 Labs, CapCut, Canva, VidIQ, TubeBuddy, Pexels/Pixabay) has a free tier that covers about 80% of what's needed.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 3,
+   "quote": "80% of what you need anyway",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "pick a niche using an RPM + repeatability score prompt",
+   "claim": "Feed Claude a shortlist of candidate niches and have it return an RPM range plus a 'repeatability score' per niche in about 60 seconds (e.g. finance scored a $12-45 ceiling with a repeatability score of 8/10) to choose a niche by data instead of personal preference.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 4,
+   "quote": "repeatability score of eight out of 10",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "four rules for Claude-written video scripts",
+   "claim": "Script prompts to Claude should enforce four rules: a hook inside the first 30-60 seconds, an early open loop that teases the payoff, visual tags marking every scene for the editor, and a soft call-to-action at the end instead of a 'smash that like' ask.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 6,
+   "quote": "a soft CTA at the end so no smash that like energy",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "a single prompt replaces a paid scriptwriter",
+   "claim": "A single, well-constrained Claude script-writing prompt is positioned as replacing a professional scriptwriter who would otherwise charge $150-400 per video.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 6,
+   "quote": "replaces a pro script writer that would charge you anywhere from $150 to $400 per video",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "voice-clone minimum vs recommended sample count",
+   "claim": "ElevenLabs instant voice cloning requires a minimum 10-second audio clip, but at least four clips are recommended to get a better-quality cloned voice.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 7,
+   "quote": "requires you to record a 10-second audio clip for minimum",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "AI avatar removes the footage problem entirely",
+   "claim": "Unlike stock-footage or motion-graphics approaches, an AI-avatar tool (HeyGen) removes the footage-sourcing problem entirely by generating the channel's host directly from a script, with a feature ('Soul ID') that builds a consistent AI likeness from a handful of uploaded photos.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 13,
+   "quote": "it takes the whole footage problem off the table entirely",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "AI-avatar tool real cost floor",
+   "claim": "HeyGen's AI-avatar generation is advertised starting at $15/month, but realistic regular use requires the roughly $100/month plan to get enough API credits.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 14,
+   "quote": "you're probably going to need something like the $100 a month plan",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "automated Pexels B-roll pipeline",
+   "claim": "A Claude skill ('Pexels footage') reads a script section-by-section, generates a search query per section, pulls matching HD clips via the Pexels API, and produces a labeled folder plus a CapCut assembly guide with timestamps in about 2 minutes.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 12,
+   "quote": "about 2 minutes",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "posting cadence and time to see results",
+   "claim": "Posting consistently 5-6 times a week is the recommended cadence, with results typically visible after roughly two to three months.",
+   "video_id": "IBYHgDC5L0c",
+   "chunk_index": 16,
+   "quote": "post five to six times a week",
+   "kind": "metric",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "How much formal evaluation is needed before trusting an agent's output",
+   "positions": [
+    {
+     "video_id": "reISMhbZ2XE",
+     "chunk_index": 13,
+     "position": "Advocates building layered single-step, full-turn, and multi-turn eval suites, with metrics and offline/online/ad hoc testing cadences, before trusting agent behavior at any scale."
+    },
+    {
+     "video_id": "TL527yTpxlk",
+     "chunk_index": 39,
+     "position": "Insists an LLM-as-judge must be validated against a human-labeled match rate — even on a tiny 5-example sample — before anyone trusts its scores, since an under-specified judge rated everything 'good.'"
+    },
+    {
+     "video_id": "oQdkFPhqaGk",
+     "chunk_index": 14,
+     "position": "Treats a single successful 'dry run' as sufficient validation before handing the bot an autonomous daily trading schedule, with no formal dataset, rubric, or judge involved."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "Neither eval-focused video gives a concrete numeric threshold (e.g. a specific match-rate or pass-rate percentage) for when a judge or agent is 'good enough' to ship to production.",
+  "The trading-bot and YouTube-automation videos never apply any observability/tracing to the Claude-built systems they ship, so there's no guidance on monitoring those bots for drift, silent MCP failures, or scheduled-job crashes once left running unattended.",
+  "No video discloses the ongoing cost of running an eval pipeline at scale (LangSmith/Arise pricing tiers, token costs of repeated LLM-as-judge calls) once you move past a 10-100 row golden dataset.",
+  "Ray Fu's trading-bot and YouTube videos show no actual outcome data (no real trading P&L, no verified channel revenue from his own content) — the dollar figures cited are projections or other creators' public subscriber/RPM numbers, not demonstrated results from the workflow itself.",
+  "The LangChain webinar openly admits its prompt-injection / security-eval use case is not yet built or demoed, leaving no concrete technique for applying agent observability to security detection today.",
+  "None of the four videos discusses what happens when the underlying automation fails partway (a scheduled bot missing its 9:30 EST run, an MCP disconnect, a sandbox/infra timeout flagged in Terminal-Bench) beyond noting that such errors exist."
+ ],
+ "verified_claims": 55
+}

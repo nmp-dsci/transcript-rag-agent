@@ -1,6 +1,23 @@
 {
   "guides": [
     {
+      "slug": "luke-at-the-aiquest-channel-and-yeah-give-me-like",
+      "title": "Free-GPU Video Production",
+      "topic": "luke. at the aiquest channel and yeah give me like",
+      "subtitle": "How to generate AI video end to end on free cloud GPUs — picking a MiniMax H3 distillation variant, running the dual-T4 notebook, diagnosing the failures that only show up at 480p, bolting long-term character memory onto an open backbone with StoryMem, and knowing the exact moment the free tier stops being enough. Distilled from AIQUEST's two open-video-model teardowns, with the fine-tuning, eval and deployment practice around them drawn from Fahd Mirza, Zen van Riel, Sebastian Raschka, Dave Ebbelaar, LangChain, Ray Fu, Gaurav Sen and others.",
+      "question": "Can you Luke. At the AIQuest channel And, yeah, give me, like, a rundown on what's happening, you know, like, especially focusing on mini max h three. I wanna, like, get into the process of building or, you know, experience building, like, a AI video. End to end. So, you know, I wanna start and just get a feel for the models and, like, the variants, especially AI Quest channel shows like, how to simplify or how to make those models have long and short term memory. So I wanna implement that with my video. But, yeah, I wanna start with the base case. Tell me you know, what stage one just running on Google Colab and then you know, if I wanted... Could I keep using Google Colab to generate videos, or will I need to pivot somewhere else?",
+      "status": "published",
+      "current_version": 1,
+      "compiled_at": "2026-11-04",
+      "videos": 20,
+      "chunk_count": 1368,
+      "cite_total": 151,
+      "cite_valid": 151,
+      "versions": [
+        1
+      ]
+    },
+    {
       "slug": "create-a-deep-dive-into-fine-tuning-how-to-build",
       "title": "The Fine-Tuning Pipeline",
       "topic": "create a deep dive into fine tuning how to build",

@@ -1,0 +1,299 @@
+{
+  "slug": "luke-at-the-aiquest-channel-and-yeah-give-me-like",
+  "title": "Free-GPU Video Production",
+  "topic": "luke. at the aiquest channel and yeah give me like",
+  "subtitle": "How to generate AI video end to end on free cloud GPUs — picking a MiniMax H3 distillation variant, running the dual-T4 notebook, diagnosing the failures that only show up at 480p, bolting long-term character memory onto an open backbone with StoryMem, and knowing the exact moment the free tier stops being enough. Distilled from AIQUEST's two open-video-model teardowns, with the fine-tuning, eval and deployment practice around them drawn from Fahd Mirza, Zen van Riel, Sebastian Raschka, Dave Ebbelaar, LangChain, Ray Fu, Gaurav Sen and others.",
+  "question": "Can you Luke. At the AIQuest channel And, yeah, give me, like, a rundown on what's happening, you know, like, especially focusing on mini max h three. I wanna, like, get into the process of building or, you know, experience building, like, a AI video. End to end. So, you know, I wanna start and just get a feel for the models and, like, the variants, especially AI Quest channel shows like, how to simplify or how to make those models have long and short term memory. So I wanna implement that with my video. But, yeah, I wanna start with the base case. Tell me you know, what stage one just running on Google Colab and then you know, if I wanted... Could I keep using Google Colab to generate videos, or will I need to pivot somewhere else?",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-11-04",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "9LU90uI4WRU",
+    "qF5il_9IwME",
+    "reISMhbZ2XE",
+    "TL527yTpxlk",
+    "oQdkFPhqaGk",
+    "E8zpgNPx8jE",
+    "Cu8kUBwLoTM",
+    "IBYHgDC5L0c",
+    "rEjasJZq1t8",
+    "r-MPiu0E4W4",
+    "Q679gH7oszg",
+    "OYvlznJ4IZQ",
+    "omU3zR3K7-U",
+    "4yNswvhPWCQ",
+    "a3SMraZWNNs",
+    "v7qMjy_RxOs",
+    "GM70MDyl94E",
+    "lsgVRCJ4fko",
+    "NovNcsKX8AU",
+    "JfaLQqfXqPA"
+  ],
+  "sources": [
+    {
+      "video_id": "9LU90uI4WRU",
+      "title": "Fine-Tune Qwen3.5 0.8B Locally On Your Own Dataset - Full Easy Guide",
+      "channel": "Fahd Mirza",
+      "contributed": "A full, parameter-by-parameter walkthrough of LoRA fine-tuning a small local model (unsloth + TRL SFTTrainer) on a 200-row custom dataset, with concrete hyperparameter values and before/after output comparison.",
+      "url": "https://www.youtube.com/watch?v=9LU90uI4WRU"
+    },
+    {
+      "video_id": "qF5il_9IwME",
+      "title": "Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A monorepo full-stack RAG build (FastAPI + React + Supabase + pgvector) for a hypothetical client, showing agents.md-driven setup, hybrid retrieval with agentic tool loops, grounding/citation validators, and a Railway deployment.",
+      "url": "https://www.youtube.com/watch?v=qF5il_9IwME"
+    },
+    {
+      "video_id": "reISMhbZ2XE",
+      "title": "Building Better AI Agents: Artificial Intelligence Observability How To",
+      "channel": "LangChain",
+      "contributed": "Frames agent observability (runs/traces/threads) as the prerequisite infrastructure that powers every type of agent eval, and shows LangChain's internal workflow for mining Terminal-Bench traces to improve their deep-agents coding harness.",
+      "url": "https://www.youtube.com/watch?v=reISMhbZ2XE"
+    },
+    {
+      "video_id": "TL527yTpxlk",
+      "title": "Complete Beginner's Course on AI Evaluations in 50 Minutes (2025) | Aman Khan",
+      "channel": "Peter Yang",
+      "contributed": "Walks a full live example of building a customer-support-agent eval pipeline end to end — prompt, human-labeled rubric/spreadsheet, LLM-as-judge, and match-rate validation — using Anthropic's console and the Arise platform.",
+      "url": "https://www.youtube.com/watch?v=TL527yTpxlk"
+    },
+    {
+      "video_id": "oQdkFPhqaGk",
+      "title": "Complete Guide to building an AI Trading Bot with Claude for Beginners",
+      "channel": "Ray Fu",
+      "contributed": "Shows a concrete non-technical workflow for having Claude Code build and schedule a working moving-average-crossover trading bot wired to Alpaca's paper-trading API via MCP.",
+      "url": "https://www.youtube.com/watch?v=oQdkFPhqaGk"
+    },
+    {
+      "video_id": "E8zpgNPx8jE",
+      "title": "Build a Complete End-to-End GenAI Project in 3 Hours",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A single-person, single-repo AI news aggregator build (scrapers to database to agents to email to render deployment) that shows the moment-to-moment prompting and architectural-decision loop with a coding agent.",
+      "url": "https://www.youtube.com/watch?v=E8zpgNPx8jE"
+    },
+    {
+      "video_id": "Cu8kUBwLoTM",
+      "title": "Agentic AI made me an 100x engineer!",
+      "channel": "Bits inside by René Rebe",
+      "contributed": "A 30-year open-source/Linux driver maintainer's first-person log of four weeks using Claude (Pro then Max plan) to resurrect dozens of decades-dead hardware drivers, with real token/dollar cost figures and a skeptical, 'LLMs are a dead end for AGI' framing that cuts against typical AI-hype talks.",
+      "url": "https://www.youtube.com/watch?v=Cu8kUBwLoTM"
+    },
+    {
+      "video_id": "IBYHgDC5L0c",
+      "title": "How to make an $8K/month Youtube Channel with Claude",
+      "channel": "Ray Fu",
+      "contributed": "Lays out a five-step faceless-YouTube production pipeline (niche selection by RPM data, scripting rules, voice cloning, three tiers of AI visuals) built almost entirely around Claude prompts.",
+      "url": "https://www.youtube.com/watch?v=IBYHgDC5L0c"
+    },
+    {
+      "video_id": "rEjasJZq1t8",
+      "title": "MiniMax H3 is Now Crazy Fast (Free Kaggle Notebook)",
+      "channel": "AIQUEST",
+      "contributed": "Head-to-head benchmark of three 4-step distillation LoRAs (PDMD, DMAD, Fused Turbo) for the MiniMax H3 video model, plus exact steps and specs for running it free on dual Kaggle T4 GPUs.",
+      "url": "https://www.youtube.com/watch?v=rEjasJZq1t8"
+    },
+    {
+      "video_id": "r-MPiu0E4W4",
+      "title": "Design with AI - Full Guide (Tools, Workflows, Design Systems)",
+      "channel": "UI Collective",
+      "contributed": "Head-to-head token/time/quality comparison of AI design tools (Grok, Claude Fable/Opus, Codex, Figma AI, Google Stitch, cursor) and a staged workflow (iterate -> prototype/QA -> align to design system) using different tools for each stage.",
+      "url": "https://www.youtube.com/watch?v=r-MPiu0E4W4"
+    },
+    {
+      "video_id": "Q679gH7oszg",
+      "title": "How I Build and Ship Custom AI Solutions for Clients",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The agency-level process: discovery, scoping into PoC vs MVP, proposal structure, two-week sprint cadence and pricing, the standardized Genai Launchpad stack, and the Hetzner/Caddy/Langfuse/Sentry deployment and monitoring setup.",
+      "url": "https://www.youtube.com/watch?v=Q679gH7oszg"
+    },
+    {
+      "video_id": "OYvlznJ4IZQ",
+      "title": "20 AI Concepts Explained in 40 Minutes",
+      "channel": "Gaurav Sen",
+      "contributed": "A compact glossary-style map of the full LLM concept stack (tokens, vectors, attention, self-supervised learning, transformers, fine-tuning, RAG, MCP, context engineering, agents, RLHF, chain-of-thought, SLMs/distillation, quantization) that the other three talks assume as background.",
+      "url": "https://www.youtube.com/watch?v=OYvlznJ4IZQ"
+    },
+    {
+      "video_id": "omU3zR3K7-U",
+      "title": "The Best AI Automation Stack to Learn in 2026",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A concrete five-layer custom-code stack (Python/FastAPI/Celery, Postgres/Supabase, React/Vite/shadcn, model APIs, Docker/Railway/Hetzner) as the alternative to no-code automation tools.",
+      "url": "https://www.youtube.com/watch?v=omU3zR3K7-U"
+    },
+    {
+      "video_id": "4yNswvhPWCQ",
+      "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+      "channel": "Sebastian Raschka",
+      "contributed": "Code-level walkthrough of building an instruction-tuning dataset, collate function, padding/masking, and using a local LLM (Ollama) as an automated judge to score fine-tuned responses.",
+      "url": "https://www.youtube.com/watch?v=4yNswvhPWCQ"
+    },
+    {
+      "video_id": "a3SMraZWNNs",
+      "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "A dedicated framework for the three levels of LLM evals (unit tests, human+LLM-judge, A/B testing), the analyze-measure-improve loop, and the human/LLM alignment process with concrete agreement-score tooling.",
+      "url": "https://www.youtube.com/watch?v=a3SMraZWNNs"
+    },
+    {
+      "video_id": "v7qMjy_RxOs",
+      "title": "The Honest Guide To Fine-Tuning Local AI In 2026",
+      "channel": "Zen van Riel",
+      "contributed": "A decision framework for when to fine-tune vs. prompt/RAG/agentic loops, plus concrete hardware, VRAM, and time benchmarks for local LoRA fine-tuning.",
+      "url": "https://www.youtube.com/watch?v=v7qMjy_RxOs"
+    },
+    {
+      "video_id": "GM70MDyl94E",
+      "title": "Minute Long AI Story Videos With Consistent Characters? Meet StoryMem",
+      "channel": "AIQUEST",
+      "contributed": "Explains ByteDance's StoryMem LoRA — the memory-bank mechanism (negative RoPE shift, CLIP + HPSv3 keyframe filtering) that lets any Wan 2.2-based video model hold character consistency across minute-long, multi-scene stories, with exact training/parameter/VRAM figures.",
+      "url": "https://www.youtube.com/watch?v=GM70MDyl94E"
+    },
+    {
+      "video_id": "lsgVRCJ4fko",
+      "title": "Learn Design Systems: Figma Variables, Components, AI, and More",
+      "channel": "UI Collective",
+      "contributed": "From-scratch teaching of design token tiering (brand/alias/mapped), component variant structure, and the specific skills-based workaround needed because AI cannot reliably sync with or build a design system on its own.",
+      "url": "https://www.youtube.com/watch?v=lsgVRCJ4fko"
+    },
+    {
+      "video_id": "NovNcsKX8AU",
+      "title": "The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)",
+      "channel": "GroundZero YT",
+      "contributed": "A practitioner's definition and operating playbook for 'agent harnesses' — prompting, verification, orchestration, file systems, context rot mitigation, continual learning, and when to reach for RL vs. context engineering — from LangChain's open-source agent lead.",
+      "url": "https://www.youtube.com/watch?v=NovNcsKX8AU"
+    },
+    {
+      "video_id": "JfaLQqfXqPA",
+      "title": "RFT, DPO, SFT: Fine-tuning with OpenAI — Ilan Bigio, OpenAI",
+      "channel": "AI Engineer",
+      "contributed": "The only non-AIQUEST, non-video-gen talk in this cluster: a live, code-heavy walkthrough of OpenAI's three fine-tuning methods, when each one fits, concrete data-volume thresholds, and two on-stage failures (RFT email classifier, live 'prompt tuning' experiment).",
+      "url": "https://www.youtube.com/watch?v=JfaLQqfXqPA"
+    }
+  ],
+  "chunk_count": 1368,
+  "cluster_count": 5,
+  "cite_total": 151,
+  "cite_valid": 151,
+  "gaps": [
+    "This cluster bundles four unrelated videos on different topics (OpenAI fine-tuning APIs, two AIQUEST video-generation tool reviews, and a personal essay on agentic coding for retro Linux drivers) with no shared throughline — a reader expecting a coherent 'Luke at AIQUEST' guide won't find one from these four sources alone; only rEjasJZq1t8 and GM70MDyl94E are actually AIQUEST videos.",
+    "None of the videos state the dollar cost of OpenAI fine-tuning jobs (training compute price, per-token inference price for a fine-tuned model) — JfaLQqfXqPA never gives pricing.",
+    "The RFT grader-design guidance stays qualitative ('does it benefit from more accuracy') with no worked example of comparing a simple vs. complex grader's actual score lift.",
+    "Neither AIQUEST video gives quantitative accuracy/benchmark numbers beyond the vendors' own self-reported percentages (PDMD, DMAD, StoryMem) — no independent third-party validation of the claimed win rates or consistency scores is discussed.",
+    "StoryMem's actual generation speed/latency and GPU runtime are not covered in GM70MDyl94E — only parameter count, training-clip count, and VRAM footprint are given.",
+    "Cu8kUBwLoTM's '100x engineer' framing is entirely anecdotal — no controlled before/after task-timing data is given beyond rough verbal estimates ('a week or a month' vs 'an afternoon'), so the productivity multiplier can't be independently checked.",
+    "None of the videos address the legal/licensing risk of using AI to reverse-engineer vendor BIOS dumps, leaked drivers, or proprietary hardware docs (a theme Cu8kUBwLoTM raises but doesn't resolve).",
+    "No corpus content on how to measure or prove the '3 hours saved per analyst per week' success metric mentioned as the RAG project's definition of done — the demo build never gets tested with real analysts.",
+    "No discussion of exact pricing or contract terms for the LLM evals program/consulting beyond the sprint pricing given in Q679gH7oszg; the eval video doesn't connect its framework back to billing.",
+    "No detail on how the agency actually recruits, interviews, or onboards subcontractors mentioned in Q679gH7oszg beyond 'depending on the contracts' — the hiring process itself is not covered.",
+    "No concrete numbers on LLM API cost for the news aggregator or document-copilot projects beyond the single qF5il_9IwME remark about $1-2 per RAG query — no monthly cost estimate for either demo app.",
+    "The videos never show what the actual LLM-as-judge prompt looked like after iteration to reach high agreement, only the general meta-prompting technique — no worked example of a 'good' judge prompt verbatim.",
+    "No coverage of how Pydantic AI's tool-calling loop actually decides when to stop calling tools versus finalize an answer (the internal stopping criteria) — only that it 'decides' based on instructions.",
+    "No discussion of multi-tenant security hardening (RLS policy specifics, rate limiting, abuse prevention) beyond enabling Supabase row-level security by default — the videos don't show what a bad RLS policy misconfiguration looks like.",
+    "None of the four videos give concrete cost figures for running this stack in production (cloud bills, inference cost per token at scale, GPU rental cost for fine-tuning larger models).",
+    "No video explains how to decide, with real criteria, whether a given task should be solved with prompting/RAG, a sub-agent harness, LoRA fine-tuning, or full RL — each video touches part of this but none gives a unified decision framework.",
+    "The fine-tuning video (9LU90uI4WRU) doesn't cover how to evaluate a fine-tuned model beyond eyeballing one or two sample answers and the training loss number — no held-out test set or quantitative eval is shown.",
+    "Gaurav Sen's concept primer doesn't include any code or tool names, so a viewer still needs a separate hands-on tutorial to implement tokenization, RAG, or MCP.",
+    "Dave Ebbelaar's stack video doesn't address how to choose which specific LLM/provider to call for a given automation task, security/compliance concerns, or how to monitor the deployed system in production.",
+    "Vivek Trivedy's interview describes hooks, verification, and context-rot mitigations conceptually but gives no concrete code example of how a hook or virtual file system is implemented.",
+    "No video in this cluster addresses agent security, prompt-injection defenses, or guardrails for production agent deployments.",
+    "Neither eval-focused video gives a concrete numeric threshold (e.g. a specific match-rate or pass-rate percentage) for when a judge or agent is 'good enough' to ship to production.",
+    "The trading-bot and YouTube-automation videos never apply any observability/tracing to the Claude-built systems they ship, so there's no guidance on monitoring those bots for drift, silent MCP failures, or scheduled-job crashes once left running unattended.",
+    "No video discloses the ongoing cost of running an eval pipeline at scale (LangSmith/Arise pricing tiers, token costs of repeated LLM-as-judge calls) once you move past a 10-100 row golden dataset.",
+    "Ray Fu's trading-bot and YouTube videos show no actual outcome data (no real trading P&L, no verified channel revenue from his own content) — the dollar figures cited are projections or other creators' public subscriber/RPM numbers, not demonstrated results from the workflow itself.",
+    "The LangChain webinar openly admits its prompt-injection / security-eval use case is not yet built or demoed, leaving no concrete technique for applying agent observability to security detection today.",
+    "None of the four videos discusses what happens when the underlying automation fails partway (a scheduled bot missing its 9:30 EST run, an MCP disconnect, a sandbox/infra timeout flagged in Terminal-Bench) beyond noting that such errors exist.",
+    "None of the videos show the actual data-engineering code that turns raw transcripts/logs into prompt-response pairs for fine-tuning (v7qMjy_RxOs promises this for a future video in the series but doesn't demonstrate it here).",
+    "No video gives dollar-cost figures for any of the AI design tools (Claude, Grok, Codex, paper.design, Figma AI) or for fine-tuning hardware (RTX 5090, cloud GPU rental) — only time and token/VRAM counts are given.",
+    "The corpus doesn't address how to combine fine-tuning, RAG, and an agentic loop together in one production system — v7qMjy_RxOs presents them as a sequential decision tree, not a combined architecture.",
+    "No video benchmarks AMD ROCm or Nvidia's unified-memory \"Spark\" machines for fine-tuning in practice, despite both being mentioned as emerging options.",
+    "Neither design video explains how to measure or validate that an AI-assisted design actually passes accessibility/contrast checks in code (only Figma-level accessibility audits are covered, not shipped frontend code).",
+    "Sebastian Raschka's evaluation section doesn't say how to pick a good small-model-as-judge prompt beyond pointing to a reader-contributed GitHub discussion; no systematic guidance on validating a judge model against human ratings is given.",
+    "None of the videos discuss team/organizational rollout of these workflows at scale (e.g., onboarding a whole design or ML team to these AI practices) beyond individual-contributor tips."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "variants",
+      "pipeline",
+      "framing",
+      "memory",
+      "pivot",
+      "judging",
+      "prompts",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20261104T113617Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.7387968,
+        "duration_ms": 183199,
+        "turns": 16,
+        "tool_calls": 15
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0931887000000002,
+        "duration_ms": 223031,
+        "turns": 7,
+        "tool_calls": 6
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.0671931,
+        "duration_ms": 261526,
+        "turns": 11,
+        "tool_calls": 10
+      },
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.3323108,
+        "duration_ms": 319954,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 2.2452423,
+        "duration_ms": 376322,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 3.4112355,
+        "duration_ms": 634582,
+        "turns": 13,
+        "tool_calls": 12
+      },
+      {
+        "label": "fix:1",
+        "model": "claude-opus-5",
+        "cost_usd": 0.5910525000000001,
+        "duration_ms": 91213,
+        "turns": 26,
+        "tool_calls": 25
+      }
+    ]
+  }
+}

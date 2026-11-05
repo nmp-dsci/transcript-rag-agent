@@ -1,0 +1,768 @@
+{
+ "cluster": "cluster-3",
+ "videos": [
+  "omU3zR3K7-U",
+  "9LU90uI4WRU",
+  "OYvlznJ4IZQ",
+  "NovNcsKX8AU"
+ ],
+ "video_notes": [
+  {
+   "video_id": "omU3zR3K7-U",
+   "title": "The Best AI Automation Stack to Learn in 2026",
+   "contributed": "A concrete five-layer custom-code stack (Python/FastAPI/Celery, Postgres/Supabase, React/Vite/shadcn, model APIs, Docker/Railway/Hetzner) as the alternative to no-code automation tools."
+  },
+  {
+   "video_id": "9LU90uI4WRU",
+   "title": "Fine-Tune Qwen3.5 0.8B Locally On Your Own Dataset - Full Easy Guide",
+   "contributed": "A full, parameter-by-parameter walkthrough of LoRA fine-tuning a small local model (unsloth + TRL SFTTrainer) on a 200-row custom dataset, with concrete hyperparameter values and before/after output comparison."
+  },
+  {
+   "video_id": "OYvlznJ4IZQ",
+   "title": "20 AI Concepts Explained in 40 Minutes",
+   "contributed": "A compact glossary-style map of the full LLM concept stack (tokens, vectors, attention, self-supervised learning, transformers, fine-tuning, RAG, MCP, context engineering, agents, RLHF, chain-of-thought, SLMs/distillation, quantization) that the other three talks assume as background."
+  },
+  {
+   "video_id": "NovNcsKX8AU",
+   "title": "The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, LangChain)",
+   "contributed": "A practitioner's definition and operating playbook for 'agent harnesses' — prompting, verification, orchestration, file systems, context rot mitigation, continual learning, and when to reach for RL vs. context engineering — from LangChain's open-source agent lead."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Five-layer AI automation stack",
+   "claim": "Treat an AI automation system as five layers — backend, database, frontend, AI/model layer, and infrastructure — rather than any single no-code tool; jobs test for these layers, not for tool names.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 0,
+   "quote": "a backend, work with a database, a front end, an AI layer",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Backend language choice",
+   "claim": "Python is the recommended core backend language/engine to build the rest of the automation stack around.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 2,
+   "quote": "Python is this whole ecosystem that we use as the core, as the engine really",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "FastAPI as entry point",
+   "claim": "FastAPI is used as the API layer / entry point for automations, exposing GET, POST, PUT, DELETE endpoints that webhooks and frontends talk to.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 3,
+   "quote": "it becomes the entry point for your automations",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Celery for background jobs",
+   "claim": "Celery hands off slow work from FastAPI to background workers so requests stay responsive.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 3,
+   "quote": "celery is great because you can use it to set up background workers",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Celery for scheduled jobs",
+   "claim": "Celery is also used to schedule and trigger cron-style jobs in Python, forming the core recurring-task engine of the speaker's own AI automation system.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 4,
+   "quote": "you can essentially schedule and trigger chron jobs using the Python programming language",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Postgres is enough database",
+   "claim": "Postgres alone is sufficient storage for almost all AI automation projects, even scaling to millions of records, without needing other database types.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 4,
+   "quote": "Postgress is really all you need like literally you don't have to worry about other databases",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Postgres scales far",
+   "claim": "Instagram scaled to hundreds of millions of users on Postgres alone, used as proof that most builders will never outgrow it.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 5,
+   "quote": "Instagram also scaled to hundreds of millions of users on just using Postgress",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Supabase as Postgres wrapper",
+   "claim": "Supabase is recommended as a hosted wrapper around Postgres that simplifies authentication, provides an admin dashboard, and can also store vectors.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 5,
+   "quote": "superbase which is just a essentially a wrapper around Postgress that simplifies a lot of things",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Frontend stack",
+   "claim": "The recommended frontend stack is React for components, Vite as the dev/build server, and shadcn/ui for the component library.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 7,
+   "quote": "combination of three things that I recommend that is react, fight, and shet UI",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "shadcn components live in your code",
+   "claim": "shadcn/ui components are imported directly into the project's own codebase rather than installed as a node_modules dependency, so AI coding agents can read and modify them.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 9,
+   "quote": "you import that code into your project. So now it's there",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Plain front-end skill is devalued",
+   "claim": "Being purely a front-end developer with no other skills is now low-value because AI makes building simple internal-tool frontends trivial — though UX/design judgment is still a gap AI doesn't fill.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 9,
+   "quote": "just front-end code, just being a front-end developer, like you're cooked",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "AI layer is the easy part",
+   "claim": "Calling an LLM, embedding, vision, speech, or image-generation model is now 'one API call away,' which is why the AI layer is usually the simplest of the five stack layers.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 10,
+   "quote": "all of this is just one API call away",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Use enterprise model providers in production",
+   "claim": "For serious/company or freelance work, route model calls through AWS, Azure, or Google Cloud rather than direct OpenAI/Anthropic calls, for centralized billing, data-privacy controls, and scaling.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 11,
+   "quote": "you'll likely going to want to use AI models for uh one of these providers either through AWS, Azure, Google Cloud",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Docker for deployment",
+   "claim": "Containerizing backend and frontend with Docker (or Docker Compose) is the industry-standard way to make a custom-built automation shippable.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 13,
+   "quote": "the really industry standard way of doing this doing this is first of all to use docker",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Railway for beginner deployment",
+   "claim": "Railway is recommended for first-time deploys of the dockerized backend and frontend, and even has its own MCP server a coding agent can use to manage deployment.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 14,
+   "quote": "railway even got an MCP server to help you manage that",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Hetzner for production VPS",
+   "claim": "For more advanced/production deployments, the speaker's company has used Hetzner VPS (a German provider) for three years as an alternative to the big cloud container services.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 14,
+   "quote": "We for the past 3 years have actually uh used HNER for this really great German company",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Full worked example available",
+   "claim": "A companion 4-hour live build video walks through building a 'document co-pilot' internal chatbot end-to-end using this exact five-layer stack.",
+   "video_id": "omU3zR3K7-U",
+   "chunk_index": 15,
+   "quote": "a 4hour live build of me building out this project, a document co-pilot",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "LoRA mechanism",
+   "claim": "LoRA (low-rank adaptation) freezes the base model and injects small trainable matrices into specific layers instead of retraining all weights, making fine-tuning feasible on consumer-grade hardware.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 1,
+   "quote": "Laura injects small trainable matrices into specific layers and only train those",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Dataset size for a domain fine-tune",
+   "claim": "A domain fine-tune (here, 'Turkish kebab expert') was built on a custom dataset of just 200 high-quality question/answer pairs.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 1,
+   "quote": "We have a custom data set of 200 highquality questions and answer pairs",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Hardware used",
+   "claim": "Fine-tuning the 0.8B model was done on an Nvidia RTX 6000 with 48GB VRAM.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 2,
+   "quote": "this GPU card Nvidia RTX 6000 with 48 GB of VRAM",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "16-bit load precision",
+   "claim": "The base model is loaded in 16-bit precision via unsloth as the best balance of accuracy and memory usage before attaching LoRA adapters.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 3,
+   "quote": "we are loading it in 16 bit precision which gives us the best balance of accuracy and memory usage",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA target modules — attention",
+   "claim": "LoRA adapters are attached to the query/key/value/output projection layers (q_proj, k_proj, v_proj, o_proj) inside the attention mechanism, which control how the model attends to input.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 3,
+   "quote": "QR, Kroj, VRO and OROJ are the query key value and output projections inside the attention mechanism",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA target modules — feed-forward",
+   "claim": "LoRA adapters also target the gate_proj, up_proj, and down_proj layers inside the feed-forward network, which control how the model transforms information.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 4,
+   "quote": "gate proj and upro as you can see here and down proje are inside the feed forward network",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA rank default",
+   "claim": "A LoRA rank (r) of 16 is described as a solid default/sweet spot — higher rank gives more learning capacity but costs more VRAM.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 4,
+   "quote": "16 is a solid sweet spot. I always use it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "LoRA alpha rule of thumb",
+   "claim": "Set lora_alpha equal to the rank r (e.g., r=16 → alpha=16), scaling both together if r increases.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 10,
+   "quote": "The rule of thumb is keep it equal to R",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Chat template pitfall",
+   "claim": "Using the wrong chat template (special tokens like im_start/im_end) when formatting training data is one of the most common reasons a fine-tuned model behaves strangely afterward.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 5,
+   "quote": "Using the wrong chat template is one of the most common reasons a fine-tuned model behaves strangely after training",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Max sequence length setting",
+   "claim": "max_seq_length was set to 2048 tokens for the SFT run — any example longer than that gets truncated.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 7,
+   "quote": "max sequence length is 2048. This is a maximum number of tokens per example",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Gradient accumulation trick",
+   "claim": "Gradient accumulation of 4 steps gives an effective batch size of 8 without needing 8x the VRAM a true batch size of 8 would require.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 8,
+   "quote": "it waits and accumulate four batches before updating weights which effectively gives us a batch size of eight",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "8-bit AdamW optimizer",
+   "claim": "AdamW 8-bit does the same job as standard AdamW but uses half the memory, traded for use in production in its full-precision form.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 9,
+   "quote": "the 8 bit version does the same job as standard ADMW but uses half the memory",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Fixed seed for reproducibility",
+   "claim": "Setting a fixed seed (3407) ensures reproducible fine-tuning runs.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 9,
+   "quote": "Seed is just 34 3407. This is a fixed random starting point",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Low VRAM footprint during LoRA training",
+   "claim": "During the LoRA fine-tune of this 0.8B model, VRAM usage stayed under 3GB — far below the 48GB card's capacity.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 9,
+   "quote": "it is consuming still consuming under 3 gig of VRAM",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Inspect data before training",
+   "claim": "Always inspect your dataset before training — garbage in produces garbage out, regardless of how good the GPU or training setup is.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 5,
+   "quote": "Always always inspect your data before training. Garbage in garbage out",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Loss as a success signal",
+   "claim": "A final training loss of 2.21 after 200 records and 3 epochs was called reasonable — anything under 2.5 after 3 epochs indicates training worked for a small model/dataset.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 12,
+   "quote": "Anything under 2.5 after three epox means training worked",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Two levers to push loss lower",
+   "claim": "To reduce loss further after a first run, either increase epochs (e.g., 3 to 6) or expand the dataset (e.g., 200 to 500+ records).",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 12,
+   "quote": "increase num trainer box from 3 to 65 or expand the data set from 200 to 500 plus records",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Qualitative before/after fine-tune comparison",
+   "claim": "After fine-tuning on 200 records, the model's answers became noticeably more grounded and culturally nuanced versus the base model's generic, vague response to the same question.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 13,
+   "quote": "This answer is more grounded. It is more culturally nuanced",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Merging LoRA for deployment",
+   "claim": "unsloth can merge the trained LoRA adapter weights back into the original base model to produce a standalone merged model file deployable with Transformers or vLLM.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 14,
+   "quote": "it has merged the Laura adapter weights back into the original base model weights creating a standalone model file",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "CPU fine-tuning is possible but slow",
+   "claim": "Fine-tuning on CPU is possible for small models but requires plenty of RAM and will be much slower than GPU training.",
+   "video_id": "9LU90uI4WRU",
+   "chunk_index": 9,
+   "quote": "you can also use CPU here but you would need plenty of RAM",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "LLM definition",
+   "claim": "A large language model is defined as a neural network trained to predict the next term of an input sequence.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 0,
+   "quote": "a neural network. That is trained to predict the next term. Of an input sequence",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Tokenization follows linguistic structure",
+   "claim": "Tokenization doesn't just split on spaces — it breaks words into morphologically meaningful units (e.g., recognizing suffixes like -ers or -ing) so the model can infer grammatical role.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 1,
+   "quote": "terms which have the suffix of ers",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Vectors encode meaning as coordinates",
+   "claim": "Vectorization maps each token to a coordinate in n-dimensional space such that words with similar meaning cluster near each other and opposite-meaning words sit far apart.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 2,
+   "quote": "This is called a vector",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Attention resolves word ambiguity",
+   "claim": "The attention mechanism disambiguates words like 'apple' by combining a word's vector with nearby context vectors (e.g., 'revenue' pushes 'apple' toward the company, 'tasty' pushes it toward the fruit).",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 4,
+   "quote": "You effectively take the vector of Apple and you push it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Self-supervised learning enables scale",
+   "claim": "Self-supervised learning lets models generate their own training challenges from existing text (predicting masked/next tokens) without human-labeled data, which is what made LLM training massively scalable.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 6,
+   "quote": "Self-supervised learning means that instead of telling the model",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Transformer architecture",
+   "claim": "A transformer processes input tokens through an attention block forwarded into a feedforward neural network, stacking many such layers (classic models ~12 layers, recent GPT architectures reportedly in the hundreds) to refine meaning before producing output tokens.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 10,
+   "quote": "Sometimes they're stacked to 12 layers, sometimes more",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning definition",
+   "claim": "Fine-tuning is the step where a self-supervised base model is further trained on question/answer pairs so it answers in a specific (e.g., medical or financial) register, penalizing plausible-but-undesirable responses.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 12,
+   "quote": "a base model is trained to answer in a specific way",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Few-shot prompting",
+   "claim": "Few-shot prompting means augmenting a query with example input/output pairs at inference time, improving response quality without any retraining.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 13,
+   "quote": "This is called future prompting. It's basically example prompting example in prompt",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "RAG's status is contested",
+   "claim": "Some practitioners are already calling retrieval-augmented generation (RAG) 'dead' even as the technique is described as central to giving LLMs company-specific context.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 14,
+   "quote": "people are saying rank or retrieval augmented generation is already dead",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Vector DB search algorithm",
+   "claim": "Vector databases commonly use algorithms like HNSW (hierarchical navigable small world) to perform the similarity search that finds semantically relevant documents for RAG.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 17,
+   "quote": "Some of these algorithms are hierarchical, navigable, small world",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "MCP connects models to external tools",
+   "claim": "Model Context Protocol (MCP) was created specifically to let a model's client connect to external servers/databases (e.g., airline booking systems) and pull context the model itself can't reach.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 18,
+   "quote": "this challenge was met with model context protocol",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Context engineering defined",
+   "claim": "Context engineering is the umbrella term for combining few-shot prompting, RAG, and MCP tool access, plus managing user preferences and summarizing/compressing chat history over time.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 20,
+   "quote": "all of this put together is called context engineering",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Agent definition",
+   "claim": "An agent is a long-running process (like a server handling API calls) with the capability to query an LLM, external systems, and other agents to meet a user's requirements over time.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 21,
+   "quote": "you have a long running process. Which is known as an agent",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "RLHF mechanism",
+   "claim": "Reinforcement learning with human feedback trains a model by having humans choose between two generated responses (+1/-1), reinforcing the vector-space path that led to the preferred output.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 24,
+   "quote": "That's what is reinforcement learning with human feedback",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "RL limitation vs. human mental models",
+   "claim": "Reinforcement learning only observes outcomes and can't build a true mental model of a system (illustrated with Pavlov's dog and a fair coin), unlike human reasoning which understands the underlying physics/structure.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 25,
+   "quote": "If you know about Pavlov's dog",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "Chain-of-thought reasoning",
+   "claim": "Chain-of-thought training teaches a model to break problems into step-by-step deductions, producing higher-quality answers than direct response, and letting the model add more reasoning steps as problem difficulty increases.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 28,
+   "quote": "If you make the problem harder, it goes for more steps",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Small language model scale",
+   "claim": "Small language models (SLMs) typically have roughly 3 million to 300 million parameters, versus 3 to 300 billion for LLMs, trading general capability for cheaper, company/task-specific performance.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 30,
+   "quote": "a small language model may have 3 million to 300 million parameters",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Distillation builds SLMs",
+   "claim": "Small language models are typically produced via distillation: a large teacher model's outputs are used as the training target for a smaller student model with far fewer parameters.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 31,
+   "quote": "the process of building small language models is usually distillation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Quantization saves memory, not training cost",
+   "claim": "Quantizing weights from 32-bit to 8-bit can save roughly 75% of memory; it's applied after training to cut inference cost, since training cost is unaffected.",
+   "video_id": "OYvlznJ4IZQ",
+   "chunk_index": 33,
+   "quote": "condense that information into eight bits. Then 75% of your memory is expected to be saved",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Agent = model + harness",
+   "claim": "An agent equals the model plus its harness — a harness is defined as every piece of code, configuration, or execution logic around the model that isn't the model itself.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 27,
+   "quote": "a harness is every piece of code, configuration, or execution logic that isn't the model itself",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "First harness pillar: prompting",
+   "claim": "Of the things that make a harness good, prompting and very clear instructions rank first — covering not just system prompts but tool descriptions, skills front matter, and sub-agent descriptions.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 30,
+   "quote": "prompting and like very very clear instructions",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Models game easy verification",
+   "claim": "Agents are susceptible to taking the easy way out on self-verification, testing trivial cases instead of genuinely hard ones, which lets bugs pass a superficial self-check.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 32,
+   "quote": "agents are very susceptible towards like picking the easy way out in verification",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "Sub-agent task sizing",
+   "claim": "Bound a sub-agent's task to roughly a 50k–150k (up to ~200k) token range so it doesn't drift into the high-context 'dumb zone' where performance degrades.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 35,
+   "quote": "do things in like a 50k to like a 150k token range, roughly",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Model selection by task",
+   "claim": "Different models are picked for different sub-tasks: GPT-5.4 is considered exceptional at planning, while Gemini Flash offers excellent multimodal performance at low cost/latency.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 36,
+   "quote": "like Flash is actually amazing bang for buck for",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Max reasoning effort can backfire under time limits",
+   "claim": "Running a model at maximum ('X-high') reasoning effort throughout scored only 53.9% on a time-bounded terminal benchmark due to timeouts, versus 63.6% at 'high' effort — more reasoning isn't always better once wall-clock constraints apply.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 36,
+   "quote": "running only at X high scored 53.9% due to timeouts versus 63.6% at high",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Split reasoning effort by phase",
+   "claim": "A practical reasoning-effort recipe is X-high for planning and high for execution, balancing solution quality against latency and cost.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 39,
+   "quote": "X high planning and then like high for execution",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "File system as the foundational harness primitive",
+   "claim": "The file system is described as arguably the most foundational harness primitive — models are already exceptional at using it, and it serves as persistent storage for both context offloading and multi-agent collaboration.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 39,
+   "quote": "the file system is arguably the most foundational harness primitive",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Virtual file systems over real storage",
+   "claim": "LangChain's libraries expose a 'virtual file system' concept so agents can use file-system-style operations (ls, grep) over existing storage backends like S3 or Postgres.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 41,
+   "quote": "we have this concept like virtual file systems where it's like you expose file system like storage essentially",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Distill traces into retrievable memories",
+   "claim": "Because agents produce massive volumes of trace data, search is used to distill that trace knowledge into retrievable 'nuggets'/memories rather than keeping everything always-on in context.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 47,
+   "quote": "distilling a bunch of trace knowledge into like nuggets or like memories that I can actually retrieve",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "When RL/fine-tuning is worth it",
+   "claim": "RL (or fine-tuning) is worth exploring when a team is building for a specific vertical with real data and wants a model that's both better and cheaper/faster for that one task.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 50,
+   "quote": "really, really great if you have some sort of like vertical that you want to like make your model like a really, really good at",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Start with harness engineering before RL",
+   "claim": "Before reaching for RL, it's a good idea to start with harness/context engineering — picking a model and building a simple harness around it first, since it's far cheaper to iterate on than RL.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 52,
+   "quote": "really good idea just to start with harness engineering",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Sub-agents fight context rot",
+   "claim": "Decomposing a problem across sub-agents is a primary lever against context rot, because it keeps the main agent's context window from being polluted with intermediate work.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 54,
+   "quote": "I can use like sub agents to decompose the problem into like more manageable chunks",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Tool-call output offloading",
+   "claim": "For noisy tool outputs (e.g., shell/bash command results), pipe only the head and tail into the model's context and store the full output in a file the model can access if needed.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 57,
+   "quote": "you can just take like the head and the tail and you pipe that into context",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Why skills work",
+   "claim": "Skills improved agent instructions because, unlike private system prompts, skills are shareable and visible to others, which pushed authors to write genuinely good workflow descriptions.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 55,
+   "quote": "Skills are awesome because everyone before skills, like hated writing good docs",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Open models surprised in 2025/2026",
+   "claim": "Open models like GLM-5 surprised the speaker this year as genuinely good, fast agentic coding partners, used regularly by the LangChain team.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 71,
+   "quote": "the GLM series is like fantastic. And like it is actually a good agentic coding partner",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Tag evals to capability axes",
+   "claim": "LangChain tags every eval to one or more capability axes (e.g., retrieval, problem solving, planning, tool use) rather than treating benchmark scores as a single undifferentiated number.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 82,
+   "quote": "we tag every eval to like one or multiple axes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Build your own benchmark",
+   "claim": "Public benchmarks (Terminal Bench, SWE-bench, etc.) are rough proxy signals at best; the best way to measure your agent's problem-solving ability is a representative set of evals/tasks built from your own product's trace data.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 83,
+   "quote": "really the best way to measure problem-solving ability is just to like get a representative set of like evals and tasks like my own bench",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Long-horizon tasks need decompose-and-verify",
+   "claim": "Long-horizon tasks are best handled by decomposing the hard problem into sub-pieces and verifying each intermediate step, since detecting when a sub-step failed is the hardest part.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 86,
+   "quote": "decomposing a really difficult problem into like sub pieces and then doing like verification of the intermediate steps",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Self-improvement loop for agents",
+   "claim": "The emerging self-improvement loop is: build agent, run it in an environment, collect traces, mine traces for errors, point compute at that trace data to derive new evals and training data, and improve the agent — then repeat.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 89,
+   "quote": "point a lot of compute at the trace data to derive like evals and to derive training data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Underrated harness feature: hooks",
+   "claim": "Hooks/middleware that inject deterministic code execution into the harness (e.g., forcing self-verification before an agent exits) are an underrated but highly effective harness feature.",
+   "video_id": "NovNcsKX8AU",
+   "chunk_index": 70,
+   "quote": "hooks that sort of like control bad model behavior are like really really helpful",
+   "kind": "tool",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "When to fine-tune/RL vs. rely on prompting and context engineering",
+   "positions": [
+    {
+     "video_id": "9LU90uI4WRU",
+     "chunk_index": 0,
+     "position": "Presents LoRA fine-tuning on a tiny 200-row custom dataset as an accessible, worthwhile first move to make even a small 0.8B model a domain expert — framed as 'not really a big deal.'"
+    },
+    {
+     "video_id": "NovNcsKX8AU",
+     "chunk_index": 52,
+     "position": "Argues teams should start with harness/context engineering first and reserve RL/fine-tuning for narrow verticals with ample data, since it is cheaper to iterate on a harness than to fine-tune, and some needs (like fact retrieval) are better solved by search than by RL."
+    }
+   ]
+  },
+  {
+   "topic": "Whether retrieval-augmented generation (RAG) still matters",
+   "positions": [
+    {
+     "video_id": "OYvlznJ4IZQ",
+     "chunk_index": 14,
+     "position": "Notes that 'people are saying RAG is already dead,' even while describing RAG as a core, widely-used context-engineering technique for feeding a model company-specific documents."
+    },
+    {
+     "video_id": "NovNcsKX8AU",
+     "chunk_index": 39,
+     "position": "Implicitly treats file systems and search/trace-distillation as the more foundational, forward-looking primitives for giving agents context, rather than classic RAG pipelines."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the four videos give concrete cost figures for running this stack in production (cloud bills, inference cost per token at scale, GPU rental cost for fine-tuning larger models).",
+  "No video explains how to decide, with real criteria, whether a given task should be solved with prompting/RAG, a sub-agent harness, LoRA fine-tuning, or full RL — each video touches part of this but none gives a unified decision framework.",
+  "The fine-tuning video (9LU90uI4WRU) doesn't cover how to evaluate a fine-tuned model beyond eyeballing one or two sample answers and the training loss number — no held-out test set or quantitative eval is shown.",
+  "Gaurav Sen's concept primer doesn't include any code or tool names, so a viewer still needs a separate hands-on tutorial to implement tokenization, RAG, or MCP.",
+  "Dave Ebbelaar's stack video doesn't address how to choose which specific LLM/provider to call for a given automation task, security/compliance concerns, or how to monitor the deployed system in production.",
+  "Vivek Trivedy's interview describes hooks, verification, and context-rot mitigations conceptually but gives no concrete code example of how a hook or virtual file system is implemented.",
+  "No video in this cluster addresses agent security, prompt-injection defenses, or guardrails for production agent deployments."
+ ],
+ "verified_claims": 76
+}
