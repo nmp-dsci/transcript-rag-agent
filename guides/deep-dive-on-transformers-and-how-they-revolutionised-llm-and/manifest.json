@@ -1,0 +1,238 @@
+{
+  "slug": "deep-dive-on-transformers-and-how-they-revolutionised-llm-and",
+  "title": "From Recurrence to Attention",
+  "topic": "deep dive on transformers and how they revolutionised llm and",
+  "subtitle": "What the transformer actually changed about neural network training, how it differs from RNNs and LSTMs mechanism by mechanism, and what that change costs you downstream — distilled from Stanford's CME295 lectures (Afshine and Shervine Amidi), Maxime Labonne, Sebastian Raschka, Cormac Brick, Sunny Savita, Dave Ebbelaar, KodeKloud and the Databricks/MosaicML keynote.",
+  "question": "can you do deep dive on transformers and how they revolutionised llm and neural network training how it differs to rnn / lstm",
+  "status": "published",
+  "current_version": 1,
+  "compiled_at": "2026-10-22",
+  "model": {
+    "extractor": "claude-sonnet-5",
+    "composer": "claude-opus-5",
+    "reviser": "claude-opus-5"
+  },
+  "video_ids": [
+    "cO6Ly7mIziQ",
+    "VlA_jt_3Qc4",
+    "8fNP4N46RRo",
+    "k5Fh-UgTuCo",
+    "Ub3GoFaUcds",
+    "PmW_TMQ3l0I",
+    "-TiET_K-E_g",
+    "hBzUokVYQkI",
+    "4yNswvhPWCQ",
+    "zjM2-_cFupo",
+    "idIck_TmPTE",
+    "a3SMraZWNNs",
+    "uLrOI65XbDw"
+  ],
+  "sources": [
+    {
+      "video_id": "cO6Ly7mIziQ",
+      "title": "LoRA & QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical (Complete Guide)",
+      "channel": "Sunny Savita",
+      "contributed": "Grounds the transformer's weight matrices and attention mechanism (Q/K/V, multi-head attention, feed-forward layers) in concrete matrix-rank math, then shows exactly how LoRA/QLoRA exploit that structure to fine-tune on a single GPU, including a full Hugging Face code walkthrough.",
+      "url": "https://www.youtube.com/watch?v=cO6Ly7mIziQ"
+    },
+    {
+      "video_id": "VlA_jt_3Qc4",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 4 - LLM Training",
+      "channel": "Stanford Online",
+      "contributed": "Covers pre-training mechanics and scale (data/compute/cost orders of magnitude, Chinchilla scaling), the distributed-training toolkit (data/model parallelism, ZeRO, flash attention, mixed precision/quantization), and the start of SFT plus evaluation pitfalls and LoRA/QLoRA.",
+      "url": "https://www.youtube.com/watch?v=VlA_jt_3Qc4"
+    },
+    {
+      "video_id": "8fNP4N46RRo",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 8 - LLM Evaluation",
+      "channel": "Stanford Online",
+      "contributed": "Gives the evaluation taxonomy that proves whether reasoning/transformer gains are real: human-rating pitfalls, rule-based metric limits, full LLM-as-judge mechanics and bias catalogue, an agentic failure-mode breakdown, and the benchmark landscape (MMLU, AIME, PIQA, SWE-bench, HarmBench, tau-bench).",
+      "url": "https://www.youtube.com/watch?v=8fNP4N46RRo"
+    },
+    {
+      "video_id": "k5Fh-UgTuCo",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 6 - LLM Reasoning",
+      "channel": "Stanford Online",
+      "contributed": "Walks through how reasoning models are actually trained on top of vanilla transformer LLMs — chain-of-thought motivation, pass@k math, GRPO mechanics, its known length-bias bug and fixes, and the full DeepSeek R1-Zero/R1 recipe.",
+      "url": "https://www.youtube.com/watch?v=k5Fh-UgTuCo"
+    },
+    {
+      "video_id": "Ub3GoFaUcds",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 1 - Transformer",
+      "channel": "Stanford Online",
+      "contributed": "Builds the transformer from first principles: tokenization tradeoffs, Word2vec proxy tasks, why RNNs/LSTMs fail on long-range dependencies, and the self-attention/Q-K-V mechanics with a full worked translation example.",
+      "url": "https://www.youtube.com/watch?v=Ub3GoFaUcds"
+    },
+    {
+      "video_id": "PmW_TMQ3l0I",
+      "title": "Stanford CME295 Transformers & LLMs | Autumn 2025 | Lecture 5 - LLM tuning",
+      "channel": "Stanford Online",
+      "contributed": "Walks through preference tuning end to end: collecting pairwise preference data, the Bradley-Terry reward model, RLHF/PPO mechanics (advantage, KL penalty, reward hacking), best-of-n, and DPO as a supervised alternative with its PPO-vs-DPO tradeoffs.",
+      "url": "https://www.youtube.com/watch?v=PmW_TMQ3l0I"
+    },
+    {
+      "video_id": "-TiET_K-E_g",
+      "title": "From 46% to 90%: Fine-Tuning Tiny LLMs for On-Device Agents — Cormac Brick, Google",
+      "channel": "AI Engineer",
+      "contributed": "The on-device / tiny-LLM (<1B param) deployment stack (LiteRT LM, AI Edge Gallery, Gemma skills) plus hard before/after fine-tuning numbers (FunctionGemma 46%→90%+) and real-hardware token-throughput metrics.",
+      "url": "https://www.youtube.com/watch?v=-TiET_K-E_g"
+    },
+    {
+      "video_id": "hBzUokVYQkI",
+      "title": "AI Infrastructure Explained (GPUs, vLLM, and LLM-D)",
+      "channel": "KodeKloud",
+      "contributed": "Frames the transformer itself as 'a fixed formula plus billions of learned weights' and walks through the serving-side machinery (VRAM, KV cache, prefill/decode, batching, sharding, LLM-D routing) that turns that formula into a product at scale.",
+      "url": "https://www.youtube.com/watch?v=hBzUokVYQkI"
+    },
+    {
+      "video_id": "4yNswvhPWCQ",
+      "title": "Build an LLM from Scratch 7: Instruction Finetuning",
+      "channel": "Sebastian Raschka",
+      "contributed": "Hands-on walkthrough of turning a pretrained GPT-2-class transformer into an instruction-follower: prompt templating, batch-level padding, loss masking, and the practical mess of scoring free-form output with another LLM as judge.",
+      "url": "https://www.youtube.com/watch?v=4yNswvhPWCQ"
+    },
+    {
+      "video_id": "zjM2-_cFupo",
+      "title": "Data + AI Summit Keynote, Wednesday Part 4 -  Democratizing LLMs with MosaicML and Databricks",
+      "channel": "Databricks",
+      "contributed": "The enterprise economics of training/owning LLMs from scratch (MPT-7B at $250K, MPT-30B at ~$750K vs. GPT-3's $10-15M) and the Lakehouse AI platform architecture (vector search, monitoring, GPU serving) backed by real customer deployments (Replit, JetBlue).",
+      "url": "https://www.youtube.com/watch?v=zjM2-_cFupo"
+    },
+    {
+      "video_id": "idIck_TmPTE",
+      "title": "LLM Fine-Tuning 24: Embedding & Embedding Fine-Tuning Full Guide | Train Your Own Embedding Model",
+      "channel": "Sunny Savita",
+      "contributed": "Shows the other transformer-derived artifact besides generative LLMs — sentence-transformer embeddings — contrasting them with pre-transformer static embeddings (Word2Vec/FastText), and gives hands-on model selection/benchmarking workflow (MTEB, cosine similarity, BM25 baseline).",
+      "url": "https://www.youtube.com/watch?v=idIck_TmPTE"
+    },
+    {
+      "video_id": "a3SMraZWNNs",
+      "title": "How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)",
+      "channel": "Dave Ebbelaar",
+      "contributed": "The three-level eval framework (unit tests -> human/model judge -> A/B testing) and the concrete human-alignment process you need before an LLM-as-judge can be trusted.",
+      "url": "https://www.youtube.com/watch?v=a3SMraZWNNs"
+    },
+    {
+      "video_id": "uLrOI65XbDw",
+      "title": "Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne",
+      "channel": "AI Engineer",
+      "contributed": "A practical taxonomy of SFT techniques (full fine-tuning, LoRA, QLoRA) plus a deep dive on model merging (SLERP, DARE, passthrough self-merge, FrankenMoE) with mergekit tooling and leaderboard evidence that merges can beat trained models.",
+      "url": "https://www.youtube.com/watch?v=uLrOI65XbDw"
+    }
+  ],
+  "chunk_count": 756,
+  "cluster_count": 5,
+  "cite_total": 211,
+  "cite_valid": 211,
+  "gaps": [
+    "None of the three talks explains the Transformer architecture itself (self-attention, multi-head attention, positional encoding, or why it displaced RNNs/LSTMs) — they assume it and jump straight to fine-tuning, deployment, or platform strategy.",
+    "No discussion of pretraining compute/data scaling laws, or how the attention mechanism specifically enables the capabilities being fine-tuned, merged, or deployed.",
+    "No talk gives apples-to-apples compute cost or wall-clock time for the merge/fine-tuning techniques themselves, the way the Databricks talk quantifies full pretraining cost.",
+    "Maxime Labonne's merge-technique claims rest mostly on leaderboard rank rather than specific benchmark score deltas, so a reader can't judge the exact magnitude of SLERP/DARE/FrankenMoE gains.",
+    "The Google talk doesn't explain how skill/function definitions interact with the underlying transformer's context window or attention over tool schemas.",
+    "No video gives a safety/alignment deep dive beyond one passing DPO example (refusing bomb-making instructions); there's no treatment of RLHF, red-teaming, or guardrails.",
+    "No video addresses inference-time architectural tricks (KV-cache, flash attention, quantization internals) that connect directly to how transformers are actually served efficiently.",
+    "None of the three talks explain the actual internals of the transformer — self-attention, multi-head attention, positional encoding — hBzUokVYQkI explicitly says 'don't worry about how it works inside' and moves straight to weights-as-a-file.",
+    "No video explains why the transformer architecture displaced RNNs/LSTMs (e.g. parallelizable training, long-range dependency handling) — the 'revolutionised' half of the topic is asserted, not argued, from this corpus.",
+    "No discussion of pretraining compute budgets, dataset scale, or scaling laws for transformer LLMs — hBzUokVYQkI only covers inference-time serving costs.",
+    "No cost or step breakdown of a full RLHF pipeline (reward model training, PPO) — 4yNswvhPWCQ names RLHF and PPO but defers the details to unlinked bonus material.",
+    "No guidance connecting transformer architectural choices (context length, attention variant, head count) to KV-cache memory sizing in production — hBzUokVYQkI treats KV cache purely as a serving concern, not an architecture one.",
+    "No concrete benchmark numbers for transformer LLM quality (e.g. MMLU results) beyond a passing comment that MMLU-style multiple choice is 'not super useful' for judging free-form generation.",
+    "The lecture explicitly skips the sinusoidal position-encoding formula ('we're not going to dig into that today'), so a reader gets the concept but not the math.",
+    "The generalized advantage estimation (GAE) formula itself is described as 'beyond the scope of this class' — the corpus names the technique and paper but not the derivation.",
+    "No video in this cluster gives concrete wall-clock or dollar costs for the RLHF/PPO stage specifically (only pre-training costs are quantified).",
+    "GRPO is named as the lecture-six topic but not explained in this cluster — readers interested in reasoning-model RL get only a pointer, not a mechanism.",
+    "Chinchilla's claim that 'architecture change does not play a big role' in scaling is asserted from the paper but not independently examined or challenged in these talks.",
+    "Zero-point and absmax quantization techniques are named as pointers ('stay tuned') but never explained within this cluster.",
+    "No discussion of how modern production transformers deviate from the original 2017 encoder-decoder design (e.g., RoPE, grouped-query attention) — this cluster covers the original architecture and training pipeline, not current architectural variants.",
+    "No corpus talk gives the actual GRPO/DAPO/Dr. GRPO loss formulas end-to-end with worked numbers — only high-level descriptions of what each fix changes, so a reader can't reimplement them from this evidence alone.",
+    "No concrete numbers on reasoning-token pricing (e.g., $/token for reasoning vs output tokens on a specific provider) are given, even though the lecture flags that users are charged for them.",
+    "The DeepSeek R1 cold-start SFT dataset size is never quantified — the lecturer explicitly says the paper doesn't give a number and guesses it's 'orders of magnitude less' than other stages.",
+    "No video gives a recommended judge model (or model family) for LLM-as-judge setups, just the general heuristic 'bigger and different from the generator.'",
+    "The embedding video explicitly defers embedding fine-tuning methodology itself (loss functions like triplet/contrastive loss, dataset formatting, actual fine-tuning code) to a follow-up video not in this cluster — so this cluster explains what embeddings are and how to pick one, but not how to fine-tune one.",
+    "None of the three talks covers core transformer architecture internals (self-attention, positional encoding, multi-head attention math) — they all assume that foundation from earlier lectures not present in this cluster.",
+    "No guidance is given on how to choose or size the 'group' (G) in GRPO (how many completions to sample per prompt) beyond noting that more samples reduce variance in the reward comparison.",
+    "No benchmark numbers (accuracy percentages, dollar costs) are given comparing reasoning models like R1 against closed competitors on specific tasks — the lecture only characterizes R1 as 'competitive.'",
+    "No coverage of positional encoding, layer normalization, or residual connections in the transformer block — the video stays at the level of attention (Q/K/V) and feed-forward weights.",
+    "The speaker explicitly flags his own LoRA vs QLoRA speed comparison as possibly mislabeled ('I think this is going to be swapped maybe'), so a reader cannot resolve from this source which is actually faster.",
+    "No perplexity or accuracy numbers are given for QLoRA itself — only the LoRA-vs-full-fine-tuning GPT-3 figures from the LoRA paper are cited.",
+    "RLHF, PPO, GRPO, DPO, and ORPO are named as upcoming playlist topics but are not explained in this video.",
+    "DoRA, prefix tuning, prompt tuning, BitFit, and IA3 are named as alternative PEFT methods but none are explained beyond their names.",
+    "No guidance on how to choose LoRA rank or alpha for a new task beyond the single demo values (rank=16, alpha=32) used in the walkthrough.",
+    "No treatment of the internal head-splitting math of multi-head attention — the video stays at the 'Q, K, V are matrices' level of detail."
+  ],
+  "web_allowed": false,
+  "web_urls": [],
+  "provenance": {
+    "pipeline": "guides write",
+    "skill": "field-guide-writer",
+    "cite_level": "chunk",
+    "sections": [
+      "thesis",
+      "lineage",
+      "recurrence",
+      "swap",
+      "block",
+      "attention",
+      "bill",
+      "training",
+      "adapt",
+      "worksheets",
+      "sources",
+      "gaps"
+    ],
+    "runs": [
+      "20261022T041211Z-write.jsonl"
+    ],
+    "costs": [
+      {
+        "label": "extract:cluster-3",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.1105421,
+        "duration_ms": 167174,
+        "turns": 12,
+        "tool_calls": 11
+      },
+      {
+        "label": "extract:cluster-5",
+        "model": "claude-sonnet-5",
+        "cost_usd": 0.8868881000000001,
+        "duration_ms": 215309,
+        "turns": 6,
+        "tool_calls": 5
+      },
+      {
+        "label": "extract:cluster-2",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.1374804,
+        "duration_ms": 221430,
+        "turns": 11,
+        "tool_calls": 10
+      },
+      {
+        "label": "extract:cluster-1",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.154498,
+        "duration_ms": 342414,
+        "turns": 10,
+        "tool_calls": 9
+      },
+      {
+        "label": "extract:cluster-4",
+        "model": "claude-sonnet-5",
+        "cost_usd": 1.4495643,
+        "duration_ms": 353937,
+        "turns": 11,
+        "tool_calls": 10
+      },
+      {
+        "label": "compose",
+        "model": "claude-opus-5",
+        "cost_usd": 7.636924,
+        "duration_ms": 950445,
+        "turns": 76,
+        "tool_calls": 75
+      }
+    ]
+  }
+}

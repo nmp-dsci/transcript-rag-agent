@@ -36,6 +36,24 @@ def extract_video_id(url_or_id: str) -> str:
     raise YouTubeUrlError(f"Could not extract YouTube video ID from: {url_or_id}")
 
 
+def video_id_from_url(value: str) -> str | None:
+    """The video ID when ``value`` is a YouTube *video URL*, else ``None``.
+
+    Stricter than :func:`extract_video_id`: a bare 11-character string is not
+    accepted, because a channel handle typed without its ``@`` can look exactly
+    like a video ID. Used to catch a video URL pasted into a channel field.
+    """
+    text = value.strip()
+    if not text or _looks_like_video_id(text):
+        return None
+    if "://" not in text:
+        text = f"https://{text}"
+    try:
+        return extract_video_id(text)
+    except YouTubeUrlError:
+        return None
+
+
 def _looks_like_video_id(value: str) -> bool:
     return len(value) == 11 and all(
         char.isalnum() or char in {"_", "-"} for char in value

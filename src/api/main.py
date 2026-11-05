@@ -33,7 +33,7 @@ from fastapi.responses import (
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from src.api.corpus import (
     list_chunks,
@@ -87,6 +87,7 @@ from src.chat.setups import (
 )
 from src.config import Settings, load_settings
 from src.transcripts.supadata_keys import ring_for
+from src.transcripts.youtube import video_id_from_url
 from src.documents.resolve import ResolvedDocument, describe_failure, resolve_document
 from src.documents.store import DocumentStore
 from src.evals.judge import RagasJudge, unjudgeable
@@ -166,6 +167,17 @@ class IndexRequest(BaseModel):
     url: str | None = None
     channel: str | None = None
     latest: int = Field(default=5, ge=1, le=50)
+
+    @model_validator(mode="after")
+    def _video_url_in_channel_field(self) -> "IndexRequest":
+        """Index a video URL pasted into the channel field as that one video.
+
+        Sent as a channel it reaches Supadata's channel discovery, which
+        rejects it with HTTP 400 and fails the whole job at ``discover``.
+        """
+        if self.mode == "channel" and self.channel and video_id_from_url(self.channel):
+            self.mode, self.url, self.channel = "video", self.channel.strip(), None
+        return self
 
 
 class RankRequest(BaseModel):

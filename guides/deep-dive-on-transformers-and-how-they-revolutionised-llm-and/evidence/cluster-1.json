@@ -1,0 +1,624 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "uLrOI65XbDw",
+  "-TiET_K-E_g",
+  "zjM2-_cFupo"
+ ],
+ "video_notes": [
+  {
+   "video_id": "uLrOI65XbDw",
+   "title": "Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne",
+   "contributed": "A practical taxonomy of SFT techniques (full fine-tuning, LoRA, QLoRA) plus a deep dive on model merging (SLERP, DARE, passthrough self-merge, FrankenMoE) with mergekit tooling and leaderboard evidence that merges can beat trained models."
+  },
+  {
+   "video_id": "-TiET_K-E_g",
+   "title": "From 46% to 90%: Fine-Tuning Tiny LLMs for On-Device Agents — Cormac Brick, Google",
+   "contributed": "The on-device / tiny-LLM (<1B param) deployment stack (LiteRT LM, AI Edge Gallery, Gemma skills) plus hard before/after fine-tuning numbers (FunctionGemma 46%→90%+) and real-hardware token-throughput metrics."
+  },
+  {
+   "video_id": "zjM2-_cFupo",
+   "title": "Data + AI Summit Keynote, Wednesday Part 4 - Democratizing LLMs with MosaicML and Databricks",
+   "contributed": "The enterprise economics of training/owning LLMs from scratch (MPT-7B at $250K, MPT-30B at ~$750K vs. GPT-3's $10-15M) and the Lakehouse AI platform architecture (vector search, monitoring, GPU serving) backed by real customer deployments (Replit, JetBlue)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "Three-stage LLM training pipeline",
+   "claim": "LLMs are built in three stages: pretraining on raw text with a next-token objective (produces a base model), supervised fine-tuning on question/answer pairs, then preference alignment on human preference data.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 0,
+   "quote": "model learns to do a next token prediction",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Base models autocomplete instead of answering",
+   "claim": "A raw pretrained base model will autocomplete a question rather than answer it, which is exactly the gap supervised fine-tuning closes.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 0,
+   "quote": "autocomplete your question instead of answering it",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Enterprises fine-tune for control and customizability",
+   "claim": "An a16z survey found the top two reasons enterprises care about open-source LLMs are control and customizability, and customizability is largely about fine-tuning.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 2,
+   "quote": "control and customer ability",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning library landscape",
+   "claim": "Besides Unsloth, the main fine-tuning libraries are TRL (Hugging Face, built on Transformers), Axolotl (YAML-config driven), and LLaMA-Factory (has a strong GUI).",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 3,
+   "quote": "TRL from hugging face uh Great Library",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SFT trains only on the answer tokens",
+   "claim": "In an SFT sample, the system+user prompt is used only as context and masked out; training loss is computed on the output tokens only.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 3,
+   "quote": "we train the model usually like generally on the outputs only",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DPO trains on chosen vs. rejected pairs",
+   "claim": "Direct Preference Optimization trains on (instruction, chosen answer, rejected answer) triples with the objective of raising the probability of the chosen answer relative to the untrained model.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 4,
+   "quote": "make sure that the model that you're currently training outputs higher probabilities",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Complexity means forcing reasoning, not Wikipedia-style QA",
+   "claim": "Good SFT data pushes complexity by giving the model tasks that force reasoning, e.g. outputs with chain-of-thought, rather than simple fact-lookup QA.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 6,
+   "quote": "the output will have Chain of Thought reasoning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Full fine-tuning: best performance, most cost",
+   "claim": "Full fine-tuning (training the base model's own parameters) is the most basic SFT technique and gives the best performance, but at the highest resource cost.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 7,
+   "quote": "full fine training this is like the most basic one",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "LoRA freezes the base model, trains adapters",
+   "claim": "LoRA freezes all pretrained weights and adds trainable low-rank adapter matrices (A and B) to targeted layers, training only a small subset of parameters, which is much faster.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 7,
+   "quote": "freeze all the pre-rain weights and you add adapters",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA quantizes the base model to 4-bit",
+   "claim": "QLoRA applies the LoRA idea on top of a 4-bit quantized pretrained model, lowering VRAM usage further but degrading performance — a real trade-off.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 8,
+   "quote": "quantize uh the pre-train model here in 4bit Precision",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Learning-rate search: push until loss explodes",
+   "claim": "The recommended way to tune learning rate is to go as high as possible until the loss curve explodes, then back off from that point.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 8,
+   "quote": "go as high as you can uh until your loss explodes",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Batch size should maximize GPU utilization",
+   "claim": "Batch size should be maximized to make full use of available GPU capacity during fine-tuning.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 9,
+   "quote": "you want to maximize it to maximize the utilization",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Model merging requires zero GPU compute",
+   "claim": "Merging the weights of different fine-tuned models requires no GPU at all, is extremely cheap, and still produces excellent results.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 9,
+   "quote": "it doesn't required any GPU so it's super efficient",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Merged models dominate the Open LLM Leaderboard",
+   "claim": "On the Open LLM Leaderboard (v1) for 7B parameter models, the entire top 8-10 ranked models were merges, not standalone fine-tunes.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 9,
+   "quote": "the entire top eight or top 10 is just merge models",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "mergekit is the leading merge library",
+   "claim": "mergekit is recommended as the leading open-source library implementing the main model-merging techniques.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 10,
+   "quote": "I would recommend using merch kit uh this is like the leading library",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SLERP merges exactly two models with tunable interpolation",
+   "claim": "SLERP (spherical linear interpolation) merges exactly two models at a time, letting you tune different interpolation factors per layer.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 10,
+   "quote": "it stands for spherical linear interpolation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DARE works best merging 7-8 models, not just 2-3",
+   "claim": "DARE prunes the most significant weights and rescales them, and works best not with 2-3 models but when merging as many as 7 or 8 models together.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 11,
+   "quote": "like with seven or eight models it works really really well",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Passthrough self-merge builds a bigger model with zero training",
+   "claim": "Passthrough merging can concatenate layers of the same model (self-merge) with no training at all — e.g. a 'Meta-Llama-3-120B-Instruct' was made by repeating 10 layers of Llama-3-70B-Instruct six times and went viral for strong, if unhinged, creative writing.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 12,
+   "quote": "I took Lama 370d instruct and I just uh repeated 10 layers six times",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "FrankenMoE merges FFN layers from fine-tunes into a router",
+   "claim": "A 'FrankenMoE' is built by extracting the feed-forward network layers from several already fine-tuned models and combining them under a new router, instead of pretraining a mixture-of-experts from scratch.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 13,
+   "quote": "we call this a Franken M you add a router",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Merged Beyonder model beat its own source models",
+   "claim": "The Beyonder FrankenMoE (merging a chat, code, roleplay, and math model, router initialized from positive-prompt embeddings) outperformed each of its individual source models on multiple benchmarks.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 14,
+   "quote": "it's actually performing better than the source models",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Tiny LLM defined as under 1 billion parameters",
+   "claim": "Google's 'tiny LLM' category refers to models smaller than a billion parameters, small enough to bundle directly into a mobile app.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 0,
+   "quote": "LLMs that are like smaller than a billion parameters",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Google AI Edge stack layers",
+   "claim": "Google's on-device AI stack is MediaPipe (assets), LiteRT LM (the LLM-serving harness you bundle with an app), and LiteRT runtime (formerly TensorFlow Lite) running on CPU, GPU, or NPU.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 1,
+   "quote": "formerly known as TensorFlow Lite, which is a kind of cross-framework runtime",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "LiteRT already reaches 2.7 billion devices",
+   "claim": "LiteRT (built into Android OS) already runs on over 2.7 billion devices with very high daily invocation volume.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 2,
+   "quote": "it does uh, support over 2.7 billion devices",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Gemini Nano's base models are Gemma E2B/E4B",
+   "claim": "Gemini Nano, delivered via AI Core, is built on the Gemma E2B and E4B base models — pre-optimized, pre-loaded on-device models that don't add to app size.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 3,
+   "quote": "the Gemma 4 E2B and E4B are the base models",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "On-device skills are enabled by a new Gemma release",
+   "claim": "On-device agent 'skills' are a new capability unlocked by the Gemma model released the week of the talk.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 4,
+   "quote": "this is something new that we can do with Gemma 4",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "AI Edge Gallery app also loads third-party models",
+   "claim": "Google's open-source AI Edge Gallery app (iOS/Android, built on LiteRT LM) lets users load third-party models like Qwen or Phi to try performance on-device, not just Gemma.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 5,
+   "quote": "the app also supports 3P models, like kind of quan or phi",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Skill details load on demand rather than all at once",
+   "claim": "The model is told the names/descriptions of available skills in its system prompt, but full function details for a skill are only loaded into context on demand via a built-in load-skill tool call.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 7,
+   "quote": "a load uh a load skill tool call built into the model",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Skills can run custom JavaScript for UI",
+   "claim": "Because the harness lives inside an app, a skill can include custom JavaScript that renders UI (e.g., a roulette wheel or a map view) as part of the skill's response.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 7,
+   "quote": "you can put simple JavaScript into the skill",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Community built ~80 skills using skills-to-write-skills",
+   "claim": "Using Gemini CLI with a reliable prompt pattern, the team (and community) have built roughly 80 skills, including an ADB skill used for on-device debugging/testing.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 8,
+   "quote": "our team have done like about 80 skills",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "LiteRT LM packages a model as a single file",
+   "claim": "LiteRT LM is a single-file format that packages everything needed to run a model (including the tokenizer), and is open source and cross-platform.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 9,
+   "quote": "it runs models in lighter or TLM format, which is a single file",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Deployment path: Transformers to LiteRT-Torch to LiteRT LM",
+   "claim": "The standard tiny-model deployment flow starts in Transformers, exports via the LiteRT-Torch package, and runs/serves via LiteRT LM (which also has a desktop reference runtime for quick testing).",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 10,
+   "quote": "typically starting transformers, you then have a package called lighter or T torch",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Sub-200M models need a narrow single task to work well",
+   "claim": "Once a model drops to roughly 100-200 million parameters, it only works well if given a very narrow, focused task rather than general-purpose use.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 11,
+   "quote": "it needs to have a very narrow and focused task",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Apple FastVLM: 500M-parameter VLM on a phone NPU",
+   "claim": "Apple's FastVLM is a 500-million-parameter visual language model that runs fast on a Qualcomm NPU via Google's edge stack, demonstrating hardware-accelerated tiny multimodal inference.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 11,
+   "quote": "this is a visual language model that's only 500 million parameters",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "FunctionGemma (270M) throughput on a legacy phone",
+   "claim": "FunctionGemma, a 270M-parameter Gemma-3-based function-calling model, processes almost 2,000 tokens/sec at prefill and 140 tokens/sec at decode even on an old Pixel 7.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 12,
+   "quote": "almost 2,000 tokens per second prefill and 140 decode",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Fine-tuning lifted FunctionGemma accuracy from 46% to over 90%",
+   "claim": "Out of the box, FunctionGemma's app-intent success rate was about 46%; after a synthetic-data fine-tuning workflow it rose to over 90% for 8 of the 10 target functions.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 14,
+   "quote": "that 46% um to over like it was over 90%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "FunctionGemma fine-tuning lab ships as a Hugging Face Space",
+   "claim": "There is a public FunctionGemma fine-tuning lab (a Hugging Face Space) where you can define functions, upload your own data, and fine-tune the model interactively.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 13,
+   "quote": "This is available as a hugging face space",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Training data generated synthetically via Flash",
+   "claim": "The workflow for fine-tuning a tiny model for a narrow task is to synthetically generate a labeled dataset using a larger model (Flash) rather than hand-labeling.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 13,
+   "quote": "We use flash to synthetically create a data set",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "Eloquent chains two sub-300M models for offline transcription",
+   "claim": "The Eloquent transcription app chains a Gemma-3-based ASR engine and a separate text-polishing engine, each only a few hundred million parameters, to deliver personalized, filler-word-free offline transcription.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 15,
+   "quote": "each of these models are only a few hundred million parameters",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Sequential multi-skill calls work; single-turn multi-skill calls don't yet",
+   "claim": "Chaining skills across turns in a conversation (skill, then skill, then skill) works robustly, but getting the model to invoke multiple skills within a single turn/answer is still unreliable and unsolved.",
+   "video_id": "-TiET_K-E_g",
+   "chunk_index": 17,
+   "quote": "through a single like um interaction with the app for the app to know to call multiple skills",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Thesis: own your own LLM trained on your own data",
+   "claim": "Databricks' core position is that every organization should own its own ML models and generative AI models, trained on its own data, rather than relying solely on third-party models.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 1,
+   "quote": "you should own your own machine learning models your own generative AI models your own llms",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Owning the model resets the cost equation",
+   "claim": "Owning your own model (instead of relying on a handful of big proprietary models) changes the economics of running generative AI at scale.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 2,
+   "quote": "owning the model will actually change that price equation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Replit trained a state-of-the-art code model in 3 days",
+   "claim": "Replit built an ETL pipeline on Databricks, cleaned its data, and — prioritizing a small model for fast latency — trained a state-of-the-art code-completion model in about three days using MosaicML's training platform.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 6,
+   "quote": "built a model uh in a few days in about three days that was state of the art",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "MosaicML's privacy design: the vendor literally can't see customer data",
+   "claim": "MosaicML runs training computation in the customer's own secure environment and writes model weights/artifacts back to the customer's own storage, so the vendor itself cannot see the data or the model.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 7,
+   "quote": "we literally can't see it it's a it's sort of a brick wall",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "MPT-7B cost $250K to train and became the most-downloaded LLM",
+   "claim": "MosaicML's MPT-7B, a state-of-the-art 7B-parameter open-source foundation model, cost only $250,000 to train from scratch and became the most-downloaded LLM in history within about a month and a half of release.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 9,
+   "quote": "it only costs 250 000 to build it and that's from scratch",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "GPT-3 training cost benchmark: $10-15M",
+   "claim": "As a cost baseline, GPT-3-scale training is commonly cited at roughly $10-15 million, which MosaicML's approach aims to undercut dramatically.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 8,
+   "quote": "gpt3 costs Millions 10 12 15 million dollars to train",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "MPT-30B cost ~$700-800K, rivaled ChatGPT's base model",
+   "claim": "MPT-30B, a 30B-parameter model with stronger reasoning, was trained from scratch for roughly $700,000-$800,000 and was on par with or better than the model underlying ChatGPT.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 10,
+   "quote": "seven or eight hundred thousand dollars to train this from scratch",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "MosaicML's training platform is a one-YAML-file black box",
+   "claim": "Training a model on MosaicML's platform is reduced to editing one YAML config (architecture, attention type, tuning parameters) and pressing a button to start training.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 12,
+   "quote": "you just modify one yaml file you set up the parameters",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Training platform auto-handles gradient/stability/GPU failures",
+   "claim": "MosaicML's platform transparently handles vanishing gradients, training stability issues, and GPU crash failures without user intervention during a training run.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 12,
+   "quote": "no Vanishing gradients uh you know no stability issues nothing",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "1,500+ customers used a Transformer model on Databricks in 30 days",
+   "claim": "In the 30 days before the keynote, more than 1,500 Databricks customers had used a Transformer model, and GPU usage on the platform was growing 25% month over month — the fastest growth rate of any infrastructure component on Databricks.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 13,
+   "quote": "more than 1500 customers have used a Transformer model on databricks",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Databricks GPU usage growing 25% month-over-month",
+   "claim": "GPU usage on the Databricks platform was growing 25% month over month, described as the fastest growth rate ever seen for an infrastructure component there.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 13,
+   "quote": "our usage of gpus on the platform is growing 25 month over month",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Model quality is commoditizing fast; prices fell 10x in a year",
+   "claim": "Twelve months after GPT-3.5/ChatGPT, proprietary model prices had fallen roughly 10x and open-source models had rapidly closed the quality gap for many enterprise use cases.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 15,
+   "quote": "prices have come down 10x there's Google in the market",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Proprietary data, not the model, is the real differentiator",
+   "claim": "Since modeling techniques are commoditizing and available to every competitor, the real way to differentiate in generative AI is to take advantage of your own proprietary data.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 16,
+   "quote": "the main way that you can differentiate is take advantage of your data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Lakehouse AI: prep data, tune models, deploy/serve — one platform",
+   "claim": "Building real LLM applications breaks into three pieces — preparing data for ML, finding/tuning good models, and deploying/serving applications — and Databricks argues all three belong inside one data platform, not three separate systems.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 17,
+   "quote": "finding and tuning really good models and then it's deploying and serving applications",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "Native vector search and online feature serving announced",
+   "claim": "Databricks announced native vector search for unstructured/document data and online feature serving as two new technologies for preparing data for real-time LLM applications.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 19,
+   "quote": "a native Vector search capability for your document or unstructured data",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Open-source model usage edges out proprietary among customers",
+   "claim": "Across a 30-day sample, slightly more Databricks customers were using open-source models than proprietary models in production, though most customers tried both.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 23,
+   "quote": "it's actually slightly more than our using proprietary models",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "MLflow revamped with an LLM evaluation A/B framework",
+   "claim": "Databricks is revamping MLflow (a popular open-source ML experimentation framework) to support language models, starting with an evaluation framework for A/B comparing multiple models' responses.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 24,
+   "quote": "we're revamping mlflow to better support language models starting with an evaluation framework",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "MLflow AI Gateway centralizes credentials, rate limits, caching",
+   "claim": "The open-source MLflow AI Gateway lets an organization route all AI use cases through one gateway, centrally managing credentials, rate limiting, and caching instead of every team standing up its own API accounts.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 25,
+   "quote": "centrally manage things like credentials rate limiting caching",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "Optimized GPU serving gives up to an order-of-magnitude speedup",
+   "claim": "Databricks' optimized GPU model serving has delivered customers up to an order of magnitude better performance on popular curated open-source LLM families.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 37,
+   "quote": "customers get up to a magnitude an order of magnitude better performance",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "Vector-search grounding avoided a hallucination a generic model made",
+   "claim": "In a live demo, a generic OpenAI model hallucinated when asked about 'Spark Connect' (answering as if about 'a connector'), while the vector-search-grounded custom model answered correctly — shown via MLflow's LLM evaluation API.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 33,
+   "quote": "this is actually a hallucination it's giving the answer to what is a connector",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "Swapped OpenAI for self-hosted MPT-30B for compliance",
+   "claim": "After detecting customers pasting sensitive data into a support bot, the team replaced the OpenAI-backed model with a self-hosted MPT-30B served on Databricks GPU model serving, for data security/compliance, and then saw improved latency.",
+   "video_id": "zjM2-_cFupo",
+   "chunk_index": 36,
+   "quote": "we're going to need to replace the open AI model with a private model",
+   "kind": "technique",
+   "verified": true
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "When is it worth fine-tuning or training your own model?",
+   "positions": [
+    {
+     "video_id": "uLrOI65XbDw",
+     "chunk_index": 1,
+     "position": "Start with prompt engineering and a robust evaluation framework; only move to fine-tuning once prompting provably fails to meet accuracy/cost/latency needs and you can build a quality instruction dataset."
+    },
+    {
+     "video_id": "zjM2-_cFupo",
+     "chunk_index": 1,
+     "position": "Every company should own and train its own LLM on its own data as a strategic default, for control, IP, and cost reasons — independent of whether a prompted off-the-shelf model would technically suffice."
+    }
+   ]
+  },
+  {
+   "topic": "What scale of model is worth building/deploying?",
+   "positions": [
+    {
+     "video_id": "-TiET_K-E_g",
+     "chunk_index": 11,
+     "position": "The practical frontier of value is in sub-1B (even 270M-500M parameter) models fine-tuned for one narrow task and run free on-device."
+    },
+    {
+     "video_id": "zjM2-_cFupo",
+     "chunk_index": 9,
+     "position": "The democratized 'build your own' unit showcased is 7B-30B parameter models costing $250K-$800K to train from scratch — an order of magnitude larger than Google's tiny-model focus."
+    }
+   ]
+  },
+  {
+   "topic": "How much effort does getting a good customized model actually take?",
+   "positions": [
+    {
+     "video_id": "uLrOI65XbDw",
+     "chunk_index": 12,
+     "position": "Merging can require zero training at all (a passthrough self-merge with 'no fine-tuning nothing') and still produce a model people love."
+    },
+    {
+     "video_id": "-TiET_K-E_g",
+     "chunk_index": 13,
+     "position": "Reliable fine-tuning for a narrow task is described as real extra engineering work ('a bit more work than just prompting a larger model') involving synthetic data generation pipelines, not a shortcut."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "None of the three talks explains the Transformer architecture itself (self-attention, multi-head attention, positional encoding, or why it displaced RNNs/LSTMs) — they assume it and jump straight to fine-tuning, deployment, or platform strategy.",
+  "No discussion of pretraining compute/data scaling laws, or how the attention mechanism specifically enables the capabilities being fine-tuned, merged, or deployed.",
+  "No talk gives apples-to-apples compute cost or wall-clock time for the merge/fine-tuning techniques themselves, the way the Databricks talk quantifies full pretraining cost.",
+  "Maxime Labonne's merge-technique claims rest mostly on leaderboard rank rather than specific benchmark score deltas, so a reader can't judge the exact magnitude of SLERP/DARE/FrankenMoE gains.",
+  "The Google talk doesn't explain how skill/function definitions interact with the underlying transformer's context window or attention over tool schemas.",
+  "No video gives a safety/alignment deep dive beyond one passing DPO example (refusing bomb-making instructions); there's no treatment of RLHF, red-teaming, or guardrails.",
+  "No video addresses inference-time architectural tricks (KV-cache, flash attention, quantization internals) that connect directly to how transformers are actually served efficiently."
+ ],
+ "verified_claims": 60
+}

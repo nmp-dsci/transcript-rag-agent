@@ -1,0 +1,653 @@
+{
+ "cluster": "cluster-1",
+ "videos": [
+  "T0HhO4YtTfE",
+  "uLrOI65XbDw",
+  "CvRngaQZQ3Y",
+  "JfaLQqfXqPA"
+ ],
+ "video_notes": [
+  {
+   "video_id": "T0HhO4YtTfE",
+   "title": "AI System Design: From Idea to Production - Apoorva Joshi, MongoDB",
+   "contributed": "Frames fine-tuning as just one design-pattern option inside a broader product-requirements-to-production framework, and names the exact trigger for reaching for it (behavioral failures, domain-specific ceiling) without ever actually implementing it in the walkthrough."
+  },
+  {
+   "video_id": "uLrOI65XbDw",
+   "title": "Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne",
+   "contributed": "The cluster's core how-to-build reference: SFT/DPO data formats, the three-feature recipe for good training samples, a dataset-curation pipeline, SFT technique trade-offs (full/LoRA/QLoRA), key hyperparameters, and a deep dive into post-training model merging (SLERP, DARE, passthrough, FrankenMoE)."
+  },
+  {
+   "video_id": "CvRngaQZQ3Y",
+   "title": "Improving Agents is a Data Mining Problem — Vivek Trivedy, LangChain",
+   "contributed": "Positions fine-tuning as the second step in a trace-mining pipeline (ship, collect traces, mine, experiment) and gives the operational sequencing rule for when to stop prompt/harness engineering and start fine-tuning, plus the token-cost-vs-hardware-cost economics that justify it at scale."
+  },
+  {
+   "video_id": "JfaLQqfXqPA",
+   "title": "RFT, DPO, SFT: Fine-tuning with OpenAI — Ilan Bigio, OpenAI",
+   "contributed": "The most granular build guide in the cluster: live demos and real metrics for SFT (classification, function-calling distillation), DPO (joke tone-matching), and RFT (hydrogen-bond prediction success, email-triage failure), plus concrete rules of thumb on sample counts, grader design, and platform mechanics (LoRA adapters, overfitting monitoring, image fine-tuning)."
+  }
+ ],
+ "claims": [
+  {
+   "theme": "fine-tuning decision trigger",
+   "claim": "Reach for fine-tuning as a system-design pattern only when an LLM's failures are behavioral (not data or orchestration issues) or when a narrow domain-specific task needs performance beyond what prompting delivers — not as a default starting point.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 12,
+   "quote": "if you're observing that the LLM's failures are behavioral rather than data",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "start simplest architecture first",
+   "claim": "Before adding an agent or fine-tuning, design the simplest system that meets requirements, evaluate it, and only add complexity once evaluation reveals a specific gap.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 10,
+   "quote": "start with the simplest design, evaluate it, find gaps during the evaluation",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "specs over code",
+   "claim": "Anthropic and OpenAI speakers are quoted as saying specs — product requirements, system design, and eval criteria — are now 'the new code,' meaning the design work matters more than the generated code in an AI-coding-agent era.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 1,
+   "quote": "Specs are the new code",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "faithfulness as a quality metric",
+   "claim": "Define separate metrics for guardrail compliance and response quality; faithfulness measures whether an output is actually rooted in the retrieved source material rather than hallucinated.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 18,
+   "quote": "faithfulness, which is whether or not the claims approval or rejection is actually rooted in",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "capping AI autonomy with constraints",
+   "claim": "Business constraints (like mandatory human review for denials) can cap a system's autonomy level at 'semi-autonomous at max,' and that cap should be decided before architecture, not discovered after.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 5,
+   "quote": "our system can be semi-autonomous at max",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "measure to improve",
+   "claim": "Build evaluation in from the start of any AI build, including a fine-tuning project, because you can't improve what you can't measure.",
+   "video_id": "T0HhO4YtTfE",
+   "chunk_index": 22,
+   "quote": "You can't improve what you can't measure",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "LLM training lifecycle",
+   "claim": "The LLM training lifecycle has three stages: pre-training (next-token prediction on raw text, producing a base model that autocompletes instead of answering), supervised fine-tuning (question/answer pairs to follow instructions), and preference alignment (human preferences produce the final chat model).",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 0,
+   "quote": "it's going to autocomplete your question instead of answering it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "prompt engineering before fine-tuning",
+   "claim": "Start with prompt engineering if you can, backed by a robust evaluation setup covering accuracy, cost, and latency (custom or open-source benchmarks); only move to fine-tuning if prompting isn't good enough.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 1,
+   "quote": "it's good in general to start with promp engineering if you can",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "dataset feasibility as a go/no-go signal",
+   "claim": "If you can't assemble an instruction dataset of question/answer pairs for fine-tuning, that's a sign you need to rescope the project rather than force fine-tuning.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 2,
+   "quote": "it's probably a good sign that you need to recope the project",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "non-technical case for fine-tuning",
+   "claim": "Beyond cost/latency, an a16z report finds the top two reasons enterprises care about open-source models are control and customizability — i.e. fine-tuning — making it a business decision as well as a technical one.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 2,
+   "quote": "control and customer ability",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning libraries",
+   "claim": "Common open-source fine-tuning libraries include TRL (Hugging Face, built on Transformers, easy to use), Axolotl (versatile, YAML-config driven), and LLaMA Factory (built-in GUI), in addition to Unsloth.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 3,
+   "quote": "TRL from hugging face uh Great Library buil on top of Transformers",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SFT data format",
+   "claim": "An SFT sample pairs a system+user prompt (used as context, masked out of the loss) with the target assistant output; the model trains only on producing the correct output, not on reproducing the prompt.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 3,
+   "quote": "we train the model usually like generally on the outputs only",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "SFT data is usually synthetic",
+   "claim": "Most SFT datasets use synthetic data generated by frontier models, which is a legitimate and common way to build higher-quality training sets.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 4,
+   "quote": "most sft data set I want you to say that use synthetic data and that's perfectly fine",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DPO data format and objective",
+   "claim": "DPO data pairs an instruction with a chosen and a rejected answer; training pushes the model to assign higher probability to the chosen answer than the untrained version would, usable for safety refusals or general quality boosts.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 4,
+   "quote": "chosen answer and a rejected answer",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "three qualities of a good SFT sample",
+   "claim": "Judge SFT sample quality on three axes: accuracy (factually correct, no typos, no false knowledge), diversity (many topics/styles unless the use case is narrow), and complexity.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 5,
+   "quote": "we want the samples the outputs to be uh factually correct",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "complexity means forcing reasoning",
+   "claim": "The 'complexity' quality of a good SFT sample specifically means tasks that force reasoning — e.g. outputs with chain-of-thought — rather than simple Wikipedia-style question answering.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 6,
+   "quote": "the output will have Chain of Thought reasoning",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "dataset curation pipeline",
+   "claim": "A practical SFT dataset recipe: start from open-source datasets, combine them, deduplicate (exact and fuzzy), apply quality filters (rule-based or reward-model/LLM-as-judge based), then explore with clustering tools before regenerating more data.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 6,
+   "quote": "data dat duplication it can be either exact because you want to remove",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "three SFT training techniques",
+   "claim": "Full fine-tuning trains all weights (best performance), LoRA freezes the base weights and trains small adapter matrices on top (faster, still loads the full model), trading efficiency for a subset of trainable parameters.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 7,
+   "quote": "freeze all the pre-rain weights and you add adapters to each targeted layer",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "QLoRA trade-off",
+   "claim": "QLoRA quantizes the pre-trained model to 4-bit precision for lower VRAM usage, but this degrades performance — it's a direct trade-off against full fine-tuning or plain LoRA.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 8,
+   "quote": "the problem is that it also degrades performance so there's a trade-off here",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "key hyperparameters",
+   "claim": "The most important SFT hyperparameter is learning rate — push it as high as possible until the loss curve explodes, then back off from there.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 8,
+   "quote": "go as high as you can uh until your loss explodes",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "maximize batch size for GPU utilization",
+   "claim": "Batch size should be maximized to fully use available GPUs, while sequence length trades off against VRAM and doesn't need to match the pre-trained model's full context window.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 9,
+   "quote": "you want to maximize it to maximize the utilization of your gpus",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "model merging needs no GPU",
+   "claim": "Model merging combines the weights of existing fine-tuned models with no GPU required, and on the Open LLM Leaderboard (v1) the entire top 8–10 models for 7B parameters were merge models.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 9,
+   "quote": "the entire top eight or top 10 is just merge models",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "mergekit is the standard tool",
+   "claim": "Mergekit is the leading library for model merging, implementing multiple merge techniques and enabling family trees where merges are merged with other merges repeatedly.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 10,
+   "quote": "I would recommend using merch kit",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "SLERP merge technique",
+   "claim": "SLERP (spherical linear interpolation) merges exactly two models at a time but lets you tune interpolation factors per layer.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 10,
+   "quote": "spherical but linear interpolation",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DARE merge technique",
+   "claim": "DARE reduces parameter redundancy via pruning and rescaling and can merge more than two models at once; it works especially well merging seven or eight models together rather than just two or three.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 11,
+   "quote": "I would recommend this technique and not with just two model not with three but like with seven or eight models",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "passthrough / self-merge needs zero training",
+   "claim": "Passthrough merging concatenates layers from different (or the same) LLM with no training at all — the presenter built a 120B model by repeating 10 Llama-3-70B-Instruct layers six times.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 12,
+   "quote": "I took Lama 370d instruct and I just uh repeated 10 layers six times",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "untrained self-merge went viral for creative writing",
+   "claim": "Despite having zero fine-tuning, the 120B self-merge became popular online for being particularly good at creative writing (though noted as 'unhinged' in general behavior).",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 12,
+   "quote": "particularly good at uh creative writing",
+   "kind": "quote-worthy",
+   "verified": true
+  },
+  {
+   "theme": "FrankenMoE via merging",
+   "claim": "You can build a 'FrankenMoE' by extracting feed-forward network layers from several fine-tuned models and combining them with a router, instead of pre-training a mixture-of-experts model from scratch.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 13,
+   "quote": "we call this a Franken M you add a router",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "MoE merging underperforms SLERP/DARE",
+   "claim": "For pure performance gains, SLERP and DARE merging outperform mixture-of-experts merging, which is called 'a bit more experimental' and less reliable for raw performance improvement.",
+   "video_id": "uLrOI65XbDw",
+   "chunk_index": 14,
+   "quote": "it's better to use uh slap and dare instead of mixture of experts because this is a bit more experimental",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "ship then mine traces to improve agents",
+   "claim": "The recipe for continuously improving agents: ship the agent so it operates in real environments, then collect a ton of traces (tool calls, outputs, API/CLI usage) before any data mining or fine-tuning can start.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 0,
+   "quote": "collect a ton of traces",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "what to ask when reading traces",
+   "claim": "Reading agent traces at scale answers concrete questions, such as finding interactions where users got upset or happy and whether an agent gets 'dumb' after context compaction.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 4,
+   "quote": "find a bunch of like good and bad interactions where like users got upset",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "cost of mining traces at scale",
+   "claim": "Reading traces at scale is expensive — the cost scales with millions of traces times millions of tokens per trace, which is why trace mining needs dedicated systems rather than ad hoc review.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 6,
+   "quote": "reading traces at scale is super expensive",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "open models can match frontier judges cheaply",
+   "claim": "In LangChain's work on Harvey's legal benchmark, a harness-engineered open model could match Opus-level trace-judging capability at roughly one to two orders of magnitude lower cost.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 7,
+   "quote": "match the trace judging capability of Opus with an open cheaper model",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tune narrow verticals to beat frontier models",
+   "claim": "Once harness engineering plateaus, fine-tuning base models on a narrow, customer-specific vertical task can reach and even exceed frontier-model performance on that narrow task.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 9,
+   "quote": "we can fine-tune base models to sort of like reach and then also go beyond frontier performance",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "token cost vs hardware cost economics",
+   "claim": "High-inference-volume teams can switch from per-token API costs to running a dedicated hardware cluster (spun down when idle) for effectively unlimited inference, which can be substantially cheaper at scale.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 9,
+   "quote": "you can move from token costs to hardware costs",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "trace-based distillation pipeline",
+   "claim": "A trace-mining distillation pipeline: run a larger model in production, collect its good traces/examples, package them as a dataset, and fine-tune a much smaller model (9B–13B) to mimic that behavior.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 10,
+   "quote": "I'll take the good traces and the good examples from the GLM 5.2 runs",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "evals define agent behavior",
+   "claim": "You can roughly predict how an agent will behave just by looking at the evals it was built against, because teams iterate until the agent passes them, making eval design itself a behavior-shaping decision for any fine-tuning target.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 11,
+   "quote": "you can basically define agent behavior by showing the evals that you ran on it",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "dense feedback beats pass/fail signal",
+   "claim": "Binary pass/fail task signals give agents too little signal to know what to fix; densifying feedback (letting the agent read its own traces and reason over them) is a much better way to drive improvement before fine-tuning.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 14,
+   "quote": "densifying feedback is uh really good way to improve agents",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "harness-engineer, fine-tune, harness-engineer sandwich",
+   "claim": "Recommended sequencing: try harness engineering first because it gives feedback in minutes; once that ceiling saturates, try fine-tuning to break through it; then return to more harness engineering.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 15,
+   "quote": "try harness engineering, try to do fine-tuning to sort of like break through that ceiling",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "cheapest first step toward improvement",
+   "claim": "The simplest, highest-leverage first step for improving any agent before considering fine-tuning is just turning on tracing and pointing another agent at the traces.",
+   "video_id": "CvRngaQZQ3Y",
+   "chunk_index": 18,
+   "quote": "just turn on tracing and point an agent at it",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning defined",
+   "claim": "Fine-tuning is 'continued training that optimizes a model for a given domain' — a specialized, high-upfront-cost tool (like a CNC machine) versus prompting's low-barrier, fast-iteration toolkit (like a hammer).",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 4,
+   "quote": "fine-tuning is really just continued training that optimizes a",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "what each method teaches the model",
+   "claim": "SFT teaches a direct/soft mapping from inputs to outputs (imitation); DPO teaches the delta between a preferred and non-preferred output rather than the examples themselves; RFT teaches the model to reason by reinforcing chains of thought that lead to high grader scores.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 8,
+   "quote": "it doesn't actually learn like each of the examples, it learns the delta between the examples",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "which method fits which task",
+   "claim": "SFT fits classification, formatting/structured extraction, and distillation into small models; DPO fits tone/style matching and A/B preference data; RFT fits gradable-but-hard problems (medical, legal, coding) with unambiguous solutions.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 10,
+   "quote": "reinforcement fine-tuning is for gradable hard problems",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning doesn't add new knowledge",
+   "claim": "All three fine-tuning methods only retrain a subset of the model's weights (via LoRA, which decomposes weights into two smaller matrices), so none are good for teaching the model large amounts of new information — RAG/agentic retrieval is better suited for that.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 11,
+   "quote": "we are training only a subset of the model in each of these cases",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "function-calling distillation case study",
+   "claim": "For a latency-constrained 120-function assistant with no labeled data, OpenAI generated synthetic training data by deterministically enumerating every valid permutation of function-call arguments, then used GPT-4 to reverse-generate a plausible user command for each call.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 13,
+   "quote": "this was actually the first time that anybody fine-tuned a model with over 100 functions",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "distillation result",
+   "claim": "Combining synthetic permutation data with GPT-4-distilled labels on real unlabeled inputs, the fine-tuned GPT-3.5 reached GPT-4-level accuracy at a small fraction of GPT-4's latency.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 16,
+   "quote": "we achieved GPT4 level performance at 3.5 accuracy",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "removing context hurts fine-tuned function calling",
+   "claim": "Stripping function schemas/parameters from the prompt to save latency backfired — removing that information from context made it much harder for the fine-tuned model to learn.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 20,
+   "quote": "removing them from context makes them much harder to learn through fine-tuning",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "SFT sample-size thresholds",
+   "claim": "Rule of thumb for SFT sample counts: around 50–100 examples starts showing 'signs of life,' and production-grade results typically need a few hundred to 500+ examples.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 18,
+   "quote": "around like 50 to 100 examples you start to see signs of life",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning crushes a narrow classification task",
+   "claim": "On a 77-label banking-intent classification task, baseline prompting accuracy was 75% (4o-mini) and 83% (4o); fine-tuned 4o and 4o-mini (with 150–500 examples) outperformed every prompting baseline and even reasoning models 03/04.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 30,
+   "quote": "the fine-tuning models blow everything else out of like blow everything else out of the water",
+   "kind": "metric",
+   "verified": false
+  },
+  {
+   "theme": "no automatic overfitting protection",
+   "claim": "OpenAI's fine-tuning jobs do not automatically detect or stop for overfitting — you must watch the training/validation loss curves yourself and manually stop the job if validation loss diverges.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 31,
+   "quote": "do the fine tuning runs check for overfitting? No, they don't",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "always try prompting and evals first",
+   "claim": "The recommended decision process is: start with prompt engineering, build evals, and only reach for fine-tuning once you're hitting the limits of what prompting can achieve.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 32,
+   "quote": "always start with prompt engineering and see how far you can go and then run evals",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "SFT rules of thumb",
+   "claim": "Supervised fine-tuning is best for simple, narrow tasks; because it can cause regressions on anything not represented in training data, data diversity is critical, with roughly 100 samples as a floor and 500+ recommended.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 36,
+   "quote": "data diversity is critical for that reason. Anything you don't include might regress",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "DPO joke case study",
+   "claim": "To build a DPO dataset for humor, the presenter generated jokes with GPT-4.5 and manually filtered for ones that were actually funny, then extracted each joke's topic to generate a matched 'corny' negative example for a stronger preference delta.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 36,
+   "quote": "then did some manual filtering like did I laugh",
+   "kind": "technique",
+   "verified": true
+  },
+  {
+   "theme": "DPO result and its limits",
+   "claim": "The DPO-tuned joke model produced funny output on command but not original content (it reproduced an existing well-known joke) — a qualified success the presenter summarized as 'did it work? sort of.'",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 38,
+   "quote": "did it work? sort of",
+   "kind": "pitfall",
+   "verified": false
+  },
+  {
+   "theme": "RFT needs unambiguous, low-noise, high-signal data",
+   "claim": "RFT requires unambiguous grading (any qualified grader following the same rubric would agree) and very low-noise data since mistakes get magnified; in exchange, RFT is extremely data-efficient — 40 to 80 high-quality examples can be enough to generalize.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 42,
+   "quote": "you can give it like 40 to 80 very high quality, very high signal examples",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "RFT grader types",
+   "claim": "RFT graders can be string checks, text similarity, sandboxed Python code (no internet, limited libraries) acting as the grader itself, or model graders outputting a score or label, nestable into a weighted multi-grader.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 42,
+   "quote": "you can write Python code sandboxed",
+   "kind": "tool",
+   "verified": true
+  },
+  {
+   "theme": "RFT failure case: ambiguous human-preference labels",
+   "claim": "An RFT email-triage model trained on ~600 personally labeled emails performed poorly because the labels were inherently low-signal and inconsistent — the presenter admits he likely wouldn't relabel the same emails identically a second time.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 45,
+   "quote": "would I hit like a 100% the same classifications for all of them? Probably not",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "RFT success case: hydrogen bond prediction",
+   "claim": "An RFT model (o4-mini) trained to predict hydrogen bond donor/acceptor counts, graded by a multi-grader giving half credit per correct field, rose from roughly 65% to about 80% accuracy on a domain the base model has no inherent world knowledge of.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 46,
+   "quote": "this started at roughly like 65%. Um it ended up going to I think it started like touching 80%",
+   "kind": "metric",
+   "verified": true
+  },
+  {
+   "theme": "RFT is reasoning-model-only",
+   "claim": "SFT and DPO work on non-reasoning models; RFT currently only works on reasoning models — described as an 'iff' relationship, not a matter of degree.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 47,
+   "quote": "RFT you can do with reasoning models and there's no interplay",
+   "kind": "principle",
+   "verified": true
+  },
+  {
+   "theme": "RFT can't yet do multi-step agentic tasks",
+   "claim": "RFT is currently limited to a single turn and only evaluates the model's final output — there's no way to feed back a tool-call result mid-episode and keep training on the continuation.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 48,
+   "quote": "agentic use cases are limited by a single turn",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "mechanism: LoRA adapter at inference",
+   "claim": "Under the hood, OpenAI fine-tuning produces a LoRA adapter component rather than a full new model; at inference time the base model's weights stay the same and the LoRA piece is loaded alongside them.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 55,
+   "quote": "it is generating this Laura component",
+   "kind": "technique",
+   "verified": false
+  },
+  {
+   "theme": "don't optimize chain-of-thought directly",
+   "claim": "Directly rewarding or penalizing content inside the chain-of-thought (instead of only the final result) reduces bad behavior only slightly but destroys the ability to detect remaining bad behavior by reading the chain-of-thought.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 58,
+   "quote": "you reduce the cases where you can catch them by looking at the chain of thought to like zero",
+   "kind": "pitfall",
+   "verified": true
+  },
+  {
+   "theme": "fine-tuning is poor for injecting facts",
+   "claim": "Fine-tuning is better treated as teaching a methodology/format than as a way to inject correct factual knowledge — the model only memorizes a little, so for knowledge-heavy needs use RAG/search instead.",
+   "video_id": "JfaLQqfXqPA",
+   "chunk_index": 64,
+   "quote": "I just wouldn't say it's like the best way to give like correct information",
+   "kind": "pitfall",
+   "verified": false
+  }
+ ],
+ "disagreements": [
+  {
+   "topic": "What justifies reaching for fine-tuning",
+   "positions": [
+    {
+     "video_id": "JfaLQqfXqPA",
+     "chunk_index": 54,
+     "position": "Avoid fine-tuning until you need it — only pull it out once evals show you're hitting the limits of what prompting can accomplish."
+    },
+    {
+     "video_id": "CvRngaQZQ3Y",
+     "chunk_index": 15,
+     "position": "Sequence strictly: harness engineer first for fast feedback, fine-tune only once the harness-engineering ceiling saturates, then return to harness engineering."
+    },
+    {
+     "video_id": "uLrOI65XbDw",
+     "chunk_index": 2,
+     "position": "Beyond the technical cost/latency calculus, enterprises fine-tune for control and customizability as a business argument — a reason to fine-tune that holds even when prompting is technically 'good enough.'"
+    }
+   ]
+  },
+  {
+   "topic": "Where fine-tuned capability should live — hosted API vs self-hosted open models",
+   "positions": [
+    {
+     "video_id": "JfaLQqfXqPA",
+     "chunk_index": 55,
+     "position": "Fine-tuning on OpenAI's platform produces a LoRA adapter layered on the hosted base model; you fine-tune and then run inference on OpenAI's infrastructure."
+    },
+    {
+     "video_id": "CvRngaQZQ3Y",
+     "chunk_index": 9,
+     "position": "At high inference volume, distill/fine-tune into smaller open models and run them on your own hardware cluster, switching the cost model from per-token to per-cluster."
+    },
+    {
+     "video_id": "uLrOI65XbDw",
+     "chunk_index": 9,
+     "position": "Leverage the open-source ecosystem's existing fine-tuned checkpoints and merge them (no GPU required) rather than fine-tuning or hosting a single proprietary model."
+    }
+   ]
+  }
+ ],
+ "gaps": [
+  "No concrete pricing or dollar figures for OpenAI SFT/DPO/RFT fine-tuning jobs, or for self-hosted fine-tuning clusters, so cost comparisons across approaches stay qualitative only.",
+  "T0HhO4YtTfE names fine-tuning as an option for the claims-review system but never actually implements or evaluates it, so there's no worked example of fine-tuning inside a full product-requirements-to-production walkthrough.",
+  "No exact deduplication/quality-filter thresholds or hands-on tool demos for building SFT datasets — tools like Lilac/Atlas-style clustering are named, not demonstrated.",
+  "No description of how or when RFT will support multi-turn agentic tasks (feeding tool-call results back mid-episode) — explicitly called a current limitation with no stated timeline.",
+  "No benchmark numbers comparing merged/open-source fine-tuned models against frontier proprietary models on real downstream tasks — the merging results cite leaderboard rank, not absolute task scores against GPT-4-class models.",
+  "No detail on how 'continual learning' memory updates (sleep-time compute, evolving harnesses over multi-year timescales) are actually implemented in production — CvRngaQZQ3Y names the direction but calls it 'slightly unclear.'",
+  "No quantified break-even point between hosted per-token fine-tuning costs and the hardware-cluster economics described by CvRngaQZQ3Y — readers can't size when to switch.",
+  "The live 'prompt tuning' experiment in JfaLQqfXqPA (notes-based iterative prompt improvement as an alternative to RFT) ends inconclusively with no numbers showing convergence, so it's an idea sketch, not a validated technique."
+ ],
+ "verified_claims": 58
+}

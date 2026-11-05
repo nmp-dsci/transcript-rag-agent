@@ -406,6 +406,12 @@ def test_index_channel_invokes_bulk_path(harness: Harness) -> None:
     assert harness.index_argv == [["bulk-index", "channel", "--channel", "@some", "--latest", "3"]]
 
 
+def test_index_channel_field_with_a_video_url_indexes_that_video(harness: Harness) -> None:
+    url = "https://www.youtube.com/watch?v=ruiLq0OzjkI&pp=ygUNZ3VhcmRyYWlscyBhaQ%3D%3D"
+    harness.client.post("/api/index", json={"mode": "channel", "channel": url, "latest": 9})
+    assert harness.index_argv == [["index-rag", url]]
+
+
 def test_index_requires_target(harness: Harness) -> None:
     assert harness.client.post("/api/index", json={"mode": "video"}).status_code == 422
     assert harness.client.post("/api/index", json={"mode": "channel"}).status_code == 422
@@ -1351,6 +1357,27 @@ def test_index_queue_channel_mode_carries_latest(settings: Settings, tmp_path: P
     assert response.json()["mode"] == "channel"
     assert response.json()["latest"] == 7
     assert response.json()["target"] == "@some"
+
+
+def test_index_queue_reroutes_a_video_url_from_the_channel_field(
+    settings: Settings, tmp_path: Path
+) -> None:
+    app = create_app(
+        settings,
+        runner_factory=lambda: None,
+        history_path=tmp_path / "h.json",
+        chat_html_path=tmp_path / "c.html",
+        index_fn=lambda argv: 0,
+        frontend_dist=tmp_path / "no-bundle",
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/index/queue",
+        json={"mode": "channel", "channel": "https://youtu.be/ruiLq0OzjkI", "latest": 9},
+    )
+    assert response.json()["mode"] == "video"
+    assert response.json()["latest"] is None
+    assert response.json()["target"] == "https://youtu.be/ruiLq0OzjkI"
 
 
 def test_index_queue_stream_seeds_then_broadcasts_over_a_real_server(

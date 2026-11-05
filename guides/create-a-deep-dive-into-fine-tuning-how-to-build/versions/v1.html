@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Fine-Tuning Pipeline — a field guide from the transcript corpus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides/guide.css">
+<style>
+  table.sizes { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.94rem; }
+  table.sizes th, table.sizes td { text-align: left; vertical-align: top; padding: 0.6rem 0.75rem; border-bottom: 1px solid color-mix(in oklab, currentColor 14%, transparent); }
+  table.sizes th { font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; font-size: 0.74rem; opacity: 0.7; }
+  table.sizes td:first-child { font-family: "Geist Mono", ui-monospace, monospace; white-space: nowrap; }
+  .seq { display: grid; gap: 0.5rem; margin: 1.25rem 0; counter-reset: seq; }
+  .seq > li { list-style: none; }
+  .conflict { border-left: 2px solid color-mix(in oklab, currentColor 25%, transparent); padding-left: 1rem; margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+
+<nav class="site" aria-label="Sections"><div class="bar">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>The Fine-Tuning Pipeline</a>
+  <div class="links">
+    <a href="#thesis">Thesis</a>
+    <a href="#gate">Gate</a>
+    <a href="#options">Options</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#sizing">Sizing</a>
+    <a href="#params">Parameters</a>
+    <a href="#hosting">Hosting</a>
+    <a href="#scoring">Scoring</a>
+    <a href="#copy">Copy</a>
+    <a href="#conflicts">Conflicts</a>
+    <a href="#sources">Sources</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</div></nav>
+
+<header class="hero wrap" id="top">
+  <div class="eyebrow">A field guide from the transcript corpus</div>
+  <h1>Train the <em>behaviour</em>, not the knowledge</h1>
+  <p class="sub">A staff-engineer walkthrough of fine-tuning as a system: when it earns its place, how to construct the input set, which method to pick (SFT, DPO, RFT, GRPO, merging), which parameters you actually set, how to host the result, and how to score it honestly. Distilled from twenty talks — OpenAI, LangChain, Databricks, MongoDB, Hugging Face practitioners, Unsloth and from-scratch tutorialists, and a tau²-bench case study.</p>
+  <div class="provenance">20 source videos · 1,482 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-10-22</div>
+</header>
+
+<main class="wrap">
+
+<section id="thesis">
+  <h2 id="thesis-h21">Thesis</h2>
+  <p id="thesis-p1">Yes — and the corpus answers it in a specific order. Fine-tuning is <cite data-video="JfaLQqfXqPA" data-chunk="4" data-quote="fine-tuning is really just continued training that optimizes a">continued training</cite> that specialises a model you already have. It is not a knowledge transplant: every method in this corpus retrains only <cite data-video="JfaLQqfXqPA" data-chunk="11" data-quote="training only a subset of the model">a subset of the weights</cite>, the base <cite data-video="YxXBojdD1as" data-chunk="2" data-quote="the base stays frozen We train a relatively small adapter">stays frozen under an adapter</cite>, and the honest summary of what you get is a methodology and a format — not <cite data-video="JfaLQqfXqPA" data-chunk="65" data-quote="the best way to give like correct information">the best way to give correct information</cite>. So the practical sequence is: earn the fine-tune behind prompting, retrieval and harness work; build a narrow, machine-scorable input set and treat its quality as the whole job; pick the method by what you are teaching (imitation, preference, or reasoning); keep the parameter list to three or four knobs; host the adapter where your cost curve lives; and score the identical evaluation before and after, or you have learned nothing.</p>
+  <p id="thesis-p2">Do you need hyperparameterisation? Barely. The corpus converges on a short list — epochs, learning rate, LoRA rank — and one discipline: <cite data-video="YxXBojdD1as" data-chunk="24" data-quote="Then what we do is we go back, we change one thing">change exactly one thing</cite> per iteration. Nobody in these twenty talks runs a sweep. The reason is that the dominant term is data, not configuration: feeding a model uncleaned input doesn't give you a neutral result, it means <cite data-video="v7qMjy_RxOs" data-chunk="10" data-quote="you're going to make the end result much worse">the end result is much worse</cite>, and a fine-tuned model <cite data-video="uaiq1HvQKoI" data-chunk="46" data-quote="the fine-tuned models usually inherit whatever errors or biases lurk">inherits whatever errors or biases lurk in the training data</cite>. Budget your effort accordingly: a weekend of dataset engineering beats an afternoon of sweeps.</p>
+  <blockquote class="epigraph" id="thesis-blockquote1">
+    <p id="thesis-p3">“Fine tuning is not an event, it's essentially an experimental loop.” <cite data-video="YxXBojdD1as" data-chunk="23" data-quote="fine tuning is not an event, it's essentially an experimental loop">Unsloth walkthrough</cite></p>
+  </blockquote>
+  <div class="triptych">
+    <div>
+      <h3 id="thesis-h31">Earn it</h3>
+      <p id="thesis-p4">Prompt, then retrieve, then engineer the harness — then fine-tune. Harness work gives feedback in minutes and is cheap relative to training, so the recommendation is to <cite data-video="NovNcsKX8AU" data-chunk="52" data-quote="a really good idea just to start with harness engineering">start with harness engineering</cite> and only escalate to <cite data-video="CvRngaQZQ3Y" data-chunk="15" data-quote="break through that ceiling">break through that ceiling</cite>.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h32">Build the set</h3>
+      <p id="thesis-p5">The deliverable of a fine-tuning project is a dataset, not a checkpoint. Mask the prompt and train <cite data-video="uLrOI65XbDw" data-chunk="3" data-quote="we train the model usually like generally on the outputs only">on the outputs only</cite>, and grade every sample on accuracy, diversity and complexity before it enters the file.</p>
+    </div>
+    <div>
+      <h3 id="thesis-h33">Score it twice</h3>
+      <p id="thesis-p6">Run the baseline first. The comparison is only valid with the <cite data-video="YxXBojdD1as" data-chunk="4" data-quote="same evaluation, same questions, same scoring rules, comparable generation settings">same questions, same scoring rules, comparable generation settings</cite> — because <cite data-video="T0HhO4YtTfE" data-chunk="22" data-quote="You can't improve what you can't measure">you can't improve what you can't measure</cite>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="gate">
+  <h2 id="gate-h21">The gate: when fine-tuning is the right tool</h2>
+  <p id="gate-p1">Treat fine-tuning as the specialised machine, not the hammer: it is a high-upfront-cost tool next to prompting's fast-iteration toolkit. Concretely it will cost you <cite data-video="v7qMjy_RxOs" data-chunk="8" data-quote="It will cost you at least a weekend of screwing around">at least a weekend</cite> and a competent GPU. Use these six tests before you commit.</p>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="gate-h31">Run the escalation ladder first</h3>
+      <p id="gate-p2">Four steps, in order: <cite data-video="v7qMjy_RxOs" data-chunk="8" data-quote="you can just try a better prompt">try a better prompt</cite>, then RAG, then an agentic loop, and only fine-tune if all three fail. OpenAI's own guidance is the same shape — <cite data-video="JfaLQqfXqPA" data-chunk="32" data-quote="always start with prompt engineering and see how far you can go">always start with prompt engineering and see how far you can go</cite>, then run evals.</p>
+    </div>
+    <div class="lever">
+      <h3 id="gate-h32">Confirm the failure is behavioural</h3>
+      <p id="gate-p3">Reach for fine-tuning when <cite data-video="T0HhO4YtTfE" data-chunk="12" data-quote="if you're observing that the LLM's failures are behavioral rather than data">the LLM's failures are behavioral rather than data</cite> or orchestration problems. Otherwise you are training around a retrieval bug. Design the simplest system first, then <cite data-video="T0HhO4YtTfE" data-chunk="10" data-quote="start with the simplest design, evaluate it, find gaps during the evaluation">find gaps during the evaluation</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="gate-h33">Check you can even assemble the data</h3>
+      <p id="gate-p4">If you cannot build the instruction dataset, that is a scoping answer, not a tooling problem: it's <cite data-video="uLrOI65XbDw" data-chunk="2" data-quote="it's probably a good sign that you need to recope the project">a good sign that you need to rescope the project</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="gate-h34">Fine-tune for guarantees, not facts</h3>
+      <p id="gate-p5">A system prompt <cite data-video="v7qMjy_RxOs" data-chunk="1" data-quote="your system prompt is not going to cover every type of question">is not going to cover every type of question</cite>. If you need a model that <cite data-video="v7qMjy_RxOs" data-chunk="8" data-quote="writes like you every time with a real guarantee">writes like you every time with a real guarantee</cite>, that is a weights problem. If you need current facts, that is retrieval.</p>
+    </div>
+    <div class="lever">
+      <h3 id="gate-h35">Price the inference, not the training</h3>
+      <p id="gate-p6">The economic case is usually unit cost at volume: a closed model can be <cite data-video="R78NYFkWH10" data-chunk="1" data-quote="actually four or five times more expensive than open source model">four or five times more expensive</cite> per task, and at high volume you can <cite data-video="CvRngaQZQ3Y" data-chunk="9" data-quote="you can move from token costs to hardware costs">move from token costs to hardware costs</cite> with a cluster you spin down when idle.</p>
+    </div>
+    <div class="lever">
+      <h3 id="gate-h36">Expect to win only on the narrow task</h3>
+      <p id="gate-p7">On a curated vertical slice a fine-tuned open model can <cite data-video="CvRngaQZQ3Y" data-chunk="9" data-quote="reach and then also go beyond frontier performance">reach and then go beyond frontier performance</cite>, and depending on training-mixture coverage <cite data-video="NovNcsKX8AU" data-chunk="51" data-quote="your fine-tuned model will be better than that open model">your fine-tuned model will be better</cite> than the unfine-tuned alternative. Outside that slice, <cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="data diversity is critical for that reason">anything you don't include might regress</cite>.</p>
+    </div>
+  </div>
+  <p id="gate-p8">And know the ceiling of the artefact itself: <cite data-video="YxXBojdD1as" data-chunk="32" data-quote="fine tuning only changes the behavior of the model">fine-tuning only changes the behaviour of the model</cite>. The system around it still needs context, tools, guardrails and evaluation. Also beware vendors: many platforms that claim to train on your data are really just doing retrieval, since <cite data-video="v7qMjy_RxOs" data-chunk="4" data-quote="a lot of them just inject your information into a prompt">a lot of them just inject your information into a prompt</cite>.</p>
+</section>
+
+<section id="options">
+  <h2 id="options-h21">The option space</h2>
+  <p id="options-p1">Two orthogonal choices: <em>what you teach</em> (the objective) and <em>how much of the model you touch</em> (the adaptation method). Get the objective wrong and no amount of rank tuning saves you. The lifecycle context: pretraining produces a base model that will <cite data-video="uLrOI65XbDw" data-chunk="0" data-quote="it's going to autocomplete your question instead of answering it">autocomplete your question instead of answering it</cite>; SFT teaches instruction-following; preference alignment produces the chat model. You can intervene at any point — <cite data-video="cO6Ly7mIziQ" data-chunk="9" data-quote="after any stage we can pick up the LLM model">after any stage we can pick up the model</cite> and train on top.</p>
+  <h3 id="options-h31">What you teach</h3>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="options-h32">SFT — imitation</h3>
+      <p id="options-p2">A direct mapping from input to output. Mechanically it is the pretraining objective again: instruction fine-tuning <cite data-video="4yNswvhPWCQ" data-chunk="44" data-quote="instruction fine-tuning uses exactly the same loss that we used during pre-training">uses exactly the same loss used during pre-training</cite>; only the text structure changes. Fits classification, structured extraction and distillation into small models.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h33">DPO — preference</h3>
+      <p id="options-p3">Pairs a chosen and a rejected answer. The model <cite data-video="JfaLQqfXqPA" data-chunk="8" data-quote="it learns the delta between the examples">learns the delta between the examples</cite>, not the examples. Popular over RLHF because it skips the reward model, which otherwise means holding <cite data-video="4yNswvhPWCQ" data-chunk="53" data-quote="two llms in your compute memory which is more expensive">two LLMs in compute memory</cite>. Use it for tone, style, refusals and safety.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h34">RFT — reasoning</h3>
+      <p id="options-p4">Reinforces chains of thought that score well against a grader. Built for <cite data-video="JfaLQqfXqPA" data-chunk="10" data-quote="reinforcement fine-tuning is for gradable hard problems">gradable hard problems</cite> with unambiguous answers, and it is startlingly data-efficient — <cite data-video="JfaLQqfXqPA" data-chunk="42" data-quote="40 to 80 very high quality, very high signal examples">40 to 80 very high quality, very high signal examples</cite> can generalise. Two hard limits: it works on reasoning models only (<cite data-video="JfaLQqfXqPA" data-chunk="47" data-quote="RFT you can do with reasoning models and there's no interplay">no interplay</cite> with non-reasoning bases), and <cite data-video="JfaLQqfXqPA" data-chunk="48" data-quote="agentic use cases are limited by a single turn">agentic use cases are limited by a single turn</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h35">SFT → GRPO — staged RL</h3>
+      <p id="options-p5">The tau²-bench tool-calling study trains SFT on teacher trajectories first, then <cite data-video="R78NYFkWH10" data-chunk="8" data-quote="try to push the performance further by use by doing reinforcement learning">pushes performance further with reinforcement learning</cite>. The reward is shaped, not pass/fail: <cite data-video="R78NYFkWH10" data-chunk="11" data-quote="the first one is action fraction">action fraction</cite>, a termination bonus, tool-name accuracy, tool-argument accuracy and a step penalty.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h36">Merging — no GPU at all</h3>
+      <p id="options-p6">Combine existing fine-tuned checkpoints by weight arithmetic, with no training. It worked well enough that on one leaderboard generation <cite data-video="uLrOI65XbDw" data-chunk="9" data-quote="the entire top eight or top 10 is just merge models">the entire top eight or ten were merge models</cite>. Use <cite data-video="uLrOI65XbDw" data-chunk="10" data-quote="I would recommend using merch kit">mergekit</cite>: SLERP (<cite data-video="uLrOI65XbDw" data-chunk="10" data-quote="spherical but linear interpolation">spherical linear interpolation</cite>, two models, per-layer factors) or DARE, recommended <cite data-video="uLrOI65XbDw" data-chunk="11" data-quote="not with three but like with seven or eight models">not with three but with seven or eight models</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h37">Exotic merges — know the limits</h3>
+      <p id="options-p7">Passthrough merging concatenates layers with zero training: one presenter built a 120B model by <cite data-video="uLrOI65XbDw" data-chunk="12" data-quote="repeated 10 layers six times">repeating 10 layers six times</cite>, and it went viral for being <cite data-video="uLrOI65XbDw" data-chunk="12" data-quote="particularly good at uh creative writing">particularly good at creative writing</cite>. You can also graft feed-forward layers into a <cite data-video="uLrOI65XbDw" data-chunk="13" data-quote="we call this a Franken M you add a router">FrankenMoE by adding a router</cite> — but for raw performance prefer SLERP and DARE, <cite data-video="uLrOI65XbDw" data-chunk="14" data-quote="because this is a bit more experimental">because MoE merging is more experimental</cite>.</p>
+    </div>
+  </div>
+  <h3 id="options-h38">How much of the model you touch</h3>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="options-h39">Full fine-tuning</h3>
+      <p id="options-p8">Every weight is trainable, so cost scales linearly with size: <cite data-video="cO6Ly7mIziQ" data-chunk="13" data-quote="if you have 13 billion model, then you have 13 billion weights">a 13-billion model means 13 billion weights</cite>. It still wins on peak performance, but it needs clusters and is argued to be <cite data-video="cO6Ly7mIziQ" data-chunk="15" data-quote="full parameter fine-tuning is not a practical choice">not a practical choice</cite> for most teams.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h310">LoRA</h3>
+      <p id="options-p9">Freeze the pretrained weights and <cite data-video="uLrOI65XbDw" data-chunk="7" data-quote="freeze all the pre-rain weights and you add adapters">add adapters to each targeted layer</cite>, exploiting the fact that a matrix's rank is its <cite data-video="cO6Ly7mIziQ" data-chunk="36" data-quote="number of linearly independent rows and columns">number of linearly independent rows and columns</cite>. On GPT-3 scale that is <cite data-video="cO6Ly7mIziQ" data-chunk="62" data-quote="we are just going to be trained only 4.7 million of parameter">about 4.7 million trainable parameters</cite> instead of 175 billion — typically <cite data-video="v7qMjy_RxOs" data-chunk="4" data-quote="half to 2% of the parameters of the model">half to 2% of the parameters</cite> — for <cite data-video="cO6Ly7mIziQ" data-chunk="63" data-quote="we were getting 89.5% accuracy">accuracy matching the 89.5% full-fine-tune baseline</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h311">QLoRA</h3>
+      <p id="options-p10">LoRA with the frozen base loaded <cite data-video="cO6Ly7mIziQ" data-chunk="63" data-quote="we are going to be use the 4-bit, right, the quantized model">in 4-bit</cite>, so work that needed 24GB+ fits in <cite data-video="cO6Ly7mIziQ" data-chunk="64" data-quote="8 to 16 GB will be enough for the respective task">8 to 16 GB</cite>. Do not pretend it is free: <cite data-video="uLrOI65XbDw" data-chunk="8" data-quote="it also degrades performance so there's a trade-off here">it also degrades performance, so there's a trade-off</cite>. Reach for it when VRAM is the binding constraint, not by default.</p>
+    </div>
+    <div class="lever">
+      <h3 id="options-h312">The wider PEFT shelf</h3>
+      <p id="options-p11">LoRA is the famous one, but the shelf also holds DoRA, prefix tuning, prompt tuning, BitFit, IA3 and plain adapters — <cite data-video="cO6Ly7mIziQ" data-chunk="16" data-quote="LoRA adaptation is a very famous method to achieve this PEFT">LoRA is one method of achieving PEFT</cite>, not the definition of it. The payoff you are buying is <cite data-video="cO6Ly7mIziQ" data-chunk="18" data-quote="less memory, faster training, lower cost, and the easy customization">less memory, faster training, lower cost, easy customization</cite>.</p>
+    </div>
+  </div>
+  <h3 id="options-h313">Tooling, by where you want the job to run</h3>
+  <ul>
+    <li id="options-li1">Open-source trainers: <cite data-video="uLrOI65XbDw" data-chunk="3" data-quote="TRL from hugging face uh Great Library buil on top of Transformers">TRL from Hugging Face, built on top of Transformers</cite>, plus Axolotl (YAML-driven) and LLaMA Factory (GUI).</li>
+    <li id="options-li2">A LoRA run on Hugging Face needs <cite data-video="cO6Ly7mIziQ" data-chunk="66" data-quote="data set, peft, accelerator, bits and bytes, TRL">transformers, datasets, peft, accelerate, bitsandbytes and TRL</cite>.</li>
+    <li id="options-li3">No-code: Unsloth's UI runs the whole loop and ships an <cite data-video="YxXBojdD1as" data-chunk="30" data-quote="OnSlot provides an OpenAI compatible API locally">OpenAI-compatible API locally</cite>.</li>
+    <li id="options-li4">Managed: a guided API such as <cite data-video="1jvxxa7tdjw" data-chunk="60" data-quote="Mosaic AI model training which is a very guided">Mosaic AI Model Training</cite> for continued pretraining and instruction tuning, versus DIY Spark/Ray/DeepSpeed.</li>
+    <li id="options-li5">Split infrastructure is normal: the tau²-bench team used a <cite data-video="R78NYFkWH10" data-chunk="9" data-quote="serverless uh supervised fine-tuning">serverless supervised fine-tuning</cite> service for SFT and the OpenPipe SDK on self-managed H100s for the RL stage.</li>
+    <li id="options-li6">Base-model shortlist for open fine-tunes: <cite data-video="R78NYFkWH10" data-chunk="1" data-quote="fine-tune, right, Qwen 3 30B parameters on a specific task">Qwen3 30B</cite> for tool-calling work, and the <cite data-video="NovNcsKX8AU" data-chunk="71" data-quote="the GLM series is like fantastic">GLM series</cite> as a credible agentic base.</li>
+  </ul>
+</section>
+
+<section id="dataset">
+  <h2 id="dataset-h21">Building the input set</h2>
+  <p id="dataset-p1">This is the part that decides the outcome. There are <cite data-video="v7qMjy_RxOs" data-chunk="10" data-quote="for your first fine-tuning project, there's roughly five steps">roughly five steps</cite> in a first project — collection, dataset engineering, LoRA training, evaluation, export. Below is the dataset half expanded into the seven moves the corpus actually demonstrates.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="dataset-h31">Pick one behaviour, and make it machine-scorable</h3>
+    <p class="why">If you cannot grade an output with code, you cannot run the loop. Define the label space before you open a tool.</p>
+    <ul>
+      <li id="dataset-li1"><cite data-video="YxXBojdD1as" data-chunk="4" data-quote="start with the behavior you want to measure">Start with the behaviour you want to measure</cite> — categories, severity levels, required keys — and only then choose tooling.</li>
+      <li id="dataset-li2">Force a structured target: in the worked example, <cite data-video="YxXBojdD1as" data-chunk="3" data-quote="exactly one JSON object containing three fields, Category, severity and next action">exactly one JSON object containing three fields: category, severity and next action</cite>. Subjective “does this feel nicer” targets have no scoreboard.</li>
+      <li id="dataset-li3">Start small on the base model too — a deliberately tiny base like <cite data-video="YxXBojdD1as" data-chunk="8" data-quote="I'm going to be using Queen 2.505 B">Qwen 2.5 0.5B</cite> is for learning the loop, not shipping.</li>
+      <li id="dataset-li4">Where success is a world-state change, grade the world: tau²-bench asks <cite data-video="R78NYFkWH10" data-chunk="3" data-quote="whether for this particular task data actually increased by 2 GB">whether the customer's data allowance actually increased by 2 GB</cite>, not whether the transcript sounded right.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="dataset-h32">Choose the record shape for your objective</h3>
+    <p class="why">Each objective has exactly one file format. Getting the masking wrong silently trains the model to parrot your prompts.</p>
+    <ul>
+      <li id="dataset-li5">SFT: a system+user prompt as context and the assistant message as the target — <cite data-video="YxXBojdD1as" data-chunk="4" data-quote="the assistant message contains the correct answer">the assistant message contains the correct answer</cite>. The prompt is masked out of the loss; you train <cite data-video="uLrOI65XbDw" data-chunk="3" data-quote="we train the model usually like generally on the outputs only">on the outputs only</cite>.</li>
+      <li id="dataset-li6">On a hosted API the file is JSONL with a messages array, and the trainer takes <cite data-video="JfaLQqfXqPA" data-chunk="27" data-quote="the last assistant message and learn from it">the last assistant message and learns from it</cite>. Upload with <cite data-video="JfaLQqfXqPA" data-chunk="28" data-quote="set the purpose to fine-tune">purpose set to fine-tune</cite>.</li>
+      <li id="dataset-li7">DPO: one instruction, a <cite data-video="uLrOI65XbDw" data-chunk="4" data-quote="chosen answer and a rejected answer">chosen answer and a rejected answer</cite>; the <cite data-video="4yNswvhPWCQ" data-chunk="55" data-quote="chosen response could also be called preferred response">chosen response is the preferred response</cite>.</li>
+      <li id="dataset-li8">Local/from-scratch SFT: wrap raw JSON into text, because models read text — apply <cite data-video="4yNswvhPWCQ" data-chunk="7" data-quote="this is the alpaka prompt style template">the Alpaca prompt-style template</cite>. Prefer terser templates (Phi-3 style) since generation is token-by-token and <cite data-video="4yNswvhPWCQ" data-chunk="9" data-quote="shorter and shorter is cheaper">shorter is cheaper</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="dataset-h33">Generate candidates — synthetic data is the norm</h3>
+    <p class="why">Hand-labelling does not scale and is not required. Most SFT corpora are model-made.</p>
+    <ul>
+      <li id="dataset-li9">Be unembarrassed about it: most SFT datasets <cite data-video="uLrOI65XbDw" data-chunk="4" data-quote="use synthetic data and that's perfectly fine">use synthetic data and that's perfectly fine</cite>.</li>
+      <li id="dataset-li10">From raw source material (transcripts, docs), invert the task: <cite data-video="v7qMjy_RxOs" data-chunk="11" data-quote="use a local language model to generate a question that is relevant">use a local language model to generate a question relevant</cite> to each snippet, then pair question with snippet to get chat-format pairs.</li>
+      <li id="dataset-li11">When the output space is enumerable, enumerate it. For a 120-function assistant — <cite data-video="JfaLQqfXqPA" data-chunk="13" data-quote="anybody fine-tuned a model with over 100 functions">the first time anybody fine-tuned a model with over 100 functions</cite> — OpenAI generated every valid permutation of call arguments deterministically, then had a frontier model reverse-generate a plausible user command for each.</li>
+      <li id="dataset-li12">Distil from a stronger model's production behaviour: <cite data-video="CvRngaQZQ3Y" data-chunk="10" data-quote="take the good traces and the good examples">take the good traces and the good examples</cite> from the large model's runs and train a 9–13B student to mimic them.</li>
+      <li id="dataset-li13">For a DPO negative, construct the contrast deliberately — generate the positives, then <cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="then did some manual filtering like did I laugh">manually filter</cite> and synthesise a matched weak answer on the same topic so the delta is about the quality you care about.</li>
+      <li id="dataset-li14">Tooling exists for the cold start: Unsloth ships a recipe builder, though the presenter <cite data-video="YxXBojdD1as" data-chunk="9" data-quote="I usually prefer getting my own data sets">prefers building his own datasets</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="dataset-h34">Mine and filter traces if you already have production</h3>
+    <p class="why">A shipped system is a dataset generator. Most teams fine-tune on their own traces, not public corpora.</p>
+    <ul>
+      <li id="dataset-li15">The order is ship first, then <cite data-video="CvRngaQZQ3Y" data-chunk="0" data-quote="collect a ton of traces">collect a ton of traces</cite> — tool calls, outputs, CLI/API usage — before any mining.</li>
+      <li id="dataset-li16">Cheapest possible first step: <cite data-video="CvRngaQZQ3Y" data-chunk="18" data-quote="just turn on tracing and point an agent at it">just turn on tracing and point an agent at it</cite>, then ask targeted questions — <cite data-video="CvRngaQZQ3Y" data-chunk="4" data-quote="good and bad interactions where like users got upset">find good and bad interactions where users got upset</cite>, or whether the agent degrades after compaction.</li>
+      <li id="dataset-li17">Budget for it: <cite data-video="CvRngaQZQ3Y" data-chunk="6" data-quote="reading traces at scale is super expensive">reading traces at scale is super expensive</cite> — millions of traces times millions of tokens. Mine with a cheap judge; a harness-engineered open model matched <cite data-video="CvRngaQZQ3Y" data-chunk="7" data-quote="match the trace judging capability of Opus with an open cheaper model">Opus-level trace-judging at one to two orders of magnitude lower cost</cite>.</li>
+      <li id="dataset-li18">Log rollouts as first-class artefacts: the tau²-bench team <cite data-video="R78NYFkWH10" data-chunk="4" data-quote="we basically log the traces of the interaction between the user and">logs the traces of the interaction between user and agent</cite> in an experiment tracker.</li>
+      <li id="dataset-li19">Filter hard. Of ~822 raw rollouts they kept only <cite data-video="R78NYFkWH10" data-chunk="10" data-quote="to use 669 clean trajectories, right, for the uh supervised fine-tuning">669 clean trajectories for supervised fine-tuning</cite>, screening for efficiency and hallucinated tool calls.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="dataset-h35">Grade every sample on three axes</h3>
+    <p class="why">Accuracy, diversity, complexity. These are the only quality dimensions the corpus names, and all three are load-bearing.</p>
+    <ul>
+      <li id="dataset-li20"><strong>Accuracy</strong> — <cite data-video="uLrOI65XbDw" data-chunk="5" data-quote="we want the samples the outputs to be uh factually correct">the outputs must be factually correct</cite>, typo-free, no invented knowledge.</li>
+      <li id="dataset-li21"><strong>Diversity</strong> — many topics and styles unless the use case is genuinely narrow; this is the direct defence against regression, because <cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="data diversity is critical for that reason">anything you don't include might regress</cite>.</li>
+      <li id="dataset-li22"><strong>Complexity</strong> — tasks that force reasoning, e.g. where <cite data-video="uLrOI65XbDw" data-chunk="6" data-quote="the output will have Chain of Thought reasoning">the output will have chain-of-thought reasoning</cite>, rather than Wikipedia-style lookups.</li>
+      <li id="dataset-li23">For RFT, add a fourth bar: unambiguous grading, where any qualified grader following the rubric would agree. The email-triage failure case was ~600 personally labelled emails where the author conceded he wouldn't hit <cite data-video="JfaLQqfXqPA" data-chunk="45" data-quote="the same classifications for all of them? Probably not">the same classifications for all of them</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">6</div>
+    <h3 id="dataset-h36">Deduplicate, filter, cluster, regenerate</h3>
+    <p class="why">The curation pipeline is mechanical and cheap, and it is where most of the quality comes from.</p>
+    <ul>
+      <li id="dataset-li24">Start from open-source datasets, combine them, then deduplicate — <cite data-video="uLrOI65XbDw" data-chunk="6" data-quote="data dat duplication it can be either exact">deduplication can be either exact</cite> or fuzzy. Hand-built sets need it too: <cite data-video="4yNswvhPWCQ" data-chunk="49" data-quote="I found near duplicates removed them">find near duplicates and remove them</cite>.</li>
+      <li id="dataset-li25">Apply quality filters — rule-based, or reward-model / LLM-as-judge scoring — then explore the set with clustering before generating more.</li>
+      <li id="dataset-li26">Add programmatic guardrails inside the data stage, not after: <cite data-video="R78NYFkWH10" data-chunk="23" data-quote="more programmatic evaluation or got reals in your SFT stage">more programmatic evaluation and guardrails in your SFT stage</cite> — flag tool-not-found errors, check response tone.</li>
+      <li id="dataset-li27">Never trust a teacher trace because it passed: <cite data-video="R78NYFkWH10" data-chunk="22" data-quote="RL roll out trajectories are actually hallucinating a lot">RL rollout trajectories are actually hallucinating a lot</cite>, and that noise propagates into the RL stage and destabilises it. Their teacher solved <cite data-video="R78NYFkWH10" data-chunk="9" data-quote="it actually able to solve 68 of the 74 tasks">68 of 74 tasks</cite> — and the passing traces still needed filtering.</li>
+      <li id="dataset-li28">Keep the prompt context rich. Stripping function schemas out of the prompt to save latency backfired: <cite data-video="JfaLQqfXqPA" data-chunk="20" data-quote="removing them from context makes them much harder to learn through fine-tuning">removing them from context makes them much harder to learn through fine-tuning</cite>.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">7</div>
+    <h3 id="dataset-h37">Split three ways, and check the licence</h3>
+    <p class="why">Two splits is one too few, and one legal check can invalidate the whole corpus.</p>
+    <ul>
+      <li id="dataset-li29">Three splits: training updates the adapter, validation checks generalisation while you iterate, and you <cite data-video="YxXBojdD1as" data-chunk="6" data-quote="keep a final test set completely untouched as well">keep a final test set completely untouched</cite>. A concrete ratio from the from-scratch build: <cite data-video="4yNswvhPWCQ" data-chunk="12" data-quote="85% for training 10% for testing and then the remaining 5%">85% training, 10% test, 5% validation</cite>.</li>
+      <li id="dataset-li30">Pass the validation file to the job explicitly — it is what <cite data-video="JfaLQqfXqPA" data-chunk="29" data-quote="Validation file which is going to tell us how well it's doing">tells you how well it's doing</cite> so you don't overfit.</li>
+      <li id="dataset-li31">Licence contamination is real: outputs generated under one model's terms mean <cite data-video="1jvxxa7tdjw" data-chunk="40" data-quote="you can't use those outputs to F tune some other architectures">you can't use those outputs to fine-tune some other architectures</cite>. Audit which model produced which synthetic rows before you mix providers.</li>
+      <li id="dataset-li32">Data quality is the gate, not the sequencing: a model cannot self-correct a bad corpus, and <cite data-video="v7qMjy_RxOs" data-chunk="10" data-quote="you're going to make the end result much worse">feeding it bad data makes the end result much worse</cite>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="sizing">
+  <h2 id="sizing-h21">How many examples — the corpus numbers</h2>
+  <p id="sizing-p1">Every number below is a reported figure from a specific talk, not a general rule. They disagree by an order of magnitude because they are answering different questions: a hosted SFT on a narrow classifier needs hundreds, a from-scratch instruction-tuned production model needs six figures. Find the row that matches your objective and base.</p>
+  <table class="sizes">
+    <thead><tr><th id="sizing-th1">Scale</th><th id="sizing-th2">Context</th><th id="sizing-th3">Source</th></tr></thead>
+    <tbody>
+      <tr><td>40–80</td><td>RFT, high-signal unambiguous examples — enough to generalise</td><td><cite data-video="JfaLQqfXqPA" data-chunk="42" data-quote="40 to 80 very high quality, very high signal examples">JfaLQqfXqPA@42</cite></td></tr>
+      <tr><td>20–50</td><td>A first local LoRA experiment, plus a separate eval set</td><td><cite data-video="YxXBojdD1as" data-chunk="33" data-quote="20 to 50 or a few hundred examples">YxXBojdD1as@33</cite></td></tr>
+      <tr><td>50–100</td><td>Hosted SFT — where you start to see “signs of life”</td><td><cite data-video="JfaLQqfXqPA" data-chunk="18" data-quote="50 to 100 examples you start to see signs of life">JfaLQqfXqPA@18</cite></td></tr>
+      <tr><td>150 / 500</td><td>The two sizes actually trained in the banking-intent demo</td><td><cite data-video="JfaLQqfXqPA" data-chunk="30" data-quote="blow everything else out of the water">JfaLQqfXqPA@30</cite></td></tr>
+      <tr><td>500+</td><td>Recommended floor for production-grade SFT</td><td><cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="data diversity is critical for that reason">JfaLQqfXqPA@36</cite></td></tr>
+      <tr><td>669 / 822</td><td>Clean trajectories kept from raw rollouts for tool-calling SFT</td><td><cite data-video="R78NYFkWH10" data-chunk="10" data-quote="to use 669 clean trajectories, right, for the uh supervised fine-tuning">R78NYFkWH10@10</cite></td></tr>
+      <tr><td>~1,000s</td><td>Instruction fine-tuning to tailor a model to a task (enterprise MLOps view)</td><td><cite data-video="1jvxxa7tdjw" data-chunk="43" data-quote="order of thousands of examples">1jvxxa7tdjw@43</cite></td></tr>
+      <tr><td>1–2M+ tokens</td><td>Raw source text before transformation, for an 8B local fine-tune</td><td><cite data-video="v7qMjy_RxOs" data-chunk="10" data-quote="you might need a million, 2 million plus tokens of raw data">v7qMjy_RxOs@10</cite></td></tr>
+      <tr><td>100,000+</td><td>What production LLMs are actually instruction-tuned on</td><td><cite data-video="4yNswvhPWCQ" data-chunk="5" data-quote="nowadays at least 100,000 training examples">4yNswvhPWCQ@5</cite></td></tr>
+      <tr><td>50–100</td><td>Separate figure: the <em>evaluation</em> set, drawn from real traffic</td><td><cite data-video="vBJF2sy1Pyw" data-chunk="12" data-quote="a test data sets of like 50 to 100 samples">vBJF2sy1Pyw@12</cite></td></tr>
+    </tbody>
+  </table>
+  <p id="sizing-p2">The staff-engineer read: the floor is far lower than people expect, and the method moves it more than the task does. RFT buys data efficiency at the price of requiring a reasoning base and an unambiguous grader; SFT is cheap to label and expensive in volume; continued pretraining is a different sport entirely, measured in millions of tokens and billions for pretraining.</p>
+</section>
+
+<section id="params">
+  <h2 id="params-h21">The parameters you actually set</h2>
+  <p id="params-p1">Short answer to the hyperparameterisation question: you need a small, ordered set of decisions and one disciplined loop — not a sweep. No talk in this corpus runs a hyperparameter search. What they all do is fix three knobs, read the loss curve, and change one variable at a time.</p>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="params-h31">The three that matter</h3>
+      <p id="params-p2">The <cite data-video="YxXBojdD1as" data-chunk="14" data-quote="are epochs, learning rate and rank">three parameters to recognise immediately are epochs, learning rate and rank</cite>. Everything else is defaults until a curve tells you otherwise.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h32">Learning rate: push until it breaks</h3>
+      <p id="params-p3">The most important SFT hyperparameter, and the search procedure is one line — <cite data-video="uLrOI65XbDw" data-chunk="8" data-quote="go as high as you can uh until your loss explodes">go as high as you can until your loss explodes</cite>, then back off. Pair it with AdamW, which <cite data-video="cO6Ly7mIziQ" data-chunk="57" data-quote="it is going to be combine this weight decay concept">combines the weight-decay concept</cite> with a scheduler and warmup.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h33">Epochs: two, then watch</h3>
+      <p id="params-p4">In the from-scratch run <cite data-video="4yNswvhPWCQ" data-chunk="48" data-quote="two was better than one">two was better than one</cite>, and further epochs push into overfitting as training loss drops below validation loss. The Unsloth tutorial also runs 3 epochs. Start at 2–3.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h34">Rank: capacity, not quality</h3>
+      <p id="params-p5"><cite data-video="YxXBojdD1as" data-chunk="14" data-quote="the rank controls roughly how much capacity the adapter has">Rank controls roughly how much capacity the adapter has</cite> — and more capacity is not automatically better, it just costs more memory and parameters. Rank 16 with alpha 32 on a 1.1B base left <cite data-video="cO6Ly7mIziQ" data-chunk="76" data-quote="it is just uh 0.277 of this all the parameter">just 0.277% of parameters trainable</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h35">Batch size and accumulation</h3>
+      <p id="params-p6">On real GPUs, <cite data-video="uLrOI65XbDw" data-chunk="9" data-quote="you want to maximize it to maximize the utilization of your gpus">maximise batch size to maximise GPU utilisation</cite>; sequence length trades against VRAM and need not match the base model's full context. On small hardware, fake it: <cite data-video="YxXBojdD1as" data-chunk="12" data-quote="the model collects gradients from four batches, making one update">collect gradients from four batches, making one update</cite>, so a physical batch of 2 <cite data-video="YxXBojdD1as" data-chunk="15" data-quote="effectively sees eight examples before one full update">effectively sees eight examples before one full update</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h36">Dropout and padding</h3>
+      <p id="params-p7"><cite data-video="YxXBojdD1as" data-chunk="12" data-quote="dropout randomly ignores some training signals to reduce overfitting">Dropout randomly ignores some training signals to reduce overfitting</cite>; the tutorial leaves it at zero for a small run. Pad per batch, not globally — <cite data-video="4yNswvhPWCQ" data-chunk="14" data-quote="we will pad only to the longest element in each batch">pad only to the longest element in each batch</cite> — and mask the rest with <cite data-video="4yNswvhPWCQ" data-chunk="27" data-quote="I'm using minus 100 because that's the default value">-100, the cross-entropy default ignore index</cite>, keeping exactly one pad token so the model learns to stop.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h37">The reward function, if you do RL</h3>
+      <p id="params-p8">With GRPO the reward components <em>are</em> your hyperparameters, and their weights are the dangerous part. Weighting them evenly produced <cite data-video="R78NYFkWH10" data-chunk="13" data-quote="there's actually presence of reward reward hacking">reward hacking</cite> — the model farmed the action-fraction term by re-calling a correct-but-redundant tool. The fix was upweighting task completion.</p>
+    </div>
+    <div class="lever">
+      <h3 id="params-h38">The grader, if you do RFT</h3>
+      <p id="params-p9">Graders are the tunable surface: string checks, text similarity, sandboxed Python where <cite data-video="JfaLQqfXqPA" data-chunk="42" data-quote="you can write Python code sandboxed">you write Python code sandboxed</cite>, or model graders, nestable into a weighted multi-grader. Partial credit works: half credit per correct field moved hydrogen-bond prediction from <cite data-video="JfaLQqfXqPA" data-chunk="46" data-quote="this started at roughly like 65%">roughly 65%</cite> to around 80%.</p>
+    </div>
+  </div>
+  <h3 id="params-h39">Read the loss curve; nothing will stop the job for you</h3>
+  <p id="params-p10">Overfitting protection is manual. Asked directly whether hosted jobs check for it: <cite data-video="JfaLQqfXqPA" data-chunk="31" data-quote="do the fine tuning runs check for overfitting? No, they don't">“do the fine tuning runs check for overfitting? No, they don't”</cite> — you watch the curves and stop the job yourself. And a wrong curve is diagnostic, not cosmetic: <cite data-video="YxXBojdD1as" data-chunk="16" data-quote="the training loss chart is trending upwards instead of training downwards">a training loss chart trending upwards instead of downwards</cite> means the run config is broken. In that case the cause was <cite data-video="YxXBojdD1as" data-chunk="17" data-quote="I mistakenly set these Max steps at 3">max steps set to 3</cite> instead of 3 epochs — three optimizer updates total. After the fix, <cite data-video="YxXBojdD1as" data-chunk="18" data-quote="the training loss is gradually going down">the training loss gradually went down</cite>, confirming the diagnosis. Expect to wait: hosted jobs run <cite data-video="JfaLQqfXqPA" data-chunk="29" data-quote="Anywhere from 30 minutes to 24 hours">anywhere from 30 minutes to 24 hours</cite>.</p>
+  <h3 id="params-h310">Hardware, because it constrains the parameters</h3>
+  <ul>
+    <li id="params-li1">LoRA is what makes the loop iterable: <cite data-video="v7qMjy_RxOs" data-chunk="13" data-quote="instead of having to wait 20 hours to get a result">instead of waiting 20 hours</cite> you can finish in about two.</li>
+    <li id="params-li2">Measured: a medium model took <cite data-video="v7qMjy_RxOs" data-chunk="14" data-quote="it would take something like 2 to 3 hours on a 5090">2 to 3 hours on a 5090</cite>. A 355M full fine-tune for 2 epochs took <cite data-video="4yNswvhPWCQ" data-chunk="46" data-quote="with this 355 million model it took about 15 minutes">about 15 minutes</cite> on an M3 MacBook Air CPU versus roughly a minute on an A100.</li>
+    <li id="params-li3">VRAM is the hard wall: <cite data-video="v7qMjy_RxOs" data-chunk="14" data-quote="a 27 billion parameter model likely will exceed 14 GB">a 27B model will likely exceed 14 GB</cite> even quantized, and offloading to system RAM <cite data-video="v7qMjy_RxOs" data-chunk="16" data-quote="this will grind fine-tuning to a halt">will grind fine-tuning to a halt</cite>.</li>
+    <li id="params-li4">Vendor verdict: <cite data-video="v7qMjy_RxOs" data-chunk="16" data-quote="AMD is actively developing CUDA counterparts">AMD is actively developing CUDA counterparts</cite> and ROCm can already train many models; <cite data-video="v7qMjy_RxOs" data-chunk="17" data-quote="What I would definitely avoid is to fine-tune on Apple silicon">definitely avoid fine-tuning on Apple silicon</cite>.</li>
+    <li id="params-li5">Don't chase bit-identical reproducibility across backends — <cite data-video="4yNswvhPWCQ" data-chunk="47" data-quote="the results are very close between CPU and GPU">results are very close but not identical between CPU and GPU</cite>, and vary by library version.</li>
+    <li id="params-li6">If results are weak, a bigger base can beat better hyperparameters: when 124M GPT-2 produced unusable output, the fix was that <cite data-video="4yNswvhPWCQ" data-chunk="38" data-quote="I went one model size up">he went one model size up</cite>.</li>
+  </ul>
+  <h3 id="params-h311">Delete on sight</h3>
+  <table class="ban">
+    <thead><tr><th id="params-th1">Delete on sight</th><th id="params-th2">Replace with</th></tr></thead>
+    <tbody>
+      <tr><td><code>max_steps = 3</code> when you meant three epochs</td><td>Epochs. Three updates is not three passes <cite data-video="YxXBojdD1as" data-chunk="17" data-quote="I mistakenly set these Max steps at 3">YxXBojdD1as@17</cite></td></tr>
+      <tr><td>Padding the whole dataset to one global max length</td><td>Per-batch padding to that batch's longest element <cite data-video="4yNswvhPWCQ" data-chunk="14" data-quote="we will pad only to the longest element in each batch">4yNswvhPWCQ@14</cite></td></tr>
+      <tr><td>Loss computed over the prompt tokens</td><td>Mask the prompt; train on outputs only <cite data-video="uLrOI65XbDw" data-chunk="3" data-quote="we train the model usually like generally on the outputs only">uLrOI65XbDw@3</cite></td></tr>
+      <tr><td>Offloading training state to system RAM</td><td>A model sized to your VRAM <cite data-video="v7qMjy_RxOs" data-chunk="16" data-quote="this will grind fine-tuning to a halt">v7qMjy_RxOs@16</cite></td></tr>
+      <tr><td>Assuming the trainer halts on overfit</td><td>Your own eyes on train/validation loss <cite data-video="JfaLQqfXqPA" data-chunk="31" data-quote="do the fine tuning runs check for overfitting? No, they don't">JfaLQqfXqPA@31</cite></td></tr>
+      <tr><td>Changing the data and the config in one iteration</td><td>One change per run <cite data-video="YxXBojdD1as" data-chunk="24" data-quote="Then what we do is we go back, we change one thing">YxXBojdD1as@24</cite></td></tr>
+      <tr><td>Unfiltered teacher trajectories</td><td>Clean-trajectory filtering before SFT <cite data-video="R78NYFkWH10" data-chunk="22" data-quote="RL roll out trajectories are actually hallucinating a lot">R78NYFkWH10@22</cite></td></tr>
+      <tr><td>Evenly weighted RL reward components</td><td>Task completion upweighted over sub-rewards <cite data-video="R78NYFkWH10" data-chunk="13" data-quote="there's actually presence of reward reward hacking">R78NYFkWH10@13</cite></td></tr>
+      <tr><td>Rewards or penalties applied inside the chain of thought</td><td>Grade the final result only — optimising the CoT drops your ability to catch bad behaviour <cite data-video="JfaLQqfXqPA" data-chunk="58" data-quote="by looking at the chain of thought to like zero">JfaLQqfXqPA@58</cite></td></tr>
+      <tr><td>Fine-tuning to install facts</td><td>RAG or agentic retrieval <cite data-video="JfaLQqfXqPA" data-chunk="65" data-quote="the best way to give like correct information">JfaLQqfXqPA@65</cite></td></tr>
+      <tr><td><code>pass@1</code> as your reliability number</td><td>pass^k, which is <cite data-video="R78NYFkWH10" data-chunk="14" data-quote="pass three itself, right? It's significantly lower than pass one">significantly lower than pass one</cite></td></tr>
+      <tr><td>A judge you never aligned to a human</td><td>An agreement score against human labels <cite data-video="a3SMraZWNNs" data-chunk="35" data-quote="mistake number four is unaligned LLM judges">a3SMraZWNNs@35</cite></td></tr>
+      <tr><td>Dashboards of “helpfulness 4.2, truthfulness 4.5”</td><td>Specific boolean checks tied to a decision <cite data-video="a3SMraZWNNs" data-chunk="33" data-quote="mistake number two, generic metrics obsessions">a3SMraZWNNs@33</cite></td></tr>
+      <tr><td>Benchmarking against a model released after your eval set</td><td>A baseline that predates the benchmark <cite data-video="R78NYFkWH10" data-chunk="19" data-quote="it was um released after GPT 4.1 mini">R78NYFkWH10@19</cite></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="hosting">
+  <h2 id="hosting-h21">Hosting the model</h2>
+  <p id="hosting-p1">Four deployment shapes appear in this corpus, and the choice is driven by where your cost curve and your control requirements sit — not by training convenience. Note that the fine-tuned artefact is usually an adapter, not a model: on a hosted platform the job is <cite data-video="JfaLQqfXqPA" data-chunk="55" data-quote="It's generating this Laura component">generating a LoRA component</cite> that is loaded alongside unchanged base weights at inference.</p>
+  <div class="levers">
+    <div class="lever">
+      <h3 id="hosting-h31">Adapter on a hosted base</h3>
+      <p id="hosting-p2">You train and serve on the provider's infrastructure; the adapter rides on their base model. Lowest operational burden, no VRAM planning, and the per-token cost model stays. This is the default for hosted SFT, DPO and RFT.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h32">Merged weights, local runtime</h3>
+      <p id="hosting-p3">After LoRA training, <cite data-video="cO6Ly7mIziQ" data-chunk="80" data-quote="merge the Laura adapter with that previous model only">merge the LoRA adapter into the base model</cite> to ship one standalone artefact. Then export to GGUF — <cite data-video="YxXBojdD1as" data-chunk="25" data-quote="we're going to be exporting the model using the file formats gguf">export using the GGUF file format</cite> at <cite data-video="YxXBojdD1as" data-chunk="26" data-quote="we're going to be selecting the Q4KM">Q4_K_M</cite> quantization (distinct from the 4-bit used in training), which makes it <cite data-video="v7qMjy_RxOs" data-chunk="19" data-quote="easier to run on platforms like LM Studio">easier to run on platforms like LM Studio</cite> and Ollama. Point the hub at the local export folder so <cite data-video="YxXBojdD1as" data-chunk="27" data-quote="we are not downloading the model again">you aren't downloading the model again</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h33">Adapters kept separate and swapped</h3>
+      <p id="hosting-p4">Because the base stays frozen you can hold <cite data-video="cO6Ly7mIziQ" data-chunk="55" data-quote="different LoRA adapter for a multiple task without duplicating the full model">a different LoRA adapter per task without duplicating the full model</cite>. This is the right shape when you have many narrow behaviours and one base — but you give up the single-artefact simplicity of merging.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h34">Your own cluster, tiered routing</h3>
+      <p id="hosting-p5">At high volume, <cite data-video="CvRngaQZQ3Y" data-chunk="9" data-quote="you can move from token costs to hardware costs">move from token costs to hardware costs</cite>: a dedicated cluster, spun down when idle, for effectively unlimited inference. The common end state is tiered — teams <cite data-video="R78NYFkWH10" data-chunk="20" data-quote="break their workload into final workload">break their workload up</cite> so frontier models take the hard tasks and the fine-tuned small model takes the simple ones.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h35">Serve behind a promotion gate</h3>
+      <p id="hosting-p6">Don't flip traffic. Serving should support <cite data-video="1jvxxa7tdjw" data-chunk="12" data-quote="we support online strategies um like AB testing">online strategies like A/B testing</cite> and canaries at one endpoint, and the new checkpoint should carry <cite data-video="1jvxxa7tdjw" data-chunk="15" data-quote="assign a challenger Alias and use that as well">a challenger alias</cite> against the proven champion so a human gates promotion. The same pattern from the RAG-production side: <cite data-video="uaiq1HvQKoI" data-chunk="43" data-quote="blue green uh deployments or canary deployments">blue-green or canary deployments</cite>, validated before the switch.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h36">Promote code, not checkpoints</h3>
+      <p id="hosting-p7">The enterprise MLOps recommendation is explicit: <cite data-video="1jvxxa7tdjw" data-chunk="7" data-quote="what we actually recommend is deploy code">deploy code</cite>, promoting the training pipeline through dev/staging/prod and retraining in each, because <cite data-video="1jvxxa7tdjw" data-chunk="8" data-quote="it locks down your training data especially your production data">it locks down your production training data</cite> and makes retraining reproducible.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h37">Modest infrastructure is fine</h3>
+      <p id="hosting-p8">One consultancy's baseline for client systems: <cite data-video="Q679gH7oszg" data-chunk="36" data-quote="we just get a bare metal VM, no managed service services">a bare-metal VM, no managed services</cite> with Docker Compose and Caddy for automatic HTTPS — roughly 10× cheaper than hyperscalers at their scale — plus a hard network baseline: <cite data-video="Q679gH7oszg" data-chunk="38" data-quote="we want to block all IPs by default">block all IPs by default</cite>, whitelist a static VPN IP, expose only 80/443.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h38">Instrument before you need it</h3>
+      <p id="hosting-p9">Pair LLM trace monitoring with application error tracking — <cite data-video="Q679gH7oszg" data-chunk="40" data-quote="Langfuse for all our LLM traces">Langfuse for all LLM traces</cite> plus Sentry piped to Slack. Traces are also your next training set, so this is dual-purpose spend. Add a user feedback channel — <cite data-video="uaiq1HvQKoI" data-chunk="41" data-quote="thumbs up, thumbs down, comments">thumbs up, thumbs down, comments</cite>.</p>
+    </div>
+    <div class="lever">
+      <h3 id="hosting-h39">Gate retraining on a number</h3>
+      <p id="hosting-p10">Drift triggers should be concrete, not vibes: one reference architecture retriggers training when a metric crosses a threshold — <cite data-video="1jvxxa7tdjw" data-chunk="29" data-quote="the R square threshold is 7">the R-squared threshold is 0.7</cite> across a rolling detection window. Pick the equivalent scalar for your task and wire it to the pipeline.</p>
+    </div>
+  </div>
+  <p id="hosting-p11">Risks to budget for once it is live, from the production-RAG side and applicable verbatim to a fine-tuned endpoint: <cite data-video="uaiq1HvQKoI" data-chunk="44" data-quote="hallucinations data leaks um and bias prompt injections">hallucinations, data leaks, bias, prompt injection</cite>, IP exposure and runaway usage cost. And one architectural stabiliser: models churn monthly, so keep the surrounding stack boring — <cite data-video="Q679gH7oszg" data-chunk="49" data-quote="AI is going to change every month but your process shouldn't">AI is going to change every month but your process shouldn't</cite>.</p>
+</section>
+
+<section id="scoring">
+  <h2 id="scoring-h21">Scoring the model</h2>
+  <p id="scoring-p1">Scoring is where fine-tuning projects are won or quietly wasted. The corpus gives a five-stage ladder that starts before training and ends in production slices. Build it first; <cite data-video="T0HhO4YtTfE" data-chunk="22" data-quote="You can't improve what you can't measure">you can't improve what you can't measure</cite>.</p>
+
+  <div class="stage">
+    <div class="no">1</div>
+    <h3 id="scoring-h31">Baseline the untrained model, with the exact harness</h3>
+    <p class="why">The before/after comparison is the entire product of a fine-tuning run. It is also the easiest thing to invalidate.</p>
+    <ul>
+      <li id="scoring-li1">Hold everything constant: <cite data-video="YxXBojdD1as" data-chunk="4" data-quote="same evaluation, same questions, same scoring rules, comparable generation settings">same evaluation, same questions, same scoring rules, comparable generation settings</cite> — including the system prompt you trained with.</li>
+      <li id="scoring-li2">The point of the baseline is attribution: <cite data-video="v7qMjy_RxOs" data-chunk="19" data-quote="write some proper tests to figure out whether your finetude model">write proper tests to figure out whether your fine-tuned model</cite> beats vanilla, so you can tell a training problem from a dataset problem.</li>
+      <li id="scoring-li3">Calibrate expectations. One honest first-iteration result: the fine-tune scored <cite data-video="YxXBojdD1as" data-chunk="23" data-quote="the fine tune model performed has a score of 75">75 composite against the base model's 74</cite>, correctly classifying 12 of 25 cases versus 11. Real, tiny, and only visible because the baseline existed.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">2</div>
+    <h3 id="scoring-h32">Level one — unit tests on structured output</h3>
+    <p class="why">Cheap, deterministic, and run on every change. These catch format regression, which is the most common fine-tuning failure mode.</p>
+    <ul>
+      <li id="scoring-li4">Assert the shape: <cite data-video="a3SMraZWNNs" data-chunk="14" data-quote="check whether the category is in all of the categories">check whether the category is in the allowed categories</cite>, confidence is a float in [0,1], and the label matches the expected value for a known input.</li>
+      <li id="scoring-li5">Score several axes at once rather than one aggregate: correct category, correct severity, valid JSON, <cite data-video="YxXBojdD1as" data-chunk="5" data-quote="did it use the exact required keys">whether it used the exact required keys</cite>, and usefulness of the free-text field.</li>
+      <li id="scoring-li6">Prefer reference-based metrics where the golden answer exists — <cite data-video="a3SMraZWNNs" data-chunk="31" data-quote="exact string matching, semantic similarity, code execution results">exact string matching, semantic similarity, code execution results</cite>, SQL correctness, schema validation — because they automate for free.</li>
+      <li id="scoring-li7">Make structured output a precondition of the architecture: when <cite data-video="Q679gH7oszg" data-chunk="28" data-quote="a piantic model with structured output">every step's output is a Pydantic model</cite>, every step is testable.</li>
+      <li id="scoring-li8">Cadence: unit tests on every code or prompt change; human-and-model evals <cite data-video="a3SMraZWNNs" data-chunk="12" data-quote="you want to run these weekly or bi-weekly">weekly or bi-weekly</cite>; A/B testing for major releases.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">3</div>
+    <h3 id="scoring-h33">Level two — an LLM judge you have aligned</h3>
+    <p class="why">For free-form output, exact match is useless. But an unaligned judge is worse than no judge, because it manufactures confidence.</p>
+    <ul>
+      <li id="scoring-li9">The judge must explain itself: produce <cite data-video="a3SMraZWNNs" data-chunk="19" data-quote="detailed critiques, not just scores">detailed critiques, not just scores</cite>. The critique is what you diagnose and align against.</li>
+      <li id="scoring-li10">The alignment loop: <cite data-video="a3SMraZWNNs" data-chunk="20" data-quote="you collect model predictions, you generate model critiques">collect model predictions, generate model critiques</cite>, collect human judgments on the same rows, compare, revise the judge prompt, repeat. A worked 10-example pass landed at <cite data-video="a3SMraZWNNs" data-chunk="25" data-quote="a 70% agreement score">a 70% agreement score</cite> on the first attempt.</li>
+      <li id="scoring-li11">To close the gap, export the disagreements and <cite data-video="a3SMraZWNNs" data-chunk="26" data-quote="you could then create a metaprompt">create a meta-prompt</cite> asking a strong model to rewrite the judge prompt — then re-measure agreement.</li>
+      <li id="scoring-li12">Reduce subjectivity structurally: rather than a Likert rating, <cite data-video="vBJF2sy1Pyw" data-chunk="7" data-quote="break down the response into like individual facts">break the response into individual facts</cite>, score each, and aggregate into a ratio.</li>
+      <li id="scoring-li13">Scale matters more than prompt polish: a 3B judge averaged <cite data-video="4yNswvhPWCQ" data-chunk="83" data-quote="we get an average score of 51.6">51.6/100</cite> across 110 test rows and 14 responses couldn't be parsed into a number at all. A tighter rubric helps — <cite data-video="4yNswvhPWCQ" data-chunk="78" data-quote="it's just using a scale from 1 to 5">a 1-to-5 scale</cite> instead of 0–100 — but <cite data-video="4yNswvhPWCQ" data-chunk="78" data-quote="the bigger the models usually the better they are">bigger models are usually better</cite>.</li>
+      <li id="scoring-li14">Scoring free-form output at all requires the judge pattern: have a second model <cite data-video="4yNswvhPWCQ" data-chunk="76" data-quote="scale from 0 to 100 where 100 is the best score">score each response on a scale from 0 to 100</cite> against the reference answer.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">4</div>
+    <h3 id="scoring-h34">Measure reliability, not just accuracy</h3>
+    <p class="why">A single successful run hides consistency problems. For anything agentic or tool-calling, accuracy is the wrong statistic.</p>
+    <ul>
+      <li id="scoring-li15">Use pass^k — success required k consecutive times. Empirically <cite data-video="R78NYFkWH10" data-chunk="14" data-quote="pass three itself, right? It's significantly lower than pass one">pass three is significantly lower than pass one</cite>, and the gap <em>is</em> the finding.</li>
+      <li id="scoring-li16">The headline result on that benchmark: SFT lifted pass^3 <cite data-video="R78NYFkWH10" data-chunk="15" data-quote="from 37.5, right? Increased to 75 percent percentage">from 37.5% to 75%</cite>, with GRPO adding an incremental 2.5 points to 77.5% — beating the closed baseline at lower cost. Note the shape: SFT did almost all the work; RL was the last few points.</li>
+      <li id="scoring-li17">Log the operational metrics too, not only pass/fail: total time, <cite data-video="NovNcsKX8AU" data-chunk="57" data-quote="how many tokens did it take">how many tokens did it take</cite>, and overall cost — plus read the trajectory itself.</li>
+      <li id="scoring-li18">Watch for silent failures where neither side errors — an agent that <cite data-video="R78NYFkWH10" data-chunk="21" data-quote="it needs to enable the roaming uh on the agent side">never enables roaming on the agent side</cite> produces no error signal at all.</li>
+      <li id="scoring-li19">Avoid contaminated comparisons: that team chose their closed baseline specifically because the benchmark <cite data-video="R78NYFkWH10" data-chunk="19" data-quote="it was um released after GPT 4.1 mini">was released after GPT-4.1 mini</cite>.</li>
+      <li id="scoring-li20">Public benchmarks are a vibe check. Build <cite data-video="NovNcsKX8AU" data-chunk="83" data-quote="a representative set of like evals and tasks">a representative set of evals and tasks</cite> tagged to axes that map to your product.</li>
+    </ul>
+  </div>
+
+  <div class="stage">
+    <div class="no">5</div>
+    <h3 id="scoring-h35">Run it in production, on slices</h3>
+    <p class="why">Post-deployment scoring has a different economics problem: you cannot afford every check on every request.</p>
+    <ul>
+      <li id="scoring-li21">Two-tier it: run one high-level check across all traffic, then on the 10–20% that fail <cite data-video="vBJF2sy1Pyw" data-chunk="6" data-quote="run like a a battery of checks on them">run a battery of 5–10 deeper checks</cite> to localise the failure to retrieval, citation, utilisation or hallucination.</li>
+      <li id="scoring-li22">Most quality checks can't be pre-response: <cite data-video="vBJF2sy1Pyw" data-chunk="3" data-quote="checking requires extra time and you don't want to add latency">checking requires extra time and you don't want to add latency</cite>. Only safety/jailbreak checks are cheap enough to run in parallel with generation.</li>
+      <li id="scoring-li23">Across the lifecycle: <cite data-video="uaiq1HvQKoI" data-chunk="43" data-quote="use golden data sets and manual uh reviews">golden datasets and manual reviews</cite> in development, adversarial end-to-end tests in staging, continuous A/B and re-evaluation after deployment.</li>
+      <li id="scoring-li24">Feed the results back as labels — one of the three jobs of an eval system is to <cite data-video="a3SMraZWNNs" data-chunk="9" data-quote="label data for either fine-tuning">label data for fine-tuning</cite> or custom test sets, which closes the loop into the next dataset.</li>
+      <li id="scoring-li25">Operating loop for the whole thing: the <cite data-video="a3SMraZWNNs" data-chunk="9" data-quote="analyze, measure, improve life cycle">analyze, measure, improve life cycle</cite> — categorise failures, convert them to quantitative metrics, then change prompts, data, or weights.</li>
+      <li id="scoring-li26">Don't automate away the reading. A principal engineer is cited as <cite data-video="a3SMraZWNNs" data-chunk="34" data-quote="spends three hours per day looking at traces">spending three hours per day looking at traces</cite>.</li>
+    </ul>
+  </div>
+  <p id="scoring-p2">One strategic note on eval design, which matters more for a fine-tune than for a prompt: you can <cite data-video="CvRngaQZQ3Y" data-chunk="11" data-quote="define agent behavior by showing the evals">define agent behaviour by showing the evals you ran on it</cite>, because teams iterate until they pass. Your eval suite is a specification of the model you are about to train. And before you spend a GPU-weekend, remember binary signals are weak teachers — <cite data-video="CvRngaQZQ3Y" data-chunk="14" data-quote="densifying feedback is uh really good way to improve agents">densifying feedback</cite> by letting the system read and reason over its own traces is often the cheaper win.</p>
+</section>
+
+<section id="copy">
+  <h2 id="copy-h21">Templates to copy</h2>
+  <p id="copy-p1">Five artefacts, each assembled from the corpus's demonstrated practice. Adapt the names; keep the structure.</p>
+
+  <figure class="prompt" id="copy-figure1">
+    <div class="label">Dataset spec — fill this in before opening a trainer <button type="button" data-copy>Copy</button></div>
+    <pre id="copy-pre1">BEHAVIOUR (one, narrow):
+  Input:   &lt;what arrives&gt;
+  Output:  exactly one JSON object with keys: &lt;k1&gt;, &lt;k2&gt;, &lt;k3&gt;
+  Label space: &lt;enumerate every allowed value&gt;
+
+SCORABLE BY CODE?  yes / no     # if no, stop and redefine
+GRADER:            &lt;string check | schema check | python | model grader&gt;
+PASS BAR:          &lt;baseline score&gt; + &lt;delta you need to ship&gt;
+
+SOURCE OF EXAMPLES:
+  [ ] production traces (filtered: how?)
+  [ ] synthetic from a frontier model (which? licence checked?)
+  [ ] enumerated permutations of a bounded output space
+  [ ] hand-written
+
+QUALITY BARS (reject a row if it fails any):
+  accuracy    - factually correct, no typos, no invented knowledge
+  diversity   - covers topics/styles we must not regress on
+  complexity  - forces reasoning, not lookup
+
+SPLITS:  train __% / validation __% / test __% (test untouched)
+COUNTS:  train ____  val ____  test ____   eval set ____ (50-100 real rows)</pre>
+    <div class="note" id="copy-p2">Three quality axes from <cite data-video="uLrOI65XbDw" data-chunk="5" data-quote="we want the samples the outputs to be uh factually correct">uLrOI65XbDw@5</cite>; scorable-output and label-space-first from <cite data-video="YxXBojdD1as" data-chunk="4" data-quote="start with the behavior you want to measure">YxXBojdD1as@4</cite>; untouched test split from <cite data-video="YxXBojdD1as" data-chunk="6" data-quote="keep a final test set completely untouched as well">YxXBojdD1as@6</cite>; 50–100 real eval rows from <cite data-video="vBJF2sy1Pyw" data-chunk="12" data-quote="a test data sets of like 50 to 100 samples">vBJF2sy1Pyw@12</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="copy-figure2">
+    <div class="label">Record formats — SFT and preference <button type="button" data-copy>Copy</button></div>
+    <pre id="copy-pre2"># SFT (JSONL, one object per line). Prompt is context; only the final
+# assistant message is the training target.
+{"messages": [
+  {"role": "developer", "content": "&lt;the system prompt you will ALSO use at inference&gt;"},
+  {"role": "user",      "content": "&lt;the input&gt;"},
+  {"role": "assistant", "content": "{\"category\": \"...\", \"severity\": \"...\", \"next_action\": \"...\"}"}
+]}
+
+# Preference / DPO: same prompt, two completions.
+{"prompt": "&lt;the instruction&gt;",
+ "chosen":   "&lt;the preferred answer&gt;",
+ "rejected": "&lt;a matched weak answer on the SAME topic&gt;"}
+
+# Local/from-scratch SFT: render to text before tokenising. Prefer a terse
+# template over Alpaca boilerplate - fewer tokens per row is cheaper.
+### Instruction:
+&lt;instruction&gt;
+### Input:
+&lt;input, omit the header if empty&gt;
+### Response:
+&lt;target&gt;</pre>
+    <div class="note" id="copy-p3">Trainer learns from <cite data-video="JfaLQqfXqPA" data-chunk="27" data-quote="the last assistant message and learn from it">the last assistant message</cite>; chosen/rejected pairing from <cite data-video="uLrOI65XbDw" data-chunk="4" data-quote="chosen answer and a rejected answer">uLrOI65XbDw@4</cite>; matched negatives from <cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="then did some manual filtering like did I laugh">JfaLQqfXqPA@36</cite>; Alpaca template and the terseness argument from <cite data-video="4yNswvhPWCQ" data-chunk="9" data-quote="shorter and shorter is cheaper">4yNswvhPWCQ@9</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="copy-figure3">
+    <div class="label">Run config — a defensible starting point <button type="button" data-copy>Copy</button></div>
+    <pre id="copy-pre3">method:               qlora        # lora if VRAM is not the constraint
+load_in_4bit:         true         # training-time quantization
+epochs:               3            # NOT max_steps. 2-3 to start.
+max_steps:            null         # leave unset; setting it to 3 = 3 updates
+learning_rate:        &lt;raise until the loss curve explodes, then back off&gt;
+optimizer:            adamw        # weight decay + scheduler + warmup
+lora_rank:            16           # capacity, not quality
+lora_alpha:           32
+lora_dropout:         0.0          # 0 for a small experimental run
+per_device_batch:     2            # maximise on real GPUs
+grad_accum_steps:     4            # effective batch = 8
+max_seq_length:       512          # trades against VRAM; need not equal ctx
+validation_file:      required     # the only overfit signal you get
+
+STOP CONDITIONS (manual - nothing stops the job for you):
+  - validation loss diverges from training loss  -> kill the job
+  - training loss trending UP                    -> config is broken
+CHANGE EXACTLY ONE THING PER RUN: data spec OR one parameter. Never both.</pre>
+    <div class="note" id="copy-p4">Values from the Unsloth run (<cite data-video="YxXBojdD1as" data-chunk="12" data-quote="We're going to be setting the low rank at 16">rank 16, grad-accum 4, dropout 0</cite>) and <cite data-video="cO6Ly7mIziQ" data-chunk="76" data-quote="it is just uh 0.277 of this all the parameter">rank 16 / alpha 32</cite>; learning-rate procedure from <cite data-video="uLrOI65XbDw" data-chunk="8" data-quote="go as high as you can uh until your loss explodes">uLrOI65XbDw@8</cite>; no automatic overfit stop from <cite data-video="JfaLQqfXqPA" data-chunk="31" data-quote="do the fine tuning runs check for overfitting? No, they don't">JfaLQqfXqPA@31</cite>; the max_steps trap from <cite data-video="YxXBojdD1as" data-chunk="17" data-quote="I mistakenly set these Max steps at 3">YxXBojdD1as@17</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="copy-figure4">
+    <div class="label">Before/after scorecard <button type="button" data-copy>Copy</button></div>
+    <pre id="copy-pre4">HELD CONSTANT: eval set, questions, scoring rules, generation settings,
+               system prompt (identical to training)
+
+                              base      tuned     delta
+valid JSON                    __ / N    __ / N    ____
+exact required keys           __ / N    __ / N    ____
+correct primary label         __ / N    __ / N    ____
+correct secondary label       __ / N    __ / N    ____
+free-text usefulness (judge)  __ / 5    __ / 5    ____
+composite                     ____      ____      ____
+
+pass^1                        ____      ____      ____
+pass^3                        ____      ____      ____   # the real number
+tokens / task                 ____      ____      ____
+latency p50 / p95             ____      ____      ____
+cost / task                   ____      ____      ____
+
+REGRESSION CHECK: score the tuned model on 20 rows of behaviour that were
+NOT in the training data. Anything you did not include might regress.
+
+ATTRIBUTION: tuned &lt; base  -> dataset problem or training problem?
+             Re-run the base eval first. If base moved, the harness moved.</pre>
+    <div class="note" id="copy-p5">Identical-harness rule and multi-axis scoring from <cite data-video="YxXBojdD1as" data-chunk="4" data-quote="same evaluation, same questions, same scoring rules, comparable generation settings">YxXBojdD1as@4</cite>; pass^k from <cite data-video="R78NYFkWH10" data-chunk="14" data-quote="pass three itself, right? It's significantly lower than pass one">R78NYFkWH10@14</cite>; token/time/cost logging from <cite data-video="NovNcsKX8AU" data-chunk="57" data-quote="how many tokens did it take">NovNcsKX8AU@57</cite>; regression risk from <cite data-video="JfaLQqfXqPA" data-chunk="36" data-quote="data diversity is critical for that reason">JfaLQqfXqPA@36</cite>.</div>
+  </figure>
+
+  <figure class="prompt" id="copy-figure5">
+    <div class="label">Judge-alignment meta-prompt <button type="button" data-copy>Copy</button></div>
+    <pre id="copy-pre5">You are improving an evaluator prompt.
+
+Below are cases where a human grader and the current LLM judge disagreed.
+Each row has: INPUT, MODEL OUTPUT, HUMAN LABEL + HUMAN CRITIQUE,
+JUDGE LABEL + JUDGE CRITIQUE.
+
+&lt;paste disagreement rows&gt;
+
+CURRENT JUDGE PROMPT:
+&lt;paste it&gt;
+
+Tasks:
+1. For each disagreement, state in one line why the judge diverged from the
+   human. Name the specific criterion that was missing, vague, or misweighted.
+2. Rewrite the judge prompt so those cases would be graded as the human did,
+   WITHOUT special-casing these examples.
+3. The rewritten judge must output a detailed critique and then a label -
+   critique first, label last. Use a 1-5 rubric with each level defined.
+4. List any case where you believe the HUMAN label is wrong, and why.
+
+Return only the rewritten judge prompt and the numbered diagnosis list.
+
+# Then: re-run on the same rows and recompute the human/judge agreement
+# score. Ship the judge only when agreement stops improving.</pre>
+    <div class="note" id="copy-p6">Meta-prompt method and the agreement-score loop from <cite data-video="a3SMraZWNNs" data-chunk="26" data-quote="you could then create a metaprompt">a3SMraZWNNs@26</cite> and <cite data-video="a3SMraZWNNs" data-chunk="20" data-quote="you collect model predictions, you generate model critiques">a3SMraZWNNs@20</cite>; critique-before-label from <cite data-video="a3SMraZWNNs" data-chunk="19" data-quote="detailed critiques, not just scores">a3SMraZWNNs@19</cite>; 1–5 rubric from <cite data-video="4yNswvhPWCQ" data-chunk="78" data-quote="it's just using a scale from 1 to 5">4yNswvhPWCQ@78</cite>.</div>
+  </figure>
+</section>
+
+<section id="conflicts">
+  <h2 id="conflicts-h21">Where the corpus disagrees</h2>
+  <p id="conflicts-p1">Four live disagreements. Each is a real engineering fork, and the resolution depends on your constraints — not on who is right.</p>
+
+  <div class="conflict">
+    <h3 id="conflicts-h31">Is fine-tuning a last resort or a strategy?</h3>
+    <p id="conflicts-p2">The strict-escalation position puts it fourth: prompt, RAG, agentic loop, then fine-tune, because <cite data-video="v7qMjy_RxOs" data-chunk="8" data-quote="It will cost you at least a weekend of screwing around">it costs at least a weekend</cite>. The enterprise position is the inverse: frontier models are commodity, so proprietary data plus fine-tuning is the competitive edge you should plan for. And a third argument sidesteps technical merit entirely — the top two enterprise reasons for open models are <cite data-video="uLrOI65XbDw" data-chunk="2" data-quote="control and customer ability">control and customizability</cite>, which holds even when prompting is technically good enough. <strong>Resolution:</strong> the ladder is right for one task; the strategic position is right for a portfolio. Note the corpus's own counter-evidence: a complete production RAG copilot gets built with no fine-tuning step anywhere, relying on hybrid retrieval and a <cite data-video="qF5il_9IwME" data-chunk="143" data-quote="rejects chunks ideas that were never retrieved">grounding validator that rejects unretrieved citations</cite>.</p>
+  </div>
+
+  <div class="conflict">
+    <h3 id="conflicts-h32">Full fine-tuning or PEFT by default?</h3>
+    <p id="conflicts-p3">One camp calls full-parameter training <cite data-video="cO6Ly7mIziQ" data-chunk="15" data-quote="full parameter fine-tuning is not a practical choice">not a practical choice</cite> and makes LoRA/QLoRA the default even for modest setups. The from-scratch camp fully fine-tunes a 355M GPT-2 end to end and, when quality was poor, reached for a bigger base rather than an adapter — <cite data-video="4yNswvhPWCQ" data-chunk="38" data-quote="I went one model size up">one model size up</cite>. <strong>Resolution:</strong> the crossover is model size. Below a few hundred million parameters full fine-tuning is simpler and the memory argument evaporates; above a billion, PEFT wins on iteration speed, and full fine-tuning's only remaining claim is peak performance.</p>
+  </div>
+
+  <div class="conflict">
+    <h3 id="conflicts-h33">Expensive judge or cheap judge?</h3>
+    <p id="conflicts-p4">One side: <cite data-video="a3SMraZWNNs" data-chunk="18" data-quote="use the most powerful model that you can afford">use the most powerful model that you can afford</cite>, explicitly not a mini model, because you must trust the judge's reasoning. The other: <cite data-video="vBJF2sy1Pyw" data-chunk="5" data-quote="you don't want to use like an expensive model like gp4">you don't want to use an expensive model like GPT-4</cite> for evaluation at scale — if judging costs more than generating, hire a human. <strong>Resolution:</strong> these are different jobs. Use the strongest model for the small aligned judge that grades your eval set and for the meta-prompt rewrite; use cheap models for the high-level check over all production traffic, escalating only the failing slice. The trace-mining result supports this: a harness-engineered open model matched <cite data-video="CvRngaQZQ3Y" data-chunk="7" data-quote="match the trace judging capability of Opus with an open cheaper model">Opus-level trace judging at far lower cost</cite>.</p>
+  </div>
+
+  <div class="conflict">
+    <h3 id="conflicts-h34">Is passing the task metric enough to accept a training trajectory?</h3>
+    <p id="conflicts-p5">The judge-the-final-answer approach treats a good score as sufficient evidence. The tool-calling case study says explicitly that it is not: trajectories can pass while <cite data-video="R78NYFkWH10" data-chunk="22" data-quote="RL roll out trajectories are actually hallucinating a lot">hallucinating a lot</cite>, or succeed by luck, and that noise destabilises the later RL stage. <strong>Resolution:</strong> outcome scoring is adequate for accepting an <em>answer</em> and inadequate for accepting a <em>training row</em>. Any trajectory entering a dataset needs process-level checks, not just an outcome check. The same logic kills chain-of-thought optimisation: policing the reasoning reduces bad behaviour slightly while dropping your ability to catch it <cite data-video="JfaLQqfXqPA" data-chunk="58" data-quote="by looking at the chain of thought to like zero">to roughly zero</cite>.</p>
+  </div>
+</section>
+
+<section id="sources">
+  <h2 id="sources-h21">Sources</h2>
+  <p id="sources-p1">Twenty talks, grouped by what they contributed. Three are included for completeness and contributed nothing to this topic — said plainly rather than quietly dropped.</p>
+
+  <div class="cluster">
+    <h3 id="sources-h31">Method and mechanics</h3>
+    <ol>
+      <li id="sources-li1"><a href="https://www.youtube.com/watch?v=JfaLQqfXqPA" target="_blank" rel="noopener"><cite data-video="JfaLQqfXqPA">RFT, DPO, SFT: Fine-tuning with OpenAI — Ilan Bigio, OpenAI</cite></a> <span class="tk">— the most granular build guide here: live SFT/DPO/RFT demos with real metrics, sample-count rules of thumb, grader design, platform mechanics, and two honest failures.</span></li>
+      <li id="sources-li2"><a href="https://www.youtube.com/watch?v=uLrOI65XbDw" target="_blank" rel="noopener"><cite data-video="uLrOI65XbDw">Everything you need to know about Fine-tuning and Merging LLMs: Maxime Labonne</cite></a> <span class="tk">— SFT/DPO data formats, the three-feature sample recipe, the curation pipeline, full/LoRA/QLoRA trade-offs, key hyperparameters, and the deep dive on merging.</span></li>
+      <li id="sources-li3"><a href="https://www.youtube.com/watch?v=cO6Ly7mIziQ" target="_blank" rel="noopener"><cite data-video="cO6Ly7mIziQ">LoRA &amp; QLoRA Explained Simply | Full Fine-Tuning vs PEFT + Intuition + Practical (Complete Guide)</cite></a> <span class="tk">— matrix rank as the intuition under LoRA, the parameter arithmetic, the PEFT landscape, and a hands-on TinyLlama PEFT script.</span></li>
+      <li id="sources-li4"><a href="https://www.youtube.com/watch?v=4yNswvhPWCQ" target="_blank" rel="noopener"><cite data-video="4yNswvhPWCQ">Build an LLM from Scratch 7: Instruction Finetuning</cite></a> <span class="tk">— the mechanics nobody else shows: Alpaca formatting, batch-level padding, loss masking with ignore_index, epoch/overfit behaviour, and an Ollama-based judge pipeline.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h32">Hands-on runs</h3>
+    <ol>
+      <li id="sources-li5"><a href="https://www.youtube.com/watch?v=YxXBojdD1as" target="_blank" rel="noopener"><cite data-video="YxXBojdD1as">Fine-Tuning a Model: The Easiest Way to Start (Unsloth Tutorial)</cite></a> <span class="tk">— the full loop end to end: baseline before training, the hyperparameters actually set, a real max-steps mistake and its loss-chart symptom, before/after scores, GGUF export, and calling the result from Python.</span></li>
+      <li id="sources-li6"><a href="https://www.youtube.com/watch?v=v7qMjy_RxOs" target="_blank" rel="noopener"><cite data-video="v7qMjy_RxOs">The Honest Guide To Fine-Tuning Local AI In 2026</cite></a> <span class="tk">— the decision flowchart, the five-step pipeline, token/VRAM/wall-clock benchmarks, and a blunt hardware verdict across Nvidia, AMD and Apple Silicon.</span></li>
+      <li id="sources-li7"><a href="https://www.youtube.com/watch?v=R78NYFkWH10" target="_blank" rel="noopener"><cite data-video="R78NYFkWH10">Fine-Tuning LLMs for Real-World Tool Calling: Lessons from tau2-bench</cite></a> <span class="tk">— the only production-grade SFT→GRPO workflow in the corpus, with reward shaping, trajectory filtering counts, pass^k numbers, and a reward-hacking post-mortem.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h33">Deciding and sequencing</h3>
+    <ol>
+      <li id="sources-li8"><a href="https://www.youtube.com/watch?v=CvRngaQZQ3Y" target="_blank" rel="noopener"><cite data-video="CvRngaQZQ3Y">Improving Agents is a Data Mining Problem — Vivek Trivedy, LangChain</cite></a> <span class="tk">— fine-tuning as step two of a trace-mining pipeline, the harness→fine-tune→harness sandwich, and the token-cost-versus-hardware-cost economics.</span></li>
+      <li id="sources-li9"><a href="https://www.youtube.com/watch?v=NovNcsKX8AU" target="_blank" rel="noopener"><cite data-video="NovNcsKX8AU">The Never Ending Lore of Harness | Vivek Trivedy (Product Lead, Langchain)</cite></a> <span class="tk">— defines model-plus-harness, gives the sub-agent context budget, and states plainly when RL/fine-tuning beats more context engineering.</span></li>
+      <li id="sources-li10"><a href="https://www.youtube.com/watch?v=T0HhO4YtTfE" target="_blank" rel="noopener"><cite data-video="T0HhO4YtTfE">AI System Design: From Idea to Production - Apoorva Joshi, MongoDB</cite></a> <span class="tk">— frames fine-tuning as one design-pattern option and names the exact trigger: behavioural failures, or a domain ceiling prompting can't clear.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h34">Scoring</h3>
+    <ol>
+      <li id="sources-li11"><a href="https://www.youtube.com/watch?v=a3SMraZWNNs" target="_blank" rel="noopener"><cite data-video="a3SMraZWNNs">How to Systematically Setup LLM Evals (Metrics, Unit Tests, LLM-as-a-Judge)</cite></a> <span class="tk">— the three-level eval ladder, the judge-alignment workflow with a real agreement score, the meta-prompt fix, and four named eval mistakes.</span></li>
+      <li id="sources-li12"><a href="https://www.youtube.com/watch?v=vBJF2sy1Pyw" target="_blank" rel="noopener"><cite data-video="vBJF2sy1Pyw">The challenges in using LLM-as-a-Judge - Sourabh Agrawal | Vector Space Talk #013</cite></a> <span class="tk">— judge economics at scale, root-cause analysis on the failing slice, fact-decomposition scoring, and eval dataset sizing.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h35">Shipping and operations</h3>
+    <ol>
+      <li id="sources-li13"><a href="https://www.youtube.com/watch?v=1jvxxa7tdjw" target="_blank" rel="noopener"><cite data-video="1jvxxa7tdjw">Exploring MLOps and LLMOps: Architectures and Best Practices</cite></a> <span class="tk">— deploy-code-not-models, champion/challenger promotion, a concrete drift-based retrain threshold, data-volume thresholds per customisation step, and the licence cross-contamination trap.</span></li>
+      <li id="sources-li14"><a href="https://www.youtube.com/watch?v=uaiq1HvQKoI" target="_blank" rel="noopener"><cite data-video="uaiq1HvQKoI">GenAI in Production: How RAG &amp; AI Agents Are Shaping the Future</cite></a> <span class="tk">— the garbage-in-garbage-out warning specific to fine-tuned models inheriting training-data errors, plus golden datasets, canary/blue-green rollout, and feedback loops.</span></li>
+      <li id="sources-li15"><a href="https://www.youtube.com/watch?v=Q679gH7oszg" target="_blank" rel="noopener"><cite data-video="Q679gH7oszg">How I Build and Ship Custom AI Solutions for Clients</cite></a> <span class="tk">— the accuracy ladder clients should expect, structured-output-first eval design, the bare-metal deployment and security baseline, and the Langfuse/Sentry monitoring pair.</span></li>
+      <li id="sources-li16"><a href="https://www.youtube.com/watch?v=qF5il_9IwME" target="_blank" rel="noopener"><cite data-video="qF5il_9IwME">Build a Full-Stack GenAI Project in 4 Hours (FastAPI, React, Supabase)</cite></a> <span class="tk">— the counter-example: a production-grade document copilot built entirely with hybrid retrieval, agentic retrieval and a grounding validator, with no fine-tuning anywhere.</span></li>
+      <li id="sources-li17"><a href="https://www.youtube.com/watch?v=E8zpgNPx8jE" target="_blank" rel="noopener"><cite data-video="E8zpgNPx8jE">Build a Complete End-to-End GenAI Project in 3 Hours</cite></a> <span class="tk">— data-pipeline craft upstream of any training set (dedup-on-conflict, two-stage ingestion, correct source timestamps) but no fine-tuning content.</span></li>
+    </ol>
+  </div>
+
+  <div class="cluster">
+    <h3 id="sources-h36">Adjacent and off-topic</h3>
+    <ol>
+      <li id="sources-li18"><a href="https://www.youtube.com/watch?v=NRQVTxl14x8" target="_blank" rel="noopener"><cite data-video="NRQVTxl14x8">GenAI in Production: How AI Is Transforming the Entire Filmmaking Pipeline</cite></a> <span class="tk">— one production LoRA use case (per-actor digital doubles) and a real cost/control pendulum, but no training detail; the LoRA work is attributed to a team not on the call.</span></li>
+      <li id="sources-li19"><a href="https://www.youtube.com/watch?v=lsgVRCJ4fko" target="_blank" rel="noopener"><cite data-video="lsgVRCJ4fko">Learn Design Systems: Figma Variables, Components, AI, and More</cite></a> <span class="tk">— no LLM fine-tuning content; a Figma design-systems tutorial that uses “training” in the design-tooling sense. Contributed nothing to this guide.</span></li>
+      <li id="sources-li20"><a href="https://www.youtube.com/watch?v=r-MPiu0E4W4" target="_blank" rel="noopener"><cite data-video="r-MPiu0E4W4">Design with AI - Full Guide (Tools, Workflows, Design Systems)</cite></a> <span class="tk">— no LLM fine-tuning content; AI-assisted UI/UX design tooling. Contributed nothing to this guide.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="gaps">
+  <h2 id="gaps-h21">Gaps</h2>
+  <p id="gaps-p1">What twenty talks do not tell you. These are the questions a staff engineer would have to answer elsewhere — and the reason this guide gives you procedures where it cannot give you numbers.</p>
+  <ul>
+    <li id="gaps-li1"><strong>No dollar costs, anywhere.</strong> Not for hosted SFT/DPO/RFT jobs, not for cloud GPU hours, not for a self-managed cluster. Every cost claim in the corpus is relative (“4–5× more expensive”, “10× cheaper”) or in wall-clock minutes. You cannot size a budget from this material.</li>
+    <li id="gaps-li2"><strong>No break-even analysis for the token-cost-versus-hardware-cost switch.</strong> The economics are asserted at high volume but never quantified, so there is no request-per-second threshold at which owning GPUs starts to pay.</li>
+    <li id="gaps-li3"><strong>No method for choosing LoRA rank or alpha.</strong> Rank 16 / alpha 32 appears twice as a demo value, and rank is correctly described as capacity — but no scaling rule, no search procedure, no relationship to dataset size or task difficulty.</li>
+    <li id="gaps-li4"><strong>No concrete learning-rate schedule, warmup, or weight-decay values.</strong> AdamW is named and never tuned on screen. “Raise it until the loss explodes” is the only procedure offered.</li>
+    <li id="gaps-li5"><strong>No GRPO hyperparameters.</strong> The RL case study discloses its reward components but not group size, KL penalty coefficient, learning rate, training duration or cost.</li>
+    <li id="gaps-li6"><strong>No exact thresholds for dedup or quality filtering.</strong> Exact and fuzzy dedup are recommended, and clustering tools are named but never demonstrated; there are no similarity cut-offs or filter-pass rates.</li>
+    <li id="gaps-li7"><strong>No distributed or multi-GPU training.</strong> Every demo runs on one machine — a laptop, a single Colab GPU, or one H100 node. Sharding, FSDP/DeepSpeed configuration and multi-node failure modes are absent.</li>
+    <li id="gaps-li8"><strong>No catastrophic-forgetting or regression-suite methodology specific to a fine-tuned checkpoint.</strong> Regression risk is flagged ("anything you don't include might regress") but no one builds the suite that would detect it.</li>
+    <li id="gaps-li9"><strong>No safety or red-team evaluation of a fine-tuned model.</strong> Preference tuning is mentioned as a safety lever; nobody tests whether a fine-tune degraded existing refusals.</li>
+    <li id="gaps-li10"><strong>No multimodal or vision-language fine-tuning.</strong> All worked examples are text-only. Image fine-tuning is mentioned in passing on the hosted platform and never demonstrated.</li>
+    <li id="gaps-li11"><strong>No continued / domain-adaptive pretraining as a step before instruction tuning.</strong> Token volumes for it are quoted; the procedure is not.</li>
+    <li id="gaps-li12"><strong>No framework comparison.</strong> TRL, Axolotl, LLaMA Factory, Unsloth, PEFT and Mosaic AI are all named; no criteria are offered for choosing among them, and no two are benchmarked against each other.</li>
+    <li id="gaps-li13"><strong>No roadmap for multi-turn RFT.</strong> The single-turn limitation is stated as current fact with no timeline, and no workaround for feeding tool results back mid-episode.</li>
+    <li id="gaps-li14"><strong>No licensing guidance for redistributing a fine-tuned open-weight model.</strong> The input-side contamination risk is flagged; the output-side distribution question is untouched.</li>
+    <li id="gaps-li15"><strong>No absolute benchmark numbers for merged models.</strong> The merging results cite leaderboard rank, never downstream task scores against frontier models — so you cannot tell whether merging is a real alternative to training or a leaderboard artefact.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site"><div class="wrap caption">
+  <p id="footer-p1">The Fine-Tuning Pipeline — a field guide from the transcript corpus. 20 source videos · 1,482 transcript chunks read in full · 5 parallel extraction passes · compiled 2026-10-22. Every claim above resolves to a chunk you can open; where the corpus is silent, the Gaps section says so instead of guessing.</p>
+</div></footer>
+
+<script>
+(function () {
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var fig = btn.closest('figure');
+      if (!fig) return;
+      var pre = fig.querySelector('pre');
+      if (!pre) return;
+      var done = function () {
+        var prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pre.innerText).then(done, function () {});
+      }
+    });
+  });
+})();
+</script>
+<script src="/guides/guide-bridge.js"></script>
+</body>
+</html>

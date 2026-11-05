@@ -298,6 +298,19 @@ Metal driver, and under `serve` that hangs the whole process with the port still
 bound and the PID unkillable (`STAT UE`). Set `mps` or `cuda` to opt back into a
 GPU where one actually works.
 
+**One process per Chroma store.** `.yt-agent/chroma` is a `chromadb.PersistentClient`
+store, and Chroma serialises writes only *within* a process. Two long-lived processes
+on the same store (two `serve`s on different ports, or another project reading the
+corpus, such as `value-invest-agent`) each keep their own in-memory HNSW index and
+persist it over the other's. On 2026-10-28 that left `transcript_chunks` with an index
+header claiming 9,950 vectors over a data file holding 13,864. Every fresh process
+that opened the collection then segfaulted inside Chroma's Rust layer, while the
+already-running server carried on from memory. So check `lsof +D .yt-agent/chroma`
+before starting `serve`, and stop the other holder first. If it happens again, the
+chunk text and metadata survive in `chroma.sqlite3`, and the vectors can be
+re-embedded from `context_header + "\n" + text`, the same input
+`TranscriptChunkStore.upsert_chunks` uses.
+
 ### Voice-to-text (the composer mic)
 
 `DEEPGRAM_API_KEY` (optional) turns on streaming speech-to-text in the chat
