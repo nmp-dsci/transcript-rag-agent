@@ -56,3 +56,11 @@ This is guidance, not a requirement. Follow the actual project structure once it
 - Start by reading `readme.md` and this file.
 - Preserve the project goal: compare direct transcript LLM workflows with RAG workflows.
 - Avoid committing generated transcript data unless explicitly requested.
+
+## Working rules
+
+- Read `readme.md` before making changes.
+- Keep implementations scoped to the requested task; avoid broad rewrites unless a change needs them.
+- Do not introduce unnecessary infrastructure. Document setup, run commands and new dependencies in `readme.md`.
+- Prefer simple, testable modules over tightly coupled agent flows.
+- Use clear names for agent components and pipeline steps. Keep prompts versioned or easy to compare once prompt optimisation begins.
