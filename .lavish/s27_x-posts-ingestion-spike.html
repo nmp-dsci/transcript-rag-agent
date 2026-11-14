@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X Posts Spike</title>
+<link rel="stylesheet" href="house.css">
+<link rel="stylesheet" href="project.css">
+<style>
+  /* layout only: every colour, size and space is a house token */
+  .ans{ font-family:var(--mono); font-size:var(--t-2); font-weight:600; }
+  .ans.yes{ color:var(--green); } .ans.part{ color:var(--amber); } .ans.no{ color:var(--red); }
+  td .why{ display:block; color:var(--muted); font-size:var(--t-2); margin-top:2px; }
+  .proof{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:var(--s4); }
+  .proof > *{ min-width:0; }
+  .proof pre{ white-space:pre-wrap; overflow-wrap:anywhere; max-height:420px; overflow-y:auto; }
+  .fig svg{ display:block; width:100%; height:auto; color:var(--ink-2); font-family:var(--sans); }
+  .fig .node rect{ fill:var(--panel); stroke:var(--line-3); stroke-width:1.2; }
+  .fig .node.new rect{ fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.6; }
+  .fig .node.gap rect{ fill:var(--amber-soft); stroke:var(--amber); stroke-dasharray:5 4; }
+  .fig .node text{ fill:var(--ink); font-size:15px; font-weight:600; }
+  .fig .node text.s{ fill:var(--muted); font-size:12px; font-weight:400; font-family:var(--mono); }
+  .fig .edge{ stroke:var(--line-3); stroke-width:1.6; fill:none; marker-end:url(#arrow); }
+  .fig .edge.gap{ stroke:var(--amber); stroke-dasharray:5 4; marker-end:url(#arrow-gap); }
+  .fig .elabel{ fill:var(--muted); font-size:12px; font-family:var(--mono); }
+  .fig marker path{ fill:var(--line-3); } .fig marker#arrow-gap path{ fill:var(--amber); }
+  .legend{ display:flex; flex-wrap:wrap; gap:var(--s2); margin-top:var(--s3); }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <span class="eyebrow">s27 · spike · branch x-supadata-spike · 15 Nov 2026</span>
+  <h1>Pulling <em>X posts</em> into transcript·lab</h1>
+  <p class="lede">Can we pull an X post, its replies and the author's recent posts cheaply enough to summarise them into the corpus? I ran every route I could find against
+    <a href="https://x.com/yourclouddude/status/2120457311499985313">one real post</a>. Short answer: <b>yes, and for free</b>. FxTwitter's public API returned the full post, all its replies and the author's timeline. Supadata returned the post itself and nothing around it, so it's only worth paying for when an X post has a video to transcribe.</p>
+  <div class="verdict">
+    <div class="stat accent"><div class="n">674/674</div><div class="l">characters of this long post, free through FxTwitter. X's own oEmbed and syndication endpoints stop at about 277.</div></div>
+    <div class="stat accent"><div class="n">5</div><div class="l">replies and author follow-ups pulled free, with a cursor for the next page</div></div>
+    <div class="stat accent"><div class="n">21</div><div class="l">recent posts per page from the author's profile, free, with a cursor</div></div>
+    <div class="stat"><div class="n">0.4s · 5s</div><div class="l">to fetch post and replies, then to summarise them with <code>deepseek-v4-flash</code> (521 + 811 tokens)</div></div>
+    <div class="stat amber"><div class="n">2</div><div class="l">Supadata credits spent by this spike (metadata + web scrape)</div></div>
+  </div>
+  <div class="callout warn">
+    <p><b>Parked on 15 Nov 2026.</b> The spike answered the question and no build is planned. The proposal and choices below are kept as a record, ready if X ingestion comes back later.</p>
+  </div>
+</header>
+
+<section id="questions">
+  <span class="eyebrow">Your questions</span>
+  <h2>Can I pull the post, the comments and the channel?</h2>
+  <p class="sub">Each answer comes from a real call against this post on 15 Nov 2026. The raw responses stayed in the session's scratch folder and weren't committed.</p>
+  <div class="cards">
+    <div class="card">
+      <h3>Pull this post? <span class="ans yes">YES</span></h3>
+      <p>Full text, author, date, and views, likes, replies, reposts and bookmarks. FxTwitter returns all of it free. Supadata's <code>/v1/metadata</code> also gives the full text plus basic stats, for 1 credit.</p>
+    </div>
+    <div class="card">
+      <h3>See the comments? <span class="ans yes">YES, FREE</span></h3>
+      <p>FxTwitter's <code>/2/conversation/:id</code> returned all 3 replies plus the author's 2 follow-ups, with a cursor for more. Supadata metadata only gives the reply <em>count</em>. Its web scrape catches some replies, mixed in with log-in page clutter.</p>
+    </div>
+    <div class="card">
+      <h3>Pull the channel? <span class="ans yes">YES, FREE</span></h3>
+      <p>FxTwitter's <code>/2/profile/:handle/statuses</code> returned the 21 most recent posts with a paging cursor, and it also returns X Articles in full. X's own syndication timeline returned <code>429</code> on both tries. Supadata has no X timeline endpoint.</p>
+    </div>
+    <div class="card">
+      <h3>Is Supadata worth it here? <span class="ans part">ONLY FOR VIDEO</span></h3>
+      <p>For text posts it duplicates what the free route gives and adds no replies or timeline. Where it earns its credit is <code>/v1/transcript</code> on an X post that carries a video. It also works as a paid fallback if the free route breaks.</p>
+    </div>
+  </div>
+</section>
+
+<section id="routes">
+  <span class="eyebrow">Evidence</span>
+  <h2>Every route, tested on this post</h2>
+  <p class="sub">Same post for every row. "Full text" means all 674 characters of this long post. The free X endpoints silently cut long posts off.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Route</th><th>Full text</th><th>Replies</th><th>Profile · timeline</th><th>Cost</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="rec"><b>FxTwitter</b> <code>/2/status/:id</code></td><td class="rec"><span class="ans yes">674 ✓</span></td><td class="rec">count only</td><td class="rec">full profile: followers 30,279, bio, site</td><td class="n rec">free</td><td class="rec"><span class="badge ok">200</span></td></tr>
+        <tr><td class="rec"><b>FxTwitter</b> <code>/2/conversation/:id</code></td><td class="rec"><span class="ans yes">674 ✓</span></td><td class="rec"><span class="ans yes">5 + cursor</span></td><td class="rec">—</td><td class="n rec">free</td><td class="rec"><span class="badge ok">200</span></td></tr>
+        <tr><td class="rec"><b>FxTwitter</b> <code>/2/profile/:handle/statuses</code></td><td class="rec">✓ per post</td><td class="rec">—</td><td class="rec"><span class="ans yes">21 posts + cursor</span></td><td class="n rec">free</td><td class="rec"><span class="badge ok">200</span></td></tr>
+        <tr><td><b>FxTwitter</b> <code>/2/thread/:id</code></td><td>✓</td><td>author's own thread (2)</td><td>—</td><td class="n">free</td><td><span class="badge ok">200</span></td></tr>
+        <tr><td><b>Supadata</b> <code>/v1/metadata</code></td><td><span class="ans yes">674 ✓</span></td><td>count only</td><td>username, display name</td><td class="n">1 credit</td><td><span class="badge ok">200</span></td></tr>
+        <tr><td><b>Supadata</b> <code>/v1/web/scrape</code></td><td>✓ in markdown</td><td><span class="ans part">some</span><span class="why">mixed with log-in / sign-up links</span></td><td>—</td><td class="n">1 credit</td><td><span class="badge ok">200</span></td></tr>
+        <tr><td><b>Supadata</b> <code>/v1/transcript</code></td><td colspan="3">not tested: this post has no video. This is the endpoint that matters for X video posts.</td><td class="n">1+ credit</td><td><span class="badge">n/a</span></td></tr>
+        <tr><td>X syndication <code>tweet-result</code></td><td><span class="ans part">277 ✗</span><span class="why">long-post body is only an id</span></td><td>count only</td><td>name, handle</td><td class="n">free</td><td><span class="badge warn">truncated</span></td></tr>
+        <tr><td>X oEmbed</td><td><span class="ans part">cut at "security…"</span></td><td>—</td><td>name only</td><td class="n">free</td><td><span class="badge warn">truncated</span></td></tr>
+        <tr><td>x.com page, logged out</td><td><span class="ans part">300 ✗</span><span class="why">og:description only</span></td><td>none</td><td>—</td><td class="n">free</td><td><span class="badge warn">truncated</span></td></tr>
+        <tr><td>X syndication timeline</td><td>—</td><td>—</td><td><span class="ans no">429 twice</span></td><td class="n">free</td><td><span class="badge bad">blocked</span></td></tr>
+        <tr><td>vxTwitter API</td><td colspan="3">Cloudflare "Just a moment…" challenge</td><td class="n">free</td><td><span class="badge bad">403</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="market">
+  <span class="eyebrow">The market · prices checked 15 Nov 2026</span>
+  <h2>What each route costs, and what it covers</h2>
+  <p class="sub">Prices come from each provider's own pricing page, linked under each card. On its Basic or Pro plan, Supadata works out at about $0.006–0.017 a credit. That makes even its cheapest call dearer than X's own API, and it covers less.</p>
+  <div class="cards">
+    <div class="card rec">
+      <h3>FxTwitter <span class="badge rec">use now</span></h3>
+      <p>Free, no key. In our tests it returned full post text, X Articles (9,100 characters), replies, threads and the author's timeline.</p>
+      <ul><li>1,000 requests/min per IP</li><li>volunteer-run, no SLA</li><li>not sanctioned by X</li></ul>
+      <div class="cost">$0 · <a href="https://docs.fxembed.com/api/introduction">docs.fxembed.com</a></div>
+    </div>
+    <div class="card">
+      <h3>Official X API <span class="badge ok">sanctioned</span></h3>
+      <p>Pay-per-use since Feb 2026; there's no free reading tier any more. Replies come via <code>conversation_id</code> search, timelines via <code>/2/users/:id/tweets</code>.</p>
+      <ul><li>$0.005 a post · $0.010 a user</li><li>a re-read the same UTC day isn't charged again</li><li>$20 starter credit</li></ul>
+      <div class="cost">$5 per 1k posts · <a href="https://docs.x.com/x-api/getting-started/pricing">docs.x.com</a></div>
+    </div>
+    <div class="card">
+      <h3>twitterapi.io · SocialData <span class="badge warn">unofficial</span></h3>
+      <p>Paid third-party APIs. Both cover replies, threads, user timelines and Articles. They cost about 1/30 of X's price but have the same terms risk as FxTwitter.</p>
+      <ul><li>twitterapi.io $0.15 per 1k tweets, $1 trial</li><li>SocialData $0.20 per 1k, no free plan</li></ul>
+      <div class="cost">~$0.2 per 1k · <a href="https://twitterapi.io/pricing">twitterapi.io</a> · <a href="https://docs.socialdata.tools/getting-started/pricing/">socialdata.tools</a></div>
+    </div>
+    <div class="card">
+      <h3>xAI X Search <span class="badge info">search, not fetch</span></h3>
+      <p>Grok picks the calls and answers with citations. <code>x_thread_fetch</code> gets a post with its replies. Good for "what is X saying about…", but too unpredictable for a fixed ingest.</p>
+      <ul><li>$5 per 1k posts + $10 per 1k profiles</li><li>plus model tokens</li></ul>
+      <div class="cost">$5 per 1k + tokens · <a href="https://docs.x.ai/developers/tools/x-search">docs.x.ai</a></div>
+    </div>
+    <div class="card">
+      <h3>Supadata <span class="badge info">video only</span></h3>
+      <p>Metadata returns the full post text (674 of 674 characters here) but no replies and no timeline. Its real value on X is <code>/v1/transcript</code>, which turns a video post into text.</p>
+      <ul><li>1 credit for metadata or a native transcript</li><li>2 credits a minute when AI-generated</li><li>credits don't roll over</li></ul>
+      <div class="cost">~$6–17 per 1k posts on Basic/Pro · <a href="https://supadata.ai/pricing">supadata.ai</a></div>
+    </div>
+    <div class="card">
+      <h3>Avoid <span class="badge bad">dead or risky</span></h3>
+      <p><b>Nitter</b> was archived after X's cease-and-desist (Aug 2026). <b>twscrape</b> needs logged-in X accounts, which risks bans. <b>snscrape</b> hasn't been updated since 2023. X's own <b>oEmbed</b> and <b>syndication</b> endpoints cut long posts off.</p>
+    </div>
+  </div>
+  <div class="tablewrap" style="margin-top:var(--s4)">
+    <table>
+      <thead><tr><th>Worked cost</th><th class="rec">FxTwitter</th><th>X API</th><th>twitterapi.io</th><th>SocialData</th><th>xAI</th><th>Supadata</th></tr></thead>
+      <tbody>
+        <tr><td>This post + 5 replies + author</td><td class="n rec">$0</td><td class="n">$0.04</td><td class="n">&lt;$0.01</td><td class="n">&lt;$0.01</td><td class="n">$0.04 + tokens</td><td class="n">1 credit<span class="why">post only</span></td></tr>
+        <tr><td>One channel poll, 25 posts</td><td class="n rec">$0</td><td class="n">$0.14</td><td class="n">&lt;$0.01</td><td class="n">&lt;$0.01</td><td class="n">$0.14 + tokens</td><td class="n">—<span class="why">no timeline</span></td></tr>
+        <tr><td>1,000 posts a month</td><td class="n rec">$0</td><td class="n">$5.00</td><td class="n">$0.15</td><td class="n">$0.20</td><td class="n">$5 + tokens</td><td class="n">1,000 credits<span class="why">needs Pro, $17/mo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">Summarising adds about 1.3k DeepSeek flash tokens per post on every route. Not verified: how X bills expansions, whether xAI returns raw post JSON, and RapidAPI's prices, which its pages only render with JavaScript.</p>
+</section>
+
+
+<section id="proof">
+  <span class="eyebrow">Proof</span>
+  <h2>Post → one document → summary</h2>
+  <p class="sub">A 92-line scratch script (not committed) makes one FxTwitter call, writes the post, the author's thread and the replies as one markdown document, then asks the project's own LLM client (<code>chat_model_kwargs</code>, currently <code>deepseek-v4-flash</code>) for a summary. Nothing was written to the corpus.</p>
+  <div class="proof">
+    <figure>
+      <h4>What came back (summary.md)</h4>
+<pre>**Gist:** The post urges learners to stop watching AWS tutorials
+and instead build a 10-step AWS web app project to prove their skills.
+
+**Key points:**
+- Knowing EC2, S3, and IAM is not the same as connecting them
+  into a working application.
+- The 10-step challenge covers: designing a simple web app; creating
+  a VPC and subnets; configuring routes and security groups;
+  deploying on EC2; storing files in S3; connecting RDS; applying
+  least-privilege IAM; monitoring with CloudWatch; testing failures
+  and recovery; documenting architecture and costs.
+- The outcome is a project you can explain in an interview, not
+  just tutorial notes.
+
+**Replies add:** Commenters agree on avoiding "tutorial hell"; the
+author stresses that real learning comes from building, getting
+stuck, and debugging, and promotes hands-on AWS projects.</pre>
+      <figcaption>Abridged from the model's output. The full run took 0.42s to fetch and 5.0s to summarise, using 1,332 tokens.</figcaption>
+    </figure>
+    <figure>
+      <h4>What a stored X source would hold</h4>
+      <dl class="kv">
+        <dt>external_id</dt><dd><code>2120457311499985313</code>, the post id, so an edited post updates in place</dd>
+        <dt>url</dt><dd><code>x.com/yourclouddude/status/…</code></dd>
+        <dt>title</dt><dd>first line of the post: "STOP WATCHING AWS TUTORIALS."</dd>
+        <dt>channel</dt><dd><code>x:yourclouddude</code> · YourCloudDude | AWS &amp; Python</dd>
+        <dt>published_at</dt><dd>2026-11-11T10:03:13Z</dd>
+        <dt>body</dt><dd>post + author thread + replies, 1,634 chars</dd>
+        <dt>stats</dt><dd>1,146 views · 17 likes · 3 replies · 2 reposts · 15 bookmarks</dd>
+        <dt>summary</dt><dd>the gist and bullets above</dd>
+      </dl>
+    </figure>
+  </div>
+</section>
+
+<section id="fit">
+  <span class="eyebrow">Integration</span>
+  <h2>Where it plugs in: a new channel kind, not a new pipeline</h2>
+  <p class="sub">The web channels added in s26 already poll a source, wrap each item as a <code>Candidate</code>, then chunk and embed it into <code>web_chunks</code>. An X profile is just another source to poll. The new parts are tinted, and the dashed boxes are gaps that exist today whichever route you pick.</p>
+  <div class="fig">
+    <svg viewBox="0 0 1000 330" role="img" aria-labelledby="fit-title">
+      <title id="fit-title">X posts flow through a new X poller into the existing web channel pipeline</title>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="arrow-gap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <g class="node" id="n-src"><title>Input: a post URL pasted into the index box, or an @handle in channels.yaml</title>
+        <rect x="10" y="40" width="170" height="74" rx="10"/><text x="24" y="70">X post URL</text><text class="s" x="24" y="94">or @handle in channels.yaml</text></g>
+      <g class="node new" id="n-client"><title>New: XClient wraps FxTwitter, with Supadata as the paid fallback</title>
+        <rect x="225" y="40" width="190" height="74" rx="10"/><text x="239" y="70">XClient (new)</text><text class="s" x="239" y="94">FxTwitter → Supadata</text></g>
+      <g class="node new" id="n-poller"><title>New: an "x" channel kind with a poller registered in POLLERS</title>
+        <rect x="460" y="40" width="190" height="74" rx="10"/><text x="474" y="70">kind: x poller (new)</text><text class="s" x="474" y="94">Candidate, body in feed</text></g>
+      <g class="node" id="n-ingest"><title>Existing: WebIngestor runs the word floor and content hash, then chunks the source</title>
+        <rect x="695" y="40" width="160" height="74" rx="10"/><text x="709" y="70">WebIngestor</text><text class="s" x="709" y="94">hash · chunk · embed</text></g>
+      <g class="node" id="n-store"><title>Existing: Chroma collections web_sources and web_chunks</title>
+        <rect x="695" y="200" width="160" height="74" rx="10"/><text x="709" y="230">web_chunks</text><text class="s" x="709" y="254">+ web_sources</text></g>
+      <g class="node gap" id="n-chat"><title>Gap: chat retrieval does not read web_chunks yet</title>
+        <rect x="430" y="200" width="200" height="74" rx="10"/><text x="444" y="230">Chat retrieval</text><text class="s" x="444" y="254">does not read web_chunks</text></g>
+      <g class="node gap" id="n-sum"><title>Gap: summaries are video-only; X needs a plain-text summariser</title>
+        <rect x="160" y="200" width="210" height="74" rx="10"/><text x="174" y="230">Text summariser</text><text class="s" x="174" y="254">summaries are video-only</text></g>
+      <path class="edge" id="e1" d="M180,77 L222,77"><title>URL or handle to client</title></path>
+      <path class="edge" id="e2" d="M415,77 L457,77"><title>posts to poller</title></path>
+      <path class="edge" id="e3" d="M650,77 L692,77"><title>Candidates to WebIngestor</title></path>
+      <path class="edge" id="e4" d="M775,114 L775,197"><title>chunks to Chroma</title></path>
+      <path class="edge gap" id="e5" d="M695,237 L633,237"><title>not wired yet</title></path>
+      <path class="edge gap" id="e6" d="M555,114 C555,160 265,150 265,197"><title>post text to summariser</title></path>
+      <text class="elabel" x="560" y="300">needs wiring, whichever route</text>
+    </svg>
+    <div class="legend"><span class="badge ok">new for X</span><span class="badge">exists today</span><span class="badge warn">gap today</span></div>
+  </div>
+  <div class="tablewrap" style="margin-top:var(--s4)">
+    <table>
+      <thead><tr><th>Touch point</th><th>Today</th><th>Change for X</th></tr></thead>
+      <tbody>
+        <tr><td class="k">src/channels/models.py:32</td><td><code>CHANNEL_KINDS</code> = rss, atom, sitemap, github_docs, url_list</td><td>add <code>"x"</code></td></tr>
+        <tr><td class="k">src/channels/cli.py:48</td><td><code>--kind</code> choices hardcoded</td><td>add <code>x</code> (it doesn't read <code>CHANNEL_KINDS</code>)</td></tr>
+        <tr><td class="k">src/channels/pollers.py:393</td><td><code>POLLERS</code> registry</td><td>register <code>poll_x</code>: profile statuses → <code>Candidate</code>s</td></tr>
+        <tr><td class="k">channels.yaml</td><td>default <code>min_words: 250</code></td><td>per-channel override. At 250 nearly everything is dropped: this post is 112 words (251 with its replies), and the author's recent posts have a median of 15 words, with 13 of 21 under 30.</td></tr>
+        <tr><td class="k">src/transcripts/youtube.py:10</td><td><code>extract_video_id</code> raises on any non-YouTube URL</td><td>route <code>x.com/…/status/…</code> in the index box to the X path first</td></tr>
+        <tr><td class="k">src/rag/summaries.py</td><td>summariser takes a <code>RawTranscriptDocument</code></td><td>plain-text variant keyed by source, not <code>video_id</code></td></tr>
+        <tr><td class="k">src/agents · src/chat</td><td>no reader of <code>web_chunks</code></td><td>separate change: let chat retrieve web and X chunks</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="plan">
+  <span class="eyebrow">Proposal</span>
+  <h2>Build order if you go ahead</h2>
+  <p class="sub">Each step can be shipped on its own, and nothing spends Supadata credits unless the free route fails or a post has a video.</p>
+  <div class="steps">
+    <div class="step"><b>XClient over FxTwitter</b>Three calls (<code>status</code>, <code>conversation</code> with cursor, <code>profile/statuses</code> with cursor), normalised into one <code>XPost</code> model. Cache responses like <code>discovery_cache</code>, send a descriptive User-Agent, and keep volume low.<span class="tag">src/transcripts/x.py · tests with recorded fixtures</span></div>
+    <div class="step"><b>Paid fallbacks behind the same interface</b>On an FxTwitter error, fall back to Supadata <code>/v1/metadata</code>. The keys are already set up, and it returns the full post text for 1 credit. For a post with video, fetch <code>/v1/transcript</code> and append it to the body. If X's terms start to matter, swap the backend to the official API ($0.005 a post) without touching anything downstream.<span class="tag">reuses SupadataKeyRing failover · X API as a later backend</span></div>
+    <div class="step"><b>One-off: paste an X link</b>Detect <code>x.com/…/status/…</code> in the index box, the same way a pasted video URL is detected today, and ingest that post, its thread and its replies as one source.<span class="tag">IndexRequest validator · ingestion queue</span></div>
+    <div class="step"><b>X as a channel</b><code>kind: x</code> with <code>handle</code>, <code>include_replies</code>, <code>max_items_per_poll</code> and a low <code>min_words</code>. Adaptive cadence and the content hash work as they do for web channels.<span class="tag">channels.yaml · pollers.py</span></div>
+    <div class="step"><b>Summaries and retrieval</b>Plain-text summariser on <code>deepseek-v4-flash</code>, about 1.3k tokens a post. Then let chat read <code>web_chunks</code>, which also unlocks the s26 web sources.<span class="tag">separate PR · benefits all web channels</span></div>
+  </div>
+</section>
+
+<section id="risks">
+  <span class="eyebrow">Risks</span>
+  <h2>What could go wrong</h2>
+  <div class="split">
+    <div class="callout warn">
+      <h3>FxTwitter is community-run, not an X product</h3>
+      <p>It proxies X's internal API, comes with no SLA, and can rate-limit, change shape or go dark when X changes something. Keep it behind <code>XClient</code> with a paid fallback, cache aggressively, and never hammer it.</p>
+    </div>
+    <div class="callout red">
+      <h3>X's terms forbid scraping</h3>
+      <p>X's terms (effective 9 Oct 2026) prohibit crawling or scraping without written consent. FxTwitter and the paid third-party APIs all read X that way. At personal volume the practical risk is low, but only the official API is sanctioned. If this ever powers the public demo, switch <code>XClient</code> to the X API.</p>
+    </div>
+    <div class="callout warn">
+      <h3>Other people's replies</h3>
+      <p>Replies are other people's words. Store their handles only, and keep replies out of the public demo.</p>
+    </div>
+    <div class="callout">
+      <h3>Not tested yet</h3>
+      <ul class="tight">
+        <li>Reply paging beyond the first page (this post has 3 replies)</li>
+        <li>Quote posts and polls</li>
+        <li>Supadata <code>/v1/transcript</code> on an X video post</li>
+        <li>FxTwitter in practice under a daily poll (documented limit: 1,000/min)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="decide">
+  <span class="eyebrow">Your call</span>
+  <h2>Pick a route and a scope</h2>
+  <p class="sub">Your choices stay on the page until you press Queue. Then I build that slice on <code>x-supadata-spike</code>.</p>
+  <div class="qgrid">
+    <form class="q" data-lavish-question="x-route" onsubmit="event.preventDefault(); const f=new FormData(event.currentTarget); const route=f.get('route'), scope=f.get('scope'), first=f.get('first'); const note=(f.get('note')||'').trim(); if(!route||!scope||!first) { event.currentTarget.querySelector('.queued').textContent='Pick one option in each group first.'; return; } window.lavish.queuePrompt('X ingestion: use route “'+route+'”, scope “'+scope+'”, and build “'+first+'” first.'+(note?' Note: '+note:''), { tag:'choice', text:'X route: '+route+' · '+scope+' · '+first, element:event.currentTarget, data:{ question:'x-route', route, scope, first, note } }); event.currentTarget.querySelector('.queued').textContent='Queued: '+route+' · '+scope+' · '+first;">
+      <h3>Route <span class="badge rec">recommended first</span></h3>
+      <label><input type="radio" name="route" value="FxTwitter free, Supadata fallback" checked> <span>FxTwitter free, Supadata as fallback and for video<span class="d">$0 for text. Credits only on failure or video.</span></span></label>
+      <label><input type="radio" name="route" value="Supadata only"> <span>Supadata only<span class="d">1 credit a post. No replies, no timeline, and dearer than X's own API.</span></span></label>
+      <label><input type="radio" name="route" value="Official X API"> <span>Official X API, pay-per-use<span class="d">$0.005 a post. The only route X sanctions.</span></span></label>
+      <label><input type="radio" name="route" value="twitterapi.io or SocialData"> <span>twitterapi.io or SocialData<span class="d">About $0.2 per 1k posts, with replies and timelines. Unofficial.</span></span></label>
+      <label><input type="radio" name="route" value="xAI X Search"> <span>xAI / Grok X Search<span class="d">$5 per 1k posts + tokens. Search-shaped, not fetch-shaped.</span></span></label>
+      <h3 style="margin-top:var(--s3)">Scope</h3>
+      <label><input type="radio" name="scope" value="post only"> <span>Post only</span></label>
+      <label><input type="radio" name="scope" value="post + thread + replies" checked> <span>Post + author's thread + replies</span></label>
+      <label><input type="radio" name="scope" value="post + replies + author channel"> <span>…plus the author's recent posts as a channel</span></label>
+      <h3 style="margin-top:var(--s3)">Build first</h3>
+      <label><input type="radio" name="first" value="paste an X link" checked> <span>Paste an X link into the index box<span class="d">smallest useful slice</span></span></label>
+      <label><input type="radio" name="first" value="X channel poller"> <span>X as a channel (<code>kind: x</code>)</span></label>
+      <label><input type="radio" name="first" value="nothing, spike only"> <span>Nothing yet, the spike answers the question</span></label>
+      <label style="display:block"><span class="d">Anything else (optional)</span><textarea name="note" rows="2" placeholder="e.g. include quote posts, cap replies at 50"></textarea></label>
+      <div class="row"><button type="submit">Queue this answer</button><span class="queued" role="status" aria-live="polite"></span></div>
+    </form>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
