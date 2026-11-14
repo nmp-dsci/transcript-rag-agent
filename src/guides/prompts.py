@@ -12,7 +12,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-SKILL_PATH = Path(__file__).resolve().parents[2] / "skills" / "field-guide-writer" / "SKILL.md"
+SKILL_PATH = (
+    Path(__file__).resolve().parents[2] / ".agents" / "skills" / "field-guide-writer" / "SKILL.md"
+)
 
 
 def load_skill(path: Path | None = None) -> str:
